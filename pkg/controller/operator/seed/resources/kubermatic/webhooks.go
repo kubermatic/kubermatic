@@ -27,7 +27,7 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -58,14 +58,14 @@ func ClusterValidatingWebhookConfigurationReconciler(ctx context.Context, cfg *k
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-kubermatic-k8c-io-v1-cluster"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/validate-kubermatic-k8c-io-v1-cluster"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},
@@ -114,14 +114,14 @@ func ClusterMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kub
 					FailurePolicy:           &failurePolicy,
 					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/mutate-kubermatic-k8c-io-v1-cluster"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/mutate-kubermatic-k8c-io-v1-cluster"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},
@@ -170,14 +170,14 @@ func AddonMutatingWebhookConfigurationReconciler(ctx context.Context, cfg *kuber
 					FailurePolicy:           &failurePolicy,
 					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(10),
+					TimeoutSeconds:          ptr.To[int32](10),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/mutate-kubermatic-k8c-io-v1-addon"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/mutate-kubermatic-k8c-io-v1-addon"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},
@@ -226,14 +226,14 @@ func MLAAdminSettingMutatingWebhookConfigurationReconciler(ctx context.Context, 
 					FailurePolicy:           &failurePolicy,
 					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(10),
+					TimeoutSeconds:          ptr.To[int32](10),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/mutate-kubermatic-k8c-io-v1-mlaadminsetting"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/mutate-kubermatic-k8c-io-v1-mlaadminsetting"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},
@@ -283,14 +283,14 @@ func IPAMPoolValidatingWebhookConfigurationReconciler(ctx context.Context,
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      common.WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-kubermatic-k8c-io-v1-ipampool"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/validate-kubermatic-k8c-io-v1-ipampool"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},

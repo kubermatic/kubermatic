@@ -27,7 +27,7 @@ import (
 
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -135,7 +135,7 @@ var (
 				sc.Provisioner = "kubernetes.io/azure-disk"
 			} else { // out-of-tree CSI
 				sc.Provisioner = csiDriverName
-				sc.AllowVolumeExpansion = pointer.Bool(true)
+				sc.AllowVolumeExpansion = ptr.To(true)
 			}
 
 			sc.VolumeBindingMode = &waitForFirstCustomer
@@ -151,7 +151,7 @@ var (
 
 			sc.Provisioner = csiDriverName
 			sc.VolumeBindingMode = &waitForFirstCustomer
-			sc.AllowVolumeExpansion = pointer.Bool(true)
+			sc.AllowVolumeExpansion = ptr.To(true)
 
 			return nil
 		},
@@ -161,7 +161,7 @@ var (
 			}
 
 			sc.Provisioner = csiDriverName
-			sc.AllowVolumeExpansion = pointer.Bool(true)
+			sc.AllowVolumeExpansion = ptr.To(true)
 			sc.VolumeBindingMode = &waitForFirstCustomer
 
 			return nil
@@ -171,7 +171,7 @@ var (
 				sc.Provisioner = "kubernetes.io/cinder"
 			} else { // out-of-tree CSI
 				sc.Provisioner = csiDriverName
-				sc.AllowVolumeExpansion = pointer.Bool(true)
+				sc.AllowVolumeExpansion = ptr.To(true)
 				sc.VolumeBindingMode = &waitForFirstCustomer
 			}
 
@@ -194,7 +194,7 @@ var (
 			}
 
 			sc.Provisioner = csiDriverName
-			sc.AllowVolumeExpansion = pointer.Bool(true)
+			sc.AllowVolumeExpansion = ptr.To(true)
 			sc.Parameters["filesystem"] = "ext4"
 
 			return nil

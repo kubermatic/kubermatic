@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // MutateCreate is an addition to regular defaulting for new clusters.
@@ -85,7 +85,7 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 		switch {
 		case newCluster.Spec.Cloud.Openstack != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
-			newCluster.Spec.Cloud.Openstack.UseOctavia = pointer.Bool(true)
+			newCluster.Spec.Cloud.Openstack.UseOctavia = ptr.To(true)
 
 		case newCluster.Spec.Cloud.VSphere != nil:
 			addCCMCSIMigrationAnnotations(newCluster)

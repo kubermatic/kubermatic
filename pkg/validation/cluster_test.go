@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -306,48 +306,48 @@ func TestValidateLeaderElectionSettings(t *testing.T) {
 		{
 			name: "valid leader election settings",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-				LeaseDurationSeconds: pointer.Int32(int32(10)),
-				RenewDeadlineSeconds: pointer.Int32(int32(5)),
-				RetryPeriodSeconds:   pointer.Int32(int32(10)),
+				LeaseDurationSeconds: ptr.To[int32](10),
+				RenewDeadlineSeconds: ptr.To[int32](5),
+				RetryPeriodSeconds:   ptr.To[int32](10),
 			},
 			wantErr: false,
 		},
 		{
 			name: "invalid leader election settings",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-				LeaseDurationSeconds: pointer.Int32(int32(5)),
-				RenewDeadlineSeconds: pointer.Int32(int32(10)),
-				RetryPeriodSeconds:   pointer.Int32(int32(10)),
+				LeaseDurationSeconds: ptr.To[int32](5),
+				RenewDeadlineSeconds: ptr.To[int32](10),
+				RetryPeriodSeconds:   ptr.To[int32](10),
 			},
 			wantErr: true,
 		},
 		{
 			name: "lease duration only",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-				LeaseDurationSeconds: pointer.Int32(int32(10)),
+				LeaseDurationSeconds: ptr.To[int32](10),
 			},
 			wantErr: true,
 		},
 		{
 			name: "renew duration only",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-				RenewDeadlineSeconds: pointer.Int32(int32(10)),
+				RenewDeadlineSeconds: ptr.To[int32](10),
 			},
 			wantErr: true,
 		},
 		{
 			name: "retry period only",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-				RetryPeriodSeconds: pointer.Int32(int32(10)),
+				RetryPeriodSeconds: ptr.To[int32](10),
 			},
 			wantErr: false,
 		},
 		{
 			name: "negative value",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
-				LeaseDurationSeconds: pointer.Int32(int32(10)),
-				RenewDeadlineSeconds: pointer.Int32(int32(-5)),
-				RetryPeriodSeconds:   pointer.Int32(int32(10)),
+				LeaseDurationSeconds: ptr.To[int32](10),
+				RenewDeadlineSeconds: ptr.To[int32](-5),
+				RetryPeriodSeconds:   ptr.To[int32](10),
 			},
 			wantErr: true,
 		},
@@ -382,7 +382,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: false,
 		},
@@ -392,7 +392,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -402,7 +402,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -413,7 +413,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: false,
 		},
@@ -424,7 +424,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"fd03::/120", "10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -435,7 +435,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -447,7 +447,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: false,
 		},
@@ -459,7 +459,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: false,
 		},
@@ -471,7 +471,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -480,11 +480,11 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
-				NodeCIDRMaskSizeIPv4:     pointer.Int32(26),
-				NodeCIDRMaskSizeIPv6:     pointer.Int32(112),
+				NodeCIDRMaskSizeIPv4:     ptr.To[int32](26),
+				NodeCIDRMaskSizeIPv6:     ptr.To[int32](112),
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: false,
 		},
@@ -493,11 +493,11 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
-				NodeCIDRMaskSizeIPv4:     pointer.Int32(12),
-				NodeCIDRMaskSizeIPv6:     pointer.Int32(112),
+				NodeCIDRMaskSizeIPv4:     ptr.To[int32](12),
+				NodeCIDRMaskSizeIPv6:     ptr.To[int32](112),
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -506,11 +506,11 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd00::/104"}},
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
-				NodeCIDRMaskSizeIPv4:     pointer.Int32(24),
-				NodeCIDRMaskSizeIPv6:     pointer.Int32(64),
+				NodeCIDRMaskSizeIPv4:     ptr.To[int32](24),
+				NodeCIDRMaskSizeIPv6:     ptr.To[int32](64),
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -520,7 +520,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -530,7 +530,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain:                "cluster.local",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			wantErr: true,
 		},
@@ -570,7 +570,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
@@ -587,12 +587,12 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-						IPv6Enabled: pointer.Bool(true),
+						IPv6Enabled: ptr.To(true),
 					},
 				},
 			},
@@ -606,12 +606,12 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
-						IPv6Enabled: pointer.Bool(false),
+						IPv6Enabled: ptr.To(false),
 					},
 				},
 			},
@@ -625,12 +625,12 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						IPv6Enabled: pointer.Bool(true),
+						IPv6Enabled: ptr.To(true),
 					},
 				},
 			},
@@ -644,12 +644,12 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{
 					VSphere: &kubermaticv1.DatacenterSpecVSphere{
-						IPv6Enabled: pointer.Bool(false),
+						IPv6Enabled: ptr.To(false),
 					},
 				},
 			},
@@ -663,7 +663,7 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd03::/120"}},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                "ipvs",
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			dc: &kubermaticv1.Datacenter{
 				Spec: kubermaticv1.DatacenterSpec{

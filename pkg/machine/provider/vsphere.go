@@ -23,7 +23,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type vsphereConfig struct {
@@ -49,7 +49,7 @@ func (b *vsphereConfig) WithMemoryMB(memory int) *vsphereConfig {
 }
 
 func (b *vsphereConfig) WithDiskSizeGB(diskSize int) *vsphereConfig {
-	b.DiskSizeGB = pointer.Int64(int64(diskSize))
+	b.DiskSizeGB = ptr.To[int64](int64(diskSize))
 	return b
 }
 
@@ -74,7 +74,7 @@ func (b *vsphereConfig) WithTemplateVMName(templateName string) *vsphereConfig {
 }
 
 func (b *vsphereConfig) WithAllowInsecure(allow bool) *vsphereConfig {
-	b.AllowInsecure.Value = pointer.Bool(allow)
+	b.AllowInsecure.Value = ptr.To(allow)
 	return b
 }
 
@@ -109,7 +109,7 @@ func CompleteVSphereProviderSpec(config *vsphere.RawConfig, cluster *kubermaticv
 		}
 
 		if config.AllowInsecure.Value == nil {
-			config.AllowInsecure.Value = pointer.Bool(datacenter.AllowInsecure)
+			config.AllowInsecure.Value = ptr.To(datacenter.AllowInsecure)
 		}
 
 		if config.Cluster.Value == "" {

@@ -30,7 +30,7 @@ import (
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -87,8 +87,8 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 	allAZs := sets.New[string]()
 	var subnets []ec2types.Subnet
 	for _, subnet := range allSubnets {
-		if !allAZs.Has(pointer.StringDeref(subnet.AvailabilityZone, "")) {
-			allAZs.Insert(pointer.StringDeref(subnet.AvailabilityZone, ""))
+		if !allAZs.Has(ptr.Deref(subnet.AvailabilityZone, "")) {
+			allAZs.Insert(ptr.Deref(subnet.AvailabilityZone, ""))
 			subnets = append(subnets, subnet)
 		}
 	}

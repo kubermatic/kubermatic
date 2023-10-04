@@ -33,7 +33,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // All Default* constants live here, except for those used by other reconciling
@@ -264,7 +264,7 @@ var (
 				// - CVE-2022-3294 (fixed >= 1.25.4)
 				From:      ">= 1.25.0, < 1.25.4",
 				To:        "1.25.4",
-				Automatic: pointer.Bool(true),
+				Automatic: ptr.To(true),
 			},
 			{
 				// Allow to next minor release
@@ -428,37 +428,37 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.SeedController.Replicas == nil {
-		configCopy.Spec.SeedController.Replicas = pointer.Int32(DefaultSeedControllerMgrReplicas)
+		configCopy.Spec.SeedController.Replicas = ptr.To[int32](DefaultSeedControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "seedController.replicas", "value", *configCopy.Spec.SeedController.Replicas)
 	}
 
 	if configCopy.Spec.Webhook.Replicas == nil {
-		configCopy.Spec.Webhook.Replicas = pointer.Int32(DefaultWebhookReplicas)
+		configCopy.Spec.Webhook.Replicas = ptr.To[int32](DefaultWebhookReplicas)
 		logger.Debugw("Defaulting field", "field", "webhook.replicas", "value", *configCopy.Spec.Webhook.Replicas)
 	}
 
 	if configCopy.Spec.Webhook.PProfEndpoint == nil {
-		configCopy.Spec.Webhook.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
+		configCopy.Spec.Webhook.PProfEndpoint = ptr.To(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "webhook.pprofEndpoint", "value", *configCopy.Spec.Webhook.PProfEndpoint)
 	}
 
 	if configCopy.Spec.API.PProfEndpoint == nil {
-		configCopy.Spec.API.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
+		configCopy.Spec.API.PProfEndpoint = ptr.To(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "api.pprofEndpoint", "value", *configCopy.Spec.API.PProfEndpoint)
 	}
 
 	if configCopy.Spec.SeedController.PProfEndpoint == nil {
-		configCopy.Spec.SeedController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
+		configCopy.Spec.SeedController.PProfEndpoint = ptr.To(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "seedController.pprofEndpoint", "value", *configCopy.Spec.SeedController.PProfEndpoint)
 	}
 
 	if configCopy.Spec.MasterController.PProfEndpoint == nil {
-		configCopy.Spec.MasterController.PProfEndpoint = pointer.String(DefaultPProfEndpoint)
+		configCopy.Spec.MasterController.PProfEndpoint = ptr.To(DefaultPProfEndpoint)
 		logger.Debugw("Defaulting field", "field", "masterController.pprofEndpoint", "value", *configCopy.Spec.MasterController.PProfEndpoint)
 	}
 
 	if configCopy.Spec.MasterController.Replicas == nil {
-		configCopy.Spec.MasterController.Replicas = pointer.Int32(DefaultMasterControllerMgrReplicas)
+		configCopy.Spec.MasterController.Replicas = ptr.To[int32](DefaultMasterControllerMgrReplicas)
 		logger.Debugw("Defaulting field", "field", "masterController.replicas", "value", *configCopy.Spec.MasterController.Replicas)
 	}
 
@@ -468,7 +468,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.UserCluster.APIServerReplicas == nil {
-		configCopy.Spec.UserCluster.APIServerReplicas = pointer.Int32(DefaultAPIServerReplicas)
+		configCopy.Spec.UserCluster.APIServerReplicas = ptr.To[int32](DefaultAPIServerReplicas)
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *configCopy.Spec.UserCluster.APIServerReplicas)
 	}
 
@@ -479,7 +479,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.API.Replicas == nil {
-		configCopy.Spec.API.Replicas = pointer.Int32(DefaultAPIReplicas)
+		configCopy.Spec.API.Replicas = ptr.To[int32](DefaultAPIReplicas)
 		logger.Debugw("Defaulting field", "field", "api.replicas", "value", *configCopy.Spec.API.Replicas)
 	}
 
@@ -512,7 +512,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	if configCopy.Spec.UI.Replicas == nil {
-		configCopy.Spec.UI.Replicas = pointer.Int32(DefaultUIReplicas)
+		configCopy.Spec.UI.Replicas = ptr.To[int32](DefaultUIReplicas)
 		logger.Debugw("Defaulting field", "field", "ui.replicas", "value", *configCopy.Spec.UI.Replicas)
 	}
 

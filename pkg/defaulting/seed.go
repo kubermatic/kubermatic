@@ -24,7 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // DefaultBackupInterval defines the default interval used to create backups.
@@ -91,11 +91,11 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	}
 
 	if settings.ControllerManager.Replicas == nil {
-		settings.ControllerManager.Replicas = pointer.Int32(DefaultControllerManagerReplicas)
+		settings.ControllerManager.Replicas = ptr.To[int32](DefaultControllerManagerReplicas)
 	}
 
 	if settings.Scheduler.Replicas == nil {
-		settings.Scheduler.Replicas = pointer.Int32(DefaultSchedulerReplicas)
+		settings.Scheduler.Replicas = ptr.To[int32](DefaultSchedulerReplicas)
 	}
 
 	if settings.Etcd.DiskSize == nil {
@@ -107,7 +107,7 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	}
 
 	if settings.Etcd.ClusterSize == nil {
-		settings.Etcd.ClusterSize = pointer.Int32(kubermaticv1.DefaultEtcdClusterSize)
+		settings.Etcd.ClusterSize = ptr.To[int32](kubermaticv1.DefaultEtcdClusterSize)
 	}
 
 	return seedCopy, nil

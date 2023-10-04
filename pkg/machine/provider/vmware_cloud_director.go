@@ -23,7 +23,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type vcdConfig struct {
@@ -64,7 +64,7 @@ func (b *vcdConfig) WithMemoryMB(memoryMB int) *vcdConfig {
 }
 
 func (b *vcdConfig) WithDiskSizeGB(diskSizeGB int) *vcdConfig {
-	b.DiskSizeGB = pointer.Int64(int64(diskSizeGB))
+	b.DiskSizeGB = ptr.To[int64](int64(diskSizeGB))
 	return b
 }
 
@@ -74,7 +74,7 @@ func (b *vcdConfig) WithIPAllocationMode(mode vmwareclouddirector.IPAllocationMo
 }
 
 func (b *vcdConfig) WithAllowInsecure(allow bool) *vcdConfig {
-	b.AllowInsecure.Value = pointer.Bool(allow)
+	b.AllowInsecure.Value = ptr.To(allow)
 	return b
 }
 
@@ -89,7 +89,7 @@ func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConf
 
 	if datacenter != nil {
 		if config.AllowInsecure.Value == nil {
-			config.AllowInsecure.Value = pointer.Bool(datacenter.AllowInsecure)
+			config.AllowInsecure.Value = ptr.To(datacenter.AllowInsecure)
 		}
 
 		if config.Catalog.Value == "" {
@@ -97,7 +97,7 @@ func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConf
 		}
 
 		if config.StorageProfile == nil && len(datacenter.DefaultStorageProfile) > 0 {
-			config.StorageProfile = pointer.String(datacenter.DefaultStorageProfile)
+			config.StorageProfile = ptr.To(datacenter.DefaultStorageProfile)
 		}
 
 		if config.Template.Value == "" && os != "" {

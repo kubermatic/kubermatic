@@ -36,7 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -437,19 +437,19 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 
 func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
 	if cloudSpec.AWS != nil {
-		return utilpointer.Bool(false)
+		return ptr.To(false)
 	}
 	if cloudSpec.Openstack != nil {
-		return utilpointer.Bool(false)
+		return ptr.To(false)
 	}
 	if cloudSpec.VSphere != nil {
-		return utilpointer.Bool(false)
+		return ptr.To(false)
 	}
 	if cloudSpec.Azure != nil {
-		return utilpointer.Bool(false)
+		return ptr.To(false)
 	}
 	if cloudSpec.GCP != nil {
-		return utilpointer.Bool(true)
+		return ptr.To(true)
 	}
 	return nil
 }

@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func reconcileRouteTable(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -70,7 +70,7 @@ func getDefaultRouteTable(ctx context.Context, client *ec2.Client, vpcID string)
 		Filters: []ec2types.Filter{
 			ec2VPCFilter(vpcID),
 			{
-				Name:   pointer.String("association.main"),
+				Name:   ptr.To("association.main"),
 				Values: []string{"true"},
 			},
 		},

@@ -28,7 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -109,10 +109,10 @@ func getContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 				},
 			},
 			SecurityContext: &corev1.SecurityContext{
-				RunAsUser:                pointer.Int64(1001),
-				RunAsGroup:               pointer.Int64(2001),
-				ReadOnlyRootFilesystem:   pointer.Bool(true),
-				AllowPrivilegeEscalation: pointer.Bool(false),
+				RunAsUser:                ptr.To[int64](1001),
+				RunAsGroup:               ptr.To[int64](2001),
+				ReadOnlyRootFilesystem:   ptr.To(true),
+				AllowPrivilegeEscalation: ptr.To(false),
 			},
 		},
 	}

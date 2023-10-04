@@ -29,7 +29,7 @@ import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -142,7 +142,7 @@ func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: caBundle,
 						URL:      &ospURL,
@@ -170,7 +170,7 @@ func ValidatingWebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: caBundle,
 						URL:      &oscURL,

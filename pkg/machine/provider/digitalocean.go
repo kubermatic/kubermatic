@@ -22,7 +22,7 @@ import (
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type digitaloceanConfig struct {
@@ -48,22 +48,22 @@ func (b *digitaloceanConfig) WithSize(size string) *digitaloceanConfig {
 }
 
 func (b *digitaloceanConfig) WithIPv6(enable bool) *digitaloceanConfig {
-	b.IPv6.Value = pointer.Bool(enable)
+	b.IPv6.Value = ptr.To(enable)
 	return b
 }
 
 func (b *digitaloceanConfig) WithPrivateNetworking(enable bool) *digitaloceanConfig {
-	b.PrivateNetworking.Value = pointer.Bool(enable)
+	b.PrivateNetworking.Value = ptr.To(enable)
 	return b
 }
 
 func (b *digitaloceanConfig) WithBackups(enable bool) *digitaloceanConfig {
-	b.Backups.Value = pointer.Bool(enable)
+	b.Backups.Value = ptr.To(enable)
 	return b
 }
 
 func (b *digitaloceanConfig) WithMonitoring(enable bool) *digitaloceanConfig {
-	b.Monitoring.Value = pointer.Bool(enable)
+	b.Monitoring.Value = ptr.To(enable)
 	return b
 }
 
@@ -88,7 +88,7 @@ func CompleteDigitaloceanProviderSpec(config *digitalocean.RawConfig, cluster *k
 	}
 
 	if config.PrivateNetworking.Value == nil {
-		config.PrivateNetworking.Value = pointer.Bool(true)
+		config.PrivateNetworking.Value = ptr.To(true)
 	}
 
 	tags := []string{"kubernetes"}

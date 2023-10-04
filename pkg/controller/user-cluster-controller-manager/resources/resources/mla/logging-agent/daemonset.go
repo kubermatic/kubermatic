@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -85,8 +85,8 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 			ds.Spec.Template.ObjectMeta.Labels = controllerLabels
 			ds.Spec.Template.Spec.ServiceAccountName = resources.MLALoggingAgentServiceAccountName
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser:  pointer.Int64(0),
-				RunAsGroup: pointer.Int64(0),
+				RunAsUser:  ptr.To[int64](0),
+				RunAsGroup: ptr.To[int64](0),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -143,13 +143,13 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
-						AllowPrivilegeEscalation: pointer.Bool(false),
+						AllowPrivilegeEscalation: ptr.To(false),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								"all",
 							},
 						},
-						ReadOnlyRootFilesystem: pointer.Bool(true),
+						ReadOnlyRootFilesystem: ptr.To(true),
 					},
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -253,7 +253,7 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.MLALoggingAgentCertificatesSecretName,
-							DefaultMode: pointer.Int32(0400),
+							DefaultMode: ptr.To[int32](0400),
 						},
 					},
 				},

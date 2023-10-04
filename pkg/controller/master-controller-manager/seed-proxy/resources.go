@@ -36,7 +36,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func secretName(seed *kubermaticv1.Seed) string {
@@ -238,7 +238,7 @@ func masterDeploymentReconciler(seed *kubermaticv1.Seed, secret *corev1.Secret, 
 			d.OwnerReferences = ownerReferences(secret)
 			d.Labels = ensureDefaultLabels(d.Labels, MasterDeploymentName, seed.Name)
 
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = ptr.To[int32](1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: labels(),
 			}

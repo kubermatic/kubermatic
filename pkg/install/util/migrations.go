@@ -31,7 +31,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -56,7 +56,7 @@ func ShutdownDeployment(ctx context.Context, logger logrus.FieldLogger, client c
 		depLogger.Debug("Scaling down…")
 
 		oldDeployment := deployment.DeepCopy()
-		deployment.Spec.Replicas = pointer.Int32(0)
+		deployment.Spec.Replicas = ptr.To[int32](0)
 
 		if err := client.Patch(ctx, &deployment, ctrlruntimeclient.MergeFrom(oldDeployment)); err != nil {
 			return fmt.Errorf("failed to scale down Deployment %s: %w", name, err)

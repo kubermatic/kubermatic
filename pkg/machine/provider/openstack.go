@@ -24,7 +24,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type openstackConfig struct {
@@ -65,7 +65,7 @@ func (b *openstackConfig) WithInstanceReadyCheckTimeout(timeout time.Duration) *
 }
 
 func (b *openstackConfig) WithTrustDevicePath(trust bool) *openstackConfig {
-	b.TrustDevicePath.Value = pointer.Bool(trust)
+	b.TrustDevicePath.Value = ptr.To(trust)
 	return b
 }
 
@@ -112,7 +112,7 @@ func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kuberma
 			config.TrustDevicePath.Value = datacenter.TrustDevicePath
 
 			if config.TrustDevicePath.Value == nil {
-				config.TrustDevicePath.Value = pointer.Bool(false)
+				config.TrustDevicePath.Value = ptr.To(false)
 			}
 		}
 	}

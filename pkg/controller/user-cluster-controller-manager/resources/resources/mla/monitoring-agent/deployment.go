@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -78,17 +78,17 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
 			}
-			deployment.Spec.Replicas = pointer.Int32(2)
+			deployment.Spec.Replicas = ptr.To[int32](2)
 			if replicas != nil {
 				deployment.Spec.Replicas = replicas
 			}
 			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.MLAMonitoringAgentServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsUser:    pointer.Int64(65534),
-				RunAsGroup:   pointer.Int64(65534),
-				FSGroup:      pointer.Int64(65534),
-				RunAsNonRoot: pointer.Bool(true),
+				RunAsUser:    ptr.To[int64](65534),
+				RunAsGroup:   ptr.To[int64](65534),
+				FSGroup:      ptr.To[int64](65534),
+				RunAsNonRoot: ptr.To(true),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
@@ -221,7 +221,7 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.MLAMonitoringAgentCertificatesSecretName,
-							DefaultMode: pointer.Int32(0400),
+							DefaultMode: ptr.To[int32](0400),
 						},
 					},
 				},

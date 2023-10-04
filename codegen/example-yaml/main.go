@@ -39,7 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/test-infra/pkg/genyaml"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func main() {
@@ -168,12 +168,12 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Azure: &kubermaticv1.DatacenterSpecAzure{},
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							Images:               imageList,
-							ManageSecurityGroups: pointer.Bool(true),
-							UseOctavia:           pointer.Bool(true),
+							ManageSecurityGroups: ptr.To(true),
+							UseOctavia:           ptr.To(true),
 							DNSServers:           []string{},
-							TrustDevicePath:      pointer.Bool(false),
+							TrustDevicePath:      ptr.To(false),
 							EnabledFlavors:       []string{},
-							IPv6Enabled:          pointer.Bool(false),
+							IPv6Enabled:          ptr.To(false),
 							NodeSizeRequirements: &kubermaticv1.OpenstackNodeSizeRequirements{
 								MinimumVCPUs:  0,
 								MinimumMemory: 0,
@@ -187,7 +187,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						VSphere: &kubermaticv1.DatacenterSpecVSphere{
 							Templates:           imageList,
 							InfraManagementUser: &kubermaticv1.VSphereCredentials{},
-							IPv6Enabled:         pointer.Bool(false),
+							IPv6Enabled:         ptr.To(false),
 						},
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},
@@ -196,7 +196,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							DNSPolicy:                    "",
 							DNSConfig:                    &corev1.PodDNSConfig{},
 							Images:                       kubermaticv1.KubeVirtImageSources{HTTP: &kubevirtHTTPSource},
-							EnableDefaultNetworkPolicies: pointer.Bool(true),
+							EnableDefaultNetworkPolicies: ptr.To(true),
 							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
 								{
 									Name: "deny-ingress",
@@ -210,7 +210,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							},
 							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
 								Name:           "rook-ceph-block",
-								IsDefaultClass: pointer.Bool(true),
+								IsDefaultClass: ptr.To(true),
 							},
 							},
 						},
@@ -218,7 +218,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						Anexia:  &kubermaticv1.DatacenterSpecAnexia{},
 						Nutanix: &kubermaticv1.DatacenterSpecNutanix{
 							Images: imageList,
-							Port:   pointer.Int32(9440),
+							Port:   ptr.To[int32](9440),
 						},
 						VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
 							Templates: imageList,
@@ -295,11 +295,11 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 	setUpdateDefaults := func(cfg *kubermaticv1.KubermaticVersioningConfiguration) {
 		if len(cfg.Updates) > 0 {
 			if cfg.Updates[0].Automatic == nil {
-				cfg.Updates[0].Automatic = pointer.Bool(false)
+				cfg.Updates[0].Automatic = ptr.To(false)
 			}
 
 			if cfg.Updates[0].AutomaticNodeUpdate == nil {
-				cfg.Updates[0].AutomaticNodeUpdate = pointer.Bool(false)
+				cfg.Updates[0].AutomaticNodeUpdate = ptr.To(false)
 			}
 		}
 	}
@@ -333,17 +333,17 @@ func createExampleApplicationDefinition() *appskubermaticv1.ApplicationDefinitio
 									Username: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "user",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 									Password: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "pass",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 									RegistryConfigFile: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  ".dockerconfigjson",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 								},
 							},
@@ -360,22 +360,22 @@ func createExampleApplicationDefinition() *appskubermaticv1.ApplicationDefinitio
 									Username: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "user",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 									Password: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "pass",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 									Token: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "token",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 									SSHKey: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "private-key",
-										Optional:             pointer.Bool(false),
+										Optional:             ptr.To(false),
 									},
 								},
 							},

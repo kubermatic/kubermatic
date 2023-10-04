@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestClusterVersionIsConfigured(t *testing.T) {
@@ -60,7 +60,7 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 					{
 						From:      "1.0.0",
 						To:        "2.0.0",
-						Automatic: pointer.Bool(true),
+						Automatic: ptr.To(true),
 					},
 				},
 			},
@@ -74,7 +74,7 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 					{
 						From:      "1.2.*",
 						To:        "2.0.0",
-						Automatic: pointer.Bool(true),
+						Automatic: ptr.To(true),
 					},
 				},
 			},
@@ -88,7 +88,7 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 					{
 						From:      "1.0.0",
 						To:        "2.0.0",
-						Automatic: pointer.Bool(false),
+						Automatic: ptr.To(false),
 					},
 				},
 			},

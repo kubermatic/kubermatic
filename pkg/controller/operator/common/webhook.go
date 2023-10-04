@@ -37,7 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -394,14 +394,14 @@ func SeedAdmissionWebhookReconciler(ctx context.Context, cfg *kubermaticv1.Kuber
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-kubermatic-k8c-io-v1-seed"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/validate-kubermatic-k8c-io-v1-seed"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					NamespaceSelector: &metav1.LabelSelector{
@@ -455,14 +455,14 @@ func KubermaticConfigurationAdmissionWebhookReconciler(ctx context.Context, cfg 
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-kubermatic-k8c-io-v1-kubermaticconfiguration"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/validate-kubermatic-k8c-io-v1-kubermaticconfiguration"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					NamespaceSelector: &metav1.LabelSelector{
@@ -512,14 +512,14 @@ func ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx context.C
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/validate-application-definition"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/validate-application-definition"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					ObjectSelector:    &metav1.LabelSelector{},
@@ -567,15 +567,15 @@ func ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx context.Con
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ReinvocationPolicy:      &reinvocationPolicy,
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
 						Service: &admissionregistrationv1.ServiceReference{
 							Name:      WebhookServiceName,
 							Namespace: cfg.Namespace,
-							Path:      pointer.String("/mutate-application-definition"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/mutate-application-definition"),
+							Port:      ptr.To[int32](443),
 						},
 					},
 					Rules: []admissionregistrationv1.RuleWithOperations{

@@ -55,7 +55,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/yaml"
 )
 
@@ -321,7 +321,7 @@ func createClusterObject(version semverlib.Version, cloudSpec kubermaticv1.Cloud
 				},
 				DNSDomain:                "cluster.local",
 				ProxyMode:                resources.IPVSProxyMode,
-				NodeLocalDNSCacheEnabled: pointer.Bool(true),
+				NodeLocalDNSCacheEnabled: ptr.To(true),
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{
 				Type:    kubermaticv1.CNIPluginTypeCanal,

@@ -36,7 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/pkg/apis/clientauthentication"
 	clientauthv1beta1 "k8s.io/client-go/pkg/apis/clientauthentication/v1beta1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // Identity is returned on successful Verify() results. It contains a parsed
@@ -270,7 +270,7 @@ func (g generator) GetWithOptions(ctx context.Context, options *GetTokenOptions)
 
 		if options.AssumeRoleExternalID != "" {
 			assumeOptFuncs = append(assumeOptFuncs, func(opts *stscreds.AssumeRoleOptions) {
-				opts.ExternalID = pointer.String(options.AssumeRoleExternalID)
+				opts.ExternalID = ptr.To(options.AssumeRoleExternalID)
 			})
 		}
 

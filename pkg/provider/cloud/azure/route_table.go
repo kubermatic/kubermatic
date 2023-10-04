@@ -28,7 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func routeTableName(cluster *kubermaticv1.Cluster) string {
@@ -76,8 +76,8 @@ func reconcileRouteTable(ctx context.Context, clients *ClientSet, location strin
 
 func targetRouteTable(cloud kubermaticv1.CloudSpec, location string) *armnetwork.RouteTable {
 	return &armnetwork.RouteTable{
-		Name:     pointer.String(cloud.Azure.RouteTableName),
-		Location: pointer.String(location),
+		Name:     ptr.To(cloud.Azure.RouteTableName),
+		Location: ptr.To(location),
 	}
 }
 

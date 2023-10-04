@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // There are unit tests in pkg/install/images/ that effectively render
@@ -42,7 +42,7 @@ func TestNewTemplateData(t *testing.T) {
 		Spec: kubermaticv1.ClusterSpec{
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				IPVS: &kubermaticv1.IPVSConfiguration{
-					StrictArp: pointer.Bool(true),
+					StrictArp: ptr.To(true),
 				},
 			},
 			CNIPlugin: &kubermaticv1.CNIPluginSettings{

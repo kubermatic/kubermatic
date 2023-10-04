@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -81,7 +81,7 @@ func openStackDeploymentReconciler(data *resources.TemplateData) reconciling.Nam
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -92,7 +92,7 @@ func openStackDeploymentReconciler(data *resources.TemplateData) reconciling.Nam
 					Env:          getEnvVars(),
 					VolumeMounts: getVolumeMounts(true),
 					SecurityContext: &corev1.SecurityContext{
-						RunAsUser: pointer.Int64(1001),
+						RunAsUser: ptr.To[int64](1001),
 					},
 				},
 			}

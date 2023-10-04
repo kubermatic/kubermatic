@@ -29,7 +29,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -107,11 +107,11 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 func targetSubnet(cloud kubermaticv1.CloudSpec, routeTableID *string, cidrs []string) *armnetwork.Subnet {
 	cidrPointers := []*string{}
 	for _, cidr := range cidrs {
-		cidrPointers = append(cidrPointers, pointer.String(cidr))
+		cidrPointers = append(cidrPointers, ptr.To(cidr))
 	}
 
 	s := &armnetwork.Subnet{
-		Name: pointer.String(cloud.Azure.SubnetName),
+		Name: ptr.To(cloud.Azure.SubnetName),
 		Properties: &armnetwork.SubnetPropertiesFormat{
 			RouteTable: &armnetwork.RouteTable{
 				ID: routeTableID,
@@ -120,7 +120,7 @@ func targetSubnet(cloud kubermaticv1.CloudSpec, routeTableID *string, cidrs []st
 	}
 
 	if len(cidrs) == 1 {
-		s.Properties.AddressPrefix = pointer.String(cidrs[0])
+		s.Properties.AddressPrefix = ptr.To(cidrs[0])
 	} else {
 		s.Properties.AddressPrefixes = cidrPointers
 	}

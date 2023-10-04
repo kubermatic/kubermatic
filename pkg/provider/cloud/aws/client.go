@@ -32,7 +32,7 @@ import (
 	"github.com/aws/smithy-go"
 
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -97,7 +97,7 @@ func GetAWSConfig(ctx context.Context, accessKeyID, secretAccessKey, assumeRoleA
 		stsSvc := sts.NewFromConfig(cfg)
 		creds := stscreds.NewAssumeRoleProvider(stsSvc, assumeRoleARN,
 			func(o *stscreds.AssumeRoleOptions) {
-				o.ExternalID = pointer.String(assumeRoleExternalID)
+				o.ExternalID = ptr.To(assumeRoleExternalID)
 			},
 		)
 

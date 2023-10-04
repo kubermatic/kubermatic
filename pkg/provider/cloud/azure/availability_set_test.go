@@ -29,7 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcileAvailabilitySet(t *testing.T) {
@@ -127,10 +127,10 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 				AvailabilitySet: customExistingAvailabilitySet,
 			},
 			existingAvailabilitySet: &armcompute.AvailabilitySet{
-				ID:       pointer.String(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/%s", credentials.SubscriptionID, customExistingResourceGroup, customExistingAvailabilitySet)),
-				Name:     pointer.String(customExistingAvailabilitySet),
-				Location: pointer.String(testLocation),
-				Type:     pointer.String("Microsoft.Compute/availabilitySets"),
+				ID:       ptr.To(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s/%s", credentials.SubscriptionID, customExistingResourceGroup, customExistingAvailabilitySet)),
+				Name:     ptr.To(customExistingAvailabilitySet),
+				Location: ptr.To(testLocation),
+				Type:     ptr.To("Microsoft.Compute/availabilitySets"),
 			},
 			clientMode:                  fakeClientModeOkay,
 			overrideTags:                false,
@@ -195,7 +195,7 @@ func TestReconcileAvailabilitySet(t *testing.T) {
 
 				// mess with the platform update domain count to force a reconcile
 				if tc.overrideUpdateDomainCount {
-					fakeClient.AvailabilitySet.Properties.PlatformUpdateDomainCount = pointer.Int32(15)
+					fakeClient.AvailabilitySet.Properties.PlatformUpdateDomainCount = ptr.To[int32](15)
 				}
 
 				// reconcile AvailabilitySet the second time

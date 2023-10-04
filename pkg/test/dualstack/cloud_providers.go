@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -80,7 +80,7 @@ func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) 
 	})
 	jig.MachineJig.WithCloudProviderSpecPatch(func(providerSpec interface{}) interface{} {
 		awsSpec := providerSpec.(awstypes.RawConfig)
-		awsSpec.AssignPublicIP = pointer.Bool(true)
+		awsSpec.AssignPublicIP = ptr.To(true)
 		return awsSpec
 	})
 

@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -96,7 +96,7 @@ func ControllerDeploymentReconciler(enableMutation bool, imageRewriter registry.
 				Labels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
 			}
 
-			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(60)
+			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = ptr.To[int64](60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
@@ -151,10 +151,10 @@ func AuditDeploymentReconciler(registryWithOverwrite registry.ImageRewriter, res
 				Labels: resources.BaseAppLabels(auditName, gatekeeperAuditLabels),
 			}
 
-			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(60)
+			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = ptr.To[int64](60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(true)
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				SeccompProfile: &corev1.SeccompProfile{
@@ -289,16 +289,16 @@ func getControllerContainers(enableMutation bool, imageRewriter registry.ImageRe
 			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: pointer.Bool(false),
+			AllowPrivilegeEscalation: ptr.To(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"ALL",
 				},
 			},
-			ReadOnlyRootFilesystem: pointer.Bool(true),
-			RunAsGroup:             pointer.Int64(999),
-			RunAsNonRoot:           pointer.Bool(true),
-			RunAsUser:              pointer.Int64(1000),
+			ReadOnlyRootFilesystem: ptr.To(true),
+			RunAsGroup:             ptr.To[int64](999),
+			RunAsNonRoot:           ptr.To(true),
+			RunAsUser:              ptr.To[int64](1000),
 		},
 	}}
 }
@@ -384,16 +384,16 @@ func getAuditContainers(imageRewriter registry.ImageRewriter) []corev1.Container
 			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			AllowPrivilegeEscalation: pointer.Bool(false),
+			AllowPrivilegeEscalation: ptr.To(false),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"ALL",
 				},
 			},
-			ReadOnlyRootFilesystem: pointer.Bool(true),
-			RunAsGroup:             pointer.Int64(999),
-			RunAsNonRoot:           pointer.Bool(true),
-			RunAsUser:              pointer.Int64(1000),
+			ReadOnlyRootFilesystem: ptr.To(true),
+			RunAsGroup:             ptr.To[int64](999),
+			RunAsNonRoot:           ptr.To(true),
+			RunAsUser:              ptr.To[int64](1000),
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

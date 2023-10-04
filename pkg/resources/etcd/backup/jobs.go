@@ -28,7 +28,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -299,9 +299,9 @@ func jobBase(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:          utilpointer.Int32(3),
-			Completions:           utilpointer.Int32(1),
-			Parallelism:           utilpointer.Int32(1),
+			BackoffLimit:          ptr.To[int32](3),
+			Completions:           ptr.To[int32](1),
+			Parallelism:           ptr.To[int32](1),
 			ActiveDeadlineSeconds: resources.Int64(2 * 60),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{

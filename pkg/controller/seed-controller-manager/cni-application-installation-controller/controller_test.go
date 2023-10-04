@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -102,7 +102,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
 				Pods:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
 				Services:             kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.16.0/20"}},
-				NodeCIDRMaskSizeIPv4: pointer.Int32(24),
+				NodeCIDRMaskSizeIPv4: ptr.To[int32](24),
 				ProxyMode:            resources.EBPFProxyMode,
 			},
 		},

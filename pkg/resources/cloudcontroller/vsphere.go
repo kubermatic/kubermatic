@@ -27,7 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -77,7 +77,7 @@ func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 			version := VSphereCCMVersion(data.Cluster().Status.Versions.ControlPlane)
 			container := getVSphereCCMContainer(version, data)
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,
@@ -94,7 +94,7 @@ func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,
 		SecurityContext: &corev1.SecurityContext{
-			RunAsUser: pointer.Int64(1001),
+			RunAsUser: ptr.To[int64](1001),
 		},
 		Command: []string{
 			"/bin/vsphere-cloud-controller-manager",

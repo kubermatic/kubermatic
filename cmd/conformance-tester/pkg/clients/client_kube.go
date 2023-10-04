@@ -36,7 +36,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -186,8 +186,8 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
-	cluster.Spec.EnableOperatingSystemManager = pointer.Bool(c.opts.OperatingSystemManagerEnabled)
-	cluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(c.opts.KonnectivityEnabled) //nolint:staticcheck
+	cluster.Spec.EnableOperatingSystemManager = ptr.To(c.opts.OperatingSystemManagerEnabled)
+	cluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(c.opts.KonnectivityEnabled)
 
 	if c.opts.DualStackEnabled {
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack

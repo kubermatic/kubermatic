@@ -31,7 +31,7 @@ import (
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // Options holds the e2e test options.
@@ -68,7 +68,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		WithTestName("expose-strategy").
 		WithExposeStrategy(kubermaticv1.ExposeStrategyTunneling).
 		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
-			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = pointer.Bool(true)
+			cs.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = ptr.To(true)
 			return cs
 		}).
 		WithPatch(func(cs *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {

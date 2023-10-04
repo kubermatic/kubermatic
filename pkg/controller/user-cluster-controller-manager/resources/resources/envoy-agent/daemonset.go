@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -99,7 +99,7 @@ func DaemonSetReconciler(agentIP net.IP, versions kubermatic.Versions, configHas
 				HostNetwork:                   true,
 				Volumes:                       getVolumes(),
 				RestartPolicy:                 corev1.RestartPolicyAlways,
-				TerminationGracePeriodSeconds: utilpointer.Int64(30),
+				TerminationGracePeriodSeconds: ptr.To[int64](30),
 				SecurityContext: &corev1.PodSecurityContext{
 					SeccompProfile: &corev1.SeccompProfile{
 						Type: corev1.SeccompProfileTypeRuntimeDefault,
@@ -209,7 +209,7 @@ func getVolumes() []corev1.Volume {
 			Name: "config-volume",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
-					DefaultMode: utilpointer.Int32(corev1.ConfigMapVolumeSourceDefaultMode),
+					DefaultMode: ptr.To[int32](corev1.ConfigMapVolumeSourceDefaultMode),
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: resources.EnvoyAgentConfigMapName,
 					},

@@ -43,7 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func GetLocations(ctx context.Context, cred resources.AKSCredentials) (apiv2.AKSLocationList, error) {
@@ -58,7 +58,7 @@ func GetLocations(ctx context.Context, cred resources.AKSCredentials) (apiv2.AKS
 	}
 
 	pager := client.NewListLocationsPager(cred.SubscriptionID, &armsubscriptions.ClientListLocationsOptions{
-		IncludeExtendedLocations: pointer.Bool(false),
+		IncludeExtendedLocations: ptr.To(false),
 	})
 	for pager.More() {
 		nextResult, err := pager.NextPage(ctx)
@@ -451,7 +451,7 @@ func ListAzureResourceGroups(ctx context.Context, cred *resources.AKSCredentials
 		if nextResult.Value != nil {
 			for _, rg := range nextResult.Value {
 				resourceGroupList = append(resourceGroupList, apiv2.AzureResourceGroup{
-					Name: pointer.StringDeref(rg.Name, ""),
+					Name: ptr.Deref(rg.Name, ""),
 				})
 			}
 		}

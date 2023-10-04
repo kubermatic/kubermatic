@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -315,7 +315,7 @@ func TestSyncClusterAddress(t *testing.T) {
 		},
 		{
 			name:        "Verify properties for Tunneling expose strategy with IPv6",
-			clusterName: pointer.String(fakeClusterNameIPv6),
+			clusterName: ptr.To(fakeClusterNameIPv6),
 			apiserverService: corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeNodePort,

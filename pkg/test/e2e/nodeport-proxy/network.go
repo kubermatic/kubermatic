@@ -27,7 +27,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -105,7 +105,7 @@ func newAgnhostPod(ns string) *corev1.Pod {
 			},
 			HostNetwork:                   true,
 			SecurityContext:               &corev1.PodSecurityContext{},
-			TerminationGracePeriodSeconds: pointer.Int64(0),
+			TerminationGracePeriodSeconds: ptr.To[int64](0),
 		},
 	}
 	return pod

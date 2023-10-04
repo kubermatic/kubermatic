@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -61,8 +61,8 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 			sts.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{common.NameLabel: Name},
 			}
-			sts.Spec.Replicas = pointer.Int32(1)
-			sts.Spec.RevisionHistoryLimit = pointer.Int32(10)
+			sts.Spec.Replicas = ptr.To[int32](1)
+			sts.Spec.RevisionHistoryLimit = ptr.To[int32](10)
 			sts.Spec.ServiceName = Name + "-headless"
 			sts.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			sts.Spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
@@ -130,23 +130,23 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 
 			sts.Spec.Template.Spec.DNSPolicy = "ClusterFirst"
 			sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				FSGroup:      pointer.Int64(65534),
-				RunAsGroup:   pointer.Int64(65534),
-				RunAsNonRoot: pointer.Bool(false),
-				RunAsUser:    pointer.Int64(65534),
+				FSGroup:      ptr.To[int64](65534),
+				RunAsGroup:   ptr.To[int64](65534),
+				RunAsNonRoot: ptr.To(false),
+				RunAsUser:    ptr.To[int64](65534),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},
 			}
 
-			sts.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64(300)
+			sts.Spec.Template.Spec.TerminationGracePeriodSeconds = ptr.To[int64](300)
 
 			sts.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: "config-volume",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
-							DefaultMode:          pointer.Int32(420),
+							DefaultMode:          ptr.To[int32](420),
 							LocalObjectReference: corev1.LocalObjectReference{Name: Name},
 						},
 					},
@@ -177,7 +177,7 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 							},
 						},
 						VolumeMode:       &volumeMode,
-						StorageClassName: pointer.String(seed.Spec.Metering.StorageClassName),
+						StorageClassName: ptr.To(seed.Spec.Metering.StorageClassName),
 					},
 					Status: corev1.PersistentVolumeClaimStatus{
 						Phase: corev1.ClaimPending,

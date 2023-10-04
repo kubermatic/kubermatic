@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -92,45 +92,45 @@ func targetSecurityGroup(cloud kubermaticv1.CloudSpec, location string, clusterN
 	tcp := armnetwork.SecurityRuleProtocolTCP
 
 	securityGroup := &armnetwork.SecurityGroup{
-		Name:     pointer.String(cloud.Azure.SecurityGroup),
-		Location: pointer.String(location),
+		Name:     ptr.To(cloud.Azure.SecurityGroup),
+		Location: ptr.To(location),
 		Tags: map[string]*string{
-			clusterTagKey: pointer.String(clusterName),
+			clusterTagKey: ptr.To(clusterName),
 		},
 		Properties: &armnetwork.SecurityGroupPropertiesFormat{
 			Subnets: []*armnetwork.Subnet{
 				{
-					Name: pointer.String(cloud.Azure.SubnetName),
-					ID:   pointer.String(assembleSubnetID(cloud)),
+					Name: ptr.To(cloud.Azure.SubnetName),
+					ID:   ptr.To(assembleSubnetID(cloud)),
 				},
 			},
 			// inbound
 			SecurityRules: []*armnetwork.SecurityRule{
 				{
-					Name: pointer.String("ssh_ingress"),
+					Name: ptr.To("ssh_ingress"),
 					Properties: &armnetwork.SecurityRulePropertiesFormat{
 						Direction:                &inbound,
 						Protocol:                 &tcp,
-						SourceAddressPrefix:      pointer.String("*"),
-						SourcePortRange:          pointer.String("*"),
-						DestinationAddressPrefix: pointer.String("*"),
-						DestinationPortRange:     pointer.String("22"),
+						SourceAddressPrefix:      ptr.To("*"),
+						SourcePortRange:          ptr.To("*"),
+						DestinationAddressPrefix: ptr.To("*"),
+						DestinationPortRange:     ptr.To("22"),
 						Access:                   &allow,
-						Priority:                 pointer.Int32(100),
+						Priority:                 ptr.To[int32](100),
 					},
 				},
 				// outbound
 				{
-					Name: pointer.String("outbound_allow_all"),
+					Name: ptr.To("outbound_allow_all"),
 					Properties: &armnetwork.SecurityRulePropertiesFormat{
 						Direction:                &outbound,
 						Protocol:                 &all,
-						SourceAddressPrefix:      pointer.String("*"),
-						SourcePortRange:          pointer.String("*"),
-						DestinationAddressPrefix: pointer.String("*"),
-						DestinationPortRange:     pointer.String("*"),
+						SourceAddressPrefix:      ptr.To("*"),
+						SourcePortRange:          ptr.To("*"),
+						DestinationAddressPrefix: ptr.To("*"),
+						DestinationPortRange:     ptr.To("*"),
 						Access:                   &allow,
-						Priority:                 pointer.Int32(100),
+						Priority:                 ptr.To[int32](100),
 					},
 				},
 			},
@@ -189,24 +189,24 @@ func nodePortsAllowedIPRangesRule(name string, priority int32, portRangeLow int,
 
 	prefixes := []*string{}
 	for _, prefix := range nodePortsAllowedIPRanges {
-		prefixes = append(prefixes, pointer.String(prefix))
+		prefixes = append(prefixes, ptr.To(prefix))
 	}
 
 	rule := &armnetwork.SecurityRule{
-		Name: pointer.String(name),
+		Name: ptr.To(name),
 		Properties: &armnetwork.SecurityRulePropertiesFormat{
 			Direction:                &inbound,
 			Protocol:                 &all,
-			SourcePortRange:          pointer.String("*"),
-			DestinationAddressPrefix: pointer.String("*"),
-			DestinationPortRange:     pointer.String(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
+			SourcePortRange:          ptr.To("*"),
+			DestinationAddressPrefix: ptr.To("*"),
+			DestinationPortRange:     ptr.To(fmt.Sprintf("%d-%d", portRangeLow, portRangeHigh)),
 			Access:                   &allow,
-			Priority:                 pointer.Int32(priority),
+			Priority:                 ptr.To[int32](priority),
 		},
 	}
 
 	if len(nodePortsAllowedIPRanges) == 1 {
-		rule.Properties.SourceAddressPrefix = pointer.String(nodePortsAllowedIPRanges[0])
+		rule.Properties.SourceAddressPrefix = ptr.To(nodePortsAllowedIPRanges[0])
 	} else {
 		rule.Properties.SourceAddressPrefixes = prefixes
 	}
@@ -220,16 +220,16 @@ func icmpAllowAllRule() *armnetwork.SecurityRule {
 	allow := armnetwork.SecurityRuleAccessAllow
 
 	return &armnetwork.SecurityRule{
-		Name: pointer.String(allowAllICMPSecGroupRuleName),
+		Name: ptr.To(allowAllICMPSecGroupRuleName),
 		Properties: &armnetwork.SecurityRulePropertiesFormat{
 			Direction:                &inbound,
 			Protocol:                 &icmp,
-			SourceAddressPrefix:      pointer.String("*"),
-			SourcePortRange:          pointer.String("*"),
-			DestinationAddressPrefix: pointer.String("*"),
-			DestinationPortRange:     pointer.String("*"),
+			SourceAddressPrefix:      ptr.To("*"),
+			SourcePortRange:          ptr.To("*"),
+			DestinationAddressPrefix: ptr.To("*"),
+			DestinationPortRange:     ptr.To("*"),
 			Access:                   &allow,
-			Priority:                 pointer.Int32(800),
+			Priority:                 ptr.To[int32](800),
 		},
 	}
 }

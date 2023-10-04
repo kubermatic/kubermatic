@@ -27,27 +27,27 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func ec2ClusterTag(clusterName string) ec2types.Tag {
 	return ec2types.Tag{
-		Key:   pointer.String(kubernetesClusterTagPrefix + clusterName),
-		Value: pointer.String(""),
+		Key:   ptr.To(kubernetesClusterTagPrefix + clusterName),
+		Value: ptr.To(""),
 	}
 }
 
 func ec2OwnershipTag(clusterName string) ec2types.Tag {
 	return ec2types.Tag{
-		Key:   pointer.String(ownershipTagPrefix + clusterName),
-		Value: pointer.String(""),
+		Key:   ptr.To(ownershipTagPrefix + clusterName),
+		Value: ptr.To(""),
 	}
 }
 
 func iamOwnershipTag(clusterName string) iamtypes.Tag {
 	return iamtypes.Tag{
-		Key:   pointer.String(ownershipTagPrefix + clusterName),
-		Value: pointer.String(""),
+		Key:   ptr.To(ownershipTagPrefix + clusterName),
+		Value: ptr.To(""),
 	}
 }
 
@@ -67,8 +67,8 @@ func reconcileClusterTags(ctx context.Context, client *ec2.Client, cluster *kube
 
 	var subnetIDs []string
 	for _, subnet := range sOut.Subnets {
-		resourceIDs = append(resourceIDs, pointer.StringDeref(subnet.SubnetId, ""))
-		subnetIDs = append(subnetIDs, pointer.StringDeref(subnet.SubnetId, ""))
+		resourceIDs = append(resourceIDs, ptr.Deref(subnet.SubnetId, ""))
+		subnetIDs = append(subnetIDs, ptr.Deref(subnet.SubnetId, ""))
 	}
 
 	_, err = client.CreateTags(ctx, &ec2.CreateTagsInput{
@@ -101,8 +101,8 @@ func cleanUpTags(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.
 	filters := []ec2types.Filter{
 		ec2VPCFilter(cluster.Spec.Cloud.AWS.VPCID),
 		{
-			Name:   pointer.String("tag-key"),
-			Values: []string{pointer.StringDeref(tag.Key, "")},
+			Name:   ptr.To("tag-key"),
+			Values: []string{ptr.Deref(tag.Key, "")},
 		},
 	}
 
@@ -114,7 +114,7 @@ func cleanUpTags(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.
 	}
 
 	for _, subnet := range subnets.Subnets {
-		resourceIDs = append(resourceIDs, pointer.StringDeref(subnet.SubnetId, ""))
+		resourceIDs = append(resourceIDs, ptr.Deref(subnet.SubnetId, ""))
 	}
 
 	// list security groups
@@ -124,7 +124,7 @@ func cleanUpTags(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.
 	}
 
 	for _, group := range securityGroups.SecurityGroups {
-		resourceIDs = append(resourceIDs, pointer.StringDeref(group.GroupId, ""))
+		resourceIDs = append(resourceIDs, ptr.Deref(group.GroupId, ""))
 	}
 
 	// list route tables
@@ -134,7 +134,7 @@ func cleanUpTags(ctx context.Context, client *ec2.Client, cluster *kubermaticv1.
 	}
 
 	for _, rt := range routeTables.RouteTables {
-		resourceIDs = append(resourceIDs, pointer.StringDeref(rt.RouteTableId, ""))
+		resourceIDs = append(resourceIDs, ptr.Deref(rt.RouteTableId, ""))
 	}
 
 	// remove tag

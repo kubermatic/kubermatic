@@ -29,7 +29,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -91,14 +91,14 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 func targetVnet(cloud kubermaticv1.CloudSpec, location string, clusterName string, cidrs []string) *armnetwork.VirtualNetwork {
 	cidrPointers := []*string{}
 	for _, cidr := range cidrs {
-		cidrPointers = append(cidrPointers, pointer.String(cidr))
+		cidrPointers = append(cidrPointers, ptr.To(cidr))
 	}
 
 	return &armnetwork.VirtualNetwork{
-		Name:     pointer.String(cloud.Azure.VNetName),
-		Location: pointer.String(location),
+		Name:     ptr.To(cloud.Azure.VNetName),
+		Location: ptr.To(location),
 		Tags: map[string]*string{
-			clusterTagKey: pointer.String(clusterName),
+			clusterTagKey: ptr.To(clusterName),
 		},
 		Properties: &armnetwork.VirtualNetworkPropertiesFormat{
 			AddressSpace: &armnetwork.AddressSpace{AddressPrefixes: cidrPointers},

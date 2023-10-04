@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -99,7 +99,7 @@ func cleanUpControlPlaneRole(ctx context.Context, client *iam.Client, cluster *k
 
 func getRole(ctx context.Context, client *iam.Client, roleName string) (*iamtypes.Role, error) {
 	getRoleInput := &iam.GetRoleInput{
-		RoleName: pointer.String(roleName),
+		RoleName: ptr.To(roleName),
 	}
 
 	out, err := client.GetRole(ctx, getRoleInput)
@@ -120,8 +120,8 @@ func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 	// create missing role
 	if isNotFound(err) {
 		createRoleInput := &iam.CreateRoleInput{
-			AssumeRolePolicyDocument: pointer.String(assumeRolePolicy),
-			RoleName:                 pointer.String(roleName),
+			AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
+			RoleName:                 ptr.To(roleName),
 			Tags:                     []iamtypes.Tag{iamOwnershipTag(cluster.Name)},
 		}
 
@@ -134,9 +134,9 @@ func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 	for policyName, policyTpl := range policies {
 		// The AWS API allows us to issue a PUT request, which has the create-or-update/upsert semantics
 		putRolePolicyInput := &iam.PutRolePolicyInput{
-			RoleName:       pointer.String(roleName),
-			PolicyName:     pointer.String(policyName),
-			PolicyDocument: pointer.String(policyTpl),
+			RoleName:       ptr.To(roleName),
+			PolicyName:     ptr.To(policyName),
+			PolicyDocument: ptr.To(policyTpl),
 		}
 
 		if _, err := client.PutRolePolicy(ctx, putRolePolicyInput); err != nil {
@@ -167,7 +167,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 	if policies == nil || owned {
 		// list all custom policies
 		listPoliciesOut, err := client.ListRolePolicies(ctx, &iam.ListRolePoliciesInput{
-			RoleName: pointer.String(roleName),
+			RoleName: ptr.To(roleName),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to list policies for role %q: %w", roleName, err)
@@ -179,8 +179,8 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 	// delete policies from role
 	for _, policyName := range policies {
 		deleteRolePolicyInput := &iam.DeleteRolePolicyInput{
-			PolicyName: pointer.String(policyName),
-			RoleName:   pointer.String(roleName),
+			PolicyName: ptr.To(policyName),
+			RoleName:   ptr.To(roleName),
 		}
 		if _, err = client.DeleteRolePolicy(ctx, deleteRolePolicyInput); err != nil {
 			return fmt.Errorf("failed to delete role policy %q: %w", policyName, err)
@@ -196,7 +196,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 
 	// detach potential AWS managed policies
 	listAttachedPoliciesOut, err := client.ListAttachedRolePolicies(ctx, &iam.ListAttachedRolePoliciesInput{
-		RoleName: pointer.String(roleName),
+		RoleName: ptr.To(roleName),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to list attached policies for role %q: %w", roleName, err)
@@ -204,7 +204,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 
 	for _, policy := range listAttachedPoliciesOut.AttachedPolicies {
 		detachRolePolicyInput := &iam.DetachRolePolicyInput{
-			RoleName:  pointer.String(roleName),
+			RoleName:  ptr.To(roleName),
 			PolicyArn: policy.PolicyArn,
 		}
 		if _, err := client.DetachRolePolicy(ctx, detachRolePolicyInput); err != nil {
@@ -213,7 +213,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 	}
 
 	// delete the role itself
-	_, err = client.DeleteRole(ctx, &iam.DeleteRoleInput{RoleName: pointer.String(roleName)})
+	_, err = client.DeleteRole(ctx, &iam.DeleteRoleInput{RoleName: ptr.To(roleName)})
 
 	return err
 }

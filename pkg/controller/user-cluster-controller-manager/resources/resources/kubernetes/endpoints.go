@@ -21,7 +21,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -76,15 +76,15 @@ func EndpointSliceReconciler(k8sServiceEndpointAddress string, k8sServiceEndpoin
 						k8sServiceEndpointAddress,
 					},
 					Conditions: discoveryv1.EndpointConditions{
-						Ready: pointer.Bool(true),
+						Ready: ptr.To(true),
 					},
 				},
 			}
 			protoTCP := corev1.ProtocolTCP
 			es.Ports = []discoveryv1.EndpointPort{
 				{
-					Name:     pointer.String("https"),
-					Port:     pointer.Int32(k8sServiceEndpointPort),
+					Name:     ptr.To("https"),
+					Port:     ptr.To[int32](k8sServiceEndpointPort),
 					Protocol: &protoTCP,
 				},
 			}

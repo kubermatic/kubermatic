@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -69,7 +69,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas:   1,
@@ -83,7 +83,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.DeploymentStatus{
 				UpdatedReplicas:   2,
@@ -97,7 +97,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.StatefulSetStatus{
 				ReadyReplicas:   2,
@@ -111,7 +111,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: utilpointer.Int32(2),
+				Replicas: ptr.To[int32](2),
 			},
 			Status: appsv1.DeploymentStatus{
 				UpdatedReplicas:   2,
