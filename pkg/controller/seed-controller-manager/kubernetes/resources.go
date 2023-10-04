@@ -471,6 +471,12 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		)
 	}
 
+	if data.Cluster().Spec.IsKubeLBEnabled() {
+		creators = append(creators,
+			resources.GetInternalKubeconfigReconciler(namespace, resources.KubeLBCCMKubeconfigSecretName, resources.KubeLBCCMCertUsername, nil, data, r.log),
+		)
+	}
+
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators,
 			konnectivity.TLSServingCertificateReconciler(data),

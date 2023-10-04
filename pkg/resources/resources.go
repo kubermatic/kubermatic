@@ -142,6 +142,9 @@ const (
 	ViewerKubeconfigSecretName = "viewer-kubeconfig"
 	// SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler.
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
+	// KubeLBCCMCertUsername is the name of the user coming from kubeconfig cert.
+	KubeLBCCMCertUsername = "kubermatic:kubelb-ccm"
+
 	// KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller.
 	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
 	// KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics.
@@ -877,6 +880,15 @@ const (
 	CSIWebhookServingCertCertKeyName = "cert.pem"
 	// CSIWebhookServingCertKeyKeyName is the name for the key that contains the key.
 	CSIWebhookServingCertKeyKeyName = "key.pem"
+)
+
+const (
+	// KubeLBKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubelb CCM.
+	KubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
+	// KubeLBManagerKubeconfigSecretName is the name for the secret containing the kubeconfig for the kubelb management cluster used by the kubelb CCM.
+	KubeLBManagerKubeconfigSecretName = "kubelb-manager-kubeconfig"
+	// KubeLBAppName is the name of the kubelb app.
+	KubeLBAppName = "kubelb-ccm"
 )
 
 const (

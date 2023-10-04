@@ -218,6 +218,9 @@ type ClusterSpec struct {
 	// This field is enabled(true) by default.
 	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
+	// KubeLB holds the configuration for the kubeLB component.
+	KubeLB *KubeLB `json:"kubeLb,omitempty"`
+
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
 	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
 
@@ -271,6 +274,16 @@ type KubernetesDashboard struct {
 
 func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 	return c.KubernetesDashboard == nil || c.KubernetesDashboard.Enabled
+}
+
+// KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
+type KubeLB struct {
+	// Controls whether kubeLB is deployed or not.
+	Enabled bool `json:"enabled"`
+}
+
+func (c ClusterSpec) IsKubeLBEnabled() bool {
+	return c.KubeLB != nil && c.KubeLB.Enabled
 }
 
 // GetVersionConditions returns a kubermaticv1.ConditionType list that should be used when checking
