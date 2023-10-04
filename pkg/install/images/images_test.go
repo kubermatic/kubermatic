@@ -18,13 +18,15 @@ package images
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
+	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -34,15 +36,14 @@ import (
 // These tests do not just verify that the Docker images can be extracted
 // properly, but also that all addons can be processed for each cluster
 // combination (i.e. there are no broken Go templates).
-// When working on this test, remember that it also tests pkg/addon/'s
-// ParseFromFolder().
+// When working on this test, remember that it also tests pkg/addon/'s code.
 
 func TestRetagImageForAllVersions(t *testing.T) {
-	log := logrus.New()
+	log := kubermaticlog.NewLogrus()
 
 	config, err := defaulting.DefaultConfiguration(&kubermaticv1.KubermaticConfiguration{}, zap.NewNop().Sugar())
 	if err != nil {
-		t.Errorf("failed to determine versions: %v", err)
+		t.Fatalf("failed to determine versions: %v", err)
 	}
 
 	kubermaticVersions := kubermatic.NewFakeVersions()
@@ -51,14 +52,28 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	caBundle, err := certificates.NewCABundleFromFile("../../../charts/kubermatic-operator/static/ca-bundle.pem")
 	if err != nil {
-		t.Errorf("failed to load CA bundle: %v", err)
+		t.Fatalf("failed to load CA bundle: %v", err)
 	}
+
+	allAddons, err := addonutil.LoadAddonsFromDirectory(addonPath)
+	if err != nil {
+		t.Fatalf("failed to load addons: %v", err)
+	}
+
+	cloudSpecs := GetCloudSpecs()
+	cniPlugins := GetCNIPlugins()
 
 	imageSet := sets.New[string]()
 	for _, clusterVersion := range clusterVersions {
-		for _, cloudSpec := range GetCloudSpecs() {
-			for _, cniPlugin := range GetCNIPlugins() {
-				images, err := GetImagesForVersion(log, clusterVersion, cloudSpec, cniPlugin, false, config, addonPath, kubermaticVersions, caBundle, "")
+		vlog := log.WithField("version", clusterVersion.Version.String())
+
+		for _, cloudSpec := range cloudSpecs {
+			plog := vlog.WithField("provider", cloudSpec.ProviderName)
+
+			for _, cniPlugin := range cniPlugins {
+				clog := plog.WithField("cni", fmt.Sprintf("%s_%s", cniPlugin.Type, cniPlugin.Version))
+
+				images, err := GetImagesForVersion(clog, clusterVersion, cloudSpec, cniPlugin, false, config, allAddons, kubermaticVersions, caBundle, "")
 				if err != nil {
 					t.Errorf("Error calling getImagesForVersion: %v", err)
 				}

@@ -29,6 +29,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/addon"
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
@@ -46,6 +47,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/client-go/tools/record"
@@ -85,11 +87,11 @@ type Reconciler struct {
 	workerName           string
 	addonEnforceInterval int
 	addonVariables       map[string]interface{}
-	kubernetesAddonDir   string
 	overwriteRegistry    string
 	recorder             record.EventRecorder
 	KubeconfigProvider   KubeconfigProvider
 	versions             kubermatic.Versions
+	addons               map[string]*addon.Addon
 }
 
 // Add creates a new Addon controller that is responsible for
@@ -101,10 +103,10 @@ func Add(
 	workerName string,
 	addonEnforceInterval int,
 	addonCtxVariables map[string]interface{},
-	kubernetesAddonDir,
 	overwriteRegistry string,
 	kubeconfigProvider KubeconfigProvider,
 	versions kubermatic.Versions,
+	addons map[string]*addon.Addon,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -115,12 +117,12 @@ func Add(
 		log:                  log,
 		addonVariables:       addonCtxVariables,
 		addonEnforceInterval: addonEnforceInterval,
-		kubernetesAddonDir:   kubernetesAddonDir,
 		KubeconfigProvider:   kubeconfigProvider,
 		workerName:           workerName,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		overwriteRegistry:    overwriteRegistry,
 		versions:             versions,
+		addons:               addons,
 	}
 
 	ctrlOptions := controller.Options{
@@ -302,8 +304,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
-func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]addonutils.Manifest, error) {
-	addonDir := r.kubernetesAddonDir
+func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster, addonObj *addon.Addon) ([]runtime.RawExtension, error) {
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
 		return nil, err
@@ -358,13 +359,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		return nil, fmt.Errorf("failed to create template data for addon manifests: %w", err)
 	}
 
-	manifestPath := path.Join(addonDir, addon.Spec.Name)
-	allManifests, err := addonutils.ParseFromFolder(log, r.overwriteRegistry, manifestPath, data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse addon templates in %s: %w", manifestPath, err)
-	}
-
-	return allManifests, nil
+	return addonObj.Render(r.overwriteRegistry, data)
 }
 
 // combineManifests returns all manifests combined into a multi document yaml.
@@ -382,13 +377,13 @@ func (r *Reconciler) combineManifests(manifests []*bytes.Buffer) *bytes.Buffer {
 
 // ensureAddonLabelOnManifests adds the addonLabelKey label to all manifests.
 // For this to happen we need to decode all yaml files to json, parse them, add the label and finally encode to yaml again.
-func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []addonutils.Manifest) ([]*bytes.Buffer, error) {
+func (r *Reconciler) ensureAddonLabelOnManifests(addon *kubermaticv1.Addon, manifests []runtime.RawExtension) ([]*bytes.Buffer, error) {
 	var rawManifests []*bytes.Buffer
 
 	wantLabels := r.getAddonLabel(addon)
 	for _, m := range manifests {
 		parsedUnstructuredObj := &metav1unstructured.Unstructured{}
-		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(m.Content.Raw, nil, parsedUnstructuredObj); err != nil {
+		if _, _, err := metav1unstructured.UnstructuredJSONScheme.Decode(m.Raw, nil, parsedUnstructuredObj); err != nil {
 			return nil, fmt.Errorf("parsing unstructured failed: %w", err)
 		}
 
@@ -464,7 +459,12 @@ func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredL
 }
 
 func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
-	manifests, err := r.getAddonManifests(ctx, log, addon, cluster)
+	addonObj, exists := r.addons[addon.Name]
+	if !exists {
+		return "", "", nil, fmt.Errorf("no addon manifests configured for %q", addon.Name)
+	}
+
+	manifests, err := r.getAddonManifests(ctx, log, addon, cluster, addonObj)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to get addon manifests: %w", err)
 	}
@@ -610,13 +610,13 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 }
 
 func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+	if _, exists := r.addons[addon.Name]; !exists {
+		log.Debugf("cleanupManifests failed for addon %s/%s: addon manifest does not exist anymore", addon.Namespace, addon.Name)
+		return nil
+	}
+
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
-		// FIXME: use a dedicated error type and proper error unwrapping when we have the technology to do it
-		if strings.Contains(err.Error(), "no such file or directory") { // if the manifest is already deleted, that's ok
-			log.Debugf("cleanupManifests failed for addon %s/%s: %v", addon.Namespace, addon.Name, err)
-			return nil
-		}
 		return err
 	}
 	defer done()

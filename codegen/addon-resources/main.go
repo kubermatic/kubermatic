@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"go.uber.org/zap"
 
@@ -35,6 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 )
 
@@ -46,7 +46,6 @@ type containerData struct {
 type objectData struct {
 	Kind         string          `json:"kind"`
 	ResourceName string          `json:"resourceName"`
-	Filename     string          `json:"filename"`
 	Containers   []containerData `json:"containers"`
 }
 
@@ -76,30 +75,20 @@ func main() {
 		log.Fatalw("Failed to create addon templating data", zap.Error(err))
 	}
 
-	manifests, err := addon.ParseFromFolder(log, "", addonsDir, templateData)
+	allAddons, err := addon.LoadAddonsFromDirectory(addonsDir)
 	if err != nil {
 		log.Fatalw("Failed to parse addons", zap.Error(err))
 	}
 
 	// group manifests by addon
-	addonManifests := map[string][]addon.Manifest{}
-	for _, m := range manifests {
-		parts := strings.Split(m.SourceFile, string(filepath.Separator))
-		if len(parts) < 3 {
-			continue
+	addonManifests := map[string][]runtime.RawExtension{}
+	for addonName, addonObj := range allAddons {
+		manifests, err := addonObj.Render("", templateData)
+		if err != nil {
+			log.Fatalw("Failed to render addon", "addon", addonName, zap.Error(err))
 		}
 
-		addonName := parts[1]
-		relPath := filepath.Join(parts[2:]...)
-
-		if _, exists := addonManifests[addonName]; !exists {
-			addonManifests[addonName] = []addon.Manifest{}
-		}
-
-		addonManifests[addonName] = append(addonManifests[addonName], addon.Manifest{
-			SourceFile: relPath,
-			Content:    m.Content,
-		})
+		addonManifests[addonName] = manifests
 	}
 
 	// prepare final output data
@@ -175,9 +164,9 @@ func createTemplateData() (*addon.TemplateData, error) {
 	return addon.NewTemplateData(cluster, resources.Credentials{}, "", dnsClusterIP, "", nil, variables)
 }
 
-func parseManifest(manifest addon.Manifest) (*objectData, error) {
+func parseManifest(manifest runtime.RawExtension) (*objectData, error) {
 	var u unstructured.Unstructured
-	if err := yaml.UnmarshalStrict(manifest.Content.Raw, &u); err != nil {
+	if err := yaml.UnmarshalStrict(manifest.Raw, &u); err != nil {
 		return nil, err
 	}
 
@@ -188,21 +177,21 @@ func parseManifest(manifest addon.Manifest) (*objectData, error) {
 	switch u.GetKind() {
 	case "Deployment":
 		var ad appsv1.Deployment
-		if err := yaml.UnmarshalStrict(manifest.Content.Raw, &ad); err != nil {
+		if err := yaml.UnmarshalStrict(manifest.Raw, &ad); err != nil {
 			return nil, err
 		}
 		podSpec = &ad.Spec.Template.Spec
 
 	case "DaemonSet":
 		var ad appsv1.DaemonSet
-		if err := yaml.UnmarshalStrict(manifest.Content.Raw, &ad); err != nil {
+		if err := yaml.UnmarshalStrict(manifest.Raw, &ad); err != nil {
 			return nil, err
 		}
 		podSpec = &ad.Spec.Template.Spec
 
 	case "StatefulSet":
 		var as appsv1.StatefulSet
-		if err := yaml.UnmarshalStrict(manifest.Content.Raw, &as); err != nil {
+		if err := yaml.UnmarshalStrict(manifest.Raw, &as); err != nil {
 			return nil, err
 		}
 		podSpec = &as.Spec.Template.Spec
@@ -215,7 +204,6 @@ func parseManifest(manifest addon.Manifest) (*objectData, error) {
 
 	result := &objectData{
 		ResourceName: u.GetName(),
-		Filename:     manifest.SourceFile,
 		Kind:         u.GetKind(),
 		Containers:   []containerData{},
 	}

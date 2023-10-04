@@ -38,6 +38,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
@@ -332,14 +333,15 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 
 	if dryRun {
 		return 0, len(imageList), nil
-	} else {
-		for index, image := range imageList {
-			if err := copyImage(ctx, log, image, userAgent); err != nil {
-				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
-			}
-		}
-		return len(imageList), len(imageList), nil
 	}
+
+	for index, image := range imageList {
+		if err := copyImage(ctx, log, image, userAgent); err != nil {
+			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+		}
+	}
+
+	return len(imageList), len(imageList), nil
 }
 
 func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
@@ -358,7 +360,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	return crane.Copy(image.Source, image.Destination, options...)
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
 	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -371,10 +373,11 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 
 	images = append(images, creatorImages...)
 
-	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
+	addonImages, err := getImagesFromAddons(log, addons, templateData.Cluster())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
+
 	images = append(images, addonImages...)
 
 	if registryPrefix != "" {
@@ -832,9 +835,10 @@ func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []
 				log = log.WithField("gvk", gvk.String())
 			}
 
-			log.Debug("Skipping object because its not known")
+			log.Debug("Skipping object because it is not of a known GVK")
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("unable to decode object: %w", err)
 	}
 

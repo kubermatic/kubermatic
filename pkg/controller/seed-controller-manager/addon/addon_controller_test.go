@@ -205,18 +205,24 @@ func setupTestAddon(name string) *kubermaticv1.Addon {
 
 func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
-	addon := setupTestAddon("kube-dns")
+	testAddon := setupTestAddon("kube-dns")
 
-	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
+	addonsDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(addonDir)
+	defer os.RemoveAll(addonsDir)
 
-	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+	addonDir := path.Join(addonsDir, testAddon.Spec.Name)
+	if err := os.Mkdir(addonDir, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, "testManifest.yaml"), []byte(testManifestKubeDNS), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	addonObj, err := addon.LoadAddonFromDirectory(addonDir)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -224,10 +230,9 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	ctx := context.Background()
 
 	controller := &Reconciler{
-		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(ctx, log, addon, cluster)
+	manifests, err := controller.getAddonManifests(ctx, log, testAddon, cluster, addonObj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,16 +241,16 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 
 	expectedIP := "10.240.16.10"
-	if !strings.Contains(string(manifests[0].Content.Raw), expectedIP) {
-		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].Content.String())
+	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
+		t.Fatalf("invalid IP returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
 	}
 	expectedCIDR := "172.25.0.0/16"
-	if !strings.Contains(string(manifests[0].Content.Raw), expectedCIDR) {
-		t.Fatalf("invalid CIDR returned. Expected \n%s, Got \n%s", expectedCIDR, manifests[0].Content.String())
+	if !strings.Contains(string(manifests[0].Raw), expectedCIDR) {
+		t.Fatalf("invalid CIDR returned. Expected \n%s, Got \n%s", expectedCIDR, manifests[0].String())
 	}
 
 	cluster = setupTestCluster("172.25.0.0/16")
-	manifests, err = controller.getAddonManifests(ctx, log, addon, cluster)
+	manifests, err = controller.getAddonManifests(ctx, log, testAddon, cluster, addonObj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,36 +258,41 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
 	}
 	expectedIP = "172.25.0.10"
-	if !strings.Contains(string(manifests[0].Content.Raw), expectedIP) {
-		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].Content.String())
+	if !strings.Contains(string(manifests[0].Raw), expectedIP) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedIP, manifests[0].String())
 	}
 }
 
 func TestController_getAddonDeploymentManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
-	addon := setupTestAddon("test")
+	testAddon := setupTestAddon("test")
 
-	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
+	addonsDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(addonDir)
+	defer os.RemoveAll(addonsDir)
 
-	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+	addonDir := path.Join(addonsDir, testAddon.Spec.Name)
+	if err := os.Mkdir(addonDir, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	addonObj, err := addon.LoadAddonFromDirectory(addonDir)
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
-		kubernetesAddonDir: addonDir,
 		overwriteRegistry:  "bar.io",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster)
+	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,35 +302,40 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	}
 
 	expectedRegURL := "bar.io/test:1.2.3"
-	if !strings.Contains(string(manifests[0].Content.Raw), expectedRegURL) {
-		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].Content.String())
+	if !strings.Contains(string(manifests[0].Raw), expectedRegURL) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
 	}
 }
 
 func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
-	addon := setupTestAddon("test")
+	testAddon := setupTestAddon("test")
 
-	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
+	addonsDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(addonDir)
+	defer os.RemoveAll(addonsDir)
 
-	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+	addonDir := path.Join(addonsDir, testAddon.Spec.Name)
+	if err := os.Mkdir(addonDir, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, "testManifest.yaml"), []byte(testManifest1WithDeployment), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	addonObj, err := addon.LoadAddonFromDirectory(addonDir)
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
-		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster)
+	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -330,24 +345,25 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	}
 
 	expectedRegURL := "foo.io/test:1.2.3"
-	if !strings.Contains(string(manifests[0].Content.Raw), expectedRegURL) {
-		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].Content.String())
+	if !strings.Contains(string(manifests[0].Raw), expectedRegURL) {
+		t.Fatalf("invalid registryURI returned. Expected \n%s, Got \n%s", expectedRegURL, manifests[0].String())
 	}
 }
 
 func TestController_getAddonManifests(t *testing.T) {
 	cluster := setupTestCluster("10.240.16.0/20")
-	addon := setupTestAddon("test")
-	addonDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
+	testAddon := setupTestAddon("test")
+	addonsDir, err := os.MkdirTemp("/tmp", "kubermatic-tests-")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(addonDir)
+	defer os.RemoveAll(addonsDir)
 
-	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+	addonDir := path.Join(addonsDir, testAddon.Spec.Name)
+	if err := os.Mkdir(addonDir, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, "testManifest.yaml"), []byte(testManifests[0]), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -356,15 +372,19 @@ func TestController_getAddonManifests(t *testing.T) {
 	multilineManifest := fmt.Sprintf(`%s
 ---
 %s`, testManifests[1], testManifests[2])
-	if err := os.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
+	if err := os.WriteFile(path.Join(addonDir, "testManifest2.yaml"), []byte(multilineManifest), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	addonObj, err := addon.LoadAddonFromDirectory(addonDir)
+	if err != nil {
 		t.Fatal(err)
 	}
 
 	controller := &Reconciler{
-		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster)
+	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -380,8 +400,8 @@ func TestController_getAddonManifests(t *testing.T) {
 			t.Fatalf("decoding of test manifest failed: %v", err)
 		}
 
-		if string(expected.Raw) != string(manifests[idx].Content.Raw) {
-			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Content.Raw))
+		if string(expected.Raw) != string(manifests[idx].Raw) {
+			t.Errorf("Invalid manifest returned, expected \n%q\n, got \n%q", string(expected.Raw), string(manifests[idx].Raw))
 		}
 	}
 }
@@ -405,9 +425,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 			Name: "test",
 		},
 	}
-	labeledManifests, err := controller.ensureAddonLabelOnManifests(a, []addon.Manifest{{
-		Content: manifest,
-	}})
+	labeledManifests, err := controller.ensureAddonLabelOnManifests(a, []runtime.RawExtension{manifest})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -444,12 +462,18 @@ func TestController_getApplyCommand(t *testing.T) {
 func TestHugeManifest(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	cluster := setupTestCluster("10.240.16.0/20")
-	addon := setupTestAddon("istio")
-	r := &Reconciler{
-		kubernetesAddonDir: "./testdata",
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+	testAddon := setupTestAddon("istio")
+
+	allAddons, err := addon.LoadAddonsFromDirectory("testdata")
+	if err != nil {
+		t.Fatalf("Failed to parse addons: %v", err)
 	}
-	if _, _, _, err := r.setupManifestInteraction(context.Background(), log, addon, cluster); err != nil {
+
+	r := &Reconciler{
+		KubeconfigProvider: &fakeKubeconfigProvider{},
+		addons:             allAddons,
+	}
+	if _, _, _, err := r.setupManifestInteraction(context.Background(), log, testAddon, cluster); err != nil {
 		t.Fatalf("failed to setup manifest interaction: %v", err)
 	}
 }

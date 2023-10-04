@@ -17,41 +17,21 @@ limitations under the License.
 package addon
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
-	"os"
-	"path"
-	"strings"
-	"text/template"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	"github.com/Masterminds/sprig/v3"
-	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
 	ClusterTypeKubernetes = "kubernetes"
 )
-
-func txtFuncMap(overwriteRegistry string) template.FuncMap {
-	funcs := sprig.TxtFuncMap()
-	// Registry is deprecated and should not be used anymore.
-	funcs["Registry"] = registry.GetOverwriteFunc(overwriteRegistry)
-	funcs["Image"] = registry.GetImageRewriterFunc(overwriteRegistry)
-	funcs["join"] = strings.Join
-	return funcs
-}
 
 // This alias exists purely because it makes the go doc we generate easier to
 // read, as it does not hint at a different package anymore.
@@ -284,75 +264,4 @@ type CSIOptions struct {
 	// vmware Cloud Director
 	StorageProfile string
 	Filesystem     string
-}
-
-type Manifest struct {
-	Content    runtime.RawExtension
-	SourceFile string
-}
-
-func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]Manifest, error) {
-	var allManifests []Manifest
-
-	infos, err := os.ReadDir(manifestPath)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, info := range infos {
-		filename := path.Join(manifestPath, info.Name())
-		infoLog := log.With("file", filename)
-
-		// recurse into subdirectory
-		if info.IsDir() {
-			subManifests, err := ParseFromFolder(log, overwriteRegistry, filename, data)
-			if err != nil {
-				return nil, err
-			}
-			allManifests = append(allManifests, subManifests...)
-			continue
-		}
-
-		if !strings.HasSuffix(filename, ".yaml") {
-			infoLog.Debug("Ignoring non-YAML file")
-			continue
-		}
-
-		infoLog.Debug("Processing file")
-
-		fbytes, err := os.ReadFile(filename)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
-		}
-
-		tpl, err := template.New(info.Name()).Funcs(txtFuncMap(overwriteRegistry)).Parse(string(fbytes))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse file %s: %w", filename, err)
-		}
-
-		bufferAll := bytes.NewBuffer([]byte{})
-		if err := tpl.Execute(bufferAll, data); err != nil {
-			return nil, fmt.Errorf("failed to execute templating on file %s: %w", filename, err)
-		}
-
-		sd := strings.TrimSpace(bufferAll.String())
-		if len(sd) == 0 {
-			infoLog.Debug("Skipping file as its empty after parsing")
-			continue
-		}
-
-		addonManifests, err := yaml.ParseMultipleDocuments(bufio.NewReader(bufferAll))
-		if err != nil {
-			return nil, fmt.Errorf("decoding failed for file %s: %w", filename, err)
-		}
-
-		for _, m := range addonManifests {
-			allManifests = append(allManifests, Manifest{
-				Content:    m,
-				SourceFile: filename,
-			})
-		}
-	}
-
-	return allManifests, nil
 }

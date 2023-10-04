@@ -18,12 +18,10 @@ package images
 
 import (
 	"fmt"
-	"os"
-	"path"
 
 	"github.com/sirupsen/logrus"
-	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/addon"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -33,7 +31,11 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-func getImagesFromAddons(log logrus.FieldLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
+var (
+	serializer = json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
+)
+
+func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}
 
 	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil, nil)
@@ -41,19 +43,9 @@ func getImagesFromAddons(log logrus.FieldLogger, addonsPath string, cluster *kub
 		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
 
-	infos, err := os.ReadDir(addonsPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to list addons: %w", err)
-	}
-
-	serializer := json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
 	var images []string
-	for _, info := range infos {
-		if !info.IsDir() {
-			continue
-		}
-		addonName := info.Name()
-		addonImages, err := getImagesFromAddon(log, path.Join(addonsPath, addonName), serializer, addonData)
+	for addonName, addonObj := range addons {
+		addonImages, err := getImagesFromAddon(log.WithField("addon", addonName), addonObj, serializer, addonData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get images for addon %s: %w", addonName, err)
 		}
@@ -63,22 +55,22 @@ func getImagesFromAddons(log logrus.FieldLogger, addonsPath string, cluster *kub
 	return images, nil
 }
 
-func getImagesFromAddon(log logrus.FieldLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
-	log = log.WithField("addon", path.Base(addonPath))
-	log.Debug("Processing manifests…")
+func getImagesFromAddon(log logrus.FieldLogger, addonObj *addon.Addon, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
+	log.Debug("Processing addon…")
 
-	allManifests, err := addonutil.ParseFromFolder(zap.NewNop().Sugar(), "", addonPath, data)
+	manifests, err := addonObj.Render("", data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse addon templates in %s: %w", addonPath, err)
+		return nil, fmt.Errorf("failed to render addon: %w", err)
 	}
 
 	var images []string
-	for _, manifest := range allManifests {
-		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Content.Raw)
+	for _, manifest := range manifests {
+		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Raw)
 		if err != nil {
 			return nil, err
 		}
 		images = append(images, manifestImages...)
 	}
+
 	return images, nil
 }
