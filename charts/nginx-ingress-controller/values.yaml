@@ -20,8 +20,10 @@ nginx:
   controller:
     hostNetwork: false
     replicaCount: 3
-    config: {}
-  #   load-balance: "least_conn"
+    config:
+      # Increased body size to handle Minio workload, , https://github.com/rancher/rancher/issues/14323
+      proxy-body-size: "0"
+      #load-balance: "least_conn"
     extraArgs: {}
     resources:
       requests:
