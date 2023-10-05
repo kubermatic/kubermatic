@@ -45,7 +45,7 @@ import (
 
 var (
 	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
+		resources.KubeLBDeploymentName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("64Mi"),
 				corev1.ResourceCPU:    resource.MustParse("50m"),
@@ -59,8 +59,8 @@ var (
 )
 
 const (
-	Name = "kubelb-ccm"
-	tag  = "69adc1f0cba0fae86e092a6ce44173befda6d97e"
+	imageName = "kubelb-ccm"
+	imageTag  = "69adc1f0cba0fae86e092a6ce44173befda6d97e"
 )
 
 type kubeLBData interface {
@@ -103,8 +103,7 @@ func DeploymentReconciler(data kubeLBData) reconciling.NamedDeploymentReconciler
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
 func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return Name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.KubeLBDeploymentName
+		return resources.KubeLBDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Labels = resources.BaseAppLabels(resources.KubeLBDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
@@ -131,11 +130,11 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + Name))
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + imageName))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.KubeLBDeploymentName,
-					Image:   repository + ":" + tag,
+					Image:   repository + ":" + imageTag,
 					Command: []string{"/usr/local/bin/ccm"},
 					Args:    getFlags(data.Cluster().Name),
 					LivenessProbe: &corev1.Probe{

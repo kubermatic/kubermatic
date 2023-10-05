@@ -141,8 +141,12 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// If KubeLB is enforced, enable it.
 	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
-		spec.KubeLB = &kubermaticv1.KubeLB{
-			Enabled: true,
+		if spec.KubeLB == nil {
+			spec.KubeLB = &kubermaticv1.KubeLB{
+				Enabled: true,
+			}
+		} else {
+			spec.KubeLB.Enabled = true
 		}
 	}
 

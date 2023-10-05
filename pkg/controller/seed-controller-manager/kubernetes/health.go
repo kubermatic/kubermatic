@@ -119,7 +119,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if cluster.Spec.IsKubeLBEnabled() {
 		status, err := r.kubeLBHealthCheck(ctx, cluster, ns)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get kubeLB health: %w", err)
+			return nil, fmt.Errorf("failed to get KubeLB health: %w", err)
 		}
 		extendedHealth.KubeLB = &status
 	}
