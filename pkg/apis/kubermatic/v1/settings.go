@@ -62,6 +62,10 @@ type SettingSpec struct {
 	EnableShareCluster bool `json:"enableShareCluster,omitempty"`
 
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
+
+	// DisableAdminKubeconfig disables the admin kubeconfig functionality on the dashboard.
+	DisableAdminKubeconfig bool `json:"disableAdminKubeconfig,omitempty"`
+
 	// UserProjectsLimit is the maximum number of projects a user can create.
 	UserProjectsLimit       int64 `json:"userProjectsLimit"`
 	RestrictProjectCreation bool  `json:"restrictProjectCreation"`
