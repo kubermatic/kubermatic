@@ -213,6 +213,9 @@ spec:
                               enabled:
                                 description: Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
                                 type: boolean
+                              enforced:
+                                description: Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
+                                type: boolean
                               kubeconfig:
                                 description: Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
                                 properties:
@@ -241,6 +244,7 @@ spec:
                                 x-kubernetes-map-type: atomic
                             required:
                               - enabled
+                              - enforced
                               - kubeconfig
                             type: object
                           kubevirt:

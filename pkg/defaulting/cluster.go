@@ -139,6 +139,13 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
 
+	// If KubeLB is enforced, enable it.
+	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
+		spec.KubeLB = &kubermaticv1.KubeLB{
+			Enabled: true,
+		}
+	}
+
 	return nil
 }
 
