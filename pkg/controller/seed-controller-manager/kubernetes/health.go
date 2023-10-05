@@ -116,6 +116,14 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		extendedHealth.KubernetesDashboard = &status
 	}
 
+	if cluster.Spec.IsKubeLBEnabled() {
+		status, err := r.kubeLBHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get KubeLB health: %w", err)
+		}
+		extendedHealth.KubeLB = &status
+	}
+
 	return extendedHealth, nil
 }
 
@@ -202,6 +210,17 @@ func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, clus
 	status, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
+	}
+	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	return status, nil
+}
+
+func (r *Reconciler) kubeLBHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	// check for the health of kubeLB deployment.
+	key := types.NamespacedName{Namespace: namespace, Name: resources.KubeLBDeploymentName}
+	status, err := resources.HealthyDeployment(ctx, r, key, 1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubeLBDeploymentName, err)
 	}
 	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	return status, nil

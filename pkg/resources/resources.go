@@ -95,6 +95,8 @@ const (
 	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
 	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment.
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
+	// KubeLBDeploymentName is the name of the KubeLB deployment.
+	KubeLBDeploymentName = "kubelb-ccm"
 	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment.
 	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
 	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service.

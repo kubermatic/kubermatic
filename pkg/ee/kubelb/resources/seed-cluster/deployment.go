@@ -45,7 +45,7 @@ import (
 
 var (
 	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
+		resources.KubeLBDeploymentName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("64Mi"),
 				corev1.ResourceCPU:    resource.MustParse("50m"),
@@ -59,8 +59,8 @@ var (
 )
 
 const (
-	Name = "kubelb-ccm"
-	tag  = "69adc1f0cba0fae86e092a6ce44173befda6d97e"
+	imageName = "kubelb-ccm"
+	imageTag  = "69adc1f0cba0fae86e092a6ce44173befda6d97e"
 )
 
 type kubeLBData interface {
@@ -81,14 +81,14 @@ func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ct
 // DeploymentReconciler returns the function to create and update the kubeLB  deployment.
 func DeploymentReconciler(data kubeLBData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return Name, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return resources.KubeLBDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
 			_, creator := DeploymentReconcilerWithoutInitWrapper(data)()
 			deployment, err := creator(in)
 			if err != nil {
 				return nil, err
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(Name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(resources.KubeLBDeploymentName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
@@ -103,19 +103,18 @@ func DeploymentReconciler(data kubeLBData) reconciling.NamedDeploymentReconciler
 // wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
 func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return Name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = Name
-			dep.Labels = resources.BaseAppLabels(Name, nil)
+		return resources.KubeLBDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = resources.BaseAppLabels(resources.KubeLBDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(Name, nil),
+				MatchLabels: resources.BaseAppLabels(resources.KubeLBDeploymentName, nil),
 			}
 
 			volumes := []corev1.Volume{getCCMKubeconfigVolume(), getKubeLBManagerKubeconfigVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(resources.KubeLBDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
@@ -131,11 +130,11 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + Name))
+			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + imageName))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
-					Image:   repository + ":" + tag,
+					Name:    resources.KubeLBDeploymentName,
+					Image:   repository + ":" + imageTag,
 					Command: []string{"/usr/local/bin/ccm"},
 					Args:    getFlags(data.Cluster().Name),
 					LivenessProbe: &corev1.Probe{

@@ -975,6 +975,8 @@ type KubeLBDatacenterSettings struct {
 	KubeLBSettings `json:",inline"`
 	// Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
 	Enabled bool `json:"enabled"`
+	// Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
+	Enforced bool `json:"enforced"`
 }
 
 // IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

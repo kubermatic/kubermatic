@@ -50,7 +50,7 @@ func setupControllers(ctrlCtx *controllerContext) error {
 	}
 
 	if err := kubelbcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.seedGetter, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
-		return fmt.Errorf("failed to create kubeLB controller: %w", err)
+		return fmt.Errorf("failed to create KubeLB controller: %w", err)
 	}
 
 	return nil

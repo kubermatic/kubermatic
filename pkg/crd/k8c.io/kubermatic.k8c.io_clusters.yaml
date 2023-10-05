@@ -2233,6 +2233,12 @@ spec:
                         - HealthStatusUp
                         - HealthStatusProvisioning
                       type: string
+                    kubeLb:
+                      enum:
+                        - HealthStatusDown
+                        - HealthStatusUp
+                        - HealthStatusProvisioning
+                      type: string
                     kubernetesDashboard:
                       enum:
                         - HealthStatusDown
