@@ -81,14 +81,14 @@ func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ct
 // DeploymentReconciler returns the function to create and update the kubeLB  deployment.
 func DeploymentReconciler(data kubeLBData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return Name, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
+		return resources.KubeLBDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
 			_, creator := DeploymentReconcilerWithoutInitWrapper(data)()
 			deployment, err := creator(in)
 			if err != nil {
 				return nil, err
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(Name))
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(resources.KubeLBDeploymentName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
@@ -104,18 +104,18 @@ func DeploymentReconciler(data kubeLBData) reconciling.NamedDeploymentReconciler
 func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return Name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = Name
-			dep.Labels = resources.BaseAppLabels(Name, nil)
+			dep.Name = resources.KubeLBDeploymentName
+			dep.Labels = resources.BaseAppLabels(resources.KubeLBDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(Name, nil),
+				MatchLabels: resources.BaseAppLabels(resources.KubeLBDeploymentName, nil),
 			}
 
 			volumes := []corev1.Volume{getCCMKubeconfigVolume(), getKubeLBManagerKubeconfigVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(resources.KubeLBDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
@@ -134,7 +134,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + Name))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
+					Name:    resources.KubeLBDeploymentName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/ccm"},
 					Args:    getFlags(data.Cluster().Name),
