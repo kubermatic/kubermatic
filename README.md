@@ -56,7 +56,6 @@ Thanks for taking the time to join our community and start contributing!
 
 * Please familiarize yourself with the [Code of Conduct][4] before contributing.
 * See [CONTRIBUTING.md][2] for instructions on the developer certificate of origin that we require.
-* Read how [we're using ZenHub][13] for project and roadmap planning
 
 ### Repository layout
 
@@ -149,7 +148,6 @@ See [the list of releases][3] to find out about feature changes.
 [4]: https://github.com/kubermatic/kubermatic/blob/main/CODE_OF_CONDUCT.md
 
 [12]: https://kubermatic-community.slack.com/messages/kubermatic
-[13]: https://github.com/kubermatic/kubermatic/blob/main/Zenhub.md
 [15]: http://kubermatic-community.slack.com
 [16]: https://join.slack.com/t/kubermatic-community/shared_invite/zt-vqjjqnza-dDw8BuUm3HvD4VGrVQ_ptw
 
