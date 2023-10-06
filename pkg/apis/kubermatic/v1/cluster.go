@@ -957,7 +957,7 @@ type CloudSpec struct {
 	ProviderName string `json:"providerName"`
 
 	Fake *FakeCloudSpec `json:"fake,omitempty"`
-	// Digitalocean defines thes configuration data of DigitalOcean Cloud provider.
+	// Digitalocean defines the configuration data of DigitalOcean Cloud provider.
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`

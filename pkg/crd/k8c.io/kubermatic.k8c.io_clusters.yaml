@@ -414,7 +414,7 @@ spec:
                       description: DatacenterName states the name of a cloud provider "datacenter" (defined in `Seed` resources) this cluster should be deployed into.
                       type: string
                     digitalocean:
-                      description: Digitalocean defines thes configuration data of DigitalOcean Cloud provider.
+                      description: Digitalocean defines the configuration data of DigitalOcean Cloud provider.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
