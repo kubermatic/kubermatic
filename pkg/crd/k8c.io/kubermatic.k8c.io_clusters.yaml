@@ -1797,8 +1797,8 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
-                kubeLb:
-                  description: KubeLB holds the configuration for the kubeLB component.
+                kubelb:
+                  description: KubeLB holds the configuration for the kubeLB component. Only available in Enterprise Edition.
                   properties:
                     enabled:
                       description: Controls whether kubeLB is deployed or not.
@@ -2233,7 +2233,7 @@ spec:
                         - HealthStatusUp
                         - HealthStatusProvisioning
                       type: string
-                    kubeLb:
+                    kubelb:
                       enum:
                         - HealthStatusDown
                         - HealthStatusUp

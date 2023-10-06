@@ -300,7 +300,11 @@ type SeedSpec struct {
 	// OIDCProviderConfiguration allows to configure OIDC provider at the Seed level.
 	OIDCProviderConfiguration *OIDCProviderConfiguration `json:"oidcProviderConfiguration,omitempty"`
 	// KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
-	KubeLB *KubeLBSettings `json:"kubeLb,omitempty"`
+	// Only available in Enterprise Edition.
+	//
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
+	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitcegenyaml"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -458,7 +462,11 @@ type DatacenterSpec struct {
 	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
 
 	// Optional: KubeLB holds the configuration for the kubeLB at the data center level.
-	KubeLB *KubeLBDatacenterSettings `json:"kubeLb,omitempty"`
+	// Only available in Enterprise Edition.
+	//
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
+	KubeLB *KubeLBDatacenterSettings `json:"kubelb,omitempty,omitcegenyaml"`
 }
 
 var (
@@ -967,16 +975,16 @@ type OIDCProviderConfiguration struct {
 
 type KubeLBSettings struct {
 	// Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
-	Kubeconfig corev1.ObjectReference `json:"kubeconfig"`
+	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
 }
 
 type KubeLBDatacenterSettings struct {
 	// Used to configure and override the default kubeLB settings.
 	KubeLBSettings `json:",inline"`
 	// Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
-	Enabled bool `json:"enabled"`
+	Enabled bool `json:"enabled,omitempty"`
 	// Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
-	Enforced bool `json:"enforced"`
+	Enforced bool `json:"enforced,omitempty"`
 }
 
 // IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
