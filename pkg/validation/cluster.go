@@ -164,6 +164,11 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
+	// KubeLB can only be enabled on the cluster if it's either enforced or enabled at the datacenter level.
+	if spec.IsKubeLBEnabled() && (dc.Spec.KubeLB == nil || !(dc.Spec.KubeLB.Enabled || dc.Spec.KubeLB.Enforced)) {
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
+	}
+
 	return allErrs
 }
 
