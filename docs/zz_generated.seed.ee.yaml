@@ -115,7 +115,8 @@ spec:
           # HCloud CCM to work.
           network: ""
         # Optional: KubeLB holds the configuration for the kubeLB at the data center level.
-        kubeLb: null
+        # Only available in Enterprise Edition.
+        kubelb: null
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
           # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
@@ -450,8 +451,6 @@ spec:
   etcdBackupRestore: null
   # Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
   exposeStrategy: NodePort
-  # KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
-  kubeLb: null
   # A reference to the Kubeconfig of this cluster. The Kubeconfig must
   # have cluster-admin privileges. This field is mandatory for every
   # seed, even if there are no datacenters defined yet.
@@ -481,6 +480,9 @@ spec:
     # UID of the referent.
     # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
     uid: ""
+  # KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
+  # Only available in Enterprise Edition.
+  kubelb: null
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""

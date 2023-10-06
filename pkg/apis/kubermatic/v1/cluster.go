@@ -219,7 +219,8 @@ type ClusterSpec struct {
 	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubeLB holds the configuration for the kubeLB component.
-	KubeLB *KubeLB `json:"kubeLb,omitempty"`
+	// Only available in Enterprise Edition.
+	KubeLB *KubeLB `json:"kubelb,omitempty"`
 
 	// KubernetesDashboard holds the configuration for the kubernetes-dashboard component.
 	KubernetesDashboard *KubernetesDashboard `json:"kubernetesDashboard,omitempty"`
@@ -277,6 +278,7 @@ func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 }
 
 // KubeLB contains settings for the kubeLB component as part of the cluster control plane. This component is responsible for managing load balancers.
+// Only available in Enterprise Edition.
 type KubeLB struct {
 	// Controls whether kubeLB is deployed or not.
 	Enabled bool `json:"enabled"`
@@ -1419,7 +1421,7 @@ type ExtendedClusterHealth struct {
 	MLAGateway                   *HealthStatus `json:"mlaGateway,omitempty"`
 	OperatingSystemManager       *HealthStatus `json:"operatingSystemManager,omitempty"`
 	KubernetesDashboard          *HealthStatus `json:"kubernetesDashboard,omitempty"`
-	KubeLB                       *HealthStatus `json:"kubeLb,omitempty"`
+	KubeLB                       *HealthStatus `json:"kubelb,omitempty"`
 }
 
 // ControlPlaneHealthy returns if all Kubernetes control plane components are healthy.
