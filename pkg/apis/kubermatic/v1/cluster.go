@@ -957,33 +957,33 @@ type CloudSpec struct {
 	ProviderName string `json:"providerName"`
 
 	Fake *FakeCloudSpec `json:"fake,omitempty"`
-	// Digitalocean specifies access data to DigitalOcean.
+	// Digitalocean defines thes configuration data of DigitalOcean Cloud provider.
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
-	// BringYourOwn specifies access data for a bring your own cluster.
+	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	// AWS specifies access data to Amazon Web Services.
+	// AWS defines the configuration data of AWS Cloud provider.
 	AWS *AWSCloudSpec `json:"aws,omitempty"`
-	// Azure defines cloud resource references for Microsoft Azure.
+	// Azure defines the configuration data of Microsoft Azure Cloud.
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
-	// Openstack specifies access data to an OpenStack cloud.
+	// Openstack defines the configuration data of an OpenStack Cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
-	// Packet specifies access data to a Packet cloud.
+	// Packet defines the configuration data of a Packet Cloud.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
-	// Hetzner specifies access data to hetzner cloud.
+	// Hetzner defines the configuration data of Hetzner Cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
-	// VSphere specifies access data to VSphere cloud.
+	// VSphere defines the configuration data of VSphere Cloud.
 	VSphere *VSphereCloudSpec `json:"vsphere,omitempty"`
-	// GCP specifies access data to GCP.
+	// GCP defines the configuration data of GCP.
 	GCP *GCPCloudSpec `json:"gcp,omitempty"`
-	// Kubevirt specifies the access data to Kubevirt.
+	// Kubevirt defines the configuration data of Kubevirt.
 	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
-	// Alibaba specifies the access data to Alibaba.
+	// Alibaba defines the configuration data of Alibaba.
 	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
-	// Anexia specifies the access data to Anexia.
+	// Anexia defines the configuration data of Anexia.
 	Anexia *AnexiaCloudSpec `json:"anexia,omitempty"`
-	// Nutanix specifies the access data to Nutanix.
+	// Nutanix defines the configuration data of Nutanix.
 	Nutanix *NutanixCloudSpec `json:"nutanix,omitempty"`
-	// VMwareCloudDirector specifies access data to VMware Cloud Director cloud.
+	// VMwareCloudDirector defines the configuration data of VMware Cloud Director cloud.
 	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
