@@ -871,6 +871,7 @@ type ClusterNetworkingConfig struct {
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
 
 	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
+	//Deprecated: As OpenVPN will be removed in the future, clusters with konnectivity disabled will not be supported.
 	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
 
 	// TunnelingAgentIP is the address used by the tunneling agents
