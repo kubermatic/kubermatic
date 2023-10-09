@@ -1380,11 +1380,12 @@ const (
 
 // ExtendedClusterHealth stores health information of a cluster.
 type ExtendedClusterHealth struct {
-	Apiserver                    HealthStatus  `json:"apiserver,omitempty"`
-	Scheduler                    HealthStatus  `json:"scheduler,omitempty"`
-	Controller                   HealthStatus  `json:"controller,omitempty"`
-	MachineController            HealthStatus  `json:"machineController,omitempty"`
-	Etcd                         HealthStatus  `json:"etcd,omitempty"`
+	Apiserver         HealthStatus `json:"apiserver,omitempty"`
+	Scheduler         HealthStatus `json:"scheduler,omitempty"`
+	Controller        HealthStatus `json:"controller,omitempty"`
+	MachineController HealthStatus `json:"machineController,omitempty"`
+	Etcd              HealthStatus `json:"etcd,omitempty"`
+	//  Deprecated: OpenVPN will be removed entirely in future.
 	OpenVPN                      HealthStatus  `json:"openvpn,omitempty"`
 	Konnectivity                 HealthStatus  `json:"konnectivity,omitempty"`
 	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
