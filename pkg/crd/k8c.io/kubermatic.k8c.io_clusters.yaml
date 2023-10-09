@@ -2253,6 +2253,7 @@ spec:
                         - HealthStatusProvisioning
                       type: string
                     openvpn:
+                      description: 'Deprecated: OpenVPN will be removed entirely in the future.'
                       enum:
                         - HealthStatusDown
                         - HealthStatusUp

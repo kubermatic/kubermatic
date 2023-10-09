@@ -1385,7 +1385,7 @@ type ExtendedClusterHealth struct {
 	Controller        HealthStatus `json:"controller,omitempty"`
 	MachineController HealthStatus `json:"machineController,omitempty"`
 	Etcd              HealthStatus `json:"etcd,omitempty"`
-	//  Deprecated: OpenVPN will be removed entirely in future.
+	//  Deprecated: OpenVPN will be removed entirely in the future.
 	OpenVPN                      HealthStatus  `json:"openvpn,omitempty"`
 	Konnectivity                 HealthStatus  `json:"konnectivity,omitempty"`
 	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
