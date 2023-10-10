@@ -28,12 +28,17 @@ minio:
   # and restore from the local minio deployment. The TLS certificates should be
   # signed by the global KKP CA.
   # If you are enabling it, make sure to enable prometheus scraping for minio as well.
-  certificateSecret: '' # tls secret used by minio.
+  certificateSecret: "" # tls secret used by minio.
+
+  # Management Console for Minio Access
+  console:
+    # configure a port enables the console
+    port: 80
 
   # These settings are required. Keys must be alphanumeric.
   credentials:
-    accessKey: '' # 32 byte long
-    secretKey: '' # 64 byte long
+    accessKey: "" # 32 byte long
+    secretKey: "" # 64 byte long
 
     # When set to true, a Secret will be created in the given namespace.
     # Kubermatic requires an "kubermatic-s3-credentials" Secret in the kube-system
@@ -52,6 +57,24 @@ minio:
 
     # hide sensitive information from logging
     anonymous: false
+
+  # Optional: Expose Minio external
+  ingress:
+    # configure a host name enables the ingress deployment
+    server:
+      host: "minio.kkp.example.com"
+    console:
+      host: "minio-console.kkp.example.com"
+    # if set to "non-existent", no Ingress resource will be created
+    class: "non-existent"
+
+  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  certIssuer: null
+  # If you want to deploy a certificate using cert-manager
+  # uncomment the next lines and remove certIssuer configuration above.
+  # certIssuer:
+  #   name: letsencrypt-prod
+  #   kind: ClusterIssuer
 
   backup:
     enabled: true

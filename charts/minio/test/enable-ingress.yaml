@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: minio
-spec:
-  type: ClusterIP
-  ports:
-    - name: server
-      port: 9000
-      targetPort: 9000
-      protocol: TCP
-    {{- if .Values.minio.console.port }}
-    - name: console
-      port: {{ .Values.minio.console.port }}
-      targetPort: {{ .Values.minio.console.port }}
-      protocol: TCP
-    {{- end }}
-  selector:
-    app: minio
+minio:
+  ingress:
+    class: "nginx"
+
+  certIssuer:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

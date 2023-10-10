@@ -53,6 +53,10 @@ spec:
         {{- end }}
         - server
         - /storage
+        {{- if .Values.minio.console.port }}
+        - --console-address
+        - :{{ .Values.minio.console.port}}
+        {{- end }}
         env:
         - name: MINIO_ROOT_USER
           valueFrom:

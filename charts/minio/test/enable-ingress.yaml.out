@@ -71,12 +71,11 @@ metadata:
   labels:
     app: minio
 spec:
-  storageClassName: "minio-hdd"
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 500Gi
+      storage: 100Gi
 ---
 # Source: minio/templates/service.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -242,3 +241,53 @@ spec:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - secretName: minio-tls
+      hosts:
+        - minio.kkp.example.com
+  rules:
+    - host: minio.kkp.example.com
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9000
+---
+# Source: minio/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-console
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - secretName: minio-console-tls
+      hosts:
+        - minio-console.kkp.example.com
+  rules:
+    - host: minio-console.kkp.example.com
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 80
