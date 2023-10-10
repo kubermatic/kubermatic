@@ -140,35 +140,35 @@ func (s Hetzner) IsValid() bool {
 type Azure struct {
 	ProviderPreset `json:",inline"`
 
-	// TenantID is the Azure Active Directory Tenant used for the user cluster.
+	// The Azure Active Directory Tenant used for the user cluster.
 	TenantID string `json:"tenantID"`
-	// SubscriptionID is the Azure Subscription used for the user cluster.
+	// The Azure Subscription used for the user cluster.
 	SubscriptionID string `json:"subscriptionID"`
-	// ClientID is the service principal used to access Azure.
+	// The service principal used to access Azure.
 	ClientID string `json:"clientID"`
-	// ClientSecret is the client secret corresponding to the given service principal.
+	// The client secret corresponding to the given service principal.
 	ClientSecret string `json:"clientSecret"`
 
-	// ResourceGroup is the resource group that will be used to look up and create resources for the cluster in.
+	// The resource group that will be used to look up and create resources for the cluster in.
 	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated to
 	// the generated resource group's name.
 	ResourceGroup string `json:"resourceGroup,omitempty"`
-	// Optional: VNetResourceGroup optionally defines a second resource group that will be used for VNet related resources instead.
+	// Optional: Defines a second resource group that will be used for VNet related resources instead.
 	// If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.
 	VNetResourceGroup string `json:"vnetResourceGroup,omitempty"`
-	// VNetName is the name of the VNet resource used for setting up networking in.
+	// The name of the VNet resource used for setting up networking in.
 	// If set to empty string at cluster creation, a new VNet will be created and this field will be updated to
 	// the generated VNet's name.
 	VNetName string `json:"vnet,omitempty"`
-	// SubnetName is the name of a subnet in the VNet referenced by `vnet`.
+	// The name of a subnet in the VNet referenced by `vnet`.
 	// If set to empty string at cluster creation, a new subnet will be created and this field will be updated to
 	// the generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.
 	SubnetName string `json:"subnet,omitempty"`
-	// RouteTableName is the name of a route table associated with the subnet referenced by `subnet`.
+	// The name of a route table associated with the subnet referenced by `subnet`.
 	// If set to empty string at cluster creation, a new route table will be created and this field will be updated to
 	// the generated route table's name. If no subnet is defined at cluster creation, this field should be empty as well.
 	RouteTableName string `json:"routeTable,omitempty"`
-	// SecurityGroup is the name of a security group associated with the subnet referenced by `subnet`.
+	// The name of a security group associated with the subnet referenced by `subnet`.
 	// If set to empty string at cluster creation, a new security group will be created and this field will be updated to
 	// the generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.
 	SecurityGroup string `json:"securityGroup,omitempty"`
@@ -186,14 +186,14 @@ func (s Azure) IsValid() bool {
 type VSphere struct {
 	ProviderPreset `json:",inline"`
 
-	// Username is the vSphere user name.
+	// The vSphere user name.
 	Username string `json:"username"`
-	// Password is the vSphere user password.
+	// The vSphere user password.
 	Password string `json:"password"`
 
 	// Deprecated: Use networks instead.
 	VMNetName string `json:"vmNetName,omitempty"`
-	// Networks is the list of vSphere networks.
+	// List of vSphere networks.
 	Networks []string `json:"networks,omitempty"`
 	// Datastore to be used for storing virtual machines and as a default for dynamic volume provisioning, it is mutually exclusive with DatastoreCluster.
 	Datastore string `json:"datastore,omitempty"`
@@ -214,17 +214,17 @@ func (s VSphere) IsValid() bool {
 type VMwareCloudDirector struct {
 	ProviderPreset `json:",inline"`
 
-	// Username is the VMware Cloud Director user name.
+	// The VMware Cloud Director user name.
 	Username string `json:"username,omitempty"`
-	// Password is the VMware Cloud Director user password.
+	// The VMware Cloud Director user password.
 	Password string `json:"password,omitempty"`
-	// APIToken is the VMware Cloud Director API token.
+	// The VMware Cloud Director API token.
 	APIToken string `json:"apiToken,omitempty"`
-	// VDC is the organizational virtual data center.
+	// The organizational virtual data center.
 	VDC string `json:"vdc"`
-	// Organization is the name of organization to use.
+	// The name of organization to use.
 	Organization string `json:"organization"`
-	// OVDCNetwork is the name of organizational virtual data center network that will be associated with the VMs and vApp.
+	// The name of organizational virtual data center network that will be associated with the VMs and vApp.
 	OVDCNetwork string `json:"ovdcNetwork"`
 }
 
@@ -240,16 +240,16 @@ func (s VMwareCloudDirector) IsValid() bool {
 type AWS struct {
 	ProviderPreset `json:",inline"`
 
-	// AccessKeyID is the AWS Access key ID used to authenticate against AWS.
+	// The Access key ID used to authenticate against AWS.
 	AccessKeyID string `json:"accessKeyID"`
-	// SecretAccessKey is the AWS Secret Access Key used to authenticate against AWS.
+	// The Secret Access Key used to authenticate against AWS.
 	SecretAccessKey string `json:"secretAccessKey"`
 
-	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
 	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
 	// required: false
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
-	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// An arbitrary string that may be needed when calling the STS AssumeRole API operation.
 	// Using an external ID can help to prevent the "confused deputy problem".
 	// required: false
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
@@ -365,9 +365,9 @@ func (s Kubevirt) IsValid() bool {
 type Alibaba struct {
 	ProviderPreset `json:",inline"`
 
-	// AccessKeyID is the Access Key ID used to authenticate against Alibaba.
+	// The Access Key ID used to authenticate against Alibaba.
 	AccessKeyID string `json:"accessKeyID"`
-	// AccessKeySecret is the Access Key Secret used to authenticate against Alibaba.
+	// The Access Key Secret used to authenticate against Alibaba.
 	AccessKeySecret string `json:"accessKeySecret"`
 }
 
@@ -390,16 +390,16 @@ func (s Anexia) IsValid() bool {
 type Nutanix struct {
 	ProviderPreset `json:",inline"`
 
-	// ProxyURL is used to optionally configure a HTTP proxy to access Nutanix Prism Central.
+	// Optional: To configure a HTTP proxy to access Nutanix Prism Central.
 	ProxyURL string `json:"proxyURL,omitempty"`
-	// Username is the username to access the Nutanix Prism Central API.
+	// Username that is used to access the Nutanix Prism Central API.
 	Username string `json:"username"`
-	// Password is the password corresponding to the provided user.
+	// Password corresponding to the provided user.
 	Password string `json:"password"`
 
-	// ClusterName is the Nutanix cluster to deploy resources and nodes to.
+	// The name of the Nutanix cluster to which the resources and nodes are deployed to.
 	ClusterName string `json:"clusterName"`
-	// ProjectName is the optional Nutanix project to use. If none is given,
+	// Optional: Nutanix project to use. If none is given,
 	// no project will be used.
 	ProjectName string `json:"projectName,omitempty"`
 
@@ -433,15 +433,15 @@ func (s GKE) IsValid() bool {
 type EKS struct {
 	ProviderPreset `json:",inline"`
 
-	// AccessKeyID is the AWS Access key ID used to authenticate against AWS.
+	// The Access key ID used to authenticate against AWS.
 	AccessKeyID string `json:"accessKeyID"`
-	// SecretAccessKey is the AWS Secret Access Key used to authenticate against AWS.
+	// The Secret Access Key used to authenticate against AWS.
 	SecretAccessKey string `json:"secretAccessKey"`
-	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
 	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
 	// required: false
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
-	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// An arbitrary string that may be needed when calling the STS AssumeRole API operation.
 	// Using an external ID can help to prevent the "confused deputy problem".
 	// required: false
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
@@ -455,13 +455,13 @@ func (s EKS) IsValid() bool {
 type AKS struct {
 	ProviderPreset `json:",inline"`
 
-	// TenantID is the Azure Active Directory Tenant used for the user cluster.
+	// The Azure Active Directory Tenant used for the user cluster.
 	TenantID string `json:"tenantID"`
-	// SubscriptionID is the Azure Subscription used for the user cluster.
+	// The Azure Subscription used for the user cluster.
 	SubscriptionID string `json:"subscriptionID"`
-	// ClientID is the service principal used to access Azure.
+	// The service principal used to access Azure.
 	ClientID string `json:"clientID"`
-	// ClientSecret is the client secret corresponding to the given service principal.
+	// The client secret corresponding to the given service principal.
 	ClientSecret string `json:"clientSecret"`
 }
 

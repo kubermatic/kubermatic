@@ -94,12 +94,12 @@ type ExternalClusterCondition struct {
 }
 
 type ExternalClusterKubeOneCloudSpec struct {
-	// ProviderName is the name of the cloud provider used, one of
+	// The name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
 	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
 	ProviderName string `json:"providerName"`
 
-	// Region is the cloud provider region in which the cluster resides.
+	// The cloud provider region in which the cluster resides.
 	// This field is used only to display information.
 	Region string `json:"region,omitempty"`
 
@@ -124,10 +124,10 @@ type ExternalClusterSpec struct {
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
 
-	// KubeconfigReference is reference to cluster Kubeconfig
+	// Reference to cluster Kubeconfig
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 
-	// Version defines the wanted version of the control plane.
+	// Defines the wanted version of the control plane.
 	Version semver.Semver `json:"version"`
 
 	// CloudSpec contains provider specific fields
@@ -255,31 +255,31 @@ type ExternalClusterEKSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 
 	Name string `json:"name"`
-	// AccessKeyID is the AWS Access key ID used to authenticate against AWS.
+	// The Access key ID used to authenticate against AWS.
 	// Can be read from `credentialsReference` instead.
 	AccessKeyID string `json:"accessKeyID,omitempty"`
-	// SecretAccessKey is the AWS Secret Access Key used to authenticate against AWS.
+	// The Secret Access Key used to authenticate against AWS.
 	// Can be read from `credentialsReference` instead.
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 	Region          string `json:"region"`
-	// ControlPlaneRoleARN: The Amazon Resource Name (ARN) of the IAM role that provides permissions
+	// The Amazon Resource Name (ARN) of the IAM role that provides permissions
 	// for the Kubernetes control plane to make calls to Amazon Web Services API
 	// operations on your behalf.
 	ControlPlaneRoleARN string `json:"roleArn,omitempty"`
-	// VPCID: The VPC associated with your cluster.
+	// The VPC associated with your cluster.
 	VPCID string `json:"vpcID,omitempty"`
-	// SubnetIDs: The subnets associated with your cluster.
+	// The subnets associated with your cluster.
 	SubnetIDs []string `json:"subnetIDs,omitempty"`
-	// SecurityGroupIDs: The security groups associated with the cross-account elastic network interfaces
+	// The security groups associated with the cross-account elastic network interfaces
 	// that are used to allow communication between your nodes and the Kubernetes
 	// control plane.
 	SecurityGroupIDs []string `json:"securityGroupIDs,omitempty"`
 
-	// AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// The ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
 	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
 	// required: false
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
-	// AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// An arbitrary string that may be needed when calling the STS AssumeRole API operation.
 	// Using an external ID can help to prevent the "confused deputy problem".
 	// required: false
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
@@ -290,21 +290,21 @@ type ExternalClusterAKSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference"`
 
 	Name string `json:"name"`
-	// TenantID: The Azure Active Directory Tenant used for this cluster.
+	// The Azure Active Directory Tenant used for this cluster.
 	// Can be read from `credentialsReference` instead.
 	TenantID string `json:"tenantID,omitempty"`
-	// SubscriptionID: The Azure Subscription used for this cluster.
+	// The Azure Subscription used for this cluster.
 	// Can be read from `credentialsReference` instead.
 	SubscriptionID string `json:"subscriptionID,omitempty"`
-	// ClientID: The service principal used to access Azure.
+	// The service principal used to access Azure.
 	// Can be read from `credentialsReference` instead.
 	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret: The client secret corresponding to the given service principal.
+	// The client secret corresponding to the given service principal.
 	// Can be read from `credentialsReference` instead.
 	ClientSecret string `json:"clientSecret,omitempty"`
-	// Location: The geo-location where the resource lives
+	// The geo-location where the resource lives
 	Location string `json:"location"`
-	// ResourceGroup: The resource group that will be used to look up and create resources for the cluster in.
+	// The resource group that will be used to look up and create resources for the cluster in.
 	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated to
 	// the generated resource group's name.
 	ResourceGroup string `json:"resourceGroup"`
