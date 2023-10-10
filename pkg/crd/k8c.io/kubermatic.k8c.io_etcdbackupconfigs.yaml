@@ -23,7 +23,7 @@ spec:
       name: v1
       schema:
         openAPIV3Schema:
-          description: EtcdBackupConfig specifies a add-on.
+          description: EtcdBackupConfig specifies an add-on.
           properties:
             apiVersion:
               description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: EtcdBackupConfigSpec specifies details of an etcd backup.
+              description: Spec describes details of an Etcd backup.
               properties:
                 cluster:
                   description: Cluster is the reference to the cluster whose etcd will be backed up

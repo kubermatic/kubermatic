@@ -116,6 +116,7 @@ type ExternalClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items holds the list of the External Kubernetes cluster.
 	Items []ExternalCluster `json:"items"`
 }
 
@@ -133,6 +134,7 @@ type ExternalClusterSpec struct {
 	// CloudSpec contains provider specific fields
 	CloudSpec ExternalClusterCloudSpec `json:"cloudSpec"`
 
+	// ClusterNetwork contains the different networking parameters for an external cluster.
 	ClusterNetwork ExternalClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
 
 	// ContainerRuntime to use, i.e. `docker` or `containerd`.
@@ -148,7 +150,7 @@ type ExternalClusterSpec struct {
 }
 
 // ExternalClusterNetworkingConfig specifies the different networking
-// parameters for a external cluster.
+// parameters for an external cluster.
 type ExternalClusterNetworkingConfig struct {
 	// The network ranges from which service VIPs are allocated.
 	// It can contain one IPv4 and/or one IPv6 CIDR.

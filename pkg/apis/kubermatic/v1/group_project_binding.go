@@ -47,6 +47,7 @@ type GroupProjectBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes an oidc group binding to a project.
 	Spec GroupProjectBindingSpec `json:"spec,omitempty"`
 }
 
@@ -79,5 +80,6 @@ type GroupProjectBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items holds the list of the group and project bindings.
 	Items []GroupProjectBinding `json:"items"`
 }

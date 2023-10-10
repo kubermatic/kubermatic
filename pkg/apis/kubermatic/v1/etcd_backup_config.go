@@ -46,11 +46,12 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// EtcdBackupConfig specifies a add-on.
+// EtcdBackupConfig specifies an add-on.
 type EtcdBackupConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes details of an Etcd backup.
 	Spec   EtcdBackupConfigSpec   `json:"spec,omitempty"`
 	Status EtcdBackupConfigStatus `json:"status,omitempty"`
 }
@@ -83,6 +84,7 @@ type EtcdBackupConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is the list of the Etcd backup config.
 	Items []EtcdBackupConfig `json:"items"`
 }
 

@@ -395,6 +395,7 @@ type Datacenter struct {
 // DatacenterSpec configures a KKP datacenter. Provider configuration is mutually exclusive,
 // and as such only a single provider can be configured per datacenter.
 type DatacenterSpec struct {
+	// Digitalocean configures a Digitalocean datacenter.
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	// BringYourOwn contains settings for clusters using manually created
 	// nodes via kubeadm.
@@ -569,9 +570,12 @@ type DatacenterSpecDigitalocean struct {
 
 // DatacenterSpecOpenstack describes an OpenStack datacenter.
 type DatacenterSpecOpenstack struct {
-	AuthURL          string `json:"authURL"`
+	// Authentication URL
+	AuthURL string `json:"authURL"`
+	// Used to make resources highly available
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
-	Region           string `json:"region"`
+	// Authentication region name
+	Region string `json:"region"`
 	// Optional
 	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"` //nolint:tagliatelle
 	// Optional

@@ -327,7 +327,7 @@ spec:
                     - providerName
                   type: object
                 clusterNetwork:
-                  description: ExternalClusterNetworkingConfig specifies the different networking parameters for a external cluster.
+                  description: ClusterNetwork contains the different networking parameters for an external cluster.
                   properties:
                     pods:
                       description: The network ranges from which POD networks are allocated. It can contain one IPv4 and/or one IPv6 CIDR. If both address families are specified, the first one defines the primary address family.
