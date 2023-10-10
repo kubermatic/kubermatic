@@ -187,7 +187,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 	cluster.Spec = *scenario.Cluster(c.opts.Secrets)
 	cluster.Spec.HumanReadableName = humanReadableName
 	cluster.Spec.EnableOperatingSystemManager = pointer.Bool(c.opts.OperatingSystemManagerEnabled)
-	cluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(c.opts.KonnectivityEnabled)
+	cluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(c.opts.KonnectivityEnabled) //nolint:staticcheck
 
 	if c.opts.DualStackEnabled {
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
