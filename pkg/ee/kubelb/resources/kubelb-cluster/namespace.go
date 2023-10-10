@@ -33,8 +33,12 @@ import (
 // NamespaceReconciler creates the namespace for Gatekeeper.
 func NamespaceReconciler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
 	return func() (string, reconciling.NamespaceReconciler) {
-		return namespace, func(n *corev1.Namespace) (*corev1.Namespace, error) {
-			return n, nil
+		return namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
+			}
+			ns.Labels["kubelb.k8c.io/managed-by"] = "kubelb"
+			return ns, nil
 		}
 	}
 }
