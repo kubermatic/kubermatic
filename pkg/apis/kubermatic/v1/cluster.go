@@ -957,19 +957,19 @@ type CloudSpec struct {
 	ProviderName string `json:"providerName"`
 
 	Fake *FakeCloudSpec `json:"fake,omitempty"`
-	// Digitalocean defines the configuration data of DigitalOcean Cloud provider.
+	// Digitalocean defines the configuration data of the DigitalOcean cloud provider.
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	// AWS defines the configuration data of Amazon Web Services(AWS) Cloud provider.
+	// AWS defines the configuration data of Amazon Web Services(AWS) cloud provider.
 	AWS *AWSCloudSpec `json:"aws,omitempty"`
-	// Azure defines the configuration data of Microsoft Azure Cloud.
+	// Azure defines the configuration data of Microsoft Azure cloud.
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
-	// Openstack defines the configuration data of an OpenStack Cloud.
+	// Openstack defines the configuration data of an OpenStack cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
-	// Packet defines the configuration data of a Packet Cloud.
+	// Packet defines the configuration data of a Packet cloud.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
-	// Hetzner defines the configuration data of Hetzner Cloud.
+	// Hetzner defines the configuration data of Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
 	// VSphere defines the configuration data of VSphere.
 	VSphere *VSphereCloudSpec `json:"vsphere,omitempty"`

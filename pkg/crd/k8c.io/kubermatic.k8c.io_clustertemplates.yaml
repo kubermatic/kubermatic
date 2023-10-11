@@ -231,7 +231,7 @@ spec:
                           type: string
                       type: object
                     aws:
-                      description: AWS defines the configuration data of Amazon Web Services(AWS) Cloud provider.
+                      description: AWS defines the configuration data of Amazon Web Services(AWS) cloud provider.
                       properties:
                         accessKeyID:
                           description: The Access key ID used to authenticate against AWS.
@@ -307,7 +307,7 @@ spec:
                         - vpcID
                       type: object
                     azure:
-                      description: Azure defines the configuration data of Microsoft Azure Cloud.
+                      description: Azure defines the configuration data of Microsoft Azure cloud.
                       properties:
                         assignAvailabilitySet:
                           description: 'Optional: AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines. Defaults to `true` internally if not set.'
@@ -409,7 +409,7 @@ spec:
                       description: DatacenterName states the name of a cloud provider "datacenter" (defined in `Seed` resources) this cluster should be deployed into.
                       type: string
                     digitalocean:
-                      description: Digitalocean defines the configuration data of DigitalOcean Cloud provider.
+                      description: Digitalocean defines the configuration data of the DigitalOcean cloud provider.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -505,7 +505,7 @@ spec:
                         - subnetwork
                       type: object
                     hetzner:
-                      description: Hetzner defines the configuration data of Hetzner Cloud.
+                      description: Hetzner defines the configuration data of Hetzner cloud.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -701,7 +701,7 @@ spec:
                         - clusterName
                       type: object
                     openstack:
-                      description: Openstack defines the configuration data of an OpenStack Cloud.
+                      description: Openstack defines the configuration data of an OpenStack cloud.
                       properties:
                         applicationCredentialID:
                           type: string
@@ -800,7 +800,7 @@ spec:
                         - subnetID
                       type: object
                     packet:
-                      description: Packet defines the configuration data of a Packet Cloud.
+                      description: Packet defines the configuration data of a Packet cloud.
                       properties:
                         apiKey:
                           type: string
