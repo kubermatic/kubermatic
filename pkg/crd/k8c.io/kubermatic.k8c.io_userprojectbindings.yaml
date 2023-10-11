@@ -43,7 +43,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: UserProjectBindingSpec specifies a user.
+              description: Spec describes a KKP user and project binding.
               properties:
                 group:
                   description: Group is the user's group, determining their permissions within the project. Must be one of `owners`, `editors`, `viewers` or `projectmanagers`.

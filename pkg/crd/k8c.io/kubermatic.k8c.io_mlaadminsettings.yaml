@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: MLAAdminSettingSpec specifies the cluster-specific administrator settings for KKP user cluster MLA (monitoring, logging & alerting) stack.
+              description: Spec describes the cluster-specific administrator settings for KKP user cluster MLA (monitoring, logging & alerting) stack.
               properties:
                 clusterName:
                   description: ClusterName is the name of the user cluster whose MLA settings are defined in this object.

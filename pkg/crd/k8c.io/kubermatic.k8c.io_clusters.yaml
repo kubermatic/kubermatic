@@ -236,7 +236,7 @@ spec:
                           type: string
                       type: object
                     aws:
-                      description: AWS defines the configuration data of AWS Cloud provider.
+                      description: AWS defines the configuration data of Amazon Web Services(AWS) Cloud provider.
                       properties:
                         accessKeyID:
                           description: The Access key ID used to authenticate against AWS.
@@ -455,7 +455,7 @@ spec:
                           type: string
                       type: object
                     gcp:
-                      description: GCP defines the configuration data of GCP.
+                      description: GCP defines the configuration data of Google Cloud Platform(GCP).
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -848,7 +848,7 @@ spec:
                       description: ProviderName is the name of the cloud provider used for this cluster. This must match the given provider spec (e.g. if the providerName is "aws", then the `aws` field must be set).
                       type: string
                     vmwareclouddirector:
-                      description: VMwareCloudDirector defines the configuration data of VMware Cloud Director cloud.
+                      description: VMwareCloudDirector defines the configuration data of VMware Cloud Director.
                       properties:
                         apiToken:
                           description: The VMware Cloud Director API token.
@@ -916,7 +916,7 @@ spec:
                         - ovdcNetwork
                       type: object
                     vsphere:
-                      description: VSphere defines the configuration data of VSphere Cloud.
+                      description: VSphere defines the configuration data of VSphere.
                       properties:
                         basePath:
                           description: 'Optional: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it''s an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath (if set) to construct the full path.'

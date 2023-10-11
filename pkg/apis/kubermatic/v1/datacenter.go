@@ -187,9 +187,11 @@ type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes the configuration of the Seed cluster.
 	Spec SeedSpec `json:"spec"`
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	// Status holds the runtime information of the Seed cluster.
 	Status SeedStatus `json:"status,omitempty,omitgenyaml"`
 }
 

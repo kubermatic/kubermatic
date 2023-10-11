@@ -49,22 +49,38 @@ type Preset struct {
 
 // Presets specifies default presets for supported providers.
 type PresetSpec struct {
-	Digitalocean        *Digitalocean        `json:"digitalocean,omitempty"`
-	Hetzner             *Hetzner             `json:"hetzner,omitempty"`
-	Azure               *Azure               `json:"azure,omitempty"`
-	VSphere             *VSphere             `json:"vsphere,omitempty"`
-	AWS                 *AWS                 `json:"aws,omitempty"`
-	Openstack           *Openstack           `json:"openstack,omitempty"`
-	Packet              *Packet              `json:"packet,omitempty"`
-	GCP                 *GCP                 `json:"gcp,omitempty"`
-	Kubevirt            *Kubevirt            `json:"kubevirt,omitempty"`
-	Alibaba             *Alibaba             `json:"alibaba,omitempty"`
-	Anexia              *Anexia              `json:"anexia,omitempty"`
-	Nutanix             *Nutanix             `json:"nutanix,omitempty"`
+	// Access data for Digital Ocean.
+	Digitalocean *Digitalocean `json:"digitalocean,omitempty"`
+	// Access data for Hetzner.
+	Hetzner *Hetzner `json:"hetzner,omitempty"`
+	// Access data for Microsoft Azure Cloud.
+	Azure *Azure `json:"azure,omitempty"`
+	// Access data for VSphere.
+	VSphere *VSphere `json:"vsphere,omitempty"`
+	// Access data for Amazon Web Services(AWS) Cloud.
+	AWS *AWS `json:"aws,omitempty"`
+	// Access data for Openstack.
+	Openstack *Openstack `json:"openstack,omitempty"`
+	// Access data for Packet Cloud.
+	Packet *Packet `json:"packet,omitempty"`
+	// Access data for Google Cloud Platform(GCP).
+	GCP *GCP `json:"gcp,omitempty"`
+	// Access data for Kubervirt.
+	Kubevirt *Kubevirt `json:"kubevirt,omitempty"`
+	// Access data for Alibaba Cloud.
+	Alibaba *Alibaba `json:"alibaba,omitempty"`
+	// Access data for Anexia.
+	Anexia *Anexia `json:"anexia,omitempty"`
+	// Access data for Nutanix.
+	Nutanix *Nutanix `json:"nutanix,omitempty"`
+	// Access data for VMware Cloud Director.
 	VMwareCloudDirector *VMwareCloudDirector `json:"vmwareclouddirector,omitempty"`
-	GKE                 *GKE                 `json:"gke,omitempty"`
-	EKS                 *EKS                 `json:"eks,omitempty"`
-	AKS                 *AKS                 `json:"aks,omitempty"`
+	// Access data for Google Kubernetes Engine(GKE).
+	GKE *GKE `json:"gke,omitempty"`
+	// Access data for Amazon Elastic Kubernetes Service(EKS).
+	EKS *EKS `json:"eks,omitempty"`
+	// Access data for Azure Kubernetes Service(AKS).
+	AKS *AKS `json:"aks,omitempty"`
 
 	Fake *Fake `json:"fake,omitempty"`
 

@@ -33,6 +33,7 @@ spec:
               description: Presets specifies default presets for supported providers.
               properties:
                 aks:
+                  description: Access data for Azure Kubernetes Service(AKS).
                   properties:
                     clientID:
                       description: The service principal used to access Azure.
@@ -59,6 +60,7 @@ spec:
                     - tenantID
                   type: object
                 alibaba:
+                  description: Access data for Alibaba Cloud.
                   properties:
                     accessKeyID:
                       description: The Access Key ID used to authenticate against Alibaba.
@@ -77,6 +79,7 @@ spec:
                     - accessKeySecret
                   type: object
                 anexia:
+                  description: Access data for Anexia.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -91,6 +94,7 @@ spec:
                     - token
                   type: object
                 aws:
+                  description: Access data for Amazon Web Services(AWS) Cloud.
                   properties:
                     accessKeyID:
                       description: The Access key ID used to authenticate against AWS.
@@ -130,6 +134,7 @@ spec:
                     - secretAccessKey
                   type: object
                 azure:
+                  description: Access data for Microsoft Azure Cloud.
                   properties:
                     clientID:
                       description: The service principal used to access Azure.
@@ -181,6 +186,7 @@ spec:
                     - tenantID
                   type: object
                 digitalocean:
+                  description: Access data for Digital Ocean.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -195,6 +201,7 @@ spec:
                     - token
                   type: object
                 eks:
+                  description: Access data for Amazon Elastic Kubernetes Service(EKS).
                   properties:
                     accessKeyID:
                       description: The Access key ID used to authenticate against AWS.
@@ -235,6 +242,7 @@ spec:
                     - token
                   type: object
                 gcp:
+                  description: Access data for Google Cloud Platform(GCP).
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -253,6 +261,7 @@ spec:
                     - serviceAccount
                   type: object
                 gke:
+                  description: Access data for Google Kubernetes Engine(GKE).
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -266,6 +275,7 @@ spec:
                     - serviceAccount
                   type: object
                 hetzner:
+                  description: Access data for Hetzner.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -283,6 +293,7 @@ spec:
                     - token
                   type: object
                 kubevirt:
+                  description: Access data for Kubervirt.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -297,6 +308,7 @@ spec:
                     - kubeconfig
                   type: object
                 nutanix:
+                  description: Access data for Nutanix.
                   properties:
                     clusterName:
                       description: The name of the Nutanix cluster to which the resources and nodes are deployed to.
@@ -338,6 +350,7 @@ spec:
                     - username
                   type: object
                 openstack:
+                  description: Access data for Openstack.
                   properties:
                     applicationCredentialID:
                       type: string
@@ -379,6 +392,7 @@ spec:
                     - domain
                   type: object
                 packet:
+                  description: Access data for Packet Cloud.
                   properties:
                     apiKey:
                       type: string
@@ -407,6 +421,7 @@ spec:
                     type: string
                   type: array
                 vmwareclouddirector:
+                  description: Access data for VMware Cloud Director.
                   properties:
                     apiToken:
                       description: The VMware Cloud Director API token.
@@ -438,6 +453,7 @@ spec:
                     - vdc
                   type: object
                 vsphere:
+                  description: Access data for VSphere.
                   properties:
                     basePath:
                       description: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath to construct the full path.

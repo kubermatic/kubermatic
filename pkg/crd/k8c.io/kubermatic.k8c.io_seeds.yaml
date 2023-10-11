@@ -49,7 +49,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: The spec for a seed cluster.
+              description: Spec describes the configuration of the Seed cluster.
               properties:
                 country:
                   description: 'Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK. For informational purposes in the Kubermatic dashboard only.'
@@ -1736,7 +1736,7 @@ spec:
                 - kubeconfig
               type: object
             status:
-              description: SeedStatus contains runtime information regarding the seed.
+              description: Status holds the runtime information of the Seed cluster.
               properties:
                 clusters:
                   default: 0

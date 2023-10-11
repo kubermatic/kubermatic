@@ -961,7 +961,7 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	// AWS defines the configuration data of AWS Cloud provider.
+	// AWS defines the configuration data of Amazon Web Services(AWS) Cloud provider.
 	AWS *AWSCloudSpec `json:"aws,omitempty"`
 	// Azure defines the configuration data of Microsoft Azure Cloud.
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
@@ -971,9 +971,9 @@ type CloudSpec struct {
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of Hetzner Cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
-	// VSphere defines the configuration data of VSphere Cloud.
+	// VSphere defines the configuration data of VSphere.
 	VSphere *VSphereCloudSpec `json:"vsphere,omitempty"`
-	// GCP defines the configuration data of GCP.
+	// GCP defines the configuration data of Google Cloud Platform(GCP).
 	GCP *GCPCloudSpec `json:"gcp,omitempty"`
 	// Kubevirt defines the configuration data of Kubevirt.
 	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
@@ -983,7 +983,7 @@ type CloudSpec struct {
 	Anexia *AnexiaCloudSpec `json:"anexia,omitempty"`
 	// Nutanix defines the configuration data of Nutanix.
 	Nutanix *NutanixCloudSpec `json:"nutanix,omitempty"`
-	// VMwareCloudDirector defines the configuration data of VMware Cloud Director cloud.
+	// VMwareCloudDirector defines the configuration data of VMware Cloud Director.
 	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
