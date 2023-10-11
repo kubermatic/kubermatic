@@ -1083,6 +1083,12 @@ type VSphereCloudSpec struct {
 	// machines.
 	// +optional
 	Folder string `json:"folder"`
+	// Optional: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in.
+	// If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path,
+	// the BasePath part will be appended to the RootPath (if set) to construct the full path.
+	// +optional
+	BasePath string `json:"basePath,omitempty"`
+
 	// If both Datastore and DatastoreCluster are not specified the virtual
 	// machines are stored in the `DefaultDatastore` specified for the
 	// Datacenter.

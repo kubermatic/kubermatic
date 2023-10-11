@@ -25,9 +25,9 @@ import (
 // getVMRootPath is a helper func to get the root path for VM's
 // We extracted it because we use it in several places.
 func getVMRootPath(dc *kubermaticv1.DatacenterSpecVSphere) string {
-	// Each datacenter root directory for VM's is: ${DATACENTER_NAME}/vm
+	// Each datacenter root directory for VMs is: ${DATACENTER_NAME}/vm
 	rootPath := path.Join("/", dc.Datacenter, "vm")
-	// We offer a different root path though in case people would like to store all Kubermatic VM's below a certain directory
+	// We offer a different root path though in case people would like to store all Kubermatic VMs below a certain directory
 	if dc.RootPath != "" {
 		rootPath = path.Clean(dc.RootPath)
 	}

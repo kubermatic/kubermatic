@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 	"go.uber.org/zap"
@@ -96,9 +97,17 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 
 	clusterFolder := path.Join(rootPath, cluster.Name)
 
+	if cluster.Spec.Cloud.VSphere.BasePath != "" {
+		if filepath.IsAbs(cluster.Spec.Cloud.VSphere.BasePath) {
+			clusterFolder = path.Join(cluster.Spec.Cloud.VSphere.BasePath, cluster.Name)
+		} else {
+			clusterFolder = path.Join(rootPath, cluster.Spec.Cloud.VSphere.BasePath, cluster.Name)
+		}
+	}
+
 	// Only reconcile folders that are KKP managed at the clusterFolder location.
 	if cluster.Spec.Cloud.VSphere.Folder == "" || cluster.Spec.Cloud.VSphere.Folder == clusterFolder {
-		logger.Infow("reconciling vsphere folder", "folder", cluster.Spec.Cloud.VSphere.Folder)
+		logger.Infow("reconciling vsphere folder", "folder", clusterFolder)
 		session, err := newSession(ctx, v.dc, username, password, v.caBundle)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create vCenter session: %w", err)
