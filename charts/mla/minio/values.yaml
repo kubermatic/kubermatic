@@ -228,8 +228,8 @@ minio:
 
   ## Additional Annotations for the Kubernetes Batch (make-bucket-job)
   makeBucketJob:
-    podAnnotations:
-    annotations:
+    podAnnotations: {}
+    annotations: {}
     securityContext:
       enabled: false
       runAsUser: 1000
@@ -240,8 +240,8 @@ minio:
         memory: 128Mi
   ## Additional Annotations for the Kubernetes Batch (update-prometheus-secret)
   updatePrometheusJob:
-    podAnnotations:
-    annotations:
+    podAnnotations: {}
+    annotations: {}
     securityContext:
       enabled: false
       runAsUser: 1000
