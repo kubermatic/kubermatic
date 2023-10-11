@@ -187,7 +187,7 @@ spec:
                       operator: In
                       values:
                         - md-kmvh888v9h-lvpfx9rptr              # A new label to add common to all VMi from the same MD
-                                                                # We can re-use machine.metadata.labels: machine=md-kmvh888v9h-lvpfx9rptr
+                                                                # We can reuse machine.metadata.labels: machine=md-kmvh888v9h-lvpfx9rptr
                                                                 # already common to all machine from the same MD
                 topologyKey: topologyKey:kubernetes.io/hostname
             # Section podAffinity present if:
