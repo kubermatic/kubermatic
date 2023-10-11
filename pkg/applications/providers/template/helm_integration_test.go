@@ -226,7 +226,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
 
-				// Create an application that deploy a LB service that will never get Puplic Ip -> helm release will not be be successful.
+				// Create an application that deploy a LB service that will never get public ip -> helm release will not be be successful.
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.DeploySvcKey, true), deployOpts)
 
 				template := HelmTemplate{
@@ -263,7 +263,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
 
-				// Create an application that deploy a LB service that will never get Puplic Ip -> helm release will not be be successful.
+				// Create an application that deploy a LB service that will never get public ip -> helm release will not be be successful.
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.DeploySvcKey, true), nil)
 
 				template := HelmTemplate{

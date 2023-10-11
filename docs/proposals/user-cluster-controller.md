@@ -1,4 +1,4 @@
-# Title of the Poposal: **user-cluster-controller**
+# Title of the Proposal: **user-cluster-controller**
 
 **Author**: Tobias Hintze (thz)
 

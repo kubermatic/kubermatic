@@ -14,7 +14,7 @@
 
 mlaSecrets:
   minio:
-    ## Set enabled to false if you want to re-use an existing secret for minio.
+    ## Set enabled to false if you want to reuse an existing secret for minio.
     enabled: true
     ## Set default accesskey, secretkey
     ## AccessKey and secretKey is generated when not set
@@ -42,7 +42,7 @@ mlaSecrets:
       clientCertKey: ""
 
   grafana:
-    ## Set enabled to false if you want to re-use an existing secret for grafana.
+    ## Set enabled to false if you want to reuse an existing secret for grafana.
     enabled: true
     adminUser: admin
   #  adminPassword: strongpassword

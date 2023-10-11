@@ -66,7 +66,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// Checking and applying each field of the ComponentSettings is tedious,
-	// so we re-use mergo as well. Even though DefaultComponentSettings is
+	// so we reuse mergo as well. Even though DefaultComponentSettings is
 	// deprecated, we cannot remove its handling here, as the template can
 	// be unconfigured (i.e. nil).
 	if err := mergo.Merge(&spec.ComponentsOverride, seed.Spec.DefaultComponentSettings); err != nil {
