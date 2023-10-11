@@ -97,7 +97,7 @@ type MLAAdminSettingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Items holds the list of the cluster-specfic administrative settings
+	// Items holds the list of the cluster-specific administrative settings
 	// for KKP user cluster MLA.
 	Items []MLAAdminSetting `json:"items"`
 }
