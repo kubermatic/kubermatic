@@ -151,7 +151,7 @@ charts.  After installing these operators CR of the corresponding kind has to
 be created so the operator takes care of bringing the application up.
 
 Operators from operatorhub can be installed natively. The catalog of operators
-can be extended by 3rd-party catalogs or by bundeling own operators into
+can be extended by 3rd-party catalogs or by bundling own operators into
 catalogs.
 
 ### Kyma Service Calatlog: Helm Broker

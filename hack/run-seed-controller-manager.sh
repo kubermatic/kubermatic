@@ -26,7 +26,7 @@ KUBERMATIC_SEED=${KUBERMATIC_SEED:-hamburg}
 KUBERMATIC_EXTERNAL_URL=${KUBERMATIC_EXTERNAL_URL:-dev.kubermatic.io}
 PPROF_PORT=${PPROF_PORT:-6600}
 
-# Deploy a user-cluster/ipam-controller for which we actuallly
+# Deploy a user-cluster/ipam-controller for which we actually
 # have a pushed image
 echodate "Compiling seed-controller-manager..."
 export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/main)}"
