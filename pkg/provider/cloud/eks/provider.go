@@ -133,7 +133,7 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 		Cluster:  name,
 		AuthInfo: name,
 	}
-	// AWS specific configation; use cloud platform scope.
+	// AWS specific configuration; use cloud platform scope.
 	config.AuthInfos[name] = &api.AuthInfo{
 		Token: token.Token,
 	}

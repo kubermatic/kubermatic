@@ -118,7 +118,7 @@ Within sig-networking, we also considered 2 other approaches to address the goal
 
 1) Introducing a new CRD for all cluster network configuration, factoring out the cluster network configuration from the KKP cluster API and introducing a specific controller managing all user-cluster networking components:
    - This turned out to be a too complex change and just by itself it would not serve all goals - we would still need to replace manifest-based CNI deployment with e.g. Helm-based CNI deployment.
-   - As we already have the Applications infra capable of doing it, it is much easier to just re-use it.
+   - As we already have the Applications infra capable of doing it, it is much easier to just reuse it.
    - If more complex networking use-cases come in the future, we can still proceed with this approach even later.
 
 2) Generic multi-CNI operator, running in the user cluster independently (similar to machine-controller):
