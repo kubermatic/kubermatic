@@ -49,23 +49,23 @@ type Preset struct {
 
 // Presets specifies default presets for supported providers.
 type PresetSpec struct {
-	// Access data for Digital Ocean.
+	// Access data for DigitalOcean.
 	Digitalocean *Digitalocean `json:"digitalocean,omitempty"`
 	// Access data for Hetzner.
 	Hetzner *Hetzner `json:"hetzner,omitempty"`
 	// Access data for Microsoft Azure Cloud.
 	Azure *Azure `json:"azure,omitempty"`
-	// Access data for VSphere.
+	// Access data for vSphere.
 	VSphere *VSphere `json:"vsphere,omitempty"`
 	// Access data for Amazon Web Services(AWS) Cloud.
 	AWS *AWS `json:"aws,omitempty"`
-	// Access data for Openstack.
+	// Access data for OpenStack.
 	Openstack *Openstack `json:"openstack,omitempty"`
 	// Access data for Packet Cloud.
 	Packet *Packet `json:"packet,omitempty"`
 	// Access data for Google Cloud Platform(GCP).
 	GCP *GCP `json:"gcp,omitempty"`
-	// Access data for Kubervirt.
+	// Access data for KuberVirt.
 	Kubevirt *Kubevirt `json:"kubevirt,omitempty"`
 	// Access data for Alibaba Cloud.
 	Alibaba *Alibaba `json:"alibaba,omitempty"`
@@ -263,11 +263,11 @@ type AWS struct {
 
 	// Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
 	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
-	// required: false
+	// +optional
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
 	// An arbitrary string that may be needed when calling the STS AssumeRole API operation.
 	// Using an external ID can help to prevent the "confused deputy problem".
-	// required: false
+	// +optional
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 
 	// AWS VPC to use. Must be configured.
@@ -419,16 +419,16 @@ type Nutanix struct {
 	// no project will be used.
 	ProjectName string `json:"projectName,omitempty"`
 
-	// Prism Element Username for csi driver
+	// Prism Element Username for CSI driver.
 	CSIUsername string `json:"csiUsername,omitempty"`
 
-	// Prism Element Password for csi driver
+	// Prism Element Password for CSI driver.
 	CSIPassword string `json:"csiPassword,omitempty"`
 
-	// CSIEndpoint to access Nutanix Prism Element for csi driver
+	// CSIEndpoint to access Nutanix Prism Element for CSI driver.
 	CSIEndpoint string `json:"csiEndpoint,omitempty"`
 
-	// CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).
 	CSIPort *int32 `json:"csiPort,omitempty"`
 }
 

@@ -574,7 +574,7 @@ type DatacenterSpecDigitalocean struct {
 type DatacenterSpecOpenstack struct {
 	// Authentication URL
 	AuthURL string `json:"authURL"`
-	// Used to make resources highly available
+	// Used to configure availability zone.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 	// Authentication region name
 	Region string `json:"region"`

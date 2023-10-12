@@ -63,11 +63,11 @@ type UserProjectBindingSpec struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// UserProjectBindingList is a list of KKP users and projects binding.
+// UserProjectBindingList is a list of KKP user and project bindings.
 type UserProjectBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Items is the list of KKP users and projects binding.
+	// Items is the list of KKP user and project bindings.
 	Items []UserProjectBinding `json:"items"`
 }

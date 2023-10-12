@@ -465,7 +465,7 @@ const (
 	ClusterConditionCSIKubeletMigrationCompleted ClusterConditionType = "CSIKubeletMigrationCompleted"
 
 	// This condition is used to determine if the CSI addon created by KKP is in use or not.
-	// This helps in ascertaining if the csi addon can be removed from the cluster or not.
+	// This helps in ascertaining if the CSI addon can be removed from the cluster or not.
 	ClusterConditionCSIAddonInUse ClusterConditionType = "CSIAddonInUse"
 
 	ReasonClusterUpdateSuccessful             = "ClusterUpdateSuccessful"
@@ -956,6 +956,8 @@ type CloudSpec struct {
 	// "aws", then the `aws` field must be set).
 	ProviderName string `json:"providerName"`
 
+	// Fake is a dummy cloud provider that is only used for testing purposes.
+	// Do not try to actually use it.
 	Fake *FakeCloudSpec `json:"fake,omitempty"`
 	// Digitalocean defines the configuration data of the DigitalOcean cloud provider.
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
@@ -971,11 +973,11 @@ type CloudSpec struct {
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
-	// VSphere defines the configuration data of the VSphere.
+	// VSphere defines the configuration data of the vSphere.
 	VSphere *VSphereCloudSpec `json:"vsphere,omitempty"`
 	// GCP defines the configuration data of the Google Cloud Platform(GCP).
 	GCP *GCPCloudSpec `json:"gcp,omitempty"`
-	// Kubevirt defines the configuration data of the Kubevirt.
+	// Kubevirt defines the configuration data of the KubeVirt.
 	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
 	// Alibaba defines the configuration data of the Alibaba.
 	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
@@ -1069,7 +1071,7 @@ type AzureCloudSpec struct {
 	// at cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field
 	// will be updated to the generated availability set's name.
 	AvailabilitySet string `json:"availabilitySet"`
-	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used.
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
@@ -1205,12 +1207,11 @@ type AWSCloudSpec struct {
 	SecretAccessKey string `json:"secretAccessKey,omitempty"`
 	// Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
 	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
-	// required: false
+	// +optional
 	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
 	// An arbitrary string that may be needed when calling the STS AssumeRole API operation.
 	// Using an external ID can help to prevent the "confused deputy problem".
-	// required: false
-
+	// +optional
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 	VPCID                string `json:"vpcID"`
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
@@ -1378,13 +1379,13 @@ type AnexiaCloudSpec struct {
 // NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
 type NutanixCSIConfig struct {
 
-	// Prism Element Username for csi driver.
+	// Prism Element Username for CSI driver.
 	Username string `json:"username,omitempty"`
 
-	// Prism Element Password for csi driver.
+	// Prism Element Password for CSI driver.
 	Password string `json:"password,omitempty"`
 
-	// Prism Element Endpoint to access Nutanix Prism Element for csi driver.
+	// Prism Element Endpoint to access Nutanix Prism Element for CSI driver.
 	Endpoint string `json:"endpoint"`
 
 	// Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).
@@ -1424,7 +1425,7 @@ type NutanixCloudSpec struct {
 	// Password corresponding to the provided user.
 	Password string `json:"password,omitempty"`
 
-	// NutanixCSIConfig for csi driver that connects to a prism element
+	// NutanixCSIConfig for CSI driver that connects to a prism element.
 	// +optional
 	CSI *NutanixCSIConfig `json:"csi,omitempty"`
 }

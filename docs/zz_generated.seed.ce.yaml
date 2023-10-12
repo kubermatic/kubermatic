@@ -211,7 +211,7 @@ spec:
         openstack:
           # Authentication URL
           authURL: ""
-          # Used to make resources highly available
+          # Used to configure availability zone.
           availabilityZone: ""
           # Used for automatic network creation
           dnsServers: []

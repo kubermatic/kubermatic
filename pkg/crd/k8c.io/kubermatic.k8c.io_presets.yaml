@@ -100,10 +100,10 @@ spec:
                       description: The Access key ID used to authenticate against AWS.
                       type: string
                     assumeRoleARN:
-                      description: 'Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
+                      description: Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
                       type: string
                     assumeRoleExternalID:
-                      description: 'An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem". required: false'
+                      description: An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem".
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -186,7 +186,7 @@ spec:
                     - tenantID
                   type: object
                 digitalocean:
-                  description: Access data for Digital Ocean.
+                  description: Access data for DigitalOcean.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -293,7 +293,7 @@ spec:
                     - token
                   type: object
                 kubevirt:
-                  description: Access data for Kubervirt.
+                  description: Access data for KuberVirt.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -314,17 +314,17 @@ spec:
                       description: The name of the Nutanix cluster to which the resources and nodes are deployed to.
                       type: string
                     csiEndpoint:
-                      description: CSIEndpoint to access Nutanix Prism Element for csi driver
+                      description: CSIEndpoint to access Nutanix Prism Element for CSI driver.
                       type: string
                     csiPassword:
-                      description: Prism Element Password for csi driver
+                      description: Prism Element Password for CSI driver.
                       type: string
                     csiPort:
-                      description: CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+                      description: CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).
                       format: int32
                       type: integer
                     csiUsername:
-                      description: Prism Element Username for csi driver
+                      description: Prism Element Username for CSI driver.
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -350,7 +350,7 @@ spec:
                     - username
                   type: object
                 openstack:
-                  description: Access data for Openstack.
+                  description: Access data for OpenStack.
                   properties:
                     applicationCredentialID:
                       type: string
@@ -453,7 +453,7 @@ spec:
                     - vdc
                   type: object
                 vsphere:
-                  description: Access data for VSphere.
+                  description: Access data for vSphere.
                   properties:
                     basePath:
                       description: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath to construct the full path.

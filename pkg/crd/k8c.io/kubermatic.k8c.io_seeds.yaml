@@ -656,7 +656,7 @@ spec:
                                 description: Authentication URL
                                 type: string
                               availabilityZone:
-                                description: Used to make resources highly available
+                                description: Used to configure availability zone.
                                 type: string
                               dnsServers:
                                 description: Used for automatic network creation

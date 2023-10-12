@@ -242,9 +242,10 @@ spec:
                           description: The Access key ID used to authenticate against AWS.
                           type: string
                         assumeRoleARN:
-                          description: 'Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
+                          description: Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
                           type: string
                         assumeRoleExternalID:
+                          description: An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem".
                           type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -355,7 +356,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         loadBalancerSKU:
-                          description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+                          description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used.
                           enum:
                             - standard
                             - basic
@@ -449,7 +450,7 @@ spec:
                           type: string
                       type: object
                     fake:
-                      description: FakeCloudSpec specifies access data for a fake cloud.
+                      description: Fake is a dummy cloud provider that is only used for testing purposes. Do not try to actually use it.
                       properties:
                         token:
                           type: string
@@ -548,7 +549,7 @@ spec:
                           type: string
                       type: object
                     kubevirt:
-                      description: Kubevirt defines the configuration data of the Kubevirt.
+                      description: Kubevirt defines the configuration data of the KubeVirt.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -663,16 +664,16 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         csi:
-                          description: NutanixCSIConfig for csi driver that connects to a prism element
+                          description: NutanixCSIConfig for CSI driver that connects to a prism element.
                           properties:
                             endpoint:
-                              description: Prism Element Endpoint to access Nutanix Prism Element for csi driver.
+                              description: Prism Element Endpoint to access Nutanix Prism Element for CSI driver.
                               type: string
                             fstype:
                               description: 'Optional: defaults to "xfs"'
                               type: string
                             password:
-                              description: Prism Element Password for csi driver.
+                              description: Prism Element Password for CSI driver.
                               type: string
                             port:
                               description: 'Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).'
@@ -685,7 +686,7 @@ spec:
                               description: 'Optional: defaults to "SelfServiceContainer".'
                               type: string
                             username:
-                              description: Prism Element Username for csi driver.
+                              description: Prism Element Username for CSI driver.
                               type: string
                           required:
                             - endpoint
@@ -916,7 +917,7 @@ spec:
                         - ovdcNetwork
                       type: object
                     vsphere:
-                      description: VSphere defines the configuration data of the VSphere.
+                      description: VSphere defines the configuration data of the vSphere.
                       properties:
                         basePath:
                           description: 'Optional: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it''s an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath (if set) to construct the full path.'
