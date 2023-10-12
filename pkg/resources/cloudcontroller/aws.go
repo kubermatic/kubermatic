@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -89,7 +89,7 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 				flags = append(flags, "--cluster-name", data.Cluster().Name)
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{

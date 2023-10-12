@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -122,9 +122,9 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 	if len(existingContainers) == 1 && existingContainers[0].SecurityContext != nil {
 		securityContext = existingContainers[0].SecurityContext
 	}
-	securityContext.RunAsUser = pointer.Int64(1001)
-	securityContext.ReadOnlyRootFilesystem = pointer.Bool(true)
-	securityContext.AllowPrivilegeEscalation = pointer.Bool(false)
+	securityContext.RunAsUser = ptr.To[int64](1001)
+	securityContext.ReadOnlyRootFilesystem = ptr.To(true)
+	securityContext.AllowPrivilegeEscalation = ptr.To(false)
 
 	tag, err := DashboardVersion(data.Cluster().Status.Versions.ControlPlane)
 	if err != nil {

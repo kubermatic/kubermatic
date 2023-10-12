@@ -42,7 +42,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -195,7 +195,7 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 					Kind: AllowedRegistryCTName,
 				},
 				Validation: &constrainttemplatev1.Validation{
-					LegacySchema: pointer.Bool(false),
+					LegacySchema: ptr.To(false),
 					OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
 						Type: "object",
 						Properties: map[string]apiextensionsv1.JSONSchemaProps{

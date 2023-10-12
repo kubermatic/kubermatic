@@ -47,7 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -773,7 +773,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 
 	optionalRefTo := func(key string) *corev1.EnvVarSource {
 		ref := refTo(key)
-		ref.SecretKeyRef.Optional = pointer.Bool(true)
+		ref.SecretKeyRef.Optional = ptr.To(true)
 
 		return ref
 	}

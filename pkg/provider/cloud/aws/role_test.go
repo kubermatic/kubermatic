@@ -28,13 +28,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func assertRoleHasPolicy(ctx context.Context, t *testing.T, client *iam.Client, roleName, policyName, policyDocument string) {
 	output, err := client.GetRolePolicy(ctx, &iam.GetRolePolicyInput{
-		RoleName:   pointer.String(roleName),
-		PolicyName: pointer.String(policyName),
+		RoleName:   ptr.To(roleName),
+		PolicyName: ptr.To(policyName),
 	})
 	if err != nil {
 		t.Errorf("failed to retrieve role policy: %v", err)
@@ -49,7 +49,7 @@ func assertRoleHasPolicy(ctx context.Context, t *testing.T, client *iam.Client, 
 func assertOwnership(ctx context.Context, t *testing.T, client *iam.Client, cluster *kubermaticv1.Cluster, roleName string, expectedOwnership bool) {
 	// check if the role exists
 	getRoleInput := &iam.GetRoleInput{
-		RoleName: pointer.String(roleName),
+		RoleName: ptr.To(roleName),
 	}
 
 	role, err := client.GetRole(ctx, getRoleInput)
@@ -75,7 +75,7 @@ func assertRoleIsGone(t *testing.T, client *iam.Client, roleName string) {
 
 func assertRolePolicies(ctx context.Context, t *testing.T, client *iam.Client, roleName string, expected sets.Set[string]) {
 	listPoliciesOut, err := client.ListRolePolicies(ctx, &iam.ListRolePoliciesInput{
-		RoleName: pointer.String(roleName),
+		RoleName: ptr.To(roleName),
 	})
 	if err != nil {
 		t.Errorf("Failed to list policies for role %q: %v", roleName, err)
@@ -129,8 +129,8 @@ func TestEnsureRole(t *testing.T) {
 
 		// create a role that the controller is then hopefully going to adopt
 		createRoleInput := &iam.CreateRoleInput{
-			AssumeRolePolicyDocument: pointer.String(assumeRolePolicy),
-			RoleName:                 pointer.String(roleName),
+			AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
+			RoleName:                 ptr.To(roleName),
 		}
 
 		if _, err := cs.IAM.CreateRole(ctx, createRoleInput); err != nil {
@@ -256,8 +256,8 @@ func TestDeleteRole(t *testing.T) {
 
 		// create a foreign role
 		createRoleInput := &iam.CreateRoleInput{
-			AssumeRolePolicyDocument: pointer.String(assumeRolePolicy),
-			RoleName:                 pointer.String(roleName),
+			AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
+			RoleName:                 ptr.To(roleName),
 		}
 
 		if _, err := cs.IAM.CreateRole(ctx, createRoleInput); err != nil {
@@ -282,7 +282,7 @@ func TestDeleteRole(t *testing.T) {
 
 		// check if the role exists
 		getRoleInput := &iam.GetRoleInput{
-			RoleName: pointer.String(roleName),
+			RoleName: ptr.To(roleName),
 		}
 
 		if _, err := cs.IAM.GetRole(ctx, getRoleInput); err != nil {
@@ -327,8 +327,8 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 
 		// create a foreign role
 		createRoleInput := &iam.CreateRoleInput{
-			AssumeRolePolicyDocument: pointer.String(assumeRolePolicy),
-			RoleName:                 pointer.String(roleName),
+			AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
+			RoleName:                 ptr.To(roleName),
 		}
 
 		if _, err := cs.IAM.CreateRole(ctx, createRoleInput); err != nil {
@@ -351,7 +351,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 
 		// check if the role exists
 		getRoleInput := &iam.GetRoleInput{
-			RoleName: pointer.String(roleName),
+			RoleName: ptr.To(roleName),
 		}
 
 		if _, err := cs.IAM.GetRole(ctx, getRoleInput); err != nil {

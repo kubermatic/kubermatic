@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -79,7 +79,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 
 			d.Labels = resources.BaseAppLabels(resources.KubeVirtCSIControllerName, nil)
 
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = ptr.To[int32](1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app": name,

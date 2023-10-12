@@ -25,7 +25,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // ValidatingwebhookConfigurationReconciler returns the ValidatingwebhookConfiguration for the machine controller.
@@ -44,13 +44,13 @@ func ValidatingwebhookConfigurationReconciler(caCert *x509.Certificate, namespac
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffect,
-					TimeoutSeconds:          pointer.Int32(30),
+					TimeoutSeconds:          ptr.To[int32](30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						Service: &admissionregistrationv1.ServiceReference{
 							Namespace: namespace,
 							Name:      resources.CSIMigrationWebhookName,
-							Path:      pointer.String("/validate"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/validate"),
+							Port:      ptr.To[int32](443),
 						},
 						CABundle: triple.EncodeCertPEM(caCert),
 					},

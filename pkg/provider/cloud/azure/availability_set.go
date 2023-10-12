@@ -26,7 +26,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func availabilitySetName(cluster *kubermaticv1.Cluster) string {
@@ -86,17 +86,17 @@ func targetAvailabilitySet(cloud kubermaticv1.CloudSpec, location string, cluste
 	}
 
 	return &armcompute.AvailabilitySet{
-		Name:     pointer.String(cloud.Azure.AvailabilitySet),
-		Location: pointer.String(location),
+		Name:     ptr.To(cloud.Azure.AvailabilitySet),
+		Location: ptr.To(location),
 		SKU: &armcompute.SKU{
-			Name: pointer.String("Aligned"),
+			Name: ptr.To("Aligned"),
 		},
 		Tags: map[string]*string{
-			clusterTagKey: pointer.String(clusterName),
+			clusterTagKey: ptr.To(clusterName),
 		},
 		Properties: &armcompute.AvailabilitySetProperties{
-			PlatformFaultDomainCount:  pointer.Int32(faultDomainCount),
-			PlatformUpdateDomainCount: pointer.Int32(20),
+			PlatformFaultDomainCount:  ptr.To[int32](faultDomainCount),
+			PlatformUpdateDomainCount: ptr.To[int32](20),
 		},
 	}, nil
 }

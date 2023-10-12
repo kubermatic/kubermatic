@@ -25,7 +25,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -99,17 +99,17 @@ func (b *awsConfig) WithDiskSize(diskSize int) *awsConfig {
 }
 
 func (b *awsConfig) WithDiskIops(iops int) *awsConfig {
-	b.DiskIops = pointer.Int32(int32(iops))
+	b.DiskIops = ptr.To[int32](int32(iops))
 	return b
 }
 
 func (b *awsConfig) WithAssignPublicIP(assign bool) *awsConfig {
-	b.AssignPublicIP = pointer.Bool(assign)
+	b.AssignPublicIP = ptr.To(assign)
 	return b
 }
 
 func (b *awsConfig) WithEBSVolumeEncrypted(encrypted bool) *awsConfig {
-	b.EBSVolumeEncrypted.Value = pointer.Bool(encrypted)
+	b.EBSVolumeEncrypted.Value = ptr.To(encrypted)
 	return b
 }
 
@@ -123,10 +123,10 @@ func (b *awsConfig) WithTag(tagKey string, tagValue string) *awsConfig {
 
 func (b *awsConfig) WithSpotInstanceMaxPrice(maxPrice string) *awsConfig {
 	if maxPrice == "" {
-		b.IsSpotInstance = pointer.Bool(false)
+		b.IsSpotInstance = ptr.To(false)
 		b.SpotInstanceConfig = nil
 	} else {
-		b.IsSpotInstance = pointer.Bool(true)
+		b.IsSpotInstance = ptr.To(true)
 		b.SpotInstanceConfig = &aws.SpotInstanceConfig{
 			MaxPrice: providerconfig.ConfigVarString{Value: maxPrice},
 		}
@@ -153,7 +153,7 @@ func CompleteAWSProviderSpec(config *aws.RawConfig, cluster *kubermaticv1.Cluste
 	}
 
 	if config.EBSVolumeEncrypted.Value == nil {
-		config.EBSVolumeEncrypted.Value = pointer.Bool(awsDefaultEBSVolumeEncrypted)
+		config.EBSVolumeEncrypted.Value = ptr.To(awsDefaultEBSVolumeEncrypted)
 	}
 
 	if datacenter != nil {

@@ -36,7 +36,7 @@ import (
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // CronJobReconciler returns the func to create/update the metering report cronjob.
@@ -65,7 +65,7 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 			job.Labels[common.ComponentLabel] = meteringName
 
 			job.Spec.Schedule = mrc.Schedule
-			job.Spec.JobTemplate.Spec.Parallelism = pointer.Int32(1)
+			job.Spec.JobTemplate.Spec.Parallelism = ptr.To[int32](1)
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = ""
 			job.Spec.JobTemplate.Spec.Template.Spec.DeprecatedServiceAccount = ""
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure

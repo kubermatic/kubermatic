@@ -35,7 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -135,7 +135,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			enableUserSSHKeyAgent := data.Cluster().Spec.EnableUserSSHKeyAgent
 			if enableUserSSHKeyAgent == nil {
-				enableUserSSHKeyAgent = pointer.Bool(true)
+				enableUserSSHKeyAgent = ptr.To(true)
 			}
 
 			address := data.Cluster().Status.Address

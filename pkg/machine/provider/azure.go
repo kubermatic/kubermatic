@@ -22,7 +22,7 @@ import (
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type azureConfig struct {
@@ -38,7 +38,7 @@ func (b *azureConfig) Build() azure.RawConfig {
 }
 
 func (b *azureConfig) WithAssignPublicIP(assign bool) *azureConfig {
-	b.AssignPublicIP.Value = pointer.Bool(assign)
+	b.AssignPublicIP.Value = ptr.To(assign)
 	return b
 }
 
@@ -154,7 +154,7 @@ func CompleteAzureProviderSpec(config *azure.RawConfig, cluster *kubermaticv1.Cl
 
 		assignPublicIP := config.AssignPublicIP.Value != nil && *config.AssignPublicIP.Value
 		if assignPublicIP && config.LoadBalancerSku.Value == string(kubermaticv1.AzureStandardLBSKU) {
-			config.PublicIPSKU = pointer.String(config.LoadBalancerSku.Value)
+			config.PublicIPSKU = ptr.To(config.LoadBalancerSku.Value)
 		}
 
 		if config.Tags == nil {

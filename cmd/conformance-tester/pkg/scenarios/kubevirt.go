@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -50,9 +50,8 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 				Kubeconfig: secrets.Kubevirt.Kubeconfig,
 				StorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
 					Name:           kubevirtStorageClassName,
-					IsDefaultClass: pointer.Bool(true),
-				},
-				},
+					IsDefaultClass: ptr.To(true),
+				}},
 			},
 		},
 		Version: s.clusterVersion,

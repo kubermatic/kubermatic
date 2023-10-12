@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	cmdtesting "k8s.io/kubectl/pkg/cmd/testing"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -567,7 +567,7 @@ func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 	settings := NewSettings(tempDir)
 
 	restClientGetter := &genericclioptions.ConfigFlags{
-		KubeConfig: pointer.String(kubeconfigPath),
+		KubeConfig: ptr.To(kubeconfigPath),
 		Namespace:  &ns.Name,
 	}
 
@@ -618,7 +618,7 @@ func buildHelClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, cha
 	}
 
 	restClientGetter := &genericclioptions.ConfigFlags{
-		KubeConfig: pointer.String(kubeconfigPath),
+		KubeConfig: ptr.To(kubeconfigPath),
 		Namespace:  &ns.Name,
 	}
 

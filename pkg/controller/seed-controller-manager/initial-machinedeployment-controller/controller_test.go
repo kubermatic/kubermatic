@@ -42,7 +42,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -117,7 +117,7 @@ func TestReconcile(t *testing.T) {
 			Name: "test",
 		},
 		Spec: clusterv1alpha1.MachineDeploymentSpec{
-			Replicas: pointer.Int32(1),
+			Replicas: ptr.To[int32](1),
 			Template: clusterv1alpha1.MachineTemplateSpec{
 				Spec: clusterv1alpha1.MachineSpec{
 					Versions: clusterv1alpha1.MachineVersionInfo{
@@ -235,7 +235,7 @@ func TestReconcile(t *testing.T) {
 			webhook := &appsv1.Deployment{}
 			webhook.Name = resources.MachineControllerWebhookDeploymentName
 			webhook.Namespace = test.cluster.Status.NamespaceName
-			webhook.Spec.Replicas = pointer.Int32(1)
+			webhook.Spec.Replicas = ptr.To[int32](1)
 
 			if test.mcHealthy {
 				webhook.Status.Replicas = *webhook.Spec.Replicas

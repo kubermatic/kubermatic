@@ -28,7 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestEnsureInstanceProfile(t *testing.T) {
@@ -78,7 +78,7 @@ func TestEnsureInstanceProfile(t *testing.T) {
 
 		// no ownership tag here, we want to simulate a normal, pre-existing profile
 		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: pointer.String(profileName),
+			InstanceProfileName: ptr.To(profileName),
 		}
 
 		if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
@@ -188,7 +188,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 
 		// no ownership tag here, we want to simulate a normal, pre-existing profile
 		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: pointer.String(profileName),
+			InstanceProfileName: ptr.To(profileName),
 		}
 
 		if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
@@ -312,7 +312,7 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 
 		// no ownership tag here, we want to simulate a normal, pre-existing profile
 		createProfileInput := &iam.CreateInstanceProfileInput{
-			InstanceProfileName: pointer.String(profileName),
+			InstanceProfileName: ptr.To(profileName),
 		}
 
 		if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {

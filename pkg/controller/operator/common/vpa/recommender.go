@@ -28,7 +28,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -56,7 +56,7 @@ func appPodLabels(appName string) map[string]string {
 func RecommenderDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return RecommenderName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = ptr.To[int32](1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: appPodLabels(RecommenderName),
 			}
@@ -70,8 +70,8 @@ func RecommenderDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, 
 
 			d.Spec.Template.Spec.ServiceAccountName = RecommenderName
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsNonRoot: pointer.Bool(true),
-				RunAsUser:    pointer.Int64(65534),
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To[int64](65534),
 				SeccompProfile: &corev1.SeccompProfile{
 					Type: corev1.SeccompProfileTypeRuntimeDefault,
 				},

@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func workerInstanceProfileName(clusterName string) string {
@@ -35,7 +35,7 @@ func workerInstanceProfileName(clusterName string) string {
 
 func getInstanceProfile(ctx context.Context, client *iam.Client, name string) (*iamtypes.InstanceProfile, error) {
 	getProfileInput := &iam.GetInstanceProfileInput{
-		InstanceProfileName: pointer.String(name),
+		InstanceProfileName: ptr.To(name),
 	}
 
 	profileOut, err := client.GetInstanceProfile(ctx, getProfileInput)
@@ -82,8 +82,8 @@ func reconcileWorkerInstanceProfile(ctx context.Context, client *iam.Client, clu
 
 		if !exists {
 			addRoleInput := &iam.AddRoleToInstanceProfileInput{
-				InstanceProfileName: pointer.String(profileName),
-				RoleName:            pointer.String(roleName),
+				InstanceProfileName: ptr.To(profileName),
+				RoleName:            ptr.To(roleName),
 			}
 
 			if _, err = client.AddRoleToInstanceProfile(ctx, addRoleInput); err != nil {
@@ -111,7 +111,7 @@ func ensureInstanceProfile(ctx context.Context, client *iam.Client, cluster *kub
 
 	// create missing profile
 	createProfileInput := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: pointer.String(profileName),
+		InstanceProfileName: ptr.To(profileName),
 		Tags:                []iamtypes.Tag{iamOwnershipTag(cluster.Name)},
 	}
 
@@ -149,7 +149,7 @@ func cleanUpWorkerInstanceProfile(ctx context.Context, client *iam.Client, clust
 	for _, role := range profile.Roles {
 		removeRoleInput := &iam.RemoveRoleFromInstanceProfileInput{
 			RoleName:            role.RoleName,
-			InstanceProfileName: pointer.String(profileName),
+			InstanceProfileName: ptr.To(profileName),
 		}
 		if _, err = client.RemoveRoleFromInstanceProfile(ctx, removeRoleInput); err != nil {
 			return fmt.Errorf("failed to remove role %q from instance profile %q: %w", *role.RoleName, profileName, err)
@@ -162,7 +162,7 @@ func cleanUpWorkerInstanceProfile(ctx context.Context, client *iam.Client, clust
 	}
 
 	// delete the profile itself
-	_, err = client.DeleteInstanceProfile(ctx, &iam.DeleteInstanceProfileInput{InstanceProfileName: pointer.String(profileName)})
+	_, err = client.DeleteInstanceProfile(ctx, &iam.DeleteInstanceProfileInput{InstanceProfileName: ptr.To(profileName)})
 
 	return err
 }

@@ -24,7 +24,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type nutanixConfig struct {
@@ -70,12 +70,12 @@ func (b *nutanixConfig) WithMemoryMB(memoryMB int) *nutanixConfig {
 }
 
 func (b *nutanixConfig) WithDiskSize(diskSize int) *nutanixConfig {
-	b.DiskSize = pointer.Int64(int64(diskSize))
+	b.DiskSize = ptr.To[int64](int64(diskSize))
 	return b
 }
 
 func (b *nutanixConfig) WithAllowInsecure(allow bool) *nutanixConfig {
-	b.AllowInsecure.Value = pointer.Bool(allow)
+	b.AllowInsecure.Value = ptr.To(allow)
 	return b
 }
 

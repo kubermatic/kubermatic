@@ -34,6 +34,7 @@ exceptions:
   - github.com/hashicorp/errwrap # MPL-2.0
   - github.com/hashicorp/go-cleanhttp # MPL-2.0
   - github.com/hashicorp/go-multierror # MPL-2.0
+  - github.com/hashicorp/go-retryablehttp # MPL-2.0
   - github.com/hashicorp/go-version # MPL-2.0
   - github.com/hashicorp/golang-lru # MPL-2.0
   - github.com/hashicorp/golang-lru/simplelru # MPL-2.0

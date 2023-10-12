@@ -28,7 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -76,7 +76,7 @@ func kubevirtDeploymentReconciler(data *resources.TemplateData) reconciling.Name
 				return nil, err
 			}
 
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled(), false), []corev1.Volume{
 				{
 					Name: resources.CloudConfigSeedSecretName,
@@ -94,7 +94,7 @@ func kubevirtDeploymentReconciler(data *resources.TemplateData) reconciling.Name
 									},
 								},
 							},
-							DefaultMode: pointer.Int32(420),
+							DefaultMode: ptr.To[int32](420),
 						},
 					},
 				},

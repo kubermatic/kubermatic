@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -73,7 +73,7 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.UserClusterWebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Name = resources.UserClusterWebhookDeploymentName
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = ptr.To[int32](1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: webhookPodLabels(),
 			}

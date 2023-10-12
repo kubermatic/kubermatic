@@ -28,7 +28,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type cronJobReconcilerData interface {
@@ -45,7 +45,7 @@ func CronJobReconciler(data cronJobReconcilerData) reconciling.NamedCronJobRecon
 		return resources.EtcdDefragCronJobName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			job.Name = resources.EtcdDefragCronJobName
 			job.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
-			job.Spec.SuccessfulJobsHistoryLimit = pointer.Int32(1)
+			job.Spec.SuccessfulJobsHistoryLimit = ptr.To[int32](1)
 			job.Spec.Schedule = "@every 3h"
 
 			job.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName

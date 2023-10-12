@@ -36,7 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -295,7 +295,7 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 
 	optionalRefTo := func(key string) *corev1.EnvVarSource {
 		ref := refTo(key)
-		ref.SecretKeyRef.Optional = pointer.Bool(true)
+		ref.SecretKeyRef.Optional = ptr.To(true)
 
 		return ref
 	}

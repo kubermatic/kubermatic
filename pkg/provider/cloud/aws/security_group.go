@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func securityGroupName(cluster *kubermaticv1.Cluster) string {
@@ -45,7 +45,7 @@ func getSecurityGroupByID(ctx context.Context, client *ec2.Client, vpc *ec2types
 
 	dsgOut, err := client.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
 		GroupIds: []string{id},
-		Filters:  []ec2types.Filter{ec2VPCFilter(pointer.StringDeref(vpc.VpcId, ""))},
+		Filters:  []ec2types.Filter{ec2VPCFilter(ptr.Deref(vpc.VpcId, ""))},
 	})
 	if err != nil && !isNotFound(err) {
 		return nil, fmt.Errorf("failed to get security group: %w", err)
@@ -88,7 +88,7 @@ func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *ku
 			Filters: []ec2types.Filter{
 				ec2VPCFilter(vpcID),
 				{
-					Name:   pointer.String("group-name"),
+					Name:   ptr.To("group-name"),
 					Values: []string{groupName},
 				},
 			},
@@ -99,7 +99,7 @@ func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *ku
 
 		// found the group by its name!
 		if len(describeOut.SecurityGroups) >= 1 {
-			groupID = pointer.StringDeref(describeOut.SecurityGroups[0].GroupId, "")
+			groupID = ptr.Deref(describeOut.SecurityGroups[0].GroupId, "")
 		}
 	}
 
@@ -107,8 +107,8 @@ func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *ku
 	if groupID == "" {
 		out, err := client.CreateSecurityGroup(ctx, &ec2.CreateSecurityGroupInput{
 			VpcId:       &vpcID,
-			GroupName:   pointer.String(groupName),
-			Description: pointer.String(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
+			GroupName:   ptr.To(groupName),
+			Description: ptr.To(fmt.Sprintf("Security group for the Kubernetes cluster %s", cluster.Name)),
 			TagSpecifications: []ec2types.TagSpecification{{
 				ResourceType: ec2types.ResourceTypeSecurityGroup,
 				Tags: []ec2types.Tag{
@@ -138,7 +138,7 @@ func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *ku
 	for _, perm := range permissions {
 		// try to add permission
 		_, err := client.AuthorizeSecurityGroupIngress(ctx, &ec2.AuthorizeSecurityGroupIngressInput{
-			GroupId: pointer.String(groupID),
+			GroupId: ptr.To(groupID),
 			IpPermissions: []ec2types.IpPermission{
 				perm,
 			},
@@ -168,27 +168,27 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	permissions := []ec2types.IpPermission{
 		// all protocols from within the sg
 		{
-			IpProtocol: pointer.String("-1"),
+			IpProtocol: ptr.To("-1"),
 			UserIdGroupPairs: []ec2types.UserIdGroupPair{{
-				GroupId: pointer.String(securityGroupID),
+				GroupId: ptr.To(securityGroupID),
 			}},
 		},
 	}
 
 	// tcp:22 from everywhere
 	sshPermission := ec2types.IpPermission{
-		IpProtocol: pointer.String("tcp"),
-		FromPort:   pointer.Int32(provider.DefaultSSHPort),
-		ToPort:     pointer.Int32(provider.DefaultSSHPort),
+		IpProtocol: ptr.To("tcp"),
+		FromPort:   ptr.To[int32](provider.DefaultSSHPort),
+		ToPort:     ptr.To[int32](provider.DefaultSSHPort),
 	}
 	if ipv4Permissions {
 		sshPermission.IpRanges = []ec2types.IpRange{{
-			CidrIp: pointer.String(kubermaticresources.IPv4MatchAnyCIDR),
+			CidrIp: ptr.To(kubermaticresources.IPv4MatchAnyCIDR),
 		}}
 	}
 	if ipv6Permissions {
 		sshPermission.Ipv6Ranges = []ec2types.Ipv6Range{{
-			CidrIpv6: pointer.String(kubermaticresources.IPv6MatchAnyCIDR),
+			CidrIpv6: ptr.To(kubermaticresources.IPv6MatchAnyCIDR),
 		}}
 	}
 	permissions = append(permissions, sshPermission)
@@ -196,11 +196,11 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	// ICMP (v4) from/to everywhere
 	if ipv4Permissions {
 		permissions = append(permissions, ec2types.IpPermission{
-			IpProtocol: pointer.String("icmp"),
-			FromPort:   pointer.Int32(-1), // any port
-			ToPort:     pointer.Int32(-1), // any port
+			IpProtocol: ptr.To("icmp"),
+			FromPort:   ptr.To[int32](-1), // any port
+			ToPort:     ptr.To[int32](-1), // any port
 			IpRanges: []ec2types.IpRange{{
-				CidrIp: pointer.String(kubermaticresources.IPv4MatchAnyCIDR),
+				CidrIp: ptr.To(kubermaticresources.IPv4MatchAnyCIDR),
 			}},
 		})
 	}
@@ -208,11 +208,11 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 	// ICMPv6 from/to everywhere
 	if ipv6Permissions {
 		permissions = append(permissions, ec2types.IpPermission{
-			IpProtocol: pointer.String("icmpv6"),
-			FromPort:   pointer.Int32(-1), // any port
-			ToPort:     pointer.Int32(-1), // any port
+			IpProtocol: ptr.To("icmpv6"),
+			FromPort:   ptr.To[int32](-1), // any port
+			ToPort:     ptr.To[int32](-1), // any port
 			Ipv6Ranges: []ec2types.Ipv6Range{{
-				CidrIpv6: pointer.String(kubermaticresources.IPv6MatchAnyCIDR),
+				CidrIpv6: ptr.To(kubermaticresources.IPv6MatchAnyCIDR),
 			}},
 		})
 	}
@@ -222,31 +222,31 @@ func getCommonSecurityGroupPermissions(securityGroupID string, ipv4Permissions, 
 
 func getNodePortSecurityGroupPermissions(lowPort, highPort int, ipv4IPRanges, ipv6IPRanges []string) []ec2types.IpPermission {
 	tcpNodePortPermission := ec2types.IpPermission{
-		IpProtocol: pointer.String("tcp"),
-		FromPort:   pointer.Int32(int32(lowPort)),
-		ToPort:     pointer.Int32(int32(highPort)),
+		IpProtocol: ptr.To("tcp"),
+		FromPort:   ptr.To[int32](int32(lowPort)),
+		ToPort:     ptr.To[int32](int32(highPort)),
 	}
 
 	udpNodePortPermission := ec2types.IpPermission{
-		IpProtocol: pointer.String("udp"),
-		FromPort:   pointer.Int32(int32(lowPort)),
-		ToPort:     pointer.Int32(int32(highPort)),
+		IpProtocol: ptr.To("udp"),
+		FromPort:   ptr.To[int32](int32(lowPort)),
+		ToPort:     ptr.To[int32](int32(highPort)),
 	}
 
 	for _, cidr := range ipv4IPRanges {
 		tcpNodePortPermission.IpRanges = append(tcpNodePortPermission.IpRanges, ec2types.IpRange{
-			CidrIp: pointer.String(cidr),
+			CidrIp: ptr.To(cidr),
 		})
 		udpNodePortPermission.IpRanges = append(udpNodePortPermission.IpRanges, ec2types.IpRange{
-			CidrIp: pointer.String(cidr),
+			CidrIp: ptr.To(cidr),
 		})
 	}
 	for _, cidr := range ipv6IPRanges {
 		tcpNodePortPermission.Ipv6Ranges = append(tcpNodePortPermission.Ipv6Ranges, ec2types.Ipv6Range{
-			CidrIpv6: pointer.String(cidr),
+			CidrIpv6: ptr.To(cidr),
 		})
 		udpNodePortPermission.Ipv6Ranges = append(udpNodePortPermission.Ipv6Ranges, ec2types.Ipv6Range{
-			CidrIpv6: pointer.String(cidr),
+			CidrIpv6: ptr.To(cidr),
 		})
 	}
 
@@ -266,7 +266,7 @@ func cleanUpSecurityGroup(ctx context.Context, client *ec2.Client, cluster *kube
 			Filters: []ec2types.Filter{
 				ec2VPCFilter(vpcID),
 				{
-					Name:   pointer.String("group-name"),
+					Name:   ptr.To("group-name"),
 					Values: []string{groupName},
 				},
 			},

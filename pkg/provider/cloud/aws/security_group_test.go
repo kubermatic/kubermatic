@@ -27,7 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestGetSecurityGroupByID(t *testing.T) {
@@ -113,15 +113,15 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 }
 
 func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermission) bool {
-	if pointer.Int32Deref(perm1.FromPort, -1) != pointer.Int32Deref(perm2.FromPort, -1) {
+	if ptr.Deref[int32](perm1.FromPort, -1) != ptr.Deref[int32](perm2.FromPort, -1) {
 		return false
 	}
 
-	if pointer.Int32Deref(perm1.ToPort, -1) != pointer.Int32Deref(perm2.ToPort, -1) {
+	if ptr.Deref[int32](perm1.ToPort, -1) != ptr.Deref[int32](perm2.ToPort, -1) {
 		return false
 	}
 
-	if pointer.StringDeref(perm1.IpProtocol, "") != pointer.StringDeref(perm2.IpProtocol, "") {
+	if ptr.Deref(perm1.IpProtocol, "") != ptr.Deref(perm2.IpProtocol, "") {
 		return false
 	}
 
@@ -130,7 +130,7 @@ func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermissi
 	}
 
 	for i := range perm1.IpRanges {
-		if pointer.StringDeref(perm1.IpRanges[i].CidrIp, "") != pointer.StringDeref(perm2.IpRanges[i].CidrIp, "") {
+		if ptr.Deref(perm1.IpRanges[i].CidrIp, "") != ptr.Deref(perm2.IpRanges[i].CidrIp, "") {
 			return false
 		}
 	}
@@ -140,7 +140,7 @@ func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermissi
 	}
 
 	for i := range perm1.Ipv6Ranges {
-		if pointer.StringDeref(perm1.Ipv6Ranges[i].CidrIpv6, "") != pointer.StringDeref(perm2.Ipv6Ranges[i].CidrIpv6, "") {
+		if ptr.Deref(perm1.Ipv6Ranges[i].CidrIpv6, "") != ptr.Deref(perm2.Ipv6Ranges[i].CidrIpv6, "") {
 			return false
 		}
 	}
@@ -150,23 +150,23 @@ func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermissi
 	}
 
 	for i := range perm1.UserIdGroupPairs {
-		if pointer.StringDeref(perm1.UserIdGroupPairs[i].GroupId, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].GroupId, "") {
+		if ptr.Deref(perm1.UserIdGroupPairs[i].GroupId, "") != ptr.Deref(perm2.UserIdGroupPairs[i].GroupId, "") {
 			return false
 		}
 
-		if pointer.StringDeref(perm1.UserIdGroupPairs[i].GroupName, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].GroupName, "") {
+		if ptr.Deref(perm1.UserIdGroupPairs[i].GroupName, "") != ptr.Deref(perm2.UserIdGroupPairs[i].GroupName, "") {
 			return false
 		}
 
-		if pointer.StringDeref(perm1.UserIdGroupPairs[i].PeeringStatus, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].PeeringStatus, "") {
+		if ptr.Deref(perm1.UserIdGroupPairs[i].PeeringStatus, "") != ptr.Deref(perm2.UserIdGroupPairs[i].PeeringStatus, "") {
 			return false
 		}
 
-		if pointer.StringDeref(perm1.UserIdGroupPairs[i].VpcId, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].VpcId, "") {
+		if ptr.Deref(perm1.UserIdGroupPairs[i].VpcId, "") != ptr.Deref(perm2.UserIdGroupPairs[i].VpcId, "") {
 			return false
 		}
 
-		if pointer.StringDeref(perm1.UserIdGroupPairs[i].VpcPeeringConnectionId, "") != pointer.StringDeref(perm2.UserIdGroupPairs[i].VpcPeeringConnectionId, "") {
+		if ptr.Deref(perm1.UserIdGroupPairs[i].VpcPeeringConnectionId, "") != ptr.Deref(perm2.UserIdGroupPairs[i].VpcPeeringConnectionId, "") {
 			return false
 		}
 	}
@@ -176,7 +176,7 @@ func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermissi
 	}
 
 	for i := range perm1.PrefixListIds {
-		if pointer.StringDeref(perm1.PrefixListIds[i].PrefixListId, "") != pointer.StringDeref(perm2.PrefixListIds[i].PrefixListId, "") {
+		if ptr.Deref(perm1.PrefixListIds[i].PrefixListId, "") != ptr.Deref(perm2.PrefixListIds[i].PrefixListId, "") {
 			return false
 		}
 	}

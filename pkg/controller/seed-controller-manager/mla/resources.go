@@ -41,7 +41,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	certutil "k8s.io/client-go/util/cert"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const nginxConfig = `worker_processes  1;
@@ -307,7 +307,7 @@ const (
 func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = pointer.Int32(1)
+			d.Spec.Replicas = ptr.To[int32](1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: gatewayName,
@@ -315,10 +315,10 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				FSGroup:      pointer.Int64(1001),
-				RunAsGroup:   pointer.Int64(2001),
-				RunAsUser:    pointer.Int64(1001),
-				RunAsNonRoot: pointer.Bool(true),
+				FSGroup:      ptr.To[int64](1001),
+				RunAsGroup:   ptr.To[int64](2001),
+				RunAsUser:    ptr.To[int64](1001),
+				RunAsNonRoot: ptr.To(true),
 			}
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			// hash for the annotation used to force deployment rollout upon configuration change
@@ -366,8 +366,8 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{"ALL"},
 						},
-						ReadOnlyRootFilesystem:   pointer.Bool(true),
-						AllowPrivilegeEscalation: pointer.Bool(false),
+						ReadOnlyRootFilesystem:   ptr.To(true),
+						AllowPrivilegeEscalation: ptr.To(false),
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -409,7 +409,7 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName:  resources.MLAGatewayCertificatesSecretName,
-							DefaultMode: pointer.Int32(0400),
+							DefaultMode: ptr.To[int32](0400),
 						},
 					},
 				},
@@ -424,7 +424,7 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 									Path: resources.MLAGatewayCACertKey,
 								},
 							},
-							DefaultMode: pointer.Int32(0400),
+							DefaultMode: ptr.To[int32](0400),
 						},
 					},
 				},

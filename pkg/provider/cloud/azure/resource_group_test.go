@@ -29,7 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestReconcileResourceGroup(t *testing.T) {
@@ -95,13 +95,13 @@ func TestReconcileResourceGroup(t *testing.T) {
 				ResourceGroup: customExistingResourceGroup,
 			},
 			existingResourceGroup: &armresources.ResourceGroup{
-				ID:        pointer.String(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
-				Name:      pointer.String(customExistingResourceGroup),
-				Location:  pointer.String(testLocation),
-				Type:      pointer.String("Microsoft.Resources/resourceGroups"),
+				ID:        ptr.To(fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", credentials.SubscriptionID, customExistingResourceGroup)),
+				Name:      ptr.To(customExistingResourceGroup),
+				Location:  ptr.To(testLocation),
+				Type:      ptr.To("Microsoft.Resources/resourceGroups"),
 				ManagedBy: nil,
 				Properties: &armresources.ResourceGroupProperties{
-					ProvisioningState: pointer.String("Succeeded"),
+					ProvisioningState: ptr.To("Succeeded"),
 				},
 			},
 			clientMode:                fakeClientModeOkay,

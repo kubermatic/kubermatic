@@ -25,7 +25,7 @@ import (
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // ValidatingSnapshotWebhookConfigurationReconciler returns the ValidatingWebhookConfiguration for the CSI external snapshotter.
@@ -45,13 +45,13 @@ func ValidatingSnapshotWebhookConfigurationReconciler(caCert *x509.Certificate, 
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffect,
-					TimeoutSeconds:          pointer.Int32(2),
+					TimeoutSeconds:          ptr.To[int32](2),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						Service: &admissionregistrationv1.ServiceReference{
 							Namespace: namespace,
 							Name:      resources.CSISnapshotValidationWebhookName,
-							Path:      pointer.String("/volumesnapshot"),
-							Port:      pointer.Int32(443),
+							Path:      ptr.To("/volumesnapshot"),
+							Port:      ptr.To[int32](443),
 						},
 						CABundle: triple.EncodeCertPEM(caCert),
 					},

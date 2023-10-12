@@ -27,7 +27,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -65,10 +65,10 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 			},
 		},
 		Spec: batchv1.JobSpec{
-			Parallelism:             pointer.Int32(1),
-			Completions:             pointer.Int32(1),
-			BackoffLimit:            pointer.Int32(0),
-			TTLSecondsAfterFinished: pointer.Int32(86400),
+			Parallelism:             ptr.To[int32](1),
+			Completions:             ptr.To[int32](1),
+			BackoffLimit:            ptr.To[int32](0),
+			TTLSecondsAfterFinished: ptr.To[int32](86400),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,

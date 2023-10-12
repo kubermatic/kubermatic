@@ -31,7 +31,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -123,7 +123,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// OSM is enabled by default.
 	if spec.EnableOperatingSystemManager == nil {
-		spec.EnableOperatingSystemManager = pointer.Bool(true)
+		spec.EnableOperatingSystemManager = ptr.To(true)
 	}
 
 	// Add default CNI plugin settings if not present.
@@ -216,10 +216,10 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 	}
 
 	if specClusterNetwork.NodeCIDRMaskSizeIPv4 == nil && specClusterNetwork.Pods.HasIPv4CIDR() {
-		specClusterNetwork.NodeCIDRMaskSizeIPv4 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv4)
+		specClusterNetwork.NodeCIDRMaskSizeIPv4 = ptr.To[int32](resources.DefaultNodeCIDRMaskSizeIPv4)
 	}
 	if specClusterNetwork.NodeCIDRMaskSizeIPv6 == nil && specClusterNetwork.Pods.HasIPv6CIDR() {
-		specClusterNetwork.NodeCIDRMaskSizeIPv6 = pointer.Int32(resources.DefaultNodeCIDRMaskSizeIPv6)
+		specClusterNetwork.NodeCIDRMaskSizeIPv6 = ptr.To[int32](resources.DefaultNodeCIDRMaskSizeIPv6)
 	}
 
 	if specClusterNetwork.ProxyMode == "" {
@@ -231,12 +231,12 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 			specClusterNetwork.IPVS = &kubermaticv1.IPVSConfiguration{}
 		}
 		if specClusterNetwork.IPVS.StrictArp == nil {
-			specClusterNetwork.IPVS.StrictArp = pointer.Bool(true)
+			specClusterNetwork.IPVS.StrictArp = ptr.To(true)
 		}
 	}
 
 	if specClusterNetwork.NodeLocalDNSCacheEnabled == nil {
-		specClusterNetwork.NodeLocalDNSCacheEnabled = pointer.Bool(resources.DefaultNodeLocalDNSCacheEnabled)
+		specClusterNetwork.NodeLocalDNSCacheEnabled = ptr.To(resources.DefaultNodeLocalDNSCacheEnabled)
 	}
 
 	if specClusterNetwork.DNSDomain == "" {

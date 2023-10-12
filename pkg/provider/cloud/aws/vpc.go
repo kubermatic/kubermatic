@@ -27,12 +27,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func ec2VPCFilter(vpcID string) ec2types.Filter {
 	return ec2types.Filter{
-		Name:   pointer.String("vpc-id"),
+		Name:   ptr.To("vpc-id"),
 		Values: []string{vpcID},
 	}
 }
@@ -74,7 +74,7 @@ func reconcileVPC(ctx context.Context, client *ec2.Client, cluster *kubermaticv1
 func getDefaultVPC(ctx context.Context, client *ec2.Client) (*ec2types.Vpc, error) {
 	vpcOut, err := client.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{
 		Filters: []ec2types.Filter{{
-			Name:   pointer.String("isDefault"),
+			Name:   ptr.To("isDefault"),
 			Values: []string{"true"},
 		}},
 	})

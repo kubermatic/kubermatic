@@ -40,7 +40,7 @@ import (
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -117,7 +117,7 @@ func GetClusterConfig(ctx context.Context, accessKeyID, secretAccessKey, cluster
 	// example: eks_eu-central-1_cluster-1 => https://XX.XX.XX.XX
 	name := fmt.Sprintf("eks_%s_%s", region, *eksclusterName)
 
-	cert, err := base64.StdEncoding.DecodeString(pointer.StringDeref(cluster.CertificateAuthority.Data, ""))
+	cert, err := base64.StdEncoding.DecodeString(ptr.Deref(cluster.CertificateAuthority.Data, ""))
 	if err != nil {
 		return nil, err
 	}
@@ -411,17 +411,17 @@ func ResizeNodeGroup(ctx context.Context, client *awsprovider.ClientSet, cluster
 	minSize := *scalingConfig.MinSize
 
 	var newScalingConfig ekstypes.NodegroupScalingConfig
-	newScalingConfig.DesiredSize = pointer.Int32(desiredSize)
+	newScalingConfig.DesiredSize = ptr.To[int32](desiredSize)
 
 	switch {
 	case currentSize == desiredSize:
 		return nil, fmt.Errorf("cluster nodes are already of size: %d", desiredSize)
 
 	case desiredSize > maxSize:
-		newScalingConfig.MaxSize = pointer.Int32(desiredSize)
+		newScalingConfig.MaxSize = ptr.To[int32](desiredSize)
 
 	case desiredSize < minSize:
-		newScalingConfig.MinSize = pointer.Int32(desiredSize)
+		newScalingConfig.MinSize = ptr.To[int32](desiredSize)
 	}
 
 	configInput := eks.UpdateNodegroupConfigInput{

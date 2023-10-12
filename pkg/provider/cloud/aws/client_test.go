@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestIsNotFound(t *testing.T) {
@@ -49,10 +49,10 @@ func TestIsNotFound(t *testing.T) {
 	})
 	errs = append(errs, err)
 
-	_, err = cs.IAM.GetRole(ctx, &iam.GetRoleInput{RoleName: pointer.String("does-not-exist")})
+	_, err = cs.IAM.GetRole(ctx, &iam.GetRoleInput{RoleName: ptr.To("does-not-exist")})
 	errs = append(errs, err)
 
-	_, err = cs.IAM.GetInstanceProfile(ctx, &iam.GetInstanceProfileInput{InstanceProfileName: pointer.String("does-not-exist")})
+	_, err = cs.IAM.GetInstanceProfile(ctx, &iam.GetInstanceProfileInput{InstanceProfileName: ptr.To("does-not-exist")})
 	errs = append(errs, err)
 
 	for _, err := range errs {

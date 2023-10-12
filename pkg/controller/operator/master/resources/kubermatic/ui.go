@@ -29,7 +29,7 @@ import (
 	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func uiPodLabels() map[string]string {
@@ -49,8 +49,8 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-				RunAsNonRoot: pointer.Bool(true),
-				RunAsUser:    pointer.Int64(65534),
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To[int64](65534),
 			}
 
 			tag := versions.UI

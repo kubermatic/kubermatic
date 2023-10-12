@@ -29,7 +29,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 // backfillOwnershipTags migrates existing clusters to the new reconciling.
@@ -77,7 +77,7 @@ func backfillOwnershipTags(ctx context.Context, cs *ClientSet, cluster *kubermat
 
 		if !hasEC2Tag(ec2Tag, group.Tags) {
 			_, err = cs.EC2.CreateTags(ctx, &ec2.CreateTagsInput{
-				Resources: []string{pointer.StringDeref(group.GroupId, "")},
+				Resources: []string{ptr.Deref(group.GroupId, "")},
 				Tags:      []ec2types.Tag{ec2Tag},
 			})
 			if err != nil {

@@ -55,7 +55,7 @@ import (
 	"k8s.io/kubectl/pkg/cmd/cp"
 	"k8s.io/kubectl/pkg/cmd/util"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -331,7 +331,7 @@ func (p *PodExec) PodCopyFile(src string, dst string, containername string) erro
 
 func getPodLogs(ctx context.Context, cli *kubernetes.Clientset, pod corev1.Pod, lines int64) (string, error) {
 	podLogOpts := corev1.PodLogOptions{
-		TailLines: pointer.Int64(lines),
+		TailLines: ptr.To[int64](lines),
 	}
 
 	req := cli.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)

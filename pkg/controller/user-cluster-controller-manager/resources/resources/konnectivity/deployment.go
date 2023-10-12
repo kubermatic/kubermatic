@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -128,11 +128,11 @@ func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kSer
 									ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
 										Audience:          resources.KonnectivityClusterRoleBindingUsername,
 										Path:              resources.KonnectivityAgentToken,
-										ExpirationSeconds: pointer.Int64(3600),
+										ExpirationSeconds: ptr.To[int64](3600),
 									},
 								},
 							},
-							DefaultMode: pointer.Int32(420),
+							DefaultMode: ptr.To[int32](420),
 						},
 					},
 				},

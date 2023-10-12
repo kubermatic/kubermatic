@@ -28,7 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func resourceGroupName(cluster *kubermaticv1.Cluster) string {
@@ -76,10 +76,10 @@ func reconcileResourceGroup(ctx context.Context, clients *ClientSet, location st
 // ensureResourceGroup will create or update an Azure resource group. The call is idempotent.
 func ensureResourceGroup(ctx context.Context, groupsClient ResourceGroupClient, cloud kubermaticv1.CloudSpec, location string, clusterName string) error {
 	parameters := armresources.ResourceGroup{
-		Name:     pointer.String(cloud.Azure.ResourceGroup),
-		Location: pointer.String(location),
+		Name:     ptr.To(cloud.Azure.ResourceGroup),
+		Location: ptr.To(location),
 		Tags: map[string]*string{
-			clusterTagKey: pointer.String(clusterName),
+			clusterTagKey: ptr.To(clusterName),
 		},
 	}
 	if _, err := groupsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, parameters, nil); err != nil {

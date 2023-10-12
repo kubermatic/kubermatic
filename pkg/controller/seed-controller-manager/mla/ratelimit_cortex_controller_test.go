@@ -35,7 +35,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	utilpointer "k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -57,12 +57,12 @@ func newTestRatelimitCortexReconciler(t *testing.T, objects []ctrlruntimeclient.
 
 func TestRatelimitCortexReconcile(t *testing.T) {
 	oldTenantOverride := TenantOverride{
-		IngestionRate:      utilpointer.Int32(1),
-		MaxSeriesPerMetric: utilpointer.Int32(1),
-		MaxSeriesPerQuery:  utilpointer.Int32(1),
-		MaxSamplesPerQuery: utilpointer.Int32(1),
-		IngestionBurstSize: utilpointer.Int32(1),
-		MaxSeriesTotal:     utilpointer.Int32(1),
+		IngestionRate:      ptr.To[int32](1),
+		MaxSeriesPerMetric: ptr.To[int32](1),
+		MaxSeriesPerQuery:  ptr.To[int32](1),
+		MaxSamplesPerQuery: ptr.To[int32](1),
+		IngestionBurstSize: ptr.To[int32](1),
+		MaxSeriesTotal:     ptr.To[int32](1),
 	}
 	oldRatelimitConfig := Overrides{Overrides: map[string]TenantOverride{"old": oldTenantOverride}}
 	data, err := yaml.Marshal(oldRatelimitConfig)
@@ -143,12 +143,12 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			expectedOverrides: Overrides{
 				Overrides: map[string]TenantOverride{
 					"123": {
-						IngestionRate:      utilpointer.Int32(1),
-						IngestionBurstSize: utilpointer.Int32(2),
-						MaxSeriesPerMetric: utilpointer.Int32(3),
-						MaxSeriesTotal:     utilpointer.Int32(4),
-						MaxSamplesPerQuery: utilpointer.Int32(5),
-						MaxSeriesPerQuery:  utilpointer.Int32(6),
+						IngestionRate:      ptr.To[int32](1),
+						IngestionBurstSize: ptr.To[int32](2),
+						MaxSeriesPerMetric: ptr.To[int32](3),
+						MaxSeriesTotal:     ptr.To[int32](4),
+						MaxSamplesPerQuery: ptr.To[int32](5),
+						MaxSeriesPerQuery:  ptr.To[int32](6),
 					},
 				},
 			},
@@ -190,12 +190,12 @@ func TestRatelimitCortexReconcile(t *testing.T) {
 			expectedOverrides: Overrides{
 				Overrides: map[string]TenantOverride{
 					"123": {
-						IngestionRate:      utilpointer.Int32(1),
-						IngestionBurstSize: utilpointer.Int32(2),
-						MaxSeriesPerMetric: utilpointer.Int32(3),
-						MaxSeriesTotal:     utilpointer.Int32(4),
-						MaxSamplesPerQuery: utilpointer.Int32(5),
-						MaxSeriesPerQuery:  utilpointer.Int32(6),
+						IngestionRate:      ptr.To[int32](1),
+						IngestionBurstSize: ptr.To[int32](2),
+						MaxSeriesPerMetric: ptr.To[int32](3),
+						MaxSeriesTotal:     ptr.To[int32](4),
+						MaxSamplesPerQuery: ptr.To[int32](5),
+						MaxSeriesPerQuery:  ptr.To[int32](6),
 					},
 					"old": oldTenantOverride,
 				},

@@ -38,7 +38,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -255,7 +255,7 @@ func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kuberm
 			status, err := grafanaClient.DeleteUser(ctx, grafanaUser.ID)
 			if err != nil {
 				return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
-					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+					err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 			}
 		}
 	}
@@ -287,7 +287,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	// delete user from default org
 	if status, err := grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
 		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err,
-			pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+			ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 	}
 
 	projectList := &kubermaticv1.ProjectList{}
@@ -318,7 +318,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		status, err := grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err,
-				pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+				ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
 	}
 

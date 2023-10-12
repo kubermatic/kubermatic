@@ -28,7 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func TestBackfillOwnershipTags(t *testing.T) {
@@ -151,7 +151,7 @@ func TestBackfillOwnershipTagsAdoptsInstanceProfile(t *testing.T) {
 
 	// create an instance profile
 	createProfileInput := &iam.CreateInstanceProfileInput{
-		InstanceProfileName: pointer.String(profileName),
+		InstanceProfileName: ptr.To(profileName),
 	}
 
 	if _, err := cs.IAM.CreateInstanceProfile(ctx, createProfileInput); err != nil {
@@ -227,8 +227,8 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 
 	// create a role
 	createRoleInput := &iam.CreateRoleInput{
-		AssumeRolePolicyDocument: pointer.String(assumeRolePolicy),
-		RoleName:                 pointer.String(roleName),
+		AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
+		RoleName:                 ptr.To(roleName),
 	}
 
 	if _, err := cs.IAM.CreateRole(ctx, createRoleInput); err != nil {

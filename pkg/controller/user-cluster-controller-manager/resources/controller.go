@@ -47,7 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -439,7 +439,7 @@ func (r *reconciler) reconcileDefaultServiceAccount(ctx context.Context, namespa
 		return nil
 	}
 
-	serviceAccount.AutomountServiceAccountToken = pointer.Bool(false)
+	serviceAccount.AutomountServiceAccountToken = ptr.To(false)
 
 	return r.Update(ctx, &serviceAccount)
 }

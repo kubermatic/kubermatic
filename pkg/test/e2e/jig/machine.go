@@ -41,7 +41,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -206,7 +206,7 @@ func (j *MachineJig) Create(ctx context.Context, waitMode MachineWaitMode, datac
 			Selector: metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Replicas: pointer.Int32(int32(j.replicas)),
+			Replicas: ptr.To[int32](int32(j.replicas)),
 			Template: clusterv1alpha1.MachineTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: labels,

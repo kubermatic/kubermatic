@@ -49,7 +49,7 @@ import (
 	reconcilerwait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -1014,13 +1014,13 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					Name:       externalCluster.Name,
 					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 					Kind:       kubermaticv1.ExternalClusterKind,
-					Controller: pointer.Bool(true),
+					Controller: ptr.To(true),
 					UID:        externalCluster.GetUID(),
 				},
 			},
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit: pointer.Int32(KubeOneJobBackOffLimit),
+			BackoffLimit: ptr.To[int32](KubeOneJobBackOffLimit),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					OwnerReferences: []metav1.OwnerReference{
@@ -1028,7 +1028,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 							Name:       externalCluster.Name,
 							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 							Kind:       kubermaticv1.ExternalClusterKind,
-							Controller: pointer.Bool(true),
+							Controller: ptr.To(true),
 							UID:        externalCluster.GetUID(),
 						},
 					},
@@ -1080,7 +1080,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 							Name: "ssh-volume",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									DefaultMode: pointer.Int32(256),
+									DefaultMode: ptr.To[int32](256),
 									SecretName:  sshSecret.Name,
 								},
 							},
@@ -1092,7 +1092,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 									LocalObjectReference: corev1.LocalObjectReference{
 										Name: kubeoneCMName,
 									},
-									DefaultMode: pointer.Int32(448),
+									DefaultMode: ptr.To[int32](448),
 								},
 							},
 						},

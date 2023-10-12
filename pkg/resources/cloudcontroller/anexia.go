@@ -27,7 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -54,7 +54,7 @@ func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedD
 				Labels: podLabels,
 			}
 
-			deployment.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
+			deployment.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{

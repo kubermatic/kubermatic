@@ -39,7 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -79,7 +79,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			dep.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(true)
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(true)
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 

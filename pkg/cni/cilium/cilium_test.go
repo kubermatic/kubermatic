@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 var testCluster = &kubermaticv1.Cluster{
@@ -40,7 +40,7 @@ var testCluster = &kubermaticv1.Cluster{
 			Pods: kubermaticv1.NetworkRanges{
 				CIDRBlocks: []string{"192.168.0.0/24", "192.168.178.0/24"},
 			},
-			NodeCIDRMaskSizeIPv4: pointer.Int32(16),
+			NodeCIDRMaskSizeIPv4: ptr.To[int32](16),
 			ProxyMode:            resources.EBPFProxyMode,
 		},
 		ComponentsOverride: kubermaticv1.ComponentSettings{

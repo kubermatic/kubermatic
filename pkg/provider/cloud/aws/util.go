@@ -20,13 +20,13 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 func hasEC2Tag(expected ec2types.Tag, actual []ec2types.Tag) bool {
 	for _, tag := range actual {
-		if pointer.StringDeref(tag.Key, "") == pointer.StringDeref(expected.Key, "") &&
-			pointer.StringDeref(tag.Value, "") == pointer.StringDeref(expected.Value, "") {
+		if ptr.Deref(tag.Key, "") == ptr.Deref(expected.Key, "") &&
+			ptr.Deref(tag.Value, "") == ptr.Deref(expected.Value, "") {
 			return true
 		}
 	}
@@ -36,8 +36,8 @@ func hasEC2Tag(expected ec2types.Tag, actual []ec2types.Tag) bool {
 
 func hasIAMTag(expected iamtypes.Tag, actual []iamtypes.Tag) bool {
 	for _, tag := range actual {
-		if pointer.StringDeref(tag.Key, "") == pointer.StringDeref(expected.Key, "") &&
-			pointer.StringDeref(tag.Value, "") == pointer.StringDeref(expected.Value, "") {
+		if ptr.Deref(tag.Key, "") == ptr.Deref(expected.Key, "") &&
+			ptr.Deref(tag.Value, "") == ptr.Deref(expected.Value, "") {
 			return true
 		}
 	}

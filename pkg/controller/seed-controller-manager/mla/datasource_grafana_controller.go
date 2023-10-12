@@ -40,7 +40,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -336,7 +336,7 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 				status, err := grafanaClient.CreateDatasource(ctx, expected)
 				if err != nil {
 					return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
-						err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+						err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 				}
 				if status.ID != nil {
 					return nil
@@ -352,12 +352,12 @@ func (r *datasourceGrafanaController) reconcileDatasource(ctx context.Context, e
 		if !datasourcesEqual(ds, expected) {
 			if status, err := grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
-					err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+					err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 			}
 		}
 	} else if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-			err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+			err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 	}
 	return nil
 }
@@ -430,15 +430,15 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 		// that's mostly means that Grafana organization doesn't exists anymore
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(alertmanagerType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+				err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+				err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
 		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(PrometheusType, cluster)); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringDeref(status.Status, "no status"), pointer.StringDeref(status.Message, "no message"))
+				err, ptr.Deref(status.Status, "no status"), ptr.Deref(status.Message, "no message"))
 		}
 	}
 	if cluster.DeletionTimestamp.IsZero() && cluster.Status.NamespaceName != "" {

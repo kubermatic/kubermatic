@@ -25,7 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 )
 
 type gcpConfig struct {
@@ -66,17 +66,17 @@ func (b *gcpConfig) WithNetwork(network string) *gcpConfig {
 }
 
 func (b *gcpConfig) WithPreemptible(preemptible bool) *gcpConfig {
-	b.Preemptible.Value = pointer.Bool(preemptible)
+	b.Preemptible.Value = ptr.To(preemptible)
 	return b
 }
 
 func (b *gcpConfig) WithRegional(regional bool) *gcpConfig {
-	b.Regional.Value = pointer.Bool(regional)
+	b.Regional.Value = ptr.To(regional)
 	return b
 }
 
 func (b *gcpConfig) WithMultiZone(multiZone bool) *gcpConfig {
-	b.MultiZone.Value = pointer.Bool(multiZone)
+	b.MultiZone.Value = ptr.To(multiZone)
 	return b
 }
 
@@ -84,7 +84,7 @@ func (b *gcpConfig) WithAssignPublicIPAddress(assign bool) *gcpConfig {
 	if b.AssignPublicIPAddress == nil {
 		b.AssignPublicIPAddress = &providerconfig.ConfigVarBool{}
 	}
-	b.AssignPublicIPAddress.Value = pointer.Bool(assign)
+	b.AssignPublicIPAddress.Value = ptr.To(assign)
 	return b
 }
 
@@ -103,15 +103,15 @@ func CompleteGCPProviderSpec(config *gce.RawConfig, cluster *kubermaticv1.Cluste
 	}
 
 	if config.AssignPublicIPAddress == nil || config.AssignPublicIPAddress.Value == nil {
-		config.AssignPublicIPAddress = &providerconfig.ConfigVarBool{Value: pointer.Bool(true)}
+		config.AssignPublicIPAddress = &providerconfig.ConfigVarBool{Value: ptr.To(true)}
 	}
 
 	if config.MultiZone.Value == nil {
-		config.MultiZone.Value = pointer.Bool(false)
+		config.MultiZone.Value = ptr.To(false)
 	}
 
 	if config.Regional.Value == nil {
-		config.Regional.Value = pointer.Bool(false)
+		config.Regional.Value = ptr.To(false)
 	}
 
 	if cluster != nil {

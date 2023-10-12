@@ -37,7 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -136,17 +136,17 @@ func (j *ClusterJig) WithOwnerEmail(email string) *ClusterJig {
 }
 
 func (j *ClusterJig) WithSSHKeyAgent(enabled bool) *ClusterJig {
-	j.spec.EnableUserSSHKeyAgent = pointer.Bool(enabled)
+	j.spec.EnableUserSSHKeyAgent = ptr.To(enabled)
 	return j
 }
 
 func (j *ClusterJig) WithKonnectivity(enabled bool) *ClusterJig {
-	j.spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(enabled) //nolint:staticcheck
+	j.spec.ClusterNetwork.KonnectivityEnabled = ptr.To(enabled) //nolint:staticcheck
 	return j
 }
 
 func (j *ClusterJig) WithOperatingSystemManager(enabled bool) *ClusterJig {
-	j.spec.EnableOperatingSystemManager = pointer.Bool(enabled)
+	j.spec.EnableOperatingSystemManager = ptr.To(enabled)
 	return j
 }
 
