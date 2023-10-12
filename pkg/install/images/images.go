@@ -653,7 +653,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-	fakeCluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(konnectivityEnabled)
+	fakeCluster.Spec.ClusterNetwork.KonnectivityEnabled = pointer.Bool(konnectivityEnabled) //nolint:staticcheck
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 	fakeCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureEtcdLauncher: true}
 	if enabled, exists := config.Spec.FeatureGates[kubermaticv1.ClusterFeatureEtcdLauncher]; exists && !enabled {

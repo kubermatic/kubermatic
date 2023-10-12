@@ -893,7 +893,9 @@ type ClusterNetworkingConfig struct {
 	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
 
-	// KonnectivityEnabled enables konnectivity for controlplane to node network communication.
+	// Deprecated: KonnectivityEnabled enables konnectivity for controlplane to node network communication.
+	// As OpenVPN will be removed in the future KKP versions, clusters with konnectivity disabled will not be supported.
+	// All existing clusters with OpenVPN should migrate to the Konnectivity.
 	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
 
 	// TunnelingAgentIP is the address used by the tunneling agents
@@ -1409,11 +1411,12 @@ const (
 
 // ExtendedClusterHealth stores health information of a cluster.
 type ExtendedClusterHealth struct {
-	Apiserver                    HealthStatus  `json:"apiserver,omitempty"`
-	Scheduler                    HealthStatus  `json:"scheduler,omitempty"`
-	Controller                   HealthStatus  `json:"controller,omitempty"`
-	MachineController            HealthStatus  `json:"machineController,omitempty"`
-	Etcd                         HealthStatus  `json:"etcd,omitempty"`
+	Apiserver         HealthStatus `json:"apiserver,omitempty"`
+	Scheduler         HealthStatus `json:"scheduler,omitempty"`
+	Controller        HealthStatus `json:"controller,omitempty"`
+	MachineController HealthStatus `json:"machineController,omitempty"`
+	Etcd              HealthStatus `json:"etcd,omitempty"`
+	//  Deprecated: OpenVPN will be removed entirely in the future.
 	OpenVPN                      HealthStatus  `json:"openvpn,omitempty"`
 	Konnectivity                 HealthStatus  `json:"konnectivity,omitempty"`
 	CloudProviderInfrastructure  HealthStatus  `json:"cloudProviderInfrastructure,omitempty"`
