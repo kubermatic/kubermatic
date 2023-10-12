@@ -125,7 +125,7 @@ grafana:
   # priorityClassName:
   downloadDashboardsImage:
     repository: docker.io/curlimages/curl
-    tag: 7.85.0
+    tag: 8.4.0
     sha: ""
     pullPolicy: IfNotPresent
   downloadDashboards:
