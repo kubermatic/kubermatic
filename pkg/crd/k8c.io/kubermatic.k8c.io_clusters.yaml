@@ -163,7 +163,7 @@ spec:
                   description: Cloud contains information regarding the cloud provider that is responsible for hosting the cluster's workload.
                   properties:
                     alibaba:
-                      description: Alibaba defines the configuration data of Alibaba.
+                      description: Alibaba defines the configuration data of the Alibaba.
                       properties:
                         accessKeyID:
                           description: The Access Key ID used to authenticate against Alibaba.
@@ -201,7 +201,7 @@ spec:
                           x-kubernetes-map-type: atomic
                       type: object
                     anexia:
-                      description: Anexia defines the configuration data of Anexia.
+                      description: Anexia defines the configuration data of the Anexia.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -236,7 +236,7 @@ spec:
                           type: string
                       type: object
                     aws:
-                      description: AWS defines the configuration data of Amazon Web Services(AWS) cloud provider.
+                      description: AWS defines the configuration data of the Amazon Web Services(AWS) cloud provider.
                       properties:
                         accessKeyID:
                           description: The Access key ID used to authenticate against AWS.
@@ -312,7 +312,7 @@ spec:
                         - vpcID
                       type: object
                     azure:
-                      description: Azure defines the configuration data of Microsoft Azure cloud.
+                      description: Azure defines the configuration data of the Microsoft Azure cloud.
                       properties:
                         assignAvailabilitySet:
                           description: 'Optional: AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines. Defaults to `true` internally if not set.'
@@ -455,7 +455,7 @@ spec:
                           type: string
                       type: object
                     gcp:
-                      description: GCP defines the configuration data of Google Cloud Platform(GCP).
+                      description: GCP defines the configuration data of the Google Cloud Platform(GCP).
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -510,7 +510,7 @@ spec:
                         - subnetwork
                       type: object
                     hetzner:
-                      description: Hetzner defines the configuration data of Hetzner cloud.
+                      description: Hetzner defines the configuration data of the Hetzner cloud.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -548,7 +548,7 @@ spec:
                           type: string
                       type: object
                     kubevirt:
-                      description: Kubevirt defines the configuration data of Kubevirt.
+                      description: Kubevirt defines the configuration data of the Kubevirt.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -629,7 +629,7 @@ spec:
                           type: array
                       type: object
                     nutanix:
-                      description: Nutanix defines the configuration data of Nutanix.
+                      description: Nutanix defines the configuration data of the Nutanix.
                       properties:
                         clusterName:
                           description: ClusterName is the Nutanix cluster that this user cluster will be deployed to.
@@ -848,7 +848,7 @@ spec:
                       description: ProviderName is the name of the cloud provider used for this cluster. This must match the given provider spec (e.g. if the providerName is "aws", then the `aws` field must be set).
                       type: string
                     vmwareclouddirector:
-                      description: VMwareCloudDirector defines the configuration data of VMware Cloud Director.
+                      description: VMwareCloudDirector defines the configuration data of the VMware Cloud Director.
                       properties:
                         apiToken:
                           description: The VMware Cloud Director API token.
@@ -916,7 +916,7 @@ spec:
                         - ovdcNetwork
                       type: object
                     vsphere:
-                      description: VSphere defines the configuration data of VSphere.
+                      description: VSphere defines the configuration data of the VSphere.
                       properties:
                         basePath:
                           description: 'Optional: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it''s an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath (if set) to construct the full path.'
