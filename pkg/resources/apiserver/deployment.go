@@ -350,7 +350,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--profiling=false",
 	)
 
-	// pre-pend to have advertise-address as first argument and avoid
+	// prepend to have advertise-address as first argument and avoid
 	// triggering unneeded redeployments.
 	flags = append([]string{
 		// advertise-address is the external IP under which the apiserver is available.
