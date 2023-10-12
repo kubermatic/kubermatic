@@ -961,29 +961,29 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
-	// AWS defines the configuration data of Amazon Web Services(AWS) cloud provider.
+	// AWS defines the configuration data of the Amazon Web Services(AWS) cloud provider.
 	AWS *AWSCloudSpec `json:"aws,omitempty"`
-	// Azure defines the configuration data of Microsoft Azure cloud.
+	// Azure defines the configuration data of the Microsoft Azure cloud.
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
 	// Openstack defines the configuration data of an OpenStack cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
 	// Packet defines the configuration data of a Packet cloud.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
-	// Hetzner defines the configuration data of Hetzner cloud.
+	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
-	// VSphere defines the configuration data of VSphere.
+	// VSphere defines the configuration data of the VSphere.
 	VSphere *VSphereCloudSpec `json:"vsphere,omitempty"`
-	// GCP defines the configuration data of Google Cloud Platform(GCP).
+	// GCP defines the configuration data of the Google Cloud Platform(GCP).
 	GCP *GCPCloudSpec `json:"gcp,omitempty"`
-	// Kubevirt defines the configuration data of Kubevirt.
+	// Kubevirt defines the configuration data of the Kubevirt.
 	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
-	// Alibaba defines the configuration data of Alibaba.
+	// Alibaba defines the configuration data of the Alibaba.
 	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
-	// Anexia defines the configuration data of Anexia.
+	// Anexia defines the configuration data of the Anexia.
 	Anexia *AnexiaCloudSpec `json:"anexia,omitempty"`
-	// Nutanix defines the configuration data of Nutanix.
+	// Nutanix defines the configuration data of the Nutanix.
 	Nutanix *NutanixCloudSpec `json:"nutanix,omitempty"`
-	// VMwareCloudDirector defines the configuration data of VMware Cloud Director.
+	// VMwareCloudDirector defines the configuration data of the VMware Cloud Director.
 	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
