@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER_REPO ?= "quay.io/hc2p"
+DOCKER_REPO ?= "quay.io/kubermatic"
 GOOS ?= $(shell go env GOOS)
 
 .PHONY: build
