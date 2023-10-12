@@ -25,4 +25,3 @@ RUN curl -Lo /usr/bin/kubectl \
 
 COPY ./_build/conformance-tester /usr/local/bin/conformance-tester
 WORKDIR /conformance-tester
-COPY ./run-e2e-tests.sh run-e2e-tests.sh
