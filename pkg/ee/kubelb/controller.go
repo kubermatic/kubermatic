@@ -150,7 +150,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.workerName,
 		cluster,
 		r.versions,
-		kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess,
+		kubermaticv1.ClusterConditionKubeLBControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, cluster)
 		},
