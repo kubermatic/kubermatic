@@ -240,7 +240,7 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 	}
 
 	roleBindingReconcilers := []reconciling.NamedRoleBindingReconcilerFactory{
-		kubelbmanagementresources.RoleBindingReconciler(),
+		kubelbmanagementresources.RoleBindingReconciler(namespace),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconcilers, namespace, client); err != nil {

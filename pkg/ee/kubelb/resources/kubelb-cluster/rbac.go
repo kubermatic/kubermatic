@@ -79,7 +79,7 @@ func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
+func RoleBindingReconciler(namespace string) reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingReconciler) {
 		return roleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(resources.KubeLBAppName, nil)
@@ -91,9 +91,9 @@ func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
 			}
 			rb.Subjects = []rbacv1.Subject{
 				{
-					Kind:     rbacv1.UserKind,
-					Name:     serviceAccountName,
-					APIGroup: rbacv1.GroupName,
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      serviceAccountName,
+					Namespace: namespace,
 				},
 			}
 			return rb, nil
