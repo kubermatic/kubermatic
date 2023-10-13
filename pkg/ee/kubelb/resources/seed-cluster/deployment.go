@@ -126,7 +126,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 				Annotations: map[string]string{
 					"prometheus.io/scrape": "true",
 					"prometheus.io/path":   "/metrics",
-					"prometheus.io/port":   "8080",
+					"prometheus.io/port":   "8082",
 				},
 			}
 
@@ -143,7 +143,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
-								Port:   intstr.FromInt(8081),
+								Port:   intstr.FromInt(8085),
 								Scheme: corev1.URISchemeHTTP,
 							},
 						},
@@ -157,7 +157,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/readyz",
-								Port:   intstr.FromInt(8081),
+								Port:   intstr.FromInt(8085),
 								Scheme: corev1.URISchemeHTTP,
 							},
 						},
