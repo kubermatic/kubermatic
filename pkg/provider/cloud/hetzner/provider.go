@@ -63,8 +63,12 @@ func (h *hetzner) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		// this validates the token
 		_, _, err = client.ServerType.List(timeout, hcloud.ServerTypeListOpts{})
 	} else {
+		var net *hcloud.Network
 		// this validates network and implicitly the token
-		_, _, err = client.Network.GetByName(timeout, spec.Hetzner.Network)
+		net, _, err = client.Network.GetByName(timeout, spec.Hetzner.Network)
+		if err == nil && net == nil {
+			return fmt.Errorf("network %q not found", spec.Hetzner.Network)
+		}
 	}
 
 	return err
