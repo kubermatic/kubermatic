@@ -350,7 +350,7 @@ const (
 	ClusterFeatureVsphereCSIClusterID = "vsphereCSIClusterID"
 
 	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
-	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
+	// etcd scaling, automatic volume recovery and new backup/restore controllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
 
 	// ApiserverNetworkPolicy enables the deployment of network policies that

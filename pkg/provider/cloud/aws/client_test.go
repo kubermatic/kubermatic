@@ -53,7 +53,7 @@ func TestIsNotFound(t *testing.T) {
 
 	for _, err := range errs {
 		if !isNotFound(err) {
-			t.Errorf("%v should have been recoginized as a notFound error.", err)
+			t.Errorf("%v should have been recognized as a notFound error.", err)
 		}
 	}
 }

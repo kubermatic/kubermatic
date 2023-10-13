@@ -199,7 +199,7 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return fmt.Errorf("failed to get credentials: %w", err)
 	}
 
-	// re-use our reconciling framework, because this is a special place where right after the Cluster
+	// reuse our reconciling framework, because this is a special place where right after the Cluster
 	// creation, we must set some status fields and this requires us to wait for the Cluster object
 	// to appear in our caches.
 	name := types.NamespacedName{Name: newCluster.Name}

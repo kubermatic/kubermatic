@@ -89,7 +89,7 @@ func GetClusterConfig(ctx context.Context, sa, clusterName, zone string) (*api.C
 		Cluster:  name,
 		AuthInfo: name,
 	}
-	// GCP specific configation; use cloud platform scope.
+	// GCP specific configuration; use cloud platform scope.
 	config.AuthInfos[name] = &api.AuthInfo{
 		Token: token.AccessToken,
 	}

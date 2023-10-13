@@ -340,7 +340,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 
 		// scenario 3
 		{
-			Name:          "scenario 3: john the owner of the plan9 project removes himself from the projec",
+			Name:          "scenario 3: john the owner of the plan9 project removes himself from the project",
 			Body:          fmt.Sprintf(`{"id":"%s", "email":"%s", "projects":[{"id":"plan9", "group":"owners"}]}`, test.UserID, test.UserEmail),
 			HTTPStatus:    http.StatusForbidden,
 			ProjectToSync: "plan9-ID",
