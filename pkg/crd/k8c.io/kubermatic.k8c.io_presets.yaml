@@ -33,10 +33,13 @@ spec:
               description: Presets specifies default presets for supported providers.
               properties:
                 aks:
+                  description: Access data for Azure Kubernetes Service(AKS).
                   properties:
                     clientID:
+                      description: The service principal used to access Azure.
                       type: string
                     clientSecret:
+                      description: The client secret corresponding to the given service principal.
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -45,8 +48,10 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     subscriptionID:
+                      description: The Azure Subscription used for the user cluster.
                       type: string
                     tenantID:
+                      description: The Azure Active Directory Tenant used for the user cluster.
                       type: string
                   required:
                     - clientID
@@ -55,12 +60,13 @@ spec:
                     - tenantID
                   type: object
                 alibaba:
+                  description: Access data for Alibaba Cloud.
                   properties:
                     accessKeyID:
-                      description: Access Key ID to authenticate against Alibaba.
+                      description: The Access Key ID used to authenticate against Alibaba.
                       type: string
                     accessKeySecret:
-                      description: Access Key Secret to authenticate against Alibaba.
+                      description: The Access Key Secret used to authenticate against Alibaba.
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -73,6 +79,7 @@ spec:
                     - accessKeySecret
                   type: object
                 anexia:
+                  description: Access data for Anexia.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -87,13 +94,16 @@ spec:
                     - token
                   type: object
                 aws:
+                  description: Access data for Amazon Web Services(AWS) Cloud.
                   properties:
                     accessKeyID:
-                      description: Access Key ID to authenticate against AWS.
+                      description: The Access key ID used to authenticate against AWS.
                       type: string
                     assumeRoleARN:
+                      description: Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
                       type: string
                     assumeRoleExternalID:
+                      description: An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem".
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -111,7 +121,7 @@ spec:
                       description: Route table to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
                       type: string
                     secretAccessKey:
-                      description: Secret Access Key to authenticate against AWS.
+                      description: The Secret Access Key used to authenticate against AWS.
                       type: string
                     securityGroupID:
                       description: Security group to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
@@ -124,10 +134,13 @@ spec:
                     - secretAccessKey
                   type: object
                 azure:
+                  description: Access data for Microsoft Azure Cloud.
                   properties:
                     clientID:
+                      description: The service principal used to access Azure.
                       type: string
                     clientSecret:
+                      description: The client secret corresponding to the given service principal.
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -142,20 +155,28 @@ spec:
                         - basic
                       type: string
                     resourceGroup:
+                      description: The resource group that will be used to look up and create resources for the cluster in. If set to empty string at cluster creation, a new resource group will be created and this field will be updated to the generated resource group's name.
                       type: string
                     routeTable:
+                      description: The name of a route table associated with the subnet referenced by `subnet`. If set to empty string at cluster creation, a new route table will be created and this field will be updated to the generated route table's name. If no subnet is defined at cluster creation, this field should be empty as well.
                       type: string
                     securityGroup:
+                      description: The name of a security group associated with the subnet referenced by `subnet`. If set to empty string at cluster creation, a new security group will be created and this field will be updated to the generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.
                       type: string
                     subnet:
+                      description: The name of a subnet in the VNet referenced by `vnet`. If set to empty string at cluster creation, a new subnet will be created and this field will be updated to the generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.
                       type: string
                     subscriptionID:
+                      description: The Azure Subscription used for the user cluster.
                       type: string
                     tenantID:
+                      description: The Azure Active Directory Tenant used for the user cluster.
                       type: string
                     vnet:
+                      description: The name of the VNet resource used for setting up networking in. If set to empty string at cluster creation, a new VNet will be created and this field will be updated to the generated VNet's name.
                       type: string
                     vnetResourceGroup:
+                      description: 'Optional: Defines a second resource group that will be used for VNet related resources instead. If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.'
                       type: string
                   required:
                     - clientID
@@ -165,6 +186,7 @@ spec:
                     - tenantID
                   type: object
                 digitalocean:
+                  description: Access data for DigitalOcean.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -179,12 +201,16 @@ spec:
                     - token
                   type: object
                 eks:
+                  description: Access data for Amazon Elastic Kubernetes Service(EKS).
                   properties:
                     accessKeyID:
+                      description: The Access key ID used to authenticate against AWS.
                       type: string
                     assumeRoleARN:
+                      description: 'Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
                       type: string
                     assumeRoleExternalID:
+                      description: 'An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem". required: false'
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -193,6 +219,7 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     secretAccessKey:
+                      description: The Secret Access Key used to authenticate against AWS.
                       type: string
                   required:
                     - accessKeyID
@@ -215,6 +242,7 @@ spec:
                     - token
                   type: object
                 gcp:
+                  description: Access data for Google Cloud Platform(GCP).
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -225,6 +253,7 @@ spec:
                     network:
                       type: string
                     serviceAccount:
+                      description: ServiceAccount is the Google Service Account (JSON format), encoded with base64.
                       type: string
                     subnetwork:
                       type: string
@@ -232,6 +261,7 @@ spec:
                     - serviceAccount
                   type: object
                 gke:
+                  description: Access data for Google Kubernetes Engine(GKE).
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -245,6 +275,7 @@ spec:
                     - serviceAccount
                   type: object
                 hetzner:
+                  description: Access data for Hetzner.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -262,6 +293,7 @@ spec:
                     - token
                   type: object
                 kubevirt:
+                  description: Access data for KuberVirt.
                   properties:
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -270,27 +302,29 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     kubeconfig:
+                      description: Kubeconfig is the cluster's kubeconfig file, encoded with base64.
                       type: string
                   required:
                     - kubeconfig
                   type: object
                 nutanix:
+                  description: Access data for Nutanix.
                   properties:
                     clusterName:
-                      description: ClusterName is the Nutanix cluster to deploy resources and nodes to.
+                      description: The name of the Nutanix cluster to which the resources and nodes are deployed to.
                       type: string
                     csiEndpoint:
-                      description: CSIEndpoint to access Nutanix Prism Element for csi driver
+                      description: CSIEndpoint to access Nutanix Prism Element for CSI driver.
                       type: string
                     csiPassword:
-                      description: Prism Element Password for csi driver
+                      description: Prism Element Password for CSI driver.
                       type: string
                     csiPort:
-                      description: CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+                      description: CSIPort to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).
                       format: int32
                       type: integer
                     csiUsername:
-                      description: Prism Element Username for csi driver
+                      description: Prism Element Username for CSI driver.
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -299,16 +333,16 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     password:
-                      description: Password is the password corresponding to the provided user.
+                      description: Password corresponding to the provided user.
                       type: string
                     projectName:
-                      description: ProjectName is the optional Nutanix project to use. If none is given, no project will be used.
+                      description: 'Optional: Nutanix project to use. If none is given, no project will be used.'
                       type: string
                     proxyURL:
-                      description: ProxyURL is used to optionally configure a HTTP proxy to access Nutanix Prism Central.
+                      description: 'Optional: To configure a HTTP proxy to access Nutanix Prism Central.'
                       type: string
                     username:
-                      description: Username is the username to access the Nutanix Prism Central API.
+                      description: Username that is used to access the Nutanix Prism Central API.
                       type: string
                   required:
                     - clusterName
@@ -316,6 +350,7 @@ spec:
                     - username
                   type: object
                 openstack:
+                  description: Access data for OpenStack.
                   properties:
                     applicationCredentialID:
                       type: string
@@ -330,14 +365,18 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     floatingIPPool:
+                      description: FloatingIPPool holds the name of the public network The public network is reachable from the outside world and should provide the pool of IP addresses to choose from.
                       type: string
                     network:
+                      description: Network holds the name of the internal network When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created.
                       type: string
                     password:
                       type: string
                     project:
+                      description: Project, formally known as tenant.
                       type: string
                     projectID:
+                      description: ProjectID, formally known as tenantID.
                       type: string
                     routerID:
                       type: string
@@ -353,6 +392,7 @@ spec:
                     - domain
                   type: object
                 packet:
+                  description: Access data for Packet Cloud.
                   properties:
                     apiKey:
                       type: string
@@ -381,8 +421,10 @@ spec:
                     type: string
                   type: array
                 vmwareclouddirector:
+                  description: Access data for VMware Cloud Director.
                   properties:
                     apiToken:
+                      description: The VMware Cloud Director API token.
                       type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
@@ -391,14 +433,19 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     organization:
+                      description: The name of organization to use.
                       type: string
                     ovdcNetwork:
+                      description: The name of organizational virtual data center network that will be associated with the VMs and vApp.
                       type: string
                     password:
+                      description: The VMware Cloud Director user password.
                       type: string
                     username:
+                      description: The VMware Cloud Director user name.
                       type: string
                     vdc:
+                      description: The organizational virtual data center.
                       type: string
                   required:
                     - organization
@@ -406,29 +453,39 @@ spec:
                     - vdc
                   type: object
                 vsphere:
+                  description: Access data for vSphere.
                   properties:
+                    basePath:
+                      description: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath to construct the full path.
+                      type: string
                     datacenter:
                       description: If datacenter is set, this preset is only applicable to the configured datacenter.
                       type: string
                     datastore:
+                      description: Datastore to be used for storing virtual machines and as a default for dynamic volume provisioning, it is mutually exclusive with DatastoreCluster.
                       type: string
                     datastoreCluster:
+                      description: DatastoreCluster to be used for storing virtual machines, it is mutually exclusive with Datastore.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     networks:
+                      description: List of vSphere networks.
                       items:
                         type: string
                       type: array
                     password:
+                      description: The vSphere user password.
                       type: string
                     resourcePool:
+                      description: ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool should be defined on vSphere cluster level.
                       type: string
                     username:
+                      description: The vSphere user name.
                       type: string
                     vmNetName:
-                      description: VMNetName is going to be deprecated starting with KKP 2.24 and removed in KKP 2.26+. It's recommended to use Networks instead.
+                      description: 'Deprecated: Use networks instead.'
                       type: string
                   required:
                     - password

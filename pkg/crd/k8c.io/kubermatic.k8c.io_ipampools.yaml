@@ -34,7 +34,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: IPAMPoolSpec specifies the  Multi-Cluster IP Address Management (IPAM) configuration for KKP user clusters.
+              description: Spec describes the Multi-Cluster IP Address Management (IPAM) configuration for KKP user clusters.
               properties:
                 datacenters:
                   additionalProperties:

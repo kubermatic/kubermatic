@@ -40,7 +40,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ResourceQuotaSpec describes the desired state of a resource quota.
+              description: Spec describes the desired state of the resource quota.
               properties:
                 quota:
                   description: Quota specifies the current maximum allowed usage of resources.
@@ -88,7 +88,7 @@ spec:
                 - subject
               type: object
             status:
-              description: ResourceQuotaStatus describes the current state of a resource quota.
+              description: Status holds the current state of the resource quota.
               properties:
                 globalUsage:
                   description: GlobalUsage is holds the current usage of resources for all seeds.

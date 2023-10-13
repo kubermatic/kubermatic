@@ -38,10 +38,13 @@ type Alertmanager struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AlertmanagerSpec   `json:"spec,omitempty"`
+	// Spec describes the configuration of the Alertmanager.
+	Spec AlertmanagerSpec `json:"spec,omitempty"`
+	// Status stores status information about the Alertmanager.
 	Status AlertmanagerStatus `json:"status,omitempty"`
 }
 
+// AlertmanagerSpec describes the configuration of the Alertmanager.
 type AlertmanagerSpec struct {
 	// ConfigSecret refers to the Secret in the same namespace as the Alertmanager object,
 	// which contains configuration for this Alertmanager.

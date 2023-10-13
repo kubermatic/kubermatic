@@ -43,7 +43,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: GroupProjectBindingSpec specifies an oidc group binding to a project.
+              description: Spec describes an oidc group binding to a project.
               properties:
                 group:
                   description: Group is the group name that is bound to the given project.

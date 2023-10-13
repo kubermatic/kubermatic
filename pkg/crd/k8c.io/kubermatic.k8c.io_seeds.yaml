@@ -49,7 +49,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: The spec for a seed cluster.
+              description: Spec describes the configuration of the Seed cluster.
               properties:
                 country:
                   description: 'Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK. For informational purposes in the Kubermatic dashboard only.'
@@ -150,7 +150,7 @@ spec:
                             description: BringYourOwn contains settings for clusters using manually created nodes via kubeadm.
                             type: object
                           digitalocean:
-                            description: DatacenterSpecDigitalocean describes a DigitalOcean datacenter.
+                            description: Digitalocean configures a Digitalocean datacenter.
                             properties:
                               region:
                                 description: Datacenter location, e.g. "ams3". A list of existing datacenters can be found at https://www.digitalocean.com/docs/platform/availability-matrix/
@@ -614,8 +614,10 @@ spec:
                             description: Openstack configures an Openstack datacenter.
                             properties:
                               authURL:
+                                description: Authentication URL
                                 type: string
                               availabilityZone:
+                                description: Used to configure availability zone.
                                 type: string
                               dnsServers:
                                 description: Used for automatic network creation
@@ -655,6 +657,7 @@ spec:
                                     type: integer
                                 type: object
                               region:
+                                description: Authentication region name
                                 type: string
                               trustDevicePath:
                                 description: 'Optional: Gets mapped to the "trust-device-path" setting in the cloud config. This setting defaults to false.'
@@ -1661,7 +1664,7 @@ spec:
                 - kubeconfig
               type: object
             status:
-              description: SeedStatus contains runtime information regarding the seed.
+              description: Status holds the runtime information of the Seed cluster.
               properties:
                 clusters:
                   default: 0

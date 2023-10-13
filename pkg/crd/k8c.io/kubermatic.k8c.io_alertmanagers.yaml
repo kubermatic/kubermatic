@@ -33,6 +33,7 @@ spec:
             metadata:
               type: object
             spec:
+              description: Spec describes the configuration of the Alertmanager.
               properties:
                 configSecret:
                   description: ConfigSecret refers to the Secret in the same namespace as the Alertmanager object, which contains configuration for this Alertmanager.
@@ -46,7 +47,7 @@ spec:
                 - configSecret
               type: object
             status:
-              description: AlertmanagerStatus stores status information about the AlertManager.
+              description: Status stores status information about the Alertmanager.
               properties:
                 configStatus:
                   description: ConfigStatus stores status information about the AlertManager configuration.

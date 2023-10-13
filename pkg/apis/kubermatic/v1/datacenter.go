@@ -187,9 +187,11 @@ type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes the configuration of the Seed cluster.
 	Spec SeedSpec `json:"spec"`
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	// Status holds the runtime information of the Seed cluster.
 	Status SeedStatus `json:"status,omitempty,omitgenyaml"`
 }
 
@@ -389,6 +391,7 @@ type Datacenter struct {
 // DatacenterSpec configures a KKP datacenter. Provider configuration is mutually exclusive,
 // and as such only a single provider can be configured per datacenter.
 type DatacenterSpec struct {
+	// Digitalocean configures a Digitalocean datacenter.
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	// BringYourOwn contains settings for clusters using manually created
 	// nodes via kubeadm.
@@ -552,9 +555,12 @@ type DatacenterSpecDigitalocean struct {
 
 // DatacenterSpecOpenstack describes an OpenStack datacenter.
 type DatacenterSpecOpenstack struct {
-	AuthURL          string `json:"authURL"`
+	// Authentication URL
+	AuthURL string `json:"authURL"`
+	// Used to configure availability zone.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
-	Region           string `json:"region"`
+	// Authentication region name
+	Region string `json:"region"`
 	// Optional
 	IgnoreVolumeAZ bool `json:"ignoreVolumeAZ,omitempty"` //nolint:tagliatelle
 	// Optional

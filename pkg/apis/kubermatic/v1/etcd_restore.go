@@ -52,11 +52,12 @@ type EtcdRestorePhase string
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// EtcdRestore specifies a add-on.
+// EtcdRestore specifies an add-on.
 type EtcdRestore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes details of an etcd restore.
 	Spec   EtcdRestoreSpec   `json:"spec,omitempty"`
 	Status EtcdRestoreStatus `json:"status,omitempty"`
 }
@@ -87,6 +88,7 @@ type EtcdRestoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is the list of the Etcd restores.
 	Items []EtcdRestore `json:"items"`
 }
 
