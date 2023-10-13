@@ -49,7 +49,7 @@ func getTestClientSet(t *testing.T) *ClientSet {
 }
 
 // makeCluster returns a KKP Cluster object with the AWS cloud spec inserted.
-// The cluster will have a random name, which helps to re-use the same localstack
+// The cluster will have a random name, which helps to reuse the same localstack
 // test environment without causing name clashes (or having to restart the
 // test env in between every test).
 func makeCluster(cloudSpec *kubermaticv1.AWSCloudSpec) *kubermaticv1.Cluster {

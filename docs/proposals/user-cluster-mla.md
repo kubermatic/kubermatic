@@ -231,7 +231,7 @@ To enable multi-tenancy, KKP projects will be mapped
 to [Grafana Organizations](https://grafana.com/docs/grafana/latest/permissions/organization_roles/). For every cluster
 within a KKP project, logs and metrics data sources pointing to the respective MLA Gateways will be added to Grafana
 within the organization. The regular users won’t be able to manage data sources in Grafana, therefore they will be
-restricted to only see logs & matrics matching their organization. Also, Grafana can be configured with different
+restricted to only see logs & metrics matching their organization. Also, Grafana can be configured with different
 permission levels (admin / editor / viewer) for different users according to their permission levels in the KKP project.
 
 For Managed Service Provider users (superusers), who should be able to access data of all User Clusters, a superuser

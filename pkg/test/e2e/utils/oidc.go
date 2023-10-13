@@ -119,7 +119,7 @@ func RetrieveAdminMasterToken(ctx context.Context) (string, error) {
 }
 
 func retrieveToken(ctx context.Context, token *string, login, password string, connector dex.ConnectorType) (string, error) {
-	// re-use the previous token
+	// reuse the previous token
 	if token != nil && *token != "" {
 		return *token, nil
 	}

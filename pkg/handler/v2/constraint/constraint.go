@@ -92,7 +92,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			apiConstraintMap[genConstraintKey(ct.Spec.ConstraintType, ct.Name)] = apiConstraint
 		}
 
-		// List all diffrerent gatekeeper constraints and get status
+		// List all different gatekeeper constraints and get status
 		for kind := range cKinds {
 			list := &unstructured.UnstructuredList{}
 			list.SetGroupVersionKind(schema.GroupVersionKind{
