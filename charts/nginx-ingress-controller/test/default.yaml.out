@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress-controller
-  namespace: default
+  namespace: nginx-ingress-controller
 spec:
   selector:
     matchLabels:
@@ -34,7 +34,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress
-  namespace: default
+  namespace: nginx-ingress-controller
 automountServiceAccountToken: true
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/controller-configmap.yaml
@@ -50,7 +50,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress-controller
-  namespace: default
+  namespace: nginx-ingress-controller
 data:
   allow-snippet-annotations: "false"
 ---
@@ -172,7 +172,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress
-  namespace: default
+  namespace: nginx-ingress-controller
 rules:
   - apiGroups:
       - ""
@@ -265,7 +265,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress
-  namespace: default
+  namespace: nginx-ingress-controller
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -288,7 +288,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress-controller-metrics
-  namespace: default
+  namespace: nginx-ingress-controller
 spec:
   type: ClusterIP
   ports:
@@ -314,7 +314,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress-controller-admission
-  namespace: default
+  namespace: nginx-ingress-controller
 spec:
   type: ClusterIP
   ports:
@@ -342,7 +342,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress-controller
-  namespace: default
+  namespace: nginx-ingress-controller
 spec:
   type: LoadBalancer
   ipFamilyPolicy: SingleStack
@@ -377,7 +377,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: controller
   name: nginx-ingress-controller
-  namespace: default
+  namespace: nginx-ingress-controller
 spec:
   selector:
     matchLabels:
@@ -571,7 +571,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: nginx-ingress-admission
-  namespace: default
+  namespace: nginx-ingress-controller
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -600,7 +600,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: nginx-ingress-admission
-  namespace: default
+  namespace: nginx-ingress-controller
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -668,7 +668,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: nginx-ingress-admission
-  namespace: default
+  namespace: nginx-ingress-controller
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -694,7 +694,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: nginx-ingress-admission
-  namespace: default
+  namespace: nginx-ingress-controller
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade,post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -720,7 +720,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: nginx-ingress-admission-create
-  namespace: default
+  namespace: nginx-ingress-controller
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
@@ -775,7 +775,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: nginx-ingress-admission-patch
-  namespace: default
+  namespace: nginx-ingress-controller
   annotations:
     "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
