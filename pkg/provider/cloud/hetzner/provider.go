@@ -63,8 +63,12 @@ func (h *hetzner) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Cloud
 		// this validates the token
 		_, _, err = client.ServerType.List(timeout, hcloud.ServerTypeListOpts{})
 	} else {
+		var net *hcloud.Network
 		// this validates network and implicitly the token
-		_, _, err = client.Network.GetByName(timeout, spec.Hetzner.Network)
+		net, _, err = client.Network.GetByName(timeout, spec.Hetzner.Network)
+		if err == nil && net == nil {
+			return fmt.Errorf("network %q not found", spec.Hetzner.Network)
+		}
 	}
 
 	return err
@@ -123,6 +127,12 @@ func GetServerType(ctx context.Context, token string, serverTypeName string) (*p
 	serverType, _, err := hClient.ServerType.Get(ctx, serverTypeName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get server type %q: %w", serverTypeName, err)
+	}
+
+	// if the server type isn't found, hClient.ServerType.Get returns no error but sets
+	// the ServerType return value to nil.
+	if serverType == nil {
+		return nil, fmt.Errorf("Hetzner server type %q not found", serverTypeName)
 	}
 
 	capacity := provider.NewNodeCapacity()
