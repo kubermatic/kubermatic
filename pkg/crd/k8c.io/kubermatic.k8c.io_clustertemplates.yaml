@@ -157,11 +157,13 @@ spec:
                   description: Cloud contains information regarding the cloud provider that is responsible for hosting the cluster's workload.
                   properties:
                     alibaba:
-                      description: AlibabaCloudSpec specifies the access data to Alibaba.
+                      description: Alibaba defines the configuration data of the Alibaba.
                       properties:
                         accessKeyID:
+                          description: The Access Key ID used to authenticate against Alibaba.
                           type: string
                         accessKeySecret:
+                          description: The Access Key Secret used to authenticate against Alibaba.
                           type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -193,7 +195,7 @@ spec:
                           x-kubernetes-map-type: atomic
                       type: object
                     anexia:
-                      description: AnexiaCloudSpec specifies the access data to Anexia.
+                      description: Anexia defines the configuration data of the Anexia.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -224,16 +226,20 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         token:
+                          description: Token is used to authenticate with the Anexia API.
                           type: string
                       type: object
                     aws:
-                      description: AWSCloudSpec specifies access data to Amazon Web Services.
+                      description: AWS defines the configuration data of the Amazon Web Services(AWS) cloud provider.
                       properties:
                         accessKeyID:
+                          description: The Access key ID used to authenticate against AWS.
                           type: string
                         assumeRoleARN:
+                          description: Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
                           type: string
                         assumeRoleExternalID:
+                          description: An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem".
                           type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -287,6 +293,7 @@ spec:
                         routeTableID:
                           type: string
                         secretAccessKey:
+                          description: The Secret Access Key used to authenticate against AWS.
                           type: string
                         securityGroupID:
                           type: string
@@ -300,7 +307,7 @@ spec:
                         - vpcID
                       type: object
                     azure:
-                      description: AzureCloudSpec defines cloud resource references for Microsoft Azure.
+                      description: Azure defines the configuration data of the Microsoft Azure cloud.
                       properties:
                         assignAvailabilitySet:
                           description: 'Optional: AssignAvailabilitySet determines whether KKP creates and assigns an AvailabilitySet to machines. Defaults to `true` internally if not set.'
@@ -309,10 +316,10 @@ spec:
                           description: An availability set that will be associated with nodes created for this cluster. If this field is set to empty string at cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field will be updated to the generated availability set's name.
                           type: string
                         clientID:
-                          description: ClientID is the service principal used to access Azure. Can be read from `credentialsReference` instead.
+                          description: The service principal used to access Azure. Can be read from `credentialsReference` instead.
                           type: string
                         clientSecret:
-                          description: ClientSecret is the client secret corresponding to the given service principal. Can be read from `credentialsReference` instead.
+                          description: The client secret corresponding to the given service principal. Can be read from `credentialsReference` instead.
                           type: string
                         credentialsReference:
                           description: CredentialsReference allows referencing a `Secret` resource instead of passing secret data in this spec.
@@ -343,7 +350,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         loadBalancerSKU:
-                          description: Azure SKU for Load Balancers. Possible values are `basic` and `standard`.
+                          description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used.
                           enum:
                             - standard
                             - basic
@@ -374,16 +381,16 @@ spec:
                           description: The name of a subnet in the VNet referenced by `vnet`. If set to empty string at cluster creation, a new subnet will be created and this field will be updated to the generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.
                           type: string
                         subscriptionID:
-                          description: SubscriptionID is the Azure Subscription used for this cluster. Can be read from `credentialsReference` instead.
+                          description: The Azure Subscription used for this cluster. Can be read from `credentialsReference` instead.
                           type: string
                         tenantID:
-                          description: TenantID is the Azure Active Directory Tenant used for this cluster. Can be read from `credentialsReference` instead.
+                          description: The Azure Active Directory Tenant used for this cluster. Can be read from `credentialsReference` instead.
                           type: string
                         vnet:
                           description: The name of the VNet resource used for setting up networking in. If set to empty string at cluster creation, a new VNet will be created and this field will be updated to the generated VNet's name.
                           type: string
                         vnetResourceGroup:
-                          description: 'Optional: VNetResourceGroup optionally defines a second resource group that will be used for VNet related resources instead. If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.'
+                          description: 'Optional: Defines a second resource group that will be used for VNet related resources instead. If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.'
                           type: string
                       required:
                         - availabilitySet
@@ -396,13 +403,13 @@ spec:
                         - vnetResourceGroup
                       type: object
                     bringyourown:
-                      description: BringYourOwnCloudSpec specifies access data for a bring your own cluster.
+                      description: BringYourOwn defines the configuration data for a Bring Your Own cluster.
                       type: object
                     dc:
                       description: DatacenterName states the name of a cloud provider "datacenter" (defined in `Seed` resources) this cluster should be deployed into.
                       type: string
                     digitalocean:
-                      description: DigitaloceanCloudSpec specifies access data to DigitalOcean.
+                      description: Digitalocean defines the configuration data of the DigitalOcean cloud provider.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -433,16 +440,17 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         token:
+                          description: Token is used to authenticate with the DigitalOcean API.
                           type: string
                       type: object
                     fake:
-                      description: FakeCloudSpec specifies access data for a fake cloud.
+                      description: Fake is a dummy cloud provider that is only used for testing purposes. Do not try to actually use it.
                       properties:
                         token:
                           type: string
                       type: object
                     gcp:
-                      description: GCPCloudSpec specifies access data to GCP.
+                      description: GCP defines the configuration data of the Google Cloud Platform(GCP).
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -497,7 +505,7 @@ spec:
                         - subnetwork
                       type: object
                     hetzner:
-                      description: HetznerCloudSpec specifies access data to hetzner cloud.
+                      description: Hetzner defines the configuration data of the Hetzner cloud.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -535,7 +543,7 @@ spec:
                           type: string
                       type: object
                     kubevirt:
-                      description: KubevirtCloudSpec specifies the access data to Kubevirt.
+                      description: Kubevirt defines the configuration data of the KubeVirt.
                       properties:
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -616,7 +624,7 @@ spec:
                           type: array
                       type: object
                     nutanix:
-                      description: NutanixCloudSpec specifies the access data to Nutanix.
+                      description: Nutanix defines the configuration data of the Nutanix.
                       properties:
                         clusterName:
                           description: ClusterName is the Nutanix cluster that this user cluster will be deployed to.
@@ -650,47 +658,50 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         csi:
-                          description: NutanixCSIConfig for csi driver that connects to a prism element
+                          description: NutanixCSIConfig for CSI driver that connects to a prism element.
                           properties:
                             endpoint:
-                              description: Prism Element Endpoint to access Nutanix Prism Element for csi driver
+                              description: Prism Element Endpoint to access Nutanix Prism Element for CSI driver.
                               type: string
                             fstype:
                               description: 'Optional: defaults to "xfs"'
                               type: string
                             password:
-                              description: Prism Element Password for csi driver
+                              description: Prism Element Password for CSI driver.
                               type: string
                             port:
-                              description: 'Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)'
+                              description: 'Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).'
                               format: int32
                               type: integer
                             ssSegmentedIscsiNetwork:
-                              description: 'Optional: defaults to "false"'
+                              description: 'Optional: defaults to "false".'
                               type: boolean
                             storageContainer:
-                              description: 'Optional: defaults to "SelfServiceContainer"'
+                              description: 'Optional: defaults to "SelfServiceContainer".'
                               type: string
                             username:
-                              description: Prism Element Username for csi driver
+                              description: Prism Element Username for CSI driver.
                               type: string
                           required:
                             - endpoint
                           type: object
                         password:
+                          description: Password corresponding to the provided user.
                           type: string
                         projectName:
-                          description: ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
+                          description: The name of the project that this cluster is deployed into. If none is given, no project will be used.
                           type: string
                         proxyURL:
+                          description: 'Optional: Used to configure a HTTP proxy to access Nutanix Prism Central.'
                           type: string
                         username:
+                          description: Username to access the Nutanix Prism Central API.
                           type: string
                       required:
                         - clusterName
                       type: object
                     openstack:
-                      description: OpenstackCloudSpec specifies access data to an OpenStack cloud.
+                      description: Openstack defines the configuration data of an OpenStack cloud.
                       properties:
                         applicationCredentialID:
                           type: string
@@ -742,7 +753,7 @@ spec:
                           description: IPv6SubnetPool holds the name of the subnet pool used for creating new IPv6 subnets. If not provided, the default IPv6 subnet pool will be used.
                           type: string
                         network:
-                          description: "Network holds the name of the internal network When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created \n Note that the network is internal if the \"External\" field is set to false"
+                          description: "Network holds the name of the internal network When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created. \n Note that the network is internal if the \"External\" field is set to false"
                           type: string
                         nodePortsAllowedIPRange:
                           description: A CIDR range that will be used to allow access to the node port range in the security group to. Only applies if the security group is generated by KKP and not preexisting. If NodePortsAllowedIPRange nor NodePortsAllowedIPRanges is set, the node port range can be accessed from anywhere.
@@ -789,7 +800,7 @@ spec:
                         - subnetID
                       type: object
                     packet:
-                      description: PacketCloudSpec specifies access data to a Packet cloud.
+                      description: Packet defines the configuration data of a Packet cloud.
                       properties:
                         apiKey:
                           type: string
@@ -832,10 +843,10 @@ spec:
                       description: ProviderName is the name of the cloud provider used for this cluster. This must match the given provider spec (e.g. if the providerName is "aws", then the `aws` field must be set).
                       type: string
                     vmwareclouddirector:
-                      description: VMwareCloudDirectorCloudSpec specifies access data to VMware Cloud Director cloud.
+                      description: VMwareCloudDirector defines the configuration data of the VMware Cloud Director.
                       properties:
                         apiToken:
-                          description: APIToken is the VMware Cloud Director API token.
+                          description: The VMware Cloud Director API token.
                           type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -878,29 +889,29 @@ spec:
                             - storageProfile
                           type: object
                         organization:
-                          description: Organization is the name of organization to use.
+                          description: The name of organization to use.
                           type: string
                         ovdcNetwork:
-                          description: Network is the name of organizational virtual data center network that will be associated with the VMs and vApp.
+                          description: The name of organizational virtual data center network that will be associated with the VMs and vApp.
                           type: string
                         password:
-                          description: Password is the VMware Cloud Director user password.
+                          description: The VMware Cloud Director user password.
                           type: string
                         username:
-                          description: Username is the VMware Cloud Director user name.
+                          description: The VMware Cloud Director user name.
                           type: string
                         vapp:
                           description: VApp used for isolation of VMs and their associated network
                           type: string
                         vdc:
-                          description: VDC is the organizational virtual data center.
+                          description: The organizational virtual data center.
                           type: string
                       required:
                         - csi
                         - ovdcNetwork
                       type: object
                     vsphere:
-                      description: VSphereCloudSpec specifies access data to VSphere cloud.
+                      description: VSphere defines the configuration data of the vSphere.
                       properties:
                         basePath:
                           description: 'Optional: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it''s an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath (if set) to construct the full path.'
@@ -940,7 +951,7 @@ spec:
                           description: DatastoreCluster to be used for storing virtual machines, it is mutually exclusive with Datastore.
                           type: string
                         folder:
-                          description: Folder is the folder to be used to group the provisioned virtual machines.
+                          description: Folder to be used to group the provisioned virtual machines.
                           type: string
                         infraManagementUser:
                           description: This user will be used for everything except cloud provider functionality
@@ -951,12 +962,12 @@ spec:
                               type: string
                           type: object
                         networks:
-                          description: Networks is the list of vSphere networks.
+                          description: List of vSphere networks.
                           items:
                             type: string
                           type: array
                         password:
-                          description: Password is the vSphere user password.
+                          description: The vSphere user password.
                           type: string
                         resourcePool:
                           description: ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool should be defined on vSphere cluster level.
@@ -979,10 +990,10 @@ spec:
                             - tags
                           type: object
                         username:
-                          description: Username is the vSphere user name.
+                          description: The vSphere user name.
                           type: string
                         vmNetName:
-                          description: 'VMNetName is the name of the vSphere network. Deprecated: Use networks instead.'
+                          description: 'The name of the vSphere network. Deprecated: Use networks instead.'
                           type: string
                       required:
                         - infraManagementUser

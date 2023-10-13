@@ -53,10 +53,10 @@ spec:
                     aks:
                       properties:
                         clientID:
-                          description: 'ClientID: The service principal used to access Azure. Can be read from `credentialsReference` instead.'
+                          description: The service principal used to access Azure. Can be read from `credentialsReference` instead.
                           type: string
                         clientSecret:
-                          description: 'ClientSecret: The client secret corresponding to the given service principal. Can be read from `credentialsReference` instead.'
+                          description: The client secret corresponding to the given service principal. Can be read from `credentialsReference` instead.
                           type: string
                         credentialsReference:
                           description: CredentialsReference allows referencing a `Secret` resource instead of passing secret data in this spec.
@@ -87,18 +87,18 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         location:
-                          description: 'Location: The geo-location where the resource lives'
+                          description: The geo-location where the resource lives
                           type: string
                         name:
                           type: string
                         resourceGroup:
-                          description: 'ResourceGroup: The resource group that will be used to look up and create resources for the cluster in. If set to empty string at cluster creation, a new resource group will be created and this field will be updated to the generated resource group''s name.'
+                          description: The resource group that will be used to look up and create resources for the cluster in. If set to empty string at cluster creation, a new resource group will be created and this field will be updated to the generated resource group's name.
                           type: string
                         subscriptionID:
-                          description: 'SubscriptionID: The Azure Subscription used for this cluster. Can be read from `credentialsReference` instead.'
+                          description: The Azure Subscription used for this cluster. Can be read from `credentialsReference` instead.
                           type: string
                         tenantID:
-                          description: 'TenantID: The Azure Active Directory Tenant used for this cluster. Can be read from `credentialsReference` instead.'
+                          description: The Azure Active Directory Tenant used for this cluster. Can be read from `credentialsReference` instead.
                           type: string
                       required:
                         - credentialsReference
@@ -111,13 +111,13 @@ spec:
                     eks:
                       properties:
                         accessKeyID:
-                          description: 'AccessKeyID: AWS Access key ID Can be read from `credentialsReference` instead.'
+                          description: The Access key ID used to authenticate against AWS. Can be read from `credentialsReference` instead.
                           type: string
                         assumeRoleARN:
-                          description: 'AssumeRoleARN defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
+                          description: 'The ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
                           type: string
                         assumeRoleExternalID:
-                          description: 'AssumeRoleExternalID is an arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem". required: false'
+                          description: 'An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem". required: false'
                           type: string
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -152,23 +152,23 @@ spec:
                         region:
                           type: string
                         roleArn:
-                          description: 'ControlPlaneRoleARN: The Amazon Resource Name (ARN) of the IAM role that provides permissions for the Kubernetes control plane to make calls to Amazon Web Services API operations on your behalf.'
+                          description: The Amazon Resource Name (ARN) of the IAM role that provides permissions for the Kubernetes control plane to make calls to Amazon Web Services API operations on your behalf.
                           type: string
                         secretAccessKey:
-                          description: 'SecretAccessKey: AWS Secret Access Key Can be read from `credentialsReference` instead.'
+                          description: The Secret Access Key used to authenticate against AWS. Can be read from `credentialsReference` instead.
                           type: string
                         securityGroupIDs:
-                          description: 'SecurityGroupIDs: The security groups associated with the cross-account elastic network interfaces that are used to allow communication between your nodes and the Kubernetes control plane.'
+                          description: The security groups associated with the cross-account elastic network interfaces that are used to allow communication between your nodes and the Kubernetes control plane.
                           items:
                             type: string
                           type: array
                         subnetIDs:
-                          description: 'SubnetIDs: The subnets associated with your cluster.'
+                          description: The subnets associated with your cluster.
                           items:
                             type: string
                           type: array
                         vpcID:
-                          description: 'VPCID: The VPC associated with your cluster.'
+                          description: The VPC associated with your cluster.
                           type: string
                       required:
                         - credentialsReference
@@ -277,10 +277,10 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         providerName:
-                          description: ProviderName is the name of the cloud provider used, one of "aws", "azure", "digitalocean", "gcp", "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
+                          description: The name of the cloud provider used, one of "aws", "azure", "digitalocean", "gcp", "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
                           type: string
                         region:
-                          description: Region is the cloud provider region in which the cluster resides. This field is used only to display information.
+                          description: The cloud provider region in which the cluster resides. This field is used only to display information.
                           type: string
                         sshReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
@@ -326,7 +326,7 @@ spec:
                     - providerName
                   type: object
                 clusterNetwork:
-                  description: ExternalClusterNetworkingConfig specifies the different networking parameters for a external cluster.
+                  description: ClusterNetwork contains the different networking parameters for an external cluster.
                   properties:
                     pods:
                       description: The network ranges from which POD networks are allocated. It can contain one IPv4 and/or one IPv6 CIDR. If both address families are specified, the first one defines the primary address family.
@@ -352,7 +352,7 @@ spec:
                   description: HumanReadableName is the cluster name provided by the user
                   type: string
                 kubeconfigReference:
-                  description: KubeconfigReference is reference to cluster Kubeconfig
+                  description: Reference to cluster Kubeconfig
                   properties:
                     apiVersion:
                       description: API version of the referent.
@@ -386,7 +386,7 @@ spec:
                   description: PauseReason is the reason why the cluster is not being managed. This field is for informational purpose only and can be set by a user or a controller to communicate the reason for pausing the cluster.
                   type: string
                 version:
-                  description: Version defines the wanted version of the control plane.
+                  description: Defines the wanted version of the control plane.
                   type: string
               required:
                 - cloudSpec

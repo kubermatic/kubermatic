@@ -59,7 +59,9 @@ type Project struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ProjectSpec   `json:"spec,omitempty"`
+	// Spec describes the configuration of the project.
+	Spec ProjectSpec `json:"spec,omitempty"`
+	// Status holds the current status of the project.
 	Status ProjectStatus `json:"status,omitempty"`
 }
 
@@ -85,5 +87,6 @@ type ProjectList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is the list of the projects.
 	Items []Project `json:"items"`
 }

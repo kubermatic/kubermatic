@@ -38,6 +38,8 @@ type MLAAdminSetting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes the cluster-specific administrator settings for KKP user cluster MLA
+	// (monitoring, logging & alerting) stack.
 	Spec MLAAdminSettingSpec `json:"spec,omitempty"`
 }
 
@@ -95,5 +97,7 @@ type MLAAdminSettingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items holds the list of the cluster-specific administrative settings
+	// for KKP user cluster MLA.
 	Items []MLAAdminSetting `json:"items"`
 }

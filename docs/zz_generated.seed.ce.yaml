@@ -3,6 +3,7 @@ kind: Seed
 metadata:
   name: <<exampleseed>>
   namespace: kubermatic
+# Spec describes the configuration of the Seed cluster.
 spec:
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
@@ -77,6 +78,7 @@ spec:
         # BringYourOwn contains settings for clusters using manually created
         # nodes via kubeadm.
         bringyourown: {}
+        # Digitalocean configures a Digitalocean datacenter.
         digitalocean:
           # Datacenter location, e.g. "ams3". A list of existing datacenters can be found
           # at https://www.digitalocean.com/docs/platform/availability-matrix/
@@ -207,7 +209,9 @@ spec:
           port: 9440
         # Openstack configures an Openstack datacenter.
         openstack:
+          # Authentication URL
           authURL: ""
+          # Used to configure availability zone.
           availabilityZone: ""
           # Used for automatic network creation
           dnsServers: []
@@ -238,6 +242,7 @@ spec:
             minimumMemory: 0
             # VCPUs is the minimum required amount of (virtual) CPUs
             minimumVCPUs: 0
+          # Authentication region name
           region: ""
           # Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
           # This setting defaults to false.

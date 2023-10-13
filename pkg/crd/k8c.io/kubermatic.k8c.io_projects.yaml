@@ -39,7 +39,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: ProjectSpec is a specification of a project.
+              description: Spec describes the configuration of the project.
               properties:
                 name:
                   description: Name is the human-readable name given to the project.
@@ -48,7 +48,7 @@ spec:
                 - name
               type: object
             status:
-              description: ProjectStatus represents the current status of a project.
+              description: Status holds the current status of the project.
               properties:
                 phase:
                   description: Phase describes the project phase. New projects are in the `Inactive` phase; after being reconciled they move to `Active` and during deletion they are `Terminating`.

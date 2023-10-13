@@ -42,10 +42,11 @@ type UserProjectBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes a KKP user and project binding.
 	Spec UserProjectBindingSpec `json:"spec,omitempty"`
 }
 
-// UserProjectBindingSpec specifies a user.
+// UserProjectBindingSpec specifies a user and project binding.
 type UserProjectBindingSpec struct {
 	// UserEmail is the email of the user that is bound to the given project.
 	UserEmail string `json:"userEmail"`
@@ -62,10 +63,11 @@ type UserProjectBindingSpec struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// UserProjectBindingList is a list of users.
+// UserProjectBindingList is a list of KKP user and project bindings.
 type UserProjectBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is the list of KKP user and project bindings.
 	Items []UserProjectBinding `json:"items"`
 }

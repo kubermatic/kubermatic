@@ -25,7 +25,7 @@ spec:
       name: v1
       schema:
         openAPIV3Schema:
-          description: EtcdRestore specifies a add-on.
+          description: EtcdRestore specifies an add-on.
           properties:
             apiVersion:
               description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -36,7 +36,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: EtcdRestoreSpec specifies details of an etcd restore.
+              description: Spec describes details of an etcd restore.
               properties:
                 backupDownloadCredentialsSecret:
                   description: BackupDownloadCredentialsSecret is the name of a secret in the cluster-xxx namespace containing credentials needed to download the backup

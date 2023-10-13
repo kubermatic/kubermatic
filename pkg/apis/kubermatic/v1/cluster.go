@@ -465,7 +465,7 @@ const (
 	ClusterConditionCSIKubeletMigrationCompleted ClusterConditionType = "CSIKubeletMigrationCompleted"
 
 	// This condition is used to determine if the CSI addon created by KKP is in use or not.
-	// This helps in ascertaining if the csi addon can be removed from the cluster or not.
+	// This helps in ascertaining if the CSI addon can be removed from the cluster or not.
 	ClusterConditionCSIAddonInUse ClusterConditionType = "CSIAddonInUse"
 
 	ReasonClusterUpdateSuccessful             = "ClusterUpdateSuccessful"
@@ -956,20 +956,36 @@ type CloudSpec struct {
 	// "aws", then the `aws` field must be set).
 	ProviderName string `json:"providerName"`
 
-	Fake                *FakeCloudSpec                `json:"fake,omitempty"`
-	Digitalocean        *DigitaloceanCloudSpec        `json:"digitalocean,omitempty"`
-	BringYourOwn        *BringYourOwnCloudSpec        `json:"bringyourown,omitempty"`
-	AWS                 *AWSCloudSpec                 `json:"aws,omitempty"`
-	Azure               *AzureCloudSpec               `json:"azure,omitempty"`
-	Openstack           *OpenstackCloudSpec           `json:"openstack,omitempty"`
-	Packet              *PacketCloudSpec              `json:"packet,omitempty"`
-	Hetzner             *HetznerCloudSpec             `json:"hetzner,omitempty"`
-	VSphere             *VSphereCloudSpec             `json:"vsphere,omitempty"`
-	GCP                 *GCPCloudSpec                 `json:"gcp,omitempty"`
-	Kubevirt            *KubevirtCloudSpec            `json:"kubevirt,omitempty"`
-	Alibaba             *AlibabaCloudSpec             `json:"alibaba,omitempty"`
-	Anexia              *AnexiaCloudSpec              `json:"anexia,omitempty"`
-	Nutanix             *NutanixCloudSpec             `json:"nutanix,omitempty"`
+	// Fake is a dummy cloud provider that is only used for testing purposes.
+	// Do not try to actually use it.
+	Fake *FakeCloudSpec `json:"fake,omitempty"`
+	// Digitalocean defines the configuration data of the DigitalOcean cloud provider.
+	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
+	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
+	// AWS defines the configuration data of the Amazon Web Services(AWS) cloud provider.
+	AWS *AWSCloudSpec `json:"aws,omitempty"`
+	// Azure defines the configuration data of the Microsoft Azure cloud.
+	Azure *AzureCloudSpec `json:"azure,omitempty"`
+	// Openstack defines the configuration data of an OpenStack cloud.
+	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
+	// Packet defines the configuration data of a Packet cloud.
+	Packet *PacketCloudSpec `json:"packet,omitempty"`
+	// Hetzner defines the configuration data of the Hetzner cloud.
+	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
+	// VSphere defines the configuration data of the vSphere.
+	VSphere *VSphereCloudSpec `json:"vsphere,omitempty"`
+	// GCP defines the configuration data of the Google Cloud Platform(GCP).
+	GCP *GCPCloudSpec `json:"gcp,omitempty"`
+	// Kubevirt defines the configuration data of the KubeVirt.
+	Kubevirt *KubevirtCloudSpec `json:"kubevirt,omitempty"`
+	// Alibaba defines the configuration data of the Alibaba.
+	Alibaba *AlibabaCloudSpec `json:"alibaba,omitempty"`
+	// Anexia defines the configuration data of the Anexia.
+	Anexia *AnexiaCloudSpec `json:"anexia,omitempty"`
+	// Nutanix defines the configuration data of the Nutanix.
+	Nutanix *NutanixCloudSpec `json:"nutanix,omitempty"`
+	// VMwareCloudDirector defines the configuration data of the VMware Cloud Director.
 	VMwareCloudDirector *VMwareCloudDirectorCloudSpec `json:"vmwareclouddirector,omitempty"`
 }
 
@@ -982,7 +998,8 @@ type FakeCloudSpec struct {
 type DigitaloceanCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	Token string `json:"token,omitempty"` // Token is used to authenticate with the DigitalOcean API.
+	// Token is used to authenticate with the DigitalOcean API.
+	Token string `json:"token,omitempty"`
 }
 
 // HetznerCloudSpec specifies access data to hetzner cloud.
@@ -1003,16 +1020,16 @@ type AzureCloudSpec struct {
 	// CredentialsReference allows referencing a `Secret` resource instead of passing secret data in this spec.
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	// TenantID is the Azure Active Directory Tenant used for this cluster.
+	// The Azure Active Directory Tenant used for this cluster.
 	// Can be read from `credentialsReference` instead.
 	TenantID string `json:"tenantID,omitempty"`
-	// SubscriptionID is the Azure Subscription used for this cluster.
+	// The Azure Subscription used for this cluster.
 	// Can be read from `credentialsReference` instead.
 	SubscriptionID string `json:"subscriptionID,omitempty"`
-	// ClientID is the service principal used to access Azure.
+	// The service principal used to access Azure.
 	// Can be read from `credentialsReference` instead.
 	ClientID string `json:"clientID,omitempty"`
-	// ClientSecret is the client secret corresponding to the given service principal.
+	// The client secret corresponding to the given service principal.
 	// Can be read from `credentialsReference` instead.
 	ClientSecret string `json:"clientSecret,omitempty"`
 
@@ -1020,7 +1037,7 @@ type AzureCloudSpec struct {
 	// If set to empty string at cluster creation, a new resource group will be created and this field will be updated to
 	// the generated resource group's name.
 	ResourceGroup string `json:"resourceGroup"`
-	// Optional: VNetResourceGroup optionally defines a second resource group that will be used for VNet related resources instead.
+	// Optional: Defines a second resource group that will be used for VNet related resources instead.
 	// If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.
 	VNetResourceGroup string `json:"vnetResourceGroup"`
 	// The name of the VNet resource used for setting up networking in.
@@ -1054,7 +1071,7 @@ type AzureCloudSpec struct {
 	// at cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field
 	// will be updated to the generated availability set's name.
 	AvailabilitySet string `json:"availabilitySet"`
-
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used.
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
@@ -1068,20 +1085,20 @@ type VSphereCredentials struct {
 type VSphereCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	// Username is the vSphere user name.
+	// The vSphere user name.
 	// +optional
 	Username string `json:"username"`
-	// Password is the vSphere user password.
+	// The vSphere user password.
 	// +optional
 	Password string `json:"password"`
-	// VMNetName is the name of the vSphere network.
+	// The name of the vSphere network.
 	// Deprecated: Use networks instead.
 	// +optional
 	VMNetName string `json:"vmNetName,omitempty"`
-	// Networks is the list of vSphere networks.
+	// List of vSphere networks.
 	// +optional
 	Networks []string `json:"networks,omitempty"`
-	// Folder is the folder to be used to group the provisioned virtual
+	// Folder to be used to group the provisioned virtual
 	// machines.
 	// +optional
 	Folder string `json:"folder"`
@@ -1137,27 +1154,27 @@ type VSphereTag struct {
 type VMwareCloudDirectorCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	// Username is the VMware Cloud Director user name.
+	// The VMware Cloud Director user name.
 	// +optional
 	Username string `json:"username,omitempty"`
 
-	// Password is the VMware Cloud Director user password.
+	// The VMware Cloud Director user password.
 	// +optional
 	Password string `json:"password,omitempty"`
 
-	// APIToken is the VMware Cloud Director API token.
+	// The VMware Cloud Director API token.
 	// +optional
 	APIToken string `json:"apiToken,omitempty"`
 
-	// Organization is the name of organization to use.
+	// The name of organization to use.
 	// +optional
 	Organization string `json:"organization,omitempty"`
 
-	// VDC is the organizational virtual data center.
+	// The organizational virtual data center.
 	// +optional
 	VDC string `json:"vdc,omitempty"`
 
-	// Network is the name of organizational virtual data center network that will be associated with the VMs and vApp.
+	// The name of organizational virtual data center network that will be associated with the VMs and vApp.
 	OVDCNetwork string `json:"ovdcNetwork"`
 
 	// VApp used for isolation of VMs and their associated network
@@ -1184,9 +1201,17 @@ type BringYourOwnCloudSpec struct{}
 type AWSCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID          string `json:"accessKeyID,omitempty"`
-	SecretAccessKey      string `json:"secretAccessKey,omitempty"`
-	AssumeRoleARN        string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	// The Access key ID used to authenticate against AWS.
+	AccessKeyID string `json:"accessKeyID,omitempty"`
+	// The Secret Access Key used to authenticate against AWS.
+	SecretAccessKey string `json:"secretAccessKey,omitempty"`
+	// Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+	// to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+	// +optional
+	AssumeRoleARN string `json:"assumeRoleARN,omitempty"` //nolint:tagliatelle
+	// An arbitrary string that may be needed when calling the STS AssumeRole API operation.
+	// Using an external ID can help to prevent the "confused deputy problem".
+	// +optional
 	AssumeRoleExternalID string `json:"assumeRoleExternalID,omitempty"`
 	VPCID                string `json:"vpcID"`
 	// The IAM role, the control plane will use. The control plane will perform an assume-role
@@ -1227,7 +1252,7 @@ type OpenstackCloudSpec struct {
 	Token string `json:"token,omitempty"`
 
 	// Network holds the name of the internal network
-	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
+	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created.
 	//
 	// Note that the network is internal if the "External" field is set to false
 	Network        string `json:"network"`
@@ -1337,7 +1362,9 @@ type PreAllocatedDataVolume struct {
 type AlibabaCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	AccessKeyID     string `json:"accessKeyID,omitempty"`
+	// The Access Key ID used to authenticate against Alibaba.
+	AccessKeyID string `json:"accessKeyID,omitempty"`
+	// The Access Key Secret used to authenticate against Alibaba.
 	AccessKeySecret string `json:"accessKeySecret,omitempty"`
 }
 
@@ -1345,28 +1372,29 @@ type AlibabaCloudSpec struct {
 type AnexiaCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
+	// Token is used to authenticate with the Anexia API.
 	Token string `json:"token,omitempty"`
 }
 
 // NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
 type NutanixCSIConfig struct {
 
-	// Prism Element Username for csi driver
+	// Prism Element Username for CSI driver.
 	Username string `json:"username,omitempty"`
 
-	// Prism Element Password for csi driver
+	// Prism Element Password for CSI driver.
 	Password string `json:"password,omitempty"`
 
-	// Prism Element Endpoint to access Nutanix Prism Element for csi driver
+	// Prism Element Endpoint to access Nutanix Prism Element for CSI driver.
 	Endpoint string `json:"endpoint"`
 
-	// Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440)
+	// Optional: Port to use when connecting to the Nutanix Prism Element endpoint (defaults to 9440).
 	// +optional
 	Port *int32 `json:"port,omitempty"`
 
 	// Storage Class options
 
-	// Optional: defaults to "SelfServiceContainer"
+	// Optional: defaults to "SelfServiceContainer".
 	// +optional
 	StorageContainer string `json:"storageContainer,omitempty"`
 
@@ -1374,7 +1402,7 @@ type NutanixCSIConfig struct {
 	// +optional
 	Fstype string `json:"fstype,omitempty"`
 
-	// Optional: defaults to "false"
+	// Optional: defaults to "false".
 	// +optional
 	SsSegmentedIscsiNetwork *bool `json:"ssSegmentedIscsiNetwork,omitempty"`
 }
@@ -1386,15 +1414,18 @@ type NutanixCloudSpec struct {
 	// ClusterName is the Nutanix cluster that this user cluster will be deployed to.
 	ClusterName string `json:"clusterName"`
 
-	// ProjectName is the project that this cluster is deployed into. If none is given, no project will be used.
+	// The name of the project that this cluster is deployed into. If none is given, no project will be used.
 	// +optional
 	ProjectName string `json:"projectName,omitempty"`
 
+	// Optional: Used to configure a HTTP proxy to access Nutanix Prism Central.
 	ProxyURL string `json:"proxyURL,omitempty"`
+	// Username to access the Nutanix Prism Central API.
 	Username string `json:"username,omitempty"`
+	// Password corresponding to the provided user.
 	Password string `json:"password,omitempty"`
 
-	// NutanixCSIConfig for csi driver that connects to a prism element
+	// NutanixCSIConfig for CSI driver that connects to a prism element.
 	// +optional
 	CSI *NutanixCSIConfig `json:"csi,omitempty"`
 }

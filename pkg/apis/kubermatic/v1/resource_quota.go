@@ -44,7 +44,9 @@ type ResourceQuota struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ResourceQuotaSpec   `json:"spec,omitempty"`
+	// Spec describes the desired state of the resource quota.
+	Spec ResourceQuotaSpec `json:"spec,omitempty"`
+	// Status holds the current state of the resource quota.
 	Status ResourceQuotaStatus `json:"status,omitempty"`
 }
 
@@ -98,6 +100,7 @@ type ResourceQuotaList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is the list of the resource quotas.
 	Items []ResourceQuota `json:"items"`
 }
 
