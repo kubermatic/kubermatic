@@ -23,7 +23,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-# We replace the domain with a dns name relying on nip.io poining to the
+# We replace the domain with a dns name relying on nip.io pointing to the
 # nodeport-proxy service. This makes the testing of expose strategies relying
 # on nodeport-proxy very easy from within the kind cluster.
 # TODO Find another solution in case nip.io does not result to be
