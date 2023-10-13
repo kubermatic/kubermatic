@@ -125,6 +125,12 @@ func GetServerType(ctx context.Context, token string, serverTypeName string) (*p
 		return nil, fmt.Errorf("failed to get server type %q: %w", serverTypeName, err)
 	}
 
+	// if the server type isn't found, hClient.ServerType.Get returns no error but sets
+	// the ServerType return value to nil.
+	if serverType == nil {
+		return nil, fmt.Errorf("Hetzner server type %q not found", serverTypeName)
+	}
+
 	capacity := provider.NewNodeCapacity()
 	capacity.WithCPUCount(serverType.Cores)
 
