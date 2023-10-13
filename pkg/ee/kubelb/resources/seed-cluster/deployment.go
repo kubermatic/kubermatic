@@ -67,14 +67,16 @@ type kubeLBData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
+	DC() *kubermaticv1.Datacenter
 }
 
-func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string) *resources.TemplateData {
+func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter) *resources.TemplateData {
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithCluster(cluster).
 		WithClient(client).
 		WithOverwriteRegistry(overwriteRegistry).
+		WithDatacenter(&dc).
 		Build()
 }
 
@@ -136,7 +138,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 					Name:    resources.KubeLBDeploymentName,
 					Image:   repository + ":" + imageTag,
 					Command: []string{"/usr/local/bin/ccm"},
-					Args:    getFlags(data.Cluster().Name),
+					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -192,7 +194,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 	}
 }
 
-func getFlags(name string) []string {
+func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-kubelb-kubeconfig", "/etc/kubernetes/kubelb-kubeconfig/kubeconfig",
@@ -201,5 +203,10 @@ func getFlags(name string) []string {
 		"-leader-election-namespace", metav1.NamespaceSystem,
 		"-cluster-name", fmt.Sprintf("cluster-%s", name),
 	}
+
+	if kubelb != nil {
+		flags = append(flags, "-node-address-type", kubelb.NodeAddressType)
+	}
+
 	return flags
 }

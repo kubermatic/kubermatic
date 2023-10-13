@@ -241,6 +241,13 @@ spec:
                                     type: string
                                 type: object
                                 x-kubernetes-map-type: atomic
+                              nodeAddressType:
+                                default: ExternalIP
+                                description: 'NodeAddressType is used to configure the address type from node, used for load balancing. Optional: Defaults to ExternalIP.'
+                                enum:
+                                  - InternalIP
+                                  - ExternalIP
+                                type: string
                             type: object
                           kubevirt:
                             description: Kubevirt configures a KubeVirt datacenter.

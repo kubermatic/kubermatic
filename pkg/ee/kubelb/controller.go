@@ -203,7 +203,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Create/update required resources in user cluster namespace in seed.
-	if err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, cfg); err != nil {
+	if err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, cfg, datacenter); err != nil {
 		return nil, err
 	}
 
@@ -300,7 +300,7 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 	return nil
 }
 
-func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, kubeLBManagementClient ctrlruntimeclient.Client, kubeconfig []byte) error {
+func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, kubeLBManagementClient ctrlruntimeclient.Client, kubeconfig []byte, dc kubermaticv1.Datacenter) error {
 	namespace := cluster.Status.NamespaceName
 
 	// Generate kubeconfig secret.
@@ -329,7 +329,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 
 	// Create/update kubeLB deployment.
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry)),
+		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
