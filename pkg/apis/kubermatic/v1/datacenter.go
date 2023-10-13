@@ -985,6 +985,11 @@ type KubeLBDatacenterSettings struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
 	Enforced bool `json:"enforced,omitempty"`
+	// NodeAddressType is used to configure the address type from node, used for load balancing.
+	// Optional: Defaults to ExternalIP.
+	// +kubebuilder:validation:Enum=InternalIP;ExternalIP
+	// +kubebuilder:default=ExternalIP
+	NodeAddressType string `json:"nodeAddressType,omitempty"`
 }
 
 // IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
