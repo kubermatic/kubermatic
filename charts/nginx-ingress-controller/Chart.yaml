@@ -15,7 +15,7 @@
 apiVersion: v2
 name: nginx-ingress-controller
 version: v9.9.9-dev
-appVersion: 1.7.1
+appVersion: 1.9.3
 description: nginx-ingress-controller
 keywords:
   - kubermatic
@@ -30,5 +30,5 @@ maintainers:
 dependencies:
   - name: ingress-nginx
     repository: https://kubernetes.github.io/ingress-nginx
-    version: 4.6.1
+    version: 4.8.2
     alias: nginx
