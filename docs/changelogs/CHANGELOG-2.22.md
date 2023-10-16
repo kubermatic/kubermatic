@@ -8,6 +8,22 @@
 - [v2.22.5](#v2225)
 - [v2.22.6](#v2226)
 - [v2.22.7](#v2227)
+- [v2.22.8](#v2228)
+
+## [v2.22.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.8)
+
+### Bugfixes
+
+- Correctly validate Hetzner API response for server type while calculating resource requirements and for networks while validating cloud spec ([#12716](https://github.com/kubermatic/kubermatic/pull/12716))
+- Fix vSphere cluster validation: If a Cluster uses a custom datastore, the Seed's default datastore should not be validated ([#12655](https://github.com/kubermatic/kubermatic/pull/12655))
+
+### Updates
+
+- Update to OSM [v1.2.3](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.2.3) ([#12709](https://github.com/kubermatic/kubermatic/pull/12709))
+
+### New Feature
+
+- Introduce `DisableAdminKubeconfig` flag in `KubermaticSettings` to disable the admin kubeconfig feature from dashboard ([#12682](https://github.com/kubermatic/kubermatic/pull/12682))
 
 ## [v2.22.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.7)
 
