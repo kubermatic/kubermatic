@@ -5,6 +5,24 @@
 - [v2.23.2](#v2232)
 - [v2.23.3](#v2233)
 - [v2.23.4](#v2234)
+- [v2.23.5](#v2235)
+
+## [v2.23.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.5)
+
+### Bugfixes
+
+- Correctly validate Hetzner API response for server type while calculating resource requirements and for networks while validating cloud spec ([#12716](https://github.com/kubermatic/kubermatic/pull/12716))
+
+### Updates
+
+- Update nginx-ingress-controller to v1.9.3 (fixes CVE-2023-44487, HTTP/2 rapid reset attack) ([#12714](https://github.com/kubermatic/kubermatic/pull/12714))
+- Update to Go 1.20.10 ([#12698](https://github.com/kubermatic/kubermatic/pull/12698))
+- Update to OSM [v1.3.3](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.3.3) ([#12710](https://github.com/kubermatic/kubermatic/pull/12710))
+- Add Cilium 1.13.7 as supported CNI version, deprecate cilium version 1.13.6 as it's impacted by CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity) ([#12695](https://github.com/kubermatic/kubermatic/pull/12695))
+
+### New Feature
+
+- Introduce `DisableAdminKubeconfig` flag in `KubermaticSettings` to disable the admin kubeconfig feature from dashboard ([#12679](https://github.com/kubermatic/kubermatic/pull/12679))
 
 ## [v2.23.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.4)
 
