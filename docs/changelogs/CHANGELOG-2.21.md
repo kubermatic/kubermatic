@@ -13,6 +13,17 @@
 - [v2.21.10](#v22110)
 - [v2.21.11](#v22111)
 - [v2.21.12](#v22112)
+- [v2.21.13](#v22113)
+
+## [v2.21.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.13)
+
+### Bugfixes
+
+- Fix vSphere cluster validation: If a Cluster uses a custom datastore, the Seed's default datastore should not be validated ([#12658](https://github.com/kubermatic/kubermatic/pull/12658))
+
+### Updates
+
+- Update OSM to [v1.1.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.1.4) ([#12707](https://github.com/kubermatic/kubermatic/pull/12707))
 
 ## [v2.21.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.12)
 
