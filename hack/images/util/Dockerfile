@@ -21,10 +21,11 @@ ENV MC_VERSION=RELEASE.2022-12-24T15-21-38Z \
     VAULT_VERSION=1.12.2 \
     YQ_VERSION=4.30.6
 
+# ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
 RUN apk add --no-cache -U \
     bash \
     ca-certificates \
-    'curl>=8.4.0-r0' \ # ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
+    'curl>=8.4.0-r0' \
     git \
     iproute2 \
     iptables \
