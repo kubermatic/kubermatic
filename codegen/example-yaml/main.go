@@ -25,6 +25,7 @@ import (
 	"reflect"
 	"strings"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
@@ -275,6 +276,9 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Ingress: kubermaticv1.KubermaticIngressConfiguration{
 				Domain: "example.com",
+				CertificateIssuer: &corev1.TypedLocalObjectReference{
+					Kind: certmanagerv1.ClusterIssuerKind,
+				},
 			},
 			FeatureGates: map[string]bool{},
 			API:          kubermaticv1.KubermaticAPIConfiguration{},

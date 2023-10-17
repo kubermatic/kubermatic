@@ -506,7 +506,7 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	// cert-manager's default is Issuer, but since we do not create an Issuer,
 	// it does not make sense to force to change the configuration for the
 	// default case
-	if configCopy.Spec.Ingress.CertificateIssuer.Kind == "" {
+	if configCopy.Spec.Ingress.CertificateIssuer != nil && configCopy.Spec.Ingress.CertificateIssuer.Kind == "" {
 		configCopy.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1.ClusterIssuerKind
 		logger.Debugw("Defaulting field", "field", "ingress.certificateIssuer.kind", "value", configCopy.Spec.Ingress.CertificateIssuer.Kind)
 	}

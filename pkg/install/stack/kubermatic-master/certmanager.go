@@ -63,7 +63,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return nil
 	}
 
-	if opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer.Name == "" {
+	if opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer == nil || opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer.Name == "" {
 		sublogger.Info("No CertificateIssuer configured in KubermaticConfiguration, skipping.")
 		return nil
 	}

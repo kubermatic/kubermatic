@@ -342,7 +342,8 @@ type KubermaticIngressConfiguration struct {
 	// matching Issuer in Kubermatic's namespace.
 	// Setting an empty name disables the automatic creation of certificates and disables
 	// the TLS settings on the Kubermatic Ingress.
-	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+	// +optional
+	CertificateIssuer *corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.

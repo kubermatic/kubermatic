@@ -107,8 +107,7 @@ func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Na
 			// If a Certificate is being issued, configure cert-manager by
 			// setting up the required annotations.
 			issuer := cfg.Spec.Ingress.CertificateIssuer
-
-			if issuer.Name != "" {
+			if issuer != nil && issuer.Name != "" {
 				delete(i.Annotations, certmanagerv1.IngressIssuerNameAnnotationKey)
 				delete(i.Annotations, certmanagerv1.IngressClusterIssuerNameAnnotationKey)
 
