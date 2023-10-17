@@ -19,6 +19,7 @@
 - Update to Go 1.20.10 ([#12698](https://github.com/kubermatic/kubermatic/pull/12698))
 - Update to OSM [v1.3.3](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.3.3) ([#12710](https://github.com/kubermatic/kubermatic/pull/12710))
 - Add Cilium 1.13.7 as supported CNI version, deprecate cilium version 1.13.6 as it's impacted by CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity) ([#12695](https://github.com/kubermatic/kubermatic/pull/12695))
+- Update to `quay.io/kubermatic/util:2.3.1` as helper image (includes curl version patched against CVE-2023-38545 and CVE-2023-38546) ([#12733](https://github.com/kubermatic/kubermatic/pull/12733))
 
 ### New Feature
 
