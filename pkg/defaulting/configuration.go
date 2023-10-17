@@ -226,14 +226,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.25
-			newSemver("v1.25.2"),
-			newSemver("v1.25.4"),
-			newSemver("v1.25.5"),
-			newSemver("v1.25.6"),
-			newSemver("v1.25.9"),
-			newSemver("v1.25.11"),
-			newSemver("v1.25.14"),
 			// Kubernetes 1.26
 			newSemver("v1.26.1"),
 			newSemver("v1.26.4"),
@@ -253,19 +245,6 @@ var (
 				To:   "1.25.*",
 			},
 			// ======= 1.25 =======
-			{
-				// Allow to change to any patch version
-				From: "1.25.*",
-				To:   "1.25.*",
-			},
-			{
-				// Auto-upgrade because of CVEs:
-				// - CVE-2022-3162 (fixed >= 1.25.4)
-				// - CVE-2022-3294 (fixed >= 1.25.4)
-				From:      ">= 1.25.0, < 1.25.4",
-				To:        "1.25.4",
-				Automatic: ptr.To(true),
-			},
 			{
 				// Allow to next minor release
 				From: "1.25.*",
