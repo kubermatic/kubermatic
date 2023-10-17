@@ -215,9 +215,10 @@ func TestController(t *testing.T) {
 				expectStatusHasConditions(t, ctx, client, app.Name)
 
 				// Update application Installation.
+				oldApp := app.DeepCopy()
 				app.Spec.ApplicationRef.Version = "2.0.0"
-				if err := client.Update(ctx, &app); err != nil {
-					t.Fatalf("failed to update applicationInstallation: %s", err)
+				if err := client.Patch(ctx, &app, ctrlruntimeclient.MergeFrom(oldApp)); err != nil {
+					t.Fatalf("failed to patch applicationInstallation: %s", err)
 				}
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
