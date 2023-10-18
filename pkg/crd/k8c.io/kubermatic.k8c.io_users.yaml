@@ -43,7 +43,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: UserSpec specifies a user.
+              description: Spec describes a KKP user.
               properties:
                 admin:
                   default: false
@@ -120,7 +120,7 @@ spec:
                 - name
               type: object
             status:
-              description: UserStatus stores status information about a user.
+              description: Status holds the information about the KKP user.
               properties:
                 lastSeen:
                   format: date-time

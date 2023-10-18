@@ -53,7 +53,9 @@ type User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   UserSpec   `json:"spec,omitempty"`
+	// Spec describes a KKP user.
+	Spec UserSpec `json:"spec,omitempty"`
+	// Status holds the information about the KKP user.
 	Status UserStatus `json:"status,omitempty"`
 }
 
@@ -115,6 +117,7 @@ type UserList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items is the list of KKP users.
 	Items []User `json:"items"`
 }
 

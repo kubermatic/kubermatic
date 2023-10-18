@@ -39,6 +39,7 @@ type IPAMPool struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// Spec describes the Multi-Cluster IP Address Management (IPAM) configuration for KKP user clusters.
 	Spec IPAMPoolSpec `json:"spec,omitempty"`
 }
 
@@ -102,9 +103,12 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
+// IPAMPoolList is the list of the object representing Multi-Cluster IP Address Management (IPAM)
+// configuration for KKP user clusters.
 type IPAMPoolList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
+	// Items holds the list of IPAM pool objects.
 	Items []IPAMPool `json:"items"`
 }

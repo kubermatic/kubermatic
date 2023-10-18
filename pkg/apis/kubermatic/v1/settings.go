@@ -174,6 +174,7 @@ type MachineDeploymentOptions struct {
 // DefaultProjectResourceQuota contains the default resource quota which will be set for all
 // projects that do not have a custom quota already set.
 type DefaultProjectResourceQuota struct {
+	// Quota specifies the default CPU, Memory and Storage quantities for all the projects.
 	Quota ResourceDetails `json:"quota,omitempty"`
 }
 
