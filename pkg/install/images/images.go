@@ -631,16 +631,18 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.OperatingSystemManagerWebhookServingCertSecretName,
 		resources.KubeVirtCSISecretName,
 		resources.KubeVirtInfraSecretName,
+		resources.GoogleServiceAccountSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
-			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
-			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
 			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
-			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
 			Azure:               &kubermaticv1.DatacenterSpecAzure{},
+			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
+			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
+			Nutanix:             &kubermaticv1.DatacenterSpecNutanix{},
+			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
 			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
+			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -749,26 +751,13 @@ func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfigur
 	return filteredVersions, nil
 }
 
-// list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI.
 func GetCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
-			ProviderName: string(kubermaticv1.VSphereCloudProvider),
-			VSphere:      &kubermaticv1.VSphereCloudSpec{},
-		},
-		{
-			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Domain:   "fakeDomain",
-				Username: "fakeUsername",
-				Password: "fakePassword",
-			},
-		},
-		{
-			ProviderName: string(kubermaticv1.HetznerCloudProvider),
-			Hetzner: &kubermaticv1.HetznerCloudSpec{
-				Token:   "fakeToken",
-				Network: "fakeNetwork",
+			ProviderName: string(kubermaticv1.AlibabaCloudProvider),
+			Alibaba: &kubermaticv1.AlibabaCloudSpec{
+				AccessKeyID:     "fakeAccessKeyID",
+				AccessKeySecret: "fakeAccessKeySecret",
 			},
 		},
 		{
@@ -778,10 +767,10 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
-			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-				Kubeconfig:    "fakeKubeconfig",
-				CSIKubeconfig: "fakeKubeconfig",
+			ProviderName: string(kubermaticv1.AWSCloudProvider),
+			AWS: &kubermaticv1.AWSCloudSpec{
+				AccessKeyID:     "fakeAccessKeyID",
+				SecretAccessKey: "fakeSecretAccessKey",
 			},
 		},
 		{
@@ -794,6 +783,50 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			},
 		},
 		{
+			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
+			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
+			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+				Token: "fakeToken",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.GCPCloudProvider),
+			GCP:          &kubermaticv1.GCPCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.HetznerCloudProvider),
+			Hetzner: &kubermaticv1.HetznerCloudSpec{
+				Token:   "fakeToken",
+				Network: "fakeNetwork",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
+			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
+				Kubeconfig:    "fakeKubeconfig",
+				CSIKubeconfig: "fakeKubeconfig",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.NutanixCloudProvider),
+			Nutanix:      &kubermaticv1.NutanixCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Domain:   "fakeDomain",
+				Username: "fakeUsername",
+				Password: "fakePassword",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.PacketCloudProvider),
+			Packet:       &kubermaticv1.PacketCloudSpec{},
+		},
+		{
 			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
 				Username:     "fakeUsername",
@@ -801,6 +834,10 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 				Organization: "fakeOrganization",
 				VDC:          "fakeVDC",
 			},
+		},
+		{
+			ProviderName: string(kubermaticv1.VSphereCloudProvider),
+			VSphere:      &kubermaticv1.VSphereCloudSpec{},
 		},
 	}
 }

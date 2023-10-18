@@ -74,11 +74,12 @@ func TestRetagImageForAllVersions(t *testing.T) {
 			plog := vlog.WithField("provider", cloudSpec.ProviderName)
 
 			for _, cniPlugin := range cniPlugins {
-				clog := plog.WithField("cni", fmt.Sprintf("%s_%s", cniPlugin.Type, cniPlugin.Version))
+				cni := fmt.Sprintf("%s_%s", cniPlugin.Type, cniPlugin.Version)
+				clog := plog.WithField("cni", cni)
 
 				images, err := GetImagesForVersion(clog, clusterVersion, cloudSpec, cniPlugin, false, config, allAddons, kubermaticVersions, caBundle, "")
 				if err != nil {
-					t.Errorf("Error calling getImagesForVersion: %v", err)
+					t.Errorf("Error calling getImagesForVersion for %s / %s / %s: %v", cloudSpec.ProviderName, clusterVersion.Version.String(), cni, err)
 				}
 				imageSet.Insert(images...)
 			}
@@ -101,4 +102,32 @@ func getLatestMinorVersions(config *kubermaticv1.KubermaticConfiguration) []*ver
 	}
 
 	return result
+}
+
+func TestGetCloudSpecsComplete(t *testing.T) {
+	cloudSpecs := GetCloudSpecs()
+
+	for _, providerName := range kubermaticv1.SupportedProviders {
+		// ignore external providers
+		if providerName == kubermaticv1.EKSCloudProvider || providerName == kubermaticv1.AKSCloudProvider || providerName == kubermaticv1.GKECloudProvider {
+			continue
+		}
+
+		// ignore fake
+		if providerName == kubermaticv1.FakeCloudProvider {
+			continue
+		}
+
+		exists := false
+		for _, spec := range cloudSpecs {
+			if spec.ProviderName == string(providerName) {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			t.Errorf("GetCloudSpecs does not contain data for %q.", providerName)
+		}
+	}
 }
