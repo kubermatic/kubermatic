@@ -253,7 +253,9 @@ func updateOwnAndPermissions(path string) error {
 func CacheOptions() cache.Options {
 	return cache.Options{
 		DefaultNamespaces: map[string]cache.Config{
-			metav1.NamespaceSystem: {},
+			metav1.NamespaceSystem: {
+				FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": resources.UserSSHKeys}),
+			},
 		},
 		ByObject: map[ctrlruntimeclient.Object]cache.ByObject{
 			&corev1.Secret{}: {
