@@ -33,7 +33,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.24",
-		kubermaticv1.CNIPluginTypeCilium: "1.13.0",
+		kubermaticv1.CNIPluginTypeCilium: "1.13.8",
 	}
 )
 
@@ -53,7 +53,7 @@ var (
 			"v1.12",
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			// See pkg/cni/cilium docs for details on introducing a new version.
-			"1.13.0",
+			"1.13.8",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -62,6 +62,9 @@ var (
 	// by the validation webhook for backward compatibility.
 	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
 		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.8", "v3.19", "v3.20", "v3.21"),
+		kubermaticv1.CNIPluginTypeCilium: sets.New(
+			"1.13.0", // CVE-2023-34242
+		),
 	}
 )
 
