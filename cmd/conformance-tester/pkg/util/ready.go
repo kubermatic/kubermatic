@@ -37,3 +37,12 @@ func PodIsReady(p *corev1.Pod) bool {
 	}
 	return false
 }
+
+func PodIsCompleted(p *corev1.Pod) bool {
+	for _, c := range p.Status.Conditions {
+		if c.Type == corev1.PodReady {
+			return c.Reason == "PodCompleted"
+		}
+	}
+	return false
+}
