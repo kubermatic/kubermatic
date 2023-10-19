@@ -103,6 +103,7 @@ metrics:
       tls_config:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      honor_timestamps: false
       job_name: kubernetes-nodes-cadvisor
       kubernetes_sd_configs:
       - role: node
