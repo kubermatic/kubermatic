@@ -172,8 +172,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	})
 	if err != nil {
 		r.recorder.Event(user, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconciled user: %s: %w", user.Name, err)
+		return reconcile.Result{}, fmt.Errorf("reconciled user %s: %w", user.Name, err)
 	}
+
 	return reconcile.Result{}, nil
 }
 

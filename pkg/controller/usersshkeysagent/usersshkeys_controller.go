@@ -111,7 +111,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
-		r.log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %w", err)
 	}
 

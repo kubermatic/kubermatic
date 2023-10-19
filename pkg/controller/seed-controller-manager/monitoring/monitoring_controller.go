@@ -189,22 +189,26 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		kubermaticv1.ClusterConditionMonitoringControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			// only reconcile this cluster if there are not yet too many updates running
-			if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
-				log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
-				return &reconcile.Result{
-					RequeueAfter: 10 * time.Second,
-				}, err
+			available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates)
+			if err != nil {
+				return &reconcile.Result{}, err
 			}
+
+			if !available {
+				log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
+				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+			}
+
 			return r.reconcile(ctx, log, cluster)
 		},
 	)
-	if err != nil {
-		log.Errorw("Failed to reconcile cluster", zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+
+	if result == nil || err != nil {
+		result = &reconcile.Result{}
 	}
 
-	if result == nil {
-		result = &reconcile.Result{}
+	if err != nil {
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return *result, err

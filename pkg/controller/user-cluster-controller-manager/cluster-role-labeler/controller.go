@@ -96,7 +96,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, clusterRole)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(clusterRole, corev1.EventTypeWarning, "AddingLabelFailed", err.Error())
 	}
 	return reconcile.Result{}, err

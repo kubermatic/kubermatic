@@ -96,7 +96,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if err := r.reconcile(ctx, r.Client, log, binding); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.log.Errorw("reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 

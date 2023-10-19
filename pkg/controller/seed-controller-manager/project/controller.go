@@ -92,7 +92,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcile
 
 	err := r.reconcile(ctx, log, project)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 

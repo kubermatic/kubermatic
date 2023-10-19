@@ -166,9 +166,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, log, osp)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(osp, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 

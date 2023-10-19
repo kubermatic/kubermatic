@@ -104,12 +104,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.reconcile(ctx, logger, kc); err != nil {
+	err := r.reconcile(ctx, logger, kc)
+	if err != nil {
 		r.recorder.Event(kc, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile kubermatic configuration %s: %w", kc.Name, err)
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kc *kubermaticv1.KubermaticConfiguration) error {

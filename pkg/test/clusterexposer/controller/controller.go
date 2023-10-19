@@ -117,9 +117,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Reconciling")
 
 	err := r.reconcile(ctx, log, request)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-	}
+
 	return reconcile.Result{}, err
 }
 

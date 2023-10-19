@@ -164,13 +164,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return r.reconcile(ctx, log, cluster)
 		},
 	)
-	if err != nil {
-		log.Errorw("Failed to reconcile cluster", zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
-	if result == nil {
+
+	if result == nil || err != nil {
 		result = &reconcile.Result{}
 	}
+
+	if err != nil {
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+
 	return *result, err
 }
 
@@ -190,8 +192,12 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	log.Debug("Reconciling CNI")
 
 	// Ensure legacy CNI addon is removed if it was deployed as older CNI version
-	if requeueAfter, err := r.ensureLegacyCNIAddonIsRemoved(ctx, cluster); requeueAfter > 0 || err != nil {
-		return &reconcile.Result{RequeueAfter: requeueAfter}, err
+	requeueAfter, err := r.ensureLegacyCNIAddonIsRemoved(ctx, cluster)
+	if err != nil {
+		return &reconcile.Result{}, err
+	}
+	if requeueAfter > 0 {
+		return &reconcile.Result{RequeueAfter: requeueAfter}, nil
 	}
 
 	// Prepare initialValues for the CNI ApplicationInstallation. These values will be used if the ApplicationInstallation does not exist yet.

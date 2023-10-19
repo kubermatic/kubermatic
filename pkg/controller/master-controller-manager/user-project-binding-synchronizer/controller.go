@@ -141,8 +141,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if err != nil {
 		r.recorder.Event(userProjectBinding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		return reconcile.Result{}, fmt.Errorf("reconciled userprojectbinding: %s: %w", userProjectBinding.Name, err)
+		return reconcile.Result{}, fmt.Errorf("reconciled userprojectbinding %s: %w", userProjectBinding.Name, err)
 	}
+
 	return reconcile.Result{}, nil
 }
 

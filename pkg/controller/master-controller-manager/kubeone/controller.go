@@ -196,7 +196,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	log := r.log.With("externalcluster", request.Name)
-	log.Info("Processing...")
+	log.Debug("Processing")
 
 	return reconcile.Result{}, r.reconcile(ctx, request.Name, log)
 }

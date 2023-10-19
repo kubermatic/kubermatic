@@ -43,9 +43,6 @@ type reconciler struct {
 // Reconcile makes changes in response to ClusterRole and ClusterRoleBinding related changes.
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	err := r.reconcile(ctx, request)
-	if err != nil {
-		r.logger.Errorw("Reconciling failed", zap.Error(err))
-	}
 
 	return reconcile.Result{}, err
 }

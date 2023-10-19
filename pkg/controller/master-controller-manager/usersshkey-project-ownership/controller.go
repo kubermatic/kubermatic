@@ -120,7 +120,6 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 	err := r.reconcile(ctx, log, sshKey)
 	if err != nil {
 		r.recorder.Event(sshKey, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		log.Errorw("Reconciling failed", zap.Error(err))
 	}
 
 	return reconcile.Result{}, err

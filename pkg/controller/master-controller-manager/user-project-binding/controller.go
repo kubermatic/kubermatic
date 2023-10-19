@@ -101,9 +101,6 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 	log.Debug("Reconciling")
 
 	err := r.reconcile(ctx, log, projectBinding)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-	}
 
 	return reconcile.Result{}, err
 }

@@ -258,23 +258,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			// only reconcile this cluster if there are not yet too many updates running
-			if available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates); !available || err != nil {
+			available, err := controllerutil.ClusterAvailableForReconciling(ctx, r, cluster, r.concurrentClusterUpdates)
+			if err != nil {
+				return &reconcile.Result{}, err
+			}
+
+			if !available {
 				log.Infow("Concurrency limit reached, checking again in 10 seconds", "concurrency-limit", r.concurrentClusterUpdates)
-				return &reconcile.Result{
-					RequeueAfter: 10 * time.Second,
-				}, err
+				return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
 
 			return r.reconcile(ctx, log, cluster)
 		},
 	)
-	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
 
+	// in case of errors, always return a zero result
 	if result == nil {
 		result = &reconcile.Result{}
+	}
+
+	// no need to log the error, controller-runtime does it for us
+	if err != nil {
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
 	return *result, err
@@ -293,8 +298,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return client, nil
 		}
 
+		if err := clusterdeletion.New(r.Client, r.recorder, userClusterClientGetter).CleanupCluster(ctx, log, cluster); err != nil {
+			return nil, err
+		}
+
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, r.recorder, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	namespace, err := r.reconcileClusterNamespace(ctx, log, cluster)

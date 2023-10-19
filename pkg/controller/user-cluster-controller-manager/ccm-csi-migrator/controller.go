@@ -117,7 +117,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, cluster)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.seedRecorder.Event(cluster, corev1.EventTypeWarning, "CCMCSIMigrationFailed", err.Error())
 	}
 

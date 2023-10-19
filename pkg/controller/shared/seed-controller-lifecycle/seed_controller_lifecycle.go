@@ -158,9 +158,7 @@ func Add(
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	err := r.reconcile(ctx)
-	if err != nil {
-		r.log.Errorw("Reconciliation failed", zap.Error(err))
-	}
+
 	return reconcile.Result{}, err
 }
 

@@ -188,13 +188,15 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 			return r.ruleGroupController.reconcile(ctx, cluster, ruleGroup)
 		},
 	)
-	if err != nil {
-		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
-	if result == nil {
+
+	if result == nil || err != nil {
 		result = &reconcile.Result{}
 	}
+
+	if err != nil {
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+
 	return *result, err
 }
 

@@ -157,15 +157,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	result, err := r.reconcile(ctx, log, restore, cluster, seed)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(restore, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
 			"failed to reconcile etcd restore %q: %v", restore.Name, err)
 	}
 
-	if result == nil {
+	if result == nil || err != nil {
 		result = &reconcile.Result{}
 	}
+
 	return *result, err
 }
 
