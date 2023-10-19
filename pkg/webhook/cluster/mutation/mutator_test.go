@@ -460,8 +460,8 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
-					"type":    string(kubermaticv1.CNIPluginTypeCanal),
-					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+					"type":    string(kubermaticv1.CNIPluginTypeCilium),
+					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 				}),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 			),
@@ -514,8 +514,8 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
-					"type":    string(kubermaticv1.CNIPluginTypeCanal),
-					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+					"type":    string(kubermaticv1.CNIPluginTypeCilium),
+					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 				}),
 			),
 		},
