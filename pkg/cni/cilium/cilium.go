@@ -200,10 +200,6 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		"podSecurityContext": podSecurityContext,
 	}
 	values := map[string]any{
-		"cni": map[string]any{
-			// we run Cilium as non-exclusive CNI to allow for Multus use-cases
-			"exclusive": false,
-		},
 		"podSecurityContext": podSecurityContext,
 	}
 
@@ -215,10 +211,15 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		},
 		"podSecurityContext": podSecurityContext,
 	}
+	valuesCni := map[string]any{
+		// we run Cilium as non-exclusive CNI to allow for Multus use-cases
+		"exclusive": false,
+	}
 	valuesCertGen := maps.Clone(defaultValues)
 	valuesRelay := maps.Clone(defaultValues)
 	valuesFrontend := maps.Clone(defaultValues)
 	valuesBackend := maps.Clone(defaultValues)
+	values["cni"] = valuesCni
 	values["operator"] = valuesOperator
 	values["certgen"] = valuesCertGen
 	values["hubble"] = map[string]any{
@@ -242,6 +243,8 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		}
 	} else {
 		values["kubeProxyReplacement"] = "disabled"
+		values["sessionAffinity"] = true
+		valuesCni["chainingMode"] = "portmap"
 	}
 
 	ipamOperator := map[string]any{
