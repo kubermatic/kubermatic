@@ -487,25 +487,13 @@ spec:
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
-        condition: externalCloudProvider
+        condition: inTreeProvider
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-        operation: SUPPORT
+        operation: CREATE
         # Provider to which to apply the compatibility check.
         # Empty string matches all providers
         provider: aws
         # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
-        version: < 1.24.0
-      - condition: externalCloudProvider
-        operation: CREATE
-        provider: aws
-        version: < 1.24.0
-      - condition: externalCloudProvider
-        operation: UPGRADE
-        provider: aws
-        version: < 1.24.0
-      - condition: inTreeProvider
-        operation: CREATE
-        provider: aws
         version: '>= 1.27.0'
       - condition: inTreeProvider
         operation: UPGRADE
@@ -544,19 +532,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.24.*
+        from: 1.26.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.25.*
-      - from: 1.25.*
-        to: 1.25.*
-      - automatic: true
-        from: '>= 1.25.0, < 1.25.4'
-        to: 1.25.4
-      - from: 1.25.*
-        to: 1.26.*
-      - from: 1.26.*
         to: 1.26.*
       - from: 1.26.*
         to: 1.27.*
@@ -568,13 +547,6 @@ spec:
         to: 1.28.*
     # Versions lists the available versions.
     versions:
-      - v1.25.2
-      - v1.25.4
-      - v1.25.5
-      - v1.25.6
-      - v1.25.9
-      - v1.25.11
-      - v1.25.14
       - v1.26.1
       - v1.26.4
       - v1.26.6
