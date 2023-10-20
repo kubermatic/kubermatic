@@ -124,6 +124,8 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
+require golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+
 require (
 	cloud.google.com/go/compute v1.23.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -320,7 +322,6 @@ require (
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/mod v0.13.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/sync v0.4.0 // indirect
