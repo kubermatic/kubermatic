@@ -53,10 +53,10 @@ data:
     cluster-name: default
     peer-service: "hubble-peer.kube-system.svc.cluster.local:443"
     listen-address: :4245
-    dial-timeout: 
-    retry-timeout: 
-    sort-buffer-len-max: 
-    sort-buffer-drain-timeout: 
+    dial-timeout:
+    retry-timeout:
+    sort-buffer-len-max:
+    sort-buffer-drain-timeout:
     tls-client-cert-file: /var/lib/hubble-relay/tls/client.crt
     tls-client-key-file: /var/lib/hubble-relay/tls/client.key
     tls-hubble-server-ca-files: /var/lib/hubble-relay/tls/hubble-server-ca.crt
@@ -253,7 +253,7 @@ spec:
     spec:
       containers:
         - name: hubble-relay
-          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.12.9"
+          image: "{{ Registry "quay.io" }}/cilium/hubble-relay:v1.12.15"
           imagePullPolicy: IfNotPresent
           command:
             - hubble-relay
@@ -342,7 +342,7 @@ spec:
       automountServiceAccountToken: true
       containers:
       - name: frontend
-        image: "{{ Registry "quay.io" }}/cilium/hubble-ui:v0.11.0"
+        image: "{{ Registry "quay.io" }}/cilium/hubble-ui:v0.12.1"
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
@@ -355,7 +355,7 @@ spec:
             mountPath: /tmp
         terminationMessagePolicy: FallbackToLogsOnError
       - name: backend
-        image: "{{ Registry "quay.io" }}/cilium/hubble-ui-backend:v0.11.0"
+        image: "{{ Registry "quay.io" }}/cilium/hubble-ui-backend:v0.12.1"
         imagePullPolicy: IfNotPresent
         env:
         - name: EVENTS_SERVER_PORT
