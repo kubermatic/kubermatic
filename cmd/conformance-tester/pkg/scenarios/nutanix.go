@@ -18,11 +18,15 @@ package scenarios
 
 import (
 	"context"
+	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -33,6 +37,22 @@ const (
 
 type nutanixScenario struct {
 	baseScenario
+}
+
+func (s *nutanixScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
+	return sets.New[providerconfig.OperatingSystem](providerconfig.AllOperatingSystems...)
+}
+
+func (s *nutanixScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
+	}
+
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+		return fmt.Errorf("provider supports only %v", sets.List(compat))
+	}
+
+	return nil
 }
 
 func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {

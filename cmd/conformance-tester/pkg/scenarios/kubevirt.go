@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 )
 
@@ -39,6 +40,22 @@ const (
 
 type kubevirtScenario struct {
 	baseScenario
+}
+
+func (s *kubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
+	return sets.New[providerconfig.OperatingSystem](providerconfig.AllOperatingSystems...)
+}
+
+func (s *kubevirtScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
+	}
+
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+		return fmt.Errorf("provider supports only %v", sets.List(compat))
+	}
+
+	return nil
 }
 
 func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
