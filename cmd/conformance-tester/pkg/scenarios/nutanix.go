@@ -40,7 +40,13 @@ type nutanixScenario struct {
 }
 
 func (s *nutanixScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](providerconfig.AllOperatingSystems...)
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemCentOS,
+		providerconfig.OperatingSystemRHEL,
+		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
+	)
 }
 
 func (s *nutanixScenario) IsValid() error {

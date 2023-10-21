@@ -42,7 +42,13 @@ type openStackScenario struct {
 }
 
 func (s *openStackScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](providerconfig.AllOperatingSystems...)
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemCentOS,
+		providerconfig.OperatingSystemRHEL,
+		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
+	)
 }
 
 func (s *openStackScenario) IsValid() error {

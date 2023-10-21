@@ -34,7 +34,13 @@ type alibabaScenario struct {
 }
 
 func (s *alibabaScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](providerconfig.AllOperatingSystems...)
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemCentOS,
+		providerconfig.OperatingSystemRHEL,
+		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
+	)
 }
 
 func (s *alibabaScenario) IsValid() error {
