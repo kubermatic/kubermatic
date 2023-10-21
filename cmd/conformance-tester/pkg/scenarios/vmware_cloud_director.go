@@ -47,7 +47,7 @@ func (s *vmwareCloudDirectorScenario) IsValid() error {
 	}
 
 	if s.operatingSystem != providerconfig.OperatingSystemUbuntu {
-		return errors.New("provider only supports Flatcar")
+		return errors.New("provider only supports Ubuntu")
 	}
 
 	return nil
