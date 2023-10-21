@@ -30,7 +30,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
@@ -60,7 +59,6 @@ type Options struct {
 	EnableTests          sets.Set[string]
 	ExcludeTests         sets.Set[string]
 	Tests                sets.Set[string]
-	ContainerRuntimes    sets.Set[string]
 
 	// The tester can export the result status for all executed scenarios
 	// into a JSON file and then re-read that to retry failed runs.
@@ -111,7 +109,6 @@ func NewDefaultOptions() *Options {
 		ScenarioOptions:              sets.New[string](),
 		Providers:                    sets.New[string](),
 		Releases:                     sets.New(version.GetLatestMinorVersions(defaulting.DefaultKubernetesVersioning.Versions)...),
-		ContainerRuntimes:            sets.New(resources.ContainerRuntimeContainerd),
 		EnableDistributions:          sets.New[string](),
 		ExcludeDistributions:         sets.New[string](),
 		Distributions:                sets.New[string](),
@@ -140,7 +137,6 @@ func (o *Options) AddFlags() {
 	flag.StringVar(&o.NamePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.Var(flagopts.SetFlag(o.Providers), "providers", "Comma-separated list of providers to test")
 	flag.Var(flagopts.SetFlag(o.Releases), "releases", "Comma-separated list of Kubernetes releases (e.g. '1.24') to test")
-	flag.Var(flagopts.SetFlag(o.ContainerRuntimes), "container-runtimes", "Comma-separated list of container runtimes to test")
 	flag.Var(flagopts.SetFlag(o.EnableDistributions), "distributions", "Comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
 	flag.Var(flagopts.SetFlag(o.ExcludeDistributions), "exclude-distributions", "Comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
 	flag.Var(flagopts.SetFlag(o.EnableTests), "tests", "Comma-separated list of enabled tests (cannot be used in conjunction with -exclude-tests)")
@@ -178,12 +174,6 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 
 	if !sets.New("api", "kube").Has(o.Client) {
 		return fmt.Errorf("invalid -client option %q", o.Client)
-	}
-
-	// restrict to known container runtimes
-	o.ContainerRuntimes = sets.New(resources.ContainerRuntimeDocker, resources.ContainerRuntimeContainerd).Intersection(o.ContainerRuntimes)
-	if o.ContainerRuntimes.Len() == 0 {
-		return errors.New("no container runtime was enabled")
 	}
 
 	o.Providers = AllProviders.Intersection(o.Providers)

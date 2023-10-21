@@ -57,7 +57,6 @@ func (s *hetznerScenario) IsValid() error {
 
 func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Hetzner.KKPDatacenter,
 			Hetzner: &kubermaticv1.HetznerCloudSpec{

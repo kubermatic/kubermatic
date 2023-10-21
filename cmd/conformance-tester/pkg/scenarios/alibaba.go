@@ -31,7 +31,6 @@ type alibabaScenario struct {
 
 func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Alibaba.KKPDatacenter,
 			Alibaba: &kubermaticv1.AlibabaCloudSpec{

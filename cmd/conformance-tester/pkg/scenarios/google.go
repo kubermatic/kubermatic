@@ -46,7 +46,6 @@ func (s *googleScenario) IsValid() error {
 
 func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{

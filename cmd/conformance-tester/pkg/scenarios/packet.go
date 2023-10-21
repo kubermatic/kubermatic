@@ -58,7 +58,6 @@ func (s *packetScenario) IsValid() error {
 
 func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Packet.KKPDatacenter,
 			Packet: &kubermaticv1.PacketCloudSpec{

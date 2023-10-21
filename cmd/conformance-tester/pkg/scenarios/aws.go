@@ -45,7 +45,6 @@ type awsScenario struct {
 
 func (s *awsScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.AWS.KKPDatacenter,
 			AWS: &kubermaticv1.AWSCloudSpec{

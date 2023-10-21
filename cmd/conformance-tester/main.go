@@ -90,7 +90,6 @@ func main() {
 		"providers", sets.List(opts.Providers),
 		"operatingsystems", sets.List(opts.Distributions),
 		"versions", opts.Versions,
-		"containerruntimes", sets.List(opts.ContainerRuntimes),
 		"tests", sets.List(opts.Tests),
 		"osm", opts.OperatingSystemManagerEnabled,
 		"dualstack", opts.DualStackEnabled,
@@ -122,7 +121,6 @@ func main() {
 	scenarios, err := scenarios.NewGenerator().
 		WithCloudProviders(sets.List(opts.Providers)...).
 		WithOperatingSystems(sets.List(opts.Distributions)...).
-		WithContainerRuntimes(sets.List(opts.ContainerRuntimes)...).
 		WithOSM(opts.OperatingSystemManagerEnabled).
 		WithDualstack(opts.DualStackEnabled).
 		WithVersions(opts.Versions...).

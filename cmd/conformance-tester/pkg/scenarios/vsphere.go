@@ -36,7 +36,6 @@ type vSphereScenario struct {
 
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{

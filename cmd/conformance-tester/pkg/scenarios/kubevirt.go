@@ -43,7 +43,6 @@ type kubevirtScenario struct {
 
 func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{

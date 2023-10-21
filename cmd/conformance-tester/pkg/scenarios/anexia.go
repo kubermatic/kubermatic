@@ -51,7 +51,6 @@ func (s *anexiaScenario) IsValid() error {
 
 func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Anexia.KKPDatacenter,
 			Anexia: &kubermaticv1.AnexiaCloudSpec{

@@ -39,7 +39,6 @@ type openStackScenario struct {
 
 func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.OpenStack.KKPDatacenter,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{

@@ -55,7 +55,6 @@ func (s *vmwareCloudDirectorScenario) IsValid() error {
 
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	spec := &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{

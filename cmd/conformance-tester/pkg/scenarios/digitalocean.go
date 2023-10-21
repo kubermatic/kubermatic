@@ -57,7 +57,6 @@ func (s *digitaloceanScenario) IsValid() error {
 
 func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Digitalocean.KKPDatacenter,
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
