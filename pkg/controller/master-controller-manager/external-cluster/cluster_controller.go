@@ -117,7 +117,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
 			err = nil
 		default:
-			log.Errorw("Reconciling failed", zap.Error(err))
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		}
 	}
@@ -189,8 +188,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 				return reconcile.Result{}, err
 			}
 		}
+		if err := r.updateStatus(ctx, *condition, cluster); err != nil {
+			return reconcile.Result{}, err
+		}
 		// updating status every 5 minutes
-		return reconcile.Result{RequeueAfter: time.Minute * 5}, r.updateStatus(ctx, *condition, cluster)
+		return reconcile.Result{RequeueAfter: time.Minute * 5}, nil
 	}
 
 	if cloud.EKS != nil {
@@ -255,9 +257,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 					Message: err.Error(),
 				}
 				return reconcile.Result{}, r.updateStatus(ctx, *condition, cluster)
-			} else {
-				return reconcile.Result{}, err
 			}
+
+			return reconcile.Result{}, err
 		}
 		if condition.Phase == kubermaticv1.ExternalClusterPhaseProvisioning {
 			if cluster.Status.Condition.Phase != condition.Phase {

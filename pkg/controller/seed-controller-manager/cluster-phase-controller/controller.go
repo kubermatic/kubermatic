@@ -89,7 +89,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, log, cluster)
 	if err != nil {
-		log.Errorw("Failed to reconcile", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 

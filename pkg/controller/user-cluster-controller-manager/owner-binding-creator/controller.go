@@ -96,7 +96,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, request.Name)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(&rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{Name: request.Name}}, corev1.EventTypeWarning, "AddBindingFailed", err.Error())
 	}
 

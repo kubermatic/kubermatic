@@ -84,9 +84,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, allowedRegistry)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(allowedRegistry, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 

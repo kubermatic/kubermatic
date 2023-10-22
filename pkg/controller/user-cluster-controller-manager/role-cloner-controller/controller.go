@@ -122,9 +122,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, role)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(role, corev1.EventTypeWarning, "CloningRoleFailed", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 

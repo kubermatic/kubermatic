@@ -106,9 +106,7 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrlruntime.Request) (ctrlruntime.Result, error) {
 	r.log.Debugw("got reconcile request", "request", req)
 	err := r.sync(ctx)
-	if err != nil {
-		r.log.Errorw("failed to reconcile", zap.Error(err))
-	}
+
 	return ctrlruntime.Result{}, err
 }
 

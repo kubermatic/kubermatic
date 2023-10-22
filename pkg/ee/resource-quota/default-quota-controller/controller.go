@@ -105,7 +105,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, setting, log)
 	if err != nil {
-		log.Errorw("ReconcilingError", zap.Error(err))
 		r.recorder.Event(setting, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 

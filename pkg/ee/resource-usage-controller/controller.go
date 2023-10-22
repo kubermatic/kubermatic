@@ -117,9 +117,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, cluster, machines)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ClusterResourceUsageReconcileFailed", err.Error())
 	}
+
 	return reconcile.Result{}, err
 }
 

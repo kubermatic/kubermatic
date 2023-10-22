@@ -115,9 +115,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	err := r.reconcile(ctx, resourceQuota)
-	if err != nil {
-		log.Errorw("ReconcilingError", zap.Error(err))
-	}
 
 	return reconcile.Result{}, err
 }

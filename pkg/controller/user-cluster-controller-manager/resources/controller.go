@@ -309,7 +309,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := r.reconcile(ctx); err != nil {
-		r.log.Errorw("Reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err
 	}
 

@@ -136,12 +136,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, appInstallation)
 	if err != nil {
-		log.Errorw("ReconcilingError", zap.Error(err))
 		r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, applicationInstallationReconcileFailedEvent, err.Error())
+		return reconcile.Result{}, err
 	}
 
 	log.Debug("Processed")
-	return reconcile.Result{RequeueAfter: appInstallation.Spec.ReconciliationInterval.Duration}, err
+	return reconcile.Result{RequeueAfter: appInstallation.Spec.ReconciliationInterval.Duration}, nil
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation) error {

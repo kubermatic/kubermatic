@@ -223,15 +223,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			result = &reconcile.Result{RequeueAfter: 30 * time.Second}
 			err = nil
 		} else {
-			log.Errorw("Reconciling failed", zap.Error(err))
 			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
 				"failed to reconcile etcd backup config %q: %v", backupConfig.Name, err)
 		}
 	}
+
 	if result == nil {
 		result = &reconcile.Result{}
 	}
+
 	return *result, err
 }
 
@@ -257,40 +258,39 @@ func (r *Reconciler) reconcile(
 	}
 
 	var nextReconcile, totalReconcile *reconcile.Result
-	errorReconcile := &reconcile.Result{RequeueAfter: 1 * time.Minute}
 
 	if nextReconcile, err = r.ensurePendingBackupIsScheduled(ctx, backupConfig, cluster); err != nil {
-		return errorReconcile, fmt.Errorf("failed to ensure next backup is scheduled: %w", err)
+		return nil, fmt.Errorf("failed to ensure next backup is scheduled: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.startPendingBackupJobs(ctx, data, backupConfig); err != nil {
-		return errorReconcile, fmt.Errorf("failed to start pending and update running backups: %w", err)
+		return nil, fmt.Errorf("failed to start pending and update running backups: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.startPendingBackupDeleteJobs(ctx, data, backupConfig); err != nil {
-		return errorReconcile, fmt.Errorf("failed to start pending backup delete jobs: %w", err)
+		return nil, fmt.Errorf("failed to start pending backup delete jobs: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.updateRunningBackupDeleteJobs(ctx, data, backupConfig); err != nil {
-		return errorReconcile, fmt.Errorf("failed to update running backup delete jobs: %w", err)
+		return nil, fmt.Errorf("failed to update running backup delete jobs: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.deleteFinishedBackupJobs(ctx, log, backupConfig, cluster); err != nil {
-		return errorReconcile, fmt.Errorf("failed to delete finished backup jobs: %w", err)
+		return nil, fmt.Errorf("failed to delete finished backup jobs: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
 	if nextReconcile, err = r.handleFinalization(ctx, backupConfig); err != nil {
-		return errorReconcile, fmt.Errorf("failed to clean up EtcdBackupConfig: %w", err)
+		return nil, fmt.Errorf("failed to clean up EtcdBackupConfig: %w", err)
 	}
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)

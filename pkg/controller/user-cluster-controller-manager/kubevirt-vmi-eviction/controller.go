@@ -115,7 +115,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
 	}
 	if paused {
-		log.Infof("Cluster paused. no reconcile")
+		log.Info("Cluster paused. no reconcile")
 		return reconcile.Result{}, nil
 	}
 
@@ -130,7 +130,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.deleteMachine(ctx, log, vmi)
 	if err != nil {
-		log.Errorw("ReconcilingError", zap.Error(err))
+		return reconcile.Result{}, fmt.Errorf("failed deleting Machine: %w", err)
 	}
 
 	return reconcile.Result{}, nil

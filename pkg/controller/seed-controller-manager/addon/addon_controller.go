@@ -221,19 +221,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		},
 	)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
 			"failed to reconcile Addon %q: %v", addon.Name, err)
-	}
-	if result == nil {
+	} else if result == nil {
 		// we check for this after the ClusterReconcileWrapper() call because otherwise the cluster would never reconcile since we always requeue
 		result = &reconcile.Result{}
 		if r.addonEnforceInterval != 0 { // addon enforce is enabled
 			// All is well, requeue in addonEnforceInterval minutes. We do this to enforce default addons and prevent cluster admins from disabling them.
+			// We only set this if err == nil, as controller-runtime would ignore it otherwise and log a warning.
 			result.RequeueAfter = time.Duration(r.addonEnforceInterval) * time.Minute
 		}
 	}
+
 	return *result, err
 }
 

@@ -136,13 +136,15 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 			return r.datasourceGrafanaController.reconcile(ctx, cluster, log)
 		},
 	)
-	if err != nil {
-		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
-	if result == nil {
+
+	if result == nil || err != nil {
 		result = &reconcile.Result{}
 	}
+
+	if err != nil {
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+
 	return *result, err
 }
 

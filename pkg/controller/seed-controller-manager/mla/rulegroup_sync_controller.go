@@ -129,6 +129,7 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 		r.recorder.Event(ruleGroup, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcle rulegroup %s: %w", ruleGroup.Name, err)
 	}
+
 	return reconcile.Result{}, nil
 }
 
