@@ -36,14 +36,14 @@ spec:
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
-        cpu: 250m
+        cpu: "1"
         memory: 1Gi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
       # otherwise to an implementation-defined value.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
-        cpu: 100m
+        cpu: 200m
         memory: 150Mi
   # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
   # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
@@ -133,14 +133,14 @@ spec:
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
-        cpu: 100m
+        cpu: "1"
         memory: 400Mi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
       # otherwise to an implementation-defined value.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       requests:
-        cpu: 50m
+        cpu: 200m
         memory: 128Mi
   # Proxy allows to configure Kubermatic to use proxies to talk to the
   # world outside of its cluster.
@@ -299,7 +299,7 @@ spec:
       # Limits describes the maximum amount of compute resources allowed.
       # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
       limits:
-        cpu: 500m
+        cpu: "1"
         memory: 1Gi
       # Requests describes the minimum amount of compute resources required.
       # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
