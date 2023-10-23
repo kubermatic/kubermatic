@@ -44,7 +44,7 @@ const (
 var OSLabelMatchValues = map[string][]string{
 	CentOSLabelValue:      {"centos"},
 	UbuntuLabelValue:      {"ubuntu"},
-	RHELLabelValue:        {"rhel"},
+	RHELLabelValue:        {"rhel", "red hat enterprise"},
 	FlatcarLabelValue:     {"flatcar container linux"},
 	RockyLinuxLabelValue:  {"rockylinux", "rocky linux"},
 	AmazonLinuxLabelValue: {"amzn2"},
