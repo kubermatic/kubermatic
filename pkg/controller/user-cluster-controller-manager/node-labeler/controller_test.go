@@ -20,8 +20,9 @@ import (
 	"context"
 	"testing"
 
+	"go.uber.org/zap"
+
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
@@ -118,6 +119,20 @@ func TestReconcile(t *testing.T) {
 			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "rhel"},
 		},
 		{
+			name: "red hat label gets added",
+			node: &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: requestName,
+				},
+				Status: corev1.NodeStatus{
+					NodeInfo: corev1.NodeSystemInfo{
+						OSImage: "Red Hat Enterprise Linux 8.5 (Ootpa)",
+					},
+				},
+			},
+			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "rhel"},
+		},
+		{
 			name: "rocky linux label gets added",
 			node: &corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{
@@ -142,6 +157,8 @@ func TestReconcile(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
+
 	for idx := range testCases {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
@@ -154,13 +171,12 @@ func TestReconcile(t *testing.T) {
 
 			client := clientBuilder.Build()
 			r := &reconciler{
-				log:      kubermaticlog.Logger,
+				log:      zap.NewNop().Sugar(),
 				client:   client,
 				recorder: record.NewFakeRecorder(10),
 				labels:   tc.reconcilerLabels,
 			}
 
-			ctx := context.Background()
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: requestName}}
 			_, err := r.Reconcile(ctx, request)
 			var actualErr string
