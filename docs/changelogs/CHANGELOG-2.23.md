@@ -6,6 +6,19 @@
 - [v2.23.3](#v2233)
 - [v2.23.4](#v2234)
 - [v2.23.5](#v2235)
+- [v2.23.6](#v2236)
+
+## [v2.23.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.6)
+
+### Bugfixes
+
+- Fix Digitalocean CSI addon failing to render ([#12739](https://github.com/kubermatic/kubermatic/pull/12739))
+- Fix node-labeller controller not applying the `x-kubernetes.io/distribution` label to RHEL nodes ([#12751](https://github.com/kubermatic/kubermatic/pull/12751))
+- Increase default CPU limits for KKP API/seed/master-controller-managers to prevent general slowness ([#12764](https://github.com/kubermatic/kubermatic/pull/12764))
+
+### Updates
+
+- Add support for Cilium 1.13.8, mitigating an high CVE-2023-44487 ([#12762](https://github.com/kubermatic/kubermatic/pull/12762))
 
 ## [v2.23.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.5)
 
