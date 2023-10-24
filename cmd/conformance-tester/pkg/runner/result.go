@@ -200,7 +200,6 @@ type ScenarioResult struct {
 
 	CloudProvider     kubermaticv1.ProviderType      `json:"cloudProvider"`
 	OperatingSystem   providerconfig.OperatingSystem `json:"operatingSystem"`
-	ContainerRuntime  string                         `json:"containerRuntime"`
 	KubernetesRelease string                         `json:"kubernetesRelease"`
 	KubernetesVersion semver.Semver                  `json:"kubernetesVersion"`
 	KubermaticVersion string                         `json:"kubermaticVersion"`
@@ -228,7 +227,6 @@ func (sr *ScenarioResult) Equals(other ScenarioResult) bool {
 	return true &&
 		other.CloudProvider == sr.CloudProvider &&
 		other.OperatingSystem == sr.OperatingSystem &&
-		other.ContainerRuntime == sr.ContainerRuntime &&
 		other.KubernetesVersion == sr.KubernetesVersion
 }
 
@@ -236,7 +234,6 @@ func (sr *ScenarioResult) MatchesScenario(scenario scenarios.Scenario) bool {
 	return true &&
 		scenario.CloudProvider() == sr.CloudProvider &&
 		scenario.OperatingSystem() == sr.OperatingSystem &&
-		scenario.ContainerRuntime() == sr.ContainerRuntime &&
 		scenario.ClusterVersion() == sr.KubernetesVersion
 }
 

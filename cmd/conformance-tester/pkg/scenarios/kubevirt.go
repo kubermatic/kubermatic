@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 )
 
@@ -41,9 +42,30 @@ type kubevirtScenario struct {
 	baseScenario
 }
 
+func (s *kubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemCentOS,
+		providerconfig.OperatingSystemRHEL,
+		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
+	)
+}
+
+func (s *kubevirtScenario) IsValid() error {
+	if err := s.baseScenario.IsValid(); err != nil {
+		return err
+	}
+
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+		return fmt.Errorf("provider supports only %v", sets.List(compat))
+	}
+
+	return nil
+}
+
 func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
 			Kubevirt: &kubermaticv1.KubevirtCloudSpec{

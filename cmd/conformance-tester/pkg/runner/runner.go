@@ -152,7 +152,6 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 			scenarioName:      scenario.Name(),
 			CloudProvider:     scenario.CloudProvider(),
 			OperatingSystem:   scenario.OperatingSystem(),
-			ContainerRuntime:  scenario.ContainerRuntime(),
 			KubernetesRelease: clusterVersion.MajorMinor(),
 			KubernetesVersion: clusterVersion,
 		}
@@ -212,21 +211,9 @@ func (r *TestRunner) scenarioWorker(ctx context.Context, scenarios <-chan scenar
 }
 
 func (r *TestRunner) isValidNewScenario(scenario scenarios.Scenario) error {
-	// check if the CRI is enabled by the user
-	if !r.opts.ContainerRuntimes.Has(scenario.ContainerRuntime()) {
-		return fmt.Errorf("CRI is not enabled")
-	}
-
 	// check if the OS is enabled by the user
 	if !r.opts.Distributions.Has(string(scenario.OperatingSystem())) {
 		return fmt.Errorf("OS is not enabled")
-	}
-
-	// apply static filters
-	clusterVersion := scenario.ClusterVersion()
-	dockerSupported := clusterVersion.LessThan(semver.NewSemverOrDie("1.24"))
-	if !dockerSupported && scenario.ContainerRuntime() == resources.ContainerRuntimeDocker {
-		return fmt.Errorf("CRI is not supported in this Kubernetes version")
 	}
 
 	return scenario.IsValid()

@@ -40,7 +40,6 @@ type Scenario interface {
 
 	CloudProvider() kubermaticv1.ProviderType
 	OperatingSystem() providerconfig.OperatingSystem
-	ContainerRuntime() string
 	ClusterVersion() semver.Semver
 	Datacenter() *kubermaticv1.Datacenter
 	Name() string
@@ -56,7 +55,6 @@ type baseScenario struct {
 	cloudProvider    kubermaticv1.ProviderType
 	operatingSystem  providerconfig.OperatingSystem
 	clusterVersion   semver.Semver
-	containerRuntime string
 	dualstackEnabled bool
 	datacenter       *kubermaticv1.Datacenter
 }
@@ -73,10 +71,6 @@ func (s *baseScenario) ClusterVersion() semver.Semver {
 	return s.clusterVersion
 }
 
-func (s *baseScenario) ContainerRuntime() string {
-	return s.containerRuntime
-}
-
 func (s *baseScenario) Datacenter() *kubermaticv1.Datacenter {
 	return s.datacenter
 }
@@ -86,7 +80,6 @@ func (s *baseScenario) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 		"provider", s.cloudProvider,
 		"os", s.operatingSystem,
 		"version", s.clusterVersion.String(),
-		"cri", s.containerRuntime,
 	)
 }
 
@@ -95,7 +88,7 @@ func (s *baseScenario) NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger {
 }
 
 func (s *baseScenario) Name() string {
-	return fmt.Sprintf("%s-%s-%s-%s", s.cloudProvider, s.operatingSystem, s.containerRuntime, s.clusterVersion.String())
+	return fmt.Sprintf("%s-%s-%s", s.cloudProvider, s.operatingSystem, s.clusterVersion.String())
 }
 
 func (s *baseScenario) IsValid() error {

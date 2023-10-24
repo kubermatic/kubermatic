@@ -19,17 +19,25 @@ package scenarios
 import (
 	"context"
 	"encoding/base64"
-	"errors"
+	"fmt"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type googleScenario struct {
 	baseScenario
+}
+
+func (s *googleScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemUbuntu,
+	)
 }
 
 func (s *googleScenario) IsValid() error {
@@ -37,8 +45,8 @@ func (s *googleScenario) IsValid() error {
 		return err
 	}
 
-	if s.operatingSystem != providerconfig.OperatingSystemUbuntu {
-		return errors.New("provider only supports Ubuntu")
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
 	return nil
@@ -46,7 +54,6 @@ func (s *googleScenario) IsValid() error {
 
 func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{

@@ -34,20 +34,18 @@ import (
 )
 
 type Generator struct {
-	cloudProviders    sets.Set[string]
-	operatingSystems  sets.Set[string]
-	versions          sets.Set[string]
-	containerRuntimes sets.Set[string]
-	enableOSM         bool
-	enableDualstack   bool
+	cloudProviders   sets.Set[string]
+	operatingSystems sets.Set[string]
+	versions         sets.Set[string]
+	enableOSM        bool
+	enableDualstack  bool
 }
 
 func NewGenerator() *Generator {
 	return &Generator{
-		cloudProviders:    sets.New[string](),
-		operatingSystems:  sets.New[string](),
-		versions:          sets.New[string](),
-		containerRuntimes: sets.New[string](),
+		cloudProviders:   sets.New[string](),
+		operatingSystems: sets.New[string](),
+		versions:         sets.New[string](),
 	}
 }
 
@@ -68,13 +66,6 @@ func (g *Generator) WithOperatingSystems(operatingSystems ...string) *Generator 
 func (g *Generator) WithVersions(versions ...*semver.Semver) *Generator {
 	for _, version := range versions {
 		g.versions.Insert(version.String())
-	}
-	return g
-}
-
-func (g *Generator) WithContainerRuntimes(runtimes ...string) *Generator {
-	for _, runtime := range runtimes {
-		g.containerRuntimes.Insert(runtime)
 	}
 	return g
 }
@@ -105,14 +96,12 @@ func (g *Generator) Scenarios(ctx context.Context, opts *types.Options, log *zap
 			}
 
 			for _, operatingSystem := range sets.List(g.operatingSystems) {
-				for _, cri := range sets.List(g.containerRuntimes) {
-					scenario, err := providerScenario(opts, kubermaticv1.ProviderType(providerName), providerconfig.OperatingSystem(operatingSystem), *s, cri, datacenter)
-					if err != nil {
-						return nil, err
-					}
-
-					scenarios = append(scenarios, scenario)
+				scenario, err := providerScenario(opts, kubermaticv1.ProviderType(providerName), providerconfig.OperatingSystem(operatingSystem), *s, datacenter)
+				if err != nil {
+					return nil, err
 				}
+
+				scenarios = append(scenarios, scenario)
 			}
 		}
 	}
@@ -162,14 +151,12 @@ func providerScenario(
 	provider kubermaticv1.ProviderType,
 	os providerconfig.OperatingSystem,
 	version semver.Semver,
-	containerRuntime string,
 	datacenter *kubermaticv1.Datacenter,
 ) (Scenario, error) {
 	base := baseScenario{
 		cloudProvider:    provider,
 		operatingSystem:  os,
 		clusterVersion:   version,
-		containerRuntime: containerRuntime,
 		datacenter:       datacenter,
 		dualstackEnabled: opts.DualStackEnabled,
 	}

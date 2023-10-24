@@ -37,19 +37,21 @@ type digitaloceanScenario struct {
 	baseScenario
 }
 
+func (s *digitaloceanScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemCentOS,
+		providerconfig.OperatingSystemRockyLinux,
+		providerconfig.OperatingSystemUbuntu,
+	)
+}
+
 func (s *digitaloceanScenario) IsValid() error {
 	if err := s.baseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	supported := sets.New(
-		string(providerconfig.OperatingSystemCentOS),
-		string(providerconfig.OperatingSystemRockyLinux),
-		string(providerconfig.OperatingSystemUbuntu),
-	)
-
-	if !supported.Has(string(s.operatingSystem)) {
-		return fmt.Errorf("provider only supports %v", sets.List(supported))
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
 	return nil
@@ -57,7 +59,6 @@ func (s *digitaloceanScenario) IsValid() error {
 
 func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
-		ContainerRuntime: s.containerRuntime,
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Digitalocean.KKPDatacenter,
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
