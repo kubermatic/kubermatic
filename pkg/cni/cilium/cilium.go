@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/exp/maps"
+
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -189,11 +191,16 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 // GetAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
 // of the Cilium CNI managed by KKP.
 func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
-	values := map[string]any{
-		"cni": map[string]any{
-			// we run Cilium as non-exclusive CNI to allow for Multus use-cases
-			"exclusive": false,
+	podSecurityContext := map[string]any{
+		"seccompProfile": map[string]any{
+			"type": "RuntimeDefault",
 		},
+	}
+	defaultValues := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+	values := map[string]any{
+		"podSecurityContext": podSecurityContext,
 	}
 
 	valuesOperator := map[string]any{
@@ -202,8 +209,27 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 				"type": "RuntimeDefault",
 			},
 		},
+		"podSecurityContext": podSecurityContext,
 	}
+	valuesCni := map[string]any{
+		// we run Cilium as non-exclusive CNI to allow for Multus use-cases
+		"exclusive": false,
+	}
+	valuesCertGen := maps.Clone(defaultValues)
+	valuesRelay := maps.Clone(defaultValues)
+	valuesFrontend := maps.Clone(defaultValues)
+	valuesBackend := maps.Clone(defaultValues)
+	values["cni"] = valuesCni
 	values["operator"] = valuesOperator
+	values["certgen"] = valuesCertGen
+	values["hubble"] = map[string]any{
+		"relay": valuesRelay,
+		"ui": map[string]any{
+			"securityContext": podSecurityContext,
+			"frontend":        map[string]any{},
+			"backend":         map[string]any{},
+		},
+	}
 
 	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
 		values["kubeProxyReplacement"] = "strict"
@@ -218,6 +244,8 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		}
 	} else {
 		values["kubeProxyReplacement"] = "disabled"
+		values["sessionAffinity"] = true
+		valuesCni["chainingMode"] = "portmap"
 	}
 
 	ipamOperator := map[string]any{
@@ -241,33 +269,21 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"operator", overwriteRegistry)),
 			"useDigest":  false,
 		}
-		values["hubble"] = map[string]any{
-			"relay": map[string]any{
-				"image": map[string]any{
-					"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-relay", overwriteRegistry)),
-					"useDigest":  false,
-				},
-			},
-			"ui": map[string]any{
-				"backend": map[string]any{
-					"image": map[string]any{
-						"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui-backend", overwriteRegistry)),
-						"useDigest":  false,
-					},
-				},
-				"frontend": map[string]any{
-					"image": map[string]any{
-						"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui", overwriteRegistry)),
-						"useDigest":  false,
-					},
-				},
-			},
+		valuesRelay["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-relay", overwriteRegistry)),
+			"useDigest":  false,
 		}
-		values["certgen"] = map[string]any{
-			"image": map[string]any{
-				"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
-				"useDigest":  false,
-			},
+		valuesBackend["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui-backend", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesFrontend["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesCertGen["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
+			"useDigest":  false,
 		}
 	}
 

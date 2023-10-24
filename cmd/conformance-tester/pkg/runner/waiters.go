@@ -122,7 +122,7 @@ func waitUntilAllPodsAreReady(ctx context.Context, log *zap.SugaredLogger, opts 
 		unready := sets.New[string]()
 		for _, pod := range podList.Items {
 			// Ignore pods failing kubelet admission (KKP #6185)
-			if !util.PodIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod, log) {
+			if !util.PodIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod, log) && !util.PodIsCompleted(&pod) {
 				unready.Insert(pod.Name)
 			}
 		}

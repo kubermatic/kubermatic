@@ -114,6 +114,11 @@ func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger,
 		if pod.Namespace != "kube-system" && pod.Namespace != "mla-system" && pod.Namespace != "gatekeeper-system" && pod.Namespace != "kubernetes-dashboard" {
 			continue
 		}
+		// TODO remove this
+		// https://github.com/kubermatic/kubermatic/pull/12752#discussion_r1367133164
+		if pod.Labels["k8s-app"] == "hubble-ui" || pod.Labels["k8s-app"] == "hubble-generate-certs" {
+			continue
+		}
 
 		var privilegedContainers int
 		for _, container := range pod.Spec.Containers {
