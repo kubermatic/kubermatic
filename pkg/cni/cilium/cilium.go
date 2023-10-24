@@ -129,6 +129,19 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 					},
 				},
 				{
+					Version: "1.13.8",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								ChartName:    ciliumHelmChartName,
+								ChartVersion: "1.13.8",
+								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
+								Credentials:  credentials,
+							},
+						},
+					},
+				},
+				{
 					Version: "1.14.1",
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
@@ -148,6 +161,19 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.2",
+								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
+								Credentials:  credentials,
+							},
+						},
+					},
+				},
+				{
+					Version: "1.14.3",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								ChartName:    ciliumHelmChartName,
+								ChartVersion: "1.14.3",
 								URL:          "oci://" + config.Spec.UserCluster.SystemApplications.HelmRepository,
 								Credentials:  credentials,
 							},
