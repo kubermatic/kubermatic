@@ -14,6 +14,17 @@
 - [v2.21.11](#v22111)
 - [v2.21.12](#v22112)
 - [v2.21.13](#v22113)
+- [v2.21.14](#v22114)
+
+## [v2.21.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.14)
+
+### Bugfixes
+
+- Increase default CPU limits for KKP API/seed/master-controller-managers to prevent general slowness ([#12771](https://github.com/kubermatic/kubermatic/pull/12771))
+
+### Updates
+
+- Add support for Cilium 1.12.15, mitigating an high CVE-2023-44487 ([#12767](https://github.com/kubermatic/kubermatic/pull/12767))
 
 ## [v2.21.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.13)
 
