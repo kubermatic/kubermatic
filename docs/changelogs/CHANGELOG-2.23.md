@@ -18,7 +18,7 @@
 
 ### Updates
 
-- Add support for Cilium 1.13.8, mitigating an high CVE-2023-44487 ([#12762](https://github.com/kubermatic/kubermatic/pull/12762))
+- Add support for Cilium 1.13.8, mitigating a high-severity vulnerability, CVE-2023-44487 ([#12762](https://github.com/kubermatic/kubermatic/pull/12762))
 
 ## [v2.23.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.5)
 
