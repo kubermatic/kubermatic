@@ -9,6 +9,18 @@
 - [v2.22.6](#v2226)
 - [v2.22.7](#v2227)
 - [v2.22.8](#v2228)
+- [v2.22.9](#v2229)
+
+## [v2.22.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.9)
+
+### Bugfixes
+
+- Fix node-labeller controller not applying the `x-kubernetes.io/distribution` label to RHEL nodes ([#12751](https://github.com/kubermatic/kubermatic/pull/12751))
+- Increase default CPU limits for KKP API/seed/master-controller-managers to prevent general slowness ([#12764](https://github.com/kubermatic/kubermatic/pull/12764))
+
+### Updates 
+
+- Add Cilium 1.13.8 as supported CNI version, deprecate cilium version 1.13.0 as it's impacted by CVE-2023-34242 ([#12753](https://github.com/kubermatic/kubermatic/pull/12753))
 
 ## [v2.22.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.8)
 
