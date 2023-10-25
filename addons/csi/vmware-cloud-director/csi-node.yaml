@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.4.0/manifests/csi-node.yaml
+# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.3.2/manifests/csi-node.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -104,7 +104,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.4.0" }}
+          image: {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.3.2" }}
           imagePullPolicy: IfNotPresent
           command:
             - /opt/vcloud/bin/cloud-director-named-disk-csi-driver
@@ -132,7 +132,7 @@ spec:
               mountPath: /dev
               mountPropagation: "HostToContainer"
             - name: pv-dir
-              mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi
+              mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi/pv
               mountPropagation: "Bidirectional"
             - name: vcloud-csi-config-volume
               mountPath: /etc/kubernetes/vcloud
@@ -161,7 +161,7 @@ spec:
             type: Directory
         - name: pv-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/kubernetes.io/csi
+            path: /var/lib/kubelet/plugins/kubernetes.io/csi/pv
             type: DirectoryOrCreate
         - name: vcloud-csi-config-volume
           configMap:
