@@ -6193,6 +6193,21 @@ func (in *SettingSpec) DeepCopyInto(out *SettingSpec) {
 		*out = make(CustomLinks, len(*in))
 		copy(*out, *in)
 	}
+	if in.EnableWebTerminal != nil {
+		in, out := &in.EnableWebTerminal, &out.EnableWebTerminal
+		*out = new(bool)
+		**out = **in
+	}
+	if in.EnableShareCluster != nil {
+		in, out := &in.EnableShareCluster, &out.EnableShareCluster
+		*out = new(bool)
+		**out = **in
+	}
+	if in.DisableAdminKubeconfig != nil {
+		in, out := &in.DisableAdminKubeconfig, &out.DisableAdminKubeconfig
+		*out = new(bool)
+		**out = **in
+	}
 	out.CleanupOptions = in.CleanupOptions
 	out.OpaOptions = in.OpaOptions
 	out.MlaOptions = in.MlaOptions
