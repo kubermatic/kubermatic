@@ -54,7 +54,59 @@ The same model will be using to implement this functionality in KKP. For full cl
 - During the cluster creation process, an option will be provided to select a backup to restore. In this case, an initial restore request will be created as a step of the cluster provisioning process. 
 
 ### UI/Rest API
-TBD
+
+ **Admin Setting**
+
+ The backup feature can be enabled or disabled by the admin. In the admin settings under the `Interface => Defaults` section, there is an option to enable or disable the feature.
+
+ Admin can add the destination for the backup storage from the admin settings under the `Manage Resources => Cluster Backup Destination` section.
+ 
+ Admin can add different BackupStorageLocation and VolumeSnapshotLocation values on multi providers(first,only Openstack)
+
+**Cluster**
+
+ In case of enable the feature from the admin settings, within the cluster creation wizard, under the `Cluster'` step, users can activate the backup feature for the created cluster.
+
+ Backups can only be created for clusters with the backup feature enabled. If the feature is not enabled for a cluster, users can enable it from the `Edit Cluster` dialog."
+
+**Project View**
+
+ on the side nave bar there will be a section for `Cluster Backups`, under this section there will be two sub navigate item `Backups` and `Restore` to navigate to Backups/Restores pages.
+
+**Backups Page**
+
+ In the backup page, users can see the list of backups for all user clusters belonging to the current project. Depending on the user's role, users can create new backups, delete existing backups, and restore cluster resources (namespaces) from specific backups.
+
+ From the backup page, users with the appropriate role can perform single or batch backup deletions with custom filtering and selection.
+
+**Restore Page**
+
+ In the restore page, users can view all the restored objects created from a backup and their details(backup name, cluster ID, resources, ...).
+
+**Create Backup**
+
+ From the backup page users with appropriate role can click on `Add Backup` button to add new backup.
+
+ Backup dialog fields:
+  
+  * Backup Name
+  * cluster (only clusters with backup feature enabled can be chosen)
+  * Destination (from the list of destination that been add in `Admin Settings => Manage Resources => Cluster Backup Destination` )
+  * namespaces 
+  * select ondemand backup or scheduled backup
+  * expired date
+  * labels (optional)
+
+**Restore Backup**
+
+ From the backup list in the backup page users with appropriate role can restore resources from an existing backup.
+
+ Restore dialog fields:
+  
+  * Restore Name
+  * cluster (the cluster that i want to create the resources (namespaces) on it)
+  * namespaces (select from the namespaces in the backup or all of them)
+
 
 ### API
 
