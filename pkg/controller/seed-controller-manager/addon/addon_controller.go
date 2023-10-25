@@ -220,11 +220,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return r.reconcile(ctx, log, addon, cluster)
 		},
 	)
+
 	if err != nil {
 		r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
 			"failed to reconcile Addon %q: %v", addon.Name, err)
-	} else if result == nil {
+
+		return reconcile.Result{}, err
+	}
+
+	if result == nil {
 		// we check for this after the ClusterReconcileWrapper() call because otherwise the cluster would never reconcile since we always requeue
 		result = &reconcile.Result{}
 		if r.addonEnforceInterval != 0 { // addon enforce is enabled
@@ -234,7 +239,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 	}
 
-	return *result, err
+	return *result, nil
 }
 
 // garbageCollectAddon is called when the cluster that owns the addon is gone
