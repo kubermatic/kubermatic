@@ -54,17 +54,17 @@ type SettingSpec struct {
 	// +kubebuilder:default=false
 
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
-	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
+	EnableWebTerminal *bool `json:"enableWebTerminal,omitempty"`
 
 	// +kubebuilder:default=true
 
 	// EnableShareCluster enables the Share Cluster feature for the user clusters.
-	EnableShareCluster bool `json:"enableShareCluster,omitempty"`
+	EnableShareCluster *bool `json:"enableShareCluster,omitempty"`
 
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
 
 	// DisableAdminKubeconfig disables the admin kubeconfig functionality on the dashboard.
-	DisableAdminKubeconfig bool `json:"disableAdminKubeconfig,omitempty"`
+	DisableAdminKubeconfig *bool `json:"disableAdminKubeconfig,omitempty"`
 
 	// UserProjectsLimit is the maximum number of projects a user can create.
 	UserProjectsLimit       int64 `json:"userProjectsLimit"`
