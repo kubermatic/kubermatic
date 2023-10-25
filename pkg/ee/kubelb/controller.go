@@ -412,15 +412,16 @@ func (r *reconciler) getKubeLBManagementClusterClient(ctx context.Context, seed 
 
 func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, dc kubermaticv1.Datacenter) (*corev1.Secret, error) {
 	var name, namespace string
-	if seed.Spec.KubeLB == nil || seed.Spec.KubeLB.Kubeconfig.Name == "" {
-		if dc.Spec.KubeLB == nil || dc.Spec.KubeLB.Kubeconfig.Name == "" {
-			return nil, fmt.Errorf("kubeLB management kubeconfig not found")
-		}
+
+	switch {
+	case dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Kubeconfig.Name != "":
 		name = dc.Spec.KubeLB.Kubeconfig.Name
 		namespace = dc.Spec.KubeLB.Kubeconfig.Namespace
-	} else {
+	case seed.Spec.KubeLB != nil && seed.Spec.KubeLB.Kubeconfig.Name != "":
 		name = seed.Spec.KubeLB.Kubeconfig.Name
 		namespace = seed.Spec.KubeLB.Kubeconfig.Namespace
+	default:
+		return nil, fmt.Errorf("kubeLB management kubeconfig not found")
 	}
 
 	secret := &corev1.Secret{}
