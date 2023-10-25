@@ -11,18 +11,21 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - **ACTION REQUIRED:** legacy backup controller has been removed. Before upgrading, please change to the backup and restore feature that uses [backup destinations](https://docs.kubermatic.com/kubermatic/v2.24/tutorials-howtos/etcd-backups/) if the legacy controller is still in use ([#12473](https://github.com/kubermatic/kubermatic/pull/12473))
 - `s3-storeuploader` has been removed ([#12473](https://github.com/kubermatic/kubermatic/pull/12473))
 - OpenVPN for control plane to node connectivity has been deprecated. It will be removed in future releases of KKP. Upgrading all user cluster to Konnectivity is strongly recommended ([#12691](https://github.com/kubermatic/kubermatic/pull/12691))
+- User clusters require upgrading to Kubernetes 1.26 prior to upgrading to KKP 2.24 ([#12740](https://github.com/kubermatic/kubermatic/pull/12740))
 
 ### API Changes
 
 - The field `vmNetName` in `Cluster` and `Preset` resources for vSphere clusters is deprecated and `networks` should be used instead ([#12444](https://github.com/kubermatic/kubermatic/pull/12444))
 - The field `konnectivityEnabled` in `Cluster` resources is deprecated. Clusters should set this to `true` to migrate off OpenVPN as Konnectivity being enabled will be assumed in future KKP releases ([#12691](https://github.com/kubermatic/kubermatic/pull/12691))
+- Set Cilium as default CNI for user clusters ([#12752](https://github.com/kubermatic/kubermatic/pull/12752))
 
 ### Supported Kubernetes Versions
 
-- Add Support for Kubernetes 1.28 ([#12593](https://github.com/kubermatic/kubermatic/pull/12593))
+- Add support for Kubernetes 1.28 ([#12593](https://github.com/kubermatic/kubermatic/pull/12593))
 - Add support for Kubernetes 1.26.9, 1.27.6 and 1.28.2 ([#12638](https://github.com/kubermatic/kubermatic/pull/12638))
 - Set default Kubernetes version to 1.27.6 ([#12638](https://github.com/kubermatic/kubermatic/pull/12638))
 - Remove support for Kubernetes 1.24 ([#12570](https://github.com/kubermatic/kubermatic/pull/12570))
+- Remove support for Kubernetes 1.25 ([#12740](https://github.com/kubermatic/kubermatic/pull/12740))
 
 #### Supported Versions
 
@@ -63,7 +66,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 #### Cilium
 
-- Add Cilium 1.13.7 & 1.14.2 as supported CNI versions, deprecate older Cilium versions 1.13.x as versions are impacted by CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity) ([#12670](https://github.com/kubermatic/kubermatic/pull/12670))
+- Set Cilium as default CNI for user clusters ([#12752](https://github.com/kubermatic/kubermatic/pull/12752))
+- Add support for Cilium 1.14.3 and 1.13.8 and deprecate previous patch releases, mitigating CVE-2023-44487, CVE-2023-39347, CVE-2023-41333, CVE-2023-41332 ([#12761](https://github.com/kubermatic/kubermatic/pull/12761))
 - Update Cilium v1.11 and v1.12 patch releases to v1.11.20 and v1.12.13 ([#12561](https://github.com/kubermatic/kubermatic/pull/12561))
 - Remove and replace deprecated `clusterPoolIPv4PodCIDR` and `clusterPoolIPv6PodCIDR` Helm value with `clusterPoolIPv4PodCIDRList` and `clusterPoolIPv6PodCIDRList` for Cilium 1.13+ ([#12561](https://github.com/kubermatic/kubermatic/pull/12561))
 
@@ -131,6 +135,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Increase memory limit of kube-state-metrics addon to 600Mi ([#12692](https://github.com/kubermatic/kubermatic/pull/12692))
 - KKP's CA bundle was not used when performing Application-related operations like installing a Helm chart from a private OCI registry ([#12514](https://github.com/kubermatic/kubermatic/pull/12514))
 - `kubermatic-installer` will now validate the existing MinIO filesystem before attempting a `kubermatic-seed` stack installation ([#12477](https://github.com/kubermatic/kubermatic/pull/12477))
+- Increase default CPU limits for KKP API/seed/master-controller-managers to prevent general slowness ([#12764](https://github.com/kubermatic/kubermatic/pull/12764))
 
 ### Updates
 
@@ -155,3 +160,4 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Use `etcd-launcher` to check if etcd is running before starting kube-apiserver and to defragment etcd clusters ([#12450](https://github.com/kubermatic/kubermatic/pull/12450))
 - Create a `NetworkPolicy` for user cluster kube-apiserver to access the Seed Kubernetes API ([#12569](https://github.com/kubermatic/kubermatic/pull/12569))
 - Improve `http-prober` performance in user clusters with a lot of CRDs ([#12634](https://github.com/kubermatic/kubermatic/pull/12634))
+- Update Velero helm chart's apiVersion to v2; Helm 3 & above would be required to install it ([#12765](https://github.com/kubermatic/kubermatic/pull/12765))
