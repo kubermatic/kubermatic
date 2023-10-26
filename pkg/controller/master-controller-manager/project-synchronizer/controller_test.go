@@ -38,6 +38,11 @@ import (
 
 const projectName = "project-test"
 
+var projectLabels = map[string]string{
+	"test":        "project",
+	"description": "test",
+}
+
 func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name            string
@@ -49,10 +54,10 @@ func TestReconcile(t *testing.T) {
 		{
 			name:            "scenario 1: sync project from master cluster to seed cluster",
 			requestName:     projectName,
-			expectedProject: generateProject(projectName, false),
+			expectedProject: generateProject(projectName, false, nil),
 			masterClient: fake.
 				NewClientBuilder().
-				WithObjects(generateProject(projectName, false), generator.GenTestSeed()).
+				WithObjects(generateProject(projectName, false, nil), generator.GenTestSeed()).
 				Build(),
 			seedClient: fake.
 				NewClientBuilder().
@@ -64,11 +69,23 @@ func TestReconcile(t *testing.T) {
 			expectedProject: nil,
 			masterClient: fake.
 				NewClientBuilder().
-				WithObjects(generateProject(projectName, true), generator.GenTestSeed()).
+				WithObjects(generateProject(projectName, true, nil), generator.GenTestSeed()).
 				Build(),
 			seedClient: fake.
 				NewClientBuilder().
-				WithObjects(generateProject(projectName, false), generator.GenTestSeed()).
+				WithObjects(generateProject(projectName, false, nil), generator.GenTestSeed()).
+				Build(),
+		},
+		{
+			name:            "scenario 3: sync project with labels from master cluster to seed cluster",
+			requestName:     projectName,
+			expectedProject: generateProject(projectName, false, projectLabels),
+			masterClient: fake.
+				NewClientBuilder().
+				WithObjects(generateProject(projectName, false, projectLabels), generator.GenTestSeed()).
+				Build(),
+			seedClient: fake.
+				NewClientBuilder().
 				Build(),
 		},
 	}
@@ -113,10 +130,11 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func generateProject(name string, deleted bool) *kubermaticv1.Project {
+func generateProject(name string, deleted bool, labels map[string]string) *kubermaticv1.Project {
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 		Spec: kubermaticv1.ProjectSpec{
 			Name: fmt.Sprintf("project-%s", name),
