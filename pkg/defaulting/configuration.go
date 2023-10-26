@@ -320,13 +320,13 @@ var (
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-		Default: semver.NewSemverOrDie("v1.27"),
+		Default: semver.NewSemverOrDie("v1.28"),
 		Versions: []semver.Semver{
+			newSemver("v1.28"),
 			newSemver("v1.27"),
 			newSemver("v1.26"),
 			newSemver("v1.25"),
 			newSemver("v1.24"),
-			newSemver("v1.23"),
 		},
 	}
 
