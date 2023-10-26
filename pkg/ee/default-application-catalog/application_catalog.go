@@ -32,6 +32,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/log"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -51,6 +52,7 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 		return fmt.Errorf("Failed to fetch ApplicationDefinitions: %w", err)
 	}
 
+	creators := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{}
 	for _, file := range appDefFiles {
 		b, err := io.ReadAll(file)
 		if err != nil {
@@ -64,13 +66,25 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
 		}
 
-		err = kubeClient.Create(ctx, appDef)
-		if err != nil {
-			return fmt.Errorf("failed to create ApplicationDefinition: %w", err)
-		}
+		creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+	}
+
+	if err = kkpreconciling.ReconcileApplicationDefinitions(ctx, creators, "", kubeClient); err != nil {
+		return fmt.Errorf("failed to apply ApplicationDefinitions: %w", err)
 	}
 
 	logger.Info("✅ Success.")
 
 	return nil
+}
+
+func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.ApplicationDefinition) kkpreconciling.NamedApplicationDefinitionReconcilerFactory {
+	return func() (string, kkpreconciling.ApplicationDefinitionReconciler) {
+		return appDef.Name, func(a *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
+			a.Labels = appDef.Labels
+			a.Annotations = appDef.Annotations
+			a.Spec = appDef.Spec
+			return a, nil
+		}
+	}
 }
