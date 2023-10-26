@@ -24,6 +24,12 @@ import (
 func projectReconcilerFactory(project *kubermaticv1.Project) reconciling.NamedProjectReconcilerFactory {
 	return func() (string, reconciling.ProjectReconciler) {
 		return project.Name, func(p *kubermaticv1.Project) (*kubermaticv1.Project, error) {
+			if p.ObjectMeta.Labels == nil {
+				p.ObjectMeta.Labels = map[string]string{}
+			}
+			for k, v := range project.ObjectMeta.Labels {
+				p.ObjectMeta.Labels[k] = v
+			}
 			p.Spec = project.Spec
 			return p, nil
 		}
