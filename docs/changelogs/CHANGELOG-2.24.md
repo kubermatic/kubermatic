@@ -161,3 +161,47 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Create a `NetworkPolicy` for user cluster kube-apiserver to access the Seed Kubernetes API ([#12569](https://github.com/kubermatic/kubermatic/pull/12569))
 - Improve `http-prober` performance in user clusters with a lot of CRDs ([#12634](https://github.com/kubermatic/kubermatic/pull/12634))
 - Update Velero helm chart's apiVersion to v2; Helm 3 & above would be required to install it ([#12765](https://github.com/kubermatic/kubermatic/pull/12765))
+
+### Dashboard & API
+
+#### Cleanup
+
+- Remove unused v1 endpoints for KKP API ([#6116](https://github.com/kubermatic/dashboard/pull/6116))
+
+#### Bugfixes
+
+- Add operating system profile to the machine deployment patch object ([#6264](https://github.com/kubermatic/dashboard/pull/6264))
+- Add vertical scroll to the install Addon dialog ([#6123](https://github.com/kubermatic/dashboard/pull/6123))
+- Allow expansion of sidenav on small screen sizes ([#6218](https://github.com/kubermatic/dashboard/pull/6218))
+- Fix a bug where available version upgrades for CNI plugins were not being properly deduced ([#6317](https://github.com/kubermatic/dashboard/pull/6317))
+- Fix a bug where network and IPv6 subnet pool options were not loading during Openstack cluster creation ([#6120](https://github.com/kubermatic/dashboard/pull/6120))
+- Fix a bug where project scope endpoints for GCP were working only with the presets instead of one of presets or credentials ([#6078](https://github.com/kubermatic/dashboard/pull/6078))
+- CE: Fix a bug where the values configured for vSphere, Hetzner, and Nutanix nodes were not being persisted ([#6171](https://github.com/kubermatic/dashboard/pull/6171))
+- Fix an issue where a custom OSP value was not selected when editing/customizing cluster template ([#6325](https://github.com/kubermatic/dashboard/pull/6325))
+- Fix docs link about OIDC groups on user settings page ([#6208](https://github.com/kubermatic/dashboard/pull/6208))
+- Fix listing events for external clusters ([#6337](https://github.com/kubermatic/dashboard/pull/6337))
+- Fix support for keycloak OIDC logout. New field `oidc_provider` was introduced to support OIDC provider specific configurations. Configuring `oidc_provider` as `keycloak` will properly configure the logout workflow ([#6144](https://github.com/kubermatic/dashboard/pull/6144))
+- Fix the default value for CNI plugin version ([#6258](https://github.com/kubermatic/dashboard/pull/6258))
+- Fix the empty `id_token_hint` value when logout from Keycloak ([#6248](https://github.com/kubermatic/dashboard/pull/6248))
+- Fix: vSphere tags for initial machine deployments ([#6179](https://github.com/kubermatic/dashboard/pull/6179))
+- OpenStack: Fix project and projectID header propagation for project scoped endpoints ([#6082](https://github.com/kubermatic/dashboard/pull/6082))
+- Openstack: take `TenantID` into account while listing networks, security groups and subnet pools ([#6156](https://github.com/kubermatic/dashboard/pull/6156))
+- VMware Cloud Director: fix an issue where the API Token from preset was not being sourced to the cluster ([#6196](https://github.com/kubermatic/dashboard/pull/6196))
+
+#### New Features
+
+- Support for enabling/disabling operating systems for machines of user clusters ([#6070](https://github.com/kubermatic/dashboard/pull/6070))
+- Add functionality to configure `basePath` in preset and cluster for vSphere ([#6281](https://github.com/kubermatic/dashboard/pull/6281))
+- Add support for encrypted root volumes in AWS ([#6125](https://github.com/kubermatic/dashboard/pull/6125))
+- Add VM anti-affinity setting for vSphere machine deployments ([#6068](https://github.com/kubermatic/dashboard/pull/6068))
+- EE: Support for configuring KubeLB for user clusters ([#6256](https://github.com/kubermatic/dashboard/pull/6256))
+- Support for configuring multiple networks for vSphere ([#6069](https://github.com/kubermatic/dashboard/pull/6069))
+- Support for disabling admin kubeconfig endpoint ([#6246](https://github.com/kubermatic/dashboard/pull/6246))
+- Support multiple NodePort allowed IP ranges ([#6188](https://github.com/kubermatic/dashboard/pull/6188))
+- Update default CNI plugin to `Cilium` ([#6328](https://github.com/kubermatic/dashboard/pull/6328))
+- VMware Cloud Director: Support for configuring placement and sizing policy for machines ([#6094](https://github.com/kubermatic/dashboard/pull/6094))
+
+### Updates
+
+- Update to Go 1.21.3 ([#6268](https://github.com/kubermatic/dashboard/pull/6268))
+- Update web-terminal image to kubectl 1.27, Helm 3.12.3 and curl 8.4.0 ([#6283](https://github.com/kubermatic/dashboard/pull/6283))
