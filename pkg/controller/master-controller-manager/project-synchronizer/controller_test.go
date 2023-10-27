@@ -44,6 +44,11 @@ func init() {
 
 const projectName = "project-test"
 
+var projectLabels = map[string]string{
+	"test":        "project",
+	"description": "test",
+}
+
 func TestReconcile(t *testing.T) {
 	testCases := []struct {
 		name            string
@@ -55,11 +60,11 @@ func TestReconcile(t *testing.T) {
 		{
 			name:            "scenario 1: sync project from master cluster to seed cluster",
 			requestName:     projectName,
-			expectedProject: generateProject(projectName, false),
+			expectedProject: generateProject(projectName, false, nil),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, false), test.GenTestSeed()).
+				WithObjects(generateProject(projectName, false, nil), test.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -73,12 +78,27 @@ func TestReconcile(t *testing.T) {
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, true), test.GenTestSeed()).
+				WithObjects(generateProject(projectName, true, nil), test.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, false), test.GenTestSeed()).
+				WithObjects(generateProject(projectName, false, nil), test.GenTestSeed()).
+				Build(),
+		},
+		{
+			name:            "scenario 3: sync project with labels from master cluster to seed cluster",
+			requestName:     projectName,
+			expectedProject: nil,
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(generateProject(projectName, true, projectLabels), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(generateProject(projectName, false, projectLabels), test.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -123,10 +143,11 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func generateProject(name string, deleted bool) *kubermaticv1.Project {
+func generateProject(name string, deleted bool, labels map[string]string) *kubermaticv1.Project {
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 		Spec: kubermaticv1.ProjectSpec{
 			Name: fmt.Sprintf("project-%s", name),
