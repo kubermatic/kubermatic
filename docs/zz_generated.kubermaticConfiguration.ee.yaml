@@ -474,16 +474,16 @@ spec:
           - v1.25
       eks:
         # Default is the default version to offer users.
-        default: v1.27
+        default: v1.28
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
+          - v1.28
           - v1.27
           - v1.26
           - v1.25
           - v1.24
-          - v1.23
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
