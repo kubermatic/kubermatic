@@ -25,11 +25,13 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cloudinitsettings"
+	clusterbackup "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cluster-backup"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
@@ -145,7 +147,9 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	data.clusterVersion = clusterVersion
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
-
+	// TODO: add a getter for this
+	data.clusterBackup = cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup]
+	fmt.Printf("-----------------------------------------------------------------------------data.clusterBackup %v\n ", data.clusterBackup)
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
@@ -673,6 +677,17 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 		}
 	}
 
+	if data.clusterBackup {
+		clusterBackupCRDs, err := clusterbackup.CRDs()
+		if err != nil {
+			return fmt.Errorf("failed to load Cluster Backup CRDs: %w", err)
+		}
+		for i := range clusterBackupCRDs {
+
+			creators = append(creators, clusterbackup.CRDReconciler(clusterBackupCRDs[i]))
+		}
+	}
+
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %w", err)
 	}
@@ -1166,6 +1181,7 @@ type reconcileData struct {
 	kubernetesDashboardEnabled    bool
 	operatingSystemManagerEnabled bool
 	coreDNSReplicas               *int32
+	clusterBackup                 bool
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
