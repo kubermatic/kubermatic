@@ -59,7 +59,7 @@ type SettingSpec struct {
 	// +kubebuilder:default=true
 
 	// EnableShareCluster enables the Share Cluster feature for the user clusters.
-	EnableShareCluster bool `json:"enableShareCluster,omitempty"`
+	EnableShareCluster *bool `json:"enableShareCluster,omitempty"`
 
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
 
