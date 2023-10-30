@@ -149,7 +149,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 	// TODO: add a getter for this
 	data.clusterBackup = cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup]
-	fmt.Printf("-----------------------------------------------------------------------------data.clusterBackup %v\n ", data.clusterBackup)
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
@@ -683,7 +682,6 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 			return fmt.Errorf("failed to load Cluster Backup CRDs: %w", err)
 		}
 		for i := range clusterBackupCRDs {
-
 			creators = append(creators, clusterbackup.CRDReconciler(clusterBackupCRDs[i]))
 		}
 	}
@@ -1033,6 +1031,10 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 	}
 	if r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
 		creators = append(creators, mla.NamespaceReconciler)
+	}
+
+	if data.clusterBackup {
+		creators = append(creators, clusterbackup.NamespaceReconciler)
 	}
 
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {

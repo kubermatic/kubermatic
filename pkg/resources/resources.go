@@ -1044,6 +1044,9 @@ const (
 	ApplicationCacheVolumeName = "applications-cache"
 	ApplicationCacheMountPath  = "/applications-cache"
 )
+const (
+	ClusterBackupNamespaceName = "velero"
+)
 
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
 
