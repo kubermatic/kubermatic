@@ -95,7 +95,6 @@ require (
 	k8s.io/kube-aggregator v0.28.2
 	k8s.io/kubectl v0.28.2
 	k8s.io/metrics v0.28.2
-	k8s.io/test-infra v0.0.0-20230224035733-afa88634622b
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	kubevirt.io/api v0.59.2
 	kubevirt.io/containerized-data-importer-api v1.56.0
@@ -124,7 +123,10 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
-require golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+require (
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+	k8s.io/test-infra v0.0.0-20231030153246-7ad5e35ad01c
+)
 
 require (
 	cloud.google.com/go/compute v1.23.0 // indirect
@@ -177,7 +179,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/docker/cli v24.0.6+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v24.0.6+incompatible // indirect
+	github.com/docker/docker v24.0.7+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
