@@ -43,7 +43,7 @@ func TestNewShouldFailWhenRESTClientGetterNamespaceIsDifferentThanTargetNamespac
 	tf := cmdtesting.NewTestFactory().WithNamespace(defaultNs)
 	defer tf.Cleanup()
 
-	_, err := NewClient(context.Background(), tf, settings, "another-ns", log, "")
+	_, err := NewClient(context.Background(), tf, settings, "another-ns", log)
 	if err == nil {
 		t.Fatalf("helmclient.NewClient() should fail when RESTClientGetter namespace is different than targetNamespace : %s", err)
 	}

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"os/exec"
 	"path"
 
@@ -39,8 +38,7 @@ import (
 
 // GitSource download the application's source from a git repository.
 type GitSource struct {
-	Ctx          context.Context
-	CABundleFile string
+	Ctx context.Context
 
 	// SeedClient to seed cluster.
 	SeedClient ctrlruntimeclient.Client
@@ -58,16 +56,8 @@ func (g GitSource) DownloadSource(destination string) (string, error) {
 		return "", err
 	}
 
-	var caBundle []byte
-	if g.CABundleFile != "" {
-		caBundle, err = os.ReadFile(g.CABundleFile)
-		if err != nil {
-			return "", fmt.Errorf("failed to read CA bundle: %w", err)
-		}
-	}
-
 	checkout := g.getCheckoutStrategy()
-	if err := checkout(g.Ctx, destination, g.Source, auth, caBundle); err != nil {
+	if err := checkout(g.Ctx, destination, g.Source, auth); err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
 			return "", errors.New("failed to clone repository: file protocol not supported, please check git remote url")
 		}
@@ -137,18 +127,18 @@ func (g GitSource) getCheckoutStrategy() checkoutFunc {
 		return checkoutFromTag
 
 	default: // this should not happen.
-		return func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod, caBundle []byte) error {
+		return func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 			return fmt.Errorf("could not determine which reference to checkout")
 		}
 	}
 }
 
 // checkoutFunc define a function to clone and checkout code from repository defined in gitSource into destination using auth as credentials.
-type checkoutFunc func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod, caBundle []byte) error
+type checkoutFunc func(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error
 
 // checkoutFromCommit clone the repository and checkout the desired commit. The commit must belongs to this branch.
 // A shallow clone is performed.
-func checkoutFromCommit(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod, caBundle []byte) error {
+func checkoutFromCommit(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	var repo *git.Repository
 	var err error
 
@@ -161,7 +151,6 @@ func checkoutFromCommit(ctx context.Context, destination string, gitSource *apps
 		ReferenceName: plumbing.NewBranchReferenceName(gitSource.Ref.Branch),
 		NoCheckout:    true,
 		Tags:          git.NoTags,
-		CABundle:      caBundle,
 	})
 	if err != nil {
 		return err
@@ -179,7 +168,7 @@ func checkoutFromCommit(ctx context.Context, destination string, gitSource *apps
 }
 
 // checkoutFromBranch clone the repository and checkout the desired branch. A shallow clone is performed.
-func checkoutFromBranch(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod, caBundle []byte) error {
+func checkoutFromBranch(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	_, err := git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
 		URL:           gitSource.Remote,
 		Auth:          auth,
@@ -188,13 +177,12 @@ func checkoutFromBranch(ctx context.Context, destination string, gitSource *apps
 		SingleBranch:  true,
 		Depth:         1,
 		Tags:          git.NoTags,
-		CABundle:      caBundle,
 	})
 	return err
 }
 
 // checkoutFromTag clone the repository and checkout the desired Tag. A shallow clone is performed.
-func checkoutFromTag(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod, caBundle []byte) error {
+func checkoutFromTag(ctx context.Context, destination string, gitSource *appskubermaticv1.GitSource, auth gogittransport.AuthMethod) error {
 	_, err := git.PlainCloneContext(ctx, destination, false, &git.CloneOptions{
 		URL:           gitSource.Remote,
 		Auth:          auth,
@@ -203,7 +191,6 @@ func checkoutFromTag(ctx context.Context, destination string, gitSource *appskub
 		SingleBranch:  true,
 		Depth:         1,
 		Tags:          git.NoTags,
-		CABundle:      caBundle,
 	})
 	return err
 }
