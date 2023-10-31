@@ -52,9 +52,6 @@ type HelmTemplate struct {
 
 	// SeedClient to seed cluster.
 	SeedClient ctrlruntimeclient.Client
-
-	// CABundleFile is an optional file path to a PEM-encoded CA bundle.
-	CABundleFile string
 }
 
 // InstallOrUpgrade the chart located at chartLoc with parameters (releaseName, values) defined applicationInstallation into cluster.
@@ -88,9 +85,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
 		applicationInstallation.Spec.Namespace.Name,
-		h.Log,
-		h.CABundleFile,
-	)
+		h.Log)
 
 	if err != nil {
 		return util.NoStatusUpdate, err
@@ -145,9 +140,7 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 		restClientGetter,
 		helmclient.NewSettings(helmCacheDir),
 		applicationInstallation.Spec.Namespace.Name,
-		h.Log,
-		h.CABundleFile,
-	)
+		h.Log)
 
 	if err != nil {
 		return util.NoStatusUpdate, err
