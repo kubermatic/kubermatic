@@ -385,6 +385,15 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		}
 	}
 
+	if data.clusterBackup {
+		creators = []reconciling.NamedServiceAccountReconcilerFactory{
+			clusterbackup.ServiceAccountReconciler(),
+		}
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, clusterbackup.NamespaceName, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", clusterbackup.NamespaceName, err)
+		}
+	}
+
 	return nil
 }
 
