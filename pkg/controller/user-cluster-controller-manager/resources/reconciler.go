@@ -644,6 +644,10 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
 	}
 
+	if data.clusterBackup {
+		creators = append(creators, clusterbackup.ClusterRoleBindingReconciler())
+	}
+
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
