@@ -1082,7 +1082,7 @@ type Requirements struct {
 	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
 }
 
-type ClusterBakcupConfig struct {
+type ClusterBackupConfig struct {
 	Enabled     bool
 	Destination *kubermaticv1.BackupDestination
 }

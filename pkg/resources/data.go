@@ -94,6 +94,8 @@ type TemplateData struct {
 	etcdBackupStoreContainer  *corev1.Container
 	etcdBackupDeleteContainer *corev1.Container
 	etcdBackupDestination     *kubermaticv1.BackupDestination
+
+	clusterBackupConfig *ClusterBackupConfig
 }
 
 type TemplateDataBuilder struct {
@@ -241,6 +243,11 @@ func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository s
 
 func (td *TemplateDataBuilder) WithTunnelingAgentIP(tunnelingAgentIP string) *TemplateDataBuilder {
 	td.data.tunnelingAgentIP = tunnelingAgentIP
+	return td
+}
+
+func (td *TemplateDataBuilder) WithClusterBackupConfig(backupConfig *ClusterBackupConfig) *TemplateDataBuilder {
+	td.data.clusterBackupConfig = backupConfig
 	return td
 }
 

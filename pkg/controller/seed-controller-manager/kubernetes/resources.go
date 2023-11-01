@@ -52,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
 	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/usercluster-webhook"
+	clusterutil "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -225,6 +226,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
 
+	backupConfig, err := clusterutil.FetchClusterBackupConfig(ctx, r.Client, cluster, r.log)
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -250,6 +253,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithBackupPeriod(r.backupSchedule).
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithVersions(r.versions).
+		WithClusterBackupConfig(backupConfig).
 		Build(), nil
 }
 
