@@ -24,12 +24,14 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -416,6 +418,52 @@ func (r *reconciler) fetchNetworkingData(ctx context.Context, data *reconcileDat
 	data.ipFamily = cluster.Spec.ClusterNetwork.IPFamily
 	data.coreDNSReplicas = cluster.Spec.ClusterNetwork.CoreDNSReplicas
 	return nil
+}
+
+func (r *reconciler) fetchClusterBackupConfig(ctx context.Context, cluster *kubermaticv1.Cluster, data *reconcileData) error {
+	data.clusterBackupConfig = &resources.ClusterBakcupConfig{
+		Enabled: cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup],
+	}
+	if !data.clusterBackupConfig.Enabled {
+		return nil
+	}
+	seedName, err := extractClusterSeedName(cluster.Name, cluster.Status.Address.URL)
+	if err != nil {
+		return fmt.Errorf("failed to extract cluster Seed name: %w", err)
+	}
+	seed := &kubermaticv1.Seed{}
+
+	if err := r.seedClient.Get(ctx,
+		types.NamespacedName{
+			Namespace: resources.KubermaticNamespace,
+			Name:      seedName},
+		seed); err != nil {
+		return fmt.Errorf("failed to get seed [%s]: %w", seedName, err)
+	}
+
+	// We pick the default backup destination for now. This behavior will change once we add the API.
+	destinations := seed.Spec.EtcdBackupRestore.Destinations
+	defaultDestination := seed.Spec.EtcdBackupRestore.DefaultDestination
+	if len(destinations) == 0 || defaultDestination != "" {
+		r.log.Infof("seed [%s] has no backup destinations or no default backup destinations defined. Skipping cluster backup config for cluster [%s]", seedName, cluster.Name)
+		return nil
+	}
+
+	data.clusterBackupConfig.Enabled = true
+	data.clusterBackupConfig.Destination = destinations[defaultDestination]
+	return nil
+}
+
+func extractClusterSeedName(clusterName, clusterURL string) (string, error) {
+	u, err := url.Parse(clusterURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse cluster URL: %w", err)
+	}
+	parts := strings.Split(u.Host, ".")
+	if len(parts) < 4 || clusterName != parts[0] { // at least a cluster name, seed name and a base domain.
+		return "", fmt.Errorf("invalid cluster URL: %s", u.Host)
+	}
+	return parts[1], nil
 }
 
 // reconcileDefaultServiceAccount ensures that the Kubernetes default service account has AutomountServiceAccountToken set to false.

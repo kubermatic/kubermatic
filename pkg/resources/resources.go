@@ -1082,6 +1082,11 @@ type Requirements struct {
 	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
 }
 
+type ClusterBakcupConfig struct {
+	Enabled     bool
+	Destination *kubermaticv1.BackupDestination
+}
+
 // GetAllowedTLSCipherSuites returns a list of allowed TLS cipher suites.
 func GetAllowedTLSCipherSuites() []string {
 	return allowedTLSCipherSuites

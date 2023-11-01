@@ -25,7 +25,6 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
@@ -147,8 +146,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	data.clusterVersion = clusterVersion
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
-	// TODO: add a getter for this
-	data.clusterBackup = cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup]
+
+	if err := r.fetchClusterBackupConfig(ctx, cluster, &data); err != nil {
+		return fmt.Errorf("failed to fetch cluster backup config: %w", err)
+	}
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
@@ -385,7 +386,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		}
 	}
 
-	if data.clusterBackup {
+	if data.clusterBackupConfig.Enabled {
 		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			clusterbackup.ServiceAccountReconciler(),
 		}
@@ -644,7 +645,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
 	}
 
-	if data.clusterBackup {
+	if data.clusterBackupConfig.Enabled {
 		creators = append(creators, clusterbackup.ClusterRoleBindingReconciler())
 	}
 
@@ -689,7 +690,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 		}
 	}
 
-	if data.clusterBackup {
+	if data.clusterBackupConfig.Enabled {
 		clusterBackupCRDs, err := clusterbackup.CRDs()
 		if err != nil {
 			return fmt.Errorf("failed to load Cluster Backup CRDs: %w", err)
@@ -1046,7 +1047,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 		creators = append(creators, mla.NamespaceReconciler)
 	}
 
-	if data.clusterBackup {
+	if data.clusterBackupConfig.Enabled {
 		creators = append(creators, clusterbackup.NamespaceReconciler)
 	}
 
@@ -1196,7 +1197,7 @@ type reconcileData struct {
 	kubernetesDashboardEnabled    bool
 	operatingSystemManagerEnabled bool
 	coreDNSReplicas               *int32
-	clusterBackup                 bool
+	clusterBackupConfig           *resources.ClusterBakcupConfig
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
