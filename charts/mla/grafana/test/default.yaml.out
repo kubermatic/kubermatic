@@ -5819,7 +5819,11 @@ metadata:
     app.kubernetes.io/version: "9.3.1"
     app.kubernetes.io/managed-by: Helm
   name: release-name-grafana-clusterrole
-rules: []
+rules:
+  - apiGroups:      ['extensions']
+    resources:      ['podsecuritypolicies']
+    verbs:          ['use']
+    resourceNames:  [release-name-grafana]
 ---
 # Source: grafana/charts/grafana/templates/clusterrolebinding.yaml
 kind: ClusterRoleBinding
