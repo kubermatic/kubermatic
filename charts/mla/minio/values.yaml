@@ -228,8 +228,8 @@ minio:
 
   ## Additional Annotations for the Kubernetes Batch (make-bucket-job)
   makeBucketJob:
-    podAnnotations:
-    annotations:
+    podAnnotations: {}
+    annotations: {}
     securityContext:
       enabled: false
       runAsUser: 1000
@@ -240,8 +240,8 @@ minio:
         memory: 128Mi
   ## Additional Annotations for the Kubernetes Batch (update-prometheus-secret)
   updatePrometheusJob:
-    podAnnotations:
-    annotations:
+    podAnnotations: {}
+    annotations: {}
     securityContext:
       enabled: false
       runAsUser: 1000
@@ -298,9 +298,6 @@ minio:
   ## and 'name' is left unspecified, the account 'default' will be used.
   serviceAccount:
     create: true
-    ## The name of the service account to use. If 'create' is 'true', a service account with that name
-    ## will be created. Otherwise, a name will be auto-generated.
-    name:
   metrics:
     # Metrics can not be disabled yet: https://github.com/minio/minio/issues/7493
     serviceMonitor:
