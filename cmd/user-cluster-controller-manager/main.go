@@ -29,6 +29,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	applicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/application-installation-controller"
@@ -62,6 +63,7 @@ import (
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -263,6 +265,15 @@ func main() {
 		LeaderElection: false,
 		Metrics:        metricsserver.Options{BindAddress: "0"},
 		Cache: cache.Options{
+			ByObject: map[client.Object]cache.ByObject{
+				&v1.Seed{}: {
+					Namespaces: map[string]cache.Config{
+						// we need to access Kubermatic namespace to access the seed resource
+						// and get backup Destinations
+						resources.KubermaticNamespace: {},
+					},
+				},
+			},
 			DefaultNamespaces: map[string]cache.Config{
 				runOp.namespace: {},
 			},
