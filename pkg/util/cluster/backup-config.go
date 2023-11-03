@@ -7,18 +7,16 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func FetchClusterBackupConfig(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
-	clusterBackupConfig := &resources.ClusterBackupConfig{
-		Enabled: cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup],
-	}
-	if !clusterBackupConfig.Enabled {
+func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
+	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
 		return nil, nil
 	}
 	seedName, err := extractClusterSeedName(cluster.Name, cluster.Status.Address.URL)
@@ -34,12 +32,23 @@ func FetchClusterBackupConfig(ctx context.Context, seedClient ctrlruntimeclient.
 		seed); err != nil {
 		return nil, fmt.Errorf("failed to get seed [%s]: %w", seedName, err)
 	}
+	return FetchClusterBackupConfig(ctx, seed, cluster, log)
+}
 
+func FetchClusterBackupConfig(ctx context.Context, seed *v1.Seed, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
+	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
+		return nil, nil
+	}
+
+	clusterBackupConfig := &resources.ClusterBackupConfig{
+		Enabled: cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup],
+	}
 	// We pick the default backup destination for now. This behavior will change once we add the API.
 	destinations := seed.Spec.EtcdBackupRestore.Destinations
 	defaultDestination := seed.Spec.EtcdBackupRestore.DefaultDestination
-	if len(destinations) == 0 || defaultDestination != "" {
-		log.Infof("seed [%s] has no backup destinations or no default backup destinations defined. Skipping cluster backup config for cluster [%s]", seedName, cluster.Name)
+
+	if len(destinations) == 0 || defaultDestination == "" {
+		log.Infof("seed [%s] has no backup destinations or no default backup destinations defined. Skipping cluster backup config for cluster [%s]", seed.Name, cluster.Name)
 		return nil, nil
 	}
 
