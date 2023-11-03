@@ -70,6 +70,8 @@ const (
 	migratedVsphereCSIAddon   = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
 	csiAddonStorageClassLabel = "kubermatic-addon=csi"
 	CSIAddonName              = "csi"
+
+	yes = "yes"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -593,7 +595,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	if addon.Name == "csi" {
 		if cluster.Spec.Cloud.Hetzner != nil &&
 			cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-			cluster.Annotations[migratedHetznerCSIAddon] != "yes" {
+			cluster.Annotations[migratedHetznerCSIAddon] != yes {
 			// Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
 			// as a result, the CSDriver resource has to be redeployed
 			// https://github.com/kubermatic/kubermatic/issues/12429
@@ -603,24 +605,23 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 			if cluster.Annotations == nil {
 				cluster.Annotations = make(map[string]string)
 			}
-			cluster.Annotations[migratedHetznerCSIAddon] = "yes"
+			cluster.Annotations[migratedHetznerCSIAddon] = yes
 			if err := r.Update(ctx, cluster); err != nil {
 				log.Errorf("failed to set %q cluster annotation: %w", migratedHetznerCSIAddon, err)
 			}
 		} else if cluster.Spec.Cloud.VSphere != nil &&
 			cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-			cluster.Annotations[migratedVsphereCSIAddon] != "yes" {
+			cluster.Annotations[migratedVsphereCSIAddon] != yes {
 			if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
 				return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 			}
 			if cluster.Annotations == nil {
 				cluster.Annotations = make(map[string]string)
 			}
-			cluster.Annotations[migratedVsphereCSIAddon] = "yes"
+			cluster.Annotations[migratedVsphereCSIAddon] = yes
 			if err := r.Update(ctx, cluster); err != nil {
 				log.Errorf("failed to set %q cluster annotation: %w", migratedVsphereCSIAddon, err)
 			}
-
 		}
 	}
 
