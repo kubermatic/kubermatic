@@ -558,7 +558,7 @@ func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.Sugar
 	}
 
 	if len(driver.Spec.VolumeLifecycleModes) > 1 || (len(driver.Spec.VolumeLifecycleModes) == 1 && driver.Spec.VolumeLifecycleModes[0] != storagev1.VolumeLifecyclePersistent) {
-		log.Debug("deleting hetzner CSIDriver to allow upgrade")
+		log.Debug("deleting vSphere CSIDriver to allow upgrade")
 		if err := cl.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete old CSIDriver: %w", err)
 		}
