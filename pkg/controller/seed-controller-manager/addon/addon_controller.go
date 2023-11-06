@@ -607,7 +607,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 			}
 			cluster.Annotations[migratedHetznerCSIAddon] = yes
 			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("failed to set cluster annotation", zap.Error(err), "cluster", cluster.Name, "annotation", migratedHetznerCSIAddon)
+				log.Errorw("failed to set cluster annotation", zap.Error(err), "annotation", migratedHetznerCSIAddon)
 			}
 		} else if cluster.Spec.Cloud.VSphere != nil &&
 			cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
@@ -620,7 +620,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 			}
 			cluster.Annotations[migratedVsphereCSIAddon] = yes
 			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("failed to set cluster annotation", zap.Error(err), "cluster", cluster.Name, "annotation", migratedVsphereCSIAddon)
+				log.Errorw("failed to set cluster annotation", zap.Error(err), "annotation", migratedVsphereCSIAddon)
 			}
 		}
 	}
