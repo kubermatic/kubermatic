@@ -607,7 +607,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 			}
 			cluster.Annotations[migratedHetznerCSIAddon] = yes
 			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorf("failed to set %q cluster annotation: %w", migratedHetznerCSIAddon, err)
+				log.Errorw("failed to set %q cluster annotation: %w", migratedHetznerCSIAddon, err)
 			}
 		} else if cluster.Spec.Cloud.VSphere != nil &&
 			cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
@@ -620,7 +620,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 			}
 			cluster.Annotations[migratedVsphereCSIAddon] = yes
 			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorf("failed to set %q cluster annotation: %w", migratedVsphereCSIAddon, err)
+				log.Errorw("failed to set %q cluster annotation: %w", migratedVsphereCSIAddon, err)
 			}
 		}
 	}
