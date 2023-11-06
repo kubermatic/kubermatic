@@ -112,7 +112,7 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 	}
 
 	if err := deployDefaultApplicationCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy default ApplicationCatalog: %w", err)
+		return fmt.Errorf("failed to deploy default Application catalog: %w", err)
 	}
 
 	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
@@ -121,7 +121,7 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 }
 
 func deployTelemetry(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	logger.Infof("📦 Deploying Telemetry")
+	logger.Info("📦 Deploying Telemetry…")
 	sublogger := log.Prefix(logger, "   ")
 
 	if opt.DisableTelemetry {
@@ -225,7 +225,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, "dex") {
-		logger.Info("⏭️ Skipping dex deployment.")
+		logger.Info("⭕ Skipping dex deployment.")
 		return nil
 	}
 

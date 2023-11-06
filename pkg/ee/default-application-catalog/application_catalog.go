@@ -39,17 +39,17 @@ import (
 )
 
 func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	logger.Infof("📦 Deploying default ApplicationCatalog")
+	logger.Info("📦 Deploying default Application catalog…")
 	sublogger := log.Prefix(logger, "   ")
 
 	if !opt.DeployDefaultAppCatalog {
-		sublogger.Info("⏭️ Skipping deployment of default ApplicationCatalog")
+		sublogger.Info("Skipping deployment of default Application catalog, set --deploy-default-app-catalog to enable it.")
 		return nil
 	}
 
 	appDefFiles, err := GetAppDefFiles()
 	if err != nil {
-		return fmt.Errorf("Failed to fetch ApplicationDefinitions: %w", err)
+		return fmt.Errorf("failed to fetch ApplicationDefinitions: %w", err)
 	}
 
 	creators := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{}

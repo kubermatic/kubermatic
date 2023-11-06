@@ -50,12 +50,12 @@ import (
 )
 
 func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, "cert-manager") {
-		logger.Info("⏭️ Skipping cert-manager deployment.")
+	if slices.Contains(opt.SkipCharts, CertManagerChartName) {
+		logger.Infof("⭕ Skipping %s deployment.", CertManagerChartName)
 		return nil
 	}
 
-	logger.Info("📦 Deploying cert-manager…")
+	logger.Infof("📦 Deploying %s…", CertManagerChartName)
 	sublogger := log.Prefix(logger, "   ")
 
 	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
@@ -68,7 +68,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return nil
 	}
 
-	chartDir := filepath.Join(opt.ChartsDirectory, "cert-manager")
+	chartDir := filepath.Join(opt.ChartsDirectory, CertManagerChartName)
 
 	chart, err := helm.LoadChart(chartDir)
 	if err != nil {

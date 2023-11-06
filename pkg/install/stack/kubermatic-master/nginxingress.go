@@ -43,12 +43,12 @@ import (
 )
 
 func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, "nginx-ingress-controller") {
-		logger.Info("⏭️ Skipping nginx-ingress-controller deployment.")
+	if slices.Contains(opt.SkipCharts, NginxIngressControllerChartName) {
+		logger.Infof("⭕ Skipping %s deployment.", NginxIngressControllerChartName)
 		return nil
 	}
 
-	logger.Info("📦 Deploying nginx-ingress-controller…")
+	logger.Infof("📦 Deploying %s…", NginxIngressControllerChartName)
 	sublogger := log.Prefix(logger, "   ")
 
 	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
@@ -56,7 +56,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 		return nil
 	}
 
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "nginx-ingress-controller"))
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, NginxIngressControllerChartName))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
@@ -79,7 +79,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 
 	if release != nil && release.Version.LessThan(v13) && !chart.Version.LessThan(v13) {
 		if !opt.EnableNginxIngressMigration {
-			sublogger.Warn("To upgrade nginx-ingress-controller to a new version, the installer")
+			sublogger.Warnf("To upgrade %s to a new version, the installer", NginxIngressControllerChartName)
 			sublogger.Warn("will remove the old deployment object before proceeding with the upgrade.")
 			sublogger.Warn("Rerun the installer with --migrate-upstream-nginx-ingress to enable the migration process.")
 			sublogger.Warn("Please refer to the KKP 2.19 upgrade notes for more information.")
@@ -90,7 +90,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 		isUpgrading = true
 		err = upgradeNginxIngress(ctx, sublogger, kubeClient, helmClient, opt, chart, release, backupTS)
 		if err != nil {
-			return fmt.Errorf("failed to prepare nginx-ingress-controller for upgrade: %w", err)
+			return fmt.Errorf("failed to prepare %s for upgrade: %w", NginxIngressControllerChartName, err)
 		}
 	}
 
