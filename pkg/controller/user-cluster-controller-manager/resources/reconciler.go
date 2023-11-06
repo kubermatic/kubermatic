@@ -148,7 +148,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 
-	backupConfig, err := clusterutil.FetchClusterBackupConfig(ctx, r.seedClient, cluster, r.log)
+	backupConfig, err := clusterutil.FetchClusterBackupConfigWithSeedClient(ctx, r.seedClient, cluster, r.log)
 	if err != nil {
 		return fmt.Errorf("failed to fetch cluster backup config: %w", err)
 	}
@@ -394,8 +394,8 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			clusterbackup.ServiceAccountReconciler(),
 		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, clusterbackup.NamespaceName, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", clusterbackup.NamespaceName, err)
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.ClusterBackupNamespaceName, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.ClusterBackupNamespaceName, err)
 		}
 	}
 

@@ -763,6 +763,10 @@ func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfigu
 	return d.config
 }
 
+func (d *TemplateData) ClusterBackupConfig() *ClusterBackupConfig {
+	return d.clusterBackupConfig
+}
+
 func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	cluster := data.Cluster()
 	dc := data.DC()

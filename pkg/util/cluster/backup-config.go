@@ -37,7 +37,7 @@ func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrl
 
 func FetchClusterBackupConfig(ctx context.Context, seed *v1.Seed, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
 	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
-		return nil, nil
+		return &resources.ClusterBackupConfig{Enabled: false}, nil
 	}
 
 	clusterBackupConfig := &resources.ClusterBackupConfig{
@@ -49,7 +49,7 @@ func FetchClusterBackupConfig(ctx context.Context, seed *v1.Seed, cluster *v1.Cl
 
 	if len(destinations) == 0 || defaultDestination == "" {
 		log.Infof("seed [%s] has no backup destinations or no default backup destinations defined. Skipping cluster backup config for cluster [%s]", seed.Name, cluster.Name)
-		return nil, nil
+		return clusterBackupConfig, nil
 	}
 
 	clusterBackupConfig.Enabled = true

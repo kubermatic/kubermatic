@@ -1045,6 +1045,13 @@ const (
 	ApplicationCacheMountPath  = "/applications-cache"
 )
 
+const (
+	ClusterbackupKubeconfigSecretName = "velero-kubeconfig"
+	ClusterbackupUsername             = "velero"
+	ClusterBackupServiceAccountName   = "velero"
+	ClusterBackupNamespaceName        = "velero"
+)
+
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
 
 // GetApplicationCacheSize return the application cache size if defined, otherwise fallback to the default size.

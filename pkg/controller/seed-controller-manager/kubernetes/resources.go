@@ -25,6 +25,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -36,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	clusterbackup "k8c.io/kubermatic/v2/pkg/resources/cluster-backup"
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
 	"k8c.io/kubermatic/v2/pkg/resources/csi"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
@@ -84,7 +86,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	if err != nil {
 		return nil, err
 	}
-
 	// check that all services are available
 	if err := r.ensureServices(ctx, cluster, data); err != nil {
 		return nil, err
@@ -110,7 +111,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureRBAC(ctx, cluster, namespace); err != nil {
+	if err := r.ensureRBAC(ctx, cluster, namespace, data); err != nil {
 		return nil, err
 	}
 
@@ -226,7 +227,12 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
 
-	backupConfig, err := clusterutil.FetchClusterBackupConfig(ctx, r.Client, cluster, r.log)
+	backupConfig, err := clusterutil.FetchClusterBackupConfig(ctx, seed, cluster, r.log)
+	logrus.Infof("------------------------------------------------------%#v", backupConfig)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch cluster backup config: %w", err)
+	}
 
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
@@ -420,7 +426,9 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 			nodeportproxy.DeploymentLBUpdaterReconciler(data),
 		)
 	}
-
+	if data.ClusterBackupConfig().Enabled {
+		deployments = append(deployments, clusterbackup.DeploymentReconciler(data))
+	}
 	return deployments
 }
 
@@ -519,6 +527,13 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		creators = append(creators, resources.ServiceAccountSecretReconciler(data))
 	}
 
+	if data.ClusterBackupConfig().Enabled {
+		creators = append(creators,
+			resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterbackupKubeconfigSecretName, resources.ClusterbackupUsername, nil, data, r.log),
+			clusterbackup.SecretReconciler(ctx, r.Client, data),
+		)
+	}
+
 	return creators
 }
 
@@ -532,7 +547,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 	return nil
 }
 
-func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedServiceAccountReconcilerFactorys := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
@@ -920,8 +935,8 @@ func (r *Reconciler) ensureEncryptionConfigurationIsRemoved(ctx context.Context,
 	return nil
 }
 
-func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
-	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
+func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace, data *resources.TemplateData) error {
+	if err := r.ensureServiceAccounts(ctx, cluster, data); err != nil {
 		return err
 	}
 
