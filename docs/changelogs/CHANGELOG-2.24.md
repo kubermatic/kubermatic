@@ -52,6 +52,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - If a vSphere cluster uses a custom datastore, the Seed's default datastore should not be validated ([#12655](https://github.com/kubermatic/kubermatic/pull/12655))
 - Add `basePath` optional configuration for vSphere clusters that will be used to construct a cluster-specific folder path (`<root path>/<base path>/<cluster ID>` or `<base path>/<cluster ID>`) ([#12668](https://github.com/kubermatic/kubermatic/pull/12668))
 - Fix a bug where datastore cluster value was not being propagated to the CSI driver ([#12474](https://github.com/kubermatic/kubermatic/pull/12474))
+- Migrate `CSIDriver` `csi.vsphere.vmware.com` to no longer advertise inline ephemeral volumes as supported ([#12813](https://github.com/kubermatic/kubermatic/pull/12813))
 
 #### DigitalOcean
 
@@ -83,6 +84,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Extend cluster health status with KubeLB health check ([#12685](https://github.com/kubermatic/kubermatic/pull/12685))
 - Support for enforcing KubeLB at the datacenter level ([#12685](https://github.com/kubermatic/kubermatic/pull/12685))
 - Support to configure node address type for KubeLB at the datacenter level ([#12715](https://github.com/kubermatic/kubermatic/pull/12715))
+- Update KubeLB CCM image to v0.4.0 ([#12786](https://github.com/kubermatic/kubermatic/pull/12786))
 
 ### Metering (Enterprise Edition only)
 
@@ -105,6 +107,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Fix several Prometheus record and alert rules ([#12533](https://github.com/kubermatic/kubermatic/pull/12533))
 - Made Prometheus Helm chart extensible so that external metric storage solutions like Thanos can be easily integrated for seed long-term monitoring ([#12425](https://github.com/kubermatic/kubermatic/pull/12425))
 - Fixes for the Kubernetes overview dashboard in Grafana ([#12520](https://github.com/kubermatic/kubermatic/pull/12520))
+- Fix CPU Utilization graph showing no data for User Cluster MLA dashboard "Nodes Overview" ([#12814](https://github.com/kubermatic/kubermatic/pull/12814))
+- Fix empty panels in Grafana dashboard "Resource Usage per Namespace" for Master/Seed MLA ([#12816](https://github.com/kubermatic/kubermatic/pull/12816))
 
 ### New Features
 
@@ -136,6 +140,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - KKP's CA bundle was not used when performing Application-related operations like installing a Helm chart from a private OCI registry ([#12514](https://github.com/kubermatic/kubermatic/pull/12514))
 - `kubermatic-installer` will now validate the existing MinIO filesystem before attempting a `kubermatic-seed` stack installation ([#12477](https://github.com/kubermatic/kubermatic/pull/12477))
 - Increase default CPU limits for KKP API/seed/master-controller-managers to prevent general slowness ([#12764](https://github.com/kubermatic/kubermatic/pull/12764))
+- Extend project-synchronizer controller in kubermatic-master-controller-manager to propagate labels from Projects in the master cluster to Projects in the seed cluster. This fixes an issue where the metering report doesn't contain project-labels in separate master/seed setups ([#12791](https://github.com/kubermatic/kubermatic/pull/12791))
 
 ### Updates
 
@@ -154,6 +159,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update controller-runtime to 0.16.1 and Kubernetes libraries to 1.28 ([#12609](https://github.com/kubermatic/kubermatic/pull/12609))
 - Update Go to 1.21.3 ([#12697](https://github.com/kubermatic/kubermatic/pull/12697))
 - Update KubeVirt CDI for local installer to 1.57.0 ([#12605](https://github.com/kubermatic/kubermatic/pull/12605))
+- Add Kubernetes 1.28 to EKS versions, remove Kubernetes 1.23 ([#12789](https://github.com/kubermatic/kubermatic/pull/12789))
 
 ### Miscellaneous
 
