@@ -137,7 +137,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Fix node-labeller controller not applying the `x-kubernetes.io/distribution` label to RHEL nodes ([#12751](https://github.com/kubermatic/kubermatic/pull/12751))
 - Fix reconcile loop for `seed-proxy-token` Secret on Kubernetes 1.27 ([#12557](https://github.com/kubermatic/kubermatic/pull/12557))
 - Increase memory limit of kube-state-metrics addon to 600Mi ([#12692](https://github.com/kubermatic/kubermatic/pull/12692))
-- KKP's CA bundle was not used when performing Application-related operations like installing a Helm chart from a private OCI registry ([#12514](https://github.com/kubermatic/kubermatic/pull/12514))
 - `kubermatic-installer` will now validate the existing MinIO filesystem before attempting a `kubermatic-seed` stack installation ([#12477](https://github.com/kubermatic/kubermatic/pull/12477))
 - Increase default CPU limits for KKP API/seed/master-controller-managers to prevent general slowness ([#12764](https://github.com/kubermatic/kubermatic/pull/12764))
 - Extend project-synchronizer controller in kubermatic-master-controller-manager to propagate labels from Projects in the master cluster to Projects in the seed cluster. This fixes an issue where the metering report doesn't contain project-labels in separate master/seed setups ([#12791](https://github.com/kubermatic/kubermatic/pull/12791))
