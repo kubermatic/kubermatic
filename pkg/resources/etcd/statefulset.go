@@ -322,6 +322,8 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				set.Spec.Template.Spec.Affinity = resources.MergeAffinities(set.Spec.Template.Spec.Affinity, failureDomainZoneAntiAffinity)
 			}
 
+			set.Spec.Template.Spec.NodeSelector = data.Cluster().Spec.ComponentsOverride.Etcd.NodeSelector
+
 			set.Spec.Template.Spec.Volumes = volumes
 
 			// Make sure we don't change volume claim template of existing sts

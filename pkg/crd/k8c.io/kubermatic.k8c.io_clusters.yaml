@@ -1347,6 +1347,11 @@ spec:
                             - preferred
                             - required
                           type: string
+                        nodeSelector:
+                          additionalProperties:
+                            type: string
+                          description: 'NodeSelector is a selector which restricts the set of nodes where etcd Pods can run. Multiple labels with a required value can be supplied.'
+                          type: object
                       type: object
                     konnectivityProxy:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
