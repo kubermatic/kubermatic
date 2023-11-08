@@ -31,6 +31,7 @@ const (
 	cloudCredentialsSecretName        = "velero-cloud-credentials"
 )
 
+// DeploymentReconciler creates the velero deployment in the user cluster namespace.
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return clusterBackupName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
@@ -110,13 +111,6 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 							Value: "/scratch",
 						},
 						{
-							Name: "VELERO_NAMESPACE",
-							ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath: "metadata.namespace",
-							},
-							},
-						},
-						{
 							Name:  "LD_LIBRARY_PATH",
 							Value: "/plugins",
 						},
@@ -135,6 +129,12 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 						{
 							Name:  "ALIBABA_CLOUD_CREDENTIALS_FILE",
 							Value: "/credentials/cloud",
+						},
+						// looks like velero has a bug where is doesn't use the provided kubeconfig for some operations
+						// and falls back to incluster credentials. This is a workaround.
+						{
+							Name:  "KUBECONFIG",
+							Value: "/etc/kubernetes/kubeconfig/kubeconfig",
 						},
 					},
 					VolumeMounts:    volumeMounts,

@@ -15,6 +15,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// FetchClusterBackupConfigWithSeedClient returns the Cluster Backup configuration using a seed client to access the seed object.
 func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
 	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
 		return nil, nil
@@ -35,26 +36,30 @@ func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrl
 	return FetchClusterBackupConfig(ctx, seed, cluster, log)
 }
 
+// FetchClusterBackupConfig returns the Cluster Backup configuration from the seed object directly
 func FetchClusterBackupConfig(ctx context.Context, seed *v1.Seed, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
 	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
 		return &resources.ClusterBackupConfig{Enabled: false}, nil
 	}
 
-	clusterBackupConfig := &resources.ClusterBackupConfig{
-		Enabled: cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup],
-	}
 	// We pick the default backup destination for now. This behavior will change once we add the API.
 	destinations := seed.Spec.EtcdBackupRestore.Destinations
 	defaultDestination := seed.Spec.EtcdBackupRestore.DefaultDestination
-
 	if len(destinations) == 0 || defaultDestination == "" {
 		log.Infof("seed [%s] has no backup destinations or no default backup destinations defined. Skipping cluster backup config for cluster [%s]", seed.Name, cluster.Name)
-		return clusterBackupConfig, nil
+		return &resources.ClusterBackupConfig{Enabled: false}, nil
 	}
-
-	clusterBackupConfig.Enabled = true
-	clusterBackupConfig.Destination = destinations[defaultDestination]
-	return clusterBackupConfig, nil
+	dest, ok := destinations[defaultDestination]
+	if !ok {
+		return nil, fmt.Errorf("configured default destination [%s] doesn't exist", defaultDestination)
+	}
+	if dest.BucketName == "" || dest.Endpoint == "" || dest.Credentials == nil {
+		return nil, fmt.Errorf("failed to validate backup destination configuration: bucketName, endpoint or credentials are not valid")
+	}
+	return &resources.ClusterBackupConfig{
+		Enabled:     cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup],
+		Destination: dest,
+	}, nil
 }
 
 func extractClusterSeedName(clusterName, clusterURL string) (string, error) {

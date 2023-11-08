@@ -300,6 +300,12 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 			return err
 		}
 	}
+
+	if data.clusterBackupConfig.Enabled {
+		if err := clusterbackup.EnsureVeleroBSL(ctx, r.Client, data.clusterBackupConfig, r.clusterName); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

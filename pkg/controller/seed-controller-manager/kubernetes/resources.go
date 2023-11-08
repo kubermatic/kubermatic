@@ -25,7 +25,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -228,8 +227,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
 
 	backupConfig, err := clusterutil.FetchClusterBackupConfig(ctx, seed, cluster, r.log)
-	logrus.Infof("------------------------------------------------------%#v", backupConfig)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch cluster backup config: %w", err)
 	}
