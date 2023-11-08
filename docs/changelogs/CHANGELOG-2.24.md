@@ -41,6 +41,27 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - v1.27.6 (default)
 - v1.28.2
 
+### KubeLB (Enterprise Edition only)
+
+This release adds support for [KubeLB](https://docs.kubermatic.com/kubelb/), a cloud native multi-tenant load balancing solution by Kubermatic.
+
+- Add KubeLB integration with KKP; introduce KubeLB as a first-class citizen in KKP ([#12667](https://github.com/kubermatic/kubermatic/pull/12667))
+- Extend cluster health status with KubeLB health check ([#12685](https://github.com/kubermatic/kubermatic/pull/12685))
+- Support for enforcing KubeLB at the datacenter level ([#12685](https://github.com/kubermatic/kubermatic/pull/12685))
+- Support to configure node address type for KubeLB at the datacenter level ([#12715](https://github.com/kubermatic/kubermatic/pull/12715))
+- Update KubeLB CCM image to v0.4.0 ([#12786](https://github.com/kubermatic/kubermatic/pull/12786))
+
+### Metering (Enterprise Edition only)
+
+- Following fields are removed from metering reports ([#12545](https://github.com/kubermatic/kubermatic/pull/12545))
+  - Cluster reports
+    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
+    - Removal of `average-available-cpu-cores`, use `average-available-cpu-millicores` instead
+  - Namespace reports
+    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead 
+- Add `monthly` parameter for metering monthly report generation ([#12544](https://github.com/kubermatic/kubermatic/pull/12544))
+- Update metering component to v1.1.1, fixing highly inaccurate data in cluster reports (see [Action Required](#action-required) for more details) ([#12822](https://github.com/kubermatic/kubermatic/pull/12822))
+
 ### Cloud Providers
 
 #### Azure
@@ -81,25 +102,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add support for Canal v3.26.1 ([#12561](https://github.com/kubermatic/kubermatic/pull/12561))
 - Deprecate Canal v3.23 ([#12561](https://github.com/kubermatic/kubermatic/pull/12561))
 - Mark all Canal CRDs with preserveUnknownFields: false ([#12538](https://github.com/kubermatic/kubermatic/pull/12538))
-
-### KubeLB (Enterprise Edition only)
-
-- Add KubeLB integration with KKP; introduce KubeLB as a first-class citizen in KKP ([#12667](https://github.com/kubermatic/kubermatic/pull/12667))
-- Extend cluster health status with KubeLB health check ([#12685](https://github.com/kubermatic/kubermatic/pull/12685))
-- Support for enforcing KubeLB at the datacenter level ([#12685](https://github.com/kubermatic/kubermatic/pull/12685))
-- Support to configure node address type for KubeLB at the datacenter level ([#12715](https://github.com/kubermatic/kubermatic/pull/12715))
-- Update KubeLB CCM image to v0.4.0 ([#12786](https://github.com/kubermatic/kubermatic/pull/12786))
-
-### Metering (Enterprise Edition only)
-
-- Following fields are removed from metering reports ([#12545](https://github.com/kubermatic/kubermatic/pull/12545))
-  - Cluster reports
-    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
-    - Removal of `average-available-cpu-cores`, use `average-available-cpu-millicores` instead
-  - Namespace reports
-    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead 
-- Add `monthly` parameter for metering monthly report generation ([#12544](https://github.com/kubermatic/kubermatic/pull/12544))
-- Update metering component to v1.1.1, fixing highly inaccurate data in cluster reports (see [Action Required](#action-required) for more details) ([#12822](https://github.com/kubermatic/kubermatic/pull/12822))
 
 ### MLA
 
