@@ -22,6 +22,10 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+line() {
+  printf "| %-30s | %-30s |\n" "$1" "$2"
+}
+
 TARGET_DIR=docs_sync
 REVISION=$(git rev-parse --short HEAD)
 
@@ -76,8 +80,8 @@ weight = 2
 The following list is only applicable for the KKP version that is currently available. Kubermatic has a strong emphasis on security and reliability
 of provided software and therefore releases updates regularly that also include component updates.
 
-| KKP Components                | Version                      |
-| ----------------------------- | ---------------------------- |
+| KKP Components                 | Version                        |
+| ------------------------------ | ------------------------------ |
 EOT
 
 # iterate over all charts to extract version information
@@ -87,7 +91,7 @@ for filepath in $(find ../charts -name Chart.yaml | sort); do
   # read appVersion from Chart.yaml and normalize version format by removing a "v" prefix
   app_version=$(yq '.appVersion' ${filepath} | sed -e 's/^v//g')
   # append information to components markdown file
-  echo "| ${chart_name} | ${app_version} |" >> ${components_file}
+  line ${chart_name} ${app_version} >> ${components_file}
 done
 
 # update repo
