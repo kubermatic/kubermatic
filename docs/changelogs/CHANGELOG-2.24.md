@@ -13,6 +13,10 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - OpenVPN for control plane to node connectivity has been deprecated. It will be removed in future releases of KKP. Upgrading all user cluster to Konnectivity is strongly recommended ([#12691](https://github.com/kubermatic/kubermatic/pull/12691))
 - User clusters require upgrading to Kubernetes 1.26 prior to upgrading to KKP 2.24 ([#12740](https://github.com/kubermatic/kubermatic/pull/12740))
 
+### Action Required
+
+- **ACTION REQUIRED (EE ONLY):** Update metering component to v1.1.1, fixing highly inaccurate data in cluster reports. Reports generated in KKP v2.23.2+ or v2.22.5+ do not represent actual consumption. Ad-hoc reports for time frames that need correct consumption data can be generated [by following our documentation](https://docs.kubermatic.com/kubermatic/v2.24/tutorials-howtos/metering/#custom-reports) ([#12822](https://github.com/kubermatic/kubermatic/pull/12822))
+
 ### API Changes
 
 - The field `vmNetName` in `Cluster` and `Preset` resources for vSphere clusters is deprecated and `networks` should be used instead ([#12444](https://github.com/kubermatic/kubermatic/pull/12444))
@@ -88,13 +92,14 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Metering (Enterprise Edition only)
 
-- Update metering to v1.1.0. Following fields are removed: ([#12545](https://github.com/kubermatic/kubermatic/pull/12545))
+- Following fields are removed from metering reports ([#12545](https://github.com/kubermatic/kubermatic/pull/12545))
   - Cluster reports
     - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
     - Removal of `average-available-cpu-cores`, use `average-available-cpu-millicores` instead
   - Namespace reports
     - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead 
 - Add `monthly` parameter for metering monthly report generation ([#12544](https://github.com/kubermatic/kubermatic/pull/12544))
+- Update metering component to v1.1.1, fixing highly inaccurate data in cluster reports (see [Action Required](#action-required) for more details) ([#12822](https://github.com/kubermatic/kubermatic/pull/12822))
 
 ### MLA
 
@@ -159,6 +164,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update Go to 1.21.3 ([#12697](https://github.com/kubermatic/kubermatic/pull/12697))
 - Update KubeVirt CDI for local installer to 1.57.0 ([#12605](https://github.com/kubermatic/kubermatic/pull/12605))
 - Add Kubernetes 1.28 to EKS versions, remove Kubernetes 1.23 ([#12789](https://github.com/kubermatic/kubermatic/pull/12789))
+- Update machine-controller to [v1.58.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.58.0) ([#12825](https://github.com/kubermatic/kubermatic/pull/12825))
+- Update operating-system-manager to [v1.4.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.0) ([#12826](https://github.com/kubermatic/kubermatic/pull/12826))
 
 ### Miscellaneous
 
