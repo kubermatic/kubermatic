@@ -144,6 +144,35 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 			},
 			expectedError: "[spec.values.operator.securityContext: Invalid value: \"null\": value is immutable]",
 		},
+		{
+			name: "cni excluded field introduced under immutable value",
+			testValuesModifier: func(values map[string]any) {
+				o := values["cni"].(map[string]any)
+				o["chainingMode"] = "portmap"
+
+			},
+			expectedError: "[]",
+		},
+		{
+			name: "ipam excluded field introduced under immutable value",
+			testValuesModifier: func(values map[string]any) {
+				ipam := values["ipam"].(map[string]any)
+				op := ipam["operator"].(map[string]any)
+				op["clusterPoolIPv4PodCIDR"] = "192.168.0.0/24"
+
+			},
+			expectedError: "[]",
+		},
+		{
+			name: "Modified immutable nested value in ipam",
+			testValuesModifier: func(values map[string]any) {
+				ipam := values["ipam"].(map[string]any)
+				op := ipam["operator"].(map[string]any)
+				op["clusterPoolIPv4PodCIDRList"] = []string{"192.168.0.0/24"}
+
+			},
+			expectedError: "[spec.values.ipam: Invalid value: map[string]interface {}{\"operator\":map[string]interface {}{\"clusterPoolIPv4MaskSize\":\"16\", \"clusterPoolIPv4PodCIDRList\":[]string{\"192.168.0.0/24\"}}}: value is immutable]",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -174,10 +203,9 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 	}
 }
 
-// Test_validateImmutableValues ensures that map comparison works as expected.
-func Test_validateImmutableValues(t *testing.T) {
+// TestValidateImmutableValues ensures that map comparison works as expected.
+func TestValidateImmutableValues(t *testing.T) {
 	oldValues := GetAppInstallOverrideValues(testCluster, "")
-
 	// copy oldValues to newValues to modify
 	equalValues := make(map[string]any)
 	rawValues, _ := json.Marshal(oldValues)
@@ -194,6 +222,7 @@ func Test_validateImmutableValues(t *testing.T) {
 		name            string
 		want            field.ErrorList
 		immutableValues []string
+		acceptedFields  []string
 		fieldPath       *field.Path
 		oldValues       map[string]any
 		newValues       map[string]any
@@ -201,6 +230,7 @@ func Test_validateImmutableValues(t *testing.T) {
 		{
 			name:            "equal spec",
 			immutableValues: []string{"values"},
+			acceptedFields:  []string{},
 			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec"),
 			oldValues:       oldValues,
@@ -209,6 +239,7 @@ func Test_validateImmutableValues(t *testing.T) {
 		{
 			name:            "equal values",
 			immutableValues: []string{"cni", "ipam", "ipv6"},
+			acceptedFields:  []string{},
 			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec").Child("values"),
 			oldValues:       oldValues,
@@ -217,15 +248,25 @@ func Test_validateImmutableValues(t *testing.T) {
 		{
 			name:            "ipam modified",
 			immutableValues: []string{"cni", "ipam", "ipv6"},
+			acceptedFields:  []string{},
 			want:            field.ErrorList{field.Invalid(field.NewPath("spec").Child("values").Child("ipam"), alteredValues["ipam"], "value is immutable")},
+			fieldPath:       field.NewPath("spec").Child("values"),
+			oldValues:       oldValues,
+			newValues:       alteredValues,
+		},
+		{
+			name:            "ipam modified, but the clusterPoolIPv4PodCIDRList is accepted",
+			immutableValues: []string{"cni", "ipam", "ipv6"},
+			acceptedFields:  []string{"ipam.operator.clusterPoolIPv4PodCIDRList"},
+			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec").Child("values"),
 			oldValues:       oldValues,
 			newValues:       alteredValues,
 		},
 	}
 	for _, tt := range tests {
-		t.Run("Test map comparison", func(t *testing.T) {
-			if got := validateImmutableValues(tt.newValues, tt.oldValues, tt.fieldPath, tt.immutableValues); !reflect.DeepEqual(got, tt.want) {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := validateImmutableValues(tt.newValues, tt.oldValues, tt.fieldPath, tt.immutableValues, tt.acceptedFields); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s: validateImmutableValues() = %v, want %v", tt.name, got, tt.want)
 			}
 		})

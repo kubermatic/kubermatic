@@ -319,12 +319,14 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 // ValidateValuesUpdate validates the update operation on provided Cilium Helm values.
 func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-
 	// Validate immutability of specific top-level value subtrees, managed solely by KKP
 	allErrs = append(allErrs, validateImmutableValues(newValues, oldValues, fieldPath, []string{
 		"cni",
 		"ipam",
 		"ipv6",
+	}, []string{
+		"cni.chainingMode",
+		"ipam.operator.clusterPoolIPv4PodCIDR",
 	})...)
 
 	// Validate that mandatory top-level values are present
@@ -353,13 +355,18 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 	}
 	allErrs = append(allErrs, validateImmutableValues(newOperator, oldOperator, operPath, []string{
 		"securityContext",
-	})...)
+	}, []string{})...)
 
 	return allErrs
 }
 
-func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string) field.ErrorList {
+func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string, excludedKeys []string) field.ErrorList {
 	allErrs := field.ErrorList{}
+	for _, exclusion := range excludedKeys {
+		if excludedKeyExists(newValues, strings.Split(exclusion, ".")...) {
+			return allErrs
+		}
+	}
 	for _, v := range immutableValues {
 		if fmt.Sprint(oldValues[v]) != fmt.Sprint(newValues[v]) {
 			allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
@@ -376,4 +383,25 @@ func validateMandatoryValues(newValues map[string]any, fieldPath *field.Path, ma
 		}
 	}
 	return allErrs
+}
+
+func excludedKeyExists(values map[string]any, keys ...string) bool {
+	if len(keys) == 0 || values == nil {
+		return false
+	}
+	root := keys[0]
+	value, ok := values[root]
+	if !ok {
+		return false
+	}
+
+	if len(keys) == 1 {
+		return true
+	}
+
+	if innerMap, ok := value.(map[string]any); ok {
+		return excludedKeyExists(innerMap, keys[1:]...)
+	}
+
+	return false
 }
