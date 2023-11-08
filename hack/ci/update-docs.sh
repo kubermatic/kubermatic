@@ -66,7 +66,7 @@ make runbook
 hack/render-crds.sh
 
 # update components page
-components_file=content/kubermatic/main/architecture/compatibility/KKP-components-versioning/_index.en.md
+components_file=content/kubermatic/main/architecture/compatibility/kkp-components-versioning/_index.en.md
 cat > ${components_file} << EOT
 +++
 title = "KKP Components"
