@@ -149,7 +149,6 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 			testValuesModifier: func(values map[string]any) {
 				o := values["cni"].(map[string]any)
 				o["chainingMode"] = "portmap"
-
 			},
 			expectedError: "[]",
 		},
@@ -159,7 +158,6 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 				ipam := values["ipam"].(map[string]any)
 				op := ipam["operator"].(map[string]any)
 				op["clusterPoolIPv4PodCIDR"] = "192.168.0.0/24"
-
 			},
 			expectedError: "[]",
 		},
@@ -169,7 +167,6 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 				ipam := values["ipam"].(map[string]any)
 				op := ipam["operator"].(map[string]any)
 				op["clusterPoolIPv4PodCIDRList"] = []string{"192.168.0.0/24"}
-
 			},
 			expectedError: "[spec.values.ipam: Invalid value: map[string]interface {}{\"operator\":map[string]interface {}{\"clusterPoolIPv4MaskSize\":\"16\", \"clusterPoolIPv4PodCIDRList\":[]string{\"192.168.0.0/24\"}}}: value is immutable]",
 		},
