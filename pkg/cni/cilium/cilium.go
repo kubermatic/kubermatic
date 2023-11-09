@@ -362,13 +362,17 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 
 func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string, excludedKeys []string) field.ErrorList {
 	allErrs := field.ErrorList{}
-	for _, exclusion := range excludedKeys {
-		if excludedKeyExists(newValues, strings.Split(exclusion, ".")...) {
-			return allErrs
-		}
-	}
+	allowedValues := map[string]bool{}
+
 	for _, v := range immutableValues {
-		if fmt.Sprint(oldValues[v]) != fmt.Sprint(newValues[v]) {
+		for _, exclusion := range excludedKeys {
+			if strings.HasPrefix(exclusion, v) {
+				if excludedKeyExists(newValues, strings.Split(exclusion, ".")...) {
+					allowedValues[v] = true
+				}
+			}
+		}
+		if fmt.Sprint(oldValues[v]) != fmt.Sprint(newValues[v]) && !allowedValues[v] {
 			allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
 		}
 	}
