@@ -148,7 +148,7 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 			name: "cni excluded field introduced under immutable value",
 			testValuesModifier: func(values map[string]any) {
 				o := values["cni"].(map[string]any)
-				o["chainingMode"] = "portmap"
+				o["chainingMode"] = "test"
 			},
 			expectedError: "[]",
 		},
@@ -165,7 +165,7 @@ func TestValidateCiliumValuesUpdate(t *testing.T) {
 			name: "Modified multiple immutable nested value in ipam and one is excluded",
 			testValuesModifier: func(values map[string]any) {
 				cni := values["cni"].(map[string]any)
-				cni["chainingMode"] = "portmap"
+				cni["chainingMode"] = "test"
 				ipam := values["ipam"].(map[string]any)
 				op := ipam["operator"].(map[string]any)
 				op["clusterPoolIPv4PodCIDRList"] = []string{"192.168.0.0/24"}
