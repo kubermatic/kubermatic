@@ -1,4 +1,4 @@
-package clusterbackup
+package userclusterresources
 
 import (
 	"context"
@@ -23,9 +23,11 @@ const (
 )
 
 // NamespaceReconciler creates the namespace for velero related resources on the user cluster
-func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
-	return resources.ClusterBackupNamespaceName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
-		return ns, nil
+func NamespaceReconciler() reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return resources.ClusterBackupNamespaceName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			return ns, nil
+		}
 	}
 }
 

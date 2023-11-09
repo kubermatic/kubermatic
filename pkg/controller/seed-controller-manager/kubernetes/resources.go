@@ -36,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
-	clusterbackup "k8c.io/kubermatic/v2/pkg/resources/cluster-backup"
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
 	"k8c.io/kubermatic/v2/pkg/resources/csi"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
@@ -423,9 +422,7 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 			nodeportproxy.DeploymentLBUpdaterReconciler(data),
 		)
 	}
-	if data.ClusterBackupConfig().Enabled {
-		deployments = append(deployments, clusterbackup.DeploymentReconciler(data))
-	}
+
 	return deployments
 }
 
@@ -522,13 +519,6 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		creators = append(creators, resources.ServiceAccountSecretReconciler(data))
-	}
-
-	if data.ClusterBackupConfig().Enabled {
-		creators = append(creators,
-			resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterbackupKubeconfigSecretName, resources.ClusterbackupUsername, nil, data, r.log),
-			clusterbackup.SecretReconciler(ctx, r.Client, data),
-		)
 	}
 
 	return creators

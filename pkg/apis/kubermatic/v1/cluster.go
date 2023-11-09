@@ -454,6 +454,7 @@ const (
 	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
 	ClusterConditionIPAMControllerReconcilingSuccess                    ClusterConditionType = "IPAMControllerReconciledSuccessfully"
+	ClusterConditionClusterBackupControllerReconcilingSuccess           ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"

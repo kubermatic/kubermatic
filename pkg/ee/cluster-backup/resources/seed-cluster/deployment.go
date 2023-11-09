@@ -1,4 +1,4 @@
-package clusterbackup
+package seedclusterresources
 
 import (
 	"fmt"
@@ -29,6 +29,8 @@ const (
 	clusterBackupName                 = "velero-cluster-backup"
 	clusterbackupKubeConfigSecretName = "velero-kubeconfig"
 	cloudCredentialsSecretName        = "velero-cloud-credentials"
+
+	veleroImage = "velero/velero:v1.12.0"
 )
 
 // DeploymentReconciler creates the velero deployment in the user cluster namespace.
@@ -90,7 +92,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "velero",
-					Image:   "velero/velero:v1.12.0",
+					Image:   veleroImage,
 					Command: []string{"/velero"},
 					Args: []string{
 						"server",
@@ -130,8 +132,8 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 							Name:  "ALIBABA_CLOUD_CREDENTIALS_FILE",
 							Value: "/credentials/cloud",
 						},
-						// looks like velero has a bug where is doesn't use the provided kubeconfig for some operations
-						// and falls back to incluster credentials. This is a workaround.
+						// looks like velero has a bug where it doesn't use the provided kubeconfig for some operations
+						// and falls back to in-cluster credentials. This is a workaround.
 						{
 							Name:  "KUBECONFIG",
 							Value: "/etc/kubernetes/kubeconfig/kubeconfig",

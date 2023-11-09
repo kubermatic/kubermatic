@@ -18,7 +18,7 @@ import (
 // FetchClusterBackupConfigWithSeedClient returns the Cluster Backup configuration using a seed client to access the seed object.
 func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
 	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
-		return nil, nil
+		return &resources.ClusterBackupConfig{Enabled: false}, nil
 	}
 	seedName, err := extractClusterSeedName(cluster.Name, cluster.Status.Address.URL)
 	if err != nil {

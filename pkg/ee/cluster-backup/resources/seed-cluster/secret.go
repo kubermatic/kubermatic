@@ -1,4 +1,4 @@
-package clusterbackup
+package seedclusterresources
 
 import (
 	"context"

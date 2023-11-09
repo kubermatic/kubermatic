@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cloudinitsettings"
-	clusterbackup "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cluster-backup"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
@@ -301,11 +300,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if data.clusterBackupConfig.Enabled {
-		if err := clusterbackup.EnsureVeleroBSL(ctx, r.Client, data.clusterBackupConfig, r.clusterName); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -395,16 +389,6 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
-
-	if data.clusterBackupConfig.Enabled {
-		creators = []reconciling.NamedServiceAccountReconcilerFactory{
-			clusterbackup.ServiceAccountReconciler(),
-		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.ClusterBackupNamespaceName, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.ClusterBackupNamespaceName, err)
-		}
-	}
-
 	return nil
 }
 
@@ -654,11 +638,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, operatingsystemmanager.ClusterRoleBindingReconciler())
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
 	}
-
-	if data.clusterBackupConfig.Enabled {
-		creators = append(creators, clusterbackup.ClusterRoleBindingReconciler())
-	}
-
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
@@ -697,16 +676,6 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 
 		for i := range gatekeeperCRDs {
 			creators = append(creators, gatekeeper.CRDReconciler(gatekeeperCRDs[i]))
-		}
-	}
-
-	if data.clusterBackupConfig.Enabled {
-		clusterBackupCRDs, err := clusterbackup.CRDs()
-		if err != nil {
-			return fmt.Errorf("failed to load Cluster Backup CRDs: %w", err)
-		}
-		for i := range clusterBackupCRDs {
-			creators = append(creators, clusterbackup.CRDReconciler(clusterBackupCRDs[i]))
 		}
 	}
 
@@ -1055,10 +1024,6 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 	}
 	if r.userClusterMLA.Logging || r.userClusterMLA.Monitoring {
 		creators = append(creators, mla.NamespaceReconciler)
-	}
-
-	if data.clusterBackupConfig.Enabled {
-		creators = append(creators, clusterbackup.NamespaceReconciler)
 	}
 
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
