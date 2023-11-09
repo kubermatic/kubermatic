@@ -80,7 +80,8 @@ type Secrets struct {
 	Kubevirt struct {
 		KKPDatacenter string
 		// Kubeconfig is the plaintext kubeconfig without any (base64) encoding.
-		Kubeconfig string
+		Kubeconfig   string
+		StorageClass string
 	}
 	Alibaba struct {
 		KKPDatacenter   string
@@ -155,6 +156,7 @@ func (s *Secrets) AddFlags() {
 	flag.StringVar(&s.GCP.KKPDatacenter, "gcp-kkp-datacenter", "", "GCP: KKP datacenter to use")
 	flag.StringVar(&kubevirtKubeconfigFile, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig filename")
 	flag.StringVar(&s.Kubevirt.KKPDatacenter, "kubevirt-kkp-datacenter", "", "Kubevirt: KKP datacenter to use")
+	flag.StringVar(&s.Kubevirt.StorageClass, "kubevirt-storageclass", "kubevirt-rook-ceph-block", "Kubevirt: Storageclass to use")
 	flag.StringVar(&s.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
 	flag.StringVar(&s.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
 	flag.StringVar(&s.Alibaba.KKPDatacenter, "alibaba-kkp-datacenter", "", "Alibaba: KKP datacenter to use")
