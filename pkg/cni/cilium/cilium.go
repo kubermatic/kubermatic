@@ -275,6 +275,7 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	}
 
 	ipamOperator := map[string]any{
+		"clusterPoolIPv4PodCIDR":     "",
 		"clusterPoolIPv4PodCIDRList": cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDRs(),
 		"clusterPoolIPv4MaskSize":    fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
 	}
