@@ -15,6 +15,15 @@
 - [v2.21.12](#v22112)
 - [v2.21.13](#v22113)
 - [v2.21.14](#v22114)
+- [v2.21.15](#v22115)
+
+## [v2.21.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.15)
+
+With this release, support for KKP v2.21.x ceases. Please upgrade to a supported version of KKP in the near future.
+
+### Bugfixes
+
+- Extend project-synchronizer controller in `kubermatic-master-controller-manager` to propagate labels from Projects in the master cluster to Projects in the seed cluster. This fixes an issue where the metering report doesn't contain project-labels in separate master/seed setups ([#12794](https://github.com/kubermatic/kubermatic/pull/12794))
 
 ## [v2.21.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.14)
 
