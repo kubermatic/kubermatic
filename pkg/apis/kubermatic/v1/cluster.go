@@ -1105,7 +1105,8 @@ type VSphereCloudSpec struct {
 	Folder string `json:"folder"`
 	// Optional: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in.
 	// If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path,
-	// the BasePath part will be appended to the RootPath (if set) to construct the full path.
+	// the BasePath part will be appended to the RootPath to construct the full path. For both cases,
+	// the full folder structure needs to exist. KKP will only try to create the cluster folder.
 	// +optional
 	BasePath string `json:"basePath,omitempty"`
 
