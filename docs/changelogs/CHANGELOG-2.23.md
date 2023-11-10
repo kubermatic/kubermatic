@@ -7,6 +7,20 @@
 - [v2.23.4](#v2234)
 - [v2.23.5](#v2235)
 - [v2.23.6](#v2236)
+- [v2.23.7](#v2237)
+
+## [v2.23.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.7)
+
+### Action Required
+
+- **ACTION REQUIRED (EE ONLY):** Update metering component to v1.0.5, fixing highly inaccurate data in cluster reports. Reports generated in KKP v2.23.2+ or v2.22.5+ do not represent actual consumption. Ad-hoc reports for time frames that need correct consumption data can be generated [by following our documentation](https://docs.kubermatic.com/kubermatic/v2.23/tutorials-howtos/metering/#custom-reports) ([#12823](https://github.com/kubermatic/kubermatic/pull/12823))
+
+### Bugfixes
+
+- Extend project-synchronizer controller in `kubermatic-master-controller-manager` to propagate labels from Projects in the master cluster to Projects in the seed cluster. This fixes an issue where the metering report doesn't contain project-labels in separate master/seed setups ([#12792](https://github.com/kubermatic/kubermatic/pull/12792))
+- Fix CPU Utilization graph showing no data for User Cluster MLA dashboard "Nodes Overview" ([#12814](https://github.com/kubermatic/kubermatic/pull/12814))
+- Fix empty panels in Grafana dashboard "Resource Usage per Namespace" for Master/Seed MLA ([#12816](https://github.com/kubermatic/kubermatic/pull/12816))
+- Fix Helm 3.13 failing to install the MLA Minio chart due to "resource name may not be empty" error ([#12806](https://github.com/kubermatic/kubermatic/pull/12806))
 
 ## [v2.23.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.6)
 
