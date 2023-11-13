@@ -151,7 +151,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		log.Debugw("Cluster is queued for deletion; skipping")
 		return reconcile.Result{}, nil
 	}
-
 	// Add a wrapping here, so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -220,7 +219,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	}
 
 	// Ensure ApplicationInstallation of the CNI
-	if err := r.ensreCNIApplicationInstallation(ctx, cluster, initialValues); err != nil {
+	if err := r.ensureCNIApplicationInstallation(ctx, cluster, initialValues); err != nil {
 		return &reconcile.Result{}, err
 	}
 
@@ -309,7 +308,7 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 	return nil
 }
 
-func (r *Reconciler) ensreCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
+func (r *Reconciler) ensureCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -367,6 +366,13 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			overrideValues := getCNIOverrideValues(cluster, overwriteRegistry)
 			if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 				return app, fmt.Errorf("failed to merge CNI values: %w", err)
+			}
+
+			// Remove deprecated value from older installations
+			if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+				ipam := values["ipam"].(map[string]any)
+				operator := ipam["operator"].(map[string]any)
+				delete(operator, "clusterPoolIPv4PodCIDR")
 			}
 
 			// Set new values
