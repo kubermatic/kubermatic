@@ -151,7 +151,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		log.Debugw("Cluster is queued for deletion; skipping")
 		return reconcile.Result{}, nil
 	}
-
 	// Add a wrapping here, so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -369,6 +368,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				return app, fmt.Errorf("failed to merge CNI values: %w", err)
 			}
 
+			// Remove deprecated value from older installations
 			if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
 				ipam := values["ipam"].(map[string]any)
 				operator := ipam["operator"].(map[string]any)

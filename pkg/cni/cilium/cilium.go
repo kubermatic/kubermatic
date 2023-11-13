@@ -370,6 +370,9 @@ func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *fie
 				if excludedKeyExists(newValues, strings.Split(exclusion, ".")...) {
 					allowedValues[v] = true
 				}
+				if excludedKeyExists(oldValues, strings.Split(exclusion, ".")...) {
+					allowedValues[v] = true
+				}
 			}
 		}
 		if fmt.Sprint(oldValues[v]) != fmt.Sprint(newValues[v]) && !allowedValues[v] {
