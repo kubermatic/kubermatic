@@ -1,3 +1,27 @@
+//go:build ee
+
+/*
+                  Kubermatic Enterprise Read-Only License
+                         Version 1.0 ("KERO-1.0”)
+                     Copyright © 2021 Kubermatic GmbH
+
+   1.	You may only view, read and display for studying purposes the source
+      code of the software licensed under this license, and, to the extent
+      explicitly provided under this license, the binary code.
+   2.	Any use of the software which exceeds the foregoing right, including,
+      without limitation, its execution, compilation, copying, modification
+      and distribution, is expressly prohibited.
+   3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+   END OF TERMS AND CONDITIONS
+*/
+
 package seedclusterresources
 
 import (
@@ -8,21 +32,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-var (
-	defaultResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("64Mi"),
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-		},
-	}
 )
 
 const (
@@ -37,11 +47,11 @@ const (
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return clusterBackupName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			// dep.Labels = resources.BaseAppLabels(clusterBackupName, nil)
+			dep.Labels = resources.BaseAppLabels(clusterBackupName, nil)
 
-			// dep.Spec.Selector = &metav1.LabelSelector{
-			// 	MatchLabels: resources.BaseAppLabels(clusterBackupName, nil),
-			// }
+			dep.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabels(clusterBackupName, nil),
+			}
 			dep.Spec.Replicas = resources.Int32(1)
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -64,11 +74,6 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 
 			dep.Spec.Template.Spec.Volumes = volumes
-
-			// defResourceRequirements := map[string]*corev1.ResourceRequirements{
-			// 	clusterBackupName: defaultResourceRequirements.DeepCopy(),
-			// }
-
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "velero-velero-plugin-for-aws",
@@ -182,7 +187,6 @@ func getVolumeMounts() []corev1.VolumeMount {
 }
 
 func getVolumes() []corev1.Volume {
-
 	vs := []corev1.Volume{
 		{
 			Name: resources.CASecretName,

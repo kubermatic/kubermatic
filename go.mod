@@ -124,7 +124,10 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
-require golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+require (
+	github.com/vmware-tanzu/velero v1.12.1
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
+)
 
 require (
 	cloud.google.com/go/compute v1.23.0 // indirect
@@ -300,7 +303,6 @@ require (
 	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/vincent-petithory/dataurl v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
-	github.com/vmware-tanzu/velero v1.12.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect

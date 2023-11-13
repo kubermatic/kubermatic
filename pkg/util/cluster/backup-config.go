@@ -1,3 +1,19 @@
+/*
+Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cluster
 
 import (
@@ -8,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	v1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -16,15 +32,15 @@ import (
 )
 
 // FetchClusterBackupConfigWithSeedClient returns the Cluster Backup configuration using a seed client to access the seed object.
-func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
-	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
+func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
+	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureUserClusterBackup] {
 		return &resources.ClusterBackupConfig{Enabled: false}, nil
 	}
 	seedName, err := extractClusterSeedName(cluster.Name, cluster.Status.Address.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract cluster Seed name: %w", err)
 	}
-	seed := &v1.Seed{}
+	seed := &kubermaticv1.Seed{}
 
 	if err := seedClient.Get(ctx,
 		types.NamespacedName{
@@ -36,9 +52,9 @@ func FetchClusterBackupConfigWithSeedClient(ctx context.Context, seedClient ctrl
 	return FetchClusterBackupConfig(ctx, seed, cluster, log)
 }
 
-// FetchClusterBackupConfig returns the Cluster Backup configuration from the seed object directly
-func FetchClusterBackupConfig(ctx context.Context, seed *v1.Seed, cluster *v1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
-	if !cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup] {
+// FetchClusterBackupConfig returns the Cluster Backup configuration from the seed object directly.
+func FetchClusterBackupConfig(ctx context.Context, seed *kubermaticv1.Seed, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
+	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureUserClusterBackup] {
 		return &resources.ClusterBackupConfig{Enabled: false}, nil
 	}
 
@@ -57,7 +73,7 @@ func FetchClusterBackupConfig(ctx context.Context, seed *v1.Seed, cluster *v1.Cl
 		return nil, fmt.Errorf("failed to validate backup destination configuration: bucketName, endpoint or credentials are not valid")
 	}
 	return &resources.ClusterBackupConfig{
-		Enabled:     cluster.Spec.Features[v1.ClusterFeatureUserClusterBackup],
+		Enabled:     cluster.Spec.Features[kubermaticv1.ClusterFeatureUserClusterBackup],
 		Destination: dest,
 	}, nil
 }

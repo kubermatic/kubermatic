@@ -36,7 +36,6 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	seedclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	clusterutil "k8c.io/kubermatic/v2/pkg/util/cluster"
