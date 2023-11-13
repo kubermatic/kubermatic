@@ -37,12 +37,11 @@ const (
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return clusterBackupName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = clusterBackupName
-			dep.Labels = resources.BaseAppLabels(clusterBackupName, nil)
+			// dep.Labels = resources.BaseAppLabels(clusterBackupName, nil)
 
-			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(clusterBackupName, nil),
-			}
+			// dep.Spec.Selector = &metav1.LabelSelector{
+			// 	MatchLabels: resources.BaseAppLabels(clusterBackupName, nil),
+			// }
 			dep.Spec.Replicas = resources.Int32(1)
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -64,16 +63,11 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				},
 			}
 
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
-			if err != nil {
-				return nil, err
-			}
-
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				clusterBackupName: defaultResourceRequirements.DeepCopy(),
-			}
+			// defResourceRequirements := map[string]*corev1.ResourceRequirements{
+			// 	clusterBackupName: defaultResourceRequirements.DeepCopy(),
+			// }
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
@@ -105,6 +99,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 						{
 							Name:          "metrics",
 							ContainerPort: 8085,
+							Protocol:      corev1.ProtocolSCTP,
 						},
 					},
 					Env: []corev1.EnvVar{
@@ -144,7 +139,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				},
 			}
 			dep.Spec.Template.Spec.ServiceAccountName = "default"
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, nil, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
@@ -187,6 +182,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 }
 
 func getVolumes() []corev1.Volume {
+
 	vs := []corev1.Volume{
 		{
 			Name: resources.CASecretName,

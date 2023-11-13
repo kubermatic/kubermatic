@@ -71,7 +71,6 @@ type reconciler struct {
 	recorder                      record.EventRecorder
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
-	overwriteRegistry             string
 	versions                      kubermatic.Versions
 	clusterName                   string
 }
@@ -215,8 +214,9 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 func (r *reconciler) ensureClusterBackupSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, backupConfig *resources.ClusterBackupConfig) error {
 	namespace := cluster.Status.NamespaceName
 
-	clusterData := newClusterData(ctx, cluster, backupConfig)
+	clusterData := r.newClusterData(ctx, cluster, backupConfig)
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
+		resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterbackupKubeconfigSecretName, resources.ClusterbackupUsername, nil, clusterData, r.log),
 		seedclusterresources.SecretReconciler(ctx, r.Client, clusterData),
 	}
 
@@ -234,10 +234,11 @@ func (r *reconciler) ensureClusterBackupSeedClusterResources(ctx context.Context
 	return nil
 }
 
-func newClusterData(ctx context.Context, cluster *kubermaticv1.Cluster, backupConfig *resources.ClusterBackupConfig) *resources.TemplateData {
+func (r *reconciler) newClusterData(ctx context.Context, cluster *kubermaticv1.Cluster, backupConfig *resources.ClusterBackupConfig) *resources.TemplateData {
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithCluster(cluster).
 		WithClusterBackupConfig(backupConfig).
+		WithClient(r.Client).
 		Build()
 }

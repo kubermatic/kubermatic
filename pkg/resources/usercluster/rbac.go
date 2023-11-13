@@ -139,13 +139,6 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 						"watch",
 					},
 				},
-				// this is needed to allow the user-cluster-manger-controller to access the seed objects
-				// and backup destinations.
-				{
-					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"seeds"},
-					Verbs:     []string{"get", "list", "watch"},
-				},
 			}
 			return r, nil
 		}

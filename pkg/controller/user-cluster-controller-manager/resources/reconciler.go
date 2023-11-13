@@ -63,7 +63,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/semver"
-	clusterutil "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -146,12 +145,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	data.clusterVersion = clusterVersion
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
-
-	backupConfig, err := clusterutil.FetchClusterBackupConfigWithSeedClient(ctx, r.seedClient, cluster, r.log)
-	if err != nil {
-		return fmt.Errorf("failed to fetch cluster backup config: %w", err)
-	}
-	data.clusterBackupConfig = backupConfig
 
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
@@ -1172,7 +1165,6 @@ type reconcileData struct {
 	kubernetesDashboardEnabled    bool
 	operatingSystemManagerEnabled bool
 	coreDNSReplicas               *int32
-	clusterBackupConfig           *resources.ClusterBackupConfig
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

@@ -368,7 +368,7 @@ const (
 	// Kubernetes data in etcd with a user-provided encryption key or KMS service.
 	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
 
-	//ClusterFeatureClusterBackup enables experimentation velero integration feature.
+	// ClusterFeatureClusterBackup enables experimentation velero integration feature.
 	ClusterFeatureUserClusterBackup = "clusterBackup"
 )
 

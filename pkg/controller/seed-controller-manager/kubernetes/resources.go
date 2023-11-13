@@ -109,7 +109,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureRBAC(ctx, cluster, namespace, data); err != nil {
+	if err := r.ensureRBAC(ctx, cluster, namespace); err != nil {
 		return nil, err
 	}
 
@@ -534,7 +534,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 	return nil
 }
 
-func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedServiceAccountReconcilerFactorys := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
@@ -922,8 +922,8 @@ func (r *Reconciler) ensureEncryptionConfigurationIsRemoved(ctx context.Context,
 	return nil
 }
 
-func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace, data *resources.TemplateData) error {
-	if err := r.ensureServiceAccounts(ctx, cluster, data); err != nil {
+func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
+	if err := r.ensureServiceAccounts(ctx, cluster); err != nil {
 		return err
 	}
 

@@ -141,8 +141,8 @@ func Add(
 		return err
 	}
 	r.Client = mgr.GetClient()
-	r.cache = mgr.GetCache()
 	r.seedClient = seedMgr.GetClient()
+	r.cache = mgr.GetCache()
 
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
 	if err != nil {
