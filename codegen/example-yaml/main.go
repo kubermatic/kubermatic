@@ -238,7 +238,6 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 			Metering: &kubermaticv1.MeteringConfiguration{
 				Enabled:          false,
 				StorageClassName: "kubermatic-fast",
-				StorageSize:      "100Gi",
 				ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
 					"weekly": {
 						Schedule: "0 1 * * 6",

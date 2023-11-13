@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/utils/strings/slices"
 )
@@ -35,23 +36,36 @@ func GetCronExpressionParser() cron.Parser {
 }
 
 func ValidateMeteringConfiguration(configuration *kubermaticv1.MeteringConfiguration) error {
-	if configuration != nil && len(configuration.ReportConfigurations) > 0 {
-		parser := GetCronExpressionParser()
-		for reportName, reportConfig := range configuration.ReportConfigurations {
-			if errs := validation.IsDNS1035Label(reportName); len(errs) != 0 {
-				return fmt.Errorf("metering report configuration name must be valid rfc1035 label: %s", strings.Join(errs, ","))
-			}
+	if configuration != nil {
+		if configuration.RetentionDays < 0 {
+			return fmt.Errorf("invalid retentionDays (%d): must be positive", configuration.RetentionDays)
+		}
 
-			if _, err := parser.Parse(reportConfig.Schedule); err != nil {
-				return fmt.Errorf("invalid cron expression format: %s", reportConfig.Schedule)
+		if size := configuration.StorageSize; size != "" {
+			if _, err := resource.ParseQuantity(size); err != nil {
+				return fmt.Errorf("invalid storageSize (%q): %w", size, err)
 			}
+		}
 
-			for _, t := range reportConfig.Types {
-				if !slices.Contains(reportTypes, t) {
-					return fmt.Errorf("invalid report type: %s", t)
+		if len(configuration.ReportConfigurations) > 0 {
+			parser := GetCronExpressionParser()
+			for reportName, reportConfig := range configuration.ReportConfigurations {
+				if errs := validation.IsDNS1035Label(reportName); len(errs) != 0 {
+					return fmt.Errorf("metering report configuration name must be valid rfc1035 label: %s", strings.Join(errs, ","))
+				}
+
+				if _, err := parser.Parse(reportConfig.Schedule); err != nil {
+					return fmt.Errorf("invalid cron expression format: %s", reportConfig.Schedule)
+				}
+
+				for _, t := range reportConfig.Types {
+					if !slices.Contains(reportTypes, t) {
+						return fmt.Errorf("invalid report type: %s", t)
+					}
 				}
 			}
 		}
 	}
+
 	return nil
 }

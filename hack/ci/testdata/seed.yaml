@@ -40,7 +40,7 @@ spec:
         interval: 7
         schedule: 0 1 * * 6
     storageClassName: standard
-    storageSize: 75Gi
+    storageSize: 5Gi
   datacenters:
     byo-kubernetes:
       location: Frankfurt

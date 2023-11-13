@@ -510,9 +510,12 @@ spec:
         schedule: 0 1 * * 6
         # Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
         type: null
-    # StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
+    # RetentionDays is the number of days for which data should be kept in Prometheus. Default value is 90.
+    retentionDays: 90
+    # StorageClassName is the name of the storage class that the metering Prometheus instance uses to store metric data for reporting.
     storageClassName: kubermatic-fast
-    # StorageSize is the size of the storage class. Default value is 100Gi.
+    # StorageSize is the size of the storage class. Default value is 100Gi. Changing this value requires
+    # manual deletion of the existing Prometheus PVC (and thereby removing all metering data).
     storageSize: 100Gi
   # Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
   mla:
