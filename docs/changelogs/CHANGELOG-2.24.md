@@ -201,6 +201,9 @@ This release adds support for [KubeLB](https://docs.kubermatic.com/kubelb/), a c
 - OpenStack: Fix project and projectID header propagation for project scoped endpoints ([#6082](https://github.com/kubermatic/dashboard/pull/6082))
 - Openstack: take `TenantID` into account while listing networks, security groups and subnet pools ([#6156](https://github.com/kubermatic/dashboard/pull/6156))
 - VMware Cloud Director: fix an issue where the API Token from preset was not being sourced to the cluster ([#6196](https://github.com/kubermatic/dashboard/pull/6196))
+- Fix `Enable Share Cluster` button in Admin Settings ([#6340](https://github.com/kubermatic/dashboard/pull/6340))
+- Fix an issue where `clusterDefaultNodeSelector` label was being added back on opening of edit cluster dialog ([#6362](https://github.com/kubermatic/dashboard/pull/6362))
+- Fix issue with managing clusters if some seeds are down ([#6374](https://github.com/kubermatic/dashboard/pull/6374))
 
 #### New Features
 
@@ -214,6 +217,7 @@ This release adds support for [KubeLB](https://docs.kubermatic.com/kubelb/), a c
 - Support multiple NodePort allowed IP ranges ([#6188](https://github.com/kubermatic/dashboard/pull/6188))
 - Update default CNI plugin to `Cilium` ([#6328](https://github.com/kubermatic/dashboard/pull/6328))
 - VMware Cloud Director: Support for configuring placement and sizing policy for machines ([#6094](https://github.com/kubermatic/dashboard/pull/6094))
+- Enforce Konnectivity value because OpenVPN support is now deprecated ([#6361](https://github.com/kubermatic/dashboard/pull/6361))
 
 ### Updates
 
