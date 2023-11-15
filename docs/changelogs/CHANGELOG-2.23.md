@@ -8,6 +8,13 @@
 - [v2.23.5](#v2235)
 - [v2.23.6](#v2236)
 - [v2.23.7](#v2237)
+- [v2.23.8](#v2238)
+
+## [v2.23.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.8)
+
+### Dashboard
+
+- Fix a bug where the API call to list projects was failing due to slowness ([#6385](https://github.com/kubermatic/dashboard/pull/6385))
 
 ## [v2.23.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.7)
 
