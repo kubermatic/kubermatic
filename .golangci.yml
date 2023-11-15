@@ -129,3 +129,5 @@ linters-settings:
         alias: clusterv1alpha1
       - pkg: github.com/Masterminds/semver/v3
         alias: semverlib
+      - pkg: github.com/vmware-tanzu/velero/pkg/apis/velero/v1
+        alias: velerov1

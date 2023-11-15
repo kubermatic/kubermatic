@@ -25,6 +25,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
@@ -1102,6 +1103,43 @@ func ReconcileDataVolumes(ctx context.Context, namedFactories []NamedDataVolumeR
 
 		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &cdiv1beta1.DataVolume{}, false); err != nil {
 			return fmt.Errorf("failed to ensure DataVolume %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// BackupStorageLocationReconciler defines an interface to create/update BackupStorageLocations.
+type BackupStorageLocationReconciler = func(existing *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error)
+
+// NamedBackupStorageLocationReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedBackupStorageLocationReconcilerFactory = func() (name string, reconciler BackupStorageLocationReconciler)
+
+// BackupStorageLocationObjectWrapper adds a wrapper so the BackupStorageLocationReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func BackupStorageLocationObjectWrapper(reconciler BackupStorageLocationReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*velerov1.BackupStorageLocation))
+		}
+		return reconciler(&velerov1.BackupStorageLocation{})
+	}
+}
+
+// ReconcileBackupStorageLocations will create and update the BackupStorageLocations coming from the passed BackupStorageLocationReconciler slice.
+func ReconcileBackupStorageLocations(ctx context.Context, namedFactories []NamedBackupStorageLocationReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := BackupStorageLocationObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &velerov1.BackupStorageLocation{}, false); err != nil {
+			return fmt.Errorf("failed to ensure BackupStorageLocation %s/%s: %w", namespace, name, err)
 		}
 	}
 

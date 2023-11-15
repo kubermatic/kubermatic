@@ -1046,8 +1046,8 @@ const (
 )
 
 const (
-	ClusterbackupKubeconfigSecretName = "velero-kubeconfig"
-	ClusterbackupUsername             = "velero"
+	ClusterBackupKubeconfigSecretName = "velero-kubeconfig"
+	ClusterBackupUsername             = "velero"
 	ClusterBackupServiceAccountName   = "velero"
 	ClusterBackupNamespaceName        = "velero"
 )

@@ -61,6 +61,7 @@ require (
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20220608195807-1a118fe229fc
 	github.com/vmware/go-vcloud-director/v2 v2.20.0
 	github.com/vmware/govmomi v0.30.5
+	github.com/vmware-tanzu/velero v1.12.1
 	go.anx.io/go-anxcloud v0.5.3
 	go.etcd.io/etcd/api/v3 v3.5.9
 	go.etcd.io/etcd/client/pkg/v3 v3.5.9
@@ -68,6 +69,7 @@ require (
 	go.etcd.io/etcd/etcdutl/v3 v3.5.9
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.14.0
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/oauth2 v0.13.0
 	golang.org/x/sys v0.13.0
 	golang.org/x/tools v0.14.0
@@ -124,10 +126,6 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
-require (
-	github.com/vmware-tanzu/velero v1.12.1
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-)
 
 require (
 	cloud.google.com/go/compute v1.23.0 // indirect

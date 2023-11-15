@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2023 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -27,17 +27,14 @@ package userclusterresources
 import (
 	"context"
 
-	v1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -59,7 +56,6 @@ func NamespaceReconciler() reconciling.NamedNamespaceReconcilerFactory {
 func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountReconciler) {
 		return resources.ClusterBackupServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Namespace = resources.ClusterBackupNamespaceName
 			return sa, nil
 		}
 	}
@@ -78,10 +74,8 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
-					Kind: rbacv1.UserKind,
-					// Name:      fmt.Sprintf("system:serviceaccount:%s:%s", resources.ClusterBackupNamespaceName, resources.ClusterBackupServiceAccountName),
-					Name: resources.ClusterBackupServiceAccountName,
-					// Namespace: resources.ClusterBackupNamespaceName,
+					Kind:     rbacv1.UserKind,
+					Name:     resources.ClusterBackupServiceAccountName,
 					APIGroup: rbacv1.GroupName,
 				},
 			}
@@ -90,39 +84,29 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 	}
 }
 
-// TODO: check and apply spec for updates
-// EnsureVeleroBSL Ensure the defatul BackupStorge location is created for velero.
-func EnsureVeleroBSL(ctx context.Context, client ctrlruntimeclient.Client, clusterBackupConfig *resources.ClusterBackupConfig, clusterName string) error {
-	err := client.Get(ctx, types.NamespacedName{Name: defaultBSLName, Namespace: resources.ClusterBackupNamespaceName}, &v1.BackupStorageLocation{})
-	if err == nil {
-		return nil
-	} else if !apierrors.IsNotFound(err) {
-		return err
-	}
+// BSLReconciler creates the default BackupStorage location is created for velero.
+func BSLReconciler(ctx context.Context, clusterBackupConfig *resources.ClusterBackupConfig, clusterName string) kkpreconciling.NamedBackupStorageLocationReconcilerFactory {
+	return func() (string, kkpreconciling.BackupStorageLocationReconciler) {
+		return defaultBSLName, func(bsl *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error) {
+			bucketName := clusterBackupConfig.Destination.BucketName
+			endPoint := clusterBackupConfig.Destination.Endpoint
 
-	bucketName := clusterBackupConfig.Destination.BucketName
-	endPoint := clusterBackupConfig.Destination.Endpoint
-
-	bsl := &v1.BackupStorageLocation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultBSLName,
-			Namespace: resources.ClusterBackupNamespaceName,
-		},
-		Spec: v1.BackupStorageLocationSpec{
-			Default: true,
-			StorageType: v1.StorageType{
-				ObjectStorage: &v1.ObjectStorageLocation{
-					Bucket: bucketName,
-					Prefix: clusterName,
+			bsl.Spec = velerov1.BackupStorageLocationSpec{
+				Default: true,
+				StorageType: velerov1.StorageType{
+					ObjectStorage: &velerov1.ObjectStorageLocation{
+						Bucket: bucketName,
+						Prefix: clusterName,
+					},
 				},
-			},
-			Provider: "aws",
-			Config: map[string]string{
-				"region":           "minio",
-				"s3Url":            endPoint,
-				"s3ForcePathStyle": "true",
-			},
-		},
+				Provider: "aws",
+				Config: map[string]string{
+					"region":           "minio",
+					"s3Url":            endPoint,
+					"s3ForcePathStyle": "true",
+				},
+			}
+			return bsl, nil
+		}
 	}
-	return client.Create(ctx, bsl)
 }

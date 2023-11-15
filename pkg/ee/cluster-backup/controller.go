@@ -36,9 +36,9 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	seedclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	clusterutil "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -66,6 +66,7 @@ type UserClusterClientProvider interface {
 type reconciler struct {
 	ctrlruntimeclient.Client
 
+	seedGetter                    provider.SeedGetter
 	workerName                    string
 	recorder                      record.EventRecorder
 	userClusterConnectionProvider UserClusterClientProvider
@@ -74,9 +75,10 @@ type reconciler struct {
 	clusterName                   string
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, seedGetter provider.SeedGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
+		seedGetter:                    seedGetter,
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
@@ -108,7 +110,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
 	// Resource is marked for deletion.
@@ -116,7 +118,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	backupConfig, err := clusterutil.FetchClusterBackupConfigWithSeedClient(ctx, r.Client, cluster, r.log)
+	seed, err := r.seedGetter()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get seed: %w", err)
+	}
+
+	backupConfig, err := r.fetchClusterBackupConfig(ctx, seed, cluster, r.log)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to fetch cluster backup config: %w", err)
 	}
@@ -152,11 +159,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, backupConfig *resources.ClusterBackupConfig) (*reconcile.Result, error) {
 	if err := r.ensureClusterBackupUserClusterResources(ctx, cluster, backupConfig); err != nil {
-		return nil, fmt.Errorf("failed to ensure Cluster Backup user-cluster resources: %w", err)
+		return nil, fmt.Errorf("failed to ensure cluster backup user-cluster resources: %w", err)
 	}
 
 	if err := r.ensureClusterBackupSeedClusterResources(ctx, cluster, backupConfig); err != nil {
-		return nil, fmt.Errorf("failed to ensure Cluster Backup Seed cluster resources: %w", err)
+		return nil, fmt.Errorf("failed to ensure cluster backup Seed cluster resources: %w", err)
 	}
 	return nil, nil
 }
@@ -170,14 +177,14 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 		userclusterresources.NamespaceReconciler(),
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile velero namespace: %w", err)
+		return fmt.Errorf("failed to reconcile Velero Namespace: %w", err)
 	}
 
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		userclusterresources.ServiceAccountReconciler(),
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile velero service account: %w", err)
+		return fmt.Errorf("failed to reconcile Velero Service Account: %w", err)
 	}
 
 	clusterRoleBindingReconciler := []reconciling.NamedClusterRoleBindingReconcilerFactory{
@@ -185,26 +192,30 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile velero cluster role binding: %w", err)
+		return fmt.Errorf("failed to reconcile Velero Cluster Role Binding: %w", err)
 	}
 
 	clusterBackupCRDs, err := userclusterresources.CRDs()
 	if err != nil {
-		return fmt.Errorf("failed to load Cluster Backup CRDs: %w", err)
+		return fmt.Errorf("failed to load cluster backup CRDs: %w", err)
 	}
+
 	creators := []kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory{}
 	for i := range clusterBackupCRDs {
 		creators = append(creators, userclusterresources.CRDReconciler(clusterBackupCRDs[i]))
 	}
 
-	err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient)
-
-	if err != nil {
-		return fmt.Errorf("failed to reconcile velero CustomResourceDefinitions: %w", err)
+	if err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile Velero CRDs: %w", err)
 	}
 
-	if err := userclusterresources.EnsureVeleroBSL(ctx, userClusterClient, backupConfig, r.clusterName); err != nil {
-		return fmt.Errorf("failed to ensure velero BSL: %w", err)
+	bslReconcilers := []kkpreconciling.NamedBackupStorageLocationReconcilerFactory{
+		userclusterresources.BSLReconciler(ctx, backupConfig, r.clusterName),
+	}
+
+	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile Velero BSL: %w", err)
+
 	}
 
 	return nil
@@ -215,20 +226,20 @@ func (r *reconciler) ensureClusterBackupSeedClusterResources(ctx context.Context
 
 	clusterData := r.newClusterData(ctx, cluster, backupConfig)
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
-		resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterbackupKubeconfigSecretName, resources.ClusterbackupUsername, nil, clusterData, r.log),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterBackupKubeconfigSecretName, resources.ClusterBackupUsername, nil, clusterData, r.log),
 		seedclusterresources.SecretReconciler(ctx, r.Client, clusterData),
 	}
 
 	// Create kubeconfig secret in the user cluster namespace.
 	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile Cluster Backup kubeconfig secret: %w", err)
+		return fmt.Errorf("failed to reconcile cluster backup kubeconfig secret: %w", err)
 	}
 
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		seedclusterresources.DeploymentReconciler(clusterData),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the Cluster Backup deployment: %w", err)
+		return fmt.Errorf("failed to reconcile the cluster backup deployment: %w", err)
 	}
 	return nil
 }
@@ -240,4 +251,30 @@ func (r *reconciler) newClusterData(ctx context.Context, cluster *kubermaticv1.C
 		WithClusterBackupConfig(backupConfig).
 		WithClient(r.Client).
 		Build()
+}
+
+// fetchClusterBackupConfig returns the Cluster Backup configuration from the seed object directly.
+func (r *reconciler) fetchClusterBackupConfig(ctx context.Context, seed *kubermaticv1.Seed, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*resources.ClusterBackupConfig, error) {
+	if !cluster.Spec.Features[kubermaticv1.ClusterFeatureUserClusterBackup] {
+		return &resources.ClusterBackupConfig{Enabled: false}, nil
+	}
+
+	// We pick the default backup destination for now. This behavior will change once we add the API.
+	destinations := seed.Spec.EtcdBackupRestore.Destinations
+	defaultDestination := seed.Spec.EtcdBackupRestore.DefaultDestination
+	if len(destinations) == 0 || defaultDestination == "" {
+		log.Debugw("seed has no backup destinations or no default backup destinations defined. Skipping cluster backup config for this cluster", "seed", seed.Name, "cluster", cluster.Name)
+		return &resources.ClusterBackupConfig{Enabled: false}, nil
+	}
+	dest, ok := destinations[defaultDestination]
+	if !ok {
+		return nil, fmt.Errorf("configured default destination [%s] doesn't exist", defaultDestination)
+	}
+	if dest.BucketName == "" || dest.Endpoint == "" || dest.Credentials == nil {
+		return nil, fmt.Errorf("failed to validate backup destination configuration: bucketName, endpoint or credentials are not valid")
+	}
+	return &resources.ClusterBackupConfig{
+		Enabled:     true,
+		Destination: dest,
+	}, nil
 }
