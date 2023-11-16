@@ -204,6 +204,7 @@ This release adds support for [KubeLB](https://docs.kubermatic.com/kubelb/), a c
 - Fix `Enable Share Cluster` button in Admin Settings ([#6340](https://github.com/kubermatic/dashboard/pull/6340))
 - Fix an issue where `clusterDefaultNodeSelector` label was being added back on opening of edit cluster dialog ([#6362](https://github.com/kubermatic/dashboard/pull/6362))
 - Fix issue with managing clusters if some seeds are down ([#6374](https://github.com/kubermatic/dashboard/pull/6374))
+- Fix a bug where API call to list projects was failing due to slowness ([#6385](https://github.com/kubermatic/dashboard/pull/6385))
 
 #### New Features
 
