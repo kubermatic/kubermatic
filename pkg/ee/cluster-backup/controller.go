@@ -215,7 +215,6 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 
 	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
 		return fmt.Errorf("failed to reconcile Velero BSL: %w", err)
-
 	}
 
 	return nil
