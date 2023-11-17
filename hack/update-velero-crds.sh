@@ -19,11 +19,30 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-containerize ./hack/update-velero-crds.sh
+if [ "$#" -lt 2 ] || [ "$1" == "--help" ]; then
+  cat << EOF
+Usage: $(basename $0) (chart|embed) (version) 
+where:
+    chart:      update the CRDs for the Velero chart deployed on seed clusters.
+    embed:      update the CRDs for the Velero integration into user clusters.
+    version:    Velero version used to generate the CRDs, e.g. v1.10.1
+e.g: $(basename $0) chart v1.10.1
+EOF
+  exit 0
+fi
 
+containerize ./hack/update-velero-crds.sh $1 $2
+
+# positional args refer to the args of containerize() function, not the script. So, we skip one
+# echo $* 
+# ./hack/update-velero-crds.sh chart v1.10.1
+if is_containerized; then
+  location="$2"
+  version="$3"
+fi
 velero=velero
+
 if ! [ -x "$(command -v $velero)" ]; then
-  version=v1.10.1
   url="https://github.com/vmware-tanzu/velero/releases/download/$version/velero-$version-linux-amd64.tar.gz"
   velero=/tmp/velero
 
@@ -33,15 +52,22 @@ if ! [ -x "$(command -v $velero)" ]; then
   echodate "Done!"
 fi
 
-cd charts/backup/velero/
-mkdir -p crd
+crd_dir=""
+if [ "$location" = "chart" ]; then
+  crd_dir="charts/backup/velero/crd"
+mkdir -p "$crd_dir"
+else
+  crd_dir="pkg/ee/cluster-backup/resources/user-cluster/static"
+fi
+
+cd "$crd_dir"
 
 version=$($velero version --client-only | grep Version | cut -d' ' -f2)
 crds=$($velero install --crds-only --dry-run -o json | jq -c '.items[]')
 
 while IFS= read -r crd; do
   name=$(echo "$crd" | jq -r '.spec.names.plural')
-  filename="crd/$name.yaml"
+  filename="$name.yaml"
 
   pretty=$(echo "$crd" | yq --prettyPrint)
 
