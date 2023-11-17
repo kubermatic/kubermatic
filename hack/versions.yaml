@@ -168,7 +168,21 @@ products:
       - goConstant:
           package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns
           constant: version
-
+  
+  - name: cluster-backup (Velero)
+    source: https://github.com/vmware-tanzu/velero
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster
+          constant: version
+  
+  - name: cluster-backup (Velero-plugin)
+    source: https://github.com/vmware-tanzu/velero-plugin-for-aws
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster
+          constant: pluginVersion
+ 
   - name: Velero
     source: https://github.com/vmware-tanzu/velero
     occurrences:

@@ -83,7 +83,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ClusterTemplateInstance{}), &handler.EnqueueRequestForObject{}, workerlabel.Predicates(workerName)); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ClusterTemplateInstance{}), &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to create watch for seed cluster template instance: %w", err)
 	}
 

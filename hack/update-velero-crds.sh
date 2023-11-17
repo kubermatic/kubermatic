@@ -34,7 +34,7 @@ fi
 containerize ./hack/update-velero-crds.sh $1 $2
 
 # positional args refer to the args of containerize() function, not the script. So, we skip one
-# echo $* 
+# echo $*
 # ./hack/update-velero-crds.sh chart v1.10.1
 if is_containerized; then
   location="$2"
@@ -55,7 +55,7 @@ fi
 crd_dir=""
 if [ "$location" = "chart" ]; then
   crd_dir="charts/backup/velero/crd"
-mkdir -p "$crd_dir"
+  mkdir -p "$crd_dir"
 else
   crd_dir="pkg/ee/cluster-backup/resources/user-cluster/static"
 fi

@@ -40,7 +40,8 @@ const (
 	clusterbackupKubeConfigSecretName = "velero-kubeconfig"
 	cloudCredentialsSecretName        = "velero-cloud-credentials"
 
-	veleroImage = "velero/velero:v1.12.0"
+	version       = "v1.12.0"
+	pluginVersion = "v1.0.0"
 )
 
 // DeploymentReconciler creates the velero deployment in the user cluster namespace.
@@ -77,7 +78,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "velero-velero-plugin-for-aws",
-					Image: "velero/velero-plugin-for-aws:v1.0.0",
+					Image: fmt.Sprintf("velero/velero-plugin-for-aws:%s", pluginVersion),
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "plugins",
@@ -91,7 +92,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "velero",
-					Image:   veleroImage,
+					Image:   fmt.Sprintf("velero/velero:%s", version),
 					Command: []string{"/velero"},
 					Args: []string{
 						"server",
