@@ -68,3 +68,15 @@ rules:
       - routes/custom-host
     verbs:
       - create
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - update
+      - create
+      - patch
