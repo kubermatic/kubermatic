@@ -14,8 +14,8 @@
 
 apiVersion: v1
 name: kubevirt
-version: v1.0.0
-appVersion: v1.0.0
+version: v1.1.0
+appVersion: v1.1.0
 description: KubeVirt chart for KKP local installation 
 keywords:
   - kubermatic
