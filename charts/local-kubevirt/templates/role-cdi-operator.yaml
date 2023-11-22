@@ -20,7 +20,7 @@ metadata:
     app.kubernetes.io/managed-by: cdi-operator
     cdi.kubevirt.io: ""
   name: cdi-operator
-  namespace: cdi
+  namespace: kubevirt
 rules:
   - apiGroups:
       - rbac.authorization.k8s.io

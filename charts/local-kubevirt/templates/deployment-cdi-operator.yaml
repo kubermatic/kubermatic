@@ -20,7 +20,7 @@ metadata:
     operator.cdi.kubevirt.io: ""
     prometheus.cdi.kubevirt.io: "true"
   name: cdi-operator
-  namespace: cdi
+  namespace: kubevirt
 spec:
   replicas: 1
   selector:

@@ -213,7 +213,7 @@ func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, 
 
 func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, opt LocalOptions) {
 	logger.Info("Installing KubeVirt…")
-	err := helmClient.InstallChart("", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, nil)
+	err := helmClient.InstallChart("kubevirt", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, []string{"--create-namespace"})
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
