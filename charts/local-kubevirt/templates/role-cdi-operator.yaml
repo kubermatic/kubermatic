@@ -28,7 +28,12 @@ rules:
       - rolebindings
       - roles
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
   - apiGroups:
       - ""
     resources:
@@ -38,21 +43,36 @@ rules:
       - secrets
       - services
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
       - apps
     resources:
       - deployments
       - deployments/finalizers
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
   - apiGroups:
       - route.openshift.io
     resources:
       - routes
       - routes/custom-host
     verbs:
-      - '*'
+      - get
+      - list
+      - watch
+      - create
+      - update
   - apiGroups:
       - config.openshift.io
     resources:
@@ -79,4 +99,95 @@ rules:
     resources:
       - leases
     verbs:
-      - '*'
+      - get
+      - create
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - create
+      - delete
+      - list
+      - watch
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - create
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - services
+      - endpoints
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
