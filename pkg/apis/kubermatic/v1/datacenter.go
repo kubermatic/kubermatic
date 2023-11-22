@@ -903,10 +903,13 @@ type SeedMLASettings struct {
 type MeteringConfiguration struct {
 	Enabled bool `json:"enabled"`
 
-	// StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
+	// StorageClassName is the name of the storage class that the metering Prometheus instance uses to store metric data for reporting.
 	StorageClassName string `json:"storageClassName"`
-	// StorageSize is the size of the storage class. Default value is 100Gi.
-	StorageSize string `json:"storageSize"`
+	// StorageSize is the size of the storage class. Default value is 100Gi. Changing this value requires
+	// manual deletion of the existing Prometheus PVC (and thereby removing all metering data).
+	StorageSize string `json:"storageSize,omitempty"`
+	// RetentionDays is the number of days for which data should be kept in Prometheus. Default value is 90.
+	RetentionDays int `json:"retentionDays,omitempty"`
 
 	// +kubebuilder:default:={weekly: {schedule: "0 1 * * 6", interval: 7}}
 

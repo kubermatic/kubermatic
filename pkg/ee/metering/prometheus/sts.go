@@ -62,7 +62,6 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 				MatchLabels: map[string]string{common.NameLabel: Name},
 			}
 			sts.Spec.Replicas = ptr.To[int32](1)
-			sts.Spec.RevisionHistoryLimit = ptr.To[int32](10)
 			sts.Spec.ServiceName = Name + "-headless"
 			sts.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			sts.Spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
@@ -80,12 +79,18 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 					Name:            Name,
 					Image:           getPrometheusImage(getRegistry),
 					ImagePullPolicy: "IfNotPresent",
-					Args:            []string{"--storage.tsdb.retention.time=90d", "--config.file=/etc/config/prometheus.yml", "--storage.tsdb.path=/data", "--web.console.libraries=/etc/prometheus/console_libraries", "--web.console.templates=/etc/prometheus/consoles", "--web.enable-lifecycle"},
-					Ports:           []corev1.ContainerPort{{ContainerPort: 9090, Protocol: corev1.ProtocolTCP}},
+					Args: []string{
+						fmt.Sprintf("--storage.tsdb.retention.time=%dd", seed.Spec.Metering.RetentionDays),
+						"--config.file=/etc/config/prometheus.yml",
+						"--storage.tsdb.path=/data",
+						"--web.enable-lifecycle",
+					},
+					Ports: []corev1.ContainerPort{{ContainerPort: 9090, Protocol: corev1.ProtocolTCP}},
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("250m"),
-							corev1.ResourceMemory: resource.MustParse("512Mi")},
+							corev1.ResourceMemory: resource.MustParse("512Mi"),
+						},
 					},
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -128,7 +133,6 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 				},
 			}
 
-			sts.Spec.Template.Spec.DNSPolicy = "ClusterFirst"
 			sts.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				FSGroup:      ptr.To[int64](65534),
 				RunAsGroup:   ptr.To[int64](65534),
@@ -155,7 +159,7 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 
 			pvcStorageSize, err := resource.ParseQuantity(seed.Spec.Metering.StorageSize)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse value of prometheus pvc storage size %q: %w", seed.Spec.Metering.StorageSize, err)
+				return nil, fmt.Errorf("failed to parse value of PVC storage size %q: %w", seed.Spec.Metering.StorageSize, err)
 			}
 
 			volumeMode := corev1.PersistentVolumeFilesystem

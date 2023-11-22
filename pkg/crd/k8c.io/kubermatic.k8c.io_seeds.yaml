@@ -1511,16 +1511,18 @@ spec:
                           schedule: 0 1 * * 6
                       description: ReportConfigurations is a map of report configuration definitions.
                       type: object
+                    retentionDays:
+                      description: RetentionDays is the number of days for which data should be kept in Prometheus. Default value is 90.
+                      type: integer
                     storageClassName:
-                      description: StorageClassName is the name of the storage class that the metering prometheus instance uses to store metric data for reporting.
+                      description: StorageClassName is the name of the storage class that the metering Prometheus instance uses to store metric data for reporting.
                       type: string
                     storageSize:
-                      description: StorageSize is the size of the storage class. Default value is 100Gi.
+                      description: StorageSize is the size of the storage class. Default value is 100Gi. Changing this value requires manual deletion of the existing Prometheus PVC (and thereby removing all metering data).
                       type: string
                   required:
                     - enabled
                     - storageClassName
-                    - storageSize
                   type: object
                 mla:
                   description: 'Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.'

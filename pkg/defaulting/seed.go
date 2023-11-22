@@ -27,8 +27,16 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-// DefaultBackupInterval defines the default interval used to create backups.
-const DefaultBackupInterval = "20m"
+const (
+	// DefaultBackupInterval defines the default interval used to create backups.
+	DefaultBackupInterval = "20m"
+
+	// DefaultMeteringStorageSize is the default size for the metering Prometheus PVC.
+	DefaultMeteringStorageSize = "100Gi"
+	// DefaultMeteringRetentionDays is the default number of days for which the metering Prometheus
+	// should keep data.
+	DefaultMeteringRetentionDays = 90
+)
 
 // DefaultSeed fills in missing values in the Seed's spec by copying them from the global
 // defaults in the KubermaticConfiguration (in which some fields might already be deprecated,
@@ -42,6 +50,16 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 
 	if seedCopy.Spec.ExposeStrategy == "" {
 		seedCopy.Spec.ExposeStrategy = config.Spec.ExposeStrategy
+	}
+
+	if seedCopy.Spec.Metering != nil {
+		if seedCopy.Spec.Metering.RetentionDays <= 0 {
+			seedCopy.Spec.Metering.RetentionDays = DefaultMeteringRetentionDays
+		}
+
+		if seedCopy.Spec.Metering.StorageSize == "" {
+			seedCopy.Spec.Metering.StorageSize = DefaultMeteringStorageSize
+		}
 	}
 
 	if err := defaultDockerRepo(&seedCopy.Spec.NodeportProxy.Envoy.DockerRepository, DefaultEnvoyDockerRepository, "nodeportProxy.envoy.dockerRepository", logger); err != nil {
