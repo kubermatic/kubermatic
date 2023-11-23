@@ -83,7 +83,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	if err != nil {
 		return nil, err
 	}
-
 	// check that all services are available
 	if err := r.ensureServices(ctx, cluster, data); err != nil {
 		return nil, err

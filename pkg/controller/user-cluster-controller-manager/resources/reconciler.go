@@ -292,6 +292,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -381,7 +382,6 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
-
 	return nil
 }
 
@@ -631,7 +631,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, operatingsystemmanager.ClusterRoleBindingReconciler())
 		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
 	}
-
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}

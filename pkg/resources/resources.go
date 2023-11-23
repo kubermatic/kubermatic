@@ -1045,6 +1045,13 @@ const (
 	ApplicationCacheMountPath  = "/applications-cache"
 )
 
+const (
+	ClusterBackupKubeconfigSecretName = "velero-kubeconfig"
+	ClusterBackupUsername             = "velero"
+	ClusterBackupServiceAccountName   = "velero"
+	ClusterBackupNamespaceName        = "velero"
+)
+
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
 
 // GetApplicationCacheSize return the application cache size if defined, otherwise fallback to the default size.
@@ -1080,6 +1087,11 @@ type ECDSAKeyPair struct {
 type Requirements struct {
 	Name     string                       `json:"name,omitempty"`
 	Requires *corev1.ResourceRequirements `json:"requires,omitempty"`
+}
+
+type ClusterBackupConfig struct {
+	Enabled     bool
+	Destination *kubermaticv1.BackupDestination
 }
 
 // GetAllowedTLSCipherSuites returns a list of allowed TLS cipher suites.

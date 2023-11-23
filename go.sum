@@ -1075,6 +1075,8 @@ github.com/vishvananda/netlink v1.2.1-beta.2.0.20220608195807-1a118fe229fc/go.mo
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
 github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 h1:gga7acRE695APm9hlsSMoOoE65U4/TcqNj90mc69Rlg=
 github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
+github.com/vmware-tanzu/velero v1.12.1 h1:WKmSmyE5haJpQMuw+RzA3bNTGHZP80jnDEJutsthmF8=
+github.com/vmware-tanzu/velero v1.12.1/go.mod h1:/DciEpV9LMokDQoZAp+bH4CQInmFyw3cU2CKiqrHghs=
 github.com/vmware/go-vcloud-director/v2 v2.20.0 h1:vT1vmh6uxJPE5a4d2nSj8KmF3C0kb/1UF2hn6hp7vr0=
 github.com/vmware/go-vcloud-director/v2 v2.20.0/go.mod h1:QPxGFgrUcSyzy9IlpwDE4UNT3tsOy2047tJOPEJ4nlw=
 github.com/vmware/govmomi v0.30.5 h1:p4sFypY4AJlFRiS2OFEGh9DCzufBrexbtPL5DB9Pxw0=

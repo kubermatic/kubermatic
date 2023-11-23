@@ -367,6 +367,9 @@ const (
 	// ClusterFeatureEncryptionAtRest enables the experimental "encryption-at-rest" feature, which allows encrypting
 	// Kubernetes data in etcd with a user-provided encryption key or KMS service.
 	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
+
+	// ClusterFeatureClusterBackup enables experimental Velero integration feature.
+	ClusterFeatureUserClusterBackup = "clusterBackup"
 )
 
 // This ENUM contains the misspelling CloudControllerReconcilledSuccessfully (double L);
@@ -451,6 +454,7 @@ const (
 	ClusterConditionEncryptionControllerReconcilingSuccess              ClusterConditionType = "EncryptionControllerReconciledSuccessfully"
 	ClusterConditionClusterInitialized                                  ClusterConditionType = "ClusterInitialized"
 	ClusterConditionIPAMControllerReconcilingSuccess                    ClusterConditionType = "IPAMControllerReconciledSuccessfully"
+	ClusterConditionClusterBackupControllerReconcilingSuccess           ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"
