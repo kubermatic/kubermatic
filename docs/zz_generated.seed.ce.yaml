@@ -383,6 +383,8 @@ spec:
       # pods. Options are "preferred" (default) and "required". Please note that
       # enforcing anti-affinity via "required" can mean that pods are never scheduled.
       hostAntiAffinity: ""
+      # NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
+      nodeSelector: null
       # Resources allows to override the resource requirements for etcd Pods.
       resources: null
       # StorageClass is the Kubernetes StorageClass used for persistent storage
