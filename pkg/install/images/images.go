@@ -38,6 +38,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
@@ -332,14 +333,15 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 
 	if dryRun {
 		return 0, len(imageList), nil
-	} else {
-		for index, image := range imageList {
-			if err := copyImage(ctx, log, image, userAgent); err != nil {
-				return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
-			}
-		}
-		return len(imageList), len(imageList), nil
 	}
+
+	for index, image := range imageList {
+		if err := copyImage(ctx, log, image, userAgent); err != nil {
+			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+		}
+	}
+
+	return len(imageList), len(imageList), nil
 }
 
 func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
@@ -358,7 +360,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	return crane.Copy(image.Source, image.Destination, options...)
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
 	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -371,10 +373,11 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 
 	images = append(images, creatorImages...)
 
-	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
+	addonImages, err := getImagesFromAddons(log, addons, templateData.Cluster())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from addons: %w", err)
 	}
+
 	images = append(images, addonImages...)
 
 	if registryPrefix != "" {
@@ -628,16 +631,18 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.OperatingSystemManagerWebhookServingCertSecretName,
 		resources.KubeVirtCSISecretName,
 		resources.KubeVirtInfraSecretName,
+		resources.GoogleServiceAccountSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
-			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
-			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
-			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
 			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
-			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
 			Azure:               &kubermaticv1.DatacenterSpecAzure{},
+			Hetzner:             &kubermaticv1.DatacenterSpecHetzner{},
+			Kubevirt:            &kubermaticv1.DatacenterSpecKubevirt{},
+			Nutanix:             &kubermaticv1.DatacenterSpecNutanix{},
+			Openstack:           &kubermaticv1.DatacenterSpecOpenstack{},
 			VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{},
+			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
 		},
 	}
 	objects := []runtime.Object{configMapList, secretList, serviceList}
@@ -746,26 +751,13 @@ func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfigur
 	return filteredVersions, nil
 }
 
-// list all the cloudSpecs for all the Cloud providers for which we are currently using the external CCM/CSI.
 func GetCloudSpecs() []kubermaticv1.CloudSpec {
 	return []kubermaticv1.CloudSpec{
 		{
-			ProviderName: string(kubermaticv1.VSphereCloudProvider),
-			VSphere:      &kubermaticv1.VSphereCloudSpec{},
-		},
-		{
-			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
-			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Domain:   "fakeDomain",
-				Username: "fakeUsername",
-				Password: "fakePassword",
-			},
-		},
-		{
-			ProviderName: string(kubermaticv1.HetznerCloudProvider),
-			Hetzner: &kubermaticv1.HetznerCloudSpec{
-				Token:   "fakeToken",
-				Network: "fakeNetwork",
+			ProviderName: string(kubermaticv1.AlibabaCloudProvider),
+			Alibaba: &kubermaticv1.AlibabaCloudSpec{
+				AccessKeyID:     "fakeAccessKeyID",
+				AccessKeySecret: "fakeAccessKeySecret",
 			},
 		},
 		{
@@ -775,10 +767,10 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			},
 		},
 		{
-			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
-			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
-				Kubeconfig:    "fakeKubeconfig",
-				CSIKubeconfig: "fakeKubeconfig",
+			ProviderName: string(kubermaticv1.AWSCloudProvider),
+			AWS: &kubermaticv1.AWSCloudSpec{
+				AccessKeyID:     "fakeAccessKeyID",
+				SecretAccessKey: "fakeSecretAccessKey",
 			},
 		},
 		{
@@ -791,6 +783,50 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			},
 		},
 		{
+			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
+			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
+			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
+				Token: "fakeToken",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.GCPCloudProvider),
+			GCP:          &kubermaticv1.GCPCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.HetznerCloudProvider),
+			Hetzner: &kubermaticv1.HetznerCloudSpec{
+				Token:   "fakeToken",
+				Network: "fakeNetwork",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.KubevirtCloudProvider),
+			Kubevirt: &kubermaticv1.KubevirtCloudSpec{
+				Kubeconfig:    "fakeKubeconfig",
+				CSIKubeconfig: "fakeKubeconfig",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.NutanixCloudProvider),
+			Nutanix:      &kubermaticv1.NutanixCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+			Openstack: &kubermaticv1.OpenstackCloudSpec{
+				Domain:   "fakeDomain",
+				Username: "fakeUsername",
+				Password: "fakePassword",
+			},
+		},
+		{
+			ProviderName: string(kubermaticv1.PacketCloudProvider),
+			Packet:       &kubermaticv1.PacketCloudSpec{},
+		},
+		{
 			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
 				Username:     "fakeUsername",
@@ -798,6 +834,10 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 				Organization: "fakeOrganization",
 				VDC:          "fakeVDC",
 			},
+		},
+		{
+			ProviderName: string(kubermaticv1.VSphereCloudProvider),
+			VSphere:      &kubermaticv1.VSphereCloudSpec{},
 		},
 	}
 }
@@ -832,9 +872,10 @@ func getImagesFromManifest(log logrus.FieldLogger, decoder runtime.Decoder, b []
 				log = log.WithField("gvk", gvk.String())
 			}
 
-			log.Debug("Skipping object because its not known")
+			log.Debug("Skipping object because it is not of a known GVK")
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("unable to decode object: %w", err)
 	}
 

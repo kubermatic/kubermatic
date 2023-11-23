@@ -22,6 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	applicationsecretclustercontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/application-secret-cluster-controller"
@@ -259,6 +260,11 @@ func createClusterPhaseController(ctrlCtx *controllerContext) error {
 }
 
 func createAddonController(ctrlCtx *controllerContext) error {
+	allAddons, err := addonutil.LoadAddonsFromDirectory(ctrlCtx.runOptions.addonsPath)
+	if err != nil {
+		return fmt.Errorf("failed to load addons: %w", err)
+	}
+
 	return addon.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -270,10 +276,10 @@ func createAddonController(ctrlCtx *controllerContext) error {
 				"NodeAccessNetwork": ctrlCtx.runOptions.nodeAccessNetwork,
 			},
 		},
-		ctrlCtx.runOptions.addonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
+		allAddons,
 	)
 }
 

@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
+	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -225,6 +226,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				}
 			}
 
+			allAddons, err := addonutil.LoadAddonsFromDirectory(options.AddonsPath)
+			if err != nil {
+				return fmt.Errorf("failed to load addons: %w", err)
+			}
+
 			logger.Info("🚀 Collecting images…")
 
 			// Using a set here for deduplication
@@ -237,8 +243,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 							"provider":    cloudSpec.ProviderName,
 							"cni-plugin":  string(cniPlugin.Type),
 							"cni-version": cniPlugin.Version,
-						},
-						)
+						})
 
 						versionLogger.Debug("Collecting images…")
 
@@ -252,7 +257,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 							cniPlugin,
 							false,
 							kubermaticConfig,
-							options.AddonsPath,
+							allAddons,
 							versions,
 							caBundle,
 							options.RegistryPrefix,
@@ -269,7 +274,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 							cniPlugin,
 							true,
 							kubermaticConfig,
-							options.AddonsPath,
+							allAddons,
 							versions,
 							caBundle,
 							options.RegistryPrefix,
