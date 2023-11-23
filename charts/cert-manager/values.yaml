@@ -24,33 +24,33 @@ cert-manager:
   startupapicheck:
     enabled: false
 
-  controller:
-    replicas: 1
-    image:
-      pullPolicy: IfNotPresent
+  global:
     pullSecrets: []
+  replicaCount: 1
+  image:
+    pullPolicy: IfNotPresent
 
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-      limits:
-        memory: 256Mi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
 
-    affinity: {}
-    nodeSelector: {}
-    tolerations: []
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
 
-    # Optional additional arguments. Use at your own risk.
-    extraArgs: []
-    # Must be a list of `--`-denoted args, e.G.:
-    # - --foo-args=foo-value
+  # Optional additional arguments. Use at your own risk.
+  extraArgs: []
+  # Must be a list of `--`-denoted args, e.G.:
+  # - --foo-args=foo-value
 
-    # Optional adddional env vars. Use at your own risk.
-    extraEnv: []
-    # Must be a list of valid env var definitions, e.G.:
-    # - name: SOME_VAR
-    #   value: 'some value'
+  # Optional adddional env vars. Use at your own risk.
+  extraEnv: []
+  # Must be a list of valid env var definitions, e.G.:
+  # - name: SOME_VAR
+  #   value: 'some value'
 
   webhook:
     replicas: 1
