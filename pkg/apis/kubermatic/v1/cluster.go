@@ -816,6 +816,8 @@ type EtcdStatefulSetSettings struct {
 	// pods. Options are "preferred" (default) and "required". Please note that
 	// enforcing anti-affinity via "required" can mean that pods are never scheduled.
 	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
+	// NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 type LeaderElectionSettings struct {
