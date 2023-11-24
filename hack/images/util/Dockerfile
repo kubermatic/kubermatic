@@ -22,6 +22,8 @@ ENV MC_VERSION=RELEASE.2023-11-20T16-30-59Z \
     HELM_VERSION=v3.13.2 \
     # https://github.com/hashicorp/vault/releases
     VAULT_VERSION=1.15.2 \
+    # https://github.com/jqlang/jq/releases
+    JQ_VERSION=1.7 \
     # https://github.com/mikefarah/yq/releases
     YQ_VERSION=4.40.3
 
@@ -34,13 +36,17 @@ RUN apk add --no-cache -U \
     iproute2 \
     iptables \
     ipvsadm \
-    jq \
     make \
     openssh-client \
     rsync \
     socat \
     unzip \
     tar
+
+RUN curl --fail -LO https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux64 && \
+    chmod +x jq-linux64 && \
+    mv jq-linux64 /usr/bin/jq && \
+    jq -V
 
 RUN curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64 && \
     chmod +x /usr/bin/yq && \
