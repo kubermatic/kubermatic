@@ -89,7 +89,9 @@ metrics:
       - role: node
       relabel_configs:
       - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
+        # By default regex was (.*) which adds every label from MachineDeployment which also picks up labels from user-cluster definition.
+        # Below regex keeps only most important labels and reduces label volume by 50 percent or more.
+        regex: __meta_kubernetes_node_label_(kubernetes_io_hostname|kubernetes_io_arch|kubernetes_io_os|x_kubernetes_io_distribution)
       - replacement: kubernetes.default.svc:443
         target_label: __address__
       - regex: (.+)
@@ -101,12 +103,15 @@ metrics:
       tls_config:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      honor_timestamps: false
       job_name: kubernetes-nodes-cadvisor
       kubernetes_sd_configs:
       - role: node
       relabel_configs:
       - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
+        # By default regex was (.*) which adds every label from MachineDeployment which also picks up labels from user-cluster definition.
+        # Below regex keeps only most important labels and reduces label volume by 50 percent or more.
+        regex: __meta_kubernetes_node_label_(kubernetes_io_hostname|kubernetes_io_arch|kubernetes_io_os|x_kubernetes_io_distribution)
       - replacement: kubernetes.default.svc:443
         target_label: __address__
       - regex: (.+)
@@ -114,6 +119,11 @@ metrics:
         source_labels:
         - __meta_kubernetes_node_name
         target_label: __metrics_path__
+      # Dropping some of the metrics which are usually not needed and have very high cardinality
+      metric_relabel_configs:
+      - source_labels: [__name__]
+        action: drop
+        regex: 'container_(blkio_device_usage_total|tasks_state|memory_failures_total|network_(.*)_packets_(.*)total|fs_reads_total|fs_writes_total)|rest_client_(request_duration_seconds_bucket|rate_limiter_duration_seconds_bucket|(response|request)_size_bytes_bucket)'
       scheme: https
       tls_config:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt

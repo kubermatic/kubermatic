@@ -22,6 +22,7 @@ metadata:
 data:
   custom-scrape-configs.yaml: |+
     - job_name: node-exporter
+      honor_timestamps: false
       scheme: https
       tls_config:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt

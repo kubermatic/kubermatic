@@ -101,6 +101,7 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 					Args: []string{
 						fmt.Sprintf("--config.file=%s/%s", configPath, configFileName),
 						"-server.http.address=0.0.0.0:9090",
+						"-disable-reporting",
 						fmt.Sprintf("-metrics.wal-directory=%s/agent", storagePath),
 					},
 					Ports: []corev1.ContainerPort{
