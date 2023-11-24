@@ -55,7 +55,7 @@ karma:
       pullPolicy: IfNotPresent
     initContainer:
       repository: quay.io/kubermatic/util
-      tag: 2.3.1
+      tag: 2.4.0
       pullPolicy: IfNotPresent
   # list of image pull secret references, e.g.
   # imagePullSecrets:

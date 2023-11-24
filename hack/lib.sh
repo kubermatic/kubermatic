@@ -109,7 +109,7 @@ is_containerized() {
 
 containerize() {
   local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.3.1}"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.4.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
   local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
   local skip="${NO_CONTAINERIZE:-}"

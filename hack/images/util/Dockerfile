@@ -12,14 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.17
+FROM docker.io/alpine:3.18
 LABEL maintainer="support@kubermatic.com"
 
-ENV MC_VERSION=RELEASE.2022-12-24T15-21-38Z \
-    KUBECTL_VERSION=v1.25.6 \
-    HELM_VERSION=v3.10.3 \
-    VAULT_VERSION=1.12.2 \
-    YQ_VERSION=4.30.6
+    # https://dl.minio.io/client/mc/release/linux-amd64/
+ENV MC_VERSION=RELEASE.2023-11-20T16-30-59Z \
+    KUBECTL_VERSION=v1.27.8 \
+    # https://github.com/helm/helm/releases
+    HELM_VERSION=v3.13.2 \
+    # https://github.com/hashicorp/vault/releases
+    VAULT_VERSION=1.15.2 \
+    # https://github.com/mikefarah/yq/releases
+    YQ_VERSION=4.40.3
 
 # ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
 RUN apk add --no-cache -U \
