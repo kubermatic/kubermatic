@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -153,6 +154,11 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 }
 
 func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, MinioChartName) {
+		logger.Infof("⭕ Skipping %s deployment.", MinioChartName)
+		return nil
+	}
+
 	logger.Info("📦 Deploying Minio…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -180,6 +186,11 @@ func deployMinio(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunti
 }
 
 func deployS3Exporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, S3ExporterChartName) {
+		logger.Infof("⭕ Skipping %s deployment.", S3ExporterChartName)
+		return nil
+	}
+
 	logger.Info("📦 Deploying S3 Exporter…")
 	sublogger := log.Prefix(logger, "   ")
 
