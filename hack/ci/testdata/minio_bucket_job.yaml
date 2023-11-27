@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: mc
-          image: quay.io/kubermatic/util:2.3.1
+          image: quay.io/kubermatic/util:2.4.0
           args:
             - /bin/sh
             - -c
