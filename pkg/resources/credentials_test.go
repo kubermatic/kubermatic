@@ -152,3 +152,86 @@ func TestGetOpenstackCredentials(t *testing.T) {
 		})
 	}
 }
+
+func TestGetVsphereCredentials(t *testing.T) {
+	tests := []struct {
+		name    string
+		spec    *kubermaticv1.VSphereCloudSpec
+		mock    func(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
+		want    VSphereCredentials
+		wantErr bool
+	}{
+		// vsphere auth can be split into using two sets of credentials or just using one.
+		// See https://docs.kubermatic.com/kubermatic/main/architecture/supported-providers/vsphere/vsphere#permissions for more details.
+		// When just using one, username and password will be used (obviously).
+		// When using two sets, infraManagementUser.Username and infraManagementUser.Password take precedence here.
+
+		{
+			name:    "valid spec with values - auth with only user",
+			spec:    &kubermaticv1.VSphereCloudSpec{Username: "user", Password: "pass"},
+			mock:    test.ShouldNotBeCalled,
+			want:    VSphereCredentials{Username: "user", Password: "pass"},
+			wantErr: false,
+		},
+		{
+			name:    "valid spec with values - auth with infraManagementUser",
+			spec:    &kubermaticv1.VSphereCloudSpec{Username: "user", Password: "pass", InfraManagementUser: kubermaticv1.VSphereCredentials{Username: "infraUser", Password: "infraPass"}},
+			mock:    test.ShouldNotBeCalled,
+			want:    VSphereCredentials{Username: "infraUser", Password: "infraPass"},
+			wantErr: false,
+		},
+		{
+			name: "valid spec with credentialsReference - auth with only user",
+			spec: &kubermaticv1.VSphereCloudSpec{
+				CredentialsReference: &providerconfig.GlobalSecretKeySelector{
+					ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"},
+					Key:             "data",
+				},
+				Username: "user",
+				Password: "pass",
+			},
+			mock:    test.DefaultOrOverride(map[string]interface{}{VsphereInfraManagementUserUsername: "", VsphereInfraManagementUserPassword: ""}),
+			want:    VSphereCredentials{Username: "user", Password: "pass"},
+			wantErr: false,
+		},
+		{
+			name: "valid spec with credentialsReference - auth with infraManagementUser",
+			spec: &kubermaticv1.VSphereCloudSpec{
+				CredentialsReference: &providerconfig.GlobalSecretKeySelector{
+					ObjectReference: corev1.ObjectReference{Name: "the-secret", Namespace: "default"},
+					Key:             "data",
+				},
+				Username: "user",
+				Password: "pass",
+				InfraManagementUser: kubermaticv1.VSphereCredentials{
+					Username: "infraUser",
+					Password: "infraPass",
+				},
+			},
+			mock:    test.DefaultOrOverride(map[string]interface{}{VsphereUsername: "user", VspherePassword: "pass", VsphereInfraManagementUserUsername: "infraUser", VsphereInfraManagementUserPassword: "infraPass"}),
+			want:    VSphereCredentials{Username: "infraUser", Password: "infraPass"},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			credentialsData := FakeCredentialsData{
+				KubermaticCluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							VSphere: tt.spec},
+					},
+				},
+				GlobalSecretKeySelectorValueMock: tt.mock,
+			}
+			got, err := GetVSphereCredentials(credentialsData)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetVSphereCredentials() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetVSphereCredentials() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
