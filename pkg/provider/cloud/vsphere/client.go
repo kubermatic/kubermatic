@@ -36,10 +36,12 @@ type RESTSession struct {
 }
 
 func newRESTSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, username, password string, caBundle *x509.CertPool) (*RESTSession, error) {
-	u, err := url.Parse(fmt.Sprintf("%s/sdk", dc.Endpoint))
+	endpoint, err := url.Parse(dc.Endpoint)
 	if err != nil {
 		return nil, err
 	}
+
+	u := endpoint.JoinPath("/sdk")
 
 	// creating the govmoni Client in roundabout way because we need to set the proper CA bundle: reference https://github.com/vmware/govmomi/issues/1200
 	soapClient := soap.NewClient(u, dc.AllowInsecure)
