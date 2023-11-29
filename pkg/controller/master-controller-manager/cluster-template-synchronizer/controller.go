@@ -120,7 +120,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	clusterTemplateReconcilerFactorys := []reconciling.NamedClusterTemplateReconcilerFactory{
+	clusterTemplateReconcilerFactories := []reconciling.NamedClusterTemplateReconcilerFactory{
 		clusterTemplateReconcilerFactory(clusterTemplate),
 	}
 
@@ -135,7 +135,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return nil
 		}
 
-		return reconciling.ReconcileClusterTemplates(ctx, clusterTemplateReconcilerFactorys, "", seedClient)
+		return reconciling.ReconcileClusterTemplates(ctx, clusterTemplateReconcilerFactories, "", seedClient)
 	})
 	if err != nil {
 		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)

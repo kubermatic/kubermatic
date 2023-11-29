@@ -254,7 +254,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 
 	// Download application sources.
 	oldAppInstallation := appInstallation.DeepCopy()
-	appSourcePath, downloadErr := r.appInstaller.DonwloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
+	appSourcePath, downloadErr := r.appInstaller.DownloadSource(ctx, log, r.seedClient, appInstallation, downloadDest)
 	if downloadErr != nil {
 		appInstallation.SetCondition(appskubermaticv1.ManifestsRetrieved, corev1.ConditionFalse, "DownloadSourceFailed", downloadErr.Error())
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {

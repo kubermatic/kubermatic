@@ -112,9 +112,9 @@ func GetSecretReconcilerOperations(data *resources.TemplateData) []reconciling.N
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretReconcilerFactorys := GetSecretReconcilerOperations(data)
+	namedSecretReconcilerFactories := GetSecretReconcilerOperations(data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactorys, cluster.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactories, cluster.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 

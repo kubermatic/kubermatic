@@ -110,7 +110,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appl
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	applicationDefReconcilerFactorys := []reconciling.NamedApplicationDefinitionReconcilerFactory{
+	applicationDefReconcilerFactories := []reconciling.NamedApplicationDefinitionReconcilerFactory{
 		applicationDefReconcilerFactory(applicationDef),
 	}
 
@@ -127,7 +127,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appl
 			return nil
 		}
 
-		return reconciling.ReconcileApplicationDefinitions(ctx, applicationDefReconcilerFactorys, "", seedClient)
+		return reconciling.ReconcileApplicationDefinitions(ctx, applicationDefReconcilerFactories, "", seedClient)
 	})
 	if err != nil {
 		return fmt.Errorf("reconciled application definition %s: %w", applicationDef.Name, err)

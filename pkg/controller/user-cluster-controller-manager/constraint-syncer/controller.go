@@ -114,11 +114,11 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
-	constraintReconcilerFactorys := []reconciling.NamedUnstructuredReconcilerFactory{
+	constraintReconcilerFactories := []reconciling.NamedUnstructuredReconcilerFactory{
 		constraintReconcilerFactory(constraint),
 	}
 
-	if err := reconciling.ReconcileUnstructureds(ctx, constraintReconcilerFactorys, "", r.userClient); err != nil {
+	if err := reconciling.ReconcileUnstructureds(ctx, constraintReconcilerFactories, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %w", err)
 	}
 

@@ -172,12 +172,12 @@ func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClien
 	// Even if namespace is set in the actionConfig.init() function, upgrade action take the namespace from RESTClientGetter.
 	// If the namespaces are different, the release will be installed in the namespace set in the RESTClientGetter but the
 	// release information will be stored in the targetNamespace which leads to a release which cannot be uninstalled with Helm.
-	kcNamspace, _, err := restClientGetter.ToRawKubeConfigLoader().Namespace()
+	kcNamespace, _, err := restClientGetter.ToRawKubeConfigLoader().Namespace()
 	if err != nil {
 		return nil, fmt.Errorf("can not get namespace from RESTClientGetter: %w", err)
 	}
-	if kcNamspace != targetNamespace {
-		return nil, fmt.Errorf("namespace set in RESTClientGetter should be the same as targetNamespace. RESTClientGetter namespace=%s, targetNamespace=%s", kcNamspace, targetNamespace)
+	if kcNamespace != targetNamespace {
+		return nil, fmt.Errorf("namespace set in RESTClientGetter should be the same as targetNamespace. RESTClientGetter namespace=%s, targetNamespace=%s", kcNamespace, targetNamespace)
 	}
 
 	actionConfig := new(action.Configuration)

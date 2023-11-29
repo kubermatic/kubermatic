@@ -168,19 +168,19 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 }
 
 func validateRange(r string) error {
-	splittedRange := strings.Split(r, "-")
-	if len(splittedRange) != 1 && len(splittedRange) != 2 {
+	splitRange := strings.Split(r, "-")
+	if len(splitRange) != 1 && len(splitRange) != 2 {
 		return fmt.Errorf("invalid format for range: \"%s\" (format should be \"{first_ip}-{last_ip}\" or single \"{ip}\")", r)
 	}
 	var firstIP, lastIP net.IP
-	firstIP = net.ParseIP(splittedRange[0])
+	firstIP = net.ParseIP(splitRange[0])
 	if firstIP == nil {
-		return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splittedRange[0], r)
+		return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splitRange[0], r)
 	}
-	if len(splittedRange) == 2 {
-		lastIP = net.ParseIP(splittedRange[1])
+	if len(splitRange) == 2 {
+		lastIP = net.ParseIP(splitRange[1])
 		if lastIP == nil {
-			return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splittedRange[1], r)
+			return fmt.Errorf("invalid IP format for \"%s\" in range \"%s\"", splitRange[1], r)
 		}
 		if (firstIP.To4() == nil && lastIP.To4() != nil) || (firstIP.To4() != nil && lastIP.To4() == nil) {
 			return fmt.Errorf("different IP versions for range \"%s\"", r)

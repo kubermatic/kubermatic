@@ -57,11 +57,11 @@ const (
 	// VersionLabelKey is the key in the values.yaml of examplechart / examplechart-v2 that holds custom version label value. it's also the name of the label in the configmap.
 	VersionLabelKey = "versionLabel"
 
-	// DefaultVerionLabel is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart chart.
-	DefaultVerionLabel = "1.0"
+	// DefaultVersionLabel is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart chart.
+	DefaultVersionLabel = "1.0"
 
-	// DefaultVerionLabelV2 is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart-v2 chart.
-	DefaultVerionLabelV2 = "2.0"
+	// DefaultVersionLabelV2 is the default value of the version label the configmap deployed by pkg/applications/helmclient/testdata/examplechart-v2 chart.
+	DefaultVersionLabelV2 = "2.0"
 
 	// EnableDNSLabelKey is the label key on cmData examplechart that allow test the enableDns deployOption.
 	EnableDNSLabelKey = "enableDNSLabel"
@@ -164,12 +164,12 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool) (string, string)
 		username = "someuser"
 		password = "somepassword"
 
-		encrypedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			t.Fatalf("failed to generate encrypt password: %s", err)
 		}
 		authHtpasswd := filepath.Join(credentialDir, "auth.htpasswd")
-		err = os.WriteFile(authHtpasswd, []byte(fmt.Sprintf("%s:%s\n", username, string(encrypedPassword))), 0600)
+		err = os.WriteFile(authHtpasswd, []byte(fmt.Sprintf("%s:%s\n", username, string(encryptedPassword))), 0600)
 		if err != nil {
 			t.Fatalf("failed to write auth.htpasswd file: %s", err)
 		}

@@ -104,11 +104,11 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 		}
 
 		// Ensure Constraint with registry data
-		constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
+		constraintReconcilerFactories := []reconciling.NamedConstraintReconcilerFactory{
 			allowedRegistryConstraintReconcilerFactory(regSet),
 		}
 
-		err := reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, r.namespace, r.masterClient)
+		err := reconciling.ReconcileConstraints(ctx, constraintReconcilerFactories, r.namespace, r.masterClient)
 		if err != nil {
 			return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 		}
@@ -121,20 +121,20 @@ func (r *Reconciler) reconcile(ctx context.Context, allowedRegistry *kubermaticv
 	}
 
 	// Ensure that the Constraint Template for AllowedRegistry exists
-	ctReconcilerFactorys := []reconciling.NamedConstraintTemplateReconcilerFactory{
+	ctReconcilerFactories := []reconciling.NamedConstraintTemplateReconcilerFactory{
 		allowedRegistryCTReconcilerFactory(),
 	}
-	err = reconciling.ReconcileConstraintTemplates(ctx, ctReconcilerFactorys, "", r.masterClient)
+	err = reconciling.ReconcileConstraintTemplates(ctx, ctReconcilerFactories, "", r.masterClient)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}
 
 	// Ensure Constraint with registry data
-	constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
+	constraintReconcilerFactories := []reconciling.NamedConstraintReconcilerFactory{
 		allowedRegistryConstraintReconcilerFactory(regSet),
 	}
 
-	err = reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, r.namespace, r.masterClient)
+	err = reconciling.ReconcileConstraints(ctx, constraintReconcilerFactories, r.namespace, r.masterClient)
 	if err != nil {
 		return fmt.Errorf("error ensuring AllowedRegistry Constraint Template: %w", err)
 	}

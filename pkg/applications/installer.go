@@ -36,8 +36,8 @@ type ApplicationInstaller interface {
 	// GetAppCache return the application cache location (i.e. where source and others temporary files are written)
 	GetAppCache() string
 
-	// DonwloadSource the application's source into downloadDest and returns the full path to the sources.
-	DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error)
+	// DownloadSource the application's source into downloadDest and returns the full path to the sources.
+	DownloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error)
 
 	// Apply function installs the application on the user-cluster and returns an error if the installation has failed. StatusUpdater is guaranteed to be non nil. This is idempotent.
 	Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error)
@@ -62,8 +62,8 @@ func (a *ApplicationManager) GetAppCache() string {
 	return a.ApplicationCache
 }
 
-// DonwloadSource the application's source using the appropriate provider into downloadDest and returns the full path to the sources.
-func (a *ApplicationManager) DonwloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
+// DownloadSource the application's source using the appropriate provider into downloadDest and returns the full path to the sources.
+func (a *ApplicationManager) DownloadSource(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation, downloadDest string) (string, error) {
 	sourceProvider, err := providers.NewSourceProvider(ctx, log, seedClient, a.Kubeconfig, a.ApplicationCache, &applicationInstallation.Status.ApplicationVersion.Template.Source, a.SecretNamespace)
 	if err != nil {
 		return "", fmt.Errorf("failed to initialize source provider: %w", err)

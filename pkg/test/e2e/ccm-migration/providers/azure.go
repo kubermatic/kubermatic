@@ -36,7 +36,7 @@ const (
 )
 
 type AzureScenario struct {
-	commmonScenario
+	commonScenario
 
 	credentials jig.AzureCredentials
 }
@@ -47,7 +47,7 @@ var (
 
 func NewAzureScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.AzureCredentials) *AzureScenario {
 	return &AzureScenario{
-		commmonScenario: commmonScenario{
+		commonScenario: commonScenario{
 			seedClient: seedClient,
 			testJig:    jig.NewAzureCluster(seedClient, log, credentials, 1),
 		},

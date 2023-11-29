@@ -159,7 +159,7 @@ func CloudConfig(
 		sam := map[string]string{}
 		err = json.Unmarshal(b, &sam)
 		if err != nil {
-			return "", fmt.Errorf("failed unmarshaling service account: %w", err)
+			return "", fmt.Errorf("failed unmarshalling service account: %w", err)
 		}
 		projectID := sam["project_id"]
 		if projectID == "" {

@@ -132,11 +132,11 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 			return err
 		}
 	}
-	resourceQuotaMasterReconcilerFactorys := []reconciling.NamedResourceQuotaReconcilerFactory{
+	resourceQuotaMasterReconcilerFactories := []reconciling.NamedResourceQuotaReconcilerFactory{
 		resourceQuotaLabelOwnerRefReconcilerFactory(resourceQuota),
 	}
 
-	return reconciling.ReconcileResourceQuotas(ctx, resourceQuotaMasterReconcilerFactorys, "", r.masterClient)
+	return reconciling.ReconcileResourceQuotas(ctx, resourceQuotaMasterReconcilerFactories, "", r.masterClient)
 }
 
 func ensureProjectOwnershipRef(ctx context.Context, client ctrlruntimeclient.Client, resourceQuota *kubermaticv1.ResourceQuota) error {

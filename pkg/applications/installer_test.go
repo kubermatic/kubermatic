@@ -204,14 +204,14 @@ func contains(actual map[string]string, expected map[string]string) error {
 	return nil
 }
 
-func genApplicationInstallation(namspaceSpec appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationInstallation {
+func genApplicationInstallation(namespaceSpec appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationInstallation {
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-",
 			Namespace:    defaultNamespace,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: namspaceSpec,
+			Namespace: namespaceSpec,
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    "applicationDef1",
 				Version: "1.0.0",

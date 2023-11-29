@@ -267,12 +267,12 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 }
 
 func (r *reconciler) ensureConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
-	constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
+	constraintReconcilerFactories := []reconciling.NamedConstraintReconcilerFactory{
 		constraintReconcilerFactory(constraint),
 	}
 
 	if err := r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
-		return reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, namespace, seedClient)
+		return reconciling.ReconcileConstraints(ctx, constraintReconcilerFactories, namespace, seedClient)
 	}); err != nil {
 		return err
 	}

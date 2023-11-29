@@ -118,7 +118,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	projectReconcilerFactorys := []reconciling.NamedProjectReconcilerFactory{
+	projectReconcilerFactories := []reconciling.NamedProjectReconcilerFactory{
 		projectReconcilerFactory(project),
 	}
 
@@ -144,7 +144,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		err := reconciling.ReconcileProjects(ctx, projectReconcilerFactorys, "", seedClient)
+		err := reconciling.ReconcileProjects(ctx, projectReconcilerFactories, "", seedClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile project: %w", err)
 		}

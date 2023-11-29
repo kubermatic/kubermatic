@@ -115,12 +115,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	groupProjectBindingReconcilerFactorys := []reconciling.NamedGroupProjectBindingReconcilerFactory{
+	groupProjectBindingReconcilerFactories := []reconciling.NamedGroupProjectBindingReconcilerFactory{
 		groupProjectBindingReconcilerFactory(groupProjectBinding),
 	}
 
 	err := r.syncAllSeeds(log, groupProjectBinding, func(seedClusterClient ctrlruntimeclient.Client, groupProjectBinding *kubermaticv1.GroupProjectBinding) error {
-		return reconciling.ReconcileGroupProjectBindings(ctx, groupProjectBindingReconcilerFactorys, "", seedClusterClient)
+		return reconciling.ReconcileGroupProjectBindings(ctx, groupProjectBindingReconcilerFactories, "", seedClusterClient)
 	})
 
 	if err != nil {

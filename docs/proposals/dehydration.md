@@ -24,7 +24,7 @@ Of course clusters could be deleted in the evening, but this comes with several 
 
 Having a "one click" solution to dehydrate your user cluster will provide the following upsides:
 
-* Quickly free up resources in a resource-constrainted environment.
+* Quickly free up resources in a resource-constrained environment.
 * Restart work right where it was left off maybe days or even weeks ago while staying cost-efficient.
 * No maintenance for custom scripts or other automation that does similar things.
 

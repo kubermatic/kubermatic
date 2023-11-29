@@ -105,12 +105,12 @@ func TestDefaultApplicationInstallation(t *testing.T) {
 			}
 
 			if !diff.SemanticallyEqual(tc.appInstall, tc.expectedApp) {
-				t.Fatalf("mutate applicationInstllation differs from expected:\n%s", diff.ObjectDiff(tc.expectedApp, tc.appInstall))
+				t.Fatalf("mutate applicationInstallation differs from expected:\n%s", diff.ObjectDiff(tc.expectedApp, tc.appInstall))
 			}
 
 			// test that mutate object is valid
 			if errs := validation.ValidateApplicationInstallationSpec(context.Background(), fakeClient, *tc.appInstall); len(errs) > 0 {
-				t.Fatalf("mutated applicationInstllation does not pass validation: %v", errs)
+				t.Fatalf("mutated applicationInstallation does not pass validation: %v", errs)
 			}
 		})
 	}

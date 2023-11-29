@@ -42,26 +42,26 @@ type TestScenario interface {
 	Cleanup(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error
 }
 
-type commmonScenario struct {
+type commonScenario struct {
 	seedClient ctrlruntimeclient.Client
 	testJig    *jig.TestJig
 }
 
-func (s *commmonScenario) ClusterJig() *jig.ClusterJig {
+func (s *commonScenario) ClusterJig() *jig.ClusterJig {
 	return s.testJig.ClusterJig
 }
 
-func (s *commmonScenario) MachineJig() *jig.MachineJig {
+func (s *commonScenario) MachineJig() *jig.MachineJig {
 	return s.testJig.MachineJig
 }
 
-func (s *commmonScenario) Setup(ctx context.Context) (*kubermaticv1.Cluster, error) {
+func (s *commonScenario) Setup(ctx context.Context) (*kubermaticv1.Cluster, error) {
 	_, cluster, err := s.testJig.Setup(ctx, jig.WaitForReadyPods)
 
 	return cluster, err
 }
 
-func (s *commmonScenario) Cleanup(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error {
+func (s *commonScenario) Cleanup(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) error {
 	// Skip eviction to speed up the clean up process
 	if err := s.MachineJig().SkipEvictionForAllNodes(ctx, userClient); err != nil {
 		return fmt.Errorf("failed to skip node evictions: %w", err)
