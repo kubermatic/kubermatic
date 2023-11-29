@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.18
+FROM gcr.io/distroless/static-debian12
 LABEL maintainer="support@kubermatic.com"
 
 COPY ./http-prober /usr/local/bin/
