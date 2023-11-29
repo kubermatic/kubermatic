@@ -18,6 +18,7 @@ modules:
     funcs:
       LoadDefaultConfig: null
       WithCredentialsProvider: null
+      WithEndpointResolverWithOptions: null
       WithRegion: null
       WithRetryMaxAttempts: null
       WithEndpointResolverWithOptions: null
