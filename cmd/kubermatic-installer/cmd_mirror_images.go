@@ -189,7 +189,6 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 	if err != nil {
 		return "", fmt.Errorf("failed to create local addons path: %w", err)
 	}
-	defer os.RemoveAll(tempDir)
 
 	return tempDir, nil
 }
@@ -224,6 +223,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				if err != nil {
 					return fmt.Errorf("failed to get addons path: %w", err)
 				}
+				defer os.RemoveAll(options.AddonsPath)
 			}
 
 			allAddons, err := addonutil.LoadAddonsFromDirectory(options.AddonsPath)
