@@ -32,7 +32,7 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export CGO_ENABLED=1
 
-LOCALSTACK_TAG="${LOCALSTACK_TAG:-0.12.19}"
+LOCALSTACK_TAG="${LOCALSTACK_TAG:-3.0.1}"
 LOCALSTACK_IMAGE="${LOCALSTACK_IMAGE:-localstack/localstack:$LOCALSTACK_TAG}"
 
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
