@@ -15,7 +15,7 @@
 s3Exporter:
   image:
     repository: quay.io/kubermatic/s3-exporter
-    tag: v0.6
+    tag: v0.7
     # list of image pull secret references, e.g.
   # imagePullSecrets:
   #   - name: quay-io-pull-secret
