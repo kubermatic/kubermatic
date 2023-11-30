@@ -42,8 +42,6 @@ spec:
           image: '{{ .Values.alertmanagerProxy.authz.image.repository }}:{{ .Values.alertmanagerProxy.authz.image.tag }}'
           ports:
             - containerPort: 50051
-          command:
-            - /alertmanager-authorization-server
           args:
             - -log-debug=true
           resources:

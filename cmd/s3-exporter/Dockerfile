@@ -16,3 +16,5 @@ FROM gcr.io/distroless/static-debian12
 LABEL maintainer="support@kubermatic.com"
 
 COPY ./s3-exporter /usr/local/bin/
+
+ENTRYPOINT ["s3-exporter"]

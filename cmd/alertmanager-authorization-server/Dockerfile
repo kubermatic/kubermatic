@@ -15,4 +15,6 @@
 FROM gcr.io/distroless/static-debian12
 LABEL maintainer="support@kubermatic.com"
 
-COPY ./_build/alertmanager-authorization-server /
+COPY ./_build/alertmanager-authorization-server /usr/local/bin/
+
+ENTRYPOINT ["alertmanager-authorization-server"]

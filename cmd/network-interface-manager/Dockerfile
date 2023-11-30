@@ -15,5 +15,6 @@
 FROM gcr.io/distroless/static-debian12
 LABEL maintainer="support@kubermatic.com"
 
-COPY ./_build/network-interface-manager /usr/local/bin/network-interface-manager
+COPY ./_build/network-interface-manager /usr/local/bin/
 
+ENTRYPOINT ["network-interface-manager"]

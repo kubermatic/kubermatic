@@ -39,8 +39,6 @@ spec:
       containers:
         - name: s3-exporter
           image: '{{ .Values.s3Exporter.image.repository }}:{{ .Values.s3Exporter.image.tag }}'
-          command:
-          - /usr/local/bin/s3-exporter
           args:
           - -endpoint={{ .Values.s3Exporter.endpoint }}
           - -access-key-id=$(ACCESS_KEY_ID)
