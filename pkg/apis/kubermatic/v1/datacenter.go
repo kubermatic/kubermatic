@@ -604,6 +604,9 @@ type DatacenterSpecOpenstack struct {
 	EnabledFlavors []string `json:"enabledFlavors,omitempty"`
 	// Optional: defines if the IPv6 is enabled for the datacenter
 	IPv6Enabled *bool `json:"ipv6Enabled,omitempty"`
+	// Optional: configures enablement of CSI Cinder plugin for topology support.
+	// This requires Nova and Cinder to have matching availability zones configured.
+	CSICinderTopologyEnabled bool `json:"csiCinderTopologyEnabled,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
