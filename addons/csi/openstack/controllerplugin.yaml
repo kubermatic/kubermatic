@@ -83,7 +83,7 @@ spec:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
             - "--default-fstype=ext4"
-            - "--feature-gates=Topology=true"
+            - "--feature-gates=Topology={{ .Cluster.CSI.CinderTopologyEnabled }}"
             - "--extra-create-metadata"
             - "--leader-election=true"
           env:

@@ -121,6 +121,9 @@ type CSIOptions struct {
 	// vmware Cloud Director
 	StorageProfile string
 	Filesystem     string
+
+	// openstack
+	CinderTopologyEnabled bool
 }
 
 type MLASettings struct {
