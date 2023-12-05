@@ -660,6 +660,16 @@ func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {
 			return VSphereCredentials{}, err
 		}
 	}
+	if username == "" {
+		if spec.Username != "" {
+			username = spec.Username
+		} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+			username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername)
+			if err != nil {
+				return VSphereCredentials{}, err
+			}
+		}
+	}
 
 	if spec.InfraManagementUser.Password != "" {
 		password = spec.InfraManagementUser.Password
@@ -669,22 +679,14 @@ func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {
 			return VSphereCredentials{}, err
 		}
 	}
-
-	if username == "" && spec.Username != "" {
-		username = spec.Username
-	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername)
-		if err != nil {
-			return VSphereCredentials{}, err
-		}
-	}
-
-	if password == "" && spec.Password != "" {
-		password = spec.Password
-	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword)
-		if err != nil {
-			return VSphereCredentials{}, err
+	if password == "" {
+		if spec.Password != "" {
+			password = spec.Password
+		} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+			password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword)
+			if err != nil {
+				return VSphereCredentials{}, err
+			}
 		}
 	}
 
