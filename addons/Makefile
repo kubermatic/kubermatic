@@ -18,21 +18,6 @@ DOCKER_REPO ?= "quay.io/kubermatic"
 docker:
 	docker build -t $(DOCKER_REPO)/addons:$(TAG) .
 
-.PHONY: hubble
-hubble: OUTPUT_FILE=hubble/hubble_v1.12.yaml
-hubble:
-	helm repo add cilium https://helm.cilium.io/ || true
-	helm repo update
-	cat hubble/_header.txt > $(OUTPUT_FILE)
-	helm template cilium cilium/cilium \
-	  --version 1.12.2 \
-	  --namespace kube-system \
-	  --values values-hubble.yaml \
-	  >> $(OUTPUT_FILE)
-	cat hubble/_extras.txt >> $(OUTPUT_FILE)
-	cat hubble/_footer.txt >> $(OUTPUT_FILE)
-	./templatify-images.sh $(OUTPUT_FILE)
-
 .PHONY: aws-node-termination-handler
 aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
 aws-node-termination-handler:
