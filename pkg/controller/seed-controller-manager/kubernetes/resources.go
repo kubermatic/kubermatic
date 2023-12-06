@@ -29,6 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -60,6 +61,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -673,6 +675,17 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
+
+		// if the CiliumNetworkPolicy feature gate is active and the CiliumNetworkPolicy resource type exists on the Seed, create CiliumNetworkPolicies
+		if data.KubermaticConfiguration().Spec.FeatureGates[features.CiliumNetworkPolicy] && isCiliumInstalled(r.Client) {
+			namedCiliumNPReconcilerFactorys := []kkpreconciling.NamedCiliumNetworkPolicyReconcilerFactory{
+				apiserver.CiliumSeedApiServerAllowReconciler(),
+			}
+
+			if err := kkpreconciling.ReconcileCiliumNetworkPolicies(ctx, namedCiliumNPReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+				return fmt.Errorf("failed to ensure Cilium Network Policies: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -998,4 +1011,9 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 	})
 
 	return ipList, nil
+}
+
+func isCiliumInstalled(client ctrlruntimeclient.Client) bool {
+	_, err := client.RESTMapper().RESTMapping(schema.ParseGroupKind("ciliumnetworkpolicies.cilium.io"), "v2")
+	return err == nil
 }

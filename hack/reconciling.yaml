@@ -66,4 +66,7 @@ resourceTypes:
   - { package: kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1, resourceName: DataVolume, importAlias: cdiv1beta1 }
   
   # velero/v1
-  - {package: github.com/vmware-tanzu/velero/pkg/apis/velero/v1, resourceName: BackupStorageLocation, importAlias: velerov1 }
+  - { package: github.com/vmware-tanzu/velero/pkg/apis/velero/v1, resourceName: BackupStorageLocation, importAlias: velerov1 }
+
+  # cilium.io/v2
+  - { package: github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2, resourceName: CiliumNetworkPolicy, resourceNamePlural: CiliumNetworkPolicies, importAlias: ciliumv2 }

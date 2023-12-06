@@ -20,9 +20,14 @@ import (
 	"fmt"
 	"net"
 
+	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
+	ciliumpolicyapi "github.com/cilium/cilium/pkg/policy/api"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -379,6 +384,28 @@ func SeedApiServerAllowReconciler(endpoints []net.IP) reconciling.NamedNetworkPo
 			}
 
 			return np, nil
+		}
+	}
+}
+
+func CiliumSeedApiServerAllowReconciler() kkpreconciling.NamedCiliumNetworkPolicyReconcilerFactory {
+	return func() (string, kkpreconciling.CiliumNetworkPolicyReconciler) {
+		return resources.CiliumNetworkPolicySeedApiserverAllow, func(cnp *ciliumv2.CiliumNetworkPolicy) (*ciliumv2.CiliumNetworkPolicy, error) {
+			cnp.Spec = &ciliumpolicyapi.Rule{
+				EndpointSelector: ciliumpolicyapi.EndpointSelector{
+					LabelSelector: &slim_metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							resources.AppLabelKey: name,
+						},
+					}},
+				Egress: []ciliumpolicyapi.EgressRule{
+					{EgressCommonRule: ciliumpolicyapi.EgressCommonRule{
+						ToEntities: ciliumpolicyapi.EntitySlice{ciliumpolicyapi.EntityKubeAPIServer},
+					}},
+				},
+			}
+
+			return cnp, nil
 		}
 	}
 }
