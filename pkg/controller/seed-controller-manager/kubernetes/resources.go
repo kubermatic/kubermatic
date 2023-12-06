@@ -676,7 +676,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
 
-		// if the CiliumNetworkPolicy feature gate is active and CiliumNetworkPolicies exist on the Seed, create CiliumNetworkPolicies
+		// if the CiliumNetworkPolicy feature gate is active and the CiliumNetworkPolicy resource type exists on the Seed, create CiliumNetworkPolicies
 		if data.KubermaticConfiguration().Spec.FeatureGates[features.CiliumNetworkPolicy] && isCiliumInstalled(r.Client) {
 			namedCiliumNPReconcilerFactorys := []kkpreconciling.NamedCiliumNetworkPolicyReconcilerFactory{
 				apiserver.CiliumSeedApiServerAllowReconciler(),
