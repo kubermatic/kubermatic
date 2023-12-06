@@ -25,6 +25,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -193,6 +194,12 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 	}
 
+	// Cilium became KKP's default CNI plugin but our CentOS images do not support it yet
+	// https://github.com/kubermatic/kubermatic/pull/12752
+	// https://github.com/kubermatic/kubermatic/pull/12878#issuecomment-1842451739
+	if scenario.OperatingSystem() == providerconfig.OperatingSystemCentOS {
+		cluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{Type: kubermaticv1.CNIPluginTypeCanal}
+	}
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
