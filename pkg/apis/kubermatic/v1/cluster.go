@@ -1311,7 +1311,7 @@ type OpenstackCloudSpec struct {
 	// future versions as it is considered a workaround only.
 	IngressHostnameSuffix *string `json:"ingressHostnameSuffix,omitempty"`
 
-	// Flag to configure enablement of CSI Cinder plugin for topology support.
+	// Flag to configure enablement of topology support for the Cinder CSI plugin.
 	// This requires Nova and Cinder to have matching availability zones configured.
 	// +optional
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
