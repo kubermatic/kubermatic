@@ -713,7 +713,7 @@ spec:
                         applicationCredentialSecret:
                           type: string
                         cinderTopologyEnabled:
-                          description: Flag to configure enablement of CSI Cinder plugin for topology support. This requires Nova and Cinder to have matching availability zones configured.
+                          description: Flag to configure enablement of topology support for the Cinder CSI plugin. This requires Nova and Cinder to have matching availability zones configured.
                           type: boolean
                         credentialsReference:
                           description: GlobalObjectKeySelector is needed as we can not use v1.SecretKeySelector because it is not cross namespace.
