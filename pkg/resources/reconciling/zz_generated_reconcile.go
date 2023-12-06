@@ -1147,7 +1147,7 @@ func ReconcileBackupStorageLocations(ctx context.Context, namedFactories []Named
 	return nil
 }
 
-// CiliumNetworkPolicyReconciler defines an interface to create/update CiliumNetworkPolicys.
+// CiliumNetworkPolicyReconciler defines an interface to create/update CiliumNetworkPolicies.
 type CiliumNetworkPolicyReconciler = func(existing *ciliumv2.CiliumNetworkPolicy) (*ciliumv2.CiliumNetworkPolicy, error)
 
 // NamedCiliumNetworkPolicyReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
@@ -1164,8 +1164,8 @@ func CiliumNetworkPolicyObjectWrapper(reconciler CiliumNetworkPolicyReconciler) 
 	}
 }
 
-// ReconcileCiliumNetworkPolicys will create and update the CiliumNetworkPolicys coming from the passed CiliumNetworkPolicyReconciler slice.
-func ReconcileCiliumNetworkPolicys(ctx context.Context, namedFactories []NamedCiliumNetworkPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+// ReconcileCiliumNetworkPolicies will create and update the CiliumNetworkPolicies coming from the passed CiliumNetworkPolicyReconciler slice.
+func ReconcileCiliumNetworkPolicies(ctx context.Context, namedFactories []NamedCiliumNetworkPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
 	for _, factory := range namedFactories {
 		name, reconciler := factory()
 		reconcileObject := CiliumNetworkPolicyObjectWrapper(reconciler)

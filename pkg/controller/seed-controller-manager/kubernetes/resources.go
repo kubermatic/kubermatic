@@ -682,7 +682,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				apiserver.CiliumSeedApiServerAllowReconciler(),
 			}
 
-			if err := kkpreconciling.ReconcileCiliumNetworkPolicys(ctx, namedCiliumNPReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+			if err := kkpreconciling.ReconcileCiliumNetworkPolicies(ctx, namedCiliumNPReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
 				return fmt.Errorf("failed to ensure Cilium Network Policies: %w", err)
 			}
 		}
