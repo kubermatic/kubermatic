@@ -665,7 +665,7 @@ spec:
                                 description: Used to configure availability zone.
                                 type: string
                               csiCinderTopologyEnabled:
-                                description: 'Optional: configures enablement of CSI Cinder plugin for topology support. This requires Nova and Cinder to have matching availability zones configured.'
+                                description: 'Optional: configures enablement of topology support for the Cinder CSI Plugin. This requires Nova and Cinder to have matching availability zones configured.'
                                 type: boolean
                               dnsServers:
                                 description: Used for automatic network creation
