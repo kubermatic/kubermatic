@@ -96,7 +96,7 @@ func ClusterRoleReconcilers() []reconciling.NamedClusterRoleReconcilerFactory {
 		clusterRoleReconciler(StatusActorRoleName, []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{"autoscaling.k8s.io"},
-				Resources: []string{"verticalpodautoscalers/status"},
+				Resources: []string{"verticalpodautoscalers", "verticalpodautoscalers/status"},
 				Verbs:     []string{"get", "patch"},
 			},
 		}),
