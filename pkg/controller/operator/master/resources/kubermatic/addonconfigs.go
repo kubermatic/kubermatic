@@ -40,6 +40,9 @@ var (
 
 	//go:embed static/node-exporter.svg
 	nodeExporterLogo []byte
+
+	//go:embed static/hubble.png
+	hubbleLogo []byte
 )
 
 const (
@@ -54,6 +57,7 @@ func AddonConfigsReconcilers() []reconciling.NamedAddonConfigReconcilerFactory {
 		makeReconciler(kubeflowAddonConfig),
 		makeReconciler(multusAddonConfig),
 		makeReconciler(nodeExporterAddonConfig),
+		makeReconciler(hubbleAddonConfig),
 	}
 }
 
@@ -206,6 +210,17 @@ func nodeExporterAddonConfig() *kubermaticv1.AddonConfig {
 	config.Spec.ShortDescription = "The exporter for machine metrics."
 	config.Spec.Logo = base64Encode(nodeExporterLogo)
 	config.Spec.LogoFormat = svgFormat
+
+	return config
+}
+
+func hubbleAddonConfig() *kubermaticv1.AddonConfig {
+	config := &kubermaticv1.AddonConfig{}
+	config.Name = "hubble"
+	config.Spec.Description = "Hubble UI provides networking observability interface for clusters with Cilium CNI."
+	config.Spec.ShortDescription = "Hubble UI for Cilium CNI"
+	config.Spec.Logo = base64Encode(hubbleLogo)
+	config.Spec.LogoFormat = pngFormat
 
 	return config
 }

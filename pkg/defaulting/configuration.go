@@ -83,6 +83,7 @@ var (
 		"node-exporter",
 		"kube-state-metrics",
 		"multus",
+		"hubble",
 		"metallb",
 	}
 
