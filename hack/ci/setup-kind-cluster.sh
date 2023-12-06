@@ -147,7 +147,8 @@ helm install cilium cilium/cilium \
   --version 1.14.4 \
   --namespace kube-system \
   --set image.pullPolicy=IfNotPresent \
-  --set ipam.mode=kubernetes
+  --set ipam.mode=kubernetes \
+  --set operator.replicas=1
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as

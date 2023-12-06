@@ -352,7 +352,6 @@ check_all_deployments_ready() {
   unready=$(echo "$deployments" | jq -r '[.items[] | select(.spec.replicas > 0) | select (.status.availableReplicas < .spec.replicas) | .metadata.name] | @tsv')
   if [ -n "$unready" ]; then
     echodate "Not all Deployments have finished rolling out, namely: $unready"
-    kubectl get deployments -n $namespace -o wide
     return 1
   fi
 
