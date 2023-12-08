@@ -191,4 +191,23 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   echodate "Successfully set up iptables rules for nodeports"
 fi
 
+# Cilium as CNI needs special treatment for a functional KKP
+# setup. For more details, see https://github.com/kubermatic/kubermatic/issues/12874.
+# For now, we manually need to create a clusterwide network policy.
+cat << EOF > cilium-networkpolicy.yaml
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cilium-seed-apiserver-allow
+spec:
+  egress:
+  - toEntities:
+    - kube-apiserver
+  endpointSelector:
+    matchLabels:
+      app: apiserver
+EOF
+
+kubectl apply -f cilium-networkpolicy.yaml
+
 echodate "Kind cluster $KIND_CLUSTER_NAME is up and running."
