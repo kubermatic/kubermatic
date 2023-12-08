@@ -573,14 +573,14 @@ spec:
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
           cpu: 200m
-          memory: 128Mi
+          memory: 512Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
         # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests:
           cpu: 50m
-          memory: 32Mi
+          memory: 128Mi
     recommender:
       # DockerRepository is the repository containing the component's image.
       dockerRepository: registry.k8s.io/autoscaling/vpa-recommender
@@ -623,14 +623,14 @@ spec:
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         limits:
           cpu: 200m
-          memory: 128Mi
+          memory: 512Mi
         # Requests describes the minimum amount of compute resources required.
         # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
         # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests:
           cpu: 50m
-          memory: 32Mi
+          memory: 128Mi
   # Webhook configures the webhook.
   webhook:
     # DebugLog enables more verbose logging.
