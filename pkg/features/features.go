@@ -60,11 +60,6 @@ const (
 	// gate in the future.
 	// This feature perpetually in preview and never ready for production.
 	DevelopmentEnvironment = "DevelopmentEnvironment"
-
-	// CiliumNetworkPolicy, if enabled, will create a CiliumNetworkPolicy alongside
-	// the standard NetworkPolicies for kube-apiserver network isolation. This CNI-specific
-	// implementation is a workaround for https://github.com/kubermatic/kubermatic/issues/12874.
-	CiliumNetworkPolicy = "CiliumNetworkPolicy"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

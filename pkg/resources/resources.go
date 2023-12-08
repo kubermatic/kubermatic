@@ -1001,7 +1001,6 @@ const (
 	NetworkPolicyClusterExternalAddrAllow           = "cluster-external-addr-allow"
 	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
-	CiliumNetworkPolicySeedApiserverAllow           = "cilium-seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
 )
 
