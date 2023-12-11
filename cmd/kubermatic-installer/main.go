@@ -18,9 +18,7 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -45,8 +43,6 @@ func (o *Options) CopyInto(other *Options) {
 var options = &Options{}
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	logger := log.NewLogrus()
 	versions := kubermaticversion.NewDefaultVersions()
 
