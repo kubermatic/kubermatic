@@ -111,6 +111,9 @@ type SettingSpec struct {
 	// +optional
 	MachineDeploymentOptions MachineDeploymentOptions `json:"machineDeploymentOptions,omitempty"`
 
+	// +optional
+	ApplicationOptions ApplicationOptions `json:"applicationOptions,omitempty"`
+
 	// DisableChangelogPopup disables the changelog popup in KKP dashboard.
 	DisableChangelogPopup bool `json:"disableChangelogPopup,omitempty"`
 
@@ -177,6 +180,13 @@ type MachineDeploymentOptions struct {
 	// In case of flatcar linux, this will enable automatic updates through update engine and for other operating systems,
 	// this will enable package updates on boot for the machines.
 	AutoUpdatesEnforced bool `json:"autoUpdatesEnforced,omitempty"`
+}
+
+type ApplicationOptions struct {
+	// DefaultApplications is a list of applications which will be enabled by default for user clusters
+	DefaultApplications []string `json:"defaultApplications,omitempty"`
+	// DefaultApplicationsEnforced enforces default applications on user clusters
+	DefaultApplicationsEnforced bool `json:"defaultApplicationsEnforced"`
 }
 
 // DefaultProjectResourceQuota contains the default resource quota which will be set for all
