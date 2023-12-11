@@ -191,6 +191,9 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   echodate "Successfully set up iptables rules for nodeports"
 fi
 
+echodate "Waiting for Cilium CRDs to be installed"
+kubectl wait --for condition=established --timeout=300s crd/ciliumclusterwidenetworkpolicies.cilium.io
+
 # Cilium as CNI needs special treatment for a functional KKP
 # setup. For more details, see https://github.com/kubermatic/kubermatic/issues/12874.
 # For now, we manually need to create a clusterwide network policy.
