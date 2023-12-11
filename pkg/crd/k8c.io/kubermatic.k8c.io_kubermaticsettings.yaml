@@ -115,6 +115,9 @@ spec:
                 displayTermsOfService:
                   description: DisplayDemoInfo controls whether a a link to TOS is shown in the footer.
                   type: boolean
+                enableClusterBackup:
+                  description: EnableClusterBackup enables the Cluster Backup feature in the dashboard.
+                  type: boolean
                 enableDashboard:
                   description: EnableDashboard enables the link to the Kubernetes dashboard for a user cluster.
                   type: boolean

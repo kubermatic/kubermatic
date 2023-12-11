@@ -6205,6 +6205,11 @@ func (in *SettingSpec) DeepCopyInto(out *SettingSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.EnableClusterBackups != nil {
+		in, out := &in.EnableClusterBackups, &out.EnableClusterBackups
+		*out = new(bool)
+		**out = **in
+	}
 	out.CleanupOptions = in.CleanupOptions
 	out.OpaOptions = in.OpaOptions
 	out.MlaOptions = in.MlaOptions
