@@ -34,7 +34,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-logtostderr","-v","4","-namespace","kube-system"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-log-debug=false","-log-format","json","-namespace","kube-system"]}'
         command:
         - /http-prober-bin/http-prober
         env:

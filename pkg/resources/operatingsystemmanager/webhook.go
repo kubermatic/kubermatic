@@ -55,8 +55,8 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			args := []string{
-				"-logtostderr",
-				"-v", "4",
+				"-log-debug=false",
+				"-log-format", "json",
 				"-namespace", "kube-system",
 			}
 
