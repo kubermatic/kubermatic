@@ -72,7 +72,7 @@ while IFS= read -r crd; do
   pretty=$(echo "$crd" | yq --prettyPrint)
 
   echo "# This file has been generated with Velero $version. Do not edit." > $filename
-  echo -e "---\n$pretty" >> $filename
+  echo -e "\n$pretty" >> $filename
 
   # remove misleading values
   yq --inplace 'del(.metadata.creationTimestamp)' $filename
