@@ -12,6 +12,7 @@ aliases:
     - xrstf
   sig-cluster-management:
     - ahmedwaleedmalik
+    - cnvergence
     - embik
     - kron4eg
     - moadqassem
@@ -26,6 +27,3 @@ aliases:
     - ahmadhamzh
     - ahmedwaleedmalik
     - waseem826
-  sig-virtualization:
-    - cnvergence
-    - wozniakjan
