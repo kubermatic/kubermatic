@@ -1310,6 +1310,11 @@ type OpenstackCloudSpec struct {
 	// The suffix is set to `nip.io` by default. Can only be used with the external CCM and might be deprecated and removed in
 	// future versions as it is considered a workaround only.
 	IngressHostnameSuffix *string `json:"ingressHostnameSuffix,omitempty"`
+
+	// Flag to configure enablement of topology support for the Cinder CSI plugin.
+	// This requires Nova and Cinder to have matching availability zones configured.
+	// +optional
+	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.
