@@ -112,6 +112,8 @@ func (os *Provider) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 			}
 		}
 	}
+
+	spec.Cloud.Openstack.CinderTopologyEnabled = os.dc.CSICinderTopologyEnabled
 	return nil
 }
 

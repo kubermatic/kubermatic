@@ -216,6 +216,9 @@ spec:
           authURL: ""
           # Used to configure availability zone.
           availabilityZone: ""
+          # Optional: configures enablement of topology support for the Cinder CSI Plugin.
+          # This requires Nova and Cinder to have matching availability zones configured.
+          csiCinderTopologyEnabled: false
           # Used for automatic network creation
           dnsServers: []
           # Optional: List of enabled flavors for the given datacenter

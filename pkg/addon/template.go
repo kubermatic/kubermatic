@@ -104,6 +104,10 @@ func NewTemplateData(
 		csiOptions.StorageProfile = cluster.Spec.Cloud.VMwareCloudDirector.CSI.StorageProfile
 	}
 
+	if cluster.Spec.Cloud.Openstack != nil {
+		csiOptions.CinderTopologyEnabled = cluster.Spec.Cloud.Openstack.CinderTopologyEnabled
+	}
+
 	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
 
 	var ipvs kubermaticv1.IPVSConfiguration
@@ -284,6 +288,9 @@ type CSIOptions struct {
 	// vmware Cloud Director
 	StorageProfile string
 	Filesystem     string
+
+	// openstack
+	CinderTopologyEnabled bool
 }
 
 type Manifest struct {
