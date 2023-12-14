@@ -20,6 +20,9 @@
 ### Updates
 
 - Update machine-controller to [v1.58.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.58.1) ([#12902](https://github.com/kubermatic/kubermatic/pull/12902))
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.5 ([#12911](https://github.com/kubermatic/kubermatic/pull/12911))
+    - Fixes leaking LoadBalancer reconciliation metric
+    - Updates various dependencies
 
 ### Miscellaneous
 
