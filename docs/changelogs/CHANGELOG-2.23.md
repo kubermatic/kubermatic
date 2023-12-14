@@ -9,6 +9,25 @@
 - [v2.23.6](#v2236)
 - [v2.23.7](#v2237)
 - [v2.23.8](#v2238)
+- [v2.23.9](#v2239)
+
+## [v2.23.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.9)
+
+### Bugfixes
+
+- Applied a fix to VPA caused by [upstream release issue](https://github.com/kubernetes/autoscaler/issues/5982) which caused insufficient RBAC permission for VPA recommender pod ([#12872](https://github.com/kubermatic/kubermatic/pull/12872))
+- Fix cert-manager values block. cert-manager deployment will get updated as part of upgrade ([#12854](https://github.com/kubermatic/kubermatic/pull/12854))
+- Fix cases where, when using dedicated infra- and ccm-credentials, infra-credentials were always overwritten by ccm-credentials ([#12421](https://github.com/kubermatic/kubermatic/pull/12421))
+- No longer fail constructing vSphere endpoint when a `/` suffix is present in the datacenter configuration ([#12861](https://github.com/kubermatic/kubermatic/pull/12861))
+
+### Updates
+
+- Update machine-controller to [v1.57.4](https://github.com/kubermatic/machine-controller/releases/tag/v1.57.4) ([#12903](https://github.com/kubermatic/kubermatic/pull/12903))
+
+### Miscellaneous
+
+- KKP is now built with Go 1.20.12 ([#12900](https://github.com/kubermatic/kubermatic/pull/12900))
+- Increase the default resources for VPA components to prevent OOMs ([#12887](https://github.com/kubermatic/kubermatic/pull/12887))
 
 ## [v2.23.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.8)
 
