@@ -1,6 +1,33 @@
 # Kubermatic 2.24
 
 - [v2.24.0](#v2240)
+- [v2.24.1](#v2241)
+
+## [v2.24.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.1)
+
+### Bugfixes
+
+- Applied a fix to VPA caused by [upstream release issue](https://github.com/kubernetes/autoscaler/issues/5982) which caused insufficient RBAC permission for VPA recommender pod ([#12872](https://github.com/kubermatic/kubermatic/pull/12872))
+- Fix cert-manager values block. cert-manager deployment will get updated as part of upgrade ([#12854](https://github.com/kubermatic/kubermatic/pull/12854))
+- Fix `mirror-images` command in installer not being able to extract the addons ([#12868](https://github.com/kubermatic/kubermatic/pull/12868))
+- Fix cases where, when using dedicated infra- and ccm-credentials, infra-credentials were always overwritten by ccm-credentials ([#12421](https://github.com/kubermatic/kubermatic/pull/12421))
+- No longer fail constructing vSphere endpoint when a `/` suffix is present in the datacenter configuration ([#12861](https://github.com/kubermatic/kubermatic/pull/12861))
+
+### New Features
+
+- Openstack: allow configuring Cinder CSI topology support either on `Cluster` or `Seed` resource field `cinderTopologyEnabled` ([#12878](https://github.com/kubermatic/kubermatic/pull/12878))
+
+### Updates
+
+- Update machine-controller to [v1.58.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.58.1) ([#12902](https://github.com/kubermatic/kubermatic/pull/12902))
+- Update Anexia CCM (cloud-controller-manager) to version 1.5.5 ([#12911](https://github.com/kubermatic/kubermatic/pull/12911))
+    - Fixes leaking LoadBalancer reconciliation metric
+    - Updates various dependencies
+
+### Miscellaneous
+
+- KKP is now built with Go 1.21.5 ([#12898](https://github.com/kubermatic/kubermatic/pull/12898))
+- Increase the default resources for VPA components to prevent OOMs ([#12887](https://github.com/kubermatic/kubermatic/pull/12887))
 
 ## [v2.24.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.0)
 
