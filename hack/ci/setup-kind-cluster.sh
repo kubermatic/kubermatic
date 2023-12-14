@@ -192,7 +192,7 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
 fi
 
 echodate "Waiting for Cilium CRDs to be installed"
-kubectl wait --for condition=established --timeout=300s crd/ciliumclusterwidenetworkpolicies.cilium.io
+sleep 120
 
 # Cilium as CNI needs special treatment for a functional KKP
 # setup. For more details, see https://github.com/kubermatic/kubermatic/issues/12874.
