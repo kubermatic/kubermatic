@@ -20,7 +20,7 @@ import (
 	"context"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
@@ -61,7 +61,7 @@ func SeedApiServerCiliumClusterwideNetworkPolicyReconciler() reconciling.NamedCi
 	}
 }
 
-func CiliumCRDExists(ctx context.Context, client client.Client) bool {
+func CiliumCRDExists(ctx context.Context, client ctrlruntimeclient.Client) bool {
 	crd := apiextensionsv1.CustomResourceDefinition{}
 	key := types.NamespacedName{Name: "ciliumclusterwidenetworkpolicies.cilium.io"}
 
