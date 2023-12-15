@@ -331,9 +331,17 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
-	if err := r.reconcileCiliumNetworkPolicies(ctx, cfg, seed, client, log); err != nil {
+	isCiliumDeployed, err := networkpolicy.CiliumCRDExists(ctx, client)
+	if err != nil {
 		return err
 	}
+
+	if isCiliumDeployed {
+		if err := r.reconcileCiliumNetworkPolicies(ctx, cfg, seed, client, log); err != nil {
+			return err
+		}
+	}
+
 	// Since the new standalone webhook, the old service is not required anymore.
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
@@ -589,14 +597,12 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling CiliumNetworkPolicies")
 
-	if networkpolicy.CiliumCRDExists(ctx, client) {
-		creators := []kkpreconciling.NamedCiliumClusterwideNetworkPolicyReconcilerFactory{
-			networkpolicy.SeedApiServerCiliumClusterwideNetworkPolicyReconciler(),
-		}
+	creators := []kkpreconciling.NamedCiliumClusterwideNetworkPolicyReconcilerFactory{
+		networkpolicy.SeedApiServerCiliumClusterwideNetworkPolicyReconciler(),
+	}
 
-		if err := kkpreconciling.ReconcileCiliumClusterwideNetworkPolicys(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
-			return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
-		}
+	if err := kkpreconciling.ReconcileCiliumClusterwideNetworkPolicys(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+		return fmt.Errorf("failed to reconcile CiliumClusterwideNetworkPolicies: %w", err)
 	}
 
 	return nil

@@ -18,6 +18,7 @@ package networkpolicy
 
 import (
 	"context"
+	"fmt"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
@@ -62,17 +63,17 @@ func SeedApiServerCiliumClusterwideNetworkPolicyReconciler() reconciling.NamedCi
 	}
 }
 
-func CiliumCRDExists(ctx context.Context, client ctrlruntimeclient.Client) bool {
+func CiliumCRDExists(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
 	crd := apiextensionsv1.CustomResourceDefinition{}
 	key := types.NamespacedName{Name: "ciliumclusterwidenetworkpolicies.cilium.io"}
 
 	crdExists := true
 	if err := client.Get(ctx, key, &crd); err != nil {
 		if !apierrors.IsNotFound(err) {
-			return false
+			return false, fmt.Errorf("failed to probe for Cilium Clusterwide Network Policy CRD: %w", err)
 		}
 		crdExists = false
 	}
 
-	return crdExists
+	return crdExists, nil
 }
