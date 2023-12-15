@@ -28,7 +28,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/networkpolicy"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
+
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -330,6 +332,9 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	if err := r.reconcileCiliumNetworkPolicies(ctx, cfg, seed, client, log); err != nil {
+		return err
+	}
 	// Since the new standalone webhook, the old service is not required anymore.
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
@@ -576,6 +581,22 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 		// no ownership because these resources are most likely in a different namespace than Kubermatic
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Deployments: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling CiliumNetworkPolicies")
+
+	if networkpolicy.CiliumCRDExists(ctx, client) {
+		creators := []kkpreconciling.NamedCiliumClusterwideNetworkPolicyReconcilerFactory{
+			networkpolicy.SeedApiServerCiliumClusterwideNetworkPolicyReconciler(),
+		}
+
+		if err := kkpreconciling.ReconcileCiliumClusterwideNetworkPolicys(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+			return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 		}
 	}
 
