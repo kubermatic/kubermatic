@@ -19,15 +19,16 @@ package networkpolicy
 import (
 	"context"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
 	"github.com/cilium/cilium/pkg/policy/api"
+
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var apiServerLabels = map[string]string{"app": "apiserver"}

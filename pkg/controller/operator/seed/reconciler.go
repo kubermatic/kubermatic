@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/networkpolicy"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
