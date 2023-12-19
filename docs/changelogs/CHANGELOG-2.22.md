@@ -11,6 +11,17 @@
 - [v2.22.8](#v2228)
 - [v2.22.9](#v2229)
 - [v2.22.10](#v22210)
+- [v2.22.11](#v22210)
+
+## [v2.22.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.11)
+
+### Bugfixes
+
+- No longer fail constructing vSphere endpoint when a `/` suffix is present in the datacenter configuration ([#12861](https://github.com/kubermatic/kubermatic/pull/12861))
+
+### Updates
+
+- Update machine-controller to [v1.56.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.56.5) ([#12904](https://github.com/kubermatic/kubermatic/pull/12904))
 
 ## [v2.22.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.10)
 
