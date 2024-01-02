@@ -25,4 +25,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: cdi-operator
-    namespace: cdi
+    namespace: kubevirt

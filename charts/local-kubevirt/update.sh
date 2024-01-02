@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2023 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/usr/bin/env bash
 set -xeuo pipefail
 
 dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
@@ -56,12 +57,18 @@ wget https://github.com/kubevirt/containerized-data-importer/releases/download/$
 wget https://github.com/kubevirt/containerized-data-importer/releases/download/$latest_cdi_release/cdi-cr.yaml -O ${dir}/templates/cdi-cr.yaml
 
 pushd $dir/templates
+# ensure CDI is deployed in `kubevirt` namespace too
+sed -i -e "s/\(^[ ]*namespace:\) cdi$/\1 kubevirt/" cdi-operator.yaml
+
+# split downloaded manifests into separate files and remove namespace as that should not be part of helm templates
 yq -s '.kind + "-" + .metadata.name + ".yaml"' ./kubevirt-operator.yaml
 rm ./kubevirt-operator.yaml
-
+rm ./Namespace-kubevirt.yaml
 yq -s '.kind + "-" + .metadata.name + ".yaml"' ./cdi-operator.yaml
 rm ./cdi-operator.yaml
+rm ./Namespace-cdi.yaml
 
+# rename files to lowercase and add boilerplate
 for f in *; do 
     l=$(echo "$f" | tr '[A-Z:]' '[a-z-]')
     cat <(boilerplate) "$f" > tmp.yaml
@@ -70,5 +77,7 @@ for f in *; do
       mv "$f" "$l"
     fi
 done
+
+# move crds where they belong
 mv customresourcedefinition-* ../crds/
 popd
