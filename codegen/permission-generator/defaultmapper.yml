@@ -21,7 +21,6 @@ modules:
       WithEndpointResolverWithOptions: null
       WithRegion: null
       WithRetryMaxAttempts: null
-      WithEndpointResolverWithOptions: null
 
   github.com/aws/aws-sdk-go-v2/credentials:
     funcs:
