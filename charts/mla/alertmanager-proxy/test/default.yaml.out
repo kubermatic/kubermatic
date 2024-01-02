@@ -368,11 +368,9 @@ spec:
       serviceAccountName: alertmanager-authz-server
       containers:
         - name: authz-server
-          image: 'quay.io/kubermatic/alertmanager-authorization-server:0.2.1'
+          image: 'quay.io/kubermatic/alertmanager-authorization-server:0.3.0'
           ports:
             - containerPort: 50051
-          command:
-            - /alertmanager-authorization-server
           args:
             - -log-debug=true
           resources:
