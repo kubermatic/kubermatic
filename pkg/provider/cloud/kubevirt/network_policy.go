@@ -152,7 +152,7 @@ func clusterImporterNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReco
 	}
 }
 
-func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) reconciling.NamedNetworkPolicyReconcilerFactory {
+func customNetworkPolicyReconciler(existing kubermaticv1.CustomNetworkPolicy) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return existing.Name, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Name = existing.Name
@@ -163,8 +163,13 @@ func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) r
 }
 
 func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+	var nameservers []string
+	if dc.DNSConfig != nil {
+		nameservers = dc.DNSConfig.Nameservers
+	}
+
 	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
-		clusterIsolationNetworkPolicyReconciler(cluster.Status.Address.IP, dc.DNSConfig.Nameservers),
+		clusterIsolationNetworkPolicyReconciler(cluster.Status.Address.IP, nameservers),
 		clusterImporterNetworkPolicyReconciler(),
 	}
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, cluster.Status.NamespaceName, client); err != nil {

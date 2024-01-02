@@ -2181,13 +2181,9 @@ func (in *DatacenterSpecKubevirt) DeepCopyInto(out *DatacenterSpecKubevirt) {
 	}
 	if in.CustomNetworkPolicies != nil {
 		in, out := &in.CustomNetworkPolicies, &out.CustomNetworkPolicies
-		*out = make([]*CustomNetworkPolicy, len(*in))
+		*out = make([]CustomNetworkPolicy, len(*in))
 		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(CustomNetworkPolicy)
-				(*in).DeepCopyInto(*out)
-			}
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	in.Images.DeepCopyInto(&out.Images)
