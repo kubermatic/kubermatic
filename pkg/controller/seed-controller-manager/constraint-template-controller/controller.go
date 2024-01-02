@@ -160,12 +160,12 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	ctReconcilerFactorys := []reconciling.NamedGatekeeperConstraintTemplateReconcilerFactory{
+	ctReconcilerFactories := []reconciling.NamedGatekeeperConstraintTemplateReconcilerFactory{
 		constraintTemplateReconcilerFactory(constraintTemplate),
 	}
 
 	return r.syncAllClusters(ctx, log, constraintTemplate, func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
-		return reconciling.ReconcileGatekeeperConstraintTemplates(ctx, ctReconcilerFactorys, "", userClusterClient)
+		return reconciling.ReconcileGatekeeperConstraintTemplates(ctx, ctReconcilerFactories, "", userClusterClient)
 	})
 }
 

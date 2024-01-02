@@ -179,7 +179,7 @@ func TestController(t *testing.T) {
 						},
 					}}
 				if err := client.Update(ctx, def); err != nil {
-					t.Fatalf("failed to update applicationDefiniton: %s", err)
+					t.Fatalf("failed to update applicationDefinition: %s", err)
 				}
 
 				// Checking application Installation CR is removed.

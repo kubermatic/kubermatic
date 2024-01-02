@@ -112,7 +112,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	presetReconcilerFactorys := []reconciling.NamedPresetReconcilerFactory{
+	presetReconcilerFactories := []reconciling.NamedPresetReconcilerFactory{
 		presetReconcilerFactory(preset),
 	}
 
@@ -127,7 +127,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			return nil
 		}
 
-		return reconciling.ReconcilePresets(ctx, presetReconcilerFactorys, "", seedClient)
+		return reconciling.ReconcilePresets(ctx, presetReconcilerFactories, "", seedClient)
 	})
 	if err != nil {
 		r.recorder.Event(preset, corev1.EventTypeWarning, "ReconcilingError", err.Error())

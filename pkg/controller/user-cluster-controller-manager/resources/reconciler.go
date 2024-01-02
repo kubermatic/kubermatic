@@ -1096,21 +1096,21 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 }
 
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
-	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
+	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		kubesystem.DefaultNetworkPolicyReconciler(),
 		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()),
 	}
 
 	if r.userSSHKeyAgent {
-		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
+		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
 			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()))
 	}
 
 	if r.isKonnectivityEnabled {
-		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, metricsserver.NetworkPolicyReconciler(), konnectivity.NetworkPolicyReconciler())
+		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, metricsserver.NetworkPolicyReconciler(), konnectivity.NetworkPolicyReconciler())
 	}
 
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 

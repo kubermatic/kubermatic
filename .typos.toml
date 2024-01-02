@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,19 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+# configuration for https://github.com/crate-ci/typos
 
-cd $(dirname $0)/..
-source hack/lib.sh
+[default.extend-words]
+AKS = "AKS"
+EKS = "EKS"
+GKE = "GKE"
+Ded = "Ded" # because of "ANDed"
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.21-node-18-9 containerize ./hack/verify-spelling.sh
-
-echodate "Running codespell..."
-
-codespell \
-  --skip .git,_build,_dist,vendor,go.mod,go.sum,.typos.toml,*.jpg,*.jpeg,*.png,*.woff,*.woff2,*.pem,./charts/cert-manager/crd,./charts/backup/velero/crd,./charts/oauth/test,./addons/multus/crds.yaml,./charts/local-kubevirt/crds \
-  --ignore-words .codespell.exclude \
-  --check-filenames \
-  --check-hidden
-
-echodate "No problems detected."
+[files]
+extend-exclude = [
+   "pkg/ee/cluster-backup/resources/user-cluster/static",
+   "pkg/resources/test/fixtures",
+   "charts/local-kubevirt/crds",
+   "charts/cert-manager/crd",
+   "charts/cert-manager/test/*.out",
+   "charts/backup/velero/crd",
+   "charts/kubermatic-operator/crd",
+   "codegen/permission-generator/doc/operating_principle.drawio",
+]

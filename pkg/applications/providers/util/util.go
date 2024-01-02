@@ -99,7 +99,7 @@ func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Clien
 				return auth, err
 			}
 			if err := os.WriteFile(registryConfigFilePath, []byte(registryConfigFile), 0600); err != nil {
-				return helmclient.AuthSettings{}, fmt.Errorf("failed to writre registryConfigFile: %w", err)
+				return helmclient.AuthSettings{}, fmt.Errorf("failed to write registryConfigFile: %w", err)
 			}
 			auth.RegistryConfigFile = registryConfigFilePath
 		}

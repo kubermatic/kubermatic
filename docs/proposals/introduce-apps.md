@@ -235,7 +235,7 @@ So we have created another controller, the `application-secret-cluster-controlle
 
 ### Updates to KKP API
 
-- adding an endpoint to list ApplicationDefintion. It's required to make it possible for users to select applications in the cluster wizard (see #6000)
+- adding an endpoint to list ApplicationDefinition. It's required to make it possible for users to select applications in the cluster wizard (see #6000)
 - adding endpoints to install, edit and remove an application in a user cluster. These endpoints will only create, edit or remove Application CRs in the user cluster. Reconciliation will be performed by `ApplicationInstallationController`.
 
 To do this, the following changes need to be made to the cluster and clustertemplate objects

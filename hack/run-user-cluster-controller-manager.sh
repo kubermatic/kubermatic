@@ -21,6 +21,7 @@ source hack/lib.sh
 
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 PPROF_PORT=${PPROF_PORT:-6601}
+TMPDIR="${TMPDIR:-$(mktemp -d)}"
 
 echodate "Compiling user-cluster-controller-manager..."
 make user-cluster-controller-manager
@@ -96,7 +97,7 @@ else
   ARGS="$ARGS -openvpn-server-port=${OPENVPN_SERVER_PORT}"
 fi
 
-APPTMPDIR=$(mktemp -d ${TMPDIR}/application.XXXXX)
+APPTMPDIR="$(mktemp -d ${TMPDIR}/application.XXXXX)"
 
 echodate "Starting user-cluster-controller-manager..."
 set -x

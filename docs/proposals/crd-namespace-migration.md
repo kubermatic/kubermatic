@@ -5,11 +5,11 @@
 **Status**: Draft proposal;
 
 ## Goals
-Kubernets API groups are organized by namespaces. Most of KPP CRDs are currently using the `k8s.io` namespace. 
+Kubernetes API groups are organized by namespaces. Most of KPP CRDs are currently using the `k8s.io` namespace.
 
-The `k8s.io` namespace is owned/managed by the Kubernets community and is currently protected by an API review process. At this point, the Kube-API implements checks to validate if a specific CRD is allowed to use this namespace or not. Unfortunately, we are not allowed. 
+The `k8s.io` namespace is owned/managed by the Kubernetes community and is currently protected by an API review process. At this point, the Kube-API implements checks to validate if a specific CRD is allowed to use this namespace or not. Unfortunately, we are not allowed.
 
-This proposal plans to migrate all KPP CRDs from the `k8s.io` namespace into the `k8c.io` namespace. 
+This proposal plans to migrate all KPP CRDs from the `k8s.io` namespace into the `k8c.io` namespace.
 
 
 ## Non-Goals
@@ -24,7 +24,7 @@ The plan is to use client-go dynamic clients to implement the migration code. Id
 - Scale down all KPP related deployments. This is a safety precaution to avoid any changes in existing resources.
 - List all existing resources with old group namespace.
 - Copy over the existing resources with the new group namespace. At this point, the old KPP controllers are still running and will not reconcile the newly created resources.
-- KPP upgrade is executed. During this, the new controllers will be deployed and will reconcile the newly created resources with the new group namespace. 
+- KPP upgrade is executed. During this, the new controllers will be deployed and will reconcile the newly created resources with the new group namespace.
 - Once the upgrade is completed, this installer should remove the old CRDs and the old resources from the cluster.
 
 All the converted resources must also checked for `owner reference` to fix any references to the old group namespace.

@@ -194,7 +194,7 @@ func createClient(ctx context.Context, serviceAccount string, scope string) (*ht
 	sam := map[string]string{}
 	err = json.Unmarshal(b, &sam)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed unmarshaling service account: %w", err)
+		return nil, "", fmt.Errorf("failed unmarshalling service account: %w", err)
 	}
 
 	projectID := sam["project_id"]

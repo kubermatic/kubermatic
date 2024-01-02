@@ -137,7 +137,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	userReconcilerFactorys := []reconciling.NamedUserReconcilerFactory{
+	userReconcilerFactories := []reconciling.NamedUserReconcilerFactory{
 		userReconcilerFactory(user),
 	}
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
@@ -151,7 +151,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		err := reconciling.ReconcileUsers(ctx, userReconcilerFactorys, "", seedClient)
+		err := reconciling.ReconcileUsers(ctx, userReconcilerFactories, "", seedClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile user: %w", err)
 		}

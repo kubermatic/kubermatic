@@ -86,7 +86,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, nil)
 
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVerionLabel, 1, false)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
 			},
 		},
 		{
@@ -97,7 +97,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), nil)
 
 				appendDefaultValues(customCmData, test.DefaultData) // its check that object values are merged with default object values
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1, false)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVersionLabel, 1, false)
 			},
 		},
 		{
@@ -119,13 +119,13 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), nil)
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1, false)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVersionLabel, 1, false)
 
 				// Upgrade application
 				newCustomCmData := map[string]string{"c": "d", "e": "f"}
 				app.Spec.Values.Raw = toHelmRawValues(t, test.CmDataKey, newCustomCmData)
 				appendDefaultValues(newCustomCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, newCustomCmData, test.DefaultVerionLabel, 2, false)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, newCustomCmData, test.DefaultVersionLabel, 2, false)
 			},
 		},
 		{
@@ -136,7 +136,7 @@ func TestHelmProvider(t *testing.T) {
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), nil)
 
 				appendDefaultValues(customCmData, test.DefaultData)
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVerionLabel, 1, false)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVersionLabel, 1, false)
 
 				// test uninstall app
 				template := HelmTemplate{
@@ -184,7 +184,7 @@ func TestHelmProvider(t *testing.T) {
 				createCredentialSecret(t, ctx, client, regCredFile)
 
 				// Test chart is installed.
-				installOrUpgradeTest(t, ctx, client, testNs, app, chartFullPath, test.DefaultData, test.DefaultVerionLabel, 1, false)
+				installOrUpgradeTest(t, ctx, client, testNs, app, chartFullPath, test.DefaultData, test.DefaultVersionLabel, 1, false)
 
 				// Ensure dependency has been installed too.
 				cm := &corev1.ConfigMap{}
@@ -301,7 +301,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, deployOpts)
 
-				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVerionLabel, 1, true)
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, true)
 			},
 		},
 	}
@@ -431,7 +431,7 @@ func createCredentialSecret(t *testing.T, ctx context.Context, client ctrlruntim
 // The dependency is stored on the helm registry accessible by registryUrl.
 func createChartWithDependency(t *testing.T, registryUrl string) string {
 	// copy exampleChart  and add examplechart2 as dependency
-	chartFullPath := path.Join(t.TempDir(), "chartWithDepdencies")
+	chartFullPath := path.Join(t.TempDir(), "chartWithDependencies")
 	if err := test.CopyDir("../../helmclient/testdata/examplechart", chartFullPath); err != nil {
 		t.Fatalf("failed to copy chart directory to temp dir: %s", err)
 	}

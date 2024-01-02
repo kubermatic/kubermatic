@@ -130,13 +130,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, reso
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	resourceQuotaReconcilerFactorys := []reconciling.NamedResourceQuotaReconcilerFactory{
+	resourceQuotaReconcilerFactories := []reconciling.NamedResourceQuotaReconcilerFactory{
 		resourceQuotaReconcilerFactory(resourceQuota),
 	}
 
 	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		// ensure resource quota
-		if err := reconciling.ReconcileResourceQuotas(ctx, resourceQuotaReconcilerFactorys, "", seedClient); err != nil {
+		if err := reconciling.ReconcileResourceQuotas(ctx, resourceQuotaReconcilerFactories, "", seedClient); err != nil {
 			return err
 		}
 

@@ -76,14 +76,14 @@ func TestHelmClient(t *testing.T) {
 			name: "installation from archive with default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 			},
 		},
 		{
 			name: "installation from dir with default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 			},
 		},
 		{
@@ -104,7 +104,7 @@ func TestHelmClient(t *testing.T) {
 			name: "installation from archive should failed if already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				installShouldFailedIfAlreadyInstalledTest(t, ctx, ns, chartArchiveV1Path, map[string]interface{}{})
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}})
@@ -114,7 +114,7 @@ func TestHelmClient(t *testing.T) {
 			name: "installation from dir should failed if already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				installShouldFailedIfAlreadyInstalledTest(t, ctx, ns, chartDirV1Path, map[string]interface{}{})
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}})
@@ -124,7 +124,7 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from archive with same version and different values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version", false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
@@ -137,7 +137,7 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from dir with same version and different values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				upgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version", false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
@@ -150,8 +150,8 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from archive with new version and default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
-				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, false, 2)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -163,8 +163,8 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from dir with new version and default values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
-				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, false, 2)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -176,7 +176,7 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from archive with new version and custom values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				upgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version", false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
@@ -189,7 +189,7 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade from dir with new version and custom values should be successful",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, "another-version", false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
@@ -204,7 +204,7 @@ func TestHelmClient(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
 				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version", false)
-				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false, 2)
+				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -217,7 +217,7 @@ func TestHelmClient(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
 				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, map[string]string{"hello": "world", "foo": "bar"}, "another-version", false)
-				upgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false, 2)
+				upgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -243,7 +243,7 @@ func TestHelmClient(t *testing.T) {
 			name: "installOrUpgrade from archive should installs chart when it not already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 1)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -254,7 +254,7 @@ func TestHelmClient(t *testing.T) {
 			name: "installOrUpgrade from Dir should installs chart when it not already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 1)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -265,8 +265,8 @@ func TestHelmClient(t *testing.T) {
 			name: "installOrUpgrade from archive should upgrades chart when it already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
-				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, 2)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -278,8 +278,8 @@ func TestHelmClient(t *testing.T) {
 			name: "installOrUpgrade from archive should upgrades chart when it already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, 2)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -291,7 +291,7 @@ func TestHelmClient(t *testing.T) {
 			name: "uninstall should be successful when chart is already installed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				uninstallTest(t, ctx, client, ns)
 			},
 		},
@@ -306,15 +306,15 @@ func TestHelmClient(t *testing.T) {
 			name: "install should be successful when enabledDns is enabled",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, true)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, true)
 			},
 		},
 		{
 			name: "upgrade should be successful when enabledDns is switched to true",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
-				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, true, 2)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, true, 2)
 
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
@@ -327,8 +327,8 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade should be successful when enabledDns is switched to false",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, true)
-				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false, 2)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, true)
+				upgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false, 2)
 
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
@@ -342,7 +342,7 @@ func TestHelmClient(t *testing.T) {
 			name: "install should fail when timeout is exceeded",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+				helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartDirV2Path)
 
 				deployOpts, err := NewDeployOpts(true, 5*time.Second, false, false)
 				if err != nil {
@@ -352,10 +352,10 @@ func TestHelmClient(t *testing.T) {
 				releaseInfo, err := helmClient.Install(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
 
 				// check helm operation has failed.
-				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+				checkReleaseFailedWithTimeout(t, releaseInfo, err)
 
 				// check that even if install has failed (timeout), workload has been deployed.
-				test.CheckConfigMap(t, ctx, client, ns, test.DefaultDataV2, test.DefaultVerionLabelV2, false)
+				test.CheckConfigMap(t, ctx, client, ns, test.DefaultDataV2, test.DefaultVersionLabelV2, false)
 				checkServiceDeployed(t, ctx, client, ns)
 
 				// check only desired release are stored on cluster
@@ -368,7 +368,7 @@ func TestHelmClient(t *testing.T) {
 			name: "install should fail and workloard should be reverted when timeout is exceeded and atomic=true",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+				helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartDirV2Path)
 
 				deployOpts, err := NewDeployOpts(true, 5*time.Second, true, false)
 				if err != nil {
@@ -378,7 +378,7 @@ func TestHelmClient(t *testing.T) {
 				releaseInfo, err := helmClient.Install(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
 
 				// check helm operation has failed.
-				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+				checkReleaseFailedWithTimeout(t, releaseInfo, err)
 
 				// check atomic has removed resources
 				checkServiceDeleted(t, ctx, client, ns)
@@ -391,21 +391,21 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade should fail when timeout is exceeded",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+				helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartDirV2Path)
 				deployOpts, err := NewDeployOpts(true, 5*time.Second, false, false)
 				if err != nil {
 					t.Fatalf("failed to build DeployOpts: %s", err)
 				}
 
 				// test install chart and run upgrade.
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				releaseInfo, err := helmClient.Upgrade(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
 
 				// check helm operation has failed.
-				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+				checkReleaseFailedWithTimeout(t, releaseInfo, err)
 
 				// check that even if upgrade has failed (timeout), workload has been updated.
-				test.CheckConfigMap(t, ctx, client, ns, test.DefaultDataV2, test.DefaultVerionLabelV2, false)
+				test.CheckConfigMap(t, ctx, client, ns, test.DefaultDataV2, test.DefaultVersionLabelV2, false)
 				checkServiceDeployed(t, ctx, client, ns)
 
 				// check only desired release are stored on cluster
@@ -419,21 +419,21 @@ func TestHelmClient(t *testing.T) {
 			name: "upgrade should fail and workload should be reverted when timeout is exceeded and atomic is true",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartDirV2Path)
+				helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartDirV2Path)
 				deployOpts, err := NewDeployOpts(true, 5*time.Second, true, false)
 				if err != nil {
 					t.Fatalf("failed to build DeployOpts: %s", err)
 				}
 
 				// test install chart and run upgrade.
-				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
 				releaseInfo, err := helmClient.Upgrade(chartFullPath, releaseName, map[string]interface{}{test.DeploySvcKey: true}, *deployOpts, AuthSettings{})
 
 				// check helm operation has failed.
-				checkReleaseFailedWithTimemout(t, releaseInfo, err)
+				checkReleaseFailedWithTimeout(t, releaseInfo, err)
 
 				// check atomic flag has revert release to previous version.
-				test.CheckConfigMap(t, ctx, client, ns, test.DefaultData, test.DefaultVerionLabel, false)
+				test.CheckConfigMap(t, ctx, client, ns, test.DefaultData, test.DefaultVersionLabel, false)
 				checkServiceDeleted(t, ctx, client, ns)
 
 				// check only desired release are stored on cluster
@@ -449,13 +449,13 @@ func TestHelmClient(t *testing.T) {
 			name: "release history should be prune after an upgrade",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, false)
-				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, false, 2)
+				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, false, 2)
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}, {Name: "sh.helm.release.v1." + releaseName + ".v2", Version: "2"}})
 
 				// history limit is 2 so these next upgrades should trigger a clean up of old helm release
-				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, false, 3)
-				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, false, 4)
+				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, false, 3)
+				upgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, false, 4)
 
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v3", Version: "3"}, {Name: "sh.helm.release.v1." + releaseName + ".v4", Version: "4"}})
 			},
@@ -465,16 +465,16 @@ func TestHelmClient(t *testing.T) {
 			name: "release history should be prune after an InstallOrupgrade",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 1)
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}})
 
 				// upgrade
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVerionLabel, 2)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 2)
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}, {Name: "sh.helm.release.v1." + releaseName + ".v2", Version: "2"}})
 
 				// history limit is 2 so these next upgrades should trigger a clean up of old helm release
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, 3)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVerionLabelV2, 4)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 3)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 4)
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v3", Version: "3"}, {Name: "sh.helm.release.v1." + releaseName + ".v4", Version: "4"}})
 			},
 		},
@@ -486,7 +486,7 @@ func TestHelmClient(t *testing.T) {
 }
 
 func installTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, chartPath string, values map[string]interface{}, expectedData map[string]string, expectedVersionLabel string, enableDNS bool) {
-	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
+	helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartPath)
 
 	deployOpts, err := NewDeployOpts(false, 0, false, enableDNS)
 	if err != nil {
@@ -508,7 +508,7 @@ func installTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Cli
 }
 
 func installShouldFailedIfAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string, values map[string]interface{}) {
-	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
+	helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartPath)
 
 	_, err := helmClient.Install(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
@@ -518,7 +518,7 @@ func installShouldFailedIfAlreadyInstalledTest(t *testing.T, ctx context.Context
 }
 
 func upgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, chartPath string, values map[string]interface{}, expectedData map[string]string, expectedVersionLabel string, enableDNS bool, expectedReleaseVersion int) {
-	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
+	helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartPath)
 	deployOpts, err := NewDeployOpts(false, 0, false, enableDNS)
 	if err != nil {
 		t.Fatalf("failed to build DeployOpts: %s", err)
@@ -537,7 +537,7 @@ func upgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Cli
 }
 
 func upgradeShouldFailedIfNotAlreadyInstalledTest(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string, values map[string]interface{}) {
-	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
+	helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartPath)
 
 	_, err := helmClient.Upgrade(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
@@ -547,7 +547,7 @@ func upgradeShouldFailedIfNotAlreadyInstalledTest(t *testing.T, ctx context.Cont
 }
 
 func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, chartPath string, values map[string]interface{}, expectedData map[string]string, expectedVersionLabel string, expectedRelVersion int) {
-	helmClient, chartFullPath := buildHelClient(t, ctx, ns, chartPath)
+	helmClient, chartFullPath := buildHelmClient(t, ctx, ns, chartPath)
 
 	releaseInfo, err := helmClient.InstallOrUpgrade(chartFullPath, releaseName, values, *defaultDeployOpts(t), AuthSettings{})
 
@@ -594,13 +594,13 @@ func uninstallTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.C
 	checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{})
 }
 
-// buildHelClient creates Helm client and returns it with the full path of the chart.
+// buildHelmClient creates Helm client and returns it with the full path of the chart.
 //
 // if chartPath is a directory then we copy the chart directory into Helm TempDir to avoid any concurrency problem
 // when building dependencies and return the full path to the copied chart. (i.e. Helm_TMP_DIR/chartDir)
 //
 // if chartPath is an archive (i.e. chart.tgz) then we simply returns the path to the chart archive.
-func buildHelClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string) (*HelmClient, string) {
+func buildHelmClient(t *testing.T, ctx context.Context, ns *corev1.Namespace, chartPath string) (*HelmClient, string) {
 	t.Helper()
 	tempDir := t.TempDir()
 	settings := NewSettings(tempDir)
@@ -638,8 +638,8 @@ func defaultDeployOpts(t *testing.T) *DeployOpts {
 	return deployOpts
 }
 
-// checkReleaseFailedWithTimemout checks that install / upgrade has failed with timeout error and releaseInfo has failure status.
-func checkReleaseFailedWithTimemout(t *testing.T, releaseInfo *release.Release, err error) {
+// checkReleaseFailedWithTimeout checks that install / upgrade has failed with timeout error and releaseInfo has failure status.
+func checkReleaseFailedWithTimeout(t *testing.T, releaseInfo *release.Release, err error) {
 	if err == nil {
 		t.Fatalf("expect installation or upgrade failed when timeout is exceeded but not error was raised")
 	}
@@ -703,44 +703,44 @@ func TestDownloadChart(t *testing.T) {
 	ociregistryWithAuthUrl, registryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	testCases := []struct {
-		name               string
-		repoUrl            string
-		chartName          string
-		chartVersion       string
-		auth               AuthSettings
-		expectedAchiveName string
-		expectedChartSize  int64
-		wantErr            bool
+		name                string
+		repoUrl             string
+		chartName           string
+		chartVersion        string
+		auth                AuthSettings
+		expectedArchiveName string
+		expectedChartSize   int64
+		wantErr             bool
 	}{
 		{
-			name:               "Download from HTTP repository should be successful",
-			repoUrl:            httpRegistryUrl,
-			chartName:          "examplechart",
-			chartVersion:       "0.1.0",
-			auth:               AuthSettings{},
-			expectedAchiveName: chartArchiveV1Name,
-			expectedChartSize:  chartArchiveV1Size,
-			wantErr:            false,
+			name:                "Download from HTTP repository should be successful",
+			repoUrl:             httpRegistryUrl,
+			chartName:           "examplechart",
+			chartVersion:        "0.1.0",
+			auth:                AuthSettings{},
+			expectedArchiveName: chartArchiveV1Name,
+			expectedChartSize:   chartArchiveV1Size,
+			wantErr:             false,
 		},
 		{
-			name:               "Download from HTTP repository with empty version should get the latest version",
-			repoUrl:            httpRegistryUrl,
-			chartName:          "examplechart",
-			chartVersion:       "",
-			auth:               AuthSettings{},
-			expectedAchiveName: chartArchiveV2Name,
-			expectedChartSize:  chartArchiveV2Size,
-			wantErr:            false,
+			name:                "Download from HTTP repository with empty version should get the latest version",
+			repoUrl:             httpRegistryUrl,
+			chartName:           "examplechart",
+			chartVersion:        "",
+			auth:                AuthSettings{},
+			expectedArchiveName: chartArchiveV2Name,
+			expectedChartSize:   chartArchiveV2Size,
+			wantErr:             false,
 		},
 		{
-			name:               "Download from HTTP repository with auth should be successful",
-			repoUrl:            httpRegistryWithAuthUrl,
-			chartName:          "examplechart",
-			chartVersion:       "0.1.0",
-			auth:               AuthSettings{Username: "username", Password: "password"},
-			expectedAchiveName: chartArchiveV1Name,
-			expectedChartSize:  chartArchiveV1Size,
-			wantErr:            false,
+			name:                "Download from HTTP repository with auth should be successful",
+			repoUrl:             httpRegistryWithAuthUrl,
+			chartName:           "examplechart",
+			chartVersion:        "0.1.0",
+			auth:                AuthSettings{Username: "username", Password: "password"},
+			expectedArchiveName: chartArchiveV1Name,
+			expectedChartSize:   chartArchiveV1Size,
+			wantErr:             false,
 		},
 		{
 			name:              "Download from HTTP repository should fail when chart does not exist",
@@ -762,34 +762,34 @@ func TestDownloadChart(t *testing.T) {
 		},
 
 		{
-			name:               "Download from OCI repository should be successful",
-			repoUrl:            ociRegistryUrl,
-			chartName:          "examplechart",
-			chartVersion:       "0.1.0",
-			auth:               AuthSettings{},
-			expectedAchiveName: chartArchiveV1Name,
-			expectedChartSize:  chartArchiveV1Size,
-			wantErr:            false,
+			name:                "Download from OCI repository should be successful",
+			repoUrl:             ociRegistryUrl,
+			chartName:           "examplechart",
+			chartVersion:        "0.1.0",
+			auth:                AuthSettings{},
+			expectedArchiveName: chartArchiveV1Name,
+			expectedChartSize:   chartArchiveV1Size,
+			wantErr:             false,
 		},
 		{
-			name:               "Download from oci repository with empty version should get the latest version",
-			repoUrl:            ociRegistryUrl,
-			chartName:          "examplechart",
-			chartVersion:       "",
-			auth:               AuthSettings{},
-			expectedAchiveName: chartArchiveV2Name,
-			expectedChartSize:  chartArchiveV2Size,
-			wantErr:            false,
+			name:                "Download from oci repository with empty version should get the latest version",
+			repoUrl:             ociRegistryUrl,
+			chartName:           "examplechart",
+			chartVersion:        "",
+			auth:                AuthSettings{},
+			expectedArchiveName: chartArchiveV2Name,
+			expectedChartSize:   chartArchiveV2Size,
+			wantErr:             false,
 		},
 		{
-			name:               "Download from OCI repository with auth should be successful",
-			repoUrl:            ociregistryWithAuthUrl,
-			chartName:          "examplechart",
-			chartVersion:       "0.1.0",
-			auth:               AuthSettings{RegistryConfigFile: registryConfigFile},
-			expectedAchiveName: chartArchiveV1Name,
-			expectedChartSize:  chartArchiveV1Size,
-			wantErr:            false,
+			name:                "Download from OCI repository with auth should be successful",
+			repoUrl:             ociregistryWithAuthUrl,
+			chartName:           "examplechart",
+			chartVersion:        "0.1.0",
+			auth:                AuthSettings{RegistryConfigFile: registryConfigFile},
+			expectedArchiveName: chartArchiveV1Name,
+			expectedChartSize:   chartArchiveV1Size,
+			wantErr:             false,
 		},
 		{
 			name:              "Download from oci repository should fail when chart does not exist",
@@ -836,7 +836,7 @@ func TestDownloadChart(t *testing.T) {
 				}
 
 				// Test chart is downloaded where we expect
-				expectedChartLoc := downloadDest + "/" + tc.expectedAchiveName
+				expectedChartLoc := downloadDest + "/" + tc.expectedArchiveName
 				if chartLoc != expectedChartLoc {
 					t.Fatalf("charLoc is invalid. got '%s'. expect '%s'", chartLoc, expectedChartLoc)
 				}

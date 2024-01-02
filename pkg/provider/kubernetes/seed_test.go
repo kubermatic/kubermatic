@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestSeedGetterFactorySetsDefaults(t *testing.T) {
+func TestSeedGetterFactoriesetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
@@ -67,7 +67,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	}
 }
 
-func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
+func TestSeedsGetterFactoriesetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{

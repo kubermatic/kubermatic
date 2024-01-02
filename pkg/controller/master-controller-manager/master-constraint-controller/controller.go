@@ -131,7 +131,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	constraintReconcilerFactorys := []reconciling.NamedConstraintReconcilerFactory{
+	constraintReconcilerFactories := []reconciling.NamedConstraintReconcilerFactory{
 		constraintReconcilerFactory(constraint),
 	}
 
@@ -148,7 +148,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return nil
 		}
 
-		return reconciling.ReconcileConstraints(ctx, constraintReconcilerFactorys, r.namespace, seedClient)
+		return reconciling.ReconcileConstraints(ctx, constraintReconcilerFactories, r.namespace, seedClient)
 	})
 }
 

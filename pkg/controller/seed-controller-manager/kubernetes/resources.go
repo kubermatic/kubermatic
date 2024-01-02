@@ -518,9 +518,9 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretReconcilerFactorys := r.GetSecretReconcilers(ctx, data)
+	namedSecretReconcilerFactories := r.GetSecretReconcilers(ctx, data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactories, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
@@ -528,32 +528,32 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 }
 
 func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedServiceAccountReconcilerFactorys := []reconciling.NamedServiceAccountReconcilerFactory{
+	namedServiceAccountReconcilerFactories := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
 		machinecontroller.ServiceAccountReconciler,
 		machinecontroller.WebhookServiceAccountReconciler,
 		userclusterwebhook.ServiceAccountReconciler,
 	}
-	namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, csi.ServiceAccountReconcilers(c)...)
+	namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, operatingsystemmanager.ServiceAccountReconciler)
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, operatingsystemmanager.ServiceAccountReconciler)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedServiceAccountReconcilerFactorys = append(namedServiceAccountReconcilerFactorys, nodeportproxy.ServiceAccountReconciler)
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, nodeportproxy.ServiceAccountReconciler)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountReconcilerFactories, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %w", err)
 	}
 
-	namedKubeSystemServiceAccountReconcilerFactorys := []reconciling.NamedServiceAccountReconcilerFactory{
+	namedKubeSystemServiceAccountReconcilerFactories := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.KubeSystemServiceAccountReconciler(c),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, namedKubeSystemServiceAccountReconcilerFactorys, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, namedKubeSystemServiceAccountReconcilerFactories, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts in %s namespace: %w", metav1.NamespaceSystem, err)
 	}
 
@@ -561,15 +561,15 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 }
 
 func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedRoleReconcilerFactorys := []reconciling.NamedRoleReconcilerFactory{
+	namedRoleReconcilerFactories := []reconciling.NamedRoleReconcilerFactory{
 		usercluster.RoleReconciler,
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedRoleReconcilerFactorys = append(namedRoleReconcilerFactorys, nodeportproxy.RoleReconciler)
+		namedRoleReconcilerFactories = append(namedRoleReconcilerFactories, nodeportproxy.RoleReconciler)
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, namedRoleReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, namedRoleReconcilerFactories, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
 
@@ -577,30 +577,30 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 }
 
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedRoleBindingReconcilerFactorys := []reconciling.NamedRoleBindingReconcilerFactory{
+	namedRoleBindingReconcilerFactories := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingReconciler,
 	}
-	namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, csi.RoleBindingsReconcilers(c)...)
+	namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedRoleBindingReconcilerFactorys = append(namedRoleBindingReconcilerFactorys, nodeportproxy.RoleBindingReconciler)
+		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, nodeportproxy.RoleBindingReconciler)
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingReconcilerFactories, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %w", err)
 	}
 	return nil
 }
 
 func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedClusterRoleReconcilerFactorys := []reconciling.NamedClusterRoleReconcilerFactory{
+	namedClusterRoleReconcilerFactories := []reconciling.NamedClusterRoleReconcilerFactory{
 		usercluster.ClusterRole(),
 		userclusterwebhook.ClusterRole(),
 	}
 
-	namedClusterRoleReconcilerFactorys = append(namedClusterRoleReconcilerFactorys, csi.ClusterRolesReconcilers(c)...)
+	namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
 
-	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleReconcilerFactorys, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleReconcilerFactories, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
 	}
 
@@ -608,11 +608,11 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 }
 
 func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
-	namedClusterRoleBindingsReconcilerFactorys := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+	namedClusterRoleBindingsReconcilerFactories := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		usercluster.ClusterRoleBinding(namespace),
 		userclusterwebhook.ClusterRoleBinding(namespace),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsReconcilerFactorys, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsReconcilerFactories, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %w", err)
 	}
 
@@ -621,7 +621,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 
 func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
-		namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
+		namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 			apiserver.DenyAllPolicyReconciler(),
 			apiserver.DNSAllowReconciler(c, data),
 			apiserver.EctdAllowReconciler(c),
@@ -635,9 +635,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		defer cancel()
 
 		if data.IsKonnectivityEnabled() {
-			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.ApiserverInternalAllowReconciler())
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.ApiserverInternalAllowReconciler())
 		} else {
-			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys,
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
 				apiserver.OpenVPNServerAllowReconciler(c),
 				apiserver.MetricsServerAllowReconciler(c),
 			)
@@ -660,7 +660,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
 
-			namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.OIDCIssuerAllowReconciler(ipList))
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList))
 		}
 
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
@@ -668,9 +668,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			return fmt.Errorf("failed to fetch Kubernetes API service IP list: %w", err)
 		}
 
-		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, apiserver.SeedApiServerAllowReconciler(apiIPs))
+		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.SeedApiServerAllowReconciler(apiIPs))
 
-		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, c.Status.NamespaceName, r.Client); err != nil {
+		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, c.Status.NamespaceName, r.Client); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
 	}

@@ -121,7 +121,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	userProjectBindingReconcilerFactorys := []reconciling.NamedUserProjectBindingReconcilerFactory{
+	userProjectBindingReconcilerFactories := []reconciling.NamedUserProjectBindingReconcilerFactory{
 		userProjectBindingReconcilerFactory(userProjectBinding),
 	}
 
@@ -136,7 +136,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		return reconciling.ReconcileUserProjectBindings(ctx, userProjectBindingReconcilerFactorys, "", seedClient)
+		return reconciling.ReconcileUserProjectBindings(ctx, userProjectBindingReconcilerFactories, "", seedClient)
 	})
 
 	if err != nil {

@@ -36,7 +36,7 @@ const (
 )
 
 type AWSScenario struct {
-	commmonScenario
+	commonScenario
 
 	credentials jig.AWSCredentials
 }
@@ -47,7 +47,7 @@ var (
 
 func NewAWSScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.AWSCredentials) *AWSScenario {
 	return &AWSScenario{
-		commmonScenario: commmonScenario{
+		commonScenario: commonScenario{
 			seedClient: seedClient,
 			testJig:    jig.NewAWSCluster(seedClient, log, credentials, 1, nil),
 		},

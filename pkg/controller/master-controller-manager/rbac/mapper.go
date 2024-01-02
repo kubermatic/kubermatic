@@ -663,7 +663,7 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 // generateVerbsForNamedResourceInNamespace generates a set of verbs for a named resource in a given namespace
 // for example a "cluster" named "beefy-john".
 func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace string) ([]string, error) {
-	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceNam" namespace
+	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceName" namespace
 	//
 	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
 		switch {

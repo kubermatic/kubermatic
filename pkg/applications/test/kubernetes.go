@@ -166,9 +166,9 @@ func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 		}
 		if !isExpectedDnsValue(cm.Labels[EnableDNSLabelKey], enableDns) {
 			if enableDns {
-				t.Errorf("ConfigMap label '%s' should not be empty as enalbeDns is enabled", EnableDNSLabelKey)
+				t.Errorf("ConfigMap label '%s' should not be empty as enableDns is enabled", EnableDNSLabelKey)
 			}
-			t.Errorf("ConfigMap label '%s' should be empty as enalbeDns is disabled", EnableDNSLabelKey)
+			t.Errorf("ConfigMap label '%s' should be empty as enableDns is disabled", EnableDNSLabelKey)
 		}
 	}
 }

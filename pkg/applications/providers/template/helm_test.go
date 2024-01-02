@@ -35,20 +35,20 @@ func TestGetReleaseName(t *testing.T) {
 		expectedReleaseName string
 	}{
 		{
-			testName:            "when len (namspaceName) <= 53 then namspaceName is returned",
+			testName:            "when len (namespaceName) <= 53 then namespaceName is returned",
 			appNamespace:        "default",
 			appName:             "app1",
 			expectedReleaseName: "default-app1",
 		},
 		{
-			testName:            "when len(namspaceName) > 53 and len(appName) <=43  then appName-sha1(namespace)[:9] is returned",
+			testName:            "when len(namespaceName) > 53 and len(appName) <=43  then appName-sha1(namespace)[:9] is returned",
 			appNamespace:        "default-012345678901234567890123456789001234567890123456789",
 			appName:             "app1",
 			expectedReleaseName: "app1-8232574ba",
 		},
 
 		{
-			testName:            "when len(namspaceName) > 53 and len(appName) >43  then appName[:43]-sha1(namespace)[:9] is returned",
+			testName:            "when len(namespaceName) > 53 and len(appName) >43  then appName[:43]-sha1(namespace)[:9] is returned",
 			appNamespace:        "default",
 			appName:             "application-installation-super-long-name-that-should-be-truncated",
 			expectedReleaseName: "application-installation-super-long-name-th-7505d64a5",

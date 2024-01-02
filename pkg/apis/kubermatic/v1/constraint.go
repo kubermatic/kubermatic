@@ -92,7 +92,7 @@ type Match struct {
 	// Kinds accepts a list of objects with apiGroups and kinds fields that list the groups/kinds of objects to which
 	// the constraint will apply. If multiple groups/kinds objects are specified, only one match is needed for the resource to be in scope
 	Kinds []Kind `json:"kinds,omitempty"`
-	// Scope accepts *, Cluster, or Namespaced which determines if cluster-scoped and/or namesapced-scoped resources are selected. (defaults to *)
+	// Scope accepts *, Cluster, or Namespaced which determines if cluster-scoped and/or namespace-scoped resources are selected. (defaults to *)
 	Scope string `json:"scope,omitempty"`
 	// Namespaces is a list of namespace names. If defined, a constraint will only apply to resources in a listed namespace.
 	Namespaces []string `json:"namespaces,omitempty"`

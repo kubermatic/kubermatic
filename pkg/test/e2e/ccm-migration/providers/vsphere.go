@@ -34,7 +34,7 @@ const (
 )
 
 type VSphereScenario struct {
-	commmonScenario
+	commonScenario
 
 	credentials jig.VSphereCredentials
 }
@@ -45,7 +45,7 @@ var (
 
 func NewVSphereScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.VSphereCredentials) *VSphereScenario {
 	return &VSphereScenario{
-		commmonScenario: commmonScenario{
+		commonScenario: commonScenario{
 			seedClient: seedClient,
 			testJig:    jig.NewVSphereCluster(seedClient, log, credentials, 1),
 		},

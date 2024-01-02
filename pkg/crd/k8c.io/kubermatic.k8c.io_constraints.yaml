@@ -137,7 +137,7 @@ spec:
                         type: string
                       type: array
                     scope:
-                      description: Scope accepts *, Cluster, or Namespaced which determines if cluster-scoped and/or namesapced-scoped resources are selected. (defaults to *)
+                      description: Scope accepts *, Cluster, or Namespaced which determines if cluster-scoped and/or namespace-scoped resources are selected. (defaults to *)
                       type: string
                   type: object
                 parameters:

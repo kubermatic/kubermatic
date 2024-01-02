@@ -34,7 +34,7 @@ const (
 )
 
 type OpenstackScenario struct {
-	commmonScenario
+	commonScenario
 
 	credentials jig.OpenstackCredentials
 }
@@ -45,7 +45,7 @@ var (
 
 func NewOpenstackScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.OpenstackCredentials) *OpenstackScenario {
 	return &OpenstackScenario{
-		commmonScenario: commmonScenario{
+		commonScenario: commonScenario{
 			seedClient: seedClient,
 			testJig:    jig.NewOpenstackCluster(seedClient, log, credentials, 1),
 		},

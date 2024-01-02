@@ -801,10 +801,10 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	var namedConfigMapReconcilerFactorys []reconciling.NamedConfigMapReconcilerFactory
-	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, kubernetescontroller.GetConfigMapReconcilers(data)...)
-	namedConfigMapReconcilerFactorys = append(namedConfigMapReconcilerFactorys, monitoringcontroller.GetConfigMapReconcilers(data)...)
-	for _, namedGetter := range namedConfigMapReconcilerFactorys {
+	var namedConfigMapReconcilerFactories []reconciling.NamedConfigMapReconcilerFactory
+	namedConfigMapReconcilerFactories = append(namedConfigMapReconcilerFactories, kubernetescontroller.GetConfigMapReconcilers(data)...)
+	namedConfigMapReconcilerFactories = append(namedConfigMapReconcilerFactories, monitoringcontroller.GetConfigMapReconcilers(data)...)
+	for _, namedGetter := range namedConfigMapReconcilerFactories {
 		name, create := namedGetter()
 		res, err := create(&corev1.ConfigMap{})
 		if err != nil {
