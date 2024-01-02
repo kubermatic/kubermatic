@@ -72,24 +72,32 @@ locationMap='{
   "seeds.kubermatic.k8c.io": "master,seed",
   "userprojectbindings.kubermatic.k8c.io": "master,seed",
   "usersshkeys.kubermatic.k8c.io": "master,seed",
-  "users.kubermatic.k8c.io": "master,seed"
+  "users.kubermatic.k8c.io": "master,seed",
+
+  "verticalpodautoscalers.autoscaling.k8s.io": "seed",
+  "verticalpodautoscalercheckpoints.autoscaling.k8s.io": "seed"
 }'
 
 failure=false
 echodate "Annotating CRDs"
 
-for filename in $CRD_DIR/*.yaml; do
-  crdName="$(yq '.metadata.name' "$filename")"
-  location="$(echo "$locationMap" | jq -rc --arg key "$crdName" '.[$key]')"
+cleanup_dir() {
+  for filename in $1/*.yaml; do
+    crdName="$(yq '.metadata.name' "$filename")"
+    location="$(echo "$locationMap" | jq -r -c --arg key "$crdName" '.[$key]')"
 
-  if [ -z "$location" ]; then
-    echodate "Error: No location defined for CRD $crdName"
-    failure=true
-    continue
-  fi
+    if [ "$location" == "null" ]; then
+      echodate "Error: No location defined for CRD $crdName"
+      failure=true
+      continue
+    fi
 
-  yq --inplace ".metadata.annotations.\"$annotation\" = \"$location\"" "$filename"
-done
+    yq --inplace ".metadata.annotations.\"$annotation\" = \"$location\"" "$filename"
+  done
+}
+
+cleanup_dir "$CRD_DIR"
+cleanup_dir pkg/crd/k8s.io
 
 if $failure; then
   exit 1

@@ -44,7 +44,7 @@ func UpdaterServiceAccountReconciler() reconciling.NamedServiceAccountReconciler
 }
 
 // Sourced from
-// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/updater-deployment.yaml
+// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-1.0.0/vertical-pod-autoscaler/deploy/updater-deployment.yaml
 
 func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {

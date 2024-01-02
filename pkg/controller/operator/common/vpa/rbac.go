@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// See https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/vpa-rbac.yaml
+// See https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-1.0.0/vertical-pod-autoscaler/deploy/vpa-rbac.yaml
 // for the original source of these rules.
 
 const (
@@ -44,29 +44,6 @@ func ClusterRoleReconcilers() []reconciling.NamedClusterRoleReconcilerFactory {
 				APIGroups: []string{"metrics.k8s.io"},
 				Resources: []string{"pods"},
 				Verbs:     []string{"get", "list"},
-			},
-		}),
-
-		clusterRoleReconciler(TargetReaderRoleName, []rbacv1.PolicyRule{
-			{
-				APIGroups: []string{"*"},
-				Resources: []string{"*/scale"},
-				Verbs:     []string{"get", "watch"},
-			},
-			{
-				APIGroups: []string{""},
-				Resources: []string{"replicationcontrollers"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"apps"},
-				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
-				Verbs:     []string{"get", "list", "watch"},
-			},
-			{
-				APIGroups: []string{"batch"},
-				Resources: []string{"jobs", "cronjobs"},
-				Verbs:     []string{"get", "list", "watch"},
 			},
 		}),
 
@@ -129,6 +106,29 @@ func ClusterRoleReconcilers() []reconciling.NamedClusterRoleReconcilerFactory {
 				APIGroups: []string{"apps", "extensions"},
 				Resources: []string{"replicasets"},
 				Verbs:     []string{"get"},
+			},
+		}),
+
+		clusterRoleReconciler(TargetReaderRoleName, []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{"*"},
+				Resources: []string{"*/scale"},
+				Verbs:     []string{"get", "watch"},
+			},
+			{
+				APIGroups: []string{""},
+				Resources: []string{"replicationcontrollers"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"apps"},
+				Resources: []string{"daemonsets", "deployments", "replicasets", "statefulsets"},
+				Verbs:     []string{"get", "list", "watch"},
+			},
+			{
+				APIGroups: []string{"batch"},
+				Resources: []string{"jobs", "cronjobs"},
+				Verbs:     []string{"get", "list", "watch"},
 			},
 		}),
 
@@ -207,16 +207,6 @@ func ClusterRoleBindingReconcilers() []reconciling.NamedClusterRoleBindingReconc
 			recommender,
 		}),
 
-		clusterRoleBindingReconciler(TargetReaderRoleName, rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     TargetReaderRoleName,
-		}, []rbacv1.Subject{
-			recommender,
-			updater,
-			admissionController,
-		}),
-
 		clusterRoleBindingReconciler(ActorRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
@@ -226,12 +216,30 @@ func ClusterRoleBindingReconcilers() []reconciling.NamedClusterRoleBindingReconc
 			updater,
 		}),
 
+		clusterRoleBindingReconciler(StatusActorRoleName, rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     StatusActorRoleName,
+		}, []rbacv1.Subject{
+			recommender,
+		}),
+
 		clusterRoleBindingReconciler(CheckpointActorRoleName, rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
 			Name:     CheckpointActorRoleName,
 		}, []rbacv1.Subject{
 			recommender,
+		}),
+
+		clusterRoleBindingReconciler(TargetReaderRoleName, rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     TargetReaderRoleName,
+		}, []rbacv1.Subject{
+			recommender,
+			updater,
+			admissionController,
 		}),
 
 		clusterRoleBindingReconciler(EvictionerRoleName, rbacv1.RoleRef{
@@ -256,14 +264,6 @@ func ClusterRoleBindingReconcilers() []reconciling.NamedClusterRoleBindingReconc
 			Name:     StatusReaderRoleName,
 		}, []rbacv1.Subject{
 			updater,
-		}),
-
-		clusterRoleBindingReconciler(StatusActorRoleName, rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     StatusActorRoleName,
-		}, []rbacv1.Subject{
-			recommender,
 		}),
 	}
 }

@@ -49,7 +49,7 @@ const (
 	admissionControllerPort = 8944
 
 	// https://github.com/kubernetes/autoscaler/releases
-	Version = "0.14.0"
+	Version = "1.0.0"
 )
 
 func AdmissionControllerServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
@@ -61,7 +61,7 @@ func AdmissionControllerServiceAccountReconciler() reconciling.NamedServiceAccou
 }
 
 // Sourced from
-// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-0.14.0/vertical-pod-autoscaler/deploy/admission-controller-deployment.yaml
+// https://github.com/kubernetes/autoscaler/blob/vertical-pod-autoscaler-1.0.0/vertical-pod-autoscaler/deploy/admission-controller-deployment.yaml
 
 func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
