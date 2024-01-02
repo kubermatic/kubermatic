@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"go.uber.org/zap"
 
@@ -46,6 +47,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -67,7 +69,11 @@ func init() {
 
 func TestOPAIntegration(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewFromOptions(logOptions).Sugar()
+	rawLogger := log.NewFromOptions(logOptions)
+	logger := rawLogger.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
 
 	if err := credentials.Parse(); err != nil {
 		t.Fatalf("Failed to get credentials: %v", err)
