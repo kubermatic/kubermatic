@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from
-# https://github.com/kubernetes-csi/external-snapshotter/tree/v6.2.2/client/config/crd
+# https://github.com/kubernetes-csi/external-snapshotter/tree/v6.3.3/client/config/crd
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -23,8 +23,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
-    api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/665"
+    controller-gen.kubebuilder.io/version: v0.11.3
+    api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/814"
   creationTimestamp: null
   name: volumesnapshots.snapshot.storage.k8s.io
 spec:
@@ -208,6 +208,10 @@ spec:
                   specified, it indicates that the size is unknown.
                 pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                 x-kubernetes-int-or-string: true
+              volumeGroupSnapshotName:
+                description: VolumeGroupSnapshotName is the name of the VolumeGroupSnapshot
+                  of which this VolumeSnapshot is a part of.
+                type: string
             type: object
         required:
         - spec
@@ -332,8 +336,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
-    api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/665"
+    controller-gen.kubebuilder.io/version: v0.11.3
+    api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/814"
   creationTimestamp: null
   name: volumesnapshotcontents.snapshot.storage.k8s.io
 spec:
@@ -501,6 +505,7 @@ spec:
                     description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                     type: string
                 type: object
+                x-kubernetes-map-type: atomic
             required:
             - deletionPolicy
             - driver
@@ -567,6 +572,10 @@ spec:
                   on the underlying storage system. If not specified, it indicates
                   that dynamic snapshot creation has either failed or it is still
                   in progress.
+                type: string
+              volumeGroupSnapshotContentName:
+                description: VolumeGroupSnapshotContentName is the name of the VolumeGroupSnapshotContent
+                  of which this VolumeSnapshotContent is a part of.
                 type: string
             type: object
         required:
@@ -729,8 +738,8 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
-    api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/665"
+    controller-gen.kubebuilder.io/version: v0.11.3
+    api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/814"
   creationTimestamp: null
   name: volumesnapshotclasses.snapshot.storage.k8s.io
 spec:

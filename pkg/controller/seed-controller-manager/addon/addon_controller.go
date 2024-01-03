@@ -72,8 +72,6 @@ const (
 	migratedVsphereCSIAddon   = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
 	csiAddonStorageClassLabel = "kubermatic-addon=csi"
 	CSIAddonName              = "csi"
-
-	yes = "yes"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -535,7 +533,7 @@ func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.Sugar
 	}
 
 	if driver.Spec.FSGroupPolicy == nil || *driver.Spec.FSGroupPolicy != storagev1.FileFSGroupPolicy {
-		log.Debug("deleting hetzner CSIDriver to allow upgrade")
+		log.Info("Deleting Hetzner CSIDriver to allow upgrade")
 		if err := cl.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete old CSIDriver: %w", err)
 		}
@@ -544,8 +542,10 @@ func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.Sugar
 }
 
 // Between v2.23 and v2.24, there was a change to the vSphere CSI driver immutable field volumeLifecycleModes
-// as a result, the CSDriver resource has to be redeployed
+// as a result, the CSDriver resource has to be redeployed; there was another change between 2.24 and 2.25 that
+// also requires a recreation of the CSIDriver.
 // https://github.com/kubermatic/kubermatic/issues/12801
+// https://github.com/kubermatic/kubermatic/pull/12936
 func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -559,12 +559,22 @@ func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.Sugar
 		return fmt.Errorf("failed to get CSIDriver: %w", err)
 	}
 
+	recreate := false
 	if len(driver.Spec.VolumeLifecycleModes) > 1 || (len(driver.Spec.VolumeLifecycleModes) == 1 && driver.Spec.VolumeLifecycleModes[0] != storagev1.VolumeLifecyclePersistent) {
-		log.Debug("deleting vSphere CSIDriver to allow upgrade")
+		recreate = true
+	}
+
+	if driver.Spec.PodInfoOnMount == nil || *driver.Spec.PodInfoOnMount {
+		recreate = true
+	}
+
+	if recreate {
+		log.Info("Deleting vSphere CSIDriver to allow upgrade")
 		if err := cl.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete old CSIDriver: %w", err)
 		}
 	}
+
 	return nil
 }
 
@@ -593,34 +603,33 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	}
 
 	if addon.Name == "csi" {
-		if cluster.Spec.Cloud.Hetzner != nil &&
-			cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-			cluster.Annotations[migratedHetznerCSIAddon] != yes {
-			// Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
-			// as a result, the CSDriver resource has to be redeployed
-			// https://github.com/kubermatic/kubermatic/issues/12429
-			if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
-				return fmt.Errorf("failed to migrate CSI Driver: %w", err)
+		ver := r.versions.Kubermatic
+
+		var annotation string
+
+		if cluster.Annotations[migratedHetznerCSIAddon] != ver {
+			if cluster.Spec.Cloud.Hetzner != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+				if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
+					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
+				}
+
+				annotation = migratedHetznerCSIAddon
+			} else if cluster.Spec.Cloud.VSphere != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+				if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
+					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
+				}
+
+				annotation = migratedVsphereCSIAddon
 			}
+		}
+
+		if annotation != "" {
 			if cluster.Annotations == nil {
 				cluster.Annotations = make(map[string]string)
 			}
-			cluster.Annotations[migratedHetznerCSIAddon] = yes
+			cluster.Annotations[annotation] = ver
 			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("failed to set cluster annotation", zap.Error(err), "annotation", migratedHetznerCSIAddon)
-			}
-		} else if cluster.Spec.Cloud.VSphere != nil &&
-			cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-			cluster.Annotations[migratedVsphereCSIAddon] != yes {
-			if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
-				return fmt.Errorf("failed to migrate CSI Driver: %w", err)
-			}
-			if cluster.Annotations == nil {
-				cluster.Annotations = make(map[string]string)
-			}
-			cluster.Annotations[migratedVsphereCSIAddon] = yes
-			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("failed to set cluster annotation", zap.Error(err), "annotation", migratedVsphereCSIAddon)
+				log.Errorw("failed to set cluster annotation", zap.Error(err), "annotation", annotation)
 			}
 		}
 	}

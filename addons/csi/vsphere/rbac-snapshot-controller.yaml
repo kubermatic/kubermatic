@@ -13,14 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# https://github.com/kubernetes-csi/external-snapshotter/blob/v6.2.2/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
-
-# RBAC file for the snapshot controller.
-#
-# The snapshot controller implements the control loop for CSI snapshot functionality.
-# It should be installed as part of the base Kubernetes distribution in an appropriate
-# namespace for components implementing base system functionality. For installing with
-# Vanilla Kubernetes, kube-system makes sense for the namespace.
+# https://github.com/kubernetes-csi/external-snapshotter/blob/v6.3.3/deploy/kubernetes/snapshot-controller/rbac-snapshot-controller.yaml
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
