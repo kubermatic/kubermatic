@@ -76,6 +76,35 @@ gcp-csi-driver:
 	rm csi/gcp/kustomization.yaml
 	./templatify-images.sh $(OUTPUT_FILE)
 
+.PHONY: nutanix-csi
+nutanix-csi: nutanix-csi-storage nutanix-csi-snapshotter
+
+.PHONY: nutanix-csi-storage
+nutanix-csi-storage: OUTPUT_FILE=csi/nutanix/csi-driver.yaml
+nutanix-csi-storage:
+	helm repo add nutanix https://nutanix.github.io/helm/ || true
+	helm repo update
+	mkdir -p csi/nutanix
+	cat csi/nutanix/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template nutanix-csi-storage nutanix/nutanix-csi-storage \
+	  --version 2.6.6 \
+	  --set 'createSecret=false' \
+	  >> $(OUTPUT_FILE)
+	cat csi/nutanix/_footer.txt >> $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
+
+nutanix-csi-snapshotter: OUTPUT_FILE=csi/nutanix/snapshot-controller.yaml
+nutanix-csi-snapshotter:
+	helm repo add nutanix https://nutanix.github.io/helm/ || true
+	helm repo update
+	mkdir -p csi/nutanix
+	cat csi/nutanix/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template nutanix-csi-snapshot nutanix/nutanix-csi-snapshot \
+	  --version 6.3.2 \
+	  >> $(OUTPUT_FILE)
+	cat csi/nutanix/_footer.txt >> $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
+
 .PHONY: metallb
 metallb: OUTPUT_FILE=metallb/00_metallb.yaml
 metallb:
