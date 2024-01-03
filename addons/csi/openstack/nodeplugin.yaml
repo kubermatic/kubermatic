@@ -14,29 +14,34 @@
 
 #
 # Sourced from:
-# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.0/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml
+# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.1/manifests/cinder-csi-plugin/cinder-csi-nodeplugin.yaml
+#
+# Modifications:
+#  - added security context
+#  - add KKP CABundle
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
-{{ $csiImage := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.24.6" }}
-{{ end }}
+{{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.25.6" }}
+{{ $version = "v1.25.6" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.26.3" }}
+{{ $version = "v1.26.4" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.27.1" }}
+{{ $version = "v1.27.3" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.28.0" }}
+{{ $version = "v1.28.1" }}
 {{ end }}
-{{ if not (eq $csiImage "UNSUPPORTED") }}
+{{ if eq .Cluster.MajorMinorVersion "1.29" }}
+{{ $version = "v1.28.1" }}
+{{ end }}
+
+{{ if not (eq $version "UNSUPPORTED") }}
 ---
 kind: DaemonSet
 apiVersion: apps/v1
@@ -61,7 +66,7 @@ spec:
       hostNetwork: true
       containers:
         - name: node-driver-registrar
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.6.3" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.6.3" }}
           args:
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
@@ -81,7 +86,7 @@ spec:
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}
           args:
             - --csi-address=/csi/csi.sock
           volumeMounts:
@@ -93,7 +98,7 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: '{{ Image $csiImage }}'
+          image: {{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}
           args:
             - /bin/cinder-csi-plugin
             - "--endpoint=$(CSI_ENDPOINT)"

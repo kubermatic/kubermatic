@@ -14,7 +14,7 @@
 
 #
 # Sourced from:
-# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.0/manifests/cinder-csi-plugin/csi-cinder-driver.yaml
+# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.1/manifests/cinder-csi-plugin/csi-cinder-driver.yaml
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}

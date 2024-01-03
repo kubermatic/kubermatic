@@ -14,30 +14,36 @@
 
 #
 # Sourced from:
-# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.0/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml
+# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.1/manifests/cinder-csi-plugin/cinder-csi-controllerplugin.yaml
+#
+# Modifications:
+#  - added security context
+#  - make Topology feature gate dynamic
+#  - add KKP CABundle
+#  - load cloud-config
+#  - add NetworkPolicy
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
-{{ $csiImage := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.24.6" }}
-{{ end }}
+{{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.25.6" }}
+{{ $version = "v1.25.6" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.26.3" }}
+{{ $version = "v1.26.4" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.27.1" }}
+{{ $version = "v1.27.3" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $csiImage = "registry.k8s.io/provider-os/cinder-csi-plugin:v1.28.0" }}
+{{ $version = "v1.28.1" }}
 {{ end }}
-{{ if not (eq $csiImage "UNSUPPORTED") }}
----
+{{ if eq .Cluster.MajorMinorVersion "1.29" }}
+{{ $version = "v1.28.1" }}
+{{ end }}
+{{ if not (eq $version "UNSUPPORTED") }}
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -46,10 +52,10 @@ metadata:
 spec:
   replicas: 1
   strategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxUnavailable: 0
-        maxSurge: 1
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: csi-cinder-controllerplugin
@@ -64,7 +70,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-attacher
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.2.0" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.2.0" }}
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -78,7 +84,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.4.1" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.4.1" }}
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -94,7 +100,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1" }}
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -108,7 +114,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.8.0" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.8.0" }}
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=3m"
@@ -122,7 +128,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: liveness-probe
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}'
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.9.0" }}
           args:
             - "--csi-address=$(ADDRESS)"
           env:
@@ -132,7 +138,7 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: cinder-csi-plugin
-          image: '{{ Image $csiImage }}'
+          image: {{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}
           args:
             - /bin/cinder-csi-plugin
             - "--endpoint=$(CSI_ENDPOINT)"

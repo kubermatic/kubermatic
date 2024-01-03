@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from
-# https://github.com/kubernetes-csi/external-snapshotter/tree/v6.2.2/client/config/crd
+# https://github.com/kubernetes-csi/external-snapshotter/tree/v6.3.3/client/config/crd
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "openstack" }}

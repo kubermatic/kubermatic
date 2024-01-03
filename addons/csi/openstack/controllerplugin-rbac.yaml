@@ -14,7 +14,7 @@
 
 #
 # Sourced from:
-# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.0/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml
+# https://github.com/kubernetes/cloud-provider-openstack/blob/v1.28.1/manifests/cinder-csi-plugin/cinder-csi-controllerplugin-rbac.yaml
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -99,7 +99,6 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
-
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -143,7 +142,6 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
-
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -157,8 +155,8 @@ roleRef:
   kind: ClusterRole
   name: csi-snapshotter-role
   apiGroup: rbac.authorization.k8s.io
-
 ---
+
 # External Resizer
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -188,7 +186,6 @@ rules:
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["get", "watch", "list", "delete", "update", "create"]
-
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
