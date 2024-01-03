@@ -260,6 +260,9 @@ type ClusterSpec struct {
 	// Optional: DisableCSIDriver disables the installation of CSI driver on the cluster
 	// If this is true at the data center then it can't be over-written in the cluster configuration
 	DisableCSIDriver bool `json:"disableCsiDriver,omitempty"`
+
+	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
+	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
 }
 
 func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {
@@ -367,9 +370,6 @@ const (
 	// ClusterFeatureEncryptionAtRest enables the experimental "encryption-at-rest" feature, which allows encrypting
 	// Kubernetes data in etcd with a user-provided encryption key or KMS service.
 	ClusterFeatureEncryptionAtRest = "encryptionAtRest"
-
-	// ClusterFeatureClusterBackup enables experimental Velero integration feature.
-	ClusterFeatureUserClusterBackup = "clusterBackup"
 )
 
 // +kubebuilder:validation:Enum="";SeedResourcesUpToDate;ClusterControllerReconciledSuccessfully;AddonControllerReconciledSuccessfully;AddonInstallerControllerReconciledSuccessfully;BackupControllerReconciledSuccessfully;CloudControllerReconciledSuccessfully;UpdateControllerReconciledSuccessfully;MonitoringControllerReconciledSuccessfully;MachineDeploymentReconciledSuccessfully;MLAControllerReconciledSuccessfully;ClusterInitialized;EtcdClusterInitialized;CSIKubeletMigrationCompleted;ClusterUpdateSuccessful;ClusterUpdateInProgress;CSIKubeletMigrationSuccess;CSIKubeletMigrationInProgress;EncryptionControllerReconciledSuccessfully;IPAMControllerReconciledSuccessfully;
@@ -429,6 +429,16 @@ type SecretboxKey struct {
 	// Instead of passing the sensitive encryption key via the `value` field, a secret can be
 	// referenced. The key of the secret referenced here needs to hold a key equivalent to the `value` field.
 	SecretRef *corev1.SecretKeySelector `json:"secretRef,omitempty"`
+}
+
+type BackupConfig struct {
+	BackupStorageLocation *corev1.LocalObjectReference `json:"backupStorageLocation,omitempty"`
+}
+
+func (c ClusterSpec) IsClusterBackupEnabled() bool {
+	return c.BackupConfig != nil &&
+		c.BackupConfig.BackupStorageLocation != nil &&
+		c.BackupConfig.BackupStorageLocation.Name != ""
 }
 
 const (

@@ -26,9 +26,11 @@ package userclusterresources
 
 import (
 	"context"
+	"fmt"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -85,27 +87,19 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 }
 
 // BSLReconciler creates the default BackupStorage location is created for velero.
-func BSLReconciler(ctx context.Context, clusterBackupConfig *resources.ClusterBackupConfig, clusterName string) kkpreconciling.NamedBackupStorageLocationReconcilerFactory {
+func BSLReconciler(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) kkpreconciling.NamedBackupStorageLocationReconcilerFactory {
 	return func() (string, kkpreconciling.BackupStorageLocationReconciler) {
 		return defaultBSLName, func(bsl *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error) {
-			bucketName := clusterBackupConfig.Destination.BucketName
-			endPoint := clusterBackupConfig.Destination.Endpoint
-
-			bsl.Spec = velerov1.BackupStorageLocationSpec{
-				Default: true,
-				StorageType: velerov1.StorageType{
-					ObjectStorage: &velerov1.ObjectStorageLocation{
-						Bucket: bucketName,
-						Prefix: clusterName,
-					},
-				},
-				Provider: "aws",
-				Config: map[string]string{
-					"region":           "minio",
-					"s3Url":            endPoint,
-					"s3ForcePathStyle": "true",
-				},
+			projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+			if !ok {
+				return nil, fmt.Errorf("cluster ProjectID label is not set")
 			}
+			bsl.Spec = *cbsl.Spec.DeepCopy()
+			// we set this bsl as default and remove the secret reference to make it use the default velero secret.
+			bsl.Spec.Default = true
+			bsl.Spec.Credential = nil
+			// add bucket prefix using projectID/clusterID to avoid collision.
+			bsl.Spec.ObjectStorage.Prefix = fmt.Sprintf("%s/%s", projectID, cluster.Name)
 			return bsl, nil
 		}
 	}
