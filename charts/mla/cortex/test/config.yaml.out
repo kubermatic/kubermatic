@@ -6,10 +6,10 @@ metadata:
   name: release-name-cortex-alertmanager
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
 spec:
@@ -27,10 +27,10 @@ metadata:
   name: release-name-cortex-distributor
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
 spec:
@@ -48,10 +48,10 @@ metadata:
   name: release-name-cortex-ingester
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
 spec:
@@ -62,6 +62,27 @@ spec:
       app.kubernetes.io/component: ingester
   maxUnavailable: 1
 ---
+# Source: cortex/charts/cortex/templates/querier/querier-poddisruptionbudget.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: release-name-cortex-querier
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-2.1.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.14.1"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: querier
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cortex
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/component: querier
+  maxUnavailable: 1
+---
 # Source: cortex/charts/cortex/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -69,10 +90,10 @@ metadata:
   name: release-name-cortex
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
   annotations:
     {}
@@ -85,13 +106,163 @@ metadata:
   name: release-name-cortex
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
 data:
-  cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGRhdGFfZGlyOiAvZGF0YS9jb3J0ZXgvYWxlcnQtZGF0YQogIGVuYWJsZV9hcGk6IHRydWUKICBleHRlcm5hbF91cmw6IC9hcGkvcHJvbS9hbGVydG1hbmFnZXIKICBzdG9yYWdlOgogICAgczM6CiAgICAgIGJ1Y2tldG5hbWVzOiBhbGVydG1hbmFnZXIKICAgICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgICAgaW5zZWN1cmU6IHRydWUKICAgICAgczNmb3JjZXBhdGhzdHlsZTogdHJ1ZQogICAgdHlwZTogczMKYXBpOgogIHByb21ldGhldXNfaHR0cF9wcmVmaXg6IC9wcm9tZXRoZXVzCiAgcmVzcG9uc2VfY29tcHJlc3Npb25fZW5hYmxlZDogdHJ1ZQphdXRoX2VuYWJsZWQ6IHRydWUKYmxvY2tzX3N0b3JhZ2U6CiAgYmFja2VuZDogczMKICBidWNrZXRfc3RvcmU6CiAgICBidWNrZXRfaW5kZXg6CiAgICAgIGVuYWJsZWQ6IHRydWUKICAgIGlnbm9yZV9kZWxldGlvbl9tYXJrX2RlbGF5OiAxaAogICAgc3luY19kaXI6IC9kYXRhCiAgczM6CiAgICBidWNrZXRfbmFtZTogY29ydGV4CiAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgaW5zZWN1cmU6IHRydWUKICB0c2RiOgogICAgY2xvc2VfaWRsZV90c2RiX3RpbWVvdXQ6IDM2NW0KICAgIGRpcjogL2RhdGEKICAgIGZsdXNoX2Jsb2Nrc19vbl9zaHV0ZG93bjogdHJ1ZQogICAgcmV0ZW50aW9uX3BlcmlvZDogMzY1bQogICAgd2FsX2NvbXByZXNzaW9uX2VuYWJsZWQ6IHRydWUKY2h1bmtfc3RvcmU6CiAgY2h1bmtfY2FjaGVfY29uZmlnOgogICAgbWVtY2FjaGVkOgogICAgICBleHBpcmF0aW9uOiAxaAogICAgbWVtY2FjaGVkX2NsaWVudDoKICAgICAgdGltZW91dDogMXMKY29tcGFjdG9yOgogIGJsb2NrX2RlbGV0aW9uX21hcmtzX21pZ3JhdGlvbl9lbmFibGVkOiBmYWxzZQogIGNvbXBhY3Rpb25faW50ZXJ2YWw6IDMwbQogIGRhdGFfZGlyOiAvZGF0YS9jb3J0ZXgvY29tcGFjdG9yCiAgc2hhcmRpbmdfZW5hYmxlZDogdHJ1ZQogIHNoYXJkaW5nX3Jpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdApkaXN0cmlidXRvcjoKICBoYV90cmFja2VyOgogICAgZW5hYmxlX2hhX3RyYWNrZXI6IHRydWUKICAgIGt2c3RvcmU6CiAgICAgIGNvbnN1bDoKICAgICAgICBob3N0OiBjb25zdWwtY29uc3VsLXNlcnZlcjo4NTAwCiAgICAgIHN0b3JlOiBjb25zdWwKICBwb29sOgogICAgaGVhbHRoX2NoZWNrX2luZ2VzdGVyczogdHJ1ZQogIHJpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdAogIHNoYXJkX2J5X2FsbF9sYWJlbHM6IHRydWUKZnJvbnRlbmQ6CiAgbG9nX3F1ZXJpZXNfbG9uZ2VyX3RoYW46IDEwcwppbmdlc3RlcjoKICBsaWZlY3ljbGVyOgogICAgZmluYWxfc2xlZXA6IDBzCiAgICBqb2luX2FmdGVyOiAwcwogICAgbnVtX3Rva2VuczogNTEyCiAgICBvYnNlcnZlX3BlcmlvZDogMTBzCiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIGNvbnN1bDoKICAgICAgICAgIGNvbnNpc3RlbnRfcmVhZHM6IHRydWUKICAgICAgICAgIGhvc3Q6IGNvbnN1bDo4NTAwCiAgICAgICAgICBodHRwX2NsaWVudF90aW1lb3V0OiAyMHMKICAgICAgICBwcmVmaXg6IGNvbGxlY3RvcnMvCiAgICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICAgICAgcmVwbGljYXRpb25fZmFjdG9yOiAzCiAgbWF4X3RyYW5zZmVyX3JldHJpZXM6IDAKaW5nZXN0ZXJfY2xpZW50OgogIGdycGNfY2xpZW50X2NvbmZpZzoKICAgIG1heF9yZWN2X21zZ19zaXplOiAxMDQ4NTc2MDAKICAgIG1heF9zZW5kX21zZ19zaXplOiAxMDQ4NTc2MDAKbGltaXRzOgogIGFjY2VwdF9oYV9zYW1wbGVzOiB0cnVlCiAgZW5mb3JjZV9tZXRyaWNfbmFtZTogZmFsc2UKICBtYXhfbGFiZWxfbmFtZXNfcGVyX3NlcmllczogNDAKICBtYXhfcXVlcnlfbG9va2JhY2s6IDE2OGgKICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczoKICAtIGNvcnRleC1pbmdlc3Rlci1oZWFkbGVzcwpxdWVyaWVyOgogIGFjdGl2ZV9xdWVyeV90cmFja2VyX2RpcjogL2RhdGEvY29ydGV4L3F1ZXJpZXIKICBxdWVyeV9pbmdlc3RlcnNfd2l0aGluOiAzNjVtCiAgcXVlcnlfc3RvcmVfYWZ0ZXI6IDM2MG0KICBzdG9yZV9nYXRld2F5X2FkZHJlc3NlczogfC0KICAgIApxdWVyeV9yYW5nZToKICBhbGlnbl9xdWVyaWVzX3dpdGhfc3RlcDogdHJ1ZQogIGNhY2hlX3Jlc3VsdHM6IHRydWUKICByZXN1bHRzX2NhY2hlOgogICAgY2FjaGU6CiAgICAgIG1lbWNhY2hlZDoKICAgICAgICBleHBpcmF0aW9uOiAxaAogICAgICBtZW1jYWNoZWRfY2xpZW50OgogICAgICAgIHRpbWVvdXQ6IDFzCiAgc3BsaXRfcXVlcmllc19ieV9pbnRlcnZhbDogMjRoCnJ1bGVyOgogIGFsZXJ0bWFuYWdlcl91cmw6IGh0dHA6Ly9faHR0cC1tZXRyaWNzLl90Y3AuY29ydGV4LWFsZXJ0bWFuYWdlci1oZWFkbGVzcy1ra3AvYXBpL3Byb20vYWxlcnRtYW5hZ2VyLwogIGVuYWJsZV9hbGVydG1hbmFnZXJfZGlzY292ZXJ5OiB0cnVlCiAgZW5hYmxlX2FwaTogdHJ1ZQogIHJpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdAogIHN0b3JhZ2U6CiAgICBzMzoKICAgICAgYnVja2V0bmFtZXM6IGNvcnRleC1ydWxlcgogICAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgICBpbnNlY3VyZTogdHJ1ZQogICAgICBzM2ZvcmNlcGF0aHN0eWxlOiB0cnVlCiAgICB0eXBlOiBzMwpydW50aW1lX2NvbmZpZzoKICBmaWxlOiAvZXRjL2NvcnRleC1ydW50aW1lLWNmZy9ydW50aW1lLWNvbmZpZy55YW1sCiAgcGVyaW9kOiAxMHMKc2NoZW1hOgogIGNvbmZpZ3M6CiAgLSBjaHVua3M6CiAgICAgIHBlcmlvZDogMTY4aAogICAgICBwcmVmaXg6IGNodW5rc18KICAgIGZyb206ICIyMDIwLTExLTAxIgogICAgaW5kZXg6CiAgICAgIHBlcmlvZDogMTY4aAogICAgICBwcmVmaXg6IGluZGV4XwogICAgb2JqZWN0X3N0b3JlOiBjYXNzYW5kcmEKICAgIHNjaGVtYTogdjEwCiAgICBzdG9yZTogY2Fzc2FuZHJhCnNlcnZlcjoKICBncnBjX2xpc3Rlbl9wb3J0OiA5MDk1CiAgZ3JwY19zZXJ2ZXJfbWF4X2NvbmN1cnJlbnRfc3RyZWFtczogMTAwMAogIGdycGNfc2VydmVyX21heF9yZWN2X21zZ19zaXplOiAxMDQ4NTc2MDAKICBncnBjX3NlcnZlcl9tYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAwCiAgaHR0cF9saXN0ZW5fcG9ydDogODA4MApzdG9yYWdlOgogIGF6dXJlOgogICAgYWNjb3VudF9rZXk6IG51bGwKICAgIGFjY291bnRfbmFtZTogbnVsbAogICAgY29udGFpbmVyX25hbWU6IG51bGwKICBjYXNzYW5kcmE6CiAgICBhZGRyZXNzZXM6IG51bGwKICAgIGF1dGg6IHRydWUKICAgIGtleXNwYWNlOiBjb3J0ZXgKICAgIHBhc3N3b3JkOiBudWxsCiAgICB1c2VybmFtZTogbnVsbAogIGVuZ2luZTogYmxvY2tzCiAgaW5kZXhfcXVlcmllc19jYWNoZV9jb25maWc6CiAgICBtZW1jYWNoZWQ6CiAgICAgIGV4cGlyYXRpb246IDFoCiAgICBtZW1jYWNoZWRfY2xpZW50OgogICAgICB0aW1lb3V0OiAxcwpzdG9yZV9nYXRld2F5OgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICAgIHJlcGxpY2F0aW9uX2ZhY3RvcjogMgp0YWJsZV9tYW5hZ2VyOgogIHJldGVudGlvbl9kZWxldGVzX2VuYWJsZWQ6IGZhbHNlCiAgcmV0ZW50aW9uX3BlcmlvZDogMHM=
+  cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGRhdGFfZGlyOiAvZGF0YS9jb3J0ZXgvYWxlcnQtZGF0YQogIGVuYWJsZV9hcGk6IHRydWUKICBleHRlcm5hbF91cmw6IC9hcGkvcHJvbS9hbGVydG1hbmFnZXIKYWxlcnRtYW5hZ2VyX3N0b3JhZ2U6CiAgczM6CiAgICBidWNrZXRfbmFtZTogYWxlcnRtYW5hZ2VyCiAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgaW5zZWN1cmU6IHRydWUKYXBpOgogIHByb21ldGhldXNfaHR0cF9wcmVmaXg6IC9wcm9tZXRoZXVzCiAgcmVzcG9uc2VfY29tcHJlc3Npb25fZW5hYmxlZDogdHJ1ZQphdXRoX2VuYWJsZWQ6IHRydWUKYmxvY2tzX3N0b3JhZ2U6CiAgYnVja2V0X3N0b3JlOgogICAgYnVja2V0X2luZGV4OgogICAgICBlbmFibGVkOiB0cnVlCiAgICBpZ25vcmVfZGVsZXRpb25fbWFya19kZWxheTogMWgKICAgIHN5bmNfZGlyOiAvZGF0YQogIHMzOgogICAgYnVja2V0X25hbWU6IGNvcnRleAogICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgIGluc2VjdXJlOiB0cnVlCiAgdHNkYjoKICAgIGNsb3NlX2lkbGVfdHNkYl90aW1lb3V0OiAzNjVtCiAgICBkaXI6IC9kYXRhCiAgICBmbHVzaF9ibG9ja3Nfb25fc2h1dGRvd246IHRydWUKICAgIHJldGVudGlvbl9wZXJpb2Q6IDM2NW0KICAgIHdhbF9jb21wcmVzc2lvbl9lbmFibGVkOiB0cnVlCmNvbXBhY3RvcjoKICBkYXRhX2RpcjogL2RhdGEvY29ydGV4L2NvbXBhY3RvcgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKZGlzdHJpYnV0b3I6CiAgaGFfdHJhY2tlcjoKICAgIGVuYWJsZV9oYV90cmFja2VyOiB0cnVlCiAgICBrdnN0b3JlOgogICAgICBjb25zdWw6CiAgICAgICAgaG9zdDogY29uc3VsLWNvbnN1bC1zZXJ2ZXI6ODUwMAogICAgICBzdG9yZTogY29uc3VsCiAgcG9vbDoKICAgIGhlYWx0aF9jaGVja19pbmdlc3RlcnM6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICBzaGFyZF9ieV9hbGxfbGFiZWxzOiB0cnVlCmZyb250ZW5kOgogIGxvZ19xdWVyaWVzX2xvbmdlcl90aGFuOiAxMHMKaW5nZXN0ZXI6CiAgbGlmZWN5Y2xlcjoKICAgIGZpbmFsX3NsZWVwOiAzMHMKICAgIGpvaW5fYWZ0ZXI6IDEwcwogICAgbnVtX3Rva2VuczogNTEyCiAgICBvYnNlcnZlX3BlcmlvZDogMTBzCiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIHN0b3JlOiBtZW1iZXJsaXN0CiAgICAgIHJlcGxpY2F0aW9uX2ZhY3RvcjogMwppbmdlc3Rlcl9jbGllbnQ6CiAgZ3JwY19jbGllbnRfY29uZmlnOgogICAgbWF4X3JlY3ZfbXNnX3NpemU6IDEwNDg1NzYwCiAgICBtYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAKbGltaXRzOgogIGFjY2VwdF9oYV9zYW1wbGVzOiB0cnVlCiAgZW5mb3JjZV9tZXRyaWNfbmFtZTogdHJ1ZQogIG1heF9sYWJlbF9uYW1lc19wZXJfc2VyaWVzOiA0MAogIG1heF9xdWVyeV9sb29rYmFjazogMHMKICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczoKICAtIGNvcnRleC1pbmdlc3Rlci1oZWFkbGVzcwpxdWVyaWVyOgogIGFjdGl2ZV9xdWVyeV90cmFja2VyX2RpcjogL2RhdGEvYWN0aXZlLXF1ZXJ5LXRyYWNrZXIKICBxdWVyeV9pbmdlc3RlcnNfd2l0aGluOiAzNjVtCiAgcXVlcnlfc3RvcmVfYWZ0ZXI6IDM2MG0KICBzdG9yZV9nYXRld2F5X2FkZHJlc3NlczogfC0KICAgIApxdWVyeV9yYW5nZToKICBhbGlnbl9xdWVyaWVzX3dpdGhfc3RlcDogdHJ1ZQogIGNhY2hlX3Jlc3VsdHM6IHRydWUKICByZXN1bHRzX2NhY2hlOgogICAgY2FjaGU6CiAgICAgIG1lbWNhY2hlZDoKICAgICAgICBleHBpcmF0aW9uOiAxaAogICAgICBtZW1jYWNoZWRfY2xpZW50OgogICAgICAgIHRpbWVvdXQ6IDFzCiAgc3BsaXRfcXVlcmllc19ieV9pbnRlcnZhbDogMjRoCnJ1bGVyOgogIGVuYWJsZV9hbGVydG1hbmFnZXJfZGlzY292ZXJ5OiB0cnVlCiAgZW5hYmxlX2FwaTogdHJ1ZQogIHJpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdApydWxlcl9zdG9yYWdlOgogIHMzOgogICAgYnVja2V0X25hbWU6IGNvcnRleC1ydWxlcgogICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgIGluc2VjdXJlOiB0cnVlCnJ1bnRpbWVfY29uZmlnOgogIGZpbGU6IC9ldGMvY29ydGV4LXJ1bnRpbWUtY2ZnL3J1bnRpbWUtY29uZmlnLnlhbWwKICBwZXJpb2Q6IDEwcwpzZXJ2ZXI6CiAgZ3JwY19saXN0ZW5fcG9ydDogOTA5NQogIGdycGNfc2VydmVyX21heF9jb25jdXJyZW50X3N0cmVhbXM6IDEwMDAwCiAgZ3JwY19zZXJ2ZXJfbWF4X3JlY3ZfbXNnX3NpemU6IDEwNDg1NzYwCiAgZ3JwY19zZXJ2ZXJfbWF4X3NlbmRfbXNnX3NpemU6IDEwNDg1NzYwCiAgaHR0cF9saXN0ZW5fcG9ydDogODA4MApzdG9yYWdlOgogIGVuZ2luZTogYmxvY2tzCnN0b3JlX2dhdGV3YXk6CiAgc2hhcmRpbmdfZW5hYmxlZDogdHJ1ZQogIHNoYXJkaW5nX3Jpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdAogICAgcmVwbGljYXRpb25fZmFjdG9yOiAy
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/metrics-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-index-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/port: '9150'
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: metrics
+      port: 9150
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: memcached-blocks-index
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-index
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: memcache
+      port: 11211
+      targetPort: memcache
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks-index
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/metrics-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-metadata-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/port: '9150'
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: metrics
+      port: 9150
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: memcache
+      port: 11211
+      targetPort: memcache
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks/templates/metrics-svc.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks-metrics
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/port: '9150'
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: metrics
+      port: 9150
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: memcached-blocks
+    app.kubernetes.io/instance: release-name
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-memcached-blocks
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+spec:
+  type: ClusterIP
+  sessionAffinity: None
+  ports:
+    - name: memcache
+      port: 11211
+      targetPort: memcache
+      nodePort: null
+  selector:
+    app.kubernetes.io/name: memcached-blocks
+    app.kubernetes.io/instance: release-name
 ---
 # Source: cortex/charts/cortex/templates/alertmanager/alertmanager-svc-headless.yaml
 apiVersion: v1
@@ -100,10 +271,10 @@ metadata:
   name: release-name-cortex-alertmanager-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
   annotations:
@@ -129,10 +300,10 @@ metadata:
   name: release-name-cortex-alertmanager
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
   annotations:
@@ -156,10 +327,10 @@ metadata:
   name: release-name-cortex-compactor
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: compactor
   annotations:
@@ -183,10 +354,10 @@ metadata:
   name: release-name-cortex-distributor-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
   annotations:
@@ -212,10 +383,10 @@ metadata:
   name: release-name-cortex-distributor
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
   annotations:
@@ -239,10 +410,10 @@ metadata:
   name: release-name-cortex-ingester-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
   annotations:
@@ -267,10 +438,10 @@ metadata:
   name: release-name-cortex-ingester
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
   annotations:
@@ -294,10 +465,10 @@ metadata:
   name: release-name-cortex-querier
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
   annotations:
@@ -321,10 +492,10 @@ metadata:
   name: release-name-cortex-query-frontend-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
   annotations:
@@ -350,10 +521,10 @@ metadata:
   name: release-name-cortex-query-frontend
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
   annotations:
@@ -377,10 +548,10 @@ metadata:
   name: release-name-cortex-ruler
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ruler
   annotations:
@@ -404,10 +575,10 @@ metadata:
   name: release-name-cortex-store-gateway-headless
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: store-gateway
   annotations:
@@ -432,10 +603,10 @@ metadata:
   name: release-name-cortex-store-gateway
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: store-gateway
   annotations:
@@ -459,11 +630,13 @@ metadata:
   name: release-name-cortex-memberlist
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    {}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -476,156 +649,6 @@ spec:
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/part-of: memberlist
----
-# Source: cortex/charts/memcached-blocks-index/templates/metrics-svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: release-name-memcached-blocks-index-metrics
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-index
-    helm.sh/chart: memcached-blocks-index-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: metrics
-  annotations:
-    prometheus.io/port: '9150'
-    prometheus.io/scrape: "true"
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  ports:
-    - name: metrics
-      port: 9150
-      targetPort: metrics
-  selector:
-    app.kubernetes.io/name: memcached-blocks-index
-    app.kubernetes.io/instance: release-name
----
-# Source: cortex/charts/memcached-blocks-index/templates/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: release-name-memcached-blocks-index
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-index
-    helm.sh/chart: memcached-blocks-index-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  ports:
-    - name: memcache
-      port: 11211
-      targetPort: memcache
-      nodePort: null
-  selector:
-    app.kubernetes.io/name: memcached-blocks-index
-    app.kubernetes.io/instance: release-name
----
-# Source: cortex/charts/memcached-blocks-metadata/templates/metrics-svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: release-name-memcached-blocks-metadata-metrics
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    helm.sh/chart: memcached-blocks-metadata-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: metrics
-  annotations:
-    prometheus.io/port: '9150'
-    prometheus.io/scrape: "true"
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  ports:
-    - name: metrics
-      port: 9150
-      targetPort: metrics
-  selector:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    app.kubernetes.io/instance: release-name
----
-# Source: cortex/charts/memcached-blocks-metadata/templates/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: release-name-memcached-blocks-metadata
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    helm.sh/chart: memcached-blocks-metadata-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  ports:
-    - name: memcache
-      port: 11211
-      targetPort: memcache
-      nodePort: null
-  selector:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    app.kubernetes.io/instance: release-name
----
-# Source: cortex/charts/memcached-blocks/templates/metrics-svc.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: release-name-memcached-blocks-metrics
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks
-    helm.sh/chart: memcached-blocks-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/component: metrics
-  annotations:
-    prometheus.io/port: '9150'
-    prometheus.io/scrape: "true"
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  ports:
-    - name: metrics
-      port: 9150
-      targetPort: metrics
-  selector:
-    app.kubernetes.io/name: memcached-blocks
-    app.kubernetes.io/instance: release-name
----
-# Source: cortex/charts/memcached-blocks/templates/service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: release-name-memcached-blocks
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks
-    helm.sh/chart: memcached-blocks-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-spec:
-  type: ClusterIP
-  sessionAffinity: None
-  ports:
-    - name: memcache
-      port: 11211
-      targetPort: memcache
-      nodePort: null
-  selector:
-    app.kubernetes.io/name: memcached-blocks
-    app.kubernetes.io/instance: release-name
 ---
 # Source: cortex/templates/cortex-alertmanager-headless-kkp.yaml
 # Copyright 2022 The Kubermatic Kubernetes Platform contributors.
@@ -672,10 +695,10 @@ metadata:
   name: release-name-cortex-distributor
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: distributor
     app.kubernetes.io/part-of: memberlist
@@ -696,15 +719,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: distributor
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -713,7 +736,7 @@ spec:
         []
       containers:
         - name: distributor
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=distributor"
@@ -792,16 +815,16 @@ metadata:
   name: release-name-cortex-querier
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: querier
   annotations:
     {}
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: cortex
@@ -815,14 +838,14 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: querier
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -831,7 +854,7 @@ spec:
         []
       containers:
         - name: querier
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=querier"
@@ -926,10 +949,10 @@ metadata:
   name: release-name-cortex-query-frontend
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: query-frontend
   annotations:
@@ -949,14 +972,14 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: query-frontend
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -965,7 +988,7 @@ spec:
         []
       containers:
         - name: query-frontend
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=query-frontend"
@@ -1038,10 +1061,10 @@ metadata:
   name: release-name-cortex-ruler
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ruler
     app.kubernetes.io/part-of: memberlist
@@ -1062,15 +1085,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: ruler
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1079,11 +1102,12 @@ spec:
         []
       containers:
         - name: rules
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=ruler"
             - "-config.file=/etc/cortex/cortex.yaml"
+            - "-ruler.alertmanager-url=http://_http-metrics._tcp.cortex-alertmanager-headless.default.svc.cluster.local/api/prom/alertmanager/"
             
             - "-blocks-storage.bucket-store.index-cache.backend=memcached"
             - "-blocks-storage.bucket-store.index-cache.memcached.addresses=dns+release-name-memcached-blocks-index.default.svc.cluster.local:11211"
@@ -1091,8 +1115,8 @@ spec:
             - "-blocks-storage.bucket-store.chunks-cache.memcached.addresses=dns+release-name-memcached-blocks.default.svc.cluster.local:11211"
             - "-blocks-storage.bucket-store.metadata-cache.backend=memcached"
             - "-blocks-storage.bucket-store.metadata-cache.memcached.addresses=dns+release-name-memcached-blocks-metadata.default.svc.cluster.local:11211"
-            - "-ruler.storage.s3.access-key-id=$(ACCESS_KEY)"
-            - "-ruler.storage.s3.secret-access-key=$(SECRET_KEY)"
+            - "-ruler-storage.s3.access-key-id=$(ACCESS_KEY)"
+            - "-ruler-storage.s3.secret-access-key=$(SECRET_KEY)"
           volumeMounts:
             - mountPath: /etc/cortex-runtime-cfg
               name: cortex-runtime-config
@@ -1162,6 +1186,396 @@ spec:
             name: cortex-runtime-config
           name: cortex-runtime-config
 ---
+# Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-memcached-blocks-index
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-index
+    helm.sh/chart: memcached-blocks-index-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks-index
+      app.kubernetes.io/instance: release-name
+  replicas: 2
+  podManagementPolicy: "Parallel"
+  serviceName: release-name-memcached-blocks-index
+  updateStrategy:
+    rollingUpdate: {}
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks-index
+        helm.sh/chart: memcached-blocks-index-6.3.12
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        prometheus.io/port: '9150'
+        prometheus.io/scrape: "true"
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks-index
+                    app.kubernetes.io/instance: release-name
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: default
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.19-debian-11-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: MEMCACHED_PORT_NUMBER
+              value: "11211"
+            - name: MEMCACHED_CACHE_SIZE
+              value: "1024"
+            - name: MEMCACHED_MAX_CONNECTIONS
+              value: "1024"
+            - name: MEMCACHED_THREADS
+              value: "4"
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            tcpSocket:
+              port: memcache
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+            tcpSocket:
+              port: memcache
+          resources:
+            limits: {}
+            requests:
+              cpu: 5m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        - name: metrics
+          image: docker.io/bitnami/memcached-exporter:0.11.2-debian-11-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          ports:
+            - name: metrics
+              containerPort: 9150
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /metrics
+              port: 9150
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+            httpGet:
+              path: /metrics
+              port: 9150
+          resources:
+            limits: {}
+            requests: {}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks-metadata/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-memcached-blocks-metadata
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks-metadata
+    helm.sh/chart: memcached-blocks-metadata-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks-metadata
+      app.kubernetes.io/instance: release-name
+  replicas: 2
+  podManagementPolicy: "Parallel"
+  serviceName: release-name-memcached-blocks-metadata
+  updateStrategy:
+    rollingUpdate: {}
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks-metadata
+        helm.sh/chart: memcached-blocks-metadata-6.3.12
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        prometheus.io/port: '9150'
+        prometheus.io/scrape: "true"
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks-metadata
+                    app.kubernetes.io/instance: release-name
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: default
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.19-debian-11-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: MEMCACHED_PORT_NUMBER
+              value: "11211"
+            - name: MEMCACHED_CACHE_SIZE
+              value: "1024"
+            - name: MEMCACHED_MAX_CONNECTIONS
+              value: "1024"
+            - name: MEMCACHED_THREADS
+              value: "4"
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            tcpSocket:
+              port: memcache
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+            tcpSocket:
+              port: memcache
+          resources:
+            limits: {}
+            requests:
+              cpu: 5m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        - name: metrics
+          image: docker.io/bitnami/memcached-exporter:0.11.2-debian-11-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          ports:
+            - name: metrics
+              containerPort: 9150
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /metrics
+              port: 9150
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+            httpGet:
+              path: /metrics
+              port: 9150
+          resources:
+            limits: {}
+            requests: {}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Source: cortex/charts/cortex/charts/memcached-blocks/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-memcached-blocks
+  namespace: default
+  labels:
+    app.kubernetes.io/name: memcached-blocks
+    helm.sh/chart: memcached-blocks-6.3.12
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: memcached-blocks
+      app.kubernetes.io/instance: release-name
+  replicas: 2
+  podManagementPolicy: "Parallel"
+  serviceName: release-name-memcached-blocks
+  updateStrategy:
+    rollingUpdate: {}
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: memcached-blocks
+        helm.sh/chart: memcached-blocks-6.3.12
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+      annotations:
+        prometheus.io/port: '9150'
+        prometheus.io/scrape: "true"
+    spec:
+      
+      affinity:
+        podAffinity:
+          
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: memcached-blocks
+                    app.kubernetes.io/instance: release-name
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        nodeAffinity:
+          
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: default
+      containers:
+        - name: memcached
+          image: docker.io/bitnami/memcached:1.6.19-debian-11-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          env:
+            - name: BITNAMI_DEBUG
+              value: "false"
+            - name: MEMCACHED_PORT_NUMBER
+              value: "11211"
+            - name: MEMCACHED_CACHE_SIZE
+              value: "1024"
+            - name: MEMCACHED_MAX_CONNECTIONS
+              value: "1024"
+            - name: MEMCACHED_THREADS
+              value: "4"
+          ports:
+            - name: memcache
+              containerPort: 11211
+          livenessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            tcpSocket:
+              port: memcache
+          readinessProbe:
+            failureThreshold: 6
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 3
+            tcpSocket:
+              port: memcache
+          resources:
+            limits: {}
+            requests:
+              cpu: 5m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+        - name: metrics
+          image: docker.io/bitnami/memcached-exporter:0.11.2-debian-11-r0
+          imagePullPolicy: "IfNotPresent"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+          ports:
+            - name: metrics
+              containerPort: 9150
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            httpGet:
+              path: /metrics
+              port: 9150
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 3
+            httpGet:
+              path: /metrics
+              port: 9150
+          resources:
+            limits: {}
+            requests: {}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
 # Source: cortex/charts/cortex/templates/alertmanager/alertmanager-statefulset.yaml
 apiVersion: apps/v1
 kind: StatefulSet
@@ -1169,10 +1583,10 @@ metadata:
   name: release-name-cortex-alertmanager
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: alertmanager
     app.kubernetes.io/part-of: memberlist
@@ -1202,15 +1616,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: alertmanager
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1246,13 +1660,13 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: alertmanager
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=alertmanager"
             - "-config.file=/etc/cortex/cortex.yaml"
-            - "-alertmanager.storage.s3.access-key-id=$(ACCESS_KEY)"
-            - "-alertmanager.storage.s3.secret-access-key=$(SECRET_KEY)"
+            - "-alertmanager-storage.s3.access-key-id=$(ACCESS_KEY)"
+            - "-alertmanager-storage.s3.secret-access-key=$(SECRET_KEY)"
           volumeMounts:
             - mountPath: /tmp
               name: storage
@@ -1307,10 +1721,10 @@ metadata:
   name: release-name-cortex-compactor
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: compactor
     app.kubernetes.io/part-of: memberlist
@@ -1340,15 +1754,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: compactor
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1384,7 +1798,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: compactor
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=compactor"
@@ -1441,10 +1855,10 @@ metadata:
   name: release-name-cortex-ingester
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: ingester
     app.kubernetes.io/part-of: memberlist
@@ -1475,15 +1889,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: ingester
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1519,7 +1933,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: ingester
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=ingester"
@@ -1552,19 +1966,6 @@ spec:
             - name: gossip
               containerPort: 7946
               protocol: TCP
-          startupProbe:
-            failureThreshold: 60
-            httpGet:
-              path: /ready
-              port: http-metrics
-              scheme: HTTP
-            initialDelaySeconds: 120
-            periodSeconds: 30
-          livenessProbe:
-            httpGet:
-              path: /ready
-              port: http-metrics
-              scheme: HTTP
           readinessProbe:
             httpGet:
               path: /ready
@@ -1597,10 +1998,10 @@ metadata:
   name: release-name-cortex-store-gateway
   namespace: default
   labels:
-    helm.sh/chart: cortex-1.7.0
+    helm.sh/chart: cortex-2.1.0
     app.kubernetes.io/name: cortex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "v1.13.0"
+    app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: store-gateway
     app.kubernetes.io/part-of: memberlist
@@ -1630,15 +2031,15 @@ spec:
   template:
     metadata:
       labels:
-        helm.sh/chart: cortex-1.7.0
+        helm.sh/chart: cortex-2.1.0
         app.kubernetes.io/name: cortex
         app.kubernetes.io/instance: release-name
-        app.kubernetes.io/version: "v1.13.0"
+        app.kubernetes.io/version: "v1.14.1"
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: store-gateway
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: db215ef6818194593da13deb83fb6a216f13c7486059c51fa522313d08f66528
+        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1674,7 +2075,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: store-gateway
-          image: "quay.io/cortexproject/cortex:v1.13.0"
+          image: "quay.io/cortexproject/cortex:v1.14.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=store-gateway"
@@ -1740,366 +2141,3 @@ spec:
                 secretKeyRef:
                   key: rootPassword
                   name: minio
----
-# Source: cortex/charts/memcached-blocks-index/templates/statefulset.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: release-name-memcached-blocks-index
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-index
-    helm.sh/chart: memcached-blocks-index-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: memcached-blocks-index
-      app.kubernetes.io/instance: release-name
-  replicas: 2
-  podManagementPolicy: "Parallel"
-  serviceName: release-name-memcached-blocks-index
-  updateStrategy:
-    rollingUpdate: {}
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: memcached-blocks-index
-        helm.sh/chart: memcached-blocks-index-6.3.1
-        app.kubernetes.io/instance: release-name
-        app.kubernetes.io/managed-by: Helm
-      annotations:
-        prometheus.io/port: '9150'
-        prometheus.io/scrape: "true"
-    spec:
-      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached-blocks-index
-                    app.kubernetes.io/instance: release-name
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-      serviceAccountName: default
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.17-debian-11-r25
-          imagePullPolicy: "IfNotPresent"
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1001
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-            - name: MEMCACHED_PORT_NUMBER
-              value: "11211"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-            tcpSocket:
-              port: memcache
-          readinessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            successThreshold: 1
-            timeoutSeconds: 3
-            tcpSocket:
-              port: memcache
-          resources:
-            limits: {}
-            requests:
-              cpu: 5m
-              memory: 256Mi
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-        - name: metrics
-          image: docker.io/bitnami/memcached-exporter:0.10.0-debian-11-r51
-          imagePullPolicy: "IfNotPresent"
-          ports:
-            - name: metrics
-              containerPort: 9150
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-            httpGet:
-              path: /metrics
-              port: 9150
-          readinessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
-            httpGet:
-              path: /metrics
-              port: 9150
-          resources:
-            limits: {}
-            requests: {}
-      volumes:
-        - name: tmp
-          emptyDir: {}
----
-# Source: cortex/charts/memcached-blocks-metadata/templates/statefulset.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: release-name-memcached-blocks-metadata
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks-metadata
-    helm.sh/chart: memcached-blocks-metadata-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: memcached-blocks-metadata
-      app.kubernetes.io/instance: release-name
-  replicas: 2
-  podManagementPolicy: "Parallel"
-  serviceName: release-name-memcached-blocks-metadata
-  updateStrategy:
-    rollingUpdate: {}
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: memcached-blocks-metadata
-        helm.sh/chart: memcached-blocks-metadata-6.3.1
-        app.kubernetes.io/instance: release-name
-        app.kubernetes.io/managed-by: Helm
-      annotations:
-        prometheus.io/port: '9150'
-        prometheus.io/scrape: "true"
-    spec:
-      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached-blocks-metadata
-                    app.kubernetes.io/instance: release-name
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-      serviceAccountName: default
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.17-debian-11-r25
-          imagePullPolicy: "IfNotPresent"
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1001
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-            - name: MEMCACHED_PORT_NUMBER
-              value: "11211"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-            tcpSocket:
-              port: memcache
-          readinessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            successThreshold: 1
-            timeoutSeconds: 3
-            tcpSocket:
-              port: memcache
-          resources:
-            limits: {}
-            requests:
-              cpu: 5m
-              memory: 256Mi
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-        - name: metrics
-          image: docker.io/bitnami/memcached-exporter:0.10.0-debian-11-r51
-          imagePullPolicy: "IfNotPresent"
-          ports:
-            - name: metrics
-              containerPort: 9150
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-            httpGet:
-              path: /metrics
-              port: 9150
-          readinessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
-            httpGet:
-              path: /metrics
-              port: 9150
-          resources:
-            limits: {}
-            requests: {}
-      volumes:
-        - name: tmp
-          emptyDir: {}
----
-# Source: cortex/charts/memcached-blocks/templates/statefulset.yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: release-name-memcached-blocks
-  namespace: default
-  labels:
-    app.kubernetes.io/name: memcached-blocks
-    helm.sh/chart: memcached-blocks-6.3.1
-    app.kubernetes.io/instance: release-name
-    app.kubernetes.io/managed-by: Helm
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: memcached-blocks
-      app.kubernetes.io/instance: release-name
-  replicas: 2
-  podManagementPolicy: "Parallel"
-  serviceName: release-name-memcached-blocks
-  updateStrategy:
-    rollingUpdate: {}
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: memcached-blocks
-        helm.sh/chart: memcached-blocks-6.3.1
-        app.kubernetes.io/instance: release-name
-        app.kubernetes.io/managed-by: Helm
-      annotations:
-        prometheus.io/port: '9150'
-        prometheus.io/scrape: "true"
-    spec:
-      
-      affinity:
-        podAffinity:
-          
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/name: memcached-blocks
-                    app.kubernetes.io/instance: release-name
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-        nodeAffinity:
-          
-      securityContext:
-        fsGroup: 1001
-      serviceAccountName: default
-      containers:
-        - name: memcached
-          image: docker.io/bitnami/memcached:1.6.17-debian-11-r25
-          imagePullPolicy: "IfNotPresent"
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1001
-          env:
-            - name: BITNAMI_DEBUG
-              value: "false"
-            - name: MEMCACHED_PORT_NUMBER
-              value: "11211"
-          ports:
-            - name: memcache
-              containerPort: 11211
-          livenessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-            tcpSocket:
-              port: memcache
-          readinessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            successThreshold: 1
-            timeoutSeconds: 3
-            tcpSocket:
-              port: memcache
-          resources:
-            limits: {}
-            requests:
-              cpu: 5m
-              memory: 256Mi
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-        - name: metrics
-          image: docker.io/bitnami/memcached-exporter:0.10.0-debian-11-r51
-          imagePullPolicy: "IfNotPresent"
-          ports:
-            - name: metrics
-              containerPort: 9150
-          livenessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 15
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 5
-            httpGet:
-              path: /metrics
-              port: 9150
-          readinessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 3
-            httpGet:
-              path: /metrics
-              port: 9150
-          resources:
-            limits: {}
-            requests: {}
-      volumes:
-        - name: tmp
-          emptyDir: {}
