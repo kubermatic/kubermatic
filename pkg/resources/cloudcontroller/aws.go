@@ -143,17 +143,17 @@ func AWSCCMVersion(version semver.Semver) string {
 	// https://github.com/kubernetes/cloud-provider-aws/releases
 
 	switch version.MajorMinor() {
-	case v124:
-		return "v1.24.4"
 	case v125:
-		return "v1.25.3"
+		return "v1.25.14"
 	case v126:
-		return "v1.26.1"
+		return "v1.26.10"
 	case v127:
-		return "v1.27.1"
+		return "v1.27.5"
 	case v128:
+		return "v1.28.4"
+	case v129:
 		fallthrough
 	default:
-		return "v1.28.1"
+		return "v1.29.1"
 	}
 }

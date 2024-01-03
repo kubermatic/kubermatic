@@ -127,18 +127,18 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 
 	// https://github.com/kubernetes-sigs/cloud-provider-azure/releases
 	switch version.MajorMinor() {
-	case v124:
-		return "1.24.18", nil
 	case v125:
-		return "1.25.12", nil
+		return "1.25.23", nil
 	case v126:
-		return "1.26.8", nil
+		return "1.26.18", nil
 	case v127:
-		return "1.27.1", nil
+		return "1.27.12", nil
 	case v128:
 		fallthrough
+	case v129:
+		fallthrough
 	default:
-		return "1.28.0", nil
+		return "1.28.4", nil
 	}
 }
 
