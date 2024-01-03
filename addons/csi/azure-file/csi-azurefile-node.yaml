@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.28.3/deploy/v1.28.3/csi-azurefile-node.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.29.2/deploy/v1.29.2/csi-azurefile-node.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -28,15 +28,17 @@
 {{ $version = "v1.25.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.6" }}
+{{ $version = "v1.26.10" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.3" }}
+{{ $version = "v1.27.4" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.3" }}
+{{ $version = "v1.28.7" }}
 {{ end }}
-
+{{ if eq .Cluster.MajorMinorVersion "1.29" }}
+{{ $version = "v1.29.2" }}
+{{ end }}
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -121,6 +123,7 @@ spec:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"
+            - "--metrics-address=0.0.0.0:29615"
           ports:
             - containerPort: 29613
               name: healthz
