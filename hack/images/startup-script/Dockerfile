@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine
+FROM docker.io/alpine:3.18
+
 RUN apk add --no-cache bash util-linux
 ADD manage-startup-script.sh /
 CMD /manage-startup-script.sh
