@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.28.3/deploy/v1.28.3/csi-snapshot-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.29.2/deploy/v1.29.2/csi-snapshot-controller.yaml
 #
 # Changes:
+# - removal of tolerations
 # - template image registry
 # - set replicas=1 (pod has a leader election)
 # - set CPU limit to 1
@@ -55,7 +56,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-snapshot-controller
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/snapshot-controller:v6.2.2" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/snapshot-controller:v6.3.1" }}
           args:
             - "--v=2"
             - "--leader-election=true"
@@ -63,7 +64,7 @@ spec:
           resources:
             limits:
               cpu: 1
-              memory: 100Mi
+              memory: 300Mi
             requests:
               cpu: 10m
               memory: 20Mi
