@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.28.3/deploy/v1.28.3/rbac-csi-azuredisk-node.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.29.2/deploy/v1.29.2/rbac-csi-azuredisk-node.yaml
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -28,7 +28,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: csi-azuredisk-node-secret-role
+  name: csi-azuredisk-node-role
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -48,7 +48,7 @@ subjects:
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: csi-azuredisk-node-secret-role
+  name: csi-azuredisk-node-role
   apiGroup: rbac.authorization.k8s.io
 {{ end }}
 {{ end }}
