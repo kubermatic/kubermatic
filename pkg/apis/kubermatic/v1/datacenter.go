@@ -720,7 +720,7 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
 	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
-	CustomNetworkPolicies []*CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
+	CustomNetworkPolicies []CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
 
 	// Images represents standard VM Image sources.
 	Images KubeVirtImageSources `json:"images,omitempty"`
