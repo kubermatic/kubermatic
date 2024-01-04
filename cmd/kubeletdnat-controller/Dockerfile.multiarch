@@ -28,7 +28,7 @@ WORKDIR /go/src/k8c.io/kubermatic
 COPY . .
 RUN make -C ./cmd/kubeletdnat-controller build
 
-FROM docker.io/alpine:3.17
+FROM docker.io/alpine:3.18
 LABEL maintainer="support@kubermatic.com"
 
 RUN apk add -u --no-cache iptables

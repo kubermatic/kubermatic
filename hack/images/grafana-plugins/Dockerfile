@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.17
+# This image is used as an initContainer and a small shell script is run,
+# so distroless is currently not a choice.
+
+FROM docker.io/alpine:3.18
 LABEL maintainer="support@kubermatic.com"
 
 RUN mkdir -p /plugins

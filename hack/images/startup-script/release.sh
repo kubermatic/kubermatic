@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/startup-script
-TAG=v0.1.0
+TAG=v0.2.0
 
 docker build --no-cache --pull -t "${REPOSITORY}:${TAG}" .
 docker push "${REPOSITORY}:${TAG}"
