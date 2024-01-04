@@ -231,15 +231,19 @@ func TestBackfillOwnershipTagsAdoptsControlPlaneRole(t *testing.T) {
 		RoleName:                 ptr.To(roleName),
 	}
 
-	if _, err := cs.IAM.CreateRole(ctx, createRoleInput); err != nil {
+	output, err := cs.IAM.CreateRole(ctx, createRoleInput)
+	if err != nil {
 		t.Fatalf("Failed to create dummy role: %v", err)
 	}
 
+	roleARN := *output.Role.Arn
+
 	// this will not put an owner tag on the role
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
-		ControlPlaneRoleARN: roleName,
+		ControlPlaneRoleARN: roleARN,
 	})
-	cluster, err := provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
+
+	cluster, err = provider.ReconcileCluster(ctx, cluster, testClusterUpdater(cluster))
 	if err != nil {
 		t.Fatalf("ReconcileCluster should not have failed, but returned: %v", err)
 	}

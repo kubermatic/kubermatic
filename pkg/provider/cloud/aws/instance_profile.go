@@ -65,7 +65,7 @@ func reconcileWorkerInstanceProfile(ctx context.Context, client *iam.Client, clu
 	// if we own the profile, we must also take care of the worker role
 	if hasIAMTag(iamOwnershipTag(cluster.Name), profile.Tags) {
 		// ensure the role exists
-		if err := reconcileWorkerRole(ctx, client, cluster); err != nil {
+		if _, err := reconcileWorkerRole(ctx, client, cluster); err != nil {
 			return nil, fmt.Errorf("failed to reconcile worker role: %w", err)
 		}
 

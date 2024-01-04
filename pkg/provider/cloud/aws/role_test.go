@@ -22,6 +22,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -30,6 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/ptr"
 )
+
+func roleNameToARN(roleName string) string {
+	// Follow the naming scheme localstack uses.
+	return "arn:aws:iam::000000000000:role/" + roleName
+}
 
 func assertRoleHasPolicy(ctx context.Context, t *testing.T, client *iam.Client, roleName, policyName, policyDocument string) {
 	output, err := client.GetRolePolicy(ctx, &iam.GetRolePolicyInput{
@@ -46,7 +52,12 @@ func assertRoleHasPolicy(ctx context.Context, t *testing.T, client *iam.Client, 
 	}
 }
 
-func assertOwnership(ctx context.Context, t *testing.T, client *iam.Client, cluster *kubermaticv1.Cluster, roleName string, expectedOwnership bool) {
+func assertOwnership(ctx context.Context, t *testing.T, client *iam.Client, cluster *kubermaticv1.Cluster, roleNameOrARN string, expectedOwnership bool) {
+	roleName, err := decodeRoleARN(roleNameOrARN)
+	if err != nil {
+		t.Fatalf("Failed to decode possible ARN %q: %v", roleNameOrARN, err)
+	}
+
 	// check if the role exists
 	getRoleInput := &iam.GetRoleInput{
 		RoleName: ptr.To(roleName),
@@ -108,8 +119,13 @@ func TestEnsureRole(t *testing.T) {
 
 		policies := map[string]string{controlPlanePolicyName: policy}
 
-		if err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies); err != nil {
+		roleARN, err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies)
+		if err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
+		}
+
+		if !arn.IsARN(roleARN) {
+			t.Fatalf("ensureRole did not return a valid ARN, but %q", roleARN)
 		}
 
 		assertOwnership(ctx, t, cs.IAM, cluster, roleName, true)
@@ -139,7 +155,7 @@ func TestEnsureRole(t *testing.T) {
 
 		// reconcile role and check if the code successfully attaches the policy
 		// to an existing role
-		if err := ensureRole(ctx, cs.IAM, cluster, roleName, policies); err != nil {
+		if _, err := ensureRole(ctx, cs.IAM, cluster, roleName, policies); err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
 
@@ -155,7 +171,7 @@ func TestReconcileWorkerRole(t *testing.T) {
 	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
 	roleName := workerRoleName(cluster.Name)
 
-	if err := reconcileWorkerRole(ctx, cs.IAM, cluster); err != nil {
+	if _, err := reconcileWorkerRole(ctx, cs.IAM, cluster); err != nil {
 		t.Fatalf("reconcileWorkerRole should have not errored, but returned %v", err)
 	}
 
@@ -187,7 +203,7 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 		}
 
 		expectedRole := controlPlaneRoleName(cluster.Name)
-		if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != expectedRole {
+		if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != roleNameToARN(expectedRole) {
 			t.Errorf("cloud spec should have been updated to include role name %q, but is now %q", expectedRole, cluster.Spec.Cloud.AWS.ControlPlaneRoleARN)
 		}
 
@@ -208,7 +224,7 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 		}
 
 		// the code should keep the user-supplied name and not replace it with the default name
-		if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != roleName {
+		if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != roleNameToARN(roleName) {
 			t.Errorf("cloud spec should have been updated to include role name %q, but is now %q", roleName, cluster.Spec.Cloud.AWS.ControlPlaneRoleARN)
 		}
 
@@ -232,7 +248,7 @@ func TestDeleteRole(t *testing.T) {
 
 		// ensure the role exists now
 		expectedRole := controlPlaneRoleName(cluster.Name)
-		if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != expectedRole {
+		if cluster.Spec.Cloud.AWS.ControlPlaneRoleARN != roleNameToARN(expectedRole) {
 			t.Errorf("cloud spec should have been updated to include role name %q, but is now %q", expectedRole, cluster.Spec.Cloud.AWS.ControlPlaneRoleARN)
 		}
 
@@ -309,15 +325,15 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
 
-		roleName := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
-		assertOwnership(ctx, t, cs.IAM, cluster, roleName, true)
+		roleNameOrARN := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
+		assertOwnership(ctx, t, cs.IAM, cluster, roleNameOrARN, true)
 
 		// and let's nuke it
 		if err := cleanUpControlPlaneRole(context.Background(), cs.IAM, cluster); err != nil {
 			t.Fatalf("deleteRole should not have errored, but returned %v", err)
 		}
 
-		assertRoleIsGone(t, cs.IAM, roleName)
+		assertRoleIsGone(t, cs.IAM, roleNameOrARN)
 	})
 
 	t.Run("foreign-owned-role", func(t *testing.T) {

@@ -23,6 +23,3 @@ exclude_path = [
   'pkg/crd/k8c.io',
   'pkg/resources/test/fixtures',
 ]
-
-# Log checked links.
-verbose = true
