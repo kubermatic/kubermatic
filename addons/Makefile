@@ -33,6 +33,10 @@ hubble:
 	cat hubble/_footer.txt >> $(OUTPUT_FILE)
 	./templatify-images.sh $(OUTPUT_FILE)
 
+.PHONY: azure-cloud-node-manager
+azure-cloud-node-manager:
+	make -C azure-cloud-node-manager
+
 .PHONY: aws-node-termination-handler
 aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
 aws-node-termination-handler:
