@@ -832,12 +832,6 @@ items:
 - apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
-    name: pod-security-policy
-    labels:
-      addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8c.io/v1
-  kind: Addon
-  metadata:
     name: aws-node-termination-handler
     labels:
       addons.kubermatic.io/ensure: true
