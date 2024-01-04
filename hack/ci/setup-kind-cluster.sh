@@ -92,6 +92,9 @@ nodes:
     extraMounts:
     - hostPath: /mirror
       containerPath: /mirror
+# we will install Cilium later
+networking:
+  disableDefaultCNI: true
 ${WORKERS}
 containerdConfigPatches:
   # point to the soon-to-start local socat process
@@ -115,6 +118,9 @@ else
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: "${KIND_CLUSTER_NAME}"
+# we will install Cilium later
+networking:
+  disableDefaultCNI: true
 nodes:
   - role: control-plane
 ${WORKERS}
@@ -135,6 +141,14 @@ fi
 # As a solution, we remove the preloaded image after starting the kind
 # cluster, which will force KKP to pull the correct image.
 docker exec "kubermatic-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi registry.k8s.io/kube-controller-manager:{}" || true
+
+helm repo add cilium https://helm.cilium.io/
+helm install cilium cilium/cilium \
+  --version 1.14.4 \
+  --namespace kube-system \
+  --set image.pullPolicy=IfNotPresent \
+  --set ipam.mode=kubernetes \
+  --set operator.replicas=1
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as
@@ -176,5 +190,27 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
 
   echodate "Successfully set up iptables rules for nodeports"
 fi
+
+echodate "Waiting for Cilium CRDs to be installed"
+sleep 120
+
+# Cilium as CNI needs special treatment for a functional KKP
+# setup. For more details, see https://github.com/kubermatic/kubermatic/issues/12874.
+# For now, we manually need to create a clusterwide network policy.
+cat << EOF > cilium-networkpolicy.yaml
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: cilium-seed-apiserver-allow
+spec:
+  egress:
+  - toEntities:
+    - kube-apiserver
+  endpointSelector:
+    matchLabels:
+      app: apiserver
+EOF
+
+kubectl apply -f cilium-networkpolicy.yaml
 
 echodate "Kind cluster $KIND_CLUSTER_NAME is up and running."
