@@ -20,11 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
 	"github.com/cilium/cilium/pkg/policy/api"
-
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,28 +35,23 @@ const (
 	CiliumSeedApiserverAllow = "cilium-seed-apiserver-allow"
 )
 
-func SeedApiServerCiliumClusterwideNetworkPolicyReconciler() reconciling.NamedCiliumClusterwideNetworkPolicyReconcilerFactory {
-	return func() (string, reconciling.CiliumClusterwideNetworkPolicyReconciler) {
-		return CiliumSeedApiserverAllow, func(np *ciliumv2.CiliumClusterwideNetworkPolicy) (*ciliumv2.CiliumClusterwideNetworkPolicy, error) {
-			egressRule := []api.EgressRule{
-				{
-					EgressCommonRule: api.EgressCommonRule{
-						ToEntities: api.EntitySlice{
-							api.EntityKubeAPIServer,
-						},
-					},
+func SeedApiServerRule() *api.Rule {
+	egressRule := []api.EgressRule{
+		{
+			EgressCommonRule: api.EgressCommonRule{
+				ToEntities: api.EntitySlice{
+					api.EntityKubeAPIServer,
 				},
-			}
-			np.Spec = &api.Rule{
-				EndpointSelector: api.EndpointSelector{
-					LabelSelector: &slim_metav1.LabelSelector{
-						MatchLabels: apiServerLabels,
-					},
-				},
-				Egress: egressRule,
-			}
-			return np, nil
-		}
+			},
+		},
+	}
+	return &api.Rule{
+		EndpointSelector: api.EndpointSelector{
+			LabelSelector: &slim_metav1.LabelSelector{
+				MatchLabels: apiServerLabels,
+			},
+		},
+		Egress: egressRule,
 	}
 }
 

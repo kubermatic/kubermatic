@@ -67,6 +67,3 @@ resourceTypes:
 
   # velero/v1
   - {package: github.com/vmware-tanzu/velero/pkg/apis/velero/v1, resourceName: BackupStorageLocation, importAlias: velerov1 }
-
-  # cilium/v2
-  - {package: github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2, resourceName: CiliumClusterwideNetworkPolicy, importAlias: ciliumv2 }

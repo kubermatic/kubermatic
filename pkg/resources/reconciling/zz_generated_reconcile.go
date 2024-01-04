@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+Copyright YEAR The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -1141,43 +1140,6 @@ func ReconcileBackupStorageLocations(ctx context.Context, namedFactories []Named
 
 		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &velerov1.BackupStorageLocation{}, false); err != nil {
 			return fmt.Errorf("failed to ensure BackupStorageLocation %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// CiliumClusterwideNetworkPolicyReconciler defines an interface to create/update CiliumClusterwideNetworkPolicys.
-type CiliumClusterwideNetworkPolicyReconciler = func(existing *ciliumv2.CiliumClusterwideNetworkPolicy) (*ciliumv2.CiliumClusterwideNetworkPolicy, error)
-
-// NamedCiliumClusterwideNetworkPolicyReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedCiliumClusterwideNetworkPolicyReconcilerFactory = func() (name string, reconciler CiliumClusterwideNetworkPolicyReconciler)
-
-// CiliumClusterwideNetworkPolicyObjectWrapper adds a wrapper so the CiliumClusterwideNetworkPolicyReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func CiliumClusterwideNetworkPolicyObjectWrapper(reconciler CiliumClusterwideNetworkPolicyReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*ciliumv2.CiliumClusterwideNetworkPolicy))
-		}
-		return reconciler(&ciliumv2.CiliumClusterwideNetworkPolicy{})
-	}
-}
-
-// ReconcileCiliumClusterwideNetworkPolicys will create and update the CiliumClusterwideNetworkPolicys coming from the passed CiliumClusterwideNetworkPolicyReconciler slice.
-func ReconcileCiliumClusterwideNetworkPolicys(ctx context.Context, namedFactories []NamedCiliumClusterwideNetworkPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := CiliumClusterwideNetworkPolicyObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &ciliumv2.CiliumClusterwideNetworkPolicy{}, false); err != nil {
-			return fmt.Errorf("failed to ensure CiliumClusterwideNetworkPolicy %s/%s: %w", namespace, name, err)
 		}
 	}
 
