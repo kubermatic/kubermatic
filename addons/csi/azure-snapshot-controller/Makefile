@@ -26,7 +26,7 @@ $(TEMP_FILE):
 .PHONY: assemble
 assemble:
 	cat _header.txt > $(OUTPUT_FILE)
-	rudi -s process.rudi -o yamldocs --enable-funcs $(TEMP_FILE) >> $(OUTPUT_FILE)
+	rudi -l ../../library.rudi -s process.rudi -o yamldocs --enable-funcs $(TEMP_FILE) >> $(OUTPUT_FILE)
 	cat _footer.txt >> $(OUTPUT_FILE)
 
 .PHONY: cleanup

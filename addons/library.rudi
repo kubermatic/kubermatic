@@ -1,0 +1,82 @@
+; returns true if the given object is an application
+(func! isApp? [obj]
+  (and (eq? $obj.apiVersion "apps/v1")
+       (or (eq? $obj.kind "Deployment")
+           (eq? $obj.kind "DaemonSet")
+           (eq? $obj.kind "StatefulSet"))))
+
+; adds seccompProfile=RuntimeDefault to an object if the object is an app
+(func! addSecurityContext [obj]
+  (set $obj.spec.template.spec.securityContext.seccompProfile.type "RuntimeDefault"))
+
+; wraps a container image in a Go template
+(func! wrapContainerImage [container]
+  (set $container.image (append "{{ Image \"" $container.image "\" }}")))
+
+; wraps a container image in a Go template and injects a template runtime variable
+; turning "foo/bar:latest" into {{ Image "foo/bar:" $varName }}
+(func! versionContainerImage [container varName]
+  (set $container.image (append "{{ Image (print \"" (split ":" $container.image)[0] ":\" $" $varName ") }}")))
+
+; either just wraps or versions a container image, depending on the container name
+(func! mutateContainerImage [objName container versioned]
+  (if (set-has? $versioned (concat "/" $objName $container.name))
+    (versionContainerImage $container "version")
+    (wrapContainerImage $container)))
+
+; templatifies all containers in a spec
+(func! templatifySpec [spec objName versioned]
+  (try (map! $spec.containers [c] (mutateContainerImage $objName $c $versioned)))
+  (try (map! $spec.initContainers [c] (mutateContainerImage $objName $c $versioned)))
+  $spec)
+
+; templatifies the object if it's an application; versioned must be a set of "objname/containername"
+; values; if a container matches, the container image will be transformed to include $version
+(func! templatify [obj versioned]
+  (templatifySpec! $obj.spec.template.spec $obj.metadata.name $versioned)
+  $obj)
+
+; returns true if the given object is an app that selects a specific node OS
+(func! isForOperatingSystem [obj os]
+  (and (isApp $obj) (eq? $obj.spec.template.spec.nodeSelector["kubernetes.io/os"] $os)))
+
+(func! removeVolume [obj volumeName]
+  (if (has? $obj.spec.template.spec.volumes)
+    (filter! $obj.spec.template.spec.volumes [volume] (not (eq? $volume.name $volumeName))))
+  $obj)
+
+(func! removeVolumeMount [container volumeName]
+  (if (has? $container.volumeMounts)
+    (filter! $container.volumeMounts [mount] (not (eq? $mount.name $volumeName))))
+  $container)
+
+(func! removeVolumeMounts [obj volumeName]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c] (removeVolumeMount $c $volumeName)))
+  $obj)
+
+(func! addVolume [obj volume]
+  (if (has? $obj.spec.template.spec.volumes)
+    (append! $obj.spec.template.spec.volumes $volume))
+  $obj)
+
+(func! addVolumeMount [obj containerName mount]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c]
+      (if (eq? $c.name $containerName)
+        (do (append! $c.volumeMounts $mount) $c)
+        $c)))
+  $obj)
+
+(func! changeContainerEnv [container envName newEnv]
+  (if (has? $container.env)
+    (map! $container.env [e]
+      (if (eq? $e.name $envName)
+        (set $newEnv.name $envName) ; this copies newEnv and adds a key "name" to it
+        $e)))
+  $container)
+
+(func! changeEnv [obj envName newEnv]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c] (changeContainerEnv $c $envName $newEnv)))
+  $obj)

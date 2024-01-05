@@ -1,51 +1,12 @@
-; returns true if the given document is an application
-(func! isApp [doc]
-  (and (eq? $doc.apiVersion "apps/v1")
-       (or (eq? $doc.kind "Deployment")
-           (eq? $doc.kind "DaemonSet")
-           (eq? $doc.kind "StatefulSet"))))
-
-; adds seccompProfile=RuntimeDefault to a document if the document is an app
-(func! addSecurityContext [doc]
-  (set $doc.spec.template.spec.securityContext.seccompProfile.type "RuntimeDefault"))
-
-; wraps a container image in a Go template
-(func! wrapContainerImage [container]
-  (set $container.image (append "{{ Image \"" $container.image "\" }}")))
-
-; wraps a container image in a Go template and injects a template runtime variable
-; turning "foo/bar:latest" into {{ Image "foo/bar:" $varName }}
-(func! versionContainerImage [container varName]
-  (set $container.image (append "{{ Image (print \"" (split ":" $container.image)[0] ":\" $" $varName ") }}")))
-
-; either just wraps or versions a container image, depending on the container name
-(func! mutateContainerImage [objName container]
-  (if (and (eq? $objName "cloud-node-manager")
-           (eq? $container.name "cloud-node-manager"))
-    (versionContainerImage $container "version")
-    (wrapContainerImage $container)))
-
-; templatifies all containers in a spec
-(func! templatifySpec [spec objName]
-  (try (map! $spec.containers [c] (mutateContainerImage $objName $c)))
-  (try (map! $spec.initContainers [c] (mutateContainerImage $objName $c)))
-  $spec)
-
-; templatifies the doc if it's an application
-(func! templatify [doc]
-  (templatifySpec! $doc.spec.template.spec $doc.metadata.name)
-  $doc)
-
-; returns true if the given doc is an app that selects a specific node OS
-(func! isForOperatingSystem [doc os]
-  (and (isApp $doc) (eq? $doc.spec.template.spec.nodeSelector["kubernetes.io/os"] $os)))
-
 ; remove all Windows components
-(filter! . [doc] (not (isForOperatingSystem $doc "windows")))
+(filter! . [obj] (not (isForOperatingSystem $obj "windows")))
 
-(map! . [doc]
-  (if (isApp $doc)
+(map! . [obj]
+  (if (isApp $obj)
     (do
-      (addSecurityContext! $doc) ; add security context
-      (templatify! $doc))        ; wrap container images in Go template calls
-    $doc))
+      (addSecurityContext! $obj) ; add security context
+
+      ; wrap container images in Go template calls, but make one of them use the
+      ; $version Go template variable
+      (templatify! $obj (new-set "cloud-node-manager/cloud-node-manager")))
+    $obj))

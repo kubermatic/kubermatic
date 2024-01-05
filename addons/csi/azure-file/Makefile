@@ -25,14 +25,10 @@ $(TEMP_FILE):
 	wget -nv https://raw.githubusercontent.com/kubernetes-sigs/azurefile-csi-driver/v1.29.2/deploy/v1.29.2/rbac-csi-azurefile-controller.yaml -O - >> $(TEMP_FILE)
 	wget -nv https://raw.githubusercontent.com/kubernetes-sigs/azurefile-csi-driver/v1.29.2/deploy/v1.29.2/rbac-csi-azurefile-node.yaml -O - >> $(TEMP_FILE)
 
-.PHONY: process
-process:
-	rudi -s process.rudi -o yamldocs --enable-funcs $(TEMP_FILE)
-
 .PHONY: assemble
 assemble:
 	cat _header.txt > $(OUTPUT_FILE)
-	rudi -s process.rudi -o yamldocs --enable-funcs $(TEMP_FILE) >> $(OUTPUT_FILE)
+	rudi -l ../../library.rudi -s process.rudi -o yamldocs --enable-funcs $(TEMP_FILE) >> $(OUTPUT_FILE)
 	cat _footer.txt >> $(OUTPUT_FILE)
 
 .PHONY: cleanup
