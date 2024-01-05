@@ -12,28 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-default: aws-ebs azure-disk azure-file azure-snapshot-controller digitalocean gcp
+OUTPUT_FILE=driver.yaml
 
-.PHONY: aws-ebs
-aws-ebs:
-	make -C aws-ebs
+default: build
 
-.PHONY: azure-disk
-azure-disk:
-	make -C azure-disk
-
-.PHONY: azure-file
-azure-file:
-	make -C azure-file
-
-.PHONY: azure-snapshot-controller
-azure-snapshot-controller:
-	make -C azure-snapshot-controller
-
-.PHONY: digitalocean
-digitalocean:
-	make -C digitalocean
-
-.PHONY: gcp
-gcp:
-	make -C gcp
+.PHONY: build
+build:
+	mv kustomization._yaml kustomization.yaml
+	cat _header.txt > $(OUTPUT_FILE)
+	kubectl kustomize . >> $(OUTPUT_FILE)
+	cat _footer.txt >> $(OUTPUT_FILE)
+	mv kustomization.yaml kustomization._yaml
+	../../templatify-images.sh $(OUTPUT_FILE)
