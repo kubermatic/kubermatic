@@ -37,6 +37,10 @@ hubble:
 azure-cloud-node-manager:
 	make -C azure-cloud-node-manager
 
+.PHONY: csi
+csi:
+	make -C csi
+
 .PHONY: aws-node-termination-handler
 aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
 aws-node-termination-handler:
