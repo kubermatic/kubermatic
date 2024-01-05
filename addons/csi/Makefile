@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-default: azure-disk
+default: azure-disk azure-file
 
 .PHONY: azure-disk
 azure-disk:
 	make -C azure-disk
+
+.PHONY: azure-file
+azure-file:
+	make -C azure-file

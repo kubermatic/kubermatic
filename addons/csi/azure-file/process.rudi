@@ -1,0 +1,107 @@
+; returns true if the given object is an application
+(func! isApp? [obj]
+  (and (eq? $obj.apiVersion "apps/v1")
+       (or (eq? $obj.kind "Deployment")
+           (eq? $obj.kind "DaemonSet")
+           (eq? $obj.kind "StatefulSet"))))
+
+; wraps a container image in a Go template
+(func! wrapContainerImage [container]
+  (set $container.image (append "{{ Image \"" $container.image "\" }}")))
+
+; wraps a container image in a Go template and injects a template runtime variable
+; turning "foo/bar:latest" into {{ Image "foo/bar:" $varName }}
+(func! versionContainerImage [container varName]
+  (set $container.image (append "{{ Image (print \"" (split ":" $container.image)[0] ":\" $" $varName ") }}")))
+
+; either just wraps or versions a container image, depending on the container name
+(func! mutateContainerImage [objName container]
+  (if (eq? $container.name "azurefile")
+    (versionContainerImage $container "version")
+    (wrapContainerImage $container)))
+
+; templatifies all containers in a spec
+(func! templatifySpec [spec objName]
+  (try (map! $spec.containers [c] (mutateContainerImage $objName $c)))
+  (try (map! $spec.initContainers [c] (mutateContainerImage $objName $c)))
+  $spec)
+
+; templatifies the obj if it's an application
+(func! templatify [obj]
+  (templatifySpec! $obj.spec.template.spec $obj.metadata.name)
+  $obj)
+
+(func! removeVolume [obj volumeName]
+  (if (has? $obj.spec.template.spec.volumes)
+    (filter! $obj.spec.template.spec.volumes [volume] (not (eq? $volume.name $volumeName))))
+  $obj)
+
+(func! removeVolumeMount [container volumeName]
+  (if (has? $container.volumeMounts)
+    (filter! $container.volumeMounts [mount] (not (eq? $mount.name $volumeName))))
+  $container)
+
+(func! removeVolumeMounts [obj volumeName]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c] (removeVolumeMount $c $volumeName)))
+  $obj)
+
+(func! addVolume [obj volume]
+  (if (has? $obj.spec.template.spec.volumes)
+    (append! $obj.spec.template.spec.volumes $volume))
+  $obj)
+
+(func! addVolumeMount [obj containerName mount]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c]
+      (if (eq? $c.name $containerName)
+        (do (append! $c.volumeMounts $mount) $c)
+        $c)))
+  $obj)
+
+(func! changeContainerEnv [container envName newEnv]
+  (if (has? $container.env)
+    (map! $container.env [e]
+      (if (eq? $e.name $envName)
+        (set $newEnv.name $envName) ; this copies newEnv and adds a key "name" to it
+        $e)))
+  $container)
+
+(func! changeEnv [obj envName newEnv]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c] (changeContainerEnv $c $envName $newEnv)))
+  $obj)
+
+; some of the upstream YAML files contain empty documents, remove those
+(filter! . [obj] (not (empty? $obj)))
+
+(map! . [obj]
+  (do
+    ; patch apps
+    (if (isApp? $obj)
+      (do
+        ; image source includes registry templating
+        (templatify! $obj)
+
+        ; set spec.replicas=1 since leader elections are configured
+        (if (has? $obj.spec.replicas) (set! $obj.spec.replicas 1))
+
+        ; remove scheduling hints
+        (delete! $obj.spec.template.spec.tolerations)
+        (delete! $obj.spec.template.spec.affinity)
+
+        ; mount cloud-config instead of using host path
+        (removeVolume! $obj "azure-cred")
+        (removeVolumeMounts! $obj "azure-cred")
+        (addVolume! $obj {name "cloud-config" secret {secretName "cloud-config"}})
+        (addVolumeMount! $obj "azurefile" {mountPath "/etc/config/azure.json" name "cloud-config" subPath "config"})
+        (changeEnv! $obj "AZURE_CREDENTIAL_FILE" {value "/etc/config/azure.json"})))
+
+    ; adjust CSIDriver annotations
+    (if (eq? $obj.kind "CSIDriver")
+      (do
+        (set! $obj.metadata.annotations.csiDriver "{{ $version }}")
+        (set! $obj.metadata.annotations.snapshot "{{ $snapshot }}")))
+
+    $obj
+))
