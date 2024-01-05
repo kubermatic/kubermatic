@@ -600,9 +600,6 @@ func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *ku
 	log.Debug("reconciling CiliumNetworkPolicies")
 
 	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow, Namespace: metav1.NamespaceSystem}}
-	if err := controllerutil.SetControllerReference(seed, netpol, r.scheme); err != nil {
-		return fmt.Errorf("failed to set owner ref for CiliumClusterwideNetworkPolicy: %w", err)
-	}
 
 	if _, err := controllerutil.CreateOrUpdate(ctx, client, netpol, func() error {
 		netpol.Spec = networkpolicy.SeedApiServerRule()
