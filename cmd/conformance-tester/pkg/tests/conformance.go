@@ -212,10 +212,10 @@ func getGinkgoRuns(
 
 	nodeNumberTotal := int32(opts.NodeCount)
 
-	// These require the nodes NodePort to be available from the tester, which is not the case for us.
-	// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
-	ginkgoSkipParallel := strings.Join([]string{
+	ginkgoSkipParallel := []string{
 		`\[Serial\]`,
+		// These require the nodes NodePort to be available from the tester, which is not the case for us.
+		// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
 		"Services should be able to change the type from ExternalName to NodePort",
 		"Services should be able to change the type from NodePort to ExternalName",
 		"Services should be able to change the type from ClusterIP to ExternalName",
@@ -223,7 +223,13 @@ func getGinkgoRuns(
 		"Services should be able to switch session affinity for NodePort service",
 		"Services should have session affinity timeout work for NodePort service",
 		"Services should have session affinity work for NodePort service",
-	}, "|")
+	}
+
+	// Cilium does not support Kubernetes 1.29 conformance tests yet,
+	// see https://github.com/cilium/cilium/issues/29913
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+		ginkgoSkipParallel = append(ginkgoSkipParallel, "Services should serve endpoints on same port and different protocols")
+	}
 
 	runs := []struct {
 		name          string
@@ -235,7 +241,7 @@ func getGinkgoRuns(
 		{
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
-			ginkgoSkip:    ginkgoSkipParallel,
+			ginkgoSkip:    strings.Join(ginkgoSkipParallel, "|"),
 			parallelTests: int(nodeNumberTotal) * 3,
 			timeout:       60 * time.Minute,
 		},
