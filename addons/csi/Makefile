@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-default: azure-disk azure-file azure-snapshot-controller
+default: aws-ebs azure-disk azure-file azure-snapshot-controller
+
+.PHONY: aws-ebs
+aws-ebs:
+	make -C aws-ebs
 
 .PHONY: azure-disk
 azure-disk:

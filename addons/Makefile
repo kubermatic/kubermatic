@@ -55,24 +55,6 @@ aws-node-termination-handler:
 	cat aws-node-termination-handler/_footer.txt >> $(OUTPUT_FILE)
 	./templatify-images.sh $(OUTPUT_FILE)
 
-.PHONY: aws-ebs-csi-driver
-aws-ebs-csi-driver: OUTPUT_FILE=csi/aws-ebs/driver.yaml
-aws-ebs-csi-driver:
-	helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver || true
-	helm repo update
-	mkdir -p csi/aws-ebs
-	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
-	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
-	  --version 2.22.0 \
-	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
-	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
-	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
-	  --api-versions 'policy/v1/PodDisruptionBudget' \
-	  --skip-tests \
-	  >> $(OUTPUT_FILE)
-	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
-	./templatify-images.sh $(OUTPUT_FILE)
-
 .PHONY: gcp-csi-driver
 gcp-csi-driver: OUTPUT_FILE=csi/gcp/driver.yaml
 gcp-csi-driver:
