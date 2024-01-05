@@ -599,8 +599,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling CiliumNetworkPolicies")
 
-	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow, Namespace: metav1.NamespaceSystem}}
-
+	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow}}
 	if _, err := controllerutil.CreateOrUpdate(ctx, client, netpol, func() error {
 		netpol.Spec = networkpolicy.SeedApiServerRule()
 		return nil

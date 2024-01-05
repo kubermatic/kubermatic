@@ -23,6 +23,7 @@ import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
