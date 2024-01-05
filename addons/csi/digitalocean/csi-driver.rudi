@@ -1,0 +1,41 @@
+(set! $secretName "digitalocean-csi")
+(set! $secretTokenKey "token")
+
+; add a dedicated secret for csi driver
+(append! . {
+  apiVersion "v1"
+  kind       "Secret"
+  metadata {
+    name      $secretName
+    namespace "kube-system"
+  }
+  data {
+    $secretTokenKey "{{ .Credentials.Digitalocean.Token | b64enc }}"
+  }
+})
+
+; these objname/containername combinations will be rewritten to use the $version Go template variable
+(set! $versionedContainers (new-set "csi-do-controller/csi-do-plugin" "csi-do-node/csi-do-plugin"))
+
+(map! . [obj]
+  (if (isApp? $obj)
+    (do
+      ; image source includes registry templating
+      (templatify! $obj $versionedContainers)
+
+      ; patch in the security context
+      (addSecurityContext! $obj)
+
+      ; use the secret we created earlier
+      (changeEnv! $obj "DIGITALOCEAN_ACCESS_TOKEN" {
+        valueFrom {
+          secretKeyRef {
+            name $secretName
+            key  $secretTokenKey
+          }
+        }
+      }))
+    $obj))
+
+; StorageClasses and VolumeSnapshotClasses have been moved to the default-storage-class addon
+(filter! . [obj] (not (or (eq? $obj.kind "StorageClass") (eq? $obj.kind "VolumeSnapshotClass"))))
