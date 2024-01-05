@@ -12,32 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-default: aws-ebs azure-disk azure-file azure-snapshot-controller digitalocean gcp hetzner
+OUTPUT_FILE=hcloud-csi.yaml
+TEMP_FILE=upstream.yaml
 
-.PHONY: aws-ebs
-aws-ebs:
-	make -C aws-ebs
+default: $(TEMP_FILE) assemble cleanup
 
-.PHONY: azure-disk
-azure-disk:
-	make -C azure-disk
+$(TEMP_FILE):
+	touch $(TEMP_FILE)
+	wget -nv https://raw.githubusercontent.com/hetznercloud/csi-driver/v2.4.0/deploy/kubernetes/hcloud-csi.yml -O - >> $(TEMP_FILE)
 
-.PHONY: azure-file
-azure-file:
-	make -C azure-file
+.PHONY: assemble
+assemble:
+	cat _header.txt > $(OUTPUT_FILE)
+	rudi -l ../../library.rudi -s process.rudi -o yamldocs --enable-funcs $(TEMP_FILE) >> $(OUTPUT_FILE)
+	cat _footer.txt >> $(OUTPUT_FILE)
 
-.PHONY: azure-snapshot-controller
-azure-snapshot-controller:
-	make -C azure-snapshot-controller
-
-.PHONY: digitalocean
-digitalocean:
-	make -C digitalocean
-
-.PHONY: gcp
-gcp:
-	make -C gcp
-
-.PHONY: hetzner
-hetzner:
-	make -C hetzner
+.PHONY: cleanup
+cleanup:
+	rm -f $(TEMP_FILE)

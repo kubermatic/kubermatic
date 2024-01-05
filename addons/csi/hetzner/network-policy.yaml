@@ -12,32 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-default: aws-ebs azure-disk azure-file azure-snapshot-controller digitalocean gcp hetzner
-
-.PHONY: aws-ebs
-aws-ebs:
-	make -C aws-ebs
-
-.PHONY: azure-disk
-azure-disk:
-	make -C azure-disk
-
-.PHONY: azure-file
-azure-file:
-	make -C azure-file
-
-.PHONY: azure-snapshot-controller
-azure-snapshot-controller:
-	make -C azure-snapshot-controller
-
-.PHONY: digitalocean
-digitalocean:
-	make -C digitalocean
-
-.PHONY: gcp
-gcp:
-	make -C gcp
-
-.PHONY: hetzner
-hetzner:
-	make -C hetzner
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+{{ if eq .Cluster.CloudProviderName "hetzner" }}
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hcloud-csi
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      app: hcloud-csi
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+{{ end }}
+{{ end }}
+{{ end }}
