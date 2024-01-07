@@ -60,11 +60,16 @@
     (append! $obj.spec.template.spec.volumes $volume))
   $obj)
 
+(func! addContainerVolumeMount [container mount]
+  (if (not (has? $container.volumeMounts)) (set! $container.volumeMounts []))
+  (append! $container.volumeMounts $mount)
+  $container)
+
 (func! addVolumeMount [obj containerName mount]
   (if (has? $obj.spec.template.spec.containers)
     (map! $obj.spec.template.spec.containers [c]
       (if (eq? $c.name $containerName)
-        (do (append! $c.volumeMounts $mount) $c)
+        (addContainerVolumeMount $c $mount)
         $c)))
   $obj)
 
@@ -79,4 +84,14 @@
 (func! changeEnv [obj envName newEnv]
   (if (has? $obj.spec.template.spec.containers)
     (map! $obj.spec.template.spec.containers [c] (changeContainerEnv $c $envName $newEnv)))
+  $obj)
+
+(func! addContainerEnv [container newEnv]
+  (if (not (has? $container.env)) (set! $container.env []))
+  (append! $container.env $newEnv)
+  $container)
+
+(func! addEnv [obj newEnv]
+  (if (has? $obj.spec.template.spec.containers)
+    (map! $obj.spec.template.spec.containers [c] (addContainerEnv $c $newEnv)))
   $obj)

@@ -1,0 +1,52 @@
+; remove empty objects
+(filter! . [obj] (not (empty? $obj)))
+
+(map! . [obj]
+  (do
+    ; patch apps
+    (if (isApp? $obj)
+      (do
+        ; image source includes registry templating
+        (templatify! $obj (new-set "csi-cinder-controllerplugin/cinder-csi-plugin"
+                                   "csi-cinder-nodeplugin/cinder-csi-plugin"))
+
+        ; patch in the security context
+        (addSecurityContext! $obj)
+
+        ; set spec.replicas=1 since leader elections are configured
+        (if (has? $obj.spec.replicas) (set! $obj.spec.replicas 1))
+
+        ; KKP-managed cloud config secret uses a different key, so update the env
+        (changeEnv! $obj "CLOUD_CONFIG" {value "/etc/config/config"})
+
+        ; set correct cluster name
+        (changeEnv! $obj "CLUSTER_NAME" {value "{{ .Cluster.Name }}"})
+
+        ; use KKP-provided CA bundle
+        (if (set-has? (new-set "csi-cinder-nodeplugin" "csi-cinder-controllerplugin") $obj.metadata.name)
+          (do
+            (addVolume! $obj {name "ca-bundle" configMap {name "ca-bundle"}})
+            (map! $obj.spec.template.spec.containers [c]
+              (if (eq? $c.name "cinder-csi-plugin")
+                (do
+                  (addContainerVolumeMount! $c {mountPath "/etc/kubermatic/certs" name "ca-bundle" readOnly true})
+                  (addContainerEnv! $c {name "SSL_CERT_FILE" value "/etc/kubermatic/certs/ca-bundle.pem"})
+                  $c)
+                $c))
+            $obj))
+
+        ; make CLI Topology feature gate dynamic
+        (map! $obj.spec.template.spec.containers [c]
+          (if (eq? $c.name "csi-provisioner")
+            (do
+              (map! $c.args [arg]
+                (if (has-prefix? $arg "--feature-gates")
+                  "--feature-gates=Topology={{ .Cluster.CSI.CinderTopologyEnabled }}"
+                  $arg))
+              $c)
+            $c))
+
+        $obj))
+
+    $obj
+))
