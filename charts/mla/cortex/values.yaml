@@ -82,7 +82,7 @@ cortex:
       query_ingesters_within: 365m
       query_store_after: 360m
     ruler:
-      # This is specifially customized for kubermatic setup so keeping it as is.
+      # This is specifically customized for kubermatic setup so keeping it as is.
       enable_alertmanager_discovery: true
       # Note: This is a KKP-specific headless alertmanager service, used to work around the Cortex helm chart bug in chart versions below v1.0.0
       # alertmanager_url: http://_http-metrics._tcp.cortex-alertmanager-headless-kkp/api/prom/alertmanager/
