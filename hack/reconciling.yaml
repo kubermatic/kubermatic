@@ -64,6 +64,6 @@ resourceTypes:
 
   # cdi/v1beta1
   - { package: kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1, resourceName: DataVolume, importAlias: cdiv1beta1 }
-  
+
   # velero/v1
   - {package: github.com/vmware-tanzu/velero/pkg/apis/velero/v1, resourceName: BackupStorageLocation, importAlias: velerov1 }
