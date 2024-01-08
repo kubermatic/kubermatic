@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -34,9 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/crd"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
-	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -368,164 +367,35 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		return
 	}
 
-	hostNetwork, _ := opt.HelmValues.GetBool(yamled.Path{"nginx", "hostNetwork"})
-
-	// in hostNetwork mode, nginx is deployed as a DaemonSet and the DNS
-	// records need to point to one or more worker nodes directly;
-	// normally we're not using the host network, but a regular LoadBalancer
-	if hostNetwork {
-		showHostNetworkDNSSettings(ctx, sublogger, kubeClient, opt)
-	} else {
-		showLoadBalancerDNSSettings(ctx, sublogger, kubeClient, opt)
-	}
-}
-
-type nginxTargetPod struct {
-	pod string
-	ip  string
-	dns string
-}
-
-func (t nginxTargetPod) prefererdTarget() string {
-	if len(t.dns) > 0 {
-		return t.dns
+	ingressName := types.NamespacedName{
+		Namespace: opt.KubermaticConfiguration.Namespace,
+		Name:      operatorcommon.IngressName,
 	}
 
-	return t.ip
-}
+	logger.WithField("ingress", ingressName).Debug("Waiting for Ingress to be ready…")
 
-func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
-	logger.Debugf("Listing nginx-ingress-controller pods…")
-
-	podList := corev1.PodList{}
-	err := kubeClient.List(ctx, &podList, &ctrlruntimeclient.ListOptions{
-		Namespace: NginxIngressControllerNamespace,
-	})
-	if err != nil {
-		logger.Warnf("Failed to find any nginx-ingress-controller pods: %v", err)
-		logger.Warn("Please check the DaemonSet and, if necessary, reconfigure the")
-		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
-		logger.Warn("updated configuration afterwards.")
-		return
-	}
-
-	if len(podList.Items) == 0 {
-		logger.Warnf("No nginx-ingress-controller pods were found in the %q namespace.", NginxIngressControllerNamespace)
-		logger.Warn("Please check the DaemonSet and, if necessary, reconfigure the")
-		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
-		logger.Warn("updated configuration afterwards.")
-		return
-	}
-
-	nodeList := corev1.NodeList{}
-	err = kubeClient.List(ctx, &nodeList)
-	if err != nil {
-		logger.Warnf("Failed to retrieve nodes: %v", err)
-		return
-	}
-
-	targets := []nginxTargetPod{}
-
-	for _, pod := range podList.Items {
-		hostIP := pod.Status.HostIP
-
-		for _, node := range nodeList.Items {
-			matches := false
-			externalIP := ""
-			externalDNS := ""
-
-			for _, address := range node.Status.Addresses {
-				switch address.Type {
-				case corev1.NodeExternalIP:
-					externalIP = address.Address
-				case corev1.NodeExternalDNS:
-					externalDNS = address.Address
-				}
-
-				if address.Address == hostIP {
-					matches = true
-					// do not break, so we can try more addresses
-					// to find the external IP and DNS names
-				}
-			}
-
-			if matches && (externalIP != "" || externalDNS != "") {
-				targets = append(targets, nginxTargetPod{
-					pod: pod.Name,
-					ip:  externalIP,
-					dns: externalDNS,
-				})
-			}
-		}
-	}
-
-	if len(targets) == 0 {
-		logger.Warnf("No nginx-ingress-controller pods in the %q namespace are scheduled onto nodes yet.", NginxIngressControllerNamespace)
-		logger.Warn("Please check the DaemonSet and, if necessary, reconfigure the")
-		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
-		logger.Warn("updated configuration afterwards.")
-		return
-	}
-
-	logger.Info("The nginx-ingress-controller pods have been rolled out in your cluster.")
-	logger.Info("")
-
-	logger.Infof("  %-50s    IP / Hostname", "Pod")
-	for _, target := range targets {
-		logger.Infof("  %-50s    %s", target.pod, target.prefererdTarget())
-	}
-
-	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
-	rand := targets[rand.Intn(len(targets))]
-
-	logger.Info("")
-	logger.Info("Choose a single target for your DNS or configure an external LoadBalancer")
-	logger.Info("to balance between all targets listed above. For a basic setup, choose a")
-	logger.Infof("random target from above, for example %s.", rand.prefererdTarget())
-	logger.Infof("Then ensure your DNS settings for %q include the following records:", domain)
-	logger.Info("")
-
-	if rand.dns != "" {
-		logger.Infof("   %s.    IN  CNAME  %s.", domain, rand.dns)
-		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, rand.dns)
-	} else {
-		logger.Infof("   %s.    IN  A  %s", domain, rand.ip)
-		logger.Infof("   *.%s.  IN  A  %s", domain, rand.ip)
-	}
-
-	logger.Info("")
-}
-
-func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
-	svcName := types.NamespacedName{
-		Namespace: NginxIngressControllerNamespace,
-		Name:      "nginx-ingress-controller",
-	}
-
-	logger.Debugf("Waiting for %q to be ready…", svcName)
-
-	var ingresses []corev1.LoadBalancerIngress
-	err := wait.PollUntilContextTimeout(ctx, 5*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
-		svc := corev1.Service{}
-		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
+	var ingresses []networkingv1.IngressLoadBalancerIngress
+	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
+		ingress := networkingv1.Ingress{}
+		if err := kubeClient.Get(ctx, ingressName, &ingress); err != nil {
 			return false, err
 		}
 
-		ingresses = svc.Status.LoadBalancer.Ingress
+		ingresses = ingress.Status.LoadBalancer.Ingress
 
 		return len(ingresses) > 0, nil
 	})
 	if err != nil {
-		logger.Warnf("Timed out waiting for the LoadBalancer service %q to become ready.", svcName)
+		logger.Warn("Timed out waiting for the Ingress to become ready.")
 		logger.Warn("Please check the Service and, if necessary, reconfigure the")
 		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
 		logger.Warn("updated configuration afterwards.")
 		return
 	}
 
-	logger.Info("The main LoadBalancer is ready.")
+	logger.Info("The main Ingress is ready.")
 	logger.Info("")
-	logger.Infof("  Service             : %s / %s", svcName.Namespace, svcName.Name)
+	logger.Infof("  Ingress             : %s / %s", ingressName.Namespace, ingressName.Name)
 
 	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
 
