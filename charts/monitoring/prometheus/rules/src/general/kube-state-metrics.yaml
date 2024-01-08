@@ -256,21 +256,6 @@ groups:
 
       - alert: KubeCPUOvercommit
         annotations:
-          message: Cluster has overcommitted CPU resource requests for namespaces.
-          runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecpuovercommit
-        expr: |
-          sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.cpu"})
-            /
-          sum(node:node_num_cpu:sum)
-            > 1.5
-        for: 5m
-        labels:
-          severity: warning
-          resource: cluster
-          service: kube-state-metrics
-
-      - alert: KubeCPUOvercommit
-        annotations:
           message: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
           runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecpuovercommit
         expr: |
