@@ -85,8 +85,6 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 				},
 			}
 
-			patchTolerations(&ds.Spec.Template.Spec)
-
 			hostPathType := corev1.HostPathFileOrCreate
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -199,27 +197,5 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 
 			return ds, nil
 		}
-	}
-}
-
-// patchTolerations ensures that a toleration for the CriticalAddonsOnly taint
-// exists, but pays attention to not overwrite any potential changes the user
-// has made.
-func patchTolerations(podSpec *corev1.PodSpec) {
-	exists := false
-	defaultTolerationKey := "CriticalAddonsOnly"
-
-	for _, toleration := range podSpec.Tolerations {
-		if toleration.Key == defaultTolerationKey {
-			exists = true
-			break
-		}
-	}
-
-	if !exists {
-		podSpec.Tolerations = append(podSpec.Tolerations, corev1.Toleration{
-			Key:      defaultTolerationKey,
-			Operator: corev1.TolerationOpExists,
-		})
 	}
 }
