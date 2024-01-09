@@ -32,3 +32,5 @@ FROM gcr.io/distroless/static-debian12
 LABEL maintainer="support@kubermatic.com"
 
 COPY --from=builder /go/src/k8c.io/kubermatic/cmd/network-interface-manager/_build/network-interface-manager /usr/local/bin/network-interface-manager
+
+ENTRYPOINT ["network-interface-manager"]
