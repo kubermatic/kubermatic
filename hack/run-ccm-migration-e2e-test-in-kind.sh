@@ -84,6 +84,9 @@ azure)
 aws)
   EXTRA_ARGS="-aws-kkp-datacenter=aws-eu-west-1a"
   ;;
+gcp)
+  EXTRA_ARGS="-gcp-kkp-datacenter=gcp-westeurope"
+  ;;
 esac
 
 # run tests

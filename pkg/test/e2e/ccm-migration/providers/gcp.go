@@ -32,42 +32,42 @@ import (
 )
 
 const (
-	awsCCMDeploymentName = cloudcontroller.AWSCCMDeploymentName
-	awsCSIDaemonSetName  = "ebs-csi-node"
+	gcpCSIDaemonSetName  = "csi-gce-pd-node"
+	gcpCCMDeploymentName = cloudcontroller.GCPCCMDeploymentName
 )
 
-type AWSScenario struct {
+type GCPScenario struct {
 	commonScenario
 
-	credentials jig.AWSCredentials
+	credentials jig.GCPCredentials
 }
 
 var (
-	_ TestScenario = &AWSScenario{}
+	_ TestScenario = &GCPScenario{}
 )
 
-func NewAWSScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.AWSCredentials) *AWSScenario {
-	return &AWSScenario{
+func NewGCPScenario(log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, credentials jig.GCPCredentials) *GCPScenario {
+	return &GCPScenario{
 		commonScenario: commonScenario{
 			seedClient: seedClient,
-			testJig:    jig.NewAWSCluster(seedClient, log, credentials, 1, nil),
+			testJig:    jig.NewGCPCluster(seedClient, log, credentials, 1),
 		},
 		credentials: credentials,
 	}
 }
 
-func (c *AWSScenario) CheckComponents(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) (bool, error) {
+func (c *GCPScenario) CheckComponents(ctx context.Context, cluster *kubermaticv1.Cluster, userClient ctrlruntimeclient.Client) (bool, error) {
 	ccmDeploy := &appsv1.Deployment{}
-	if err := c.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: cluster.Status.NamespaceName, Name: awsCCMDeploymentName}, ccmDeploy); err != nil {
-		return false, fmt.Errorf("failed to get %s deployment: %w", awsCCMDeploymentName, err)
+	if err := c.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: fmt.Sprintf("cluster-%s", cluster.Name), Name: gcpCCMDeploymentName}, ccmDeploy); err != nil {
+		return false, fmt.Errorf("failed to get %s deployment: %w", gcpCCMDeploymentName, err)
 	}
 	if ccmDeploy.Status.AvailableReplicas == 1 {
 		return true, nil
 	}
 
 	nodeDaemonSet := &appsv1.DaemonSet{}
-	if err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceSystem, Name: awsCSIDaemonSetName}, nodeDaemonSet); err != nil {
-		return false, fmt.Errorf("failed to get %s daemonset: %w", awsCSIDaemonSetName, err)
+	if err := userClient.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceSystem, Name: gcpCSIDaemonSetName}, nodeDaemonSet); err != nil {
+		return false, fmt.Errorf("failed to get %s daemonset: %w", gcpCSIDaemonSetName, err)
 	}
 
 	return nodeDaemonSet.Status.NumberReady == nodeDaemonSet.Status.DesiredNumberScheduled, nil

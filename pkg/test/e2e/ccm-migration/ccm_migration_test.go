@@ -62,6 +62,7 @@ type testOptions struct {
 	vsphereCredentials jig.VSphereCredentials
 	azureCredentials   jig.AzureCredentials
 	awsCredentials     jig.AWSCredentials
+	gcpCredentials     jig.GCPCredentials
 }
 
 func (o testOptions) KubernetesVersion() semver.Semver {
@@ -83,6 +84,7 @@ func init() {
 	options.azureCredentials.AddFlags(flag.CommandLine)
 	options.osCredentials.AddFlags(flag.CommandLine)
 	options.vsphereCredentials.AddFlags(flag.CommandLine)
+	options.gcpCredentials.AddFlags(flag.CommandLine)
 	options.logOptions.AddFlags(flag.CommandLine)
 
 	jig.AddFlags(flag.CommandLine)
@@ -98,6 +100,8 @@ func TestCCMMigration(t *testing.T) {
 		runtime.Must(options.osCredentials.Parse())
 	case kubermaticv1.VSphereCloudProvider:
 		runtime.Must(options.vsphereCredentials.Parse())
+	case kubermaticv1.GCPCloudProvider:
+		runtime.Must(options.gcpCredentials.Parse())
 	default:
 		t.Fatalf("Unknown provider %q", options.provider)
 	}
@@ -141,6 +145,8 @@ func setupClusterByProvider(t *testing.T, ctx context.Context, log *zap.SugaredL
 		scenario = providers.NewAzureScenario(log, seedClient, options.azureCredentials)
 	case kubermaticv1.AWSCloudProvider:
 		scenario = providers.NewAWSScenario(log, seedClient, options.awsCredentials)
+	case kubermaticv1.GCPCloudProvider:
+		scenario = providers.NewGCPScenario(log, seedClient, options.gcpCredentials)
 	default:
 		return nil, nil, nil, errors.New("provider not supported for CCM tests")
 	}
