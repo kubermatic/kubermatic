@@ -47,6 +47,12 @@ products:
           package: k8c.io/kubermatic/v2/pkg/resources/cloudcontroller
           constant: hetznerCCMVersion
 
+  - name: "CCM: GCP"
+    source: https://github.com/kubernetes/cloud-provider-gcp
+    occurrences:
+      - goFunction:
+          function: callGCPCCMVersion
+
   - name: "CCM: KubeVirt"
     source: https://github.com/kubermatic/cloud-provider-kubevirt
     occurrences:
