@@ -53,6 +53,7 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cloudS
 	case kubermaticv1.AWSCloudProvider,
 		kubermaticv1.AnexiaCloudProvider,
 		kubermaticv1.AzureCloudProvider,
+		kubermaticv1.GCPCloudProvider,
 		kubermaticv1.DigitaloceanCloudProvider,
 		kubermaticv1.KubevirtCloudProvider,
 		kubermaticv1.VSphereCloudProvider:
@@ -93,7 +94,8 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 
 	case kubermaticv1.AWSCloudProvider,
 		kubermaticv1.VSphereCloudProvider,
-		kubermaticv1.AzureCloudProvider:
+		kubermaticv1.AzureCloudProvider,
+		kubermaticv1.GCPCloudProvider:
 		supported, err := version.IsSupported(v.Semver(), t, incompatibilities, kubermaticv1.ExternalCloudProviderCondition)
 		if err != nil {
 			return false
@@ -109,7 +111,11 @@ func MigrationToExternalCloudControllerSupported(dc *kubermaticv1.Datacenter, cl
 // for the cloud provider.
 func ExternalCloudControllerClusterName(cloudSpec *kubermaticv1.CloudSpec) bool {
 	switch kubermaticv1.ProviderType(cloudSpec.ProviderName) {
-	case kubermaticv1.OpenstackCloudProvider, kubermaticv1.AzureCloudProvider, kubermaticv1.AWSCloudProvider, kubermaticv1.KubevirtCloudProvider:
+	case kubermaticv1.OpenstackCloudProvider,
+		kubermaticv1.AzureCloudProvider,
+		kubermaticv1.AWSCloudProvider,
+		kubermaticv1.GCPCloudProvider,
+		kubermaticv1.KubevirtCloudProvider:
 		return true
 	default:
 		return false
