@@ -338,7 +338,6 @@ var (
 			newSemver("v1.28"),
 			newSemver("v1.27"),
 			newSemver("v1.26"),
-			newSemver("v1.25"),
 		},
 	}
 
