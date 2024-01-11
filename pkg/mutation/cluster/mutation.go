@@ -87,13 +87,10 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 			addCCMCSIMigrationAnnotations(newCluster)
 			newCluster.Spec.Cloud.Openstack.UseOctavia = ptr.To(true)
 
-		case newCluster.Spec.Cloud.VSphere != nil:
-			addCCMCSIMigrationAnnotations(newCluster)
-
-		case newCluster.Spec.Cloud.Azure != nil:
-			addCCMCSIMigrationAnnotations(newCluster)
-
-		case newCluster.Spec.Cloud.AWS != nil:
+		case newCluster.Spec.Cloud.VSphere != nil,
+			newCluster.Spec.Cloud.Azure != nil,
+			newCluster.Spec.Cloud.AWS != nil,
+			newCluster.Spec.Cloud.GCP != nil:
 			addCCMCSIMigrationAnnotations(newCluster)
 		}
 

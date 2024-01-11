@@ -39,6 +39,9 @@ var versionProviderFuncs = map[string]versionProviderFunc{
 	"callDigitaloceanCCMVersion": func(clusterVersion semver.Semver) (string, error) {
 		return cloudcontroller.DigitaloceanCCMVersion(clusterVersion), nil
 	},
+	"callGCPCCMVersion": func(clusterVersion semver.Semver) (string, error) {
+		return cloudcontroller.GCPCCMVersion(clusterVersion), nil
+	},
 	"callOpenStackCCMVersion": cloudcontroller.OpenStackCCMTag,
 	"callVSphereCCMVersion": func(clusterVersion semver.Semver) (string, error) {
 		return cloudcontroller.VSphereCCMVersion(clusterVersion), nil

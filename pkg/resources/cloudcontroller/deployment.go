@@ -52,6 +52,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 	case data.Cluster().Spec.Cloud.Hetzner != nil:
 		creatorGetter = hetznerDeploymentReconciler(data)
 
+	case data.Cluster().Spec.Cloud.GCP != nil:
+		creatorGetter = gcpDeploymentReconciler(data)
+
 	case data.Cluster().Spec.Cloud.Anexia != nil:
 		creatorGetter = anexiaDeploymentReconciler(data)
 

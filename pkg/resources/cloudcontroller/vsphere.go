@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	vsphereCCMDeploymentName = "vsphere-cloud-controller-manager"
+	VSphereCCMDeploymentName = "vsphere-cloud-controller-manager"
 )
 
 var (
@@ -49,15 +49,15 @@ var (
 
 func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return vsphereCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = vsphereCCMDeploymentName
-			dep.Labels = resources.BaseAppLabels(vsphereCCMDeploymentName, nil)
+		return VSphereCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Name = VSphereCCMDeploymentName
+			dep.Labels = resources.BaseAppLabels(VSphereCCMDeploymentName, nil)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(vsphereCCMDeploymentName, nil),
+				MatchLabels: resources.BaseAppLabels(VSphereCCMDeploymentName, nil),
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(vsphereCCMDeploymentName, dep.Spec.Template.Spec.Volumes, map[string]string{
+			podLabels, err := data.GetPodTemplateLabels(VSphereCCMDeploymentName, dep.Spec.Template.Spec.Volumes, map[string]string{
 				"component": "cloud-controller-manager",
 				"tier":      "control-plane",
 			})
