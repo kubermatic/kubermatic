@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -28,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/networkpolicy"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -50,6 +52,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -330,6 +333,17 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *kubermaticv1.K
 		return err
 	}
 
+	isCiliumDeployed, err := networkpolicy.CiliumCRDExists(ctx, client)
+	if err != nil {
+		return err
+	}
+
+	if isCiliumDeployed {
+		if err := r.reconcileCiliumNetworkPolicies(ctx, cfg, seed, client, log); err != nil {
+			return err
+		}
+	}
+
 	// Since the new standalone webhook, the old service is not required anymore.
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, client, log, cfg.Namespace)
@@ -577,6 +591,20 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Deployments: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	log.Debug("reconciling CiliumNetworkPolicies")
+
+	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow}}
+	if _, err := controllerutil.CreateOrUpdate(ctx, client, netpol, func() error {
+		netpol.Spec = networkpolicy.SeedApiServerRule()
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to reconcile CiliumClusterwideNetworkPolicies: %w", err)
 	}
 
 	return nil
