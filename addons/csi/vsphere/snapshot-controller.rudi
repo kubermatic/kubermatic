@@ -1,0 +1,51 @@
+; remove empty objects
+(filter! . [obj] (not (empty? $obj)))
+
+; remove ValidatingWebhookConfiguration (handled in code)
+(filter! . [obj] (not (eq? $obj.kind "ValidatingWebhookConfiguration")))
+
+(map! . [obj]
+  (if (isApp? $obj)
+    (do
+      ; image source includes registry templating
+      (templatify! $obj (new-set))
+
+      ; patch in the security context
+      (addSecurityContext! $obj)
+
+      ; set spec.replicas=1 since leader elections are configured
+      (set! $obj.spec.replicas 1)
+
+      ; upstream manifests require to set the namespace explicitly
+      (set! $obj.metadata.namespace "kube-system")
+
+      ; use KKP-provided secret for the webhook cert
+      (if (has? $obj.spec.template.spec.volumes)
+        (do
+          ; update the volume source
+          (map! $obj.spec.template.spec.volumes [vol]
+            (if (eq? $vol.name "snapshot-validation-webhook-certs")
+              (set! $vol.secret.secretName "csi-snapshot-webhook-certs")
+              $vol))
+
+          ; get volume mount path
+          (set! $path "")
+          (range $obj.spec.template.spec.containers [c]
+            (if (eq? $c.name "snapshot-validation")
+              (range $c.volumeMounts [vm]
+                (if (eq? $vm.name "snapshot-validation-webhook-certs")
+                  (set! $path (trim-suffix $vm.mountPath "/"))))))
+
+          ; sanity check
+          (if (eq? $path "") (error "could not find default webhook cert mountPath"))
+
+          ; KKP uses different object keys in the cert secret
+          (map! $obj.spec.template.spec.containers [c]
+            (if (eq? $c.name "snapshot-validation")
+              (set! $c.args [
+                (append "--tls-cert-file=" $path "/cert.pem")
+                (append "--tls-private-key-file=" $path "/key.pem")
+              ])
+              $c))))
+      $obj)
+    $obj))
