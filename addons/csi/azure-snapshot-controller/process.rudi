@@ -1,0 +1,22 @@
+; some of the upstream YAML files contain empty documents, remove those
+(filter! . [obj] (not (empty? $obj)))
+
+(map! . [obj]
+  (if (isApp? $obj)
+    (do
+      ; image source includes registry templating
+      (templatify! $obj (new-set))
+
+      ; patch in the security context
+      (addSecurityContext! $obj)
+
+      ; set spec.replicas=1 since leader elections are configured
+      (set! $obj.spec.replicas 1)
+
+      ; set a sane CPU limit
+      (set! $obj.spec.template.spec.containers[0].resources.limits.cpu 1)
+
+      ; remove scheduling hints
+      (delete! $obj.spec.template.spec.tolerations)
+      (delete! $obj.spec.template.spec.affinity))
+    $obj))

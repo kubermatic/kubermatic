@@ -1,0 +1,38 @@
+(set! $secretName "hcloud-csi")
+(set! $secretTokenKey "token")
+
+; add a dedicated secret for csi driver
+(prepend! . {
+  apiVersion "v1"
+  kind       "Secret"
+  metadata {
+    name      $secretName
+    namespace "kube-system"
+  }
+  data {
+    $secretTokenKey "{{ .Credentials.Hetzner.Token | b64enc }}"
+  }
+})
+
+(map! . [obj]
+  (if (isApp? $obj)
+    (do
+      ; image source includes registry templating
+      (templatify! $obj (new-set))
+
+      ; patch in the security context
+      (addSecurityContext! $obj)
+
+      ; use the secret we created earlier
+      (changeEnv! $obj "HCLOUD_TOKEN" {
+        valueFrom {
+          secretKeyRef {
+            name $secretName
+            key  $secretTokenKey
+          }
+        }
+      }))
+    $obj))
+
+; StorageClasses have been moved to the default-storage-class addon
+(filter! . [obj] (not (eq? $obj.kind "StorageClass")))

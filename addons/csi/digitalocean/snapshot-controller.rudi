@@ -1,0 +1,21 @@
+(map! . [obj]
+  (if (isApp? $obj)
+    (do
+      ; image source includes registry templating
+      (templatify! $obj (new-set))
+
+      ; patch in the security context
+      (addSecurityContext! $obj)
+
+      ; use KKP-provided secret for the webhook cert
+      (if (has? $obj.spec.template.spec.volumes)
+        (map! $obj.spec.template.spec.volumes [vol]
+          (if (eq? $vol.name "snapshot-validation-webhook-certs")
+            (set! $vol.secret.secretName "csi-snapshot-webhook-certs")
+            $vol)))
+
+      $obj)
+    $obj))
+
+; remove ValidatingWebhookConfiguration (handled in code)
+(filter! . [obj] (not (eq? $obj.kind "ValidatingWebhookConfiguration")))

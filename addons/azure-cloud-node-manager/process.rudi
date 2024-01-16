@@ -1,0 +1,12 @@
+; remove all Windows components
+(filter! . [obj] (not (isForOperatingSystem $obj "windows")))
+
+(map! . [obj]
+  (if (isApp $obj)
+    (do
+      (addSecurityContext! $obj) ; add security context
+
+      ; wrap container images in Go template calls, but make one of them use the
+      ; $version Go template variable
+      (templatify! $obj (new-set "cloud-node-manager/cloud-node-manager")))
+    $obj))

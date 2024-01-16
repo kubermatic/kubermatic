@@ -1,0 +1,34 @@
+; some of the upstream YAML files contain empty documents, remove those
+(filter! . [obj] (not (empty? $obj)))
+
+(map! . [obj]
+  (do
+    ; patch apps
+    (if (isApp? $obj)
+      (do
+        ; image source includes registry templating
+        (templatify! $obj (new-set "csi-azuredisk-controller/azuredisk"
+                                   "csi-azuredisk-node/azuredisk"))
+
+        ; set spec.replicas=1 since leader elections are configured
+        (set! $obj.spec.replicas 1)
+
+        ; remove scheduling hints
+        (delete! $obj.spec.template.spec.tolerations)
+        (delete! $obj.spec.template.spec.affinity)
+
+        ; mount cloud-config instead of using host path
+        (removeVolume! $obj "azure-cred")
+        (removeVolumeMounts! $obj "azure-cred")
+        (addVolume! $obj {name "cloud-config" secret {secretName "cloud-config"}})
+        (addVolumeMount! $obj "azuredisk" {mountPath "/etc/config/azure.json" name "cloud-config" subPath "config"})
+        (changeEnv! $obj "AZURE_CREDENTIAL_FILE" {value "/etc/config/azure.json"})))
+
+    ; adjust CSIDriver annotations
+    (if (eq? $obj.kind "CSIDriver")
+      (do
+        (set! $obj.metadata.annotations.csiDriver "{{ $version }}")
+        (set! $obj.metadata.annotations.snapshot "{{ $snapshot }}")))
+
+    $obj
+))

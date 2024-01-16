@@ -1,0 +1,33 @@
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+OUTPUT_FILE=driver.yaml
+
+default: build
+
+.PHONY: build
+build:
+	helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver || true
+	helm repo update
+	cat _header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+	  --version 2.22.0 \
+	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
+	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
+	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
+	  --api-versions 'policy/v1/PodDisruptionBudget' \
+	  --skip-tests \
+	  >> $(OUTPUT_FILE)
+	cat _footer.txt >> $(OUTPUT_FILE)
+	../../templatify-images.sh $(OUTPUT_FILE)

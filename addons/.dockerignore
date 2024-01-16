@@ -1,3 +1,6 @@
 Dockerfile
+Makefile
 README.md
 .dockerignore
+*.rudi
+*.sh
