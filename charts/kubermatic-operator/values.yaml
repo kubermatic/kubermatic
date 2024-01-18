@@ -33,3 +33,8 @@ kubermaticOperator:
     limits:
       cpu: 500m
       memory: 512Mi
+
+  # Additional environment variables to pass to the kubermatic-operator pod.
+  extraEnv: []
+  # - name: KEY
+  #   value: 'value'
