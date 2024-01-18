@@ -44,7 +44,8 @@ func supportsLoadBalancer(cluster *kubermaticv1.Cluster) bool {
 		cluster.Spec.Cloud.AWS != nil ||
 		cluster.Spec.Cloud.GCP != nil ||
 		cluster.Spec.Cloud.Hetzner != nil ||
-		cluster.Spec.Cloud.Kubevirt != nil
+		cluster.Spec.Cloud.Kubevirt != nil ||
+		cluster.Spec.Cloud.Openstack != nil
 }
 
 func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, attempt int) error {
