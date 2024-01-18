@@ -53,6 +53,6 @@ spec:
 
     # these need to be randomly generated. Those can be generated on the
     # shell using:
-    # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+    # cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32
     issuerCookieKey: <a-random-key>
     serviceAccountKey: <another-random-key>
