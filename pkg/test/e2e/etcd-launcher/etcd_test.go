@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -42,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var (
@@ -64,7 +66,11 @@ func init() {
 
 func TestBackup(t *testing.T) {
 	ctx := context.Background()
-	logger := log.NewFromOptions(logOptions).Sugar()
+	rawLogger := log.NewFromOptions(logOptions)
+	logger := rawLogger.Sugar()
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLogger.WithOptions(zap.AddCallerSkip(1))))
 
 	if err := credentials.Parse(); err != nil {
 		t.Fatalf("Failed to get credentials: %v", err)

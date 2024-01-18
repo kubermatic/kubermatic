@@ -229,3 +229,8 @@ modules:
       ToString: null
       ToFloat64: null
       StringSlice: null
+
+  github.com/aws/aws-sdk-go-v2/aws/arn:
+    funcs:
+      Parse: null
+      IsARN: null

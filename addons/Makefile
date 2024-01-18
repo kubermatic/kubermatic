@@ -55,14 +55,33 @@ aws-ebs-csi-driver:
 	mkdir -p csi/aws-ebs
 	cat csi/aws-ebs/_header.txt > $(OUTPUT_FILE)
 	helm --namespace kube-system template aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
-	  --version 2.22.0 \
-	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
+	  --version 2.26.0 \
+	  --set 'controller.k8sTagClusterId=\{{ "{{ .Cluster.Name }}" }}' \
 	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --api-versions 'policy/v1/PodDisruptionBudget' \
 	  --skip-tests \
 	  >> $(OUTPUT_FILE)
 	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
+
+.PHONY: cluster-autoscaler
+cluster-autoscaler: OUTPUT_FILE=cluster-autoscaler/cluster-autoscaler.yaml
+cluster-autoscaler:
+	helm repo add autoscaler https://kubernetes.github.io/autoscaler || true
+	helm repo update
+	mkdir -p cluster-autoscaler
+	cat cluster-autoscaler/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template cluster-autoscaler autoscaler/cluster-autoscaler \
+	  --version 9.34.1 \
+	  --set 'cloudProvider=clusterapi' \
+	  --set 'autoDiscovery.clusterName=\{{ "{{ .Cluster.Name }}" }}' \
+	  --set 'extraEnv.CAPI_GROUP=cluster.k8s.io' \
+	  --set 'securityContext.seccompProfile.type=RuntimeDefault' \
+	  --set 'tolerations[0].effect=NoSchedule' \
+	  --set 'tolerations[0].key=node-role.kubernetes.io/master' \
+	  >> $(OUTPUT_FILE)
+	cat cluster-autoscaler/_footer.txt >> $(OUTPUT_FILE)
 	./templatify-images.sh $(OUTPUT_FILE)
 
 .PHONY: gcp-csi-driver
@@ -74,6 +93,35 @@ gcp-csi-driver:
 	kubectl kustomize csi/gcp/ >> $(OUTPUT_FILE)
 	cat csi/gcp/_footer.txt >> $(OUTPUT_FILE)
 	rm csi/gcp/kustomization.yaml
+	./templatify-images.sh $(OUTPUT_FILE)
+
+.PHONY: nutanix-csi
+nutanix-csi: nutanix-csi-storage nutanix-csi-snapshotter
+
+.PHONY: nutanix-csi-storage
+nutanix-csi-storage: OUTPUT_FILE=csi/nutanix/csi-driver.yaml
+nutanix-csi-storage:
+	helm repo add nutanix https://nutanix.github.io/helm/ || true
+	helm repo update
+	mkdir -p csi/nutanix
+	cat csi/nutanix/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template nutanix-csi-storage nutanix/nutanix-csi-storage \
+	  --version 2.6.6 \
+	  --set 'createSecret=false' \
+	  >> $(OUTPUT_FILE)
+	cat csi/nutanix/_footer.txt >> $(OUTPUT_FILE)
+	./templatify-images.sh $(OUTPUT_FILE)
+
+nutanix-csi-snapshotter: OUTPUT_FILE=csi/nutanix/snapshot-controller.yaml
+nutanix-csi-snapshotter:
+	helm repo add nutanix https://nutanix.github.io/helm/ || true
+	helm repo update
+	mkdir -p csi/nutanix
+	cat csi/nutanix/_header.txt > $(OUTPUT_FILE)
+	helm --namespace kube-system template nutanix-csi-snapshot nutanix/nutanix-csi-snapshot \
+	  --version 6.3.2 \
+	  >> $(OUTPUT_FILE)
+	cat csi/nutanix/_footer.txt >> $(OUTPUT_FILE)
 	./templatify-images.sh $(OUTPUT_FILE)
 
 .PHONY: metallb

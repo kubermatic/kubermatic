@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.28.3/deploy/v1.28.3/csi-azurefile-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.29.2/deploy/v1.29.2/csi-azurefile-controller.yaml
 #
 # Changes:
 # - image source includes registry templating
 # - set replicas=1 (pod has a leader election)
 # - removal of tolerations
+# - add security context
+# - mount cloud-config for credentials
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
@@ -28,13 +30,16 @@
 {{ $version = "v1.25.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.6" }}
+{{ $version = "v1.26.10" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.3" }}
+{{ $version = "v1.27.4" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.3" }}
+{{ $version = "v1.28.7" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.29" }}
+{{ $version = "v1.29.2" }}
 {{ end }}
 
 ---
@@ -69,10 +74,11 @@ spec:
             - "--csi-address=$(ADDRESS)"
             - "--leader-election"
             - "--leader-election-namespace=kube-system"
-            - "--timeout=300s"
+            - "--timeout=1200s"
             - "--extra-create-metadata=true"
             - "--kube-api-qps=50"
             - "--kube-api-burst=100"
+            - "--feature-gates=HonorPVReclaimPolicy=true"
           env:
             - name: ADDRESS
               value: /csi/csi.sock
@@ -108,7 +114,7 @@ spec:
               cpu: 10m
               memory: 20Mi
         - name: csi-snapshotter
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-snapshotter:v6.2.1" }}
+          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-snapshotter:v6.3.1" }}
           args:
             - "-v=2"
             - "-csi-address=$(ADDRESS)"
@@ -122,7 +128,7 @@ spec:
               mountPath: /csi
           resources:
             limits:
-              memory: 100Mi
+              memory: 200Mi
             requests:
               cpu: 10m
               memory: 20Mi

@@ -361,12 +361,6 @@ spec:
         - apiVersion: kubermatic.k8c.io/v1
           kind: Addon
           metadata:
-            name: pod-security-policy
-            labels:
-              addons.kubermatic.io/ensure: true
-        - apiVersion: kubermatic.k8c.io/v1
-          kind: Addon
-          metadata:
             name: aws-node-termination-handler
             labels:
               addons.kubermatic.io/ensure: true
@@ -458,7 +452,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.27.6
+    default: v1.28.5
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -544,6 +538,10 @@ spec:
         to: 1.28.*
       - from: 1.28.*
         to: 1.28.*
+      - from: 1.28.*
+        to: 1.29.*
+      - from: 1.29.*
+        to: 1.29.*
     # Versions lists the available versions.
     versions:
       - v1.26.1
@@ -553,6 +551,8 @@ spec:
       - v1.27.3
       - v1.27.6
       - v1.28.2
+      - v1.28.5
+      - v1.29.0
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

@@ -217,7 +217,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.27.6"),
+		Default: semver.NewSemverOrDie("v1.28.5"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -236,6 +236,9 @@ var (
 			newSemver("v1.27.6"),
 			// Kubernetes 1.28
 			newSemver("v1.28.2"),
+			newSemver("v1.28.5"),
+			// Kubernetes 1.29
+			newSemver("v1.29.0"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.26 =======
@@ -265,6 +268,17 @@ var (
 				// Allow to change to any patch version
 				From: "1.28.*",
 				To:   "1.28.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.28.*",
+				To:   "1.29.*",
+			},
+			// ======= 1.29 =======
+			{
+				// Allow to change to any patch version
+				From: "1.29.*",
+				To:   "1.29.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
@@ -815,12 +829,6 @@ items:
   kind: Addon
   metadata:
     name: default-storage-class
-- apiVersion: kubermatic.k8c.io/v1
-  kind: Addon
-  metadata:
-    name: pod-security-policy
-    labels:
-      addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:

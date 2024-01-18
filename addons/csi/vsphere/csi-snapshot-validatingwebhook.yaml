@@ -13,15 +13,13 @@
 # limitations under the License.
 
 # Sourced from:
-# https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v3.0.2/manifests/vanilla/csi-snapshot-validatingwebhook.yaml
+# https://github.com/kubernetes-sigs/vsphere-csi-driver/blob/v3.1.2/manifests/vanilla/csi-snapshot-validatingwebhook.yaml
 #
 # Modifications:
 #   - template function to replace base registry
-#   - change image domain to registry.k8s.io
 #   - remove ValidatingWebhookConfiguration (handled in code)
 #   - change webhook-certs secret name
 #   - add seccomp profile
-
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -53,7 +51,6 @@ roleRef:
   kind: ClusterRole
   name: snapshot-webhook-runner
   apiGroup: rbac.authorization.k8s.io
-
 ---
 apiVersion: v1
 kind: Service
@@ -65,8 +62,8 @@ spec:
     app: snapshot-validation
   ports:
     - protocol: TCP
-      port: 443
-      targetPort: 443
+      port: 443 # Change if needed
+      targetPort: 443 # Change if the webserver image expects a different port
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -91,11 +88,11 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-validation
-          image: {{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v6.2.1" }}
+          image: {{ Image "registry.k8s.io/sig-storage/snapshot-validation-webhook:v6.2.2" }} # change the image if you wish to use your own custom validation server image
           imagePullPolicy: IfNotPresent
           args: ['--tls-cert-file=/run/secrets/tls/cert.pem', '--tls-private-key-file=/run/secrets/tls/key.pem']
           ports:
-            - containerPort: 443
+            - containerPort: 443 # change the port as needed
           volumeMounts:
             - name: webhook-certs
               mountPath: /run/secrets/tls

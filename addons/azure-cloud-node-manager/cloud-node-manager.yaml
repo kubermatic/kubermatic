@@ -12,25 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/cloud-provider-azure/blob/v1.28.0/examples/out-of-tree/cloud-node-manager.yaml
+# Source: https://github.com/kubernetes-sigs/cloud-provider-azure/blob/v1.28.4/examples/out-of-tree/cloud-node-manager.yaml
 #
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.24" }}
-{{ $version = "v1.24.18" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $version = "v1.25.12" }}
+{{ $version = "v1.25.23" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.8" }}
+{{ $version = "v1.26.18" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.5"}}
+{{ $version = "v1.27.12"}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.0"}}
+{{ $version = "v1.28.4"}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.29" }}
+{{ $version = "v1.28.4"}}
 {{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 apiVersion: v1

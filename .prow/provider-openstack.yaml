@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-openstack-ubuntu-1.28
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.29
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
@@ -35,7 +35,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.28"
+              value: "1.29"
             - name: PROVIDER
               value: "openstack"
             - name: DISTRIBUTIONS
@@ -59,7 +59,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-openstack-centos-1.28
+  - name: pre-kubermatic-e2e-openstack-centos-1.29
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     run_if_changed: "(addons/csi/openstack/|pkg/provider/cloud/openstack/|pkg/resources/cloudconfig/openstack|pkg/resources/cloudcontroller/openstack.go)"
@@ -81,7 +81,7 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.28"
+              value: "1.29"
             - name: PROVIDER
               value: "openstack"
             - name: DEFAULT_TIMEOUT_MINUTES

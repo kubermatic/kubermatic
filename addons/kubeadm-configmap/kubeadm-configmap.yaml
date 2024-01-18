@@ -19,24 +19,16 @@ metadata:
   namespace: kube-system
 data:
   ClusterConfiguration: |
+    apiVersion: kubeadm.k8s.io/v1beta3
+    kind: ClusterConfiguration
     apiServer:
       extraArgs:
         authorization-mode: Webhook
-      timeoutForControlPlane: 4m0s
-    {{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 21) }}
-    apiVersion: kubeadm.k8s.io/v1beta2
-    {{- else }}
-    apiVersion: kubeadm.k8s.io/v1beta3
-    {{- end }}
+      timeoutForControlPlane: 4m
     certificatesDir: /etc/kubernetes/pki
     imageRepository: registry.k8s.io
-    kind: ClusterConfiguration
     kubernetesVersion: {{ .Cluster.Version }}
   ClusterStatus: |
-    {{- if and (eq .Cluster.Version.Major 1) (le .Cluster.Version.Minor 21) }}
-    apiVersion: kubeadm.k8s.io/v1beta2
-    {{- else }}
     apiVersion: kubeadm.k8s.io/v1beta3
-    {{- end }}
     kind: ClusterStatus
     apiEndpoints:

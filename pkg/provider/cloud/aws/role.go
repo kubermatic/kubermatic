@@ -19,7 +19,9 @@ package aws
 import (
 	"context"
 	"fmt"
+	"path"
 
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 
@@ -41,10 +43,10 @@ func workerRoleName(clusterName string) string {
 	return fmt.Sprintf("%s%s-worker", resourceNamePrefix, clusterName)
 }
 
-func reconcileWorkerRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster) error {
+func reconcileWorkerRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster) (string, error) {
 	policy, err := getWorkerPolicy(cluster.Name)
 	if err != nil {
-		return fmt.Errorf("failed to build the worker policy: %w", err)
+		return "", fmt.Errorf("failed to build the worker policy: %w", err)
 	}
 
 	policies := map[string]string{workerPolicyName: policy}
@@ -69,35 +71,41 @@ func reconcileControlPlaneRole(ctx context.Context, client *iam.Client, cluster 
 	policies := map[string]string{controlPlanePolicyName: policy}
 
 	// default the role name
-	roleName := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
-	if roleName == "" {
-		roleName = controlPlaneRoleName(cluster.Name)
+	roleNameOrARN := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
+	if roleNameOrARN == "" {
+		roleNameOrARN = controlPlaneRoleName(cluster.Name)
 	}
 
 	// ensure role exists and is assigned to the given policies
-	if err := ensureRole(ctx, client, cluster, roleName, policies); err != nil {
+	roleARN, err := ensureRole(ctx, client, cluster, roleNameOrARN, policies)
+	if err != nil {
 		return cluster, err
 	}
 
 	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = roleName
+		cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = roleARN
 	})
 }
 
 func cleanUpControlPlaneRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster) error {
 	// default the role name
-	roleName := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
-	if roleName == "" {
-		roleName = controlPlaneRoleName(cluster.Name)
+	roleNameOrARN := cluster.Spec.Cloud.AWS.ControlPlaneRoleARN
+	if roleNameOrARN == "" {
+		roleNameOrARN = controlPlaneRoleName(cluster.Name)
 	}
 
-	return deleteRole(ctx, client, cluster, roleName, []string{controlPlanePolicyName})
+	return deleteRole(ctx, client, cluster, roleNameOrARN, []string{controlPlanePolicyName})
 }
 
 // /////////////////////////
 // commonly shared functions
 
-func getRole(ctx context.Context, client *iam.Client, roleName string) (*iamtypes.Role, error) {
+func getRole(ctx context.Context, client *iam.Client, roleNameOrARN string) (*iamtypes.Role, error) {
+	roleName, err := decodeRoleARN(roleNameOrARN)
+	if err != nil {
+		return nil, err
+	}
+
 	getRoleInput := &iam.GetRoleInput{
 		RoleName: ptr.To(roleName),
 	}
@@ -110,14 +118,39 @@ func getRole(ctx context.Context, client *iam.Client, roleName string) (*iamtype
 	return out.Role, nil
 }
 
-func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, roleName string, policies map[string]string) error {
+func decodeRoleARN(nameOrARN string) (string, error) {
+	if !arn.IsARN(nameOrARN) {
+		return nameOrARN, nil
+	}
+
+	parsed, err := arn.Parse(nameOrARN)
+	if err != nil {
+		return "", fmt.Errorf("invalid role ARN %q: %w", nameOrARN, err)
+	}
+
+	// Roles resource names are stored as "role/...." in the ARN and we need
+	// to strip the prefix.
+	return path.Base(parsed.Resource), nil
+}
+
+func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, roleNameOrARN string, policies map[string]string) (string, error) {
+	// When ensuring an existing role, we are usually called with a full ARN,
+	// but when creating a role initially, we are called with just the name.
+	// To create/check the role, we first need to parse the nameOrARN.
+	roleName, err := decodeRoleARN(roleNameOrARN)
+	if err != nil {
+		return "", err
+	}
+
 	// check if it still exists
-	_, err := getRole(ctx, client, roleName)
+	existingRole, err := getRole(ctx, client, roleName)
 	if err != nil && !isNotFound(err) {
-		return fmt.Errorf("failed to get role: %w", err)
+		return "", fmt.Errorf("failed to get role: %w", err)
 	}
 
 	// create missing role
+	var roleARN string
+
 	if isNotFound(err) {
 		createRoleInput := &iam.CreateRoleInput{
 			AssumeRolePolicyDocument: ptr.To(assumeRolePolicy),
@@ -125,9 +158,14 @@ func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 			Tags:                     []iamtypes.Tag{iamOwnershipTag(cluster.Name)},
 		}
 
-		if _, err := client.CreateRole(ctx, createRoleInput); err != nil {
-			return fmt.Errorf("failed to create role: %w", err)
+		output, err := client.CreateRole(ctx, createRoleInput)
+		if err != nil {
+			return "", fmt.Errorf("failed to create role: %w", err)
 		}
+
+		roleARN = *output.Role.Arn
+	} else {
+		roleARN = *existingRole.Arn
 	}
 
 	// attach policies
@@ -140,14 +178,19 @@ func ensureRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 		}
 
 		if _, err := client.PutRolePolicy(ctx, putRolePolicyInput); err != nil {
-			return fmt.Errorf("failed to ensure policy %q for role %q: %w", policyName, roleName, err)
+			return "", fmt.Errorf("failed to ensure policy %q for role %q: %w", policyName, roleNameOrARN, err)
 		}
 	}
 
-	return nil
+	return roleARN, nil
 }
 
-func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, roleName string, policies []string) error {
+func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.Cluster, roleNameOrARN string, policies []string) error {
+	roleName, err := decodeRoleARN(roleNameOrARN)
+	if err != nil {
+		return err
+	}
+
 	// check if it still exists
 	role, err := getRole(ctx, client, roleName)
 	if err != nil {
@@ -170,7 +213,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 			RoleName: ptr.To(roleName),
 		})
 		if err != nil {
-			return fmt.Errorf("failed to list policies for role %q: %w", roleName, err)
+			return fmt.Errorf("failed to list policies for role %q: %w", roleNameOrARN, err)
 		}
 
 		policies = listPoliciesOut.PolicyNames
@@ -199,7 +242,7 @@ func deleteRole(ctx context.Context, client *iam.Client, cluster *kubermaticv1.C
 		RoleName: ptr.To(roleName),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to list attached policies for role %q: %w", roleName, err)
+		return fmt.Errorf("failed to list attached policies for role %q: %w", roleNameOrARN, err)
 	}
 
 	for _, policy := range listAttachedPoliciesOut.AttachedPolicies {

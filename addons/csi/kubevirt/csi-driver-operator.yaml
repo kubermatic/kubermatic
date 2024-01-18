@@ -330,13 +330,13 @@ spec:
       securityContext:
         runAsNonRoot: true
       containers:
-        - command:
+        - name: manager
+          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.3.0" }}
+          imagePullPolicy: Always
+          command:
             - /manager
           args:
             - --leader-elect
-          image: quay.io/kubermatic/kubevirt-csi-driver-operator:v0.3.0
-          imagePullPolicy: Always
-          name: manager
           securityContext:
             allowPrivilegeEscalation: false
           livenessProbe:
