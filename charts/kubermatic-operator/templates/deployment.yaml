@@ -65,7 +65,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         {{- with .Values.kubermaticOperator.extraEnv }}
-        {{- toYaml . | nindent 10 }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
         ports:
         - name: metrics
