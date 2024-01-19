@@ -131,7 +131,7 @@ func getAllNetworks(netClient *gophercloud.ServiceClient, opts osnetworks.ListOp
 	return allNetworks, nil
 }
 
-func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExternal bool) (*NetworkWithExternalExt, error) {
+func GetNetworkByName(netClient *gophercloud.ServiceClient, name string, isExternal bool) (*NetworkWithExternalExt, error) {
 	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: name})
 	if err != nil {
 		return nil, err
@@ -366,7 +366,7 @@ func createUserClusterNetwork(netClient *gophercloud.ServiceClient, clusterName 
 }
 
 func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName string) error {
-	network, err := getNetworkByName(netClient, networkName, false)
+	network, err := GetNetworkByName(netClient, networkName, false)
 	if err != nil {
 		return fmt.Errorf("failed to get network '%s' by name: %w", networkName, err)
 	}
