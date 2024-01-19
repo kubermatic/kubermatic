@@ -18,6 +18,7 @@ package operatingsystemmanager
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -333,12 +334,21 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 }
 
 func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
-	var flags []string
-	for registry, mirror := range crid.Registries {
-		var flag string
-		for _, endpoint := range mirror.Mirrors {
-			flag = fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint)
-			flags = append(flags, flag)
+	var (
+		registries, flags []string
+	)
+
+	// fetch all keys from the map and sort them
+	// for stable order.
+	for registry := range crid.Registries {
+		registries = append(registries, registry)
+	}
+
+	slices.Sort(registries)
+
+	for _, registry := range registries {
+		for _, endpoint := range crid.Registries[registry].Mirrors {
+			flags = append(flags, fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint))
 		}
 	}
 
