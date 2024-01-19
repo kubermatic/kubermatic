@@ -2,6 +2,18 @@
 
 - [v2.24.0](#v2240)
 - [v2.24.1](#v2241)
+- [v2.24.2](#v2242)
+
+## [v2.24.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.2)
+
+### Bugfixes
+
+- If the seed cluster is using Cilium as CNI, create a `CiliumClusterwideNetworkPolicy` for api-server connectivity ([#12966](https://github.com/kubermatic/kubermatic/pull/12966))
+- The Kubermatic installer will now detect DNS settings based on the `Ingress` instead of the nginx-ingress `LoadBalancer`, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
+
+### Removals
+
+- Remove 1.25 from list of supported versions on AKS (EOL on January 14th) ([#12962](https://github.com/kubermatic/kubermatic/pull/12962))
 
 ## [v2.24.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.1)
 

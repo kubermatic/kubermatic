@@ -11,7 +11,14 @@
 - [v2.22.8](#v2228)
 - [v2.22.9](#v2229)
 - [v2.22.10](#v22210)
-- [v2.22.11](#v22210)
+- [v2.22.11](#v22211)
+- [v2.22.12](#v22212)
+
+## [v2.22.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.12)
+
+### Updates
+
+- Update EKS/AKS version matrix to only include Kubernetes versions supported by those managed offerings. For  AKS 1.26-1.28 are supported, for EKS 1.24 to 1.28. The default for newly created external clusters is now 1.28 ([#12965](https://github.com/kubermatic/kubermatic/pull/12965))
 
 ## [v2.22.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.11)
 
