@@ -88,7 +88,7 @@ func getAllNetworks(netClient *gophercloud.ServiceClient, opts osnetworks.ListOp
 	return allNetworks, nil
 }
 
-func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExternal bool) (*NetworkWithExternalExt, error) {
+func GetNetworkByName(netClient *gophercloud.ServiceClient, name string, isExternal bool) (*NetworkWithExternalExt, error) {
 	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: name})
 	if err != nil {
 		return nil, err
@@ -324,7 +324,7 @@ func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName s
 }
 
 func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName string) error {
-	network, err := getNetworkByName(netClient, networkName, false)
+	network, err := GetNetworkByName(netClient, networkName, false)
 	if err != nil {
 		return fmt.Errorf("failed to get network '%s' by name: %w", networkName, err)
 	}
@@ -462,7 +462,7 @@ func getAllSubnetPools(netClient *gophercloud.ServiceClient, listOpts subnetpool
 }
 
 func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
-	extNetwork, err := getNetworkByName(netClient, extNetworkName, true)
+	extNetwork, err := GetNetworkByName(netClient, extNetworkName, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get external network %q: %w", extNetworkName, err)
 	}

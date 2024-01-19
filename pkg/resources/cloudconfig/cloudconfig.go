@@ -30,6 +30,7 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	openstackprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
 )
@@ -104,6 +105,7 @@ func CloudConfig(
 		if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
 			useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
 		}
+
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:                     dc.Spec.Openstack.AuthURL,
