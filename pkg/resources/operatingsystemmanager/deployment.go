@@ -18,7 +18,7 @@ package operatingsystemmanager
 
 import (
 	"fmt"
-	"slices"
+	"sort"
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -344,7 +344,7 @@ func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string 
 		registries = append(registries, registry)
 	}
 
-	slices.Sort(registries)
+	sort.Strings(registries)
 
 	for _, registry := range registries {
 		for _, endpoint := range crid.Registries[registry].Mirrors {
