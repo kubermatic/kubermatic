@@ -71,6 +71,27 @@ func validateHelmValues(helmValues *yamled.Document, opt stack.DeployOptions) []
 		}
 	}
 
+	if helmValues.Has(yamled.Path{"cortex", "config", "ruler", "storage"}) {
+		failures = append(failures, fmt.Errorf("cortex.config.ruler.storage is no longer supported, please use cortex.config.ruler_storage instead"))
+	}
+	if helmValues.Has(yamled.Path{"cortex", "config", "alertmanager", "storage"}) {
+		failures = append(failures, fmt.Errorf("cortex.config.alertmanager.storage is no longer supported, please use cortex.config.alertmanager_storage instead"))
+	}
+	paths := []yamled.Path{
+		{"cortex", "config", "schema"},
+		{"cortex", "config", "chunk_store"},
+		{"cortex", "config", "table_manager"},
+		{"cortex", "config", "ingester", "max_transfer_retries"},
+		{"cortex", "config", "storage", "azure"},
+		{"cortex", "config", "storage", "cassandra"},
+		{"cortex", "config", "storage", "index_queries_cache_config"},
+	}
+	for _, path := range paths {
+		if helmValues.Has(path) {
+			failures = append(failures, fmt.Errorf("%s is no longer supported", path.String()))
+		}
+	}
+
 	return failures
 }
 
