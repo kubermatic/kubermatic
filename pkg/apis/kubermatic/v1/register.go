@@ -105,6 +105,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ResourceQuotaList{},
 		&GroupProjectBinding{},
 		&GroupProjectBindingList{},
+		&ClusterBackupStorageLocation{},
+		&ClusterBackupStorageLocationList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

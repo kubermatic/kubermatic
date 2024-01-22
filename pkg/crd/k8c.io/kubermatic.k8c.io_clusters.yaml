@@ -158,6 +158,18 @@ spec:
                           type: object
                       type: object
                   type: object
+                backupConfig:
+                  description: 'Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.'
+                  properties:
+                    backupStorageLocation:
+                      description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
+                      properties:
+                        name:
+                          description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                  type: object
                 cloud:
                   description: Cloud contains information regarding the cloud provider that is responsible for hosting the cluster's workload.
                   properties:

@@ -73,6 +73,7 @@ locationMap='{
   "userprojectbindings.kubermatic.k8c.io": "master,seed",
   "usersshkeys.kubermatic.k8c.io": "master,seed",
   "users.kubermatic.k8c.io": "master,seed",
+  "clusterbackupstoragelocations.kubermatic.k8c.io": "master,seed",
 
   "verticalpodautoscalers.autoscaling.k8s.io": "seed",
   "verticalpodautoscalercheckpoints.autoscaling.k8s.io": "seed"

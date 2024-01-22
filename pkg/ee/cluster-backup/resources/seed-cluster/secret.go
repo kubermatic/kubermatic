@@ -25,9 +25,13 @@
 package seedclusterresources
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"text/template"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/awsbackupstore"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -37,18 +41,52 @@ import (
 )
 
 // SecretReconciler returns a function to create the Secret containing the backup destination credentials.
-func SecretReconciler(ctx context.Context, client ctrlruntimeclient.Client, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+func SecretReconciler(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return cloudCredentialsSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			refName := data.ClusterBackupConfig().Destination.Credentials.Name
-			refNamespace := data.ClusterBackupConfig().Destination.Credentials.Namespace
+			refName := cbsl.Spec.Credential.Name
+			refNamespace := resources.KubermaticNamespace
 
 			secret := &corev1.Secret{}
 			if err := client.Get(ctx, types.NamespacedName{Name: refName, Namespace: refNamespace}, secret); err != nil {
 				return nil, fmt.Errorf("failed to get backup destination credentials secret: %w", err)
 			}
-			cm.Data = secret.Data
+
+			awsAccessKeyId := secret.Data[awsbackupstore.AWSAccessKeyIDKeyName]
+			awsSecretAccessKey := secret.Data[awsbackupstore.AWSSecretAccessKeyName]
+			if awsAccessKeyId == nil || awsSecretAccessKey == nil {
+				return nil, fmt.Errorf("backup destination credentials secret is not set correctly: [%s] and [%s] can't be empty", awsbackupstore.AWSAccessKeyIDKeyName, awsbackupstore.AWSSecretAccessKeyName)
+			}
+
+			cloudCredsFile, err := getVeleroCloudCredentials(awsAccessKeyId, awsSecretAccessKey)
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate Velero cloud-credentials file: %w", err)
+			}
+			cm.Data = map[string][]byte{
+				defaultCloudCredentialsSecretKeyName: cloudCredsFile,
+			}
 			return cm, nil
 		}
 	}
+}
+
+var credentialsTemplate string = `[default]
+aws_access_key_id = {{ .awsAccessKeyId }}
+aws_secret_access_key = {{ .awsSecretAccessKey }}
+`
+
+func getVeleroCloudCredentials(awsAccessKeyId, awsSecretAccessKey []byte) ([]byte, error) {
+	t, err := template.New("cloud-credentials").Parse(credentialsTemplate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse credentials file template: %w", err)
+	}
+	var buff bytes.Buffer
+	if err := t.Execute(&buff, map[string]interface{}{
+		"awsAccessKeyId":     string(awsAccessKeyId),
+		"awsSecretAccessKey": string(awsSecretAccessKey),
+	}); err != nil {
+		return nil, fmt.Errorf("failed to execute credentials file template: %w", err)
+	}
+
+	return buff.Bytes(), nil
 }

@@ -24,6 +24,7 @@ import (
 	"fmt"
 
 	clusterbackup "k8c.io/kubermatic/v2/pkg/ee/cluster-backup"
+	storagelocation "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location"
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
@@ -56,6 +57,9 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := clusterbackup.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.clientProvider, ctrlCtx.seedGetter, ctrlCtx.log, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create Cluster-Backup controller: %w", err)
+	}
+	if err := storagelocation.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create StorageLocation controller: %w", err)
 	}
 	return nil
 }

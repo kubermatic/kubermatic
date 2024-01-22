@@ -40,6 +40,8 @@ const (
 	clusterbackupKubeConfigSecretName = "velero-kubeconfig"
 	cloudCredentialsSecretName        = "velero-cloud-credentials"
 
+	defaultCloudCredentialsSecretKeyName = "cloud"
+
 	version       = "v1.12.0"
 	pluginVersion = "v1.0.0"
 )
@@ -119,7 +121,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 						},
 						{
 							Name:  "AWS_SHARED_CREDENTIALS_FILE",
-							Value: "/credentials/cloud",
+							Value: fmt.Sprintf("/credentials/%s", defaultCloudCredentialsSecretKeyName),
 						},
 						{
 							Name:  "KUBECONFIG",
