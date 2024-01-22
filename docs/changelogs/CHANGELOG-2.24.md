@@ -6,10 +6,15 @@
 
 ## [v2.24.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.2)
 
+### Updates
+
+- Add support for Kubernetes v1.26.13, v1.27.10, v1.28.6 and set default version to v1.27.10 ([#12982](https://github.com/kubermatic/kubermatic/pull/12982))
+
 ### Bugfixes
 
-- If the seed cluster is using Cilium as CNI, create a `CiliumClusterwideNetworkPolicy` for api-server connectivity ([#12966](https://github.com/kubermatic/kubermatic/pull/12966))
-- The Kubermatic installer will now detect DNS settings based on the `Ingress` instead of the nginx-ingress `LoadBalancer`, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
+- If the seed cluster is using Cilium as CNI, create CiliumClusterwideNetworkPolicy for api-server connectivity ([#12966](https://github.com/kubermatic/kubermatic/pull/12966))
+- Stop constantly re-deploying operating-system-manager when registry mirrors are configured ([#12972](https://github.com/kubermatic/kubermatic/pull/12972))
+- The Kubermatic installer will now detect DNS settings based on the Ingress instead of the nginx-ingress LoadBalancer, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
 
 ### Removals
 
