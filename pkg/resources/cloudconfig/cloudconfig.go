@@ -106,6 +106,10 @@ func CloudConfig(
 			useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
 		}
 
+		if cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation] == "" {
+			return "", fmt.Errorf("failed to read floating IP pool ID from %s", openstackprovider.FloatingIPPoolIDAnnotation)
+		}
+
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:                     dc.Spec.Openstack.AuthURL,
@@ -126,7 +130,7 @@ func CloudConfig(
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
 				UseOctavia:           useOctavia,
-				FloatingNetworkID:    cluster.Spec.Cloud.Openstack.FloatingIPPool,
+				FloatingNetworkID:    cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation],
 			},
 			Version: cluster.Status.Versions.ControlPlane.String(),
 		}
