@@ -106,10 +106,6 @@ func CloudConfig(
 			useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
 		}
 
-		if cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation] == "" {
-			return "", fmt.Errorf("failed to read floating IP pool ID from %s", openstackprovider.FloatingIPPoolIDAnnotation)
-		}
-
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:                     dc.Spec.Openstack.AuthURL,
@@ -141,6 +137,12 @@ func CloudConfig(
 
 		if cluster.Spec.Cloud.Openstack.IngressHostnameSuffix != nil {
 			openstackCloudConfig.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.Openstack.IngressHostnameSuffix
+		}
+
+		// we won't throw an error here for backwards compatibility and instead simply not set
+		// the floating-ip-pool-id field if the annotation is not there.
+		if cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation] != "" {
+			openstackCloudConfig.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation]
 		}
 
 		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)

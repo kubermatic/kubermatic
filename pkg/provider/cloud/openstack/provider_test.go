@@ -111,6 +111,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterCleanupFinalizer,
 						RouterSubnetLinkCleanupFinalizer,
 					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
@@ -164,6 +167,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterCleanupFinalizer,
 						RouterSubnetLinkCleanupFinalizer,
 						RouterIPv6SubnetLinkCleanupFinalizer,
+					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
@@ -230,6 +236,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 			wantCluster: kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-xyz",
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
@@ -291,6 +300,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterCleanupFinalizer,
 						RouterSubnetLinkCleanupFinalizer,
 					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
@@ -348,6 +360,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 						RouterCleanupFinalizer,
 						RouterSubnetLinkCleanupFinalizer,
 					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
+					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
@@ -402,6 +417,9 @@ func TestInitializeCloudProvider(t *testing.T) {
 						SecurityGroupCleanupFinalizer,
 						RouterCleanupFinalizer,
 						RouterSubnetLinkCleanupFinalizer,
+					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetwork.ID,
 					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
