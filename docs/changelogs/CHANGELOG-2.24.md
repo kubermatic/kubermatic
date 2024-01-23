@@ -6,6 +6,13 @@
 
 ## [v2.24.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.2)
 
+### Action Required
+
+- **ACTION REQUIRED:** User Cluster MLA `cortex` chart has been upgraded to resolve issues for cortex-compactor and improve stability of the User Cluster MLA feature. Few actions are required to be taken to use new upgraded charts ([#12935](https://github.com/kubermatic/kubermatic/pull/12935))
+    - Refer to [Upstream helm chart values](https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml) to see the latest default values
+    - Some of the values from earlier `values.yaml` are now incompatible with latest version. They are removed in the `values.yaml` in the current chart. But if you had copied the original values.yaml to customize it further, you may see that `kubermatic-installer` will detect such incompatible options and churn out errors and explain that action that needs to be taken.
+    - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block 
+
 ### Updates
 
 - Add support for Kubernetes v1.26.13, v1.27.10, v1.28.6 and set default version to v1.27.10 ([#12982](https://github.com/kubermatic/kubermatic/pull/12982))
