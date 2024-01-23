@@ -10,6 +10,18 @@
 - [v2.23.7](#v2237)
 - [v2.23.8](#v2238)
 - [v2.23.9](#v2239)
+- [v2.23.10](#v22310)
+
+## [v2.23.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.10)
+
+### Bugfixes
+
+- Stop constantly re-deploying operating-system-manager when registry mirrors are configured ([#12972](https://github.com/kubermatic/kubermatic/pull/12972))
+
+### Updates
+
+- Update EKS/AKS version matrix to only include Kubernetes versions supported by those managed offerings. For  AKS 1.26-1.28 are supported, for EKS 1.24 to 1.28. The default for newly created external clusters is now 1.28 ([#12964](https://github.com/kubermatic/kubermatic/pull/12964))
+- Add support for Kubernetes v1.24.17, v1.25.16, v1.26.13, v1.27.10 and set default version to v1.26.13 ([#12983](https://github.com/kubermatic/kubermatic/pull/12983))
 
 ## [v2.23.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.9)
 
