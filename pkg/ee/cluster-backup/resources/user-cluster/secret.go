@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package seedclusterresources
+package userclusterresources
 
 import (
 	"bytes"

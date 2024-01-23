@@ -43,12 +43,28 @@ const (
 	clusterRoleBindingName = "velero"
 	clusterBackupAppName   = "velero"
 	defaultBSLName         = "default-cluster-backup-bsl"
+
+	cloudCredentialsSecretName           = "velero-cloud-credentials"
+	defaultCloudCredentialsSecretKeyName = "cloud"
+
+	version       = "v1.12.0"
+	pluginVersion = "v1.2.1"
 )
 
 // NamespaceReconciler creates the namespace for velero related resources on the user cluster.
 func NamespaceReconciler() reconciling.NamedNamespaceReconcilerFactory {
 	return func() (string, reconciling.NamespaceReconciler) {
 		return resources.ClusterBackupNamespaceName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			ns.Labels = map[string]string{
+				"kubernetes.io/metadata.name": "velero",
+
+				"pod-security.kubernetes.io/audit":           "privileged",
+				"pod-security.kubernetes.io/audit-version":   "latest",
+				"pod-security.kubernetes.io/enforce":         "privileged",
+				"pod-security.kubernetes.io/enforce-version": "latest",
+				"pod-security.kubernetes.io/warn":            "privileged",
+				"pod-security.kubernetes.io/warn-version":    "latest",
+			}
 			return ns, nil
 		}
 	}
@@ -76,9 +92,9 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
-					Kind:     rbacv1.UserKind,
-					Name:     resources.ClusterBackupServiceAccountName,
-					APIGroup: rbacv1.GroupName,
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      resources.ClusterBackupServiceAccountName,
+					Namespace: resources.ClusterBackupNamespaceName,
 				},
 			}
 			return crb, nil
