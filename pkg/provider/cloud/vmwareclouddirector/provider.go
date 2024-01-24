@@ -28,6 +28,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/gengo/examples/set-gen/sets"
 )
 
 const (
@@ -162,8 +164,9 @@ func (p *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermatic
 	}
 
 	if oldSpec.VMwareCloudDirector.OVDCNetworks != nil && newSpec.VMwareCloudDirector.OVDCNetworks != nil {
-		if len(oldSpec.VMwareCloudDirector.OVDCNetworks) != len(newSpec.VMwareCloudDirector.OVDCNetworks) {
-			return fmt.Errorf("updating VMware Cloud Director OVDCNetworks is not supported (was %v, updated to %v)", oldSpec.VMwareCloudDirector.OVDCNetworks, newSpec.VMwareCloudDirector.OVDCNetworks)
+		diff := sets.NewString(oldSpec.VMwareCloudDirector.OVDCNetworks...).Difference(sets.NewString(newSpec.VMwareCloudDirector.OVDCNetworks...))
+		if diff.Len() > 0 {
+			return fmt.Errorf("updating VMware Cloud Director OVDCNetworks is not supported (was %s, updated to %s)", oldSpec.VMwareCloudDirector.OVDCNetworks, newSpec.VMwareCloudDirector.OVDCNetworks)
 		}
 	}
 

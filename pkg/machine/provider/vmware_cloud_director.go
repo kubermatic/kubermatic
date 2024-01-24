@@ -103,7 +103,7 @@ func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConf
 		if config.Template.Value == "" && os != "" {
 			template := datacenter.Templates[os]
 			if template == "" {
-				return nil, fmt.Errorf("no template configured in AWS datacenter for operating system %q", os)
+				return nil, fmt.Errorf("no template configured in VMware Cloud Director datacenter for operating system %q", os)
 			}
 
 			config.Template.Value = template
