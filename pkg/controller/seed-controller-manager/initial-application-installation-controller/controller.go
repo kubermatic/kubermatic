@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -37,6 +38,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -145,6 +147,23 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, nil
 	}
 
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	if cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+		ciliumApp, err := getCiliumApplicationInstallation(userClusterClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user cluster client: %w", err)
+
+		}
+		if ciliumApp.Status.ApplicationVersion == nil {
+			r.log.Debug("Cilium System Application not ready")
+			return nil, nil
+		}
+	}
+
 	applications, err := r.parseApplications(cluster, request)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
@@ -152,11 +171,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		return nil, err
-	}
-
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
 	var errs []error
@@ -223,4 +237,13 @@ func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1
 	oldCluster := cluster.DeepCopy()
 	delete(cluster.Annotations, kubermaticv1.InitialApplicationInstallationsRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+}
+
+func getCiliumApplicationInstallation(userClusterClient ctrlruntimeclient.Client) (*appskubermaticv1.ApplicationInstallation, error) {
+	app := &appskubermaticv1.ApplicationInstallation{}
+	if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: kubermaticv1.CNIPluginTypeCilium.String()}, app); err != nil {
+		return nil, fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err)
+	}
+
+	return app, nil
 }
