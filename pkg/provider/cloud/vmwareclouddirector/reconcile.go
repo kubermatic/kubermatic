@@ -72,22 +72,32 @@ func reconcileVApp(ctx context.Context, cluster *kubermaticv1.Cluster, update pr
 func reconcileNetwork(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, vdc *govcd.Vdc) (*kubermaticv1.Cluster, error) {
 	var err error
 
-	// Ensure that ovdc network is attached to the vApp
-	ovdcNetwork, err := vdc.GetOrgVdcNetworkByNameOrId(cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork, true)
+	// Ensure that all the ovdc networks are attached to the vApp
+	ovdcNetworks, err := getOrgVDCNetworks(vdc, *cluster.Spec.Cloud.VMwareCloudDirector)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get organization VDC network '%s': %w", cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork, err)
+		return nil, fmt.Errorf("failed to get organization VDC networks: %w", err)
 	}
 
-	// Check if the network is already present in vApp
+	for _, ovdcNetwork := range ovdcNetworks {
+		if err := reconcileNetworkForVApp(ctx, cluster, update, vdc, ovdcNetwork); err != nil {
+			return nil, fmt.Errorf("failed to reconcile network for vApp: %w", err)
+		}
+	}
+
+	return cluster, nil
+}
+
+func reconcileNetworkForVApp(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, vdc *govcd.Vdc, network *govcd.OrgVDCNetwork) error {
+	// Check if the network is already present in vApp.
 	vApp, err := vdc.GetVAppByNameOrId(cluster.Spec.Cloud.VMwareCloudDirector.VApp, true)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	exists := false
 	if vApp.VApp.NetworkConfigSection != nil && vApp.VApp.NetworkConfigSection.NetworkConfig != nil {
 		for _, net := range vApp.VApp.NetworkConfigSection.NetworkNames() {
-			if net == ovdcNetwork.OrgVDCNetwork.Name {
+			if net == network.OrgVDCNetwork.Name {
 				exists = true
 			}
 		}
@@ -95,9 +105,10 @@ func reconcileNetwork(ctx context.Context, cluster *kubermaticv1.Cluster, update
 
 	// We need to attach the network to vApp
 	if !exists {
-		if _, err := vApp.AddOrgNetwork(&govcd.VappNetworkSettings{}, ovdcNetwork.OrgVDCNetwork, false); err != nil {
-			return nil, fmt.Errorf("failed to attach organization VDC network '%s' to vApp '%s': %w", ovdcNetwork.OrgVDCNetwork.Name, cluster.Spec.Cloud.VMwareCloudDirector.VApp, err)
+		if _, err := vApp.AddOrgNetwork(&govcd.VappNetworkSettings{}, network.OrgVDCNetwork, false); err != nil {
+			return fmt.Errorf("failed to attach organization VDC network '%s' to vApp '%s': %w", network.OrgVDCNetwork.Name, cluster.Spec.Cloud.VMwareCloudDirector.VApp, err)
 		}
 	}
-	return cluster, nil
+
+	return nil
 }

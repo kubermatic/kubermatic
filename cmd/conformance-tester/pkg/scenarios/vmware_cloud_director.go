@@ -71,6 +71,7 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 				Organization: secrets.VMwareCloudDirector.Organization,
 				VDC:          secrets.VMwareCloudDirector.VDC,
 				OVDCNetwork:  secrets.VMwareCloudDirector.OVDCNetwork,
+				OVDCNetworks: secrets.VMwareCloudDirector.OVDCNetworks,
 				CSI: &kubermaticv1.VMwareCloudDirectorCSIConfig{
 					StorageProfile: vmwareCloudDirectorStorageProfile,
 				},

@@ -106,6 +106,7 @@ type Secrets struct {
 		Organization  string
 		VDC           string
 		OVDCNetwork   string
+		OVDCNetworks  []string
 	}
 	RHEL struct {
 		SubscriptionUser     string
