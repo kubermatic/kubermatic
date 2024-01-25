@@ -38,6 +38,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -293,6 +294,13 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	if err != nil {
 		t.Fatalf("Hubble UI observe test failed: %v", err)
 	}
+
+	log.Info("Checking for cert-manager app...")
+	apps := appskubermaticv1.ApplicationInstallationList{}
+	if err := client.List(context.Background(), &apps); err != nil {
+		t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
+	}
+	log.Infof("Apps on user cluster: %v", apps.Items)
 }
 
 func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
@@ -459,7 +467,7 @@ func createUserCluster(
 			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 		}).
 		WithAnnotations(map[string]string{
-			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: [{"name":"cert-manager","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"namespace":{"name":"cert-manager","create":true},"applicationRef":{"name":"cert-manager","version":"v1.12.3"},"values":{"installCRDs":true}}}],
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: `{"name": "cert-manager", "creationTimestamp": "0001-01-01T00:00:00Z", "spec": {"namespace": {"name": "cert-manager", "create": true}, "applicationRef": {"name": "cert-manager", "version": "v1.12.3"}, "values": {"installCRDs": true}}}`,
 		})
 
 	cleanup := func() {
