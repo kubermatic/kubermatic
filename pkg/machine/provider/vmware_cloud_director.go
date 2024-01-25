@@ -103,7 +103,7 @@ func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConf
 		if config.Template.Value == "" && os != "" {
 			template := datacenter.Templates[os]
 			if template == "" {
-				return nil, fmt.Errorf("no template configured in AWS datacenter for operating system %q", os)
+				return nil, fmt.Errorf("no template configured in VMware Cloud Director datacenter for operating system %q", os)
 			}
 
 			config.Template.Value = template
@@ -116,7 +116,12 @@ func CompleteVMwareCloudDirectorProviderSpec(config *vmwareclouddirector.RawConf
 		}
 
 		if config.Network.Value == "" {
-			config.Network.Value = cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork
+			if len(cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetworks) > 0 {
+				// As a default, we attach the first network to the VMs.
+				config.Network.Value = cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetworks[0]
+			} else if cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork != "" {
+				config.Network.Value = cluster.Spec.Cloud.VMwareCloudDirector.OVDCNetwork
+			}
 		}
 	}
 

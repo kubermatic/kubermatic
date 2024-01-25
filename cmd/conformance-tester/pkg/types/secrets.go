@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/test"
 )
@@ -105,7 +106,7 @@ type Secrets struct {
 		Password      string
 		Organization  string
 		VDC           string
-		OVDCNetwork   string
+		OVDCNetworks  []string
 	}
 	RHEL struct {
 		SubscriptionUser     string
@@ -116,6 +117,7 @@ type Secrets struct {
 
 var (
 	kubevirtKubeconfigFile string
+	ovdcNetworks           string
 )
 
 func (s *Secrets) AddFlags() {
@@ -170,7 +172,7 @@ func (s *Secrets) AddFlags() {
 	flag.StringVar(&s.VMwareCloudDirector.Password, "vmware-cloud-director-password", "", "VMware Cloud Director: Password")
 	flag.StringVar(&s.VMwareCloudDirector.Organization, "vmware-cloud-director-organization", "", "VMware Cloud Director: Organization")
 	flag.StringVar(&s.VMwareCloudDirector.VDC, "vmware-cloud-director-vdc", "", "VMware Cloud Director: Organizational VDC")
-	flag.StringVar(&s.VMwareCloudDirector.OVDCNetwork, "vmware-cloud-director-ovdc-network", "", "VMware Cloud Director: Organizational VDC network name")
+	flag.StringVar(&ovdcNetworks, "vmware-cloud-director-ovdc-networks", "", "VMware Cloud Director: Organizational VDC networks; comma separated list of network names")
 	flag.StringVar(&s.VMwareCloudDirector.KKPDatacenter, "vmware-cloud-director-kkp-datacenter", "", "VMware Cloud Director: KKP datacenter to use")
 	flag.StringVar(&s.RHEL.SubscriptionUser, "rhel-subscription-user", "", "RedHat Enterprise subscription user")
 	flag.StringVar(&s.RHEL.SubscriptionPassword, "rhel-subscription-password", "", "RedHat Enterprise subscription password")
@@ -185,6 +187,10 @@ func (s *Secrets) ParseFlags() error {
 		}
 
 		s.Kubevirt.Kubeconfig = test.SafeBase64Decoding(string(content))
+	}
+
+	if ovdcNetworks != "" {
+		s.VMwareCloudDirector.OVDCNetworks = strings.Split(ovdcNetworks, ",")
 	}
 
 	if s.GCP.ServiceAccount != "" {

@@ -951,6 +951,12 @@ func validateVMwareCloudDirectorCloudSpec(spec *kubermaticv1.VMwareCloudDirector
 		}
 	}
 
+	if spec.OVDCNetwork == "" && len(spec.OVDCNetworks) == 0 {
+		return errors.New("one of ovdcNetwork or ovdcNetworks needs to be specified")
+	} else if spec.OVDCNetwork != "" && len(spec.OVDCNetworks) > 0 {
+		return errors.New("ovdcNetwork and ovdcNetworks cannot be set at the same time")
+	}
+
 	return nil
 }
 

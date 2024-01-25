@@ -160,6 +160,7 @@ var (
 				Organization: "vcd-organization",
 				VDC:          "vcd-vdc",
 				OVDCNetwork:  "vcd-ovdc-network",
+				OVDCNetworks: []string{"vcd-ovdc-network1", "vcd-ovdc-network2"},
 				VApp:         "vcd-vapp",
 			},
 		},

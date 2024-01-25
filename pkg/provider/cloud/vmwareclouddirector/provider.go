@@ -28,6 +28,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/gengo/examples/set-gen/sets"
 )
 
 const (
@@ -87,10 +89,10 @@ func (p *Provider) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudS
 	}
 
 	// Ensure that the network exists
-	if spec.VMwareCloudDirector.OVDCNetwork != "" {
-		_, err := vdc.GetOrgVdcNetworkByNameOrId(spec.VMwareCloudDirector.OVDCNetwork, true)
+	if spec.VMwareCloudDirector.OVDCNetwork != "" || spec.VMwareCloudDirector.OVDCNetworks != nil {
+		_, err := getOrgVDCNetworks(vdc, *spec.VMwareCloudDirector)
 		if err != nil {
-			return fmt.Errorf("failed to get organization VDC network '%s': %w", client.Auth.VDC, err)
+			return fmt.Errorf("failed to get organization VDC networks '%s': %w", client.Auth.VDC, err)
 		}
 	}
 
@@ -160,6 +162,14 @@ func (p *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermatic
 	if oldSpec.VMwareCloudDirector.OVDCNetwork != newSpec.VMwareCloudDirector.OVDCNetwork {
 		return fmt.Errorf("updating VMware Cloud Director OVDCNetwork is not supported (was %s, updated to %s)", oldSpec.VMwareCloudDirector.OVDCNetwork, newSpec.VMwareCloudDirector.OVDCNetwork)
 	}
+
+	if oldSpec.VMwareCloudDirector.OVDCNetworks != nil && newSpec.VMwareCloudDirector.OVDCNetworks != nil {
+		diff := sets.NewString(oldSpec.VMwareCloudDirector.OVDCNetworks...).Difference(sets.NewString(newSpec.VMwareCloudDirector.OVDCNetworks...))
+		if diff.Len() > 0 {
+			return fmt.Errorf("updating VMware Cloud Director OVDCNetworks is not supported (was %s, updated to %s)", oldSpec.VMwareCloudDirector.OVDCNetworks, newSpec.VMwareCloudDirector.OVDCNetworks)
+		}
+	}
+
 	return nil
 }
 

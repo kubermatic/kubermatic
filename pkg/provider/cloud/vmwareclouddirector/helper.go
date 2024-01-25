@@ -20,6 +20,8 @@ import (
 	"fmt"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
 func deleteVApp(vdc *govcd.Vdc, vapp *govcd.VApp) error {
@@ -41,4 +43,24 @@ func deleteVApp(vdc *govcd.Vdc, vapp *govcd.VApp) error {
 		return fmt.Errorf("error waiting for vApp deletion to complete: %w", err)
 	}
 	return nil
+}
+
+func getOrgVDCNetworks(vdc *govcd.Vdc, spec kubermaticv1.VMwareCloudDirectorCloudSpec) ([]*govcd.OrgVDCNetwork, error) {
+	var networks []string
+
+	if spec.OVDCNetworks != nil && len(spec.OVDCNetworks) > 0 {
+		networks = spec.OVDCNetworks
+	} else {
+		networks = []string{spec.OVDCNetwork}
+	}
+
+	orgVDCNetworks := make([]*govcd.OrgVDCNetwork, 0, len(networks))
+	for _, network := range networks {
+		orgVDCNetwork, err := vdc.GetOrgVdcNetworkByNameOrId(network, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get OrgVDCNetwork '%s': %w", network, err)
+		}
+		orgVDCNetworks = append(orgVDCNetworks, orgVDCNetwork)
+	}
+	return orgVDCNetworks, nil
 }
