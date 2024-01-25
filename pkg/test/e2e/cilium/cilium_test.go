@@ -457,6 +457,9 @@ func createUserCluster(
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
 			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
+		}).
+		WithAnnotations(map[string]string{
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: [{"name":"cert-manager","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"namespace":{"name":"cert-manager","create":true},"applicationRef":{"name":"cert-manager","version":"v1.12.3"},"values":{"installCRDs":true}}}],
 		})
 
 	cleanup := func() {
