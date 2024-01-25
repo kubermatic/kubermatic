@@ -152,13 +152,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	if cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
 		ciliumApp, err := getCiliumApplicationInstallation(userClusterClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user cluster client: %w", err)
-
 		}
-		if ciliumApp.Status.ApplicationVersion == nil {
+		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
 			r.log.Debug("Cilium System Application not ready")
 			return nil, nil
 		}
