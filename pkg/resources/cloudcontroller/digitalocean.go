@@ -151,6 +151,6 @@ func DigitaloceanCCMVersion(version semver.Semver) string {
 		fallthrough
 	default:
 		// This should always be the latest version.
-		return "v0.1.45"
+		return "v0.1.46"
 	}
 }

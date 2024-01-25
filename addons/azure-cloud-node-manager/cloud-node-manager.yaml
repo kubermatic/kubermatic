@@ -18,19 +18,19 @@
 {{ if eq .Cluster.CloudProviderName "azure" }}
 {{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $version = "v1.25.23" }}
+{{ $version = "v1.25.24" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.18" }}
+{{ $version = "v1.26.19" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.12"}}
+{{ $version = "v1.27.13" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.4"}}
+{{ $version = "v1.28.5" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.29" }}
-{{ $version = "v1.28.4"}}
+{{ $version = "v1.29.0" }}
 {{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 apiVersion: v1
