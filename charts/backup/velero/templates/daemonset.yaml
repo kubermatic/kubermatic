@@ -16,32 +16,31 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: restic
+  name: node-agent
   labels:
-    app.kubernetes.io/name: restic
+    app.kubernetes.io/name: node-agent
     app.kubernetes.io/version: '{{ .Values.velero.image.tag }}'
     app.kubernetes.io/managed-by: helm
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: restic
+      app.kubernetes.io/name: node-agent
   updateStrategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: restic
+        app.kubernetes.io/name: node-agent
     spec:
       containers:
-      - name: restic
+      - name: node-agent
         image: '{{ .Values.velero.image.repository }}:{{ .Values.velero.image.tag }}'
         imagePullPolicy: {{ .Values.velero.image.pullPolicy }}
         command:
         - /velero
         args:
-        - restic
+        - node-agent
         - server
-        - --uploader-type=restic
         {{- if .Values.velero.credentials.azure }}
         envFrom:
         - secretRef:
