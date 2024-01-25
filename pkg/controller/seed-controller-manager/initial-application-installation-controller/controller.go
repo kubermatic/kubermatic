@@ -155,7 +155,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
 		ciliumApp, err := getCiliumApplicationInstallation(userClusterClient)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user cluster client: %w", err)
+			return nil, fmt.Errorf("failed to get cilium application installation on the user cluster: %w", err)
 		}
 		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
 			r.log.Debug("Cilium System Application not ready")
@@ -241,7 +241,7 @@ func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1
 func getCiliumApplicationInstallation(userClusterClient ctrlruntimeclient.Client) (*appskubermaticv1.ApplicationInstallation, error) {
 	app := &appskubermaticv1.ApplicationInstallation{}
 	if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: kubermaticv1.CNIPluginTypeCilium.String()}, app); err != nil {
-		return nil, fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err)
+		return nil, fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err)
 	}
 
 	return app, nil
