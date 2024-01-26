@@ -21,6 +21,7 @@ package cilium
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -37,7 +38,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
@@ -448,6 +449,37 @@ func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 	return objs, nil
 }
 
+func getTestApplicationAnnotation(appName string) ([]byte, error) {
+	var values json.RawMessage
+	err := json.Unmarshal([]byte(`{"installCRDs": true}`), &values)
+	if err != nil {
+		return nil, err
+	}
+	app := apiv1.Application{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name: appName,
+		},
+		Spec: apiv1.ApplicationSpec{
+			Namespace: apiv1.NamespaceSpec{
+				Name:   appName,
+				Create: true,
+			},
+			ApplicationRef: apiv1.ApplicationRef{
+				Name:    appName,
+				Version: "v1.12.3",
+			},
+			Values: values,
+		},
+	}
+	applications := []apiv1.Application{app}
+	data, err := json.Marshal(applications)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 // creates a usercluster on aws.
 func createUserCluster(
 	ctx context.Context,
@@ -456,6 +488,11 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
+	testAppAnnotation, err := getTestApplicationAnnotation("cert-manager")
+	if err != nil {
+		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
+	}
+
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
@@ -467,7 +504,7 @@ func createUserCluster(
 			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 		}).
 		WithAnnotations(map[string]string{
-			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: `{"name": "cert-manager", "creationTimestamp": "0001-01-01T00:00:00Z", "spec": {"namespace": {"name": "cert-manager", "create": true}, "applicationRef": {"name": "cert-manager", "version": "v1.12.3"}, "values": {"installCRDs": true}}}`,
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(testAppAnnotation),
 		})
 
 	cleanup := func() {

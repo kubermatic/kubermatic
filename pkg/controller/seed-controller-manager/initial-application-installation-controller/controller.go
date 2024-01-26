@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -155,11 +156,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
 		ciliumApp, err := getCiliumApplicationInstallation(userClusterClient)
 		if err != nil {
-			return &reconcile.Result{Requeue: true}, fmt.Errorf("failed to get cilium application installation on the user cluster: %w", err)
+			r.log.Debug("Could not get Cilium system application")
+			return &reconcile.Result{RequeueAfter: 100 * time.Millisecond}, nil
 		}
 		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
-			r.log.Debug("Cilium System Application not ready")
-			return &reconcile.Result{Requeue: true}, nil
+			r.log.Debug("Cilium system application not ready")
+			return &reconcile.Result{RequeueAfter: 100 * time.Millisecond}, nil
 		}
 	}
 
