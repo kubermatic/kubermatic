@@ -32,7 +32,7 @@ import (
 
 const (
 	HetznerCCMDeploymentName = "hcloud-cloud-controller-manager"
-	hetznerCCMVersion        = "v1.17.2" // https://github.com/hetznercloud/hcloud-cloud-controller-manager#versioning-policy
+	hetznerCCMVersion        = "v1.19.0" // https://github.com/hetznercloud/hcloud-cloud-controller-manager#versioning-policy
 )
 
 var (
@@ -92,14 +92,6 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 					},
 					Env: append(
 						getEnvVars(),
-						corev1.EnvVar{
-							Name: "NODE_NAME",
-							ValueFrom: &corev1.EnvVarSource{
-								FieldRef: &corev1.ObjectFieldSelector{
-									FieldPath: "spec.nodeName",
-								},
-							},
-						},
 						corev1.EnvVar{
 							Name: "HCLOUD_TOKEN",
 							ValueFrom: &corev1.EnvVarSource{
