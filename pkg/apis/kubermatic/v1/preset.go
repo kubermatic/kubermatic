@@ -254,7 +254,7 @@ func (s VMwareCloudDirector) IsValid() bool {
 		len(s.APIToken) > 0) &&
 		len(s.VDC) > 0 &&
 		len(s.Organization) > 0 &&
-		len(s.OVDCNetwork) > 0
+		(len(s.OVDCNetwork) > 0 || len(s.OVDCNetworks) > 0)
 }
 
 type AWS struct {
