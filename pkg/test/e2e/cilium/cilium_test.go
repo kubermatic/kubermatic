@@ -501,6 +501,12 @@ func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 }
 
 func getTestApplicationAnnotation(appName string) ([]byte, error) {
+	var values json.RawMessage
+	err := json.Unmarshal([]byte(`{}`), &values)
+	if err != nil {
+		return nil, err
+	}
+
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name: appName,
@@ -513,6 +519,7 @@ func getTestApplicationAnnotation(appName string) ([]byte, error) {
 				Name:    appName,
 				Version: "v1.12.3",
 			},
+			Values: values,
 		},
 	}
 	applications := []apiv1.Application{app}
