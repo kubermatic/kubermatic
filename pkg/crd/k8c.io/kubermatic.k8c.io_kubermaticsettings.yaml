@@ -217,6 +217,18 @@ spec:
                           description: EnforceCustomDisk will enforce the custom disk option for machines for the dashboard.
                           type: boolean
                       type: object
+                    vmwareCloudDirector:
+                      description: VMwareCloudDirector are the configurations for VMware Cloud Director provider.
+                      properties:
+                        ipAllocationModes:
+                          description: IPAllocationModes are the allowed IP allocation modes for the VMware Cloud Director provider. If not set, all modes are allowed.
+                          items:
+                            enum:
+                              - DHCP
+                              - POOL
+                            type: string
+                          type: array
+                      type: object
                   type: object
                 restrictProjectCreation:
                   type: boolean
