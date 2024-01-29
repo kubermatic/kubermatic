@@ -320,6 +320,7 @@ func (j *ClusterJig) clusterReconcilerFactory(project *kubermaticv1.Project, pre
 	return func() (string, reconciling.ClusterReconciler) {
 		return j.desiredName, func(cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 			cluster.Labels = j.labels
+			cluster.Annotations = j.annotations
 			cluster.Labels[kubermaticv1.ProjectIDLabelKey] = project.Name
 			cluster.Spec = *j.spec
 
