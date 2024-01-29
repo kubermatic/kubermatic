@@ -156,12 +156,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
 		ciliumApp, err := getCiliumApplicationInstallation(userClusterClient)
 		if err != nil {
-			r.log.Debug("Could not get Cilium system application")
-			return &reconcile.Result{RequeueAfter: 100 * time.Millisecond}, nil
+			r.log.Debug("Requeue as it could not get Cilium system ApplicationInstallation")
+			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
-			r.log.Debug("Cilium system application not ready")
-			return &reconcile.Result{RequeueAfter: 100 * time.Millisecond}, nil
+			r.log.Debug("Requeue as Cilium system application is not ready yet")
+			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 	}
 
