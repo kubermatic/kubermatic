@@ -512,7 +512,7 @@ func getTestApplicationAnnotation(appName string) ([]byte, error) {
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    appName,
 				Version: "v1.12.3",
-			}
+			},
 		},
 	}
 	applications := []apiv1.Application{app}
