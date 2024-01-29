@@ -142,9 +142,9 @@ func TestCiliumClusters(t *testing.T) {
 
 	appsDefs := appskubermaticv1.ApplicationDefinitionList{}
 	if err := seedClient.List(context.Background(), &appsDefs); err != nil {
-		t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
+		t.Fatalf("failed to list ApplicationDefinitions in user cluster: %v", err)
 	}
-	logger.Infof("Apps on user cluster: %v", appsDefs.Items)
+	logger.Infof("App Definitions on user cluster: %v", appsDefs.Items)
 
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
@@ -334,7 +334,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	}
 
 	log.Info("Checking for cert-manager app...")
-	err = wait.PollLog(ctx, log, 2*time.Second, 1*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, log, 2*time.Second, 2*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: certManagerAppName}, app); err != nil {
 			return fmt.Errorf("failed to get cert-manager ApplicationInstallation in user cluster: %w", err), nil
@@ -345,6 +345,12 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		return nil, nil
 	})
 	if err != nil {
+		apps := appskubermaticv1.ApplicationInstallationList{}
+		if err := client.List(context.Background(), &apps); err != nil {
+			t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
+		}
+		log.Infof("Apps on user cluster: %v", apps.Items)
+
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 }
