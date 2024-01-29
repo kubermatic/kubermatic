@@ -70,9 +70,9 @@ var (
 )
 
 const (
-	projectName        = "cilium-test-project"
-	ciliumTestNs       = "cilium-test"
-	certManagerAppName = "cert-manager"
+	projectName  = "cilium-test-project"
+	ciliumTestNs = "cilium-test"
+	nginxAppName = "nginx"
 )
 
 func init() {
@@ -318,7 +318,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("Hubble UI observe test failed: %v", err)
 	}
 
-	log.Info("Checking for cilium app...")
+	log.Info("Checking for cilium ApplicationInstallation...")
 	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: kubermaticv1.CNIPluginTypeCilium.String()}, app); err != nil {
@@ -333,11 +333,11 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
-	log.Info("Checking for cert-manager app...")
+	log.Info("Checking for the test nginx ApplicationInstallation...")
 	err = wait.PollLog(ctx, log, 2*time.Second, 2*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
-		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: certManagerAppName}, app); err != nil {
-			return fmt.Errorf("failed to get cert-manager ApplicationInstallation in user cluster: %w", err), nil
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nginxAppName}, app); err != nil {
+			return fmt.Errorf("failed to get nginx ApplicationInstallation in user cluster: %w", err), nil
 		}
 		if app.Status.ApplicationVersion == nil {
 			return fmt.Errorf("application not yet installed: %v", app.Status), nil
@@ -501,11 +501,6 @@ func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 }
 
 func getTestApplicationAnnotation(appName string) ([]byte, error) {
-	var values json.RawMessage
-	err := json.Unmarshal([]byte(`{"installCRDs": true}`), &values)
-	if err != nil {
-		return nil, err
-	}
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name: appName,
@@ -517,8 +512,7 @@ func getTestApplicationAnnotation(appName string) ([]byte, error) {
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    appName,
 				Version: "v1.12.3",
-			},
-			Values: values,
+			}
 		},
 	}
 	applications := []apiv1.Application{app}
@@ -538,7 +532,7 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	testAppAnnotation, err := getTestApplicationAnnotation(certManagerAppName)
+	testAppAnnotation, err := getTestApplicationAnnotation(nginxAppName)
 	if err != nil {
 		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
 	}
