@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	vcdtypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -176,7 +175,7 @@ type OpenStack struct {
 }
 
 // +kubebuilder:validation:Enum=DHCP;POOL
-type ipAllocationMode vcdtypes.IPAllocationMode
+type ipAllocationMode string
 
 type VMwareCloudDirectorSettings struct {
 	// IPAllocationModes are the allowed IP allocation modes for the VMware Cloud Director provider. If not set, all modes are allowed.
