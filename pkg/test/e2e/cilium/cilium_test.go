@@ -342,7 +342,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	log.Info("Checking for cert-manager app...")
 	err = wait.PollLog(ctx, log, 2*time.Second, 1*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
-		if err := client.Get(context.Background(), types.NamespacedName{Namespace: certManagerAppName, Name: certManagerAppName}, app); err != nil {
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: certManagerAppName}, app); err != nil {
 			return fmt.Errorf("failed to get cert-manager ApplicationInstallation in user cluster: %w", err), nil
 		}
 		if app.Status.ApplicationVersion == nil {
@@ -356,6 +356,12 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 			t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
 		}
 		log.Infof("Apps on user cluster: %v", apps.Items)
+
+		pods := corev1.PodList{}
+		if err := client.List(context.Background(), &pods); err != nil {
+			t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
+		}
+		log.Infof("Apps on user cluster: %v", pods.Items)
 	}
 }
 
@@ -516,8 +522,7 @@ func getTestApplicationAnnotation(appName string) ([]byte, error) {
 		},
 		Spec: apiv1.ApplicationSpec{
 			Namespace: apiv1.NamespaceSpec{
-				Name:   appName,
-				Create: true,
+				Name: metav1.NamespaceSystem,
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    appName,
