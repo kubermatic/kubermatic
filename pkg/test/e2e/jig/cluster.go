@@ -52,6 +52,7 @@ type ClusterJig struct {
 	desiredName  string
 	ownerEmail   string
 	labels       map[string]string
+	annotations  map[string]string
 	presetSecret string
 	addons       []Addon
 
@@ -67,13 +68,14 @@ type Addon struct {
 
 func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *ClusterJig {
 	jig := &ClusterJig{
-		client:     client,
-		log:        log,
-		versions:   kubermatic.NewFakeVersions(),
-		spec:       &kubermaticv1.ClusterSpec{},
-		labels:     map[string]string{},
-		ownerEmail: "e2e@test.kubermatic.com",
-		addons:     []Addon{},
+		client:      client,
+		log:         log,
+		versions:    kubermatic.NewFakeVersions(),
+		spec:        &kubermaticv1.ClusterSpec{},
+		annotations: map[string]string{},
+		labels:      map[string]string{},
+		ownerEmail:  "e2e@test.kubermatic.com",
+		addons:      []Addon{},
 	}
 
 	jig.WithTestName("e2e")
@@ -117,6 +119,11 @@ func (j *ClusterJig) WithHumanReadableName(name string) *ClusterJig {
 
 func (j *ClusterJig) WithAddons(addons ...Addon) *ClusterJig {
 	j.addons = append(j.addons, addons...)
+	return j
+}
+
+func (j *ClusterJig) WithAnnotations(annotations map[string]string) *ClusterJig {
+	j.annotations = annotations
 	return j
 }
 
