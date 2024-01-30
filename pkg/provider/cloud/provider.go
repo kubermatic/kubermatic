@@ -19,6 +19,7 @@ package cloud
 import (
 	"crypto/x509"
 	"errors"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/edge"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -49,6 +50,9 @@ func Provider(
 	}
 	if datacenter.Spec.BringYourOwn != nil {
 		return bringyourown.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.Edge != nil {
+		return edge.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.AWS != nil {
 		return aws.NewCloudProvider(datacenter, secretKeyGetter)

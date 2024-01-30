@@ -717,6 +717,8 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validateAzureCloudSpec(spec.Azure)
 	case spec.BringYourOwn != nil:
 		providerErr = nil
+	case spec.Edge != nil:
+		providerErr = nil
 	case spec.Digitalocean != nil:
 		providerErr = validateDigitaloceanCloudSpec(spec.Digitalocean)
 	case spec.Fake != nil:

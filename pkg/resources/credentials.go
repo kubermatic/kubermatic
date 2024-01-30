@@ -216,6 +216,9 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.BringYourOwn != nil {
 		return nil, nil
 	}
+	if cluster.Spec.Cloud.Edge != nil {
+		return nil, nil
+	}
 
 	return nil, errors.New("cluster has no known cloud provider spec set")
 }

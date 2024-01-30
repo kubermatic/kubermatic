@@ -787,6 +787,10 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
 		{
+			ProviderName: string(kubermaticv1.EdgeCloudProvider),
+			Edge:         &kubermaticv1.EdgeCloudSpec{},
+		},
+		{
 			ProviderName: string(kubermaticv1.DigitaloceanCloudProvider),
 			Digitalocean: &kubermaticv1.DigitaloceanCloudSpec{
 				Token: "fakeToken",

@@ -151,6 +151,10 @@ var (
 			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
+		"edge": {
+			ProviderName: string(kubermaticv1.EdgeCloudProvider),
+			Edge:         &kubermaticv1.EdgeCloudSpec{},
+		},
 		"vcd": {
 			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{

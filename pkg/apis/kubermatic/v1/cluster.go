@@ -977,6 +977,8 @@ type CloudSpec struct {
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
 	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
+	// Edge defines the configuration data for an edge cluster.
+	Edge *EdgeCloudSpec `json:"edge,omitempty"`
 	// AWS defines the configuration data of the Amazon Web Services(AWS) cloud provider.
 	AWS *AWSCloudSpec `json:"aws,omitempty"`
 	// Azure defines the configuration data of the Microsoft Azure cloud.
@@ -1215,6 +1217,9 @@ type VMwareCloudDirectorCSIConfig struct {
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct{}
+
+// EdgeCloudSpec specifies access data for an edge cluster.
+type EdgeCloudSpec struct{}
 
 // AWSCloudSpec specifies access data to Amazon Web Services.
 type AWSCloudSpec struct {

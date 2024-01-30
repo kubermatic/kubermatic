@@ -339,7 +339,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	// the "bring-your-own" provider does not support automatic TLS rotation in kubelets yet,
 	// and because of that certs might expire and kube-apiserver cannot validate the connection anymore.
-	if cluster.Spec.Cloud.BringYourOwn == nil {
+	if cluster.Spec.Cloud.BringYourOwn == nil || cluster.Spec.Cloud.Edge == nil {
 		flags = append(flags, "--kubelet-certificate-authority", "/etc/kubernetes/pki/ca/ca.crt")
 	}
 
