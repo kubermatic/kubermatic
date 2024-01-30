@@ -159,6 +159,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			r.log.Debug("Requeue as it could not get Cilium system ApplicationInstallation")
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
+		// check if application is deployed and status is updated with app version.
 		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
 			r.log.Debug("Requeue as Cilium system application is not ready yet")
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
