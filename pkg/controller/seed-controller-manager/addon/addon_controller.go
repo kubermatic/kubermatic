@@ -787,6 +787,7 @@ func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLog
 	}
 	// map to hold csi drivers to storage classes list
 	csiToSC := make(map[string][]string)
+	csiToPV := make(map[string][]string)
 	errMsg := []string{}
 	for i := 0; i < len(csiDriverList.Items); i++ {
 		if !strings.Contains(csiDriverList.Items[i].Name, "csi") {
@@ -808,9 +809,19 @@ func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLog
 		}
 		if len(csiToSC[csiDriverList.Items[i].Name]) != 0 {
 			errMsg = append(errMsg, fmt.Sprintf("csidriver %s is being used by storage classes %s", csiDriverList.Items[i].Name, csiToSC[csiDriverList.Items[i].Name]))
+		} else {
+			// Check for the corner case where admin removes the SC without removing the PVs & tries to disable CSI drivers used by them.
+			pvList, err := r.pvsForProvisioner(ctx, cluster, csiDriverList.Items[i].Name)
+			if err != nil {
+				return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of PVs having %v as provisioner : %v", csiDriverList.Items[i].Name, err)
+			}
+			if len(pvList) > 0 {
+				csiToPV[csiDriverList.Items[i].Name] = append(csiToPV[csiDriverList.Items[i].Name], pvList[0])
+				errMsg = append(errMsg, fmt.Sprintf("csidriver %s is being used by PV %s & %d other PVs", csiDriverList.Items[i].Name, pvList[0], (len(pvList)-1)))
+			}
 		}
 	}
-	if len(csiToSC) == 0 {
+	if len(csiToSC) == 0 && len(csiToPV) == 0 {
 		return corev1.ConditionFalse, ""
 	}
 
@@ -855,4 +866,24 @@ func (r *Reconciler) pvcsForStorageClass(ctx context.Context, cluster *kubermati
 		}
 	}
 	return pvcsForStorageClass, nil
+}
+
+func (r *Reconciler) pvsForProvisioner(ctx context.Context, cluster *kubermaticv1.Cluster, provisionerName string) ([]string, error) {
+	pvsForProvisioner := []string{}
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return pvsForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	pvList := &corev1.PersistentVolumeList{}
+	if err := cl.List(ctx, pvList); apierrors.IsNotFound(err) {
+		return pvsForProvisioner, nil
+	} else if err != nil {
+		return pvsForProvisioner, fmt.Errorf("failed to get the list of PVs having %v as provisioner : %w", provisionerName, err)
+	}
+	for i := 0; i < len(pvList.Items); i++ {
+		if pvList.Items[i].Spec.CSI.Driver == provisionerName {
+			pvsForProvisioner = append(pvsForProvisioner, pvList.Items[i].Name)
+		}
+	}
+	return pvsForProvisioner, nil
 }
