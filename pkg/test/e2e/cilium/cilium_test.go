@@ -21,6 +21,7 @@ package cilium
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -38,6 +39,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -48,9 +51,11 @@ import (
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
@@ -67,6 +72,7 @@ var (
 const (
 	projectName  = "cilium-test-project"
 	ciliumTestNs = "cilium-test"
+	nginxAppName = "nginx"
 )
 
 func init() {
@@ -106,6 +112,7 @@ func TestInExistingCluster(t *testing.T) {
 func TestCiliumClusters(t *testing.T) {
 	rawLog := log.NewFromOptions(logOptions)
 	logger := rawLog.Sugar()
+	ctx := context.Background()
 
 	if err := credentials.Parse(); err != nil {
 		t.Fatalf("Failed to get credentials: %v", err)
@@ -116,9 +123,21 @@ func TestCiliumClusters(t *testing.T) {
 		t.Fatalf("failed to build config: %v", err)
 	}
 
-	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	seedClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
 		t.Fatalf("failed to build ctrlruntime client: %v", err)
+	}
+
+	testAppDefs, err := resourcesFromYaml("./testdata/test-app-def.yaml")
+	if err != nil {
+		t.Fatalf("failed to read objects from yaml: %v", err)
+	}
+	for _, testAppDef := range testAppDefs {
+		if err := seedClient.Create(ctx, testAppDef); err != nil {
+			t.Fatalf("failed to apply resource: %v", err)
+		}
+
+		logger.Infow("Created object", "kind", testAppDef.GetObjectKind(), "name", testAppDef.GetName())
 	}
 
 	// set the logger used by sigs.k8s.io/controller-runtime
@@ -146,8 +165,7 @@ func TestCiliumClusters(t *testing.T) {
 	for _, test := range tests {
 		proxyMode := test.proxyMode
 		t.Run(test.name, func(t *testing.T) {
-			ctx := context.Background()
-			client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), client, proxyMode)
+			client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
 			if cleanup != nil {
 				defer cleanup()
 			}
@@ -292,6 +310,42 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	})
 	if err != nil {
 		t.Fatalf("Hubble UI observe test failed: %v", err)
+	}
+
+	log.Info("Checking for cilium ApplicationInstallation...")
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		app := &appskubermaticv1.ApplicationInstallation{}
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: kubermaticv1.CNIPluginTypeCilium.String()}, app); err != nil {
+			return fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err), nil
+		}
+		if app.Status.ApplicationVersion == nil {
+			return fmt.Errorf("application not yet installed: %v", app.Status), nil
+		}
+		return nil, nil
+	})
+	if err != nil {
+		t.Fatalf("Application observe test failed: %v", err)
+	}
+
+	log.Info("Checking for the test nginx ApplicationInstallation...")
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		app := &appskubermaticv1.ApplicationInstallation{}
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nginxAppName}, app); err != nil {
+			return fmt.Errorf("failed to get nginx ApplicationInstallation in user cluster: %w", err), nil
+		}
+		if app.Status.ApplicationVersion == nil {
+			return fmt.Errorf("application not yet installed: %v", app.Status), nil
+		}
+		return nil, nil
+	})
+	if err != nil {
+		apps := appskubermaticv1.ApplicationInstallationList{}
+		if err := client.List(context.Background(), &apps); err != nil {
+			t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
+		}
+		log.Infof("Apps on user cluster: %v", apps.Items)
+
+		t.Fatalf("Application observe test failed: %v", err)
 	}
 }
 
@@ -440,6 +494,37 @@ func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 	return objs, nil
 }
 
+func getTestApplicationAnnotation(appName string) ([]byte, error) {
+	var values json.RawMessage
+	err := json.Unmarshal([]byte(`{"controller":{"ingressClass":"test-nginx"}}`), &values)
+	if err != nil {
+		return nil, err
+	}
+
+	app := apiv1.Application{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name: appName,
+		},
+		Spec: apiv1.ApplicationSpec{
+			Namespace: apiv1.NamespaceSpec{
+				Name: metav1.NamespaceSystem,
+			},
+			ApplicationRef: apiv1.ApplicationRef{
+				Name:    appName,
+				Version: "1.8.1",
+			},
+			Values: values,
+		},
+	}
+	applications := []apiv1.Application{app}
+	data, err := json.Marshal(applications)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 // creates a usercluster on aws.
 func createUserCluster(
 	ctx context.Context,
@@ -448,6 +533,11 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
+	testAppAnnotation, err := getTestApplicationAnnotation(nginxAppName)
+	if err != nil {
+		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
+	}
+
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
@@ -457,6 +547,9 @@ func createUserCluster(
 		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCilium,
 			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
+		}).
+		WithAnnotations(map[string]string{
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(testAppAnnotation),
 		})
 
 	cleanup := func() {
