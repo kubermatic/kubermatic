@@ -502,7 +502,7 @@ func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
 
 func getTestApplicationAnnotation(appName string) ([]byte, error) {
 	var values json.RawMessage
-	err := json.Unmarshal([]byte(`{}`), &values)
+	err := json.Unmarshal([]byte(`{"controller":{"ingressClass":"test-nginx"}}`), &values)
 	if err != nil {
 		return nil, err
 	}
