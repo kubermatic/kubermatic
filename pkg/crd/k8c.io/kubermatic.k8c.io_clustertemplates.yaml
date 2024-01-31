@@ -455,6 +455,9 @@ spec:
                           description: Token is used to authenticate with the DigitalOcean API.
                           type: string
                       type: object
+                    edge:
+                      description: Edge defines the configuration data for an edge cluster.
+                      type: object
                     fake:
                       description: Fake is a dummy cloud provider that is only used for testing purposes. Do not try to actually use it.
                       properties:
