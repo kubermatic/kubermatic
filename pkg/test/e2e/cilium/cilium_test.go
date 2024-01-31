@@ -339,12 +339,6 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		return nil, nil
 	})
 	if err != nil {
-		apps := appskubermaticv1.ApplicationInstallationList{}
-		if err := client.List(context.Background(), &apps); err != nil {
-			t.Fatalf("failed to list ApplicationInstallations in user cluster: %v", err)
-		}
-		log.Infof("Apps on user cluster: %v", apps.Items)
-
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 }
