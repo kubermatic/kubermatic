@@ -19,7 +19,6 @@ package cloud
 import (
 	"crypto/x509"
 	"errors"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/edge"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -29,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/bringyourown"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/edge"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/fake"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
