@@ -86,6 +86,9 @@ spec:
         # Optional: DisableCSIDriver disables the installation of CSI driver on every clusters within the DC
         # If true it can't be over-written in the cluster configuration
         disableCsiDriver: false
+        # Edge contains settings for clusters using manually created
+        # nodes in edge envs.
+        edge: {}
         # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
         # ignoring cluster-specific settings.
         enforceAuditLogging: false
