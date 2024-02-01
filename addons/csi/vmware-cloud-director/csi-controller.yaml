@@ -19,6 +19,8 @@
 # - image source includes registry templating
 # - add a securityContext
 # - remove affinity
+# - use `kubermatic:vcloud-csi` user instead of service account
+# - remove deployment for CSI controller; it has been moved from user cluster to seed cluster
 
 {{ if eq .Cluster.CloudProviderName "vmwareclouddirector" }}
 
