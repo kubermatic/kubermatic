@@ -36,6 +36,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -46,6 +47,9 @@ import (
 var (
 	kubernetesVersion = defaulting.DefaultKubernetesVersioning.Default
 	testScheme        = fake.NewScheme()
+	noneCNISettings   = kubermaticv1.CNIPluginSettings{
+		Type: kubermaticv1.CNIPluginTypeNone,
+	}
 )
 
 const (
@@ -72,7 +76,7 @@ func healthy() kubermaticv1.ExtendedClusterHealth {
 	}
 }
 
-func genCluster(annotation string) *kubermaticv1.Cluster {
+func genCluster(annotation string, cniPluginSettings kubermaticv1.CNIPluginSettings) *kubermaticv1.Cluster {
 	return &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "testcluster",
@@ -88,6 +92,7 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenterName,
 			},
+			CNIPlugin: &cniPluginSettings,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: healthy(),
@@ -99,13 +104,14 @@ func TestReconcile(t *testing.T) {
 	log := zap.NewNop().Sugar()
 
 	testCases := []struct {
-		name     string
-		cluster  *kubermaticv1.Cluster
-		validate func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
+		name                        string
+		cluster                     *kubermaticv1.Cluster
+		systemAppInstallationValues map[string]any
+		validate                    func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
 	}{
 		{
 			name:    "no annotation exists, nothing should happen",
-			cluster: genCluster(""),
+			cluster: genCluster("", noneCNISettings),
 			validate: func(cluster *kubermaticv1.Cluster, _ ctrlruntimeclient.Client, reconcileErr error) error {
 				// cluster should now have its special condition
 				name := kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess
@@ -132,7 +138,7 @@ func TestReconcile(t *testing.T) {
 					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
 				}
 
-				return genCluster(string(data))
+				return genCluster(string(data), noneCNISettings)
 			}(),
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -156,6 +162,44 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
+			name: "create a single ApplicationInstallation from the annotation in the cluster with system application ready",
+			cluster: func() *kubermaticv1.Cluster {
+				app := generateApplication(applicationName)
+				applications := []apiv1.Application{app}
+
+				data, err := json.Marshal(applications)
+				if err != nil {
+					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
+				}
+				ciliumCNISettings := kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCilium,
+					Version: "1.13.7",
+				}
+				return genCluster(string(data), ciliumCNISettings)
+			}(),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; ok {
+					return fmt.Errorf("annotation should be have been removed, but found %q on the cluster", ann)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return errors.New("did not find an ApplicationInstallation in the user cluster after the reconciler finished")
+				}
+
+				return nil
+			},
+		},
+		{
 			name: "create multiple ApplicationInstallation from the annotation",
 			cluster: func() *kubermaticv1.Cluster {
 				app := generateApplication(applicationName)
@@ -166,7 +210,7 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
 				}
-				return genCluster(string(data))
+				return genCluster(string(data), noneCNISettings)
 			}(),
 			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -191,7 +235,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "invalid annotation should result in error and be removed",
-			cluster: genCluster("I am not valid JSON!"),
+			cluster: genCluster("I am not valid JSON!", noneCNISettings),
 			validate: func(cluster *kubermaticv1.Cluster, _ ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr == nil {
 					return errors.New("reconciling a bad annotation should have produced an error, but got nil")
@@ -204,14 +248,50 @@ func TestReconcile(t *testing.T) {
 				return nil
 			},
 		},
-	}
+		{
+			name: "should not create initial application in cluster with not ready Cilium system application",
+			cluster: func() *kubermaticv1.Cluster {
+				app := generateApplication(applicationName)
+				applications := []apiv1.Application{app}
 
+				data, err := json.Marshal(applications)
+				if err != nil {
+					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
+				}
+				ciliumCNISettings := kubermaticv1.CNIPluginSettings{
+					Type:    kubermaticv1.CNIPluginTypeCilium,
+					Version: "1.13.7",
+				}
+				return genCluster(string(data), ciliumCNISettings)
+			}(),
+			systemAppInstallationValues: map[string]any{"status": "not-ready"},
+			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; !ok {
+					return fmt.Errorf("annotation should not have been removed, but did not found %q on the cluster", ann)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 1 {
+					return errors.New("did not find the expected ApplicationInstallations in the user cluster after the reconciler finished")
+				}
+
+				return nil
+			},
+		},
+	}
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: projectID,
 		},
 	}
-
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
 			seedClient := fake.
@@ -219,8 +299,7 @@ func TestReconcile(t *testing.T) {
 				WithScheme(testScheme).
 				WithObjects(test.cluster, project).
 				Build()
-
-			userClusterObjects := []ctrlruntimeclient.Object{}
+			userClusterObjects := getUserClusterObjects(t, test.systemAppInstallationValues)
 			userClusterClient := fake.
 				NewClientBuilder().
 				WithScheme(testScheme).
@@ -272,6 +351,31 @@ func TestReconcile(t *testing.T) {
 			}
 		})
 	}
+}
+func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]any) []ctrlruntimeclient.Object {
+	userClusterObjects := []ctrlruntimeclient.Object{}
+	if systemAppInstallationValues != nil {
+		appInst := &appskubermaticv1.ApplicationInstallation{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubermaticv1.CNIPluginTypeCilium.String(),
+				Namespace: metav1.NamespaceSystem,
+			},
+		}
+		if systemAppInstallationValues["status"] == "ready" {
+			appInst.Status = appskubermaticv1.ApplicationInstallationStatus{
+				ApplicationVersion: &appskubermaticv1.ApplicationVersion{
+					Version: "1.13.7",
+				},
+			}
+		}
+		rawValues, err := json.Marshal(systemAppInstallationValues)
+		if err != nil {
+			t.Fatalf("Test's systemAppInstallationValues marshalling failed: %v", err)
+		}
+		appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
+		userClusterObjects = append(userClusterObjects, appInst)
+	}
+	return userClusterObjects
 }
 
 func generateApplication(name string) apiv1.Application {
