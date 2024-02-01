@@ -218,7 +218,6 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					Args: []string{
 						"--endpoint=$(CSI_ENDPOINT)",
 						"--cloud-config=/etc/kubernetes/vcloud/config",
-						"--upgrade-rde",
 						"--v=5",
 					},
 					Env: []corev1.EnvVar{
