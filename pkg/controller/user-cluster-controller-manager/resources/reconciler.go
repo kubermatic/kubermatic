@@ -66,6 +66,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -293,6 +294,11 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
+		if err := r.ensureOrphanedVMwareCloudDirectorCSIResourcesAreRemoved(ctx); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -1404,6 +1410,35 @@ func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Kubernetes Dashboard resources are removed/not present: %w", err)
 		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureOrphanedVMwareCloudDirectorCSIResourcesAreRemoved(ctx context.Context) error {
+	// Remove the Deployment of CSI driver from user cluster
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "csi-vcd-controllerplugin",
+			Namespace: metav1.NamespaceSystem,
+		},
+	}
+
+	err := r.Client.Delete(ctx, deployment)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to ensure that the VCD CSI driver deployment is removed/not present: %w", err)
+	}
+
+	// Remove the service account of CSI driver from user cluster
+	serviceAccount := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "csi-vcd-controller-sa",
+			Namespace: metav1.NamespaceSystem,
+		},
+	}
+
+	err = r.Client.Delete(ctx, serviceAccount)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to ensure that the VCD CSI driver service account is removed/not present: %w", err)
 	}
 	return nil
 }
