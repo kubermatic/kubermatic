@@ -635,6 +635,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.KubeVirtInfraSecretName,
 		resources.GoogleServiceAccountSecretName,
 		resources.VMwareCloudDirectorCSIKubeconfigSecretName,
+		resources.CSICloudConfigSecretName,
+		resources.VMwareCloudDirectorCSISecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
