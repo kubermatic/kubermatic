@@ -199,6 +199,13 @@ type ApplicationDefinitionSpec struct {
 	// These settings can be overridden in applicationInstallation.
 	DefaultDeployOptions *DeployOptions `json:"defaultDeployOptions,omitempty"`
 
+	// DocumentationURL holds a link to official documentation of the Application
+	// Alternatively this can be a link to the Readme of a chart in a git repository
+	DocumentationURL string `json:"documentationURL,omitempty"`
+
+	// SourceURL holds a link to the official source code mirror or git repository of the application
+	SourceURL string `json:"sourceURL,omitempty"`
+
 	// Available version for this application
 	Versions []ApplicationVersion `json:"versions"`
 }
