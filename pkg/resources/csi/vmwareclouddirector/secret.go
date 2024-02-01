@@ -32,7 +32,7 @@ func SecretsReconcilers(data *resources.TemplateData) []reconciling.NamedSecretR
 	return creators
 }
 
-// CloudConfigSecretNameReconciler returns the CSI secrets for vmwareclouddirector cloud config.
+// CloudConfigSecretNameReconciler returns the CSI secrets for VMware Cloud Director cloud config.
 func cloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.CSICloudConfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
@@ -58,7 +58,7 @@ func cloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 	}
 }
 
-// BasicAuthSecretNameReconciler returns the CSI secrets for vmwareclouddirector.
+// BasicAuthSecretNameReconciler returns the CSI secrets for VMware Cloud Director.
 func basicAuthSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.VMwareCloudDirectorCSISecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
