@@ -154,7 +154,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
-		ciliumApp, err := getCiliumApplicationInstallation(userClusterClient)
+		ciliumApp, err := getCNIApplicationInstallation(ctx, userClusterClient, cluster.Spec.CNIPlugin.Type)
 		if err != nil {
 			r.log.Debug("Requeue as it could not get Cilium system ApplicationInstallation")
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
@@ -241,10 +241,14 @@ func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func getCiliumApplicationInstallation(userClusterClient ctrlruntimeclient.Client) (*appskubermaticv1.ApplicationInstallation, error) {
+func getCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cniType kubermaticv1.CNIPluginType) (*appskubermaticv1.ApplicationInstallation, error) {
 	app := &appskubermaticv1.ApplicationInstallation{}
-	if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: kubermaticv1.CNIPluginTypeCilium.String()}, app); err != nil {
-		return nil, fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err)
+	switch cniType {
+	case kubermaticv1.CNIPluginTypeCilium:
+		name := kubermaticv1.CNIPluginTypeCilium.String()
+		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, app); err != nil {
+			return nil, fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err)
+		}
 	}
 
 	return app, nil
