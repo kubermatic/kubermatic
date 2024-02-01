@@ -180,14 +180,14 @@ products:
     occurrences:
       - helmChart: { directory: charts/backup/velero }
       - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster
+          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster
           constant: version
 
   - name: Velero AWS Plugin
     source: https://github.com/vmware-tanzu/velero-plugin-for-aws
     occurrences:
       - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster
+          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster
           constant: pluginVersion
 
   - name: cert-manager

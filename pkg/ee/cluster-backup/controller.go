@@ -34,7 +34,6 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	seedclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/seed-cluster"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -158,10 +157,6 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if err := r.ensureClusterBackupUserClusterResources(ctx, cluster, cbsl); err != nil {
 		return nil, fmt.Errorf("failed to ensure cluster backup user-cluster resources: %w", err)
 	}
-
-	if err := r.ensureClusterBackupSeedClusterResources(ctx, cluster, cbsl); err != nil {
-		return nil, fmt.Errorf("failed to ensure cluster backup Seed cluster resources: %w", err)
-	}
 	return nil, nil
 }
 
@@ -192,6 +187,29 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 		return fmt.Errorf("failed to reconcile Velero Cluster Role Binding: %w", err)
 	}
 
+	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
+		userclusterresources.SecretReconciler(ctx, r.Client, cluster, cbsl),
+	}
+
+	// Create kubeconfig secret in the user cluster namespace.
+	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile cluster backup kubeconfig secret: %w", err)
+	}
+
+	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
+		userclusterresources.DeploymentReconciler(),
+	}
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile the cluster backup deployment: %w", err)
+	}
+	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
+		userclusterresources.DaemonSetReconciler(),
+	}
+
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile Velero node-agent Daemonset: %w", err)
+	}
+
 	clusterBackupCRDs, err := userclusterresources.CRDs()
 	if err != nil {
 		return fmt.Errorf("failed to load cluster backup CRDs: %w", err)
@@ -215,35 +233,4 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 	}
 
 	return nil
-}
-
-func (r *reconciler) ensureClusterBackupSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
-	namespace := cluster.Status.NamespaceName
-
-	clusterData := r.newClusterData(ctx, cluster)
-	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
-		resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterBackupKubeconfigSecretName, resources.ClusterBackupUsername, nil, clusterData, r.log),
-		seedclusterresources.SecretReconciler(ctx, r.Client, cluster, cbsl),
-	}
-
-	// Create kubeconfig secret in the user cluster namespace.
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile cluster backup kubeconfig secret: %w", err)
-	}
-
-	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		seedclusterresources.DeploymentReconciler(clusterData),
-	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, namespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the cluster backup deployment: %w", err)
-	}
-	return nil
-}
-
-func (r *reconciler) newClusterData(ctx context.Context, cluster *kubermaticv1.Cluster) *resources.TemplateData {
-	return resources.NewTemplateDataBuilder().
-		WithContext(ctx).
-		WithCluster(cluster).
-		WithClient(r.Client).
-		Build()
 }
