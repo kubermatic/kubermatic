@@ -19,6 +19,7 @@ package csi
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
+	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
 	"k8c.io/reconciler/pkg/reconciling"
 )
 
@@ -29,6 +30,8 @@ func ServiceAccountReconcilers(cluster *kubermaticv1.Cluster) []reconciling.Name
 	switch {
 	case cluster.Spec.Cloud.Kubevirt != nil:
 		creatorGetters = append(creatorGetters, kubevirt.ServiceAccountsReconcilers(cluster)...)
+	case cluster.Spec.Cloud.VMwareCloudDirector != nil:
+		creatorGetters = append(creatorGetters, vmwareclouddirector.ServiceAccountsReconcilers(cluster)...)
 	}
 
 	return creatorGetters

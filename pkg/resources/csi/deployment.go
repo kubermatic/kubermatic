@@ -19,6 +19,7 @@ package csi
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
+	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
 	"k8c.io/reconciler/pkg/reconciling"
 )
 
@@ -29,6 +30,8 @@ func DeploymentsReconcilers(data *resources.TemplateData) []reconciling.NamedDep
 	switch {
 	case data.Cluster().Spec.Cloud.Kubevirt != nil:
 		creatorGetters = kubevirt.DeploymentsReconcilers(data)
+	case data.Cluster().Spec.Cloud.VMwareCloudDirector != nil:
+		creatorGetters = vmwareclouddirector.DeploymentsReconcilers(data)
 	}
 
 	return creatorGetters

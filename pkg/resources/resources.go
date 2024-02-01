@@ -507,6 +507,18 @@ const (
 	// KubeVirtCSIRoleBindingName is the name of the deployment of the CSI controller.
 	KubeVirtCSIRoleBindingName = "csi-controller"
 
+	// VMwareCloudDirectorCSIControllerName is the name of the deployment of the CSI controller.
+	VMwareCloudDirectorCSIControllerName = "csi-controller"
+	// VMwareCloudDirectorCSISecretName is the name for the secret containing the credentials for VMware Cloud Director.
+	VMwareCloudDirectorCSISecretName = "vcloud-basic-auth"
+	// VMwareCloudDirectorCSIConfigmapName is the name for the configmap containing the configmap for VMware Cloud Director CSI driver.
+	VMwareCloudDirectorCSIConfigmapName = "vcloud-csi-configmap"
+	// VMwareCloudDirectorCSIServiceAccountName is the name of the service account of the CSI controller.
+	VMwareCloudDirectorCSIServiceAccountName = "vcloud-csi"
+	// VMwareCloudDirectorCertUsername is the name of the user coming from kubeconfig cert.
+	VMwareCloudDirectorCSICertUsername = "kubermatic:vcloud-csi"
+	// VMwareCloudDirectorCSIKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
+	VMwareCloudDirectorCSIKubeconfigSecretName = "vcloud-csi-kubeconfig"
 	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
 	DefaultNodePortRange = "30000-32767"
 )
