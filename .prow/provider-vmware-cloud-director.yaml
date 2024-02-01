@@ -15,7 +15,7 @@
 presubmits:
   - name: pre-kubermatic-e2e-vmware-cloud-director-ubuntu-1.29
     decorate: true
-    run_if_changed: "(pkg/provider/cloud/vmwareclouddirector)"
+    run_if_changed: "(addons/csi/vmware-cloud-director/|pkg/provider/cloud/vmwareclouddirector|pkg/resources/csi/vmwareclouddirector)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vcloud-director: "true"
