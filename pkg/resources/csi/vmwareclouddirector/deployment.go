@@ -27,6 +27,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -152,6 +153,16 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 							ReadOnly:  true,
 						},
 					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("24Mi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
+						},
+					},
 				},
 				{
 					Name:            "csi-provisioner",
@@ -181,32 +192,14 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 							ReadOnly:  true,
 						},
 					},
-				},
-				{
-					Name:            "csi-resizer",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-resizer:v1.4.0")),
-					Args: []string{
-						"--csi-address=$(ADDRESS)",
-						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
-						"--timeout=30s",
-						"--v=5",
-					},
-					Env: []corev1.EnvVar{
-						{
-							Name:  "ADDRESS",
-							Value: "unix:///var/lib/csi/sockets/pluginproxy/csi.sock",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("24Mi"),
 						},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "socket-dir",
-							MountPath: "/var/lib/csi/sockets/pluginproxy/",
-						},
-						{
-							Name:      resources.VMwareCloudDirectorCSIKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
-							ReadOnly:  true,
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
 						},
 					},
 				},
@@ -256,6 +249,16 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 						{
 							Name:      "vcloud-basic-auth-volume",
 							MountPath: "/etc/kubernetes/vcloud/basic-auth",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("24Mi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("200m"),
+							corev1.ResourceMemory: resource.MustParse("128Mi"),
 						},
 					},
 				},
