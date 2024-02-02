@@ -26,17 +26,18 @@ import (
 // Secretsreators returns the CSI secrets for KubeVirt.
 func SecretsReconcilers(data *resources.TemplateData) []reconciling.NamedSecretReconcilerFactory {
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		CloudConfigSecretNameReconciler(data),
+		cloudConfigSecretNameReconciler(data),
+		basicAuthSecretNameReconciler(data),
 	}
 	return creators
 }
 
-// CloudConfigSecretNameReconciler returns the CSI secrets for vmwareclouddirector.
-func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+// CloudConfigSecretNameReconciler returns the CSI secrets for VMware Cloud Director cloud config.
+func cloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return resources.CSICloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			if cm.Data == nil {
-				cm.Data = map[string][]byte{}
+		return resources.CSICloudConfigSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			if s.Data == nil {
+				s.Data = map[string][]byte{}
 			}
 
 			credentials, err := resources.GetCredentials(data)
@@ -49,10 +50,35 @@ func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
-			cm.Data[resources.CloudConfigKey] = []byte(vcdCloudConfig)
+			s.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
+			s.Data[resources.CloudConfigKey] = []byte(vcdCloudConfig)
 
-			return cm, nil
+			return s, nil
+		}
+	}
+}
+
+// BasicAuthSecretNameReconciler returns the CSI secrets for VMware Cloud Director.
+func basicAuthSecretNameReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return resources.VMwareCloudDirectorCSISecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
+			if s.Data == nil {
+				s.Data = map[string][]byte{}
+			}
+			s.Labels = resources.BaseAppLabels(resources.VMwareCloudDirectorCSISecretName, nil)
+
+			credentials, err := resources.GetCredentials(data)
+			if err != nil {
+				return nil, err
+			}
+
+			if credentials.VMwareCloudDirector.APIToken != "" {
+				s.Data["refreshToken"] = []byte(credentials.VMwareCloudDirector.APIToken)
+			} else {
+				s.Data["username"] = []byte(credentials.VMwareCloudDirector.Username)
+				s.Data["password"] = []byte(credentials.VMwareCloudDirector.Password)
+			}
+			return s, nil
 		}
 	}
 }

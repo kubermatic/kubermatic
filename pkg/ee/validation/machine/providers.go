@@ -574,13 +574,13 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	rawConfig, err := vmwareclouddirectortypes.GetConfig(*config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vmwareclouddirector raw config: %w", err)
+		return nil, fmt.Errorf("failed to get VMware Cloud Director raw config: %w", err)
 	}
 
 	var totalCPUCores int64
 	switch {
 	case rawConfig.CPUs == 0:
-		return nil, fmt.Errorf("found invalid value of vmwareclouddirector \"cpus\" from machine config, %v", rawConfig.CPUs)
+		return nil, fmt.Errorf("found invalid value of VMware Cloud Director \"cpus\" from machine config, %v", rawConfig.CPUs)
 	case rawConfig.CPUCores != 0:
 		totalCPUCores = rawConfig.CPUs * rawConfig.CPUCores
 	default:

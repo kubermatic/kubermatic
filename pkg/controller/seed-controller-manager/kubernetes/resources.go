@@ -450,6 +450,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		resources.GetInternalKubeconfigReconciler(namespace, resources.KubeStateMetricsKubeconfigSecretName, resources.KubeStateMetricsCertUsername, nil, data, r.log),
 		resources.GetInternalKubeconfigReconciler(namespace, resources.InternalUserClusterAdminKubeconfigSecretName, resources.InternalUserClusterAdminKubeconfigCertUsername, []string{"system:masters"}, data, r.log),
 		resources.GetInternalKubeconfigReconciler(namespace, resources.ClusterAutoscalerKubeconfigSecretName, resources.ClusterAutoscalerCertUsername, nil, data, r.log),
+		resources.GetInternalKubeconfigReconciler(namespace, resources.VMwareCloudDirectorCSIKubeconfigSecretName, resources.VMwareCloudDirectorCSICertUsername, nil, data, r.log),
 		resources.AdminKubeconfigReconciler(data),
 		apiserver.TokenViewerReconciler(),
 		apiserver.TokenUsersReconciler(data),
