@@ -79,6 +79,13 @@ products:
           package: k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt
           constant: csiVersion
 
+  - name: VMware Cloud Director CSI
+    source: https://github.com/vmware/cloud-director-named-disk-csi-driver
+    occurrences:
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector
+          constant: csiVersion
+
   - name: CoreDNS
     source: https://github.com/kubernetes/kubernetes
     occurrences:
