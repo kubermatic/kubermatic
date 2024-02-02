@@ -166,7 +166,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	applications, err := r.parseApplications(cluster, request)
+	applications, err := r.parseApplications(request)
 	if err != nil {
 		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
 			return nil, fmt.Errorf("failed to remove invalid (%w) initial ApplicationInstallation annotation: %w", err, removeErr)
@@ -227,7 +227,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 	return nil
 }
 
-func (r *Reconciler) parseApplications(cluster *kubermaticv1.Cluster, request string) ([]apiv1.Application, error) {
+func (r *Reconciler) parseApplications(request string) ([]apiv1.Application, error) {
 	var applications []apiv1.Application
 	if err := json.Unmarshal([]byte(request), &applications); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal initial Applications request: %w", err)
