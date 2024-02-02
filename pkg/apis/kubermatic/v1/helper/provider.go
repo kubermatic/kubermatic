@@ -67,6 +67,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
 	}
+	if spec.Edge != nil {
+		clouds = append(clouds, kubermaticv1.EdgeCloudProvider)
+	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
 	}
@@ -114,6 +117,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	var clouds []kubermaticv1.ProviderType
 	if spec.BringYourOwn != nil {
 		clouds = append(clouds, kubermaticv1.BringYourOwnCloudProvider)
+	}
+	if spec.Edge != nil {
+		clouds = append(clouds, kubermaticv1.EdgeCloudProvider)
 	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)

@@ -1,0 +1,16 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  name: dns-resolver
+  namespace: cluster-de-test-01
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: dns-resolver
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0

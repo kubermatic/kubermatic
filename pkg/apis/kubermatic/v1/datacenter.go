@@ -42,6 +42,7 @@ const (
 	AWSCloudProvider                 ProviderType = "aws"
 	AzureCloudProvider               ProviderType = "azure"
 	BringYourOwnCloudProvider        ProviderType = "bringyourown"
+	EdgeCloudProvider                ProviderType = "edge"
 	DigitaloceanCloudProvider        ProviderType = "digitalocean"
 	EKSCloudProvider                 ProviderType = "eks"
 	GCPCloudProvider                 ProviderType = "gcp"
@@ -69,6 +70,7 @@ var (
 		AzureCloudProvider,
 		BringYourOwnCloudProvider,
 		DigitaloceanCloudProvider,
+		EdgeCloudProvider,
 		EKSCloudProvider,
 		FakeCloudProvider,
 		GCPCloudProvider,
@@ -402,6 +404,9 @@ type DatacenterSpec struct {
 	// BringYourOwn contains settings for clusters using manually created
 	// nodes via kubeadm.
 	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
+	// Edge contains settings for clusters using manually created
+	// nodes in edge envs.
+	Edge *DatacenterSpecEdge `json:"edge,omitempty"`
 	// AWS configures an Amazon Web Services (AWS) datacenter.
 	AWS *DatacenterSpecAWS `json:"aws,omitempty"`
 	// Azure configures an Azure datacenter.
@@ -484,6 +489,9 @@ var (
 			ipv6EnabledForAllDatacenters: true,
 		},
 		BringYourOwnCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		EdgeCloudProvider: {
 			ipv6EnabledForAllDatacenters: true,
 		},
 		DigitaloceanCloudProvider: {
@@ -688,6 +696,10 @@ type DatacenterSpecAWS struct {
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
 type DatacenterSpecBringYourOwn struct {
+}
+
+// DatacenterSpecEdge describes a datacenter of edge nodes.
+type DatacenterSpecEdge struct {
 }
 
 // DatacenterSpecPacket describes a Packet datacenter.

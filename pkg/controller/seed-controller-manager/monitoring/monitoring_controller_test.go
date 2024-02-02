@@ -64,6 +64,13 @@ func seed() (*kubermaticv1.Seed, error) {
 						BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
 					},
 				},
+				"us-central1-edge": {
+					Location: "us-central",
+					Country:  "US",
+					Spec: kubermaticv1.DatacenterSpec{
+						Edge: &kubermaticv1.DatacenterSpecEdge{},
+					},
+				},
 				"private-do1": {
 					Location: "US ",
 					Country:  "NL",

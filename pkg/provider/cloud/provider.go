@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/bringyourown"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/edge"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/fake"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
@@ -49,6 +50,9 @@ func Provider(
 	}
 	if datacenter.Spec.BringYourOwn != nil {
 		return bringyourown.NewCloudProvider(), nil
+	}
+	if datacenter.Spec.Edge != nil {
+		return edge.NewCloudProvider(), nil
 	}
 	if datacenter.Spec.AWS != nil {
 		return aws.NewCloudProvider(datacenter, secretKeyGetter)
