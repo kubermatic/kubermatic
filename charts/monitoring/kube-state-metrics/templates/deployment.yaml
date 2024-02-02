@@ -47,6 +47,13 @@ spec:
         # and https://github.com/kubernetes/kube-state-metrics/issues/1489#issuecomment-851970288
         args:
         - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance]
+        {{- if .Values.kubeStateMetrics.customResourceState.enabled }}
+        - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+        volumeMounts:
+        - name: customresourcestate-config
+          mountPath: /etc/customresourcestate
+          readOnly: true
+        {{- end }}
         ports:
         - containerPort: 8080
           name: http-metrics
@@ -105,6 +112,12 @@ spec:
           periodSeconds: 10
         resources:
 {{ toYaml .Values.kubeStateMetrics.resizer.resources | indent 10 }}
+{{- if .Values.kubeStateMetrics.customResourceState.enabled }}
+      volumes:
+        - name: customresourcestate-config
+          configMap:
+            name: kube-state-metrics-customresourcestate-config
+{{- end }}
       nodeSelector:
 {{ toYaml .Values.kubeStateMetrics.nodeSelector | indent 8 }}
       affinity:

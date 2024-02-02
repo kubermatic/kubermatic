@@ -29,6 +29,20 @@ kubeStateMetrics:
       cpu: 2
       memory: 384Mi
 
+  rbac:
+    # Add permissions for CustomResources' apiGroups in Role/ClusterRole. Should be used in conjunction with Custom Resource State Metrics configuration
+    # Example:
+    # - apiGroups: ["monitoring.coreos.com"]
+    #   resources: ["prometheuses"]
+    #   verbs: ["list", "watch"]
+    extraRules: []
+
+  # Enabling support for customResourceState, will create a configMap including your config that will be read from kube-state-metrics
+  customResourceState:
+    enabled: true
+    # Add ClusterRole permissions to list/watch the customResources defined in the config to rbac.extraRules
+    config: {}
+  
   resizer:
     image:
       repository: registry.k8s.io/autoscaling/addon-resizer
