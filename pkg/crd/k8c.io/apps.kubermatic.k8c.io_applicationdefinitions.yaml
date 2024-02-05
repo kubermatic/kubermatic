@@ -63,6 +63,12 @@ spec:
                 documentationURL:
                   description: DocumentationURL holds a link to official documentation of the Application Alternatively this can be a link to the Readme of a chart in a git repository
                   type: string
+                logo:
+                  description: Logo of the Application as a base64 encoded svg
+                  type: string
+                logoFormat:
+                  description: LogoFormat contains logo format of the configured Application. Options are "svg+xml" and "png"
+                  type: string
                 method:
                   description: Method used to install the application
                   enum:
