@@ -139,13 +139,8 @@ func completeCloudProviderSpec(config *providerconfig.Config, cluster *kubermati
 // Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
 // kubelet version if it wasn't specified.
 func ValidateMachineDeployment(md *clusterv1alpha1.MachineDeployment, controlPlaneVersion *semverlib.Version) error {
-	var (
-		kubeletVersion = controlPlaneVersion
-		err            error
-	)
-
 	if kubelet := md.Spec.Template.Spec.Versions.Kubelet; kubelet != "" {
-		kubeletVersion, err = semverlib.NewVersion(kubelet)
+		kubeletVersion, err := semverlib.NewVersion(kubelet)
 		if err != nil {
 			return fmt.Errorf("failed to parse kubelet version %q: %w", kubelet, err)
 		}
@@ -155,13 +150,8 @@ func ValidateMachineDeployment(md *clusterv1alpha1.MachineDeployment, controlPla
 		}
 	}
 
-	constraint124, err := semverlib.NewConstraint(">= 1.24")
-	if err != nil {
-		return fmt.Errorf("failed to parse 1.24 constraint: %w", err)
-	}
-
-	if md.Spec.Template.Spec.ConfigSource != nil && constraint124.Check(kubeletVersion) {
-		return errors.New("dynamic config cannot be configured for Kubernetes 1.24 or higher")
+	if md.Spec.Template.Spec.ConfigSource != nil {
+		return errors.New("dynamic config is no longer available")
 	}
 
 	return nil

@@ -705,22 +705,8 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverlib.Version) []string {
 	var featureFlags []string
-	is24, _ := semverlib.NewConstraint("1.24.*")
-	ccm := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
-
-	if version == nil {
-		version = cluster.Status.Versions.ControlPlane.Semver()
-		if version == nil {
-			version = cluster.Spec.Version.Semver()
-		}
-	}
 
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
-		// This flag is default=true since 1.25; will be removed in 1.29
-		if cluster.Spec.Cloud.VSphere != nil && is24.Check(version) {
-			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
-		}
-
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
@@ -730,21 +716,6 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 			if cluster.Spec.Cloud.VSphere != nil {
 				featureFlags = append(featureFlags, "InTreePluginvSphereUnregister=true")
 			}
-		}
-	} else if !ccm && is24.Check(version) {
-		// We disable CSIMigration only if Kubernetes version is > 1.23 and
-		// there's no external CCM.
-		// If there's external CCM, in-tree volumes plugin is not enabled
-		// anyways, so CSIMigration doesn't affect existing volumes.
-		// OpenStack is known to have working fallback, so we don't disable
-		// CSIMigrationOpenStack
-		switch {
-		case cluster.Spec.Cloud.AWS != nil:
-			featureFlags = append(featureFlags, "CSIMigrationAWS=false")
-		case cluster.Spec.Cloud.GCP != nil:
-			featureFlags = append(featureFlags, "CSIMigrationGCE=false")
-		case cluster.Spec.Cloud.Azure != nil:
-			featureFlags = append(featureFlags, "CSIMigrationAzureDisk=false", "CSIMigrationAzureFile=false")
 		}
 	}
 

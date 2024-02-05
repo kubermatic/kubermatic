@@ -500,14 +500,6 @@ spec:
         operation: UPGRADE
         provider: openstack
         version: '>= 1.26.0'
-      - condition: inTreeProvider
-        operation: CREATE
-        provider: vsphere
-        version: '>= 1.25.0'
-      - condition: inTreeProvider
-        operation: UPGRADE
-        provider: vsphere
-        version: '>= 1.25.0'
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
     # Each update may optionally be configured to be 'automatic: true', in which case the
@@ -525,14 +517,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.26.*
+        from: 1.27.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.26.*
-      - from: 1.26.*
-        to: 1.27.*
-      - from: 1.27.*
         to: 1.27.*
       - from: 1.27.*
         to: 1.28.*
@@ -544,11 +532,6 @@ spec:
         to: 1.29.*
     # Versions lists the available versions.
     versions:
-      - v1.26.1
-      - v1.26.4
-      - v1.26.6
-      - v1.26.9
-      - v1.26.13
       - v1.27.3
       - v1.27.6
       - v1.27.10

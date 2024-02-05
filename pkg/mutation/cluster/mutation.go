@@ -17,10 +17,6 @@ limitations under the License.
 package cluster
 
 import (
-	"fmt"
-
-	semverlib "github.com/Masterminds/semver/v3"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -111,30 +107,6 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 	curVersion := newCluster.Status.Versions.ControlPlane
 	if curVersion.String() == "" {
 		curVersion = newCluster.Spec.Version
-	}
-
-	if newCluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCanal {
-		// This part handles Canal version upgrade for clusters with Kubernetes version 1.25 and higher,
-		// where the minimal Canal version is v3.23. We need to check the target cluster version here to ensure,
-		// the upgrade happens at the same time.
-		cniVersion, err := semverlib.NewVersion(newCluster.Spec.CNIPlugin.Version)
-		if err != nil {
-			return field.Invalid(field.NewPath("spec", "cniPlugin", "version"), newCluster.Spec.CNIPlugin.Version, err.Error())
-		}
-		lowerThan323, err := semverlib.NewConstraint("< 3.23")
-		if err != nil {
-			return field.InternalError(nil, fmt.Errorf("semver constraint parsing failed: %w", err))
-		}
-		equalOrHigherThan125, err := semverlib.NewConstraint(">= 1.25")
-		if err != nil {
-			return field.InternalError(nil, fmt.Errorf("semver constraint parsing failed: %w", err))
-		}
-		if lowerThan323.Check(cniVersion) && newCluster.Spec.Version.String() != "" && equalOrHigherThan125.Check(newCluster.Spec.Version.Semver()) {
-			newCluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-				Type:    kubermaticv1.CNIPluginTypeCanal,
-				Version: "v3.23",
-			}
-		}
 	}
 
 	return nil

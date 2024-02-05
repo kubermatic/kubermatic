@@ -51,7 +51,6 @@ var (
 	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
 	azureLoadBalancerSKUTypes = sets.New("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
 
-	gte125Constraint, _                                  = semverlib.NewConstraint(">= 1.25.0")
 	errPodSecurityPolicyAdmissionPluginWithVersionGte125 = errors.New("admission plugin \"PodSecurityPolicy\" is not supported in Kubernetes v1.25 and later")
 )
 
@@ -1143,14 +1142,8 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 }
 
 func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
-	if !sets.New("docker", "containerd").Has(spec.ContainerRuntime) {
+	if !sets.New("containerd").Has(spec.ContainerRuntime) {
 		return fmt.Errorf("container runtime not supported: %s", spec.ContainerRuntime)
-	}
-
-	// Docker is supported until 1.24.0, excluding 1.24.0
-	gteKube124Condition, _ := semverlib.NewConstraint(">= 1.24")
-	if spec.ContainerRuntime == "docker" && gteKube124Condition.Check(spec.Version.Semver()) {
-		return fmt.Errorf("docker not supported from version 1.24: %s", spec.ContainerRuntime)
 	}
 
 	return nil
@@ -1325,14 +1318,12 @@ func checkVersionConstraint(version *semverlib.Version, constraint string) bool 
 }
 
 func validatePodSecurityPolicyAdmissionPluginForVersion(spec *kubermaticv1.ClusterSpec) error {
-	isK8sVersionGte125 := gte125Constraint.Check(spec.Version.Semver())
-
 	// Admissin plugin "PodSecurityPolicy" was removed in Kubernetes v1.25 and is no longer supported.
-	if spec.UsePodSecurityPolicyAdmissionPlugin && isK8sVersionGte125 {
+	if spec.UsePodSecurityPolicyAdmissionPlugin {
 		return errPodSecurityPolicyAdmissionPluginWithVersionGte125
 	}
 	for _, admissionPlugin := range spec.AdmissionPlugins {
-		if admissionPlugin == podSecurityPolicyAdmissionPluginName && isK8sVersionGte125 {
+		if admissionPlugin == podSecurityPolicyAdmissionPluginName {
 			return errPodSecurityPolicyAdmissionPluginWithVersionGte125
 		}
 	}
