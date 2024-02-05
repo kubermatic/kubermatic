@@ -299,6 +299,21 @@ var (
 				Condition: kubermaticv1.InTreeCloudProviderCondition,
 				Operation: kubermaticv1.UpdateOperation,
 			},
+			// In-tree cloud providers have been fully removed in Kubernetes 1.29.
+			// Thus, no in-tree provider is available anymore, and no cluster with in-tree CCM
+			// can be upgraded to 1.29.
+			{
+				Provider:  "",
+				Version:   ">= 1.29.0",
+				Condition: kubermaticv1.InTreeCloudProviderCondition,
+				Operation: kubermaticv1.CreateOperation,
+			},
+			{
+				Provider:  "",
+				Version:   ">= 1.29.0",
+				Condition: kubermaticv1.InTreeCloudProviderCondition,
+				Operation: kubermaticv1.UpdateOperation,
+			},
 		},
 	}
 

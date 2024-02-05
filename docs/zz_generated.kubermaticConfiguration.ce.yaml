@@ -500,6 +500,14 @@ spec:
         operation: UPGRADE
         provider: openstack
         version: '>= 1.26.0'
+      - condition: inTreeProvider
+        operation: CREATE
+        provider: ""
+        version: '>= 1.29.0'
+      - condition: inTreeProvider
+        operation: UPGRADE
+        provider: ""
+        version: '>= 1.29.0'
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
     # Each update may optionally be configured to be 'automatic: true', in which case the
