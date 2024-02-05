@@ -16,9 +16,6 @@
 # the image tag in the Deployment dynamic.
 
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $version = "v1.25.3" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
 {{ $version = "v1.26.6" }}
 {{ end }}

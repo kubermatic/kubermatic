@@ -28,9 +28,6 @@
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.25" }}
-{{ $version = "v1.25.6" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
 {{ $version = "v1.26.4" }}
 {{ end }}

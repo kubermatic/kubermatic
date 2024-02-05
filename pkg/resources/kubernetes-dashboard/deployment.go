@@ -184,10 +184,6 @@ func DashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// https://github.com/kubernetes/dashboard/releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.24":
-		return "v2.6.0", nil
-	case "1.25":
-		fallthrough
 	case "1.26":
 		fallthrough // not officially marked as supported
 	case "1.27":
