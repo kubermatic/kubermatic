@@ -152,7 +152,7 @@ func clusterImporterNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReco
 	}
 }
 
-func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) reconciling.NamedNetworkPolicyReconcilerFactory {
+func customNetworkPolicyReconciler(existing kubermaticv1.CustomNetworkPolicy) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return existing.Name, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Name = existing.Name
@@ -163,22 +163,27 @@ func customNetworkPolicyReconciler(existing *kubermaticv1.CustomNetworkPolicy) r
 }
 
 func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
-	namedNetworkPolicyReconcilerFactorys := []reconciling.NamedNetworkPolicyReconcilerFactory{
-		clusterIsolationNetworkPolicyReconciler(cluster.Status.Address.IP, dc.DNSConfig.Nameservers),
+	var nameservers []string
+	if dc.DNSConfig != nil {
+		nameservers = dc.DNSConfig.Nameservers
+	}
+
+	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
+		clusterIsolationNetworkPolicyReconciler(cluster.Status.Address.IP, nameservers),
 		clusterImporterNetworkPolicyReconciler(),
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, cluster.Status.NamespaceName, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 	return nil
 }
 
 func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
-	namedNetworkPolicyReconcilerFactorys := make([]reconciling.NamedNetworkPolicyReconcilerFactory, 0)
+	namedNetworkPolicyReconcilerFactories := make([]reconciling.NamedNetworkPolicyReconcilerFactory, 0)
 	for _, netpol := range dc.CustomNetworkPolicies {
-		namedNetworkPolicyReconcilerFactorys = append(namedNetworkPolicyReconcilerFactorys, customNetworkPolicyReconciler(netpol))
+		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, customNetworkPolicyReconciler(netpol))
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactorys, cluster.Status.NamespaceName, client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, cluster.Status.NamespaceName, client); err != nil {
 		return fmt.Errorf("failed to ensure Custom Network Policies: %w", err)
 	}
 	return nil
