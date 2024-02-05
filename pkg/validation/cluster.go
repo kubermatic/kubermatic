@@ -1318,7 +1318,6 @@ func checkVersionConstraint(version *semverlib.Version, constraint string) bool 
 }
 
 func validatePodSecurityPolicyAdmissionPluginForVersion(spec *kubermaticv1.ClusterSpec) error {
-
 	// Admissin plugin "PodSecurityPolicy" was removed in Kubernetes v1.25 and is no longer supported.
 	if spec.UsePodSecurityPolicyAdmissionPlugin {
 		return errPodSecurityPolicyAdmissionPluginWithVersionGte125

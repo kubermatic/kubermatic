@@ -706,13 +706,6 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverlib.Version) []string {
 	var featureFlags []string
 
-	if version == nil {
-		version = cluster.Status.Versions.ControlPlane.Semver()
-		if version == nil {
-			version = cluster.Spec.Version.Semver()
-		}
-	}
-
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
