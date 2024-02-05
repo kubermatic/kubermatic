@@ -1,0 +1,509 @@
+---
+# Source: kube-state-metrics/templates/deployment.yaml
+apiVersion: policy/v1
+
+kind: PodDisruptionBudget
+metadata:
+  name: kube-state-metrics
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: kube-state-metrics
+---
+# Source: kube-state-metrics/templates/service-account.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.8.2
+  name: kube-state-metrics
+---
+# Source: kube-state-metrics/templates/crs-configmap.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-state-metrics-customresourcestate-config
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.8.2
+data:
+  config.yaml: |
+    spec:
+      resources:
+      - groupVersionKind:
+          group: helm.toolkit.fluxcd.io
+          kind: HelmRelease
+          version: v2beta2
+        metricNamePrefix: gotk
+        metrics:
+        - each:
+            info:
+              labelsFromPath:
+                name:
+                - metadata
+                - name
+            type: Info
+          help: The current state of a GitOps Toolkit resource.
+          labelsFromPath:
+            exported_namespace:
+            - metadata
+            - namespace
+            ready:
+            - status
+            - conditions
+            - '[type=Ready]'
+            - status
+            suspended:
+            - spec
+            - suspend
+          name: resource_info
+---
+# Source: kube-state-metrics/templates/cluster-role.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.8.2
+  name: kube-state-metrics
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  - nodes
+  - pods
+  - services
+  - serviceaccounts
+  - resourcequotas
+  - replicationcontrollers
+  - limitranges
+  - persistentvolumeclaims
+  - persistentvolumes
+  - namespaces
+  - endpoints
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - daemonsets
+  - deployments
+  - replicasets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - discovery.k8s.io
+  resources:
+  - endpointslices
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  - volumeattachments
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - networkpolicies
+  - ingressclasses
+  - ingresses
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - clusterroles
+  - rolebindings
+  - roles
+  verbs:
+  - list
+  - watch
+- apiGroups: ["apiextensions.k8s.io"]
+  resources:
+    - customresourcedefinitions
+  verbs: ["list", "watch"]
+
+- apiGroups:
+  - helm.toolkit.fluxcd.io
+  resources:
+  - helmreleases
+  verbs:
+  - list
+  - watch
+---
+# Source: kube-state-metrics/templates/cluster-role-binding.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.8.2
+  name: kube-state-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-state-metrics
+subjects:
+- kind: ServiceAccount
+  name: kube-state-metrics
+  namespace: default
+---
+# Source: kube-state-metrics/templates/role.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: kube-state-metrics-resizer
+rules:
+- apiGroups: [""]
+  resources:
+  - pods
+  verbs: ["get"]
+- apiGroups: ["apps"]
+  resources:
+  - deployments
+  resourceNames: ["kube-state-metrics"]
+  verbs: ["get", "update", "patch"]
+---
+# Source: kube-state-metrics/templates/role-binding.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kube-state-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kube-state-metrics-resizer
+subjects:
+- kind: ServiceAccount
+  name: kube-state-metrics
+---
+# Source: kube-state-metrics/templates/service.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: exporter
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/version: 2.8.2
+  name: kube-state-metrics
+spec:
+  clusterIP: None
+  ports:
+  - name: http-metrics
+    port: 8080
+    targetPort: http-metrics
+  - name: telemetry
+    port: 8081
+    targetPort: telemetry
+  selector:
+    app.kubernetes.io/name: kube-state-metrics
+---
+# Source: kube-state-metrics/templates/deployment.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+spec:
+  selector:
+    matchLabels:
+      app: kube-state-metrics
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kube-state-metrics
+        app.kubernetes.io/component: exporter
+        app.kubernetes.io/name: kube-state-metrics
+        app.kubernetes.io/version: 2.8.2
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+        kubermatic.io/chart: kube-state-metrics
+        fluentbit.io/parser: glog
+    spec:
+      serviceAccountName: kube-state-metrics
+      automountServiceAccountToken: true
+      containers:
+      - name: kube-state-metrics
+        image: 'registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.8.2'
+        # Ref: https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/#what-is-new-in-v2-0
+        # Issue and solutions: https://github.com/kubernetes/kube-state-metrics/issues/1501#issuecomment-863020915
+        # and https://github.com/kubernetes/kube-state-metrics/issues/1489#issuecomment-851970288
+        args:
+        - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance]
+        - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+        volumeMounts:
+        - name: customresourcestate-config
+          mountPath: /etc/customresourcestate
+          readOnly: true
+        ports:
+        - containerPort: 8080
+          name: http-metrics
+        - containerPort: 8081
+          name: telemetry
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsUser: 65534
+        resources:
+          limits:
+            cpu: 2
+            memory: 384Mi
+          requests:
+            cpu: 3m
+            memory: 128Mi
+
+      - name: addon-resizer
+        image: registry.k8s.io/autoscaling/addon-resizer:1.8.16
+        command:
+          - /pod_nanny
+          - --container=kube-state-metrics
+          - --cpu=100m
+          - --extra-cpu=2m
+          - --memory=150Mi
+          - --extra-memory=30Mi
+          - --threshold=5
+          - --deployment=kube-state-metrics
+          - --pod=$(MY_POD_NAME)
+          - --namespace=$(MY_POD_NAMESPACE)
+          - --healthcheck-address=:8088
+        env:
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        livenessProbe:
+          httpGet:
+            path: /health-check
+            port: 8088
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 100m
+            memory: 48Mi
+          requests:
+            cpu: 50m
+            memory: 32Mi
+      volumes:
+        - name: customresourcestate-config
+          configMap:
+            name: kube-state-metrics-customresourcestate-config
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: kube-state-metrics
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []

@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,58 +11,41 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 kubeStateMetrics:
-  image:
-    repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
-    tag: v2.8.2
-  # list of image pull secret references, e.g.
-  # imagePullSecrets:
-  #   - name: registry-k8s-io-pull-secret
-  imagePullSecrets: []
-  resources:
-    requests:
-      # Rationalized based on real world usage
-      cpu: 3m
-      memory: 128Mi
-    limits:
-      cpu: 2
-      memory: 384Mi
-
   rbac:
     # Add permissions for CustomResources' apiGroups in Role/ClusterRole. Should be used in conjunction with Custom Resource State Metrics configuration
     # Example:
     # - apiGroups: ["monitoring.coreos.com"]
     #   resources: ["prometheuses"]
     #   verbs: ["list", "watch"]
-    extraRules: []
+    extraRules:
+      - apiGroups:
+          - helm.toolkit.fluxcd.io
+        resources:
+          - helmreleases
+        verbs: [ "list", "watch" ]
 
   # Enabling support for customResourceState, will create a configMap including your config that will be read from kube-state-metrics
   customResourceState:
-    enabled: false
+    enabled: true
     # Add ClusterRole permissions to list/watch the customResources defined in the config to rbac.extraRules
-    config: {}
-  
-  resizer:
-    image:
-      repository: registry.k8s.io/autoscaling/addon-resizer
-      tag: '1.8.16'
-    resources:
-      requests:
-        cpu: 50m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 48Mi
-
-  nodeSelector: {}
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app: kube-state-metrics
-          topologyKey: kubernetes.io/hostname
-        weight: 100
-  tolerations: []
+    config:
+      spec:
+        resources:
+          - groupVersionKind:
+              group: helm.toolkit.fluxcd.io
+              version: "v2beta2"
+              kind: HelmRelease
+            metricNamePrefix: gotk
+            metrics:
+              - name: "resource_info"
+                help: "The current state of a GitOps Toolkit resource."
+                each:
+                  type: Info
+                  info:
+                    labelsFromPath:
+                      name: [metadata, name]
+                labelsFromPath:
+                  exported_namespace: [metadata, namespace]
+                  suspended: [spec, suspend]
+                  ready: [status, conditions, "[type=Ready]", status]
