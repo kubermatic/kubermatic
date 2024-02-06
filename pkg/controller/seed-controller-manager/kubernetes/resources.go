@@ -201,6 +201,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
+	if cluster.Spec.DisableCSIDriver {
+		if err := r.ensureCSIDriverResourcesAreRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
 	// Ensure that encryption-at-rest is completely removed when no longer enabled or active
 	if !cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		if err := r.ensureEncryptionConfigurationIsRemoved(ctx, data); err != nil {
@@ -381,7 +387,10 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 		usercluster.DeploymentReconciler(data),
 		userclusterwebhook.DeploymentReconciler(data),
 	}
-	deployments = append(deployments, csi.DeploymentsReconcilers(data)...)
+
+	if !data.Cluster().Spec.DisableCSIDriver {
+		deployments = append(deployments, csi.DeploymentsReconcilers(data)...)
+	}
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentReconciler(data))
@@ -456,7 +465,10 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TokenUsersReconciler(data),
 		resources.ViewerKubeconfigReconciler(data),
 	}
-	creators = append(creators, csi.SecretsReconcilers(ctx, data)...)
+
+	if !data.Cluster().Spec.DisableCSIDriver {
+		creators = append(creators, csi.SecretsReconcilers(ctx, data)...)
+	}
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
@@ -536,7 +548,9 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		machinecontroller.WebhookServiceAccountReconciler,
 		userclusterwebhook.ServiceAccountReconciler,
 	}
-	namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
+	if !c.Spec.DisableCSIDriver {
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
+	}
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, operatingsystemmanager.ServiceAccountReconciler)
@@ -581,7 +595,9 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	namedRoleBindingReconcilerFactories := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingReconciler,
 	}
-	namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
+	if c.Spec.DisableCSIDriver {
+		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
+	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, nodeportproxy.RoleBindingReconciler)
@@ -599,7 +615,9 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 		userclusterwebhook.ClusterRole(),
 	}
 
-	namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
+	if c.Spec.DisableCSIDriver {
+		namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
+	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleReconcilerFactories, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
@@ -686,7 +704,9 @@ func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedCo
 		apiserver.AdmissionControlReconciler(data),
 		apiserver.CABundleReconciler(data),
 	}
-	creators = append(creators, csi.ConfigMapsReconcilers(data)...)
+	if data.Cluster().Spec.DisableCSIDriver {
+		creators = append(creators, csi.ConfigMapsReconcilers(data)...)
+	}
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, apiserver.EgressSelectorConfigReconciler())
@@ -840,6 +860,16 @@ func (r *Reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure kubernetes-dashboard resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range csi.ResourcesForDeletion(data.Cluster()) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure CSI driver resources are removed/not present: %w", err)
 		}
 	}
 	return nil
