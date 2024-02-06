@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"fmt"
 	"testing"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -258,9 +259,35 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 			},
 			1,
 		},
+		"valid default values": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{URL: "https://kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
+					s.DefaultValues = `# some comment
+key: value`
+					return *s
+				}(),
+			},
+			0,
+		},
+		"invalid default values - syntax error": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{URL: "https://kubermatic.io", ChartName: "test", ChartVersion: "1.0.0"}}
+					s.DefaultValues = `invalid-yaml:
+invalid:test
+`
+					return *s
+				}(),
+			},
+			1,
+		},
 	}
 
 	for name, tc := range tt {
+		fmt.Println(name)
 		t.Run(name, func(t *testing.T) {
 			tc.ad.TypeMeta = metav1.TypeMeta{Kind: "ApplicationDefinition", APIVersion: "apps.kubermatic.k8c.io/v1"}
 			errl := ValidateApplicationDefinitionSpec(tc.ad)

@@ -21,6 +21,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -34,6 +35,7 @@ func ValidateApplicationDefinitionSpec(ad appskubermaticv1.ApplicationDefinition
 	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
 	allErrs = append(allErrs, ValidateApplicationVersions(ad.Spec.Versions, parentFieldPath.Child("spec"))...)
 	allErrs = append(allErrs, ValidateDeployOpts(ad.Spec.DefaultDeployOptions, parentFieldPath.Child("spec.defaultDeployOptions"))...)
+	allErrs = append(allErrs, ValidateApplicationValues(ad.Spec.DefaultValues, parentFieldPath.Child("spec"))...)
 	return allErrs
 }
 
@@ -67,6 +69,18 @@ func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, paren
 		} else {
 			lookup[v.Version] = struct{}{}
 		}
+	}
+
+	return allErrs
+}
+
+// ValidateApplicationValues makes sure Application Values are valid yaml. This is required since values are a string.
+func ValidateApplicationValues(values string, parentFieldPath *field.Path) []*field.Error {
+	allErrs := field.ErrorList{}
+
+	err := yaml.Unmarshal([]byte(values), struct{}{})
+	if err != nil {
+		allErrs = append(allErrs, field.TypeInvalid(parentFieldPath.Child("defaultValues"), nil, fmt.Sprintf("invalid yaml %v", err)))
 	}
 
 	return allErrs
