@@ -197,7 +197,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 							DNSConfig:                    &corev1.PodDNSConfig{},
 							Images:                       kubermaticv1.KubeVirtImageSources{HTTP: &kubevirtHTTPSource},
 							EnableDefaultNetworkPolicies: pointer.Bool(true),
-							CustomNetworkPolicies: []*kubermaticv1.CustomNetworkPolicy{
+							CustomNetworkPolicies: []kubermaticv1.CustomNetworkPolicy{
 								{
 									Name: "deny-ingress",
 									Spec: networkingv1.NetworkPolicySpec{
