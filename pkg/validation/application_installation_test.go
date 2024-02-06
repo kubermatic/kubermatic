@@ -185,6 +185,31 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 				}(),
 			}, expectedError: `[spec.reconciliationInterval: Invalid value: "-10ns": should be a positive value, or zero to disable]`,
 		},
+		{
+			name: "Create ApplicationInstallation Success - Values are valid yaml",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+					spec.Values = `# some comment
+key: value`
+					return *spec
+				}(),
+			}, expectedError: "[]",
+		},
+		{
+			name: "Create ApplicationInstallation Failure - Values are invalid yaml",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+					spec.Values = `invalid-yaml:
+invalid:test
+`
+					return *spec
+				}(),
+			}, expectedError: `[spec.defaultValues: Invalid value: "null": invalid yaml error converting YAML to JSON: yaml: line 3: could not find expected ':']`,
+		},
 	}
 
 	for _, testCase := range testCases {

@@ -69,6 +69,7 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 		}
 	}
 	allErrs = append(allErrs, ValidateDeployOpts(spec.DeployOptions, specPath.Child("deployOptions"))...)
+	allErrs = append(allErrs, ValidateApplicationValues(spec.Values, specPath)...)
 	return allErrs
 }
 
