@@ -151,14 +151,14 @@ func ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI appskubermatic
 	if newAI.Labels[appskubermaticv1.ApplicationTypeLabel] == appskubermaticv1.ApplicationTypeCNIValue {
 		newValues := make(map[string]any)
 		oldValues := make(map[string]any)
-		if len(newAI.Spec.Values.Raw) > 0 {
-			if err := json.Unmarshal(newAI.Spec.Values.Raw, &newValues); err != nil {
-				allErrs = append(allErrs, field.Invalid(valuesPath, string(newAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
+		if newAI.Spec.Values != "" {
+			if err := json.Unmarshal([]byte(newAI.Spec.Values), &newValues); err != nil {
+				allErrs = append(allErrs, field.Invalid(valuesPath, newAI.Spec.Values, fmt.Sprintf("unable to unmarshal values: %s", err)))
 			}
 		}
-		if len(oldAI.Spec.Values.Raw) > 0 {
-			if err := json.Unmarshal(oldAI.Spec.Values.Raw, &oldValues); err != nil {
-				allErrs = append(allErrs, field.Invalid(valuesPath, string(oldAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
+		if oldAI.Spec.Values != "" {
+			if err := json.Unmarshal([]byte(oldAI.Spec.Values), &oldValues); err != nil {
+				allErrs = append(allErrs, field.Invalid(valuesPath, oldAI.Spec.Values, fmt.Sprintf("unable to unmarshal values: %s", err)))
 			}
 		}
 		if newAI.Name == kubermaticv1.CNIPluginTypeCilium.String() {

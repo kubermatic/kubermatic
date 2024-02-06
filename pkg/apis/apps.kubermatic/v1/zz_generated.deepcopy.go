@@ -220,7 +220,6 @@ func (in *ApplicationInstallationSpec) DeepCopyInto(out *ApplicationInstallation
 	*out = *in
 	in.Namespace.DeepCopyInto(&out.Namespace)
 	out.ApplicationRef = in.ApplicationRef
-	in.Values.DeepCopyInto(&out.Values)
 	out.ReconciliationInterval = in.ReconciliationInterval
 	if in.DeployOptions != nil {
 		in, out := &in.DeployOptions, &out.DeployOptions

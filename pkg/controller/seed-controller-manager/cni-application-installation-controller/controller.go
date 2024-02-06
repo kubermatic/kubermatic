@@ -39,7 +39,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -351,8 +350,8 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 
 			// Unmarshall existing values
 			values := make(map[string]any)
-			if len(app.Spec.Values.Raw) > 0 {
-				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
+			if app.Spec.Values != "" {
+				if err := json.Unmarshal([]byte(app.Spec.Values), &values); err != nil {
 					return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
 				}
 			}
@@ -380,7 +379,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			if err != nil {
 				return app, fmt.Errorf("failed to marshall CNI values: %w", err)
 			}
-			app.Spec.Values = runtime.RawExtension{Raw: rawValues}
+			app.Spec.Values = string(rawValues)
 
 			return app, nil
 		}

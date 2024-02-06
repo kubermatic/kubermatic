@@ -21,7 +21,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -65,10 +64,8 @@ type ApplicationInstallationSpec struct {
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
-	// Values describe overrides for manifest-rendering. It's a free yaml field.
-	// +kubebuilder:pruning:PreserveUnknownFields
-	Values runtime.RawExtension `json:"values,omitempty"`
-	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+	// Values describe overrides for manifest-rendering. Must be valid yaml. Can include comments.
+	Values string `json:"values,omitempty"`
 
 	// ReconciliationInterval is the interval at which to force the reconciliation of the application. By default, Applications are only reconciled
 	// on changes on spec, annotations, or the parent application definition. Meaning that if the user manually deletes the workload

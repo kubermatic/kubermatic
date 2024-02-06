@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -362,7 +361,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					spec := ai.Spec.DeepCopy()
 					spec.Namespace.Labels = map[string]string{"key": "value"}
 					spec.ApplicationRef.Version = defaultAppSecondaryVersion
-					spec.Values = runtime.RawExtension{Raw: []byte("INVALID")}
+					spec.Values = "INVALID"
 					return *spec
 				}(),
 			},

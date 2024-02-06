@@ -44,7 +44,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -84,7 +83,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application is created with no values, it should install app with default values",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, nil)
+				app := createApplicationInstallation(testNs, "", nil)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
 			},
@@ -123,7 +122,7 @@ func TestHelmProvider(t *testing.T) {
 
 				// Upgrade application
 				newCustomCmData := map[string]string{"c": "d", "e": "f"}
-				app.Spec.Values.Raw = toHelmRawValues(t, test.CmDataKey, newCustomCmData)
+				app.Spec.Values = toHelmRawValues(t, test.CmDataKey, newCustomCmData)
 				appendDefaultValues(newCustomCmData, test.DefaultData)
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, newCustomCmData, test.DefaultVersionLabel, 2, false)
 			},
@@ -173,7 +172,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				chartFullPath := createChartWithDependency(t, registryUrl)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, nil)
+				app := createApplicationInstallation(testNs, "", nil)
 
 				app.Status.ApplicationVersion.Template.DependencyCredentials = &appskubermaticv1.DependencyCredentials{HelmCredentials: &appskubermaticv1.HelmCredentials{RegistryConfigFile: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: "registry-secret"},
@@ -202,7 +201,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				chartFullPath := createChartWithDependency(t, registryUrl)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, nil)
+				app := createApplicationInstallation(testNs, "", nil)
 
 				template := HelmTemplate{
 					Ctx:             context.Background(),
@@ -299,7 +298,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: false, Timeout: metav1.Duration{Duration: 0}, Atomic: false, EnableDNS: true}}
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, deployOpts)
+				app := createApplicationInstallation(testNs, "", deployOpts)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, true)
 			},
@@ -330,7 +329,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 	test.CheckConfigMap(t, ctx, client, testNs, expectedData, expectedVersionLabel, enableDns)
 	assertStatusIsUpdated(t, app, statusUpdater, expectedVersion)
 }
-func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, deployOpts *appskubermaticv1.DeployOptions) *appskubermaticv1.ApplicationInstallation {
+func createApplicationInstallation(testNs *corev1.Namespace, rawValues string, deployOpts *appskubermaticv1.DeployOptions) *appskubermaticv1.ApplicationInstallation {
 	app := &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
@@ -340,7 +339,7 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, d
 			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name: testNs.Name,
 			},
-			Values:        runtime.RawExtension{},
+			Values:        "",
 			DeployOptions: deployOpts,
 		},
 		Status: appskubermaticv1.ApplicationInstallationStatus{
@@ -359,8 +358,8 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, d
 			},
 		},
 	}
-	if rawValues != nil {
-		app.Spec.Values.Raw = rawValues
+	if rawValues != "" {
+		app.Spec.Values = rawValues
 	}
 	return app
 }
@@ -398,13 +397,13 @@ func appendDefaultValues(source map[string]string, defaultValues map[string]stri
 //
 //	hello: world
 //	a: b
-func toHelmRawValues(t *testing.T, key string, values any) []byte {
+func toHelmRawValues(t *testing.T, key string, values any) string {
 	helmValues := map[string]any{key: values}
 	rawValues, err := json.Marshal(helmValues)
 	if err != nil {
 		t.Fatalf("failed to create raw values: %s", err)
 	}
-	return rawValues
+	return string(rawValues)
 }
 
 // createCredentialSecret creates the secret that holds credentials to the helm registry.

@@ -92,8 +92,8 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 	}
 
 	values := make(map[string]interface{})
-	if len(applicationInstallation.Spec.Values.Raw) > 0 {
-		if err := json.Unmarshal(applicationInstallation.Spec.Values.Raw, &values); err != nil {
+	if applicationInstallation.Spec.Values != "" {
+		if err := json.Unmarshal([]byte(applicationInstallation.Spec.Values), &values); err != nil {
 			return util.NoStatusUpdate, fmt.Errorf("failed to unmarshall values: %w", err)
 		}
 	}

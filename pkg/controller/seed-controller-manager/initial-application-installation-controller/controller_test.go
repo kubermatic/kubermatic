@@ -36,7 +36,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -372,7 +371,7 @@ func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]
 		if err != nil {
 			t.Fatalf("Test's systemAppInstallationValues marshalling failed: %v", err)
 		}
-		appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
+		appInst.Spec.Values = string(rawValues)
 		userClusterObjects = append(userClusterObjects, appInst)
 	}
 	return userClusterObjects

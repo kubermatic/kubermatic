@@ -38,7 +38,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -212,7 +211,7 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 				Name:    application.Spec.ApplicationRef.Name,
 				Version: application.Spec.ApplicationRef.Version,
 			},
-			Values: runtime.RawExtension{Raw: application.Spec.Values},
+			Values: string(application.Spec.Values),
 		},
 	}
 
