@@ -39,67 +39,69 @@ const (
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	var creatorGetter reconciling.NamedDeploymentReconcilerFactory
 
-	switch {
-	case data.Cluster().Spec.Cloud.AWS != nil:
-		creatorGetter = awsDeploymentReconciler(data)
+	if data.Cluster().Spec.HasCCM() {
+		switch {
+		case data.Cluster().Spec.Cloud.AWS != nil:
+			creatorGetter = awsDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Azure != nil:
-		creatorGetter = azureDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.Azure != nil:
+			creatorGetter = azureDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Openstack != nil:
-		creatorGetter = openStackDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.Openstack != nil:
+			creatorGetter = openStackDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Hetzner != nil:
-		creatorGetter = hetznerDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.Hetzner != nil:
+			creatorGetter = hetznerDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.GCP != nil:
-		creatorGetter = gcpDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.GCP != nil:
+			creatorGetter = gcpDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Anexia != nil:
-		creatorGetter = anexiaDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.Anexia != nil:
+			creatorGetter = anexiaDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.VSphere != nil:
-		creatorGetter = vsphereDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.VSphere != nil:
+			creatorGetter = vsphereDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetter = kubevirtDeploymentReconciler(data)
+		case data.Cluster().Spec.Cloud.Kubevirt != nil:
+			creatorGetter = kubevirtDeploymentReconciler(data)
 
-	case data.Cluster().Spec.Cloud.Digitalocean != nil:
-		creatorGetter = digitalOceanDeploymentReconciler(data)
-	}
+		case data.Cluster().Spec.Cloud.Digitalocean != nil:
+			creatorGetter = digitalOceanDeploymentReconciler(data)
+		}
 
-	if creatorGetter != nil {
-		return func() (name string, create reconciling.DeploymentReconciler) {
-			name, creator := creatorGetter()
+		if creatorGetter != nil {
+			return func() (name string, create reconciling.DeploymentReconciler) {
+				name, creator := creatorGetter()
 
-			return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-				dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
+				return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+					dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-				modified, err := creator(dep)
-				if err != nil {
-					return nil, err
-				}
-
-				containerNames := sets.New(ccmContainerName)
-
-				if !data.IsKonnectivityEnabled() {
-					// inject the openVPN sidecar container
-					openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+					modified, err := creator(dep)
 					if err != nil {
-						return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+						return nil, err
 					}
-					modified.Spec.Template.Spec.Containers = append(modified.Spec.Template.Spec.Containers, *openvpnSidecar)
 
-					containerNames.Insert(openvpnSidecar.Name)
+					containerNames := sets.New(ccmContainerName)
+
+					if !data.IsKonnectivityEnabled() {
+						// inject the openVPN sidecar container
+						openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+						if err != nil {
+							return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+						}
+						modified.Spec.Template.Spec.Containers = append(modified.Spec.Template.Spec.Containers, *openvpnSidecar)
+
+						containerNames.Insert(openvpnSidecar.Name)
+					}
+
+					wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
+					if err != nil {
+						return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
+					}
+					modified.Spec.Template.Spec = *wrappedPodSpec
+
+					return modified, nil
 				}
-
-				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
-				if err != nil {
-					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
-				}
-				modified.Spec.Template.Spec = *wrappedPodSpec
-
-				return modified, nil
 			}
 		}
 	}
