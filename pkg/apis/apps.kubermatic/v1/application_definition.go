@@ -210,6 +210,7 @@ type ApplicationDefinitionSpec struct {
 	Logo string `json:"logo,omitempty"`
 
 	// LogoFormat contains logo format of the configured Application. Options are "svg+xml" and "png"
+	// +kubebuilder:validation:Enum=svg+xml;png
 	LogoFormat string `json:"logoFormat,omitempty"`
 
 	// Available version for this application

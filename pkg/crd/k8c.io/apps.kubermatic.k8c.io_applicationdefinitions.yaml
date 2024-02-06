@@ -68,6 +68,9 @@ spec:
                   type: string
                 logoFormat:
                   description: LogoFormat contains logo format of the configured Application. Options are "svg+xml" and "png"
+                  enum:
+                    - svg+xml
+                    - png
                   type: string
                 method:
                   description: Method used to install the application
