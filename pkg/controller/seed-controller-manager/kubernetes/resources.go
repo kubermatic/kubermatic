@@ -595,7 +595,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	namedRoleBindingReconcilerFactories := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingReconciler,
 	}
-	if c.Spec.DisableCSIDriver {
+	if !c.Spec.DisableCSIDriver {
 		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
 	}
 
@@ -615,7 +615,7 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 		userclusterwebhook.ClusterRole(),
 	}
 
-	if c.Spec.DisableCSIDriver {
+	if !c.Spec.DisableCSIDriver {
 		namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
 	}
 
@@ -704,7 +704,7 @@ func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedCo
 		apiserver.AdmissionControlReconciler(data),
 		apiserver.CABundleReconciler(data),
 	}
-	if data.Cluster().Spec.DisableCSIDriver {
+	if !data.Cluster().Spec.DisableCSIDriver {
 		creators = append(creators, csi.ConfigMapsReconcilers(data)...)
 	}
 
