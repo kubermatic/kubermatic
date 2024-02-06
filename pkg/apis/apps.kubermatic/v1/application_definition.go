@@ -206,6 +206,13 @@ type ApplicationDefinitionSpec struct {
 	// SourceURL holds a link to the official source code mirror or git repository of the application
 	SourceURL string `json:"sourceURL,omitempty"`
 
+	// Logo of the Application as a base64 encoded svg
+	Logo string `json:"logo,omitempty"`
+
+	// LogoFormat contains logo format of the configured Application. Options are "svg+xml" and "png"
+	// +kubebuilder:validation:Enum=svg+xml;png
+	LogoFormat string `json:"logoFormat,omitempty"`
+
 	// Available version for this application
 	Versions []ApplicationVersion `json:"versions"`
 }
