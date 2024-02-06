@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -35,40 +36,54 @@ const (
 	openvpnClientContainerName = "openvpn-client"
 )
 
-// DeploymentReconciler returns the function to create and update the external cloud provider deployment.
-func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
-	var creatorGetter reconciling.NamedDeploymentReconcilerFactory
+type ccmDeploymentReconcilerFunc func(*resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory
 
-	switch {
-	case data.Cluster().Spec.Cloud.AWS != nil:
-		creatorGetter = awsDeploymentReconciler(data)
+func getCCMDeploymentReconciler(spec *kubermaticv1.ClusterSpec) ccmDeploymentReconcilerFunc {
+	if spec != nil {
+		switch {
+		case spec.Cloud.AWS != nil:
+			return awsDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.Azure != nil:
-		creatorGetter = azureDeploymentReconciler(data)
+		case spec.Cloud.Azure != nil:
+			return azureDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.Openstack != nil:
-		creatorGetter = openStackDeploymentReconciler(data)
+		case spec.Cloud.Openstack != nil:
+			return openStackDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.Hetzner != nil:
-		creatorGetter = hetznerDeploymentReconciler(data)
+		case spec.Cloud.Hetzner != nil:
+			return hetznerDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.GCP != nil:
-		creatorGetter = gcpDeploymentReconciler(data)
+		case spec.Cloud.GCP != nil:
+			return gcpDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.Anexia != nil:
-		creatorGetter = anexiaDeploymentReconciler(data)
+		case spec.Cloud.Anexia != nil:
+			return anexiaDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.VSphere != nil:
-		creatorGetter = vsphereDeploymentReconciler(data)
+		case spec.Cloud.VSphere != nil:
+			return vsphereDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.Kubevirt != nil:
-		creatorGetter = kubevirtDeploymentReconciler(data)
+		case spec.Cloud.Kubevirt != nil:
+			return kubevirtDeploymentReconciler
 
-	case data.Cluster().Spec.Cloud.Digitalocean != nil:
-		creatorGetter = digitalOceanDeploymentReconciler(data)
+		case spec.Cloud.Digitalocean != nil:
+			return digitalOceanDeploymentReconciler
+		}
 	}
 
-	if creatorGetter != nil {
+	return nil
+}
+
+func HasCCM(spec *kubermaticv1.ClusterSpec) bool {
+	return getCCMDeploymentReconciler(spec) != nil
+}
+
+// DeploymentReconciler returns the function to create and update the external cloud provider deployment.
+func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+	deployer := getCCMDeploymentReconciler(&data.Cluster().Spec)
+
+	if deployer != nil {
+		creatorGetter := deployer(data)
+
 		return func() (name string, create reconciling.DeploymentReconciler) {
 			name, creator := creatorGetter()
 
