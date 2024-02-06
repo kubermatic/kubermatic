@@ -25,7 +25,5 @@ spec:
     # Name is the namespace to deploy the Application into.
     # Should be a valid lowercase RFC1123 domain name
     name: my-namespace
-  # Values describe overrides for manifest-rendering. It's a free yaml field.
-  values:
-    commonLabels:
-      owner: somebody
+  # Values describe overrides for manifest-rendering. Must be valid yaml. Can include comments.
+  values: '{ "commonLabels": {"owner": "somebody"}}'
