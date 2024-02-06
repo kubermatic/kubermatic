@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -35,73 +36,85 @@ const (
 	openvpnClientContainerName = "openvpn-client"
 )
 
+type ccmDeploymentReconcilerFunc func(*resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory
+
+func getCCMDeploymentReconciler(spec *kubermaticv1.ClusterSpec) ccmDeploymentReconcilerFunc {
+	if spec != nil {
+		switch {
+		case spec.Cloud.AWS != nil:
+			return awsDeploymentReconciler
+
+		case spec.Cloud.Azure != nil:
+			return azureDeploymentReconciler
+
+		case spec.Cloud.Openstack != nil:
+			return openStackDeploymentReconciler
+
+		case spec.Cloud.Hetzner != nil:
+			return hetznerDeploymentReconciler
+
+		case spec.Cloud.GCP != nil:
+			return gcpDeploymentReconciler
+
+		case spec.Cloud.Anexia != nil:
+			return anexiaDeploymentReconciler
+
+		case spec.Cloud.VSphere != nil:
+			return vsphereDeploymentReconciler
+
+		case spec.Cloud.Kubevirt != nil:
+			return kubevirtDeploymentReconciler
+
+		case spec.Cloud.Digitalocean != nil:
+			return digitalOceanDeploymentReconciler
+		}
+	}
+
+	return nil
+}
+
+func HasCCM(spec *kubermaticv1.ClusterSpec) bool {
+	return getCCMDeploymentReconciler(spec) != nil
+}
+
 // DeploymentReconciler returns the function to create and update the external cloud provider deployment.
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
-	var creatorGetter reconciling.NamedDeploymentReconcilerFactory
+	deployer := getCCMDeploymentReconciler(&data.Cluster().Spec)
 
-	if data.Cluster().Spec.HasCCM() {
-		switch {
-		case data.Cluster().Spec.Cloud.AWS != nil:
-			creatorGetter = awsDeploymentReconciler(data)
+	if deployer != nil {
+		creatorGetter := deployer(data)
 
-		case data.Cluster().Spec.Cloud.Azure != nil:
-			creatorGetter = azureDeploymentReconciler(data)
+		return func() (name string, create reconciling.DeploymentReconciler) {
+			name, creator := creatorGetter()
 
-		case data.Cluster().Spec.Cloud.Openstack != nil:
-			creatorGetter = openStackDeploymentReconciler(data)
+			return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+				dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-		case data.Cluster().Spec.Cloud.Hetzner != nil:
-			creatorGetter = hetznerDeploymentReconciler(data)
-
-		case data.Cluster().Spec.Cloud.GCP != nil:
-			creatorGetter = gcpDeploymentReconciler(data)
-
-		case data.Cluster().Spec.Cloud.Anexia != nil:
-			creatorGetter = anexiaDeploymentReconciler(data)
-
-		case data.Cluster().Spec.Cloud.VSphere != nil:
-			creatorGetter = vsphereDeploymentReconciler(data)
-
-		case data.Cluster().Spec.Cloud.Kubevirt != nil:
-			creatorGetter = kubevirtDeploymentReconciler(data)
-
-		case data.Cluster().Spec.Cloud.Digitalocean != nil:
-			creatorGetter = digitalOceanDeploymentReconciler(data)
-		}
-
-		if creatorGetter != nil {
-			return func() (name string, create reconciling.DeploymentReconciler) {
-				name, creator := creatorGetter()
-
-				return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-					dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
-
-					modified, err := creator(dep)
-					if err != nil {
-						return nil, err
-					}
-
-					containerNames := sets.New(ccmContainerName)
-
-					if !data.IsKonnectivityEnabled() {
-						// inject the openVPN sidecar container
-						openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-						if err != nil {
-							return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-						}
-						modified.Spec.Template.Spec.Containers = append(modified.Spec.Template.Spec.Containers, *openvpnSidecar)
-
-						containerNames.Insert(openvpnSidecar.Name)
-					}
-
-					wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
-					if err != nil {
-						return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
-					}
-					modified.Spec.Template.Spec = *wrappedPodSpec
-
-					return modified, nil
+				modified, err := creator(dep)
+				if err != nil {
+					return nil, err
 				}
+
+				containerNames := sets.New(ccmContainerName)
+
+				if !data.IsKonnectivityEnabled() {
+					// inject the openVPN sidecar container
+					openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
+					if err != nil {
+						return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
+					}
+					modified.Spec.Template.Spec.Containers = append(modified.Spec.Template.Spec.Containers, *openvpnSidecar)
+
+					containerNames.Insert(openvpnSidecar.Name)
+				}
+
+				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
+				if err != nil {
+					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
+				}
+				modified.Spec.Template.Spec = *wrappedPodSpec
+
+				return modified, nil
 			}
 		}
 	}

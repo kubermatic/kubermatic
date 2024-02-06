@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
+	clusterversion "k8c.io/kubermatic/v2/pkg/version/cluster"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -491,7 +492,7 @@ func hasOwnerRefToAny(obj ctrlruntimeclient.Object, ownerKind string, ownerNames
 }
 
 func getNextApiServerVersion(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, cluster *kubermaticv1.Cluster) (*semver.Semver, error) {
-	updateConditions := cluster.Spec.GetVersionConditions()
+	updateConditions := clusterversion.GetVersionConditions(&cluster.Spec)
 	updateManager := version.NewFromConfiguration(config)
 	currentVersion := cluster.Status.Versions.Apiserver.Semver()
 	targetVersion := cluster.Spec.Version.Semver()

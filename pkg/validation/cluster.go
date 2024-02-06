@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
+	clusterversion "k8c.io/kubermatic/v2/pkg/version/cluster"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -318,7 +319,7 @@ func ValidateVersion(spec *kubermaticv1.ClusterSpec, versionManager *version.Man
 		err           error
 	)
 
-	conditions := spec.GetVersionConditions()
+	conditions := clusterversion.GetVersionConditions(spec)
 
 	// if a current version is passed, we are doing a version upgrade.
 	if currentVersion != nil {

@@ -291,29 +291,6 @@ func (c ClusterSpec) IsKubeLBEnabled() bool {
 	return c.KubeLB != nil && c.KubeLB.Enabled
 }
 
-// GetVersionConditions returns a kubermaticv1.ConditionType list that should be used when checking
-// for available versions in a VersionManager instance.
-func (c ClusterSpec) GetVersionConditions() []ConditionType {
-	conditions := []ConditionType{}
-
-	// we will not return the external/internal provider condition for providers that do not
-	// have a CCM.
-	if c.HasCCM() {
-		if c.Features[ClusterFeatureExternalCloudProvider] {
-			conditions = append(conditions, ExternalCloudProviderCondition)
-		} else {
-			conditions = append(conditions, InTreeCloudProviderCondition)
-		}
-	}
-
-	return conditions
-}
-
-// HasCCM returns whether there _is_ a CCM (internal or external) to be deployed.
-func (c ClusterSpec) HasCCM() bool {
-	return c.Cloud.AWS != nil || c.Cloud.Azure != nil || c.Cloud.Openstack != nil || c.Cloud.Hetzner != nil || c.Cloud.GCP != nil || c.Cloud.Anexia != nil || c.Cloud.VSphere != nil || c.Cloud.Kubevirt != nil || c.Cloud.Digitalocean != nil
-}
-
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
 type CNIPluginSettings struct {
 	// Type is the CNI plugin type to be used.
