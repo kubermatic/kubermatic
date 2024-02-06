@@ -19,7 +19,6 @@ package v1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -192,8 +191,7 @@ type ApplicationDefinitionSpec struct {
 	Method TemplateMethod `json:"method"`
 
 	// DefaultValues describe overrides for manifest-rendering in UI when creating an application.
-	// +kubebuilder:pruning:PreserveUnknownFields
-	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
+	DefaultValues string `json:"defaultValues,omitempty"`
 
 	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
 	// These settings can be overridden in applicationInstallation.

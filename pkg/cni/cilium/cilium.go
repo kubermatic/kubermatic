@@ -17,7 +17,6 @@ limitations under the License.
 package cilium
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -187,31 +185,21 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 			}
 
 			// we want to allow overriding the default values, so reconcile them only if nil
-			if app.Spec.DefaultValues == nil {
-				defaultValues := map[string]any{
-					"operator": map[string]any{
-						"replicas": 1,
-					},
-					"hubble": map[string]any{
-						"relay": map[string]any{
-							"enabled": true,
-						},
-						"ui": map[string]any{
-							"enabled": true,
-						},
-						// cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
-						"tls": map[string]any{
-							"auto": map[string]any{
-								"method": "cronJob",
-							},
-						},
-					},
-				}
-				rawValues, err := json.Marshal(defaultValues)
-				if err != nil {
-					return app, fmt.Errorf("failed to marshall default CNI values: %w", err)
-				}
-				app.Spec.DefaultValues = &runtime.RawExtension{Raw: rawValues}
+			if app.Spec.DefaultValues == "" {
+				defaultValues := `
+operator:
+  replicas: 1
+hubble:
+  relay:
+    enabled: true
+ui:
+  enabled: true
+# cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
+tls:
+  auto:
+    method: cronJob
+`[1:]
+				app.Spec.DefaultValues = defaultValues
 			}
 			return app, nil
 		}

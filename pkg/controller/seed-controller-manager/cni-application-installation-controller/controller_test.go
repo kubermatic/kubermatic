@@ -270,7 +270,7 @@ func TestReconcile(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Test's appDefinitionDefaultValues marshalling failed: %v", err)
 				}
-				appDef.Spec.DefaultValues = &runtime.RawExtension{Raw: rawValues}
+				appDef.Spec.DefaultValues = string(rawValues)
 			}
 
 			seedClient := fake.

@@ -55,8 +55,7 @@ spec:
                   type: object
                 defaultValues:
                   description: DefaultValues describe overrides for manifest-rendering in UI when creating an application.
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
+                  type: string
                 description:
                   description: Description of the application. what is its purpose
                   type: string

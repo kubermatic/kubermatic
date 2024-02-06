@@ -298,9 +298,9 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
-	if appDef.Spec.DefaultValues != nil {
-		if len(appDef.Spec.DefaultValues.Raw) > 0 {
-			if err := json.Unmarshal(appDef.Spec.DefaultValues.Raw, &values); err != nil {
+	if appDef.Spec.DefaultValues != "" {
+		if len(appDef.Spec.DefaultValues) > 0 {
+			if err := json.Unmarshal([]byte(appDef.Spec.DefaultValues), &values); err != nil {
 				return fmt.Errorf("failed to unmarshall ApplicationDefinition default values: %w", err)
 			}
 		}

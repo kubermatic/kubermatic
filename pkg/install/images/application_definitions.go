@@ -79,9 +79,9 @@ func getImagesFromApplicationDefinition(logger logrus.FieldLogger, helmClient he
 
 	// if DefaultValues is provided, use it as values file
 	valuesFile := ""
-	if appDef.Spec.DefaultValues != nil {
+	if appDef.Spec.DefaultValues != "" {
 		valuesFile = path.Join(tmpDir, "values.yaml")
-		err = os.WriteFile(valuesFile, appDef.Spec.DefaultValues.Raw, 0644)
+		err = os.WriteFile(valuesFile, []byte(appDef.Spec.DefaultValues), 0644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create values file: %w", err)
 		}
