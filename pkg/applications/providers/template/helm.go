@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"path"
 
@@ -33,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // HelmTemplate install upgrade or uninstall helm chart into cluster.
@@ -93,7 +93,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 
 	values := make(map[string]interface{})
 	if applicationInstallation.Spec.Values != "" {
-		if err := json.Unmarshal([]byte(applicationInstallation.Spec.Values), &values); err != nil {
+		if err := yaml.Unmarshal([]byte(applicationInstallation.Spec.Values), &values); err != nil {
 			return util.NoStatusUpdate, fmt.Errorf("failed to unmarshall values: %w", err)
 		}
 	}

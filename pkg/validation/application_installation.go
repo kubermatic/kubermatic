@@ -18,7 +18,6 @@ package validation
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -30,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // ValidateApplicationInstallationSpec validates the ApplicationInstallation Spec.
@@ -153,12 +153,12 @@ func ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI appskubermatic
 		newValues := make(map[string]any)
 		oldValues := make(map[string]any)
 		if newAI.Spec.Values != "" {
-			if err := json.Unmarshal([]byte(newAI.Spec.Values), &newValues); err != nil {
+			if err := yaml.Unmarshal([]byte(newAI.Spec.Values), &newValues); err != nil {
 				allErrs = append(allErrs, field.Invalid(valuesPath, newAI.Spec.Values, fmt.Sprintf("unable to unmarshal values: %s", err)))
 			}
 		}
 		if oldAI.Spec.Values != "" {
-			if err := json.Unmarshal([]byte(oldAI.Spec.Values), &oldValues); err != nil {
+			if err := yaml.Unmarshal([]byte(oldAI.Spec.Values), &oldValues); err != nil {
 				allErrs = append(allErrs, field.Invalid(valuesPath, oldAI.Spec.Values, fmt.Sprintf("unable to unmarshal values: %s", err)))
 			}
 		}
