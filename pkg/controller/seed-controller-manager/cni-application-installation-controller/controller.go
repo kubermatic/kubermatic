@@ -49,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -298,10 +299,8 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 	if appDef.Spec.DefaultValues != "" {
-		if len(appDef.Spec.DefaultValues) > 0 {
-			if err := json.Unmarshal([]byte(appDef.Spec.DefaultValues), &values); err != nil {
-				return fmt.Errorf("failed to unmarshall ApplicationDefinition default values: %w", err)
-			}
+		if err := yaml.Unmarshal([]byte(appDef.Spec.DefaultValues), &values); err != nil {
+			return fmt.Errorf("failed to unmarshall ApplicationDefinition default values: %w", err)
 		}
 	}
 	return nil
@@ -351,7 +350,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			// Unmarshall existing values
 			values := make(map[string]any)
 			if app.Spec.Values != "" {
-				if err := json.Unmarshal([]byte(app.Spec.Values), &values); err != nil {
+				if err := yaml.Unmarshal([]byte(app.Spec.Values), &values); err != nil {
 					return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
 				}
 			}
@@ -375,7 +374,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 
 			// Set new values
-			rawValues, err := json.Marshal(values)
+			rawValues, err := yaml.Marshal(values)
 			if err != nil {
 				return app, fmt.Errorf("failed to marshall CNI values: %w", err)
 			}
