@@ -42,6 +42,7 @@ import (
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -347,7 +348,7 @@ func getApplicationInstallationValues(userClusterClient ctrlruntimeclient.Client
 		return nil, fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err)
 	}
 	values := make(map[string]any)
-	if err := json.Unmarshal([]byte(app.Spec.Values), &values); err != nil {
+	if err := yaml.Unmarshal([]byte(app.Spec.Values), &values); err != nil {
 		return nil, fmt.Errorf("failed to unmarshall CNI values: %w", err)
 	}
 	return values, nil

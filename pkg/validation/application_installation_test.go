@@ -390,7 +390,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					return *spec
 				}(),
 			},
-			expectedError: `[spec.values: Invalid value: "INVALID": unable to unmarshal values: invalid character 'I' looking for beginning of value]`,
+			expectedError: `[spec.values: Invalid value: "INVALID": unable to unmarshal values: error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go value of type map[string]interface {}]`,
 		},
 	}
 
