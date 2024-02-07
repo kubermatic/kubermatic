@@ -27,4 +27,4 @@ spec:
           chartVersion: 4.7.1
           url: https://kubernetes.github.io/ingress-nginx
     version: 1.8.1
-  defaultValues: {}
+  defaultValues: ""
