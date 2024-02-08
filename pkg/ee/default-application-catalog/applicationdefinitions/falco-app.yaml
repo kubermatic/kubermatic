@@ -30,7 +30,7 @@ spec:
       source:
         helm:
           chartName: falco
-          chartVersion: 3.5.0
+          chartVersion: 4.1.1
           url: https://falcosecurity.github.io/charts
-    version: 0.35.1
+    version: 0.37.0
   defaultValues: {}
