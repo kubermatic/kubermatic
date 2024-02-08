@@ -16,6 +16,8 @@ limitations under the License.
 
 package cilium
 
+// some comment to trigger cilium e2e
+
 import (
 	"encoding/json"
 	"fmt"
