@@ -18,7 +18,6 @@ package cniapplicationinstallationcontroller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -280,7 +279,7 @@ func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster 
 func (r *Reconciler) parseCNIValuesAnnotation(cluster *kubermaticv1.Cluster, values map[string]any) error {
 	annotation := cluster.Annotations[kubermaticv1.InitialCNIValuesRequestAnnotation]
 	if annotation != "" {
-		if err := json.Unmarshal([]byte(annotation), &values); err != nil {
+		if err := yaml.Unmarshal([]byte(annotation), &values); err != nil {
 			return fmt.Errorf("cannot unmarshal initial CNI values annotation: %w", err)
 		}
 	}
