@@ -30,8 +30,8 @@ spec:
       source:
         helm:
           chartName: cert-manager
-          chartVersion: v1.12.3
+          chartVersion: v1.14.1
           url: https://charts.jetstack.io
-    version: v1.12.3
+    version: v1.14.1
   defaultValues:
     installCRDs: true
