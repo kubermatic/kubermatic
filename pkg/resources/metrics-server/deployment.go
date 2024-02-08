@@ -56,7 +56,7 @@ const (
 	ServingCertSecretName  = "metrics-server-serving-cert"
 	servingCertMountFolder = "/etc/serving-cert"
 
-	tag = "v0.6.4"
+	tag = "v0.7.0"
 )
 
 // metricsServerData is the data needed to construct the metrics-server components.
@@ -121,7 +121,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 						"--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--kubelet-insecure-tls",
 						"--kubelet-use-node-status-port",
-						"--secure-port", "4443",
+						"--secure-port", "10250",
 						"--metric-resolution", "15s",
 						// We use the same as the API server as we use the same dnat-controller
 						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), data.IsKonnectivityEnabled()),
@@ -131,7 +131,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 					},
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: 4443,
+							ContainerPort: 10250,
 							Name:          "https",
 							Protocol:      corev1.ProtocolTCP,
 						},
@@ -167,10 +167,16 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
 						AllowPrivilegeEscalation: resources.Bool(false),
 						ReadOnlyRootFilesystem:   resources.Bool(true),
 						RunAsNonRoot:             resources.Bool(true),
 						RunAsUser:                resources.Int64(1000),
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
 					},
 				},
 			}
