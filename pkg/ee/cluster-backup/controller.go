@@ -42,8 +42,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -117,10 +121,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	if !cluster.Spec.IsClusterBackupEnabled() {
-		return reconcile.Result{}, nil
-	}
-
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -148,12 +148,23 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	log := r.log.With("cluster", cluster)
 	log.Debug("Reconciling")
+
+	if !cluster.Spec.IsClusterBackupEnabled() {
+		if err := r.undeployClusterBackupUserClusterComponents(ctx, cluster); err != nil {
+			return nil, fmt.Errorf("failed to undeploy cluster backup user-cluster components: %w", err)
+		}
+		return nil, nil
+	}
+
 	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.Spec.BackupConfig.BackupStorageLocation.Name}, cbsl); err != nil {
 		log.Debug("ClusterBackupStorageLocation not found")
 		return nil, nil
 	}
 
+	if !inSameProject(cluster, cbsl) {
+		return nil, fmt.Errorf("unable to use Cluster Backup Storage Location [%s]: cluster and clusterbackupstoragelocation must belong to the same project", cbsl.Name)
+	}
 	if err := r.ensureClusterBackupUserClusterResources(ctx, cluster, cbsl); err != nil {
 		return nil, fmt.Errorf("failed to ensure cluster backup user-cluster resources: %w", err)
 	}
@@ -233,4 +244,70 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 	}
 
 	return nil
+}
+
+func (r *reconciler) undeployClusterBackupUserClusterComponents(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+	if err := r.undeployClusterBackupUserClusterResources(ctx, userClusterClient); err != nil {
+		return fmt.Errorf("failed to undeploy cluster backup user-cluster resources: %w", err)
+	}
+	return r.undeployClusterBackupUserClusterCRDs(ctx, userClusterClient)
+}
+
+func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+	userClusterResources := []ctrlruntimeclient.Object{
+		&appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      userclusterresources.DaemonSetName,
+				Namespace: resources.ClusterBackupNamespaceName,
+			},
+		},
+		&appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      userclusterresources.DeploymentName,
+				Namespace: resources.ClusterBackupNamespaceName,
+			},
+		},
+		// The rest of the resources are non-workload resources. Deleting the namespace should take care of them.
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.ClusterBackupNamespaceName,
+			},
+		},
+	}
+
+	for _, resource := range userClusterResources {
+		if err := userClusterClient.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete cluster backup user-cluster resource: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) undeployClusterBackupUserClusterCRDs(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+	crdList := &apiextensionsv1.CustomResourceDefinitionList{}
+
+	listOpts := &ctrlruntimeclient.ListOptions{
+		LabelSelector: labels.SelectorFromSet(
+			map[string]string{
+				"component": "velero",
+			}),
+	}
+	if err := userClusterClient.List(ctx, crdList, listOpts); err != nil {
+		return fmt.Errorf("failed to list cluster backup user-cluster CRDs: %w", err)
+	}
+	for _, crd := range crdList.Items {
+		if err := userClusterClient.Delete(ctx, &crd); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete cluster backup user-cluster CRD: %w", err)
+		}
+	}
+	return nil
+}
+
+func inSameProject(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) bool {
+	return cluster.Labels[kubermaticv1.ProjectIDLabelKey] == cbsl.Labels[kubermaticv1.ProjectIDLabelKey]
 }
