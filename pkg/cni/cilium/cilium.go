@@ -192,12 +192,12 @@ operator:
 hubble:
   relay:
     enabled: true
-ui:
-  enabled: true
-# cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
-tls:
-  auto:
-    method: cronJob
+  ui:
+    enabled: true
+  # cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
+  tls:
+    auto:
+      method: cronJob
 `[1:]
 				app.Spec.DefaultValues = defaultValues
 			}
