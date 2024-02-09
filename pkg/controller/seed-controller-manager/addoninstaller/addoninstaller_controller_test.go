@@ -55,10 +55,6 @@ func TestCreateAddon(t *testing.T) {
 			name: "successfully created",
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -74,10 +70,6 @@ func TestCreateAddon(t *testing.T) {
 					},
 				},
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -181,10 +173,6 @@ func TestUpdateAddon(t *testing.T) {
 			name: "successfully created one addon and updated another",
 			existingClusterAddons: []*kubermaticv1.Addon{
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -202,10 +190,6 @@ func TestUpdateAddon(t *testing.T) {
 			},
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -221,10 +205,6 @@ func TestUpdateAddon(t *testing.T) {
 					},
 				},
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -259,10 +239,6 @@ func TestUpdateAddon(t *testing.T) {
 			name: "successfully created two addons and deleted one",
 			existingClusterAddons: []*kubermaticv1.Addon{
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "to-be-deleted",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -280,10 +256,6 @@ func TestUpdateAddon(t *testing.T) {
 			},
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Foo",
 						Namespace:       kubernetes.NamespaceName(name),
@@ -299,10 +271,6 @@ func TestUpdateAddon(t *testing.T) {
 					},
 				},
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8c.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "Bar",
 						Namespace:       kubernetes.NamespaceName(name),

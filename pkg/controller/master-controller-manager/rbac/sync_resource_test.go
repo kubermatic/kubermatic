@@ -56,6 +56,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedActions: []string{"create", "create", "create", "create", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
 
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
@@ -327,6 +331,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
 
 			dependantToSync: &kubermaticv1.UserSSHKey{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "UserSSHKey",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
@@ -563,6 +571,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedActions: []string{"create", "create"},
 
 			dependantToSync: &kubermaticv1.UserProjectBinding{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "UserProjectBinding",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
@@ -697,6 +709,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			name:        "scenario 4 an error is returned when syncing a cluster that doesn't belong to a project",
 			expectError: true,
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
@@ -714,6 +730,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
 
 			dependantToSync: &kubermaticv1.ExternalCluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ExternalCluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
@@ -898,6 +918,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedActions: []string{"create", "create"},
 
 			dependantToSync: &kubermaticv1.GroupProjectBinding{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "GroupProjectBinding",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "abcd",
 					UID:  types.UID("abcdID"),
@@ -1026,11 +1050,17 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				},
 			},
 		},
+
+		// scenario 7
 		{
 			name:            "scenario 7: a proper set of RBAC ClusterRole/Binding is generated for a resource quota",
 			expectedActions: []string{"get"},
 
 			dependantToSync: &kubermaticv1.ResourceQuota{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ResourceQuota",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "project-thunderball",
 					UID:  types.UID("abcdID"),
@@ -1375,6 +1405,10 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			expectedActions: []string{"create", "create"},
 
 			dependantToSync: &corev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Secret",
+					APIVersion: "v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "abcd",
 					Namespace: "kubermatic",
@@ -1501,9 +1535,6 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				},
 			},
 		},
-
-		// scenario 2
-
 	}
 
 	for _, test := range tests {
@@ -2807,6 +2838,10 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 			name: "scenario 1: a proper set of RBAC Role/Binding is generated for constraints",
 
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "clusterid",
 					Labels: map[string]string{"project-id": "my-first-project"},
@@ -2934,6 +2969,10 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 			name: "scenario 2: a mis-configured set of RBAC Role/Binding is updated for constraints",
 
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "clusterid",
 					Labels: map[string]string{"project-id": "my-first-project"},
@@ -2950,10 +2989,6 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 
 			expectedRoles: []*rbacv1.Role{
 				{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Role",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:owners",
 						Namespace: "cluster-clusterid",
@@ -2989,10 +3024,6 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 
 			expectedRoleBindings: []*rbacv1.RoleBinding{
 				{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:owners",
 						Namespace: "cluster-clusterid",
@@ -3128,6 +3159,10 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 		{
 			name: "a proper set of RBAC Role/Binding is generated for alertmanager",
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "clusterid",
 					Labels: map[string]string{"project-id": "my-first-project"},
@@ -3361,6 +3396,10 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 		{
 			name: "a mis-configured set of RBAC Role/Binding is updated for alertmanager",
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "clusterid",
 					Labels: map[string]string{"project-id": "my-first-project"},
@@ -3383,10 +3422,6 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 						Labels: map[string]string{
 							"authz.k8c.io/role": "owners-my-first-project",
 						},
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Role",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -3421,10 +3456,6 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:alertmanager-alertmanager:owners",
 						Namespace: "cluster-clusterid",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -3558,6 +3589,10 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 		{
 			name: "a proper set of RBAC Role/Binding is generated for rule groups",
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "clusterid",
 					Labels: map[string]string{"project-id": "my-first-project"},
@@ -3684,6 +3719,10 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 			name: "a mis-configured set of RBAC Role/Binding is updated for rulegroups",
 
 			dependantToSync: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "Cluster",
+					APIVersion: "kubermatic.k8c.io/v1",
+				},
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "clusterid",
 					Labels: map[string]string{"project-id": "my-first-project"},
@@ -3700,10 +3739,6 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 
 			expectedRoles: []*rbacv1.Role{
 				{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "Role",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:rulegroup:owners",
 						Namespace: "cluster-clusterid",
@@ -3739,10 +3774,6 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 
 			expectedRoleBindings: []*rbacv1.RoleBinding{
 				{
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:rulegroup:owners",
 						Namespace: "cluster-clusterid",
