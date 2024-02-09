@@ -48,13 +48,13 @@ require (
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.29.0
+	github.com/onsi/gomega v1.30.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230712214810-96753a21c26f // Gatekeeper's desired version
 	github.com/open-policy-agent/gatekeeper/v3 v3.13.0
 	github.com/packethost/packngo v0.30.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/prometheus/client_golang v1.17.0
+	github.com/prometheus/client_golang v1.18.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sosedoff/gitkit v0.3.0
@@ -66,16 +66,16 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.21.0
 	github.com/vmware/govmomi v0.33.1
 	go.anx.io/go-anxcloud v0.6.1
-	go.etcd.io/etcd/api/v3 v3.5.9
-	go.etcd.io/etcd/client/pkg/v3 v3.5.9
-	go.etcd.io/etcd/client/v3 v3.5.9
+	go.etcd.io/etcd/api/v3 v3.5.10
+	go.etcd.io/etcd/client/pkg/v3 v3.5.10
+	go.etcd.io/etcd/client/v3 v3.5.10
 	go.etcd.io/etcd/etcdutl/v3 v3.5.9
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.17.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	golang.org/x/oauth2 v0.14.0
-	golang.org/x/sys v0.15.0
-	golang.org/x/tools v0.15.0
+	golang.org/x/sys v0.16.0
+	golang.org/x/tools v0.16.1
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/api v0.152.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231127180814-3a041ad873d4
@@ -88,38 +88,25 @@ require (
 	k8c.io/kubeone v1.7.0
 	k8c.io/operating-system-manager v1.4.1-0.20231210203405-28d391f034d8
 	k8c.io/reconciler v0.5.0
-	k8s.io/api v0.28.4
-	k8s.io/apiextensions-apiserver v0.28.4
-	k8s.io/apimachinery v0.28.4
-	k8s.io/apiserver v0.28.3
+	k8s.io/api v0.29.1
+	k8s.io/apiextensions-apiserver v0.29.1
+	k8s.io/apimachinery v0.29.1
+	k8s.io/apiserver v0.29.1
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
-	k8s.io/cli-runtime v0.28.2
-	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.28.4
+	k8s.io/cli-runtime v0.29.1
+	k8s.io/client-go v0.29.1
+	k8s.io/code-generator v0.29.1
 	k8s.io/klog/v2 v2.110.1
-	k8s.io/kube-aggregator v0.28.2
-	k8s.io/kubectl v0.28.2
-	k8s.io/metrics v0.28.2
+	k8s.io/kube-aggregator v0.29.1
+	k8s.io/kubectl v0.29.1
+	k8s.io/metrics v0.29.1
 	k8s.io/test-infra v0.0.0-20230224035733-afa88634622b
 	k8s.io/utils v0.0.0-20231127182322-b307cd553661
 	kubevirt.io/api v1.0.0
 	kubevirt.io/containerized-data-importer-api v1.57.0
-	sigs.k8s.io/controller-runtime v0.16.3
+	sigs.k8s.io/controller-runtime v0.17.1
 	sigs.k8s.io/controller-tools v0.13.0
 	sigs.k8s.io/yaml v1.4.0
-)
-
-replace (
-	k8s.io/api => k8s.io/api v0.28.2
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.28.2
-	k8s.io/client-go => k8s.io/client-go v0.28.2
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.28.2
-	k8s.io/code-generator => k8s.io/code-generator v0.28.2
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.28.2
-	k8s.io/kubectl => k8s.io/kubectl v0.28.2
-	k8s.io/kubelet => k8s.io/kubelet v0.28.2
-	k8s.io/metrics => k8s.io/metrics v0.28.2
 )
 
 // follow repository deprecation
@@ -200,7 +187,7 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.7.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
@@ -213,7 +200,7 @@ require (
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
-	github.com/go-logr/logr v1.3.0 // indirect
+	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
@@ -235,7 +222,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/cel-go v0.16.1 // indirect
+	github.com/google/cel-go v0.17.7 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -246,6 +233,7 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
@@ -300,6 +288,7 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -350,11 +339,11 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20140926110328-57bccd1ccd43 // indirect
 	github.com/yvasiyarov/gorelic v0.0.0-20141212073537-a9bba5b9ab50 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20140908184405-b21fdbd4370f // indirect
-	go.etcd.io/bbolt v1.3.7 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.9 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.9 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.9 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.9 // indirect
+	go.etcd.io/bbolt v1.3.8 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.10 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.10 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.10 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.10 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.1 // indirect
@@ -378,10 +367,10 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.28.4 // indirect
+	k8s.io/component-base v0.29.1 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20231113174909-778a5567bc1e // indirect
-	k8s.io/kubelet v0.28.4 // indirect
+	k8s.io/kubelet v0.29.1 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.4 // indirect
 	sigs.k8s.io/gateway-api v0.8.0 // indirect
