@@ -28,6 +28,7 @@ import (
 	"context"
 	"fmt"
 
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -44,6 +45,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -258,6 +260,7 @@ func (r *reconciler) undeployClusterBackupUserClusterComponents(ctx context.Cont
 }
 
 func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+	// remove resources created in ./pkg/ee/cluster-backup/resources/user-cluster
 	userClusterResources := []ctrlruntimeclient.Object{
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
@@ -271,7 +274,29 @@ func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Conte
 				Namespace: resources.ClusterBackupNamespaceName,
 			},
 		},
-		// The rest of the resources are non-workload resources. Deleting the namespace should take care of them.
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.ClusterBackupServiceAccountName,
+				Namespace: resources.ClusterBackupNamespaceName,
+			},
+		},
+		&velerov1.BackupStorageLocation{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      userclusterresources.DefaultBSLName,
+				Namespace: resources.ClusterBackupNamespaceName,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      userclusterresources.CloudCredentialsSecretName,
+				Namespace: resources.ClusterBackupNamespaceName,
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: userclusterresources.ClusterRoleBindingName,
+			},
+		},
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: resources.ClusterBackupNamespaceName,

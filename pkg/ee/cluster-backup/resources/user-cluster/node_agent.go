@@ -97,8 +97,8 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 						VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 					},
 					{
-						Name:         cloudCredentialsSecretName,
-						VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: cloudCredentialsSecretName}},
+						Name:         CloudCredentialsSecretName,
+						VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: CloudCredentialsSecretName}},
 					},
 				},
 				RestartPolicy:                 corev1.RestartPolicyAlways,
@@ -166,7 +166,7 @@ func getContainers() []corev1.Container {
 					MountPath: "/scratch",
 				},
 				{
-					Name:      cloudCredentialsSecretName,
+					Name:      CloudCredentialsSecretName,
 					MountPath: "/credentials",
 				},
 			},

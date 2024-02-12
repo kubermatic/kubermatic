@@ -137,7 +137,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/scratch",
 		},
 		{
-			Name:      cloudCredentialsSecretName,
+			Name:      CloudCredentialsSecretName,
 			MountPath: "/credentials",
 		},
 	}
@@ -163,8 +163,8 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		},
 		{
-			Name:         cloudCredentialsSecretName,
-			VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: cloudCredentialsSecretName}},
+			Name:         CloudCredentialsSecretName,
+			VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: CloudCredentialsSecretName}},
 		},
 	}
 	return vs
