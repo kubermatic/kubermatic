@@ -4,17 +4,15 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: "minio-sa"
-  namespace: "default"
 ---
 # Source: minio/charts/minio/templates/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: release-name-minio
-  namespace: "default"
   labels:
     app: minio
-    chart: minio-4.0.15
+    chart: minio-5.0.9
     release: release-name
     heritage: Helm
 data:
@@ -55,7 +53,7 @@ data:
     # Check if the bucket exists, by using the exit code of `mc ls`
     checkBucketExists() {
       BUCKET=$1
-      CMD=$(${MC} ls myminio/$BUCKET > /dev/null 2>&1)
+      CMD=$(${MC} stat myminio/$BUCKET > /dev/null 2>&1)
       return $?
     }
     
@@ -119,7 +117,7 @@ data:
       # At this point, the bucket should exist, skip checking for existence
       # Set policy on the bucket
       echo "Setting policy of bucket '$BUCKET' to '$POLICY'."
-      ${MC} policy set $POLICY myminio/$BUCKET
+      ${MC} anonymous set $POLICY myminio/$BUCKET
     }
     
     # Try connecting to MinIO instance
@@ -129,11 +127,12 @@ data:
     
     
     # Create the buckets
-    createBucket alertmanager public   
-    createBucket cortex public   
-    createBucket cortex-ruler public   
-    createBucket loki public   
-    createBucket loki-ruler public   
+    createBucket alertmanager "public" false false false
+    createBucket cortex "public" false false false
+    createBucket cortex-ruler "public" false false false
+    createBucket loki "public" false false false
+    createBucket loki-ruler "public" false false false
+    
   add-user: |-
     #!/bin/sh
     set -e ; # Have script exit in the event of a failed command.
@@ -205,7 +204,9 @@ data:
       # set policy for user
       if [ ! -z $POLICY -a $POLICY != " " ] ; then
           echo "Adding policy '$POLICY' for '$USER'"
-          ${MC} admin policy set myminio $POLICY user=$USER
+          set +e ; # policy already attach errors out, allow it.
+          ${MC} admin policy attach myminio $POLICY --user=$USER
+          set -e
       else
           echo "User '$USER' has no policy attached."
       fi
@@ -275,13 +276,95 @@ data:
       else
         echo "Policy '$NAME' already exists."
       fi
-      ${MC} admin policy add myminio $NAME /config/$FILENAME.json
+      ${MC} admin policy create myminio $NAME /config/$FILENAME.json
     
     }
     
     # Try connecting to MinIO instance
     scheme=http
     connectToMinio $scheme
+    
+    
+    
+  add-svcacct: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+    
+    # AccessKey and secretkey credentials file are added to prevent shell execution errors caused by special characters.
+    # Special characters for example : ',",<,>,{,}
+    MINIO_ACCESSKEY_SECRETKEY_TMP="/tmp/accessKey_and_secretKey_svcacct_tmp"
+    
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 2 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+    
+    # checkSvcacctExists ()
+    # Check if the svcacct exists, by using the exit code of `mc admin user svcacct info`
+    checkSvcacctExists() {
+      CMD=$(${MC} admin user svcacct info myminio $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) > /dev/null 2>&1)
+      return $?
+    }
+    
+    # createSvcacct ($user)
+    createSvcacct () {
+      USER=$1
+      FILENAME=$2
+      #check accessKey_and_secretKey_tmp file
+      if [[ ! -f $MINIO_ACCESSKEY_SECRETKEY_TMP ]];then
+        echo "credentials file does not exist"
+        return 1
+      fi
+      if [[ $(cat $MINIO_ACCESSKEY_SECRETKEY_TMP|wc -l) -ne 2 ]];then
+        echo "credentials file is invalid"
+        rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+        return 1
+      fi
+      SVCACCT=$(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP)
+      # Create the svcacct if it does not exist
+      if ! checkSvcacctExists ; then
+        echo "Creating svcacct '$SVCACCT'"
+        # Check if policy file is define
+        if [ -z $FILENAME ]; then
+          ${MC} admin user svcacct add --access-key $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) --secret-key $(tail -n1 $MINIO_ACCESSKEY_SECRETKEY_TMP) myminio $USER
+        else
+          ${MC} admin user svcacct add --access-key $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) --secret-key $(tail -n1 $MINIO_ACCESSKEY_SECRETKEY_TMP) --policy /config/$FILENAME.json myminio $USER
+        fi
+      else
+        echo "Svcacct '$SVCACCT' already exists."
+      fi
+      #clean up credentials files.
+      rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+    }
+    
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+    
     
     
   custom-command: |-
@@ -333,10 +416,9 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: release-name-minio
-  namespace: "default"
   labels:
     app: minio
-    chart: minio-4.0.15
+    chart: minio-5.0.9
     release: release-name
     heritage: Helm
 spec:
@@ -352,10 +434,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: release-name-minio-console
-  namespace: "default"
   labels:
     app: minio
-    chart: minio-4.0.15
+    chart: minio-5.0.9
     release: release-name
     heritage: Helm
 spec:
@@ -374,10 +455,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: release-name-minio
-  namespace: "default"
   labels:
     app: minio
-    chart: minio-4.0.15
+    chart: minio-5.0.9
     release: release-name
     heritage: Helm
     monitoring: "true"
@@ -397,15 +477,17 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: release-name-minio
-  namespace: "default"
   labels:
     app: minio
-    chart: minio-4.0.15
+    chart: minio-5.0.9
     release: release-name
     heritage: Helm
 spec:
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 0
   replicas: 1
   selector:
     matchLabels:
@@ -419,18 +501,18 @@ spec:
         release: release-name
       annotations:
         checksum/secrets: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
-        checksum/config: 1a1981c409c2bd621c8560c9bafbd0a54f9c48cd560e143245dd39beab05057d
+        checksum/config: c05d96b18794e579373343e45ab6e64fa23308c0c54786750a307a888d2775a1
     spec:
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-
+      
       serviceAccountName: minio-sa
       containers:
         - name: minio
-          image: "quay.io/minio/minio:RELEASE.2022-09-17T00-09-45Z"
+          image: "quay.io/minio/minio:RELEASE.2023-04-28T18-11-17Z"
           imagePullPolicy: IfNotPresent
           command:
             - "/bin/sh"
@@ -471,15 +553,14 @@ spec:
           secret:
             secretName: minio
 ---
-# Source: minio/charts/minio/templates/post-install-create-bucket-job.yaml
+# Source: minio/charts/minio/templates/post-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: release-name-minio-make-bucket-job
-  namespace: "default"
+  name: release-name-minio-post-job
   labels:
-    app: minio-make-bucket-job
-    chart: minio-4.0.15
+    app: minio-post-job
+    chart: minio-5.0.9
     release: release-name
     heritage: Helm
   annotations:
@@ -497,74 +578,38 @@ spec:
         - name: minio-configuration
           projected:
             sources:
-            - configMap:
-                name: release-name-minio
-            - secret:
-                name: minio
-
-      serviceAccountName: minio-sa
+              - configMap:
+                  name: release-name-minio
+              - secret:
+                  name: minio
       containers:
-      - name: minio-mc
-        image: "quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z"
-        imagePullPolicy: IfNotPresent
-        command: ["/bin/sh", "/config/initialize"]
-        env:
-          - name: MINIO_ENDPOINT
-            value: release-name-minio
-          - name: MINIO_PORT
-            value: "9000"
-        volumeMounts:
-          - name: minio-configuration
-            mountPath: /config
-        resources:
-          requests:
-            memory: 128Mi
----
-# Source: minio/charts/minio/templates/post-install-create-user-job.yaml
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: release-name-minio-make-user-job
-  namespace: "default"
-  labels:
-    app: minio-make-user-job
-    chart: minio-4.0.15
-    release: release-name
-    heritage: Helm
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
-spec:
-  template:
-    metadata:
-      labels:
-        app: minio-job
-        release: release-name
-    spec:
-      restartPolicy: OnFailure      
-      volumes:
-        - name: minio-configuration
-          projected:
-            sources:
-            - configMap:
-                name: release-name-minio
-            - secret:
-                name: minio
-
-      serviceAccountName: minio-sa
-      containers:
-      - name: minio-mc
-        image: "quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z"
-        imagePullPolicy: IfNotPresent
-        command: ["/bin/sh", "/config/add-user"]
-        env:
-          - name: MINIO_ENDPOINT
-            value: release-name-minio
-          - name: MINIO_PORT
-            value: "9000"
-        volumeMounts:
-          - name: minio-configuration
-            mountPath: /config
-        resources:
-          requests:
-            memory: 128Mi
+        - name: minio-make-bucket
+          image: "quay.io/minio/mc:RELEASE.2023-04-12T02-21-51Z"
+          imagePullPolicy: IfNotPresent
+          command: [ "/bin/sh", "/config/initialize" ]
+          env:
+            - name: MINIO_ENDPOINT
+              value: release-name-minio
+            - name: MINIO_PORT
+              value: "9000"
+          volumeMounts:
+            - name: minio-configuration
+              mountPath: /config
+          resources:
+            requests:
+              memory: 128Mi
+        - name: minio-make-user
+          image: "quay.io/minio/mc:RELEASE.2023-04-12T02-21-51Z"
+          imagePullPolicy: IfNotPresent
+          command: [ "/bin/sh", "/config/add-user" ]
+          env:
+            - name: MINIO_ENDPOINT
+              value: release-name-minio
+            - name: MINIO_PORT
+              value: "9000"
+          volumeMounts:
+            - name: minio-configuration
+              mountPath: /config
+          resources:
+            requests:
+              memory: 128Mi
