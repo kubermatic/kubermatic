@@ -195,6 +195,20 @@ func validateHelmValues(helmValues *yamled.Document, opt stack.DeployOptions) []
 		}
 	}
 
+	// loki
+
+	if helmValues.Has(yamled.Path{"loki-distributed", "ingester", "persistence", "size"}) ||
+		helmValues.Has(yamled.Path{"loki-distributed", "ingester", "persistence", "storageClass"}) &&
+			!helmValues.Has(yamled.Path{"loki-distributed", "ingester", "persistence", "claims"}) {
+		failures = append(failures, fmt.Errorf("Please use loki-distributed.ingester.persistence.claims to configure persistence in the Loki Ingester"))
+	}
+
+	if helmValues.Has(yamled.Path{"loki-distributed", "compactor", "persistence", "size"}) ||
+		helmValues.Has(yamled.Path{"loki-distributed", "compactor", "persistence", "storageClass"}) &&
+			!helmValues.Has(yamled.Path{"loki-distributed", "compactor", "persistence", "claims"}) {
+		failures = append(failures, fmt.Errorf("Please use loki-distributed.compactor.persistence.claims to configure persistence in the Loki Ingester"))
+	}
+
 	return failures
 }
 
