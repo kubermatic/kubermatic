@@ -21,6 +21,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -34,6 +35,7 @@ func ValidateApplicationDefinitionSpec(ad appskubermaticv1.ApplicationDefinition
 	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
 	allErrs = append(allErrs, ValidateApplicationVersions(ad.Spec.Versions, parentFieldPath.Child("spec"))...)
 	allErrs = append(allErrs, ValidateDeployOpts(ad.Spec.DefaultDeployOptions, parentFieldPath.Child("spec.defaultDeployOptions"))...)
+	allErrs = append(allErrs, ValidateApplicationValues(ad.Spec, parentFieldPath.Child("spec"))...)
 	return allErrs
 }
 
@@ -174,6 +176,24 @@ func ValidateApplicationDefinitionWithOpenAPI(ad appskubermaticv1.ApplicationDef
 		return allErrs
 	}
 	allErrs = append(allErrs, validation.ValidateCustomResource(parentFieldPath, ad, v)...)
+
+	return allErrs
+}
+
+func ValidateApplicationValues(spec appskubermaticv1.ApplicationDefinitionSpec, parentFieldPath *field.Path) []*field.Error {
+	allErrs := field.ErrorList{}
+
+	if spec.DefaultValues != nil && len(spec.DefaultValues.Raw) > 0 && spec.DefaultValuesBlock != "" {
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("defaultValues"), "Only defaultValues or defaultValuesBlock can be set, but not both simultaneously"))
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("defaultValuesBlock"), "Only defaultValues or defaultValuesBlock can be set, but not both simultaneously"))
+	}
+
+	// we need to verify that the defaultValuesBlock is valid yaml as it is a free-text string
+	if spec.DefaultValuesBlock != "" {
+		if err := yaml.Unmarshal([]byte(spec.DefaultValuesBlock), struct{}{}); err != nil {
+			allErrs = append(allErrs, field.TypeInvalid(parentFieldPath.Child("defaultValues"), nil, fmt.Sprintf("invalid yaml %v", err)))
+		}
+	}
 
 	return allErrs
 }
