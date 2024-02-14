@@ -158,7 +158,11 @@ type ApplicationSpec struct {
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
 	// Values describe overrides for manifest-rendering
+	// Deprecated: Use ValuesBlock instead
 	Values json.RawMessage `json:"values,omitempty"`
+
+	// Values describe overrides for manifest-rendering. Preserves yaml comments.
+	ValuesBlock string `json:"valuesBlock,omitempty"`
 }
 
 type NamespaceSpec struct {

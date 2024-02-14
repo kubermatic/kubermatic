@@ -69,6 +69,13 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 		}
 	}
 	allErrs = append(allErrs, ValidateDeployOpts(spec.DeployOptions, specPath.Child("deployOptions"))...)
+
+	// Ensure that not both values and ValuesBlock fields are set simultaneously
+	if len(ai.Spec.Values.Raw) > 0 && ai.Spec.ValuesBlock != "" {
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("values"), "Only values or valuesBlock can be set, but not both simultaneously"))
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("valuesBlock"), "Only values or valuesBlock can be set, but not both simultaneously"))
+	}
+
 	return allErrs
 }
 
