@@ -11,6 +11,22 @@
 - [v2.23.8](#v2238)
 - [v2.23.9](#v2239)
 - [v2.23.10](#v22310)
+- [v2.23.11](#v22311)
+
+## [2.23.11](https://github.com/kubermatic/kubermatic/releases/tag/2.23.11)
+
+### Bugfixes
+
+- **ACTION REQUIRED:** If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
+- Fix panic, if no KubeVirt DNS config was set in the datacenter ([#13029](https://github.com/kubermatic/kubermatic/pull/13029))
+
+### Chore
+
+- Update metering to v1.0.6, fixing an error when a custom CA bundle is used ([#13012](https://github.com/kubermatic/kubermatic/pull/13012))
+
+### Updates
+
+- Update operating-system-manager (OSM) to [v1.3.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.3.4)  * This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes ([#13083](https://github.com/kubermatic/kubermatic/pull/13083))
 
 ## [v2.23.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.10)
 
