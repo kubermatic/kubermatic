@@ -13,10 +13,11 @@
 - Fix a bug where resources deployed in the user cluster namespace on the seed, for the CSI drivers, were not being removed when the CSI driver was disabled ([#13048](https://github.com/kubermatic/kubermatic/pull/13048))
 - Fix panic, if no KubeVirt DNS config was set in the datacenter ([#13028](https://github.com/kubermatic/kubermatic/pull/13028))
 
-### Chore
+### Updates
 
 - Update metering to v1.1.2, fixing an error when a custom CA bundle is used ([#13013](https://github.com/kubermatic/kubermatic/pull/13013))
-- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1)  * This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes ([#13082](https://github.com/kubermatic/kubermatic/pull/13082))
+- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1) ([#13082](https://github.com/kubermatic/kubermatic/pull/13082)) 
+  - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes.
 
 ### Updates
 
