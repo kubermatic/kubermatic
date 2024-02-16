@@ -60,7 +60,6 @@ spec:
                 defaultValuesBlock:
                   description: DefaultValuesBlock describe overrides for manifest-rendering in UI when creating an application. Preserves yaml comments.
                   type: string
-                  x-kubernetes-preserve-unknown-fields: true
                 description:
                   description: Description of the application. what is its purpose
                   type: string

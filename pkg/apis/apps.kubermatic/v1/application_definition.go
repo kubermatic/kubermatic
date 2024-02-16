@@ -200,7 +200,6 @@ type ApplicationDefinitionSpec struct {
 
 	// DefaultValuesBlock describe overrides for manifest-rendering in UI when creating an application.
 	// Preserves yaml comments.
-	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValuesBlock string `json:"defaultValuesBlock,omitempty"`
 
 	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
