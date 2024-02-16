@@ -1,4 +1,4 @@
-# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 
 apiVersion: v1
 name: kubevirt
-version: v1.1.0
-appVersion: v1.1.0
+version: v1.1.1
+appVersion: v1.1.1
 description: KubeVirt chart for KKP local installation 
 keywords:
   - kubermatic
