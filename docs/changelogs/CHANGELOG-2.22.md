@@ -13,6 +13,15 @@
 - [v2.22.10](#v22210)
 - [v2.22.11](#v22211)
 - [v2.22.12](#v22212)
+- [v2.22.13](#v22213)
+
+## [v2.22.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.13)
+
+### Updates
+
+- Update metering to v1.0.6, fixing an error when a custom CA bundle is used ([#13011](https://github.com/kubermatic/kubermatic/pull/13011))
+- Update operating-system-manager (OSM) to [v1.2.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.2.4) ([#13084](https://github.com/kubermatic/kubermatic/pull/13084))
+    - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes 
 
 ## [v2.22.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.12)
 
