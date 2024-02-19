@@ -30,3 +30,7 @@ spec:
   values:
     commonLabels:
       owner: somebody
+  # ValuesBlock describes overrides for manifest-rendering. It is a free yaml field, which preserves comments.
+  valuesBlock: |-
+    commonLabels:
+      owner: somebody

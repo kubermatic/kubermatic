@@ -249,7 +249,7 @@ type ApplicationDefinitionList struct {
 // Will return nil if none of the fields are set.
 func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
 	if ad.DefaultValues != nil && len(ad.DefaultValues.Raw) > 0 && ad.DefaultValuesBlock != "" {
-		return nil, fmt.Errorf("The fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
+		return nil, fmt.Errorf("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
 	}
 	if ad.DefaultValues != nil && len(ad.DefaultValues.Raw) > 0 {
 		return ad.DefaultValues.Raw, nil

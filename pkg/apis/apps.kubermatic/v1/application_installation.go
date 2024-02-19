@@ -292,7 +292,7 @@ func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr err
 func (ai *ApplicationInstallationSpec) GetParsedValues() (map[string]interface{}, error) {
 	values := make(map[string]interface{})
 	if len(ai.Values.Raw) > 0 && ai.ValuesBlock != "" {
-		return nil, fmt.Errorf("The fields Values and ValuesBlock cannot be used simultaneously. Please delete one of them.")
+		return nil, fmt.Errorf("the fields Values and ValuesBlock cannot be used simultaneously. Please delete one of them.")
 	}
 	if len(ai.Values.Raw) > 0 {
 		err := json.Unmarshal(ai.Values.Raw, &values)
