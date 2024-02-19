@@ -29,6 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
@@ -80,7 +81,8 @@ func (r *reconciler) ensureKubeLBManagementClusterResourcesAreRemoved(ctx contex
 		return err
 	}
 
-	for _, resource := range kubelbmanagementresources.ResourcesForDeletion(cluster.Status.NamespaceName) {
+	namespace := fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name)
+	for _, resource := range kubelbmanagementresources.ResourcesForDeletion(namespace) {
 		err := kubeLBManagementClient.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure kubeLB resources are removed/not present on kubelb management cluster: %w", err)
