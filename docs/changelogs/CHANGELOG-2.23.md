@@ -17,7 +17,7 @@
 
 ### Bugfixes
 
-- **ACTION REQUIRED:** If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
+- **ACTION REQUIRED:** For velero helm chart upgrade related change. If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
 - Fix panic, if no KubeVirt DNS config was set in the datacenter ([#13029](https://github.com/kubermatic/kubermatic/pull/13029))
 
 ### Updates
