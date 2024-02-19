@@ -9,9 +9,10 @@
 
 ### Bugfixes
 
-- **ACTION REQUIRED:** If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
+- **ACTION REQUIRED:** For velero helm chart upgrade related change. If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
 - Fix a bug where resources deployed in the user cluster namespace on the seed, for the CSI drivers, were not being removed when the CSI driver was disabled ([#13048](https://github.com/kubermatic/kubermatic/pull/13048))
 - Fix panic, if no KubeVirt DNS config was set in the datacenter ([#13028](https://github.com/kubermatic/kubermatic/pull/13028))
+- Validation - Added check for PVs having CSI provisioner before disabling the CSI addon ([#13092](https://github.com/kubermatic/kubermatic/pull/13009))
 
 ### Updates
 
