@@ -3,6 +3,24 @@
 - [v2.24.0](#v2240)
 - [v2.24.1](#v2241)
 - [v2.24.2](#v2242)
+- [v2.24.3](#v2243)
+
+## [2.24.3](https://github.com/kubermatic/kubermatic/releases/tag/2.24.3)
+
+### Bugfixes
+
+- **ACTION REQUIRED:** For velero helm chart upgrade related change. If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
+- Fix a bug where resources deployed in the user cluster namespace on the seed, for the CSI drivers, were not being removed when the CSI driver was disabled ([#13048](https://github.com/kubermatic/kubermatic/pull/13048))
+- Fix panic, if no KubeVirt DNS config was set in the datacenter ([#13028](https://github.com/kubermatic/kubermatic/pull/13028))
+- Validation - Added check for PVs having CSI provisioner before disabling the CSI addon ([#13092](https://github.com/kubermatic/kubermatic/pull/13009))
+
+### Updates
+
+- Update metering to v1.1.2, fixing an error when a custom CA bundle is used ([#13013](https://github.com/kubermatic/kubermatic/pull/13013))
+- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1) ([#13082](https://github.com/kubermatic/kubermatic/pull/13082)) 
+  - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes.
+- Update go-git. This enables Applications to work with private Azure DevOps Git repositories ([#12995](https://github.com/kubermatic/kubermatic/pull/12995))
+
 
 ## [v2.24.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.2)
 
