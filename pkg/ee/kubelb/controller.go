@@ -37,6 +37,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
@@ -213,7 +214,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	namespace := cluster.Status.NamespaceName
+	namespace := fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name)
 
 	// Create namespace; which is equivalent to registering the tenant.
 	nsReconcilers := []reconciling.NamedNamespaceReconcilerFactory{

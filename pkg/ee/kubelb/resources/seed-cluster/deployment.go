@@ -29,6 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -201,7 +202,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings) []stri
 		"-health-probe-bind-address", "0.0.0.0:8085",
 		"-metrics-addr", "0.0.0.0:8082",
 		"-leader-election-namespace", metav1.NamespaceSystem,
-		"-cluster-name", fmt.Sprintf("cluster-%s", name),
+		"-cluster-name", fmt.Sprintf(kubelbresources.TenantNamespacePattern, name),
 	}
 
 	if kubelb != nil {
