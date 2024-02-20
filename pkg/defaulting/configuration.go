@@ -217,7 +217,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.28.6"),
+		Default: semver.NewSemverOrDie("v1.28.7"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -230,13 +230,16 @@ var (
 			newSemver("v1.27.3"),
 			newSemver("v1.27.6"),
 			newSemver("v1.27.10"),
+			newSemver("v1.27.11"),
 			// Kubernetes 1.28
 			newSemver("v1.28.2"),
 			newSemver("v1.28.5"),
 			newSemver("v1.28.6"),
+			newSemver("v1.28.7"),
 			// Kubernetes 1.29
 			newSemver("v1.29.0"),
 			newSemver("v1.29.1"),
+			newSemver("v1.29.2"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.27 =======
@@ -320,8 +323,9 @@ var (
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-		Default: semver.NewSemverOrDie("v1.28"),
+		Default: semver.NewSemverOrDie("v1.29"),
 		Versions: []semver.Semver{
+			newSemver("v1.29"),
 			newSemver("v1.28"),
 			newSemver("v1.27"),
 			newSemver("v1.26"),
@@ -333,11 +337,11 @@ var (
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.28"),
+		Default: semver.NewSemverOrDie("v1.29"),
 		Versions: []semver.Semver{
+			newSemver("v1.29"),
 			newSemver("v1.28"),
 			newSemver("v1.27"),
-			newSemver("v1.26"),
 		},
 	}
 

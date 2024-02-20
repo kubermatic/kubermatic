@@ -346,8 +346,11 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 	creators := []reconciling.NamedServiceReconcilerFactory{
 		apiserver.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName),
 		etcd.ServiceReconciler(data),
-		machinecontroller.ServiceReconciler(),
 		userclusterwebhook.ServiceReconciler(),
+	}
+
+	if data.Cluster().Spec.Cloud.Edge == nil {
+		creators = append(creators, machinecontroller.ServiceReconciler())
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -382,10 +385,14 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 		apiserver.DeploymentReconciler(data, enableAPIserverOIDCAuthentication),
 		scheduler.DeploymentReconciler(data),
 		controllermanager.DeploymentReconciler(data),
-		machinecontroller.DeploymentReconciler(data),
-		machinecontroller.WebhookDeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
 		userclusterwebhook.DeploymentReconciler(data),
+	}
+
+	// BYO and Edge provider doesn't need machine controller.
+	if data.Cluster().Spec.Cloud.Edge == nil {
+		deployments = append(deployments, machinecontroller.DeploymentReconciler(data))
+		deployments = append(deployments, machinecontroller.WebhookDeploymentReconciler(data))
 	}
 
 	if !data.Cluster().Spec.DisableCSIDriver {
@@ -448,7 +455,6 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TLSServingCertificateReconciler(data),
 		apiserver.KubeletClientCertificateReconciler(data),
 		apiserver.ServiceAccountKeyReconciler(),
-		machinecontroller.TLSServingCertificateReconciler(data),
 		userclusterwebhook.TLSServingCertificateReconciler(data),
 
 		// Kubeconfigs
@@ -464,6 +470,10 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TokenViewerReconciler(),
 		apiserver.TokenUsersReconciler(data),
 		resources.ViewerKubeconfigReconciler(data),
+	}
+
+	if data.Cluster().Spec.Cloud.Edge == nil {
+		creators = append(creators, machinecontroller.TLSServingCertificateReconciler(data))
 	}
 
 	if !data.Cluster().Spec.DisableCSIDriver {
@@ -544,10 +554,14 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	namedServiceAccountReconcilerFactories := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
-		machinecontroller.ServiceAccountReconciler,
-		machinecontroller.WebhookServiceAccountReconciler,
 		userclusterwebhook.ServiceAccountReconciler,
 	}
+
+	if c.Spec.Cloud.Edge == nil {
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, machinecontroller.ServiceAccountReconciler)
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, machinecontroller.WebhookServiceAccountReconciler)
+	}
+
 	if !c.Spec.DisableCSIDriver {
 		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
 	}

@@ -19,12 +19,12 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.22-node-18-2 containerize ./hack/verify-spelling.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.22-node-18-3 containerize ./hack/verify-spelling.sh
 
 echodate "Running codespell..."
 
 codespell \
-  --skip .git,_build,_dist,vendor,go.mod,go.sum,.typos.toml,*.jpg,*.jpeg,*.png,*.woff,*.woff2,*.pem,./charts/cert-manager/crd,./charts/backup/velero/crd,./charts/oauth/test,./addons/multus/crds.yaml,./charts/local-kubevirt/crds \
+  --skip .git,_build,_dist,vendor,go.mod,go.sum,.typos.toml,*.jpg,*.jpeg,*.png,*.woff,*.woff2,*.pem,./charts/cert-manager/crd,./charts/backup/velero/crd,./charts/oauth/test,./addons/multus/crds.yaml,./charts/local-kubevirt/crds,./pkg/ee/default-application-catalog/applicationdefinitions \
   --ignore-words .codespell.exclude \
   --check-filenames \
   --check-hidden

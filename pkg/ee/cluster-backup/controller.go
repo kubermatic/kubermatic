@@ -48,6 +48,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -305,7 +306,8 @@ func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Conte
 	}
 
 	for _, resource := range userClusterResources {
-		if err := userClusterClient.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) {
+		// skip err if resource doesn't exist or if the API for it doesn't exist
+		if err := userClusterClient.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
 			return fmt.Errorf("failed to delete cluster backup user-cluster resource: %w", err)
 		}
 	}
