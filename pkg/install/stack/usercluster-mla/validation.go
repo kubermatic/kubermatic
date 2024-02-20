@@ -111,7 +111,7 @@ func ValidateMinioCompatibility(ctx context.Context, opt stack.DeployOptions) er
 	minioPod := ctrlruntimeclient.ObjectKeyFromObject(&pods.Items[0])
 
 	// Exec into the pod and look under Minio's hood.
-	command := []string{"cat", "/storage/.minio.sys/format.json"}
+	command := []string{"cat", "/export/.minio.sys/format.json"}
 	stdout, _, err := podexec.ExecuteCommand(ctx, opt.RestConfig, minioPod, "minio", command...)
 	if err != nil {
 		return fmt.Errorf("failed to execute command in Minio container: %w", err)
