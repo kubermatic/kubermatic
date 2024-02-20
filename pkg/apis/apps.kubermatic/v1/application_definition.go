@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -191,9 +193,14 @@ type ApplicationDefinitionSpec struct {
 	// Method used to install the application
 	Method TemplateMethod `json:"method"`
 
-	// DefaultValues describe overrides for manifest-rendering in UI when creating an application.
+	// DefaultValues specify values overrides for manifest-rendering in UI when creating an application. Comments are not preserved.
+	// Deprecated: use DefaultValuesBlock instead
 	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
+
+	// DefaultValuesBlock specify values overrides for manifest-rendering in UI when creating an application. Comments not preserved.
+	// Preserves yaml comments.
+	DefaultValuesBlock string `json:"defaultValuesBlock,omitempty"`
 
 	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
 	// These settings can be overridden in applicationInstallation.
@@ -235,4 +242,20 @@ type ApplicationDefinitionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ApplicationDefinition `json:"items"`
+}
+
+// GetDefaultValues parses the values either from the Values or ValuesBlock field.
+// Will return an error if both fields are set.
+// Will return nil if none of the fields are set.
+func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
+	if ad.DefaultValues != nil && len(ad.DefaultValues.Raw) > 0 && ad.DefaultValuesBlock != "" {
+		return nil, fmt.Errorf("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
+	}
+	if ad.DefaultValues != nil && len(ad.DefaultValues.Raw) > 0 {
+		return ad.DefaultValues.Raw, nil
+	}
+	if ad.DefaultValuesBlock != "" {
+		return []byte(ad.DefaultValuesBlock), nil
+	}
+	return nil, nil
 }

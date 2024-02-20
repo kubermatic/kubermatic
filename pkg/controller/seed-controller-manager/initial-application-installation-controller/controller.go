@@ -212,7 +212,8 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 				Name:    application.Spec.ApplicationRef.Name,
 				Version: application.Spec.ApplicationRef.Version,
 			},
-			Values: runtime.RawExtension{Raw: application.Spec.Values},
+			Values:      runtime.RawExtension{Raw: application.Spec.Values},
+			ValuesBlock: application.Spec.ValuesBlock,
 		},
 	}
 

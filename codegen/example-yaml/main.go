@@ -408,6 +408,9 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 				Version: "1.2.3",
 			},
 			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
+			ValuesBlock: `
+commonLabels:
+  owner: somebody`[1:],
 		},
 	}
 }

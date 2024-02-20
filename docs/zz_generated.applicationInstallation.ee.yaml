@@ -25,7 +25,12 @@ spec:
     # Name is the namespace to deploy the Application into.
     # Should be a valid lowercase RFC1123 domain name
     name: my-namespace
-  # Values describe overrides for manifest-rendering. It's a free yaml field.
+  # Values specify values overrides that are passed to helm templating. Comments are not preserved.
+  # Deprecated: Use ValuesBlock instead.
   values:
+    commonLabels:
+      owner: somebody
+  # ValuesBlock specifies values overrides that are passed to helm templating. Comments are preserved.
+  valuesBlock: |-
     commonLabels:
       owner: somebody

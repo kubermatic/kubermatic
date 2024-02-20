@@ -17,11 +17,15 @@ limitations under the License.
 package v1
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"helm.sh/helm/v3/pkg/release"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -65,10 +69,14 @@ type ApplicationInstallationSpec struct {
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
-	// Values describe overrides for manifest-rendering. It's a free yaml field.
+	// Values specify values overrides that are passed to helm templating. Comments are not preserved.
 	// +kubebuilder:pruning:PreserveUnknownFields
+	// Deprecated: Use ValuesBlock instead.
 	Values runtime.RawExtension `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
+
+	// ValuesBlock specifies values overrides that are passed to helm templating. Comments are preserved.
+	ValuesBlock string `json:"valuesBlock,omitempty"`
 
 	// ReconciliationInterval is the interval at which to force the reconciliation of the application. By default, Applications are only reconciled
 	// on changes on spec, annotations, or the parent application definition. Meaning that if the user manually deletes the workload
@@ -277,4 +285,19 @@ func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr err
 		appInstallation.SetCondition(Ready, corev1.ConditionTrue, "InstallationSuccessful", "application successfully installed or upgraded")
 		appInstallation.Status.Failures = 0
 	}
+}
+
+// GetParsedValues parses the values either from the Values or ValuesBlock field.
+// Will return an error if both fields are set.
+func (ai *ApplicationInstallationSpec) GetParsedValues() (map[string]interface{}, error) {
+	values := make(map[string]interface{})
+	if len(ai.Values.Raw) > 0 && ai.ValuesBlock != "" {
+		return nil, fmt.Errorf("the fields Values and ValuesBlock cannot be used simultaneously. Please delete one of them.")
+	}
+	if len(ai.Values.Raw) > 0 {
+		err := json.Unmarshal(ai.Values.Raw, &values)
+		return values, err
+	}
+	err := yaml.Unmarshal([]byte(ai.ValuesBlock), &values)
+	return values, err
 }
