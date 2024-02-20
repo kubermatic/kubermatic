@@ -54,11 +54,11 @@ spec:
                       type: object
                   type: object
                 defaultValues:
-                  description: 'DefaultValues describe overrides for manifest-rendering in UI when creating an application. Deprecated: use DefaultValuesBlock instead'
+                  description: 'DefaultValues specify values overrides for manifest-rendering in UI when creating an application. Comments are not preserved. Deprecated: use DefaultValuesBlock instead'
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 defaultValuesBlock:
-                  description: DefaultValuesBlock describe overrides for manifest-rendering in UI when creating an application. Preserves yaml comments.
+                  description: DefaultValuesBlock specify values overrides for manifest-rendering in UI when creating an application. Comments not preserved. Preserves yaml comments.
                   type: string
                 description:
                   description: Description of the application. what is its purpose

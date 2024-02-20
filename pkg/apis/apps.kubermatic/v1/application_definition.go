@@ -193,12 +193,12 @@ type ApplicationDefinitionSpec struct {
 	// Method used to install the application
 	Method TemplateMethod `json:"method"`
 
-	// DefaultValues describe overrides for manifest-rendering in UI when creating an application.
+	// DefaultValues specify values overrides for manifest-rendering in UI when creating an application. Comments are not preserved.
 	// Deprecated: use DefaultValuesBlock instead
 	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
 
-	// DefaultValuesBlock describe overrides for manifest-rendering in UI when creating an application.
+	// DefaultValuesBlock specify values overrides for manifest-rendering in UI when creating an application. Comments not preserved.
 	// Preserves yaml comments.
 	DefaultValuesBlock string `json:"defaultValuesBlock,omitempty"`
 

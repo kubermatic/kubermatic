@@ -157,11 +157,11 @@ type ApplicationSpec struct {
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
-	// Values describe overrides for manifest-rendering
+	// Values specify values overrides that are passed to helm templating. Comments are not preserved.
 	// Deprecated: Use ValuesBlock instead
 	Values json.RawMessage `json:"values,omitempty"`
 
-	// ValuesBlock describe overrides for manifest-rendering. Preserves yaml comments.
+	// ValuesBlock specifies values overrides that are passed to helm templating. Comments are preserved.
 	ValuesBlock string `json:"valuesBlock,omitempty"`
 }
 

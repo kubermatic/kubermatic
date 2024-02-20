@@ -69,13 +69,13 @@ type ApplicationInstallationSpec struct {
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
-	// Values describe overrides for manifest-rendering. It is a free yaml field; comments are not preserved.
+	// Values specify values overrides that are passed to helm templating. Comments are not preserved.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Deprecated: Use ValuesBlock instead.
 	Values runtime.RawExtension `json:"values,omitempty"`
 	// As kubebuilder does not support interface{} as a type, deferring json decoding, seems to be our best option (see https://github.com/kubernetes-sigs/controller-tools/issues/294#issuecomment-518379253)
 
-	// ValuesBlock describes overrides for manifest-rendering. It is a free yaml field, which preserves comments.
+	// ValuesBlock specifies values overrides that are passed to helm templating. Comments are preserved.
 	ValuesBlock string `json:"valuesBlock,omitempty"`
 
 	// ReconciliationInterval is the interval at which to force the reconciliation of the application. By default, Applications are only reconciled
