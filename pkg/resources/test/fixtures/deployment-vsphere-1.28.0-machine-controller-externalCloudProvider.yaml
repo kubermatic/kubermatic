@@ -73,7 +73,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:bd68d2c77acfc376a8bdbd1dc9308f113eaa15fe
+        image: quay.io/kubermatic/machine-controller:8cef3ecaab1a55295bcb9247ee56a4fe5cf61ccd
         livenessProbe:
           failureThreshold: 3
           httpGet:
