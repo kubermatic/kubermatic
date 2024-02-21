@@ -27,6 +27,7 @@ const DefaultHelmTimeout = 5 * time.Minute
 
 func DefaultApplicationInstallation(appInstall *appskubermaticv1.ApplicationInstallation) error {
 	DefaultDeployOpts(appInstall.Spec.DeployOptions)
+	DefaultOmittedValues(&appInstall.Spec)
 	return nil
 }
 
@@ -40,5 +41,16 @@ func DefaultDeployOpts(deployOpts *appskubermaticv1.DeployOptions) {
 		if deployOpts.Helm.Wait && deployOpts.Helm.Timeout.Duration == 0 {
 			deployOpts.Helm.Timeout.Duration = DefaultHelmTimeout
 		}
+	}
+}
+
+// DefaultOmittedValues defaults the values field to "{}" if it was not explicitly set.
+// Defaulting the field on our end allows users to omit the field in case they are not
+// using it or making use of the newer ValuesBlock field.
+// Without this defaulting, the k8s-apiserver complains that the field cannot be null.
+// This is most likely due to the fact that Values is of type runtime.RawExtension.
+func DefaultOmittedValues(spec *appskubermaticv1.ApplicationInstallationSpec) {
+	if len(spec.Values.Raw) == 0 {
+		spec.Values.Raw = []byte("{}")
 	}
 }
