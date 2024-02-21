@@ -13,7 +13,7 @@
 - [v2.23.10](#v22310)
 - [v2.23.11](#v22311)
 
-## [2.23.11](https://github.com/kubermatic/kubermatic/releases/tag/2.23.11)
+## [v2.23.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.11)
 
 ### Bugfixes
 
