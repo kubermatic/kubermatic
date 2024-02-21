@@ -5,7 +5,7 @@
 - [v2.24.2](#v2242)
 - [v2.24.3](#v2243)
 
-## [2.24.3](https://github.com/kubermatic/kubermatic/releases/tag/2.24.3)
+## [v2.24.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.3)
 
 ### Bugfixes
 
