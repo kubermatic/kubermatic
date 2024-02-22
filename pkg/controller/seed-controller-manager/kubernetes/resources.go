@@ -808,12 +808,19 @@ func (r *Reconciler) ensureCronJobs(ctx context.Context, c *kubermaticv1.Cluster
 
 func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	controlPlaneDeploymentNames := []string{
-		resources.MachineControllerDeploymentName,
-		resources.MachineControllerWebhookDeploymentName,
 		resources.ApiserverDeploymentName,
 		resources.ControllerManagerDeploymentName,
 		resources.SchedulerDeploymentName,
 	}
+
+	// machine controller is not deployed for the edge clusters
+	if c.Spec.Cloud.Edge == nil {
+		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
+			resources.MachineControllerDeploymentName,
+			resources.MachineControllerWebhookDeploymentName,
+		)
+	}
+
 	if !data.IsKonnectivityEnabled() {
 		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
 			resources.OpenVPNServerDeploymentName,
