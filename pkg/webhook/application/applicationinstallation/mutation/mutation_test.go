@@ -119,7 +119,7 @@ func TestHandle(t *testing.T) {
 			name: "Delete applicationInstallation should not generate path",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: admissionv1.Create,
+					Operation: admissionv1.Delete,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   appskubermaticv1.GroupName,
 						Version: appskubermaticv1.GroupVersion,
