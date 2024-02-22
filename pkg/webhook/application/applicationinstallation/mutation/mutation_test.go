@@ -62,9 +62,14 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 				},
 			},
@@ -85,14 +90,24 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					OldObject: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 					Object: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false, Wait: true}},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false, Wait: true}}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 				},
 			},
@@ -112,9 +127,14 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 				},
 			},
@@ -148,12 +168,8 @@ func TestHandle(t *testing.T) {
 	}
 }
 
-type rawAppInstallGen struct {
-	DeployOps *appskubermaticv1.DeployOptions
-}
-
-func (r rawAppInstallGen) Do() []byte {
-	key := appskubermaticv1.ApplicationInstallation{
+func commonAppInstall() *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: appskubermaticv1.GroupName + "/" + appskubermaticv1.GroupVersion,
 			Kind:       "ApplicationInstallation",
@@ -170,13 +186,14 @@ func (r rawAppInstallGen) Do() []byte {
 				Name:    "app-def-1",
 				Version: "v1.0.0",
 			},
-			DeployOptions: r.DeployOps,
 		},
 	}
+}
 
+func toByteWithSerOpts(o runtime.Object) []byte {
 	s := json.NewSerializerWithOptions(json.DefaultMetaFactory, testScheme, testScheme, json.SerializerOptions{Pretty: true})
 	buff := bytes.NewBuffer([]byte{})
-	_ = s.Encode(&key, buff)
+	_ = s.Encode(o, buff)
 
 	return buff.Bytes()
 }
