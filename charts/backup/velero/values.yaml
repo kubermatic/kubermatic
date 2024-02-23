@@ -93,7 +93,7 @@ velero:
     #nodeAgent:
     #  password: averysecurepassword
 
-  # see https://velero.io/docs/v1.8/api-types/backupstoragelocation/;
+  # see https://velero.io/docs/v1.10/api-types/backupstoragelocation/;
   # one of the backup storage location should be marked with "default: true"
   # or named "default" (previously this was the --default-backup-storage-location
   # flag)
@@ -110,7 +110,7 @@ velero:
   #defaultVolumeSnapshotLocations:
   #  - aws:aws
 
-  # see https://velero.io/docs/v1.8/api-types/volumesnapshotlocation/
+  # see https://velero.io/docs/v1.10/api-types/volumesnapshotlocation/
   #volumeSnapshotLocations:
   #  aws:
   #    provider: aws
