@@ -140,7 +140,7 @@ for TAG in $ALL_TAGS; do
     docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
     docker push "$DOCKER_REPO/addons:$TAG"
     docker push "$DOCKER_REPO/etcd-launcher:$TAG"
-    docker push "$DOCKER_REPO/conforance-tests:$TAG"
+    docker push "$DOCKER_REPO/conformance-tests:$TAG"
 
     create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"
