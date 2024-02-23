@@ -21,4 +21,4 @@ build:
 
 .PHONY: docker
 docker: build
-	docker build -t $(DOCKER_REPO)/kkp-conformance:$(TAG) .
+	docker build -t $(DOCKER_REPO)/conformance-tests:$(TAG) .
