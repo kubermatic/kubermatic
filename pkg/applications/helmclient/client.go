@@ -26,6 +26,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/downloader"
 	"helm.sh/helm/v3/pkg/getter"
@@ -241,10 +243,26 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 // Otherwise it upgrades the chart.
 // charLoc is the path to the chart archive (e.g. /tmp/foo/apache-1.0.0.tgz) or folder containing the chart (e.g. /tmp/mychart/apache).
 func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}, deployOpts DeployOpts, auth AuthSettings) (*release.Release, error) {
-	if _, err := h.actionConfig.Releases.Last(releaseName); err != nil {
+	currentRelease, err := h.actionConfig.Releases.Last(releaseName)
+	if err != nil {
 		return h.Install(chartLoc, releaseName, values, deployOpts, auth)
 	}
-	return h.Upgrade(chartLoc, releaseName, values, deployOpts, auth)
+
+	chart, err := loader.Load(chartLoc)
+	if err != nil {
+		return nil, err
+	}
+
+	newConfig, err := chartutil.CoalesceValues(chart, values)
+	if err != nil {
+		return nil, err
+	}
+
+	if !reflect.DeepEqual(currentRelease.Manifest, newConfig) {
+		return h.Upgrade(chartLoc, releaseName, values, deployOpts, auth)
+	}
+
+	return currentRelease, nil
 }
 
 // Install the chart located at chartLoc into targetNamespace. If the chart was already installed, an error is returned.
