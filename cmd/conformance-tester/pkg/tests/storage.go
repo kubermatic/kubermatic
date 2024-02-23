@@ -36,6 +36,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var (
+	kubevirtStorageClassName = "kubevirt-rook-ceph-block"
+)
+
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Openstack != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
@@ -137,7 +141,7 @@ func TestStorage(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Optio
 	}
 
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		set.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = &opts.Secrets.Kubevirt.StorageClass
+		set.Spec.VolumeClaimTemplates[0].Spec.StorageClassName = &kubevirtStorageClassName
 	}
 
 	if err := userClusterClient.Create(ctx, set); err != nil {
