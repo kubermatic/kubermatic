@@ -21,6 +21,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
@@ -131,6 +132,58 @@ func TestHandle(t *testing.T) {
 							func() *appskubermaticv1.ApplicationInstallation {
 								ai := commonAppInstall()
 								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
+					},
+				},
+			},
+			wantPatches: []jsonpatch.Operation{},
+		},
+		{
+			name: "Create ApplicationInstallation without values --> values should be defaulted",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
+						Kind:    "ApplicationInstallation",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Timeout: metav1.Duration{Duration: 5 * time.Minute}}}
+								ai.Spec.Values = runtime.RawExtension{}
+								return ai
+							}(),
+						),
+					},
+				},
+			},
+			wantPatches: []jsonpatch.Operation{
+				jsonpatch.NewOperation("replace", "/spec/values", map[string]interface{}{}),
+			},
+		},
+		{
+			name: "Create ApplicationInstallation with values --> values remain unchanged",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
+						Kind:    "ApplicationInstallation",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Timeout: metav1.Duration{Duration: 5 * time.Minute}}}
 								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
 								return ai
 							}(),
