@@ -72,6 +72,7 @@ const (
 	migratedVsphereCSIAddon   = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
 	csiAddonStorageClassLabel = "kubermatic-addon=csi"
 	CSIAddonName              = "csi"
+	pvMigrationAnnotation     = "pv.kubernetes.io/migrated-to"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -890,8 +891,14 @@ func (r *Reconciler) pvsForProvisioner(ctx context.Context, cluster *kubermaticv
 		return pvsForProvisioner, fmt.Errorf("failed to get the list of PVs having %v as provisioner : %w", provisionerName, err)
 	}
 	for i := 0; i < len(pvList.Items); i++ {
-		if pvList.Items[i].Spec.CSI.Driver == provisionerName {
-			pvsForProvisioner = append(pvsForProvisioner, pvList.Items[i].Name)
+		if pvList.Items[i].Spec.CSI != nil {
+			if pvList.Items[i].Spec.CSI.Driver == provisionerName {
+				pvsForProvisioner = append(pvsForProvisioner, pvList.Items[i].Name)
+			}
+		} else {
+			if pvList.Items[i].ObjectMeta.Annotations[pvMigrationAnnotation] == provisionerName {
+				pvsForProvisioner = append(pvsForProvisioner, pvList.Items[i].Name)
+			}
 		}
 	}
 	return pvsForProvisioner, nil
