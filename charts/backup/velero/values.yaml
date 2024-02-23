@@ -14,8 +14,8 @@
 
 velero:
   # the Docker image for Velero;
-  # if you are using restic, make sure to use an official image
-  # that also contains the restic binary
+  # if you are using nodeAgent, make sure to use an official image
+  # that also contains the nodeAgent binary
   image:
     repository: docker.io/velero/velero
     tag: v1.10.1
@@ -50,15 +50,18 @@ velero:
   #     - mountPath: /target
   #       name: plugins
 
-  # whether or not to create a restic daemonset
-  restic:
-    deploy: false
+  # Whether to deploy the node-agent daemonset.
+  deployNodeAgent: false
+
+  nodeAgent:
+    # Resource requests/limits to specify for the node-agent daemonset deployment. Optional.
+    # https://velero.io/docs/v1.10/customize-installation/#customize-resource-requests-and-limits
     resources:
       requests:
-        cpu: 100m
-        memory: 30Mi
+        cpu: 500m
+        memory: 512Mi
       limits:
-        # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
+        cpu: 1000m
         memory: 1Gi
 
     affinity: {}
@@ -72,7 +75,7 @@ velero:
   # configure the credentials used to make snapshots (when using
   # persistentVolumeProvider) and to store backups; you can enable
   # multiple credentials, if for some reason you run on GCP and
-  # still want to make restic snapshots to be stored in AWS S3.
+  # still want to make nodeAgent snapshots to be stored in AWS S3.
   credentials: {}
     #aws:
     #  accessKey: ...
@@ -87,7 +90,7 @@ velero:
     #  AZURE_CLIENT_SECRET: ...
     #  AZURE_STORAGE_ACCOUNT_ID: ...
     #  AZURE_STORAGE_KEY: ...
-    #restic:
+    #nodeAgent:
     #  password: averysecurepassword
 
   # see https://velero.io/docs/v1.8/api-types/backupstoragelocation/;
