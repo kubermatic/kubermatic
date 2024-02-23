@@ -21,6 +21,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
@@ -62,9 +63,14 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: true}}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 				},
 			},
@@ -85,14 +91,24 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					OldObject: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 					Object: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false, Wait: true}},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Atomic: false, Wait: true}}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 				},
 			},
@@ -104,6 +120,31 @@ func TestHandle(t *testing.T) {
 			name: "Delete applicationInstallation should not generate path",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Delete,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
+						Kind:    "ApplicationInstallation",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
+					},
+				},
+			},
+			wantPatches: []jsonpatch.Operation{},
+		},
+		{
+			name: "Create ApplicationInstallation without values --> values should be defaulted",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
 					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   appskubermaticv1.GroupName,
@@ -112,9 +153,41 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawAppInstallGen{
-							DeployOps: &appskubermaticv1.DeployOptions{},
-						}.Do(),
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Timeout: metav1.Duration{Duration: 5 * time.Minute}}}
+								ai.Spec.Values = runtime.RawExtension{}
+								return ai
+							}(),
+						),
+					},
+				},
+			},
+			wantPatches: []jsonpatch.Operation{
+				jsonpatch.NewOperation("replace", "/spec/values", map[string]interface{}{}),
+			},
+		},
+		{
+			name: "Create ApplicationInstallation with values --> values remain unchanged",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   appskubermaticv1.GroupName,
+						Version: appskubermaticv1.GroupVersion,
+						Kind:    "ApplicationInstallation",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: toByteWithSerOpts(
+							func() *appskubermaticv1.ApplicationInstallation {
+								ai := commonAppInstall()
+								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Timeout: metav1.Duration{Duration: 5 * time.Minute}}}
+								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
+								return ai
+							}(),
+						),
 					},
 				},
 			},
@@ -148,12 +221,8 @@ func TestHandle(t *testing.T) {
 	}
 }
 
-type rawAppInstallGen struct {
-	DeployOps *appskubermaticv1.DeployOptions
-}
-
-func (r rawAppInstallGen) Do() []byte {
-	key := appskubermaticv1.ApplicationInstallation{
+func commonAppInstall() *appskubermaticv1.ApplicationInstallation {
+	return &appskubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: appskubermaticv1.GroupName + "/" + appskubermaticv1.GroupVersion,
 			Kind:       "ApplicationInstallation",
@@ -170,13 +239,14 @@ func (r rawAppInstallGen) Do() []byte {
 				Name:    "app-def-1",
 				Version: "v1.0.0",
 			},
-			DeployOptions: r.DeployOps,
 		},
 	}
+}
 
+func toByteWithSerOpts(o runtime.Object) []byte {
 	s := json.NewSerializerWithOptions(json.DefaultMetaFactory, testScheme, testScheme, json.SerializerOptions{Pretty: true})
 	buff := bytes.NewBuffer([]byte{})
-	_ = s.Encode(&key, buff)
+	_ = s.Encode(o, buff)
 
 	return buff.Bytes()
 }
