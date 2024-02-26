@@ -37,29 +37,23 @@ func TestGetParsedValues(t *testing.T) {
 		},
 		"ValuesBlock set": {
 			appIn: ApplicationInstallationSpec{
-				ValuesBlock: `
-not-empty:
-  value`[1:],
+				ValuesBlock: "not-empty:\n  value",
 			},
 			expResponse: map[string]interface{}{"not-empty": "value"},
 			expError:    false,
 		},
 		"ValuesBlock set and Values Defaulted": {
 			appIn: ApplicationInstallationSpec{
-				Values: runtime.RawExtension{},
-				ValuesBlock: `
-not-empty:
-  value`[1:],
+				Values:      runtime.RawExtension{},
+				ValuesBlock: "not-empty:\n  value",
 			},
 			expResponse: map[string]interface{}{"not-empty": "value"},
 			expError:    false,
 		},
 		"Both Values and ValuesBlock set": {
 			appIn: ApplicationInstallationSpec{
-				Values: runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)},
-				ValuesBlock: `
-not-empty:
-  value`[1:],
+				Values:      runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)},
+				ValuesBlock: "not-empty:\n  value",
 			},
 			expResponse: nil,
 			expError:    true,
