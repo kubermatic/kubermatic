@@ -54,11 +54,11 @@ spec:
                       type: object
                   type: object
                 defaultValues:
-                  description: 'DefaultValues specify values overrides for manifest-rendering in UI when creating an application. Comments are not preserved. Deprecated: use DefaultValuesBlock instead'
+                  description: 'DefaultValues specify default values for the UI which are passed to helm templating when creating an application. Comments are not preserved. Deprecated: use DefaultValuesBlock instead'
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 defaultValuesBlock:
-                  description: DefaultValuesBlock specify values overrides for manifest-rendering in UI when creating an application. Comments not preserved. Preserves yaml comments.
+                  description: DefaultValuesBlock specifies default values for the UI which are passed to helm templating when creating an application. Comments are preserved.
                   type: string
                 description:
                   description: Description of the application. what is its purpose
