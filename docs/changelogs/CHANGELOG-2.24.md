@@ -4,6 +4,17 @@
 - [v2.24.1](#v2241)
 - [v2.24.2](#v2242)
 - [v2.24.3](#v2243)
+- [v2.24.4](#v2244)
+
+## [v2.24.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.4)
+
+### Bugfixes
+
+- Fix the panic of the seed controller manager while checking CSI addon usage for user clusters, when a user cluster has PVs which were migrated from the in-tree provisioner to the CSI provisioner ([#13126](https://github.com/kubermatic/kubermatic/pull/13126))
+
+### New Feature
+
+- We maintain now a dedicated docker image for the conformance tester, mainly for internal use ([#13113](https://github.com/kubermatic/kubermatic/pull/13113))
 
 ## [v2.24.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.3)
 
