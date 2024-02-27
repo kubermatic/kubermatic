@@ -193,13 +193,12 @@ type ApplicationDefinitionSpec struct {
 	// Method used to install the application
 	Method TemplateMethod `json:"method"`
 
-	// DefaultValues specify values overrides for manifest-rendering in UI when creating an application. Comments are not preserved.
+	// DefaultValues specify default values for the UI which are passed to helm templating when creating an application. Comments are not preserved.
 	// Deprecated: use DefaultValuesBlock instead
 	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`
 
-	// DefaultValuesBlock specify values overrides for manifest-rendering in UI when creating an application. Comments not preserved.
-	// Preserves yaml comments.
+	// DefaultValuesBlock specifies default values for the UI which are passed to helm templating when creating an application. Comments are preserved.
 	DefaultValuesBlock string `json:"defaultValuesBlock,omitempty"`
 
 	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.

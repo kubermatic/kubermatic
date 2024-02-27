@@ -142,6 +142,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		clusterVersion = cluster.Spec.Version
 	}
 
+	data.cloudProviderName = cluster.Spec.Cloud.ProviderName
 	data.clusterVersion = clusterVersion
 	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
@@ -680,9 +681,13 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
-		machinecontroller.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 		applications.ApplicationInstallationMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 	}
+
+	if data.cloudProviderName != string(kubermaticv1.EdgeCloudProvider) {
+		creators = append(creators, machinecontroller.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
+	}
+
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
 	}
@@ -699,8 +704,12 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		applications.ApplicationInstallationValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
-		machine.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 	}
+
+	if data.cloudProviderName != string(kubermaticv1.EdgeCloudProvider) {
+		creators = append(creators, machine.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
+	}
+
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
 	}
@@ -1142,12 +1151,13 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert           *triple.KeyPair
-	openVPNCACert    *resources.ECDSAKeyPair
-	mlaGatewayCACert *resources.ECDSAKeyPair
-	userSSHKeys      map[string][]byte
-	cloudConfig      []byte
-	clusterVersion   semver.Semver
+	caCert            *triple.KeyPair
+	openVPNCACert     *resources.ECDSAKeyPair
+	mlaGatewayCACert  *resources.ECDSAKeyPair
+	userSSHKeys       map[string][]byte
+	cloudProviderName string
+	cloudConfig       []byte
+	clusterVersion    semver.Semver
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig                []byte
 	ccmMigration                  bool
