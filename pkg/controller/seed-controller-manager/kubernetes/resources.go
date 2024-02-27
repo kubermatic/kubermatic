@@ -29,6 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -112,7 +113,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureNetworkPolicies(ctx, cluster, data); err != nil {
+	if err := r.ensureNetworkPolicies(ctx, cluster, data, config); err != nil {
 		return nil, err
 	}
 
@@ -640,7 +641,7 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, namespace *corev1.Namespace) error {
 	namedClusterRoleBindingsReconcilerFactories := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		usercluster.ClusterRoleBinding(namespace),
 		userclusterwebhook.ClusterRoleBinding(namespace),
@@ -652,7 +653,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 	return nil
 }
 
-func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, cfg *kubermaticv1.KubermaticConfiguration) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
 		namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 			apiserver.DenyAllPolicyReconciler(),
@@ -693,7 +694,17 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
 
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList))
+			ingressNsLabels := map[string]string{
+				corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
+			}
+
+			if cfg.Spec.Ingress.NamespaceOverride != "" {
+				ingressNsLabels = map[string]string{
+					corev1.LabelMetadataName: cfg.Spec.Ingress.NamespaceOverride,
+				}
+			}
+
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, ingressNsLabels))
 		}
 
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
@@ -984,7 +995,7 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	if err := r.ensureClusterRoleBindings(ctx, cluster, namespace); err != nil {
+	if err := r.ensureClusterRoleBindings(ctx, namespace); err != nil {
 		return err
 	}
 

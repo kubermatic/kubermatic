@@ -331,6 +331,9 @@ type KubermaticIngressConfiguration struct {
 	// ingress controller.
 	ClassName string `json:"className,omitempty"`
 
+	// NamespaceOverride need to be set if the another ingress-controller is used than nginx-ingress-controller shipped with KKP.
+	NamespaceOverride string `json:"namespaceOverride,omitempty"`
+
 	// Disable will prevent an Ingress from being created at all. This is mostly useful
 	// during testing. If the Ingress is disabled, the CertificateIssuer setting can also
 	// be left empty, as no Certificate resource will be created.
