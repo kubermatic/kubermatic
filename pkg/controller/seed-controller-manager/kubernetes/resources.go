@@ -29,7 +29,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -693,18 +692,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			if err != nil {
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
-
-			ingressNsLabels := map[string]string{
-				corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
-			}
-
-			if cfg.Spec.Ingress.NamespaceOverride != "" {
-				ingressNsLabels = map[string]string{
-					corev1.LabelMetadataName: cfg.Spec.Ingress.NamespaceOverride,
-				}
-			}
-
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, ingressNsLabels))
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
 		}
 
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
