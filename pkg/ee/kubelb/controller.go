@@ -304,10 +304,10 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 }
 
 func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, kubeLBManagementClient ctrlruntimeclient.Client, kubeconfig []byte, dc kubermaticv1.Datacenter) error {
-	namespace := cluster.Status.NamespaceName
+	userClusterNamespace := cluster.Status.NamespaceName
 
 	// Generate kubeconfig secret.
-	tenantKubeconfig, err := r.generateKubeconfig(ctx, kubeLBManagementClient, namespace, string(kubeconfig))
+	tenantKubeconfig, err := r.generateKubeconfig(ctx, kubeLBManagementClient, fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name), string(kubeconfig))
 	if err != nil {
 		return fmt.Errorf("failed to generate kubeconfig: %w", err)
 	}
@@ -317,7 +317,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	}
 
 	// Create kubeconfig secret in the user cluster namespace.
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, userClusterNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile kubeLB tenant kubeconfig secret: %w", err)
 	}
 
@@ -326,7 +326,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 		kubelbseedresources.ServiceAccountReconciler(),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, userClusterNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile service account: %w", err)
 	}
 
@@ -334,7 +334,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, userClusterNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
