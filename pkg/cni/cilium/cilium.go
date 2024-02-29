@@ -245,21 +245,11 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		// we run Cilium as non-exclusive CNI to allow for Multus use-cases
 		"exclusive": false,
 	}
+
 	valuesCertGen := maps.Clone(defaultValues)
 	valuesRelay := maps.Clone(defaultValues)
-	valuesFrontend := maps.Clone(defaultValues)
-	valuesBackend := maps.Clone(defaultValues)
-	values["cni"] = valuesCni
-	values["operator"] = valuesOperator
-	values["certgen"] = valuesCertGen
-	values["hubble"] = map[string]any{
-		"relay": valuesRelay,
-		"ui": map[string]any{
-			"securityContext": podSecurityContext,
-			"frontend":        map[string]any{},
-			"backend":         map[string]any{},
-		},
-	}
+	valuesFrontend := map[string]any{}
+	valuesBackend := map[string]any{}
 
 	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
 		values["kubeProxyReplacement"] = "strict"
@@ -315,6 +305,18 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
 			"useDigest":  false,
 		}
+	}
+
+	values["cni"] = valuesCni
+	values["operator"] = valuesOperator
+	values["certgen"] = valuesCertGen
+	values["hubble"] = map[string]any{
+		"relay": valuesRelay,
+		"ui": map[string]any{
+			"securityContext": podSecurityContext,
+			"frontend":        valuesFrontend,
+			"backend":         valuesBackend,
+		},
 	}
 
 	return values
