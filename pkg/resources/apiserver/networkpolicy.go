@@ -327,8 +327,13 @@ func ApiserverInternalAllowReconciler() reconciling.NamedNetworkPolicyReconciler
 }
 
 // OIDCIssuerAllowReconciler returns a func to create/update the apiserver oidc-issuer-allow egress policy.
-func OIDCIssuerAllowReconciler(egressIPs []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
+func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
+		ingressNamespace := kubermaticmaster.NginxIngressControllerNamespace
+		if namespaceOverride != "" {
+			ingressNamespace = namespaceOverride
+		}
+
 		return resources.NetworkPolicyOIDCIssuerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -342,11 +347,11 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP) reconciling.NamedNetworkPolic
 				Egress: []networkingv1.NetworkPolicyEgressRule{
 					{
 						To: append(ipListToPeers(egressIPs), networkingv1.NetworkPolicyPeer{
-							// allow egress traffic to the nginx-ingress-controller as for some CNI + kube-proxy
+							// allow egress traffic to the ingress-controller as for some CNI + kube-proxy
 							// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
 							NamespaceSelector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									corev1.LabelMetadataName: kubermaticmaster.NginxIngressControllerNamespace,
+									corev1.LabelMetadataName: ingressNamespace,
 								},
 							},
 						}),

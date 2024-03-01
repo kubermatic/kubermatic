@@ -105,6 +105,8 @@ spec:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
     domain: example.com
+    # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
+    namespaceOverride: ""
   # MasterController configures the master-controller-manager.
   masterController:
     # DebugLog enables more verbose logging.
