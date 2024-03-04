@@ -72,6 +72,10 @@ func (n *Nutanix) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	return n.reconcileCluster(ctx, cluster, update, true)
 }
 
+func (*Nutanix) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	return false
+}
+
 func (n *Nutanix) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	if !kuberneteshelper.HasFinalizer(cluster, categoryCleanupFinalizer) {
 		return cluster, nil

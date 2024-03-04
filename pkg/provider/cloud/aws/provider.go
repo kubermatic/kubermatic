@@ -23,6 +23,7 @@ import (
 	"path"
 
 	"github.com/aws/aws-sdk-go-v2/aws/arn"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -102,6 +103,16 @@ func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 		}
 	}
 	return nil
+}
+
+func (*AmazonEC2) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	awsSpec := cluster.Spec.Cloud.AWS
+	if awsSpec == nil {
+		return false
+	}
+
+	// trigger migration for kubermatic#12936
+	return arn.IsARN(awsSpec.ControlPlaneRoleARN)
 }
 
 // ValidateCloudSpec validates the fields that the user can override while creating

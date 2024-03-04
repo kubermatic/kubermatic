@@ -191,7 +191,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		// reconcile if the lastTime isn't set (= first time init or a forced reconciliation) or too long ago
-		if last.IsZero() || (interval.Duration > 0 && time.Since(last.Time) >= interval.Duration) {
+		if last.IsZero() || (interval.Duration > 0 && time.Since(last.Time) >= interval.Duration) || betterProvider.ClusterNeedsReconciling(cluster) {
 			log.Info("Reconciling cloud provider for cluster")
 
 			// update metrics
