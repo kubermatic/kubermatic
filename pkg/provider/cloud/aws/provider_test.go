@@ -20,6 +20,7 @@ package aws
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -309,5 +310,95 @@ func TestCleanUpCloudProvider(t *testing.T) {
 		tagCleanupFinalizer,
 	) {
 		t.Errorf("Cleaning up should have left no AWS finalizers on the cluster, but %v remained.", cluster.Finalizers)
+	}
+}
+
+func TestIsValidRoleUpdate(t *testing.T) {
+	testcases := []struct {
+		oldValue string
+		newValue string
+		valid    bool
+	}{
+		// field is kept empty
+		{
+			oldValue: "",
+			newValue: "",
+			valid:    true,
+		},
+		// nothing was actually changed
+		{
+			oldValue: "oldstyle-value",
+			newValue: "oldstyle-value",
+			valid:    true,
+		},
+		// nothing is changed, but both are valid ARNs
+		{
+			oldValue: "arn:aws:iam::account:role/my-role",
+			newValue: "arn:aws:iam::account:role/my-role",
+			valid:    true,
+		},
+		// setting the value to an ARN for the first time is the happy path
+		{
+			oldValue: "",
+			newValue: "arn:aws:iam::account:role/my-role",
+			valid:    true,
+		},
+		// turning an old-style value into a real ARN is allowed (i.e. during upgrades)
+		{
+			oldValue: "my-role",
+			newValue: "arn:aws:iam::account:role/my-role",
+			valid:    true,
+		},
+		// do not allow to change the role during upgrades
+		{
+			oldValue: "my-role",
+			newValue: "arn:aws:iam::account:role/my-other-role",
+			valid:    false,
+		},
+		// changing ARNs is forbidden
+		{
+			oldValue: "arn:aws:iam::account:role/my-role",
+			newValue: "arn:aws:iam::account:role/my-new-role",
+			valid:    false,
+		},
+		// changing old-style values is forbidden because new values must be real ARNs
+		{
+			oldValue: "my-role",
+			newValue: "my-new-role",
+			valid:    false,
+		},
+		// cannot turn ARN into old-style value (even if it refers to the same role)
+		{
+			oldValue: "arn:aws:iam::account:role/my-role",
+			newValue: "my-role",
+			valid:    false,
+		},
+		// cannot remove the value once it's set
+		{
+			oldValue: "my-role",
+			newValue: "",
+			valid:    false,
+		},
+		// cannot remove the value once it's set
+		{
+			oldValue: "arn:aws:iam::account:role/my-role",
+			newValue: "",
+			valid:    false,
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(fmt.Sprintf("%s -> %s", testcase.oldValue, testcase.newValue), func(t *testing.T) {
+			err := validateRoleUpdate(testcase.oldValue, testcase.newValue)
+			if testcase.valid {
+				if err != nil {
+					t.Fatalf("Expected no error, but got: %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Fatal("Expected an error, but got none.")
+				}
+			}
+		})
 	}
 }
