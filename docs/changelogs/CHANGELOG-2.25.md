@@ -10,7 +10,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - **ACTION REQUIRED:** VMware Cloud Director: Support for attaching multiple networks to a vApp
     - The field `ovdcNetwork` in `cluster` and `preset` CRDs is considered deprecated for VMware Cloud Director and `ovdcNetworks` should be used instead ([#12996](https://github.com/kubermatic/kubermatic/pull/12996))
-- **ACTION REQUIRED:** KubeLB: The prefix for the tenant namespaces created in the management cluster has been updated from `cluster-` to `tenant-`. The tenants will be migrated automatically to the new namespace, load balancers, and services. The load balancer IPs need to be rotated and previous namespace cleaned up ([#13093](https://github.com/kubermatic/kubermatic/pull/13093))
+- **ACTION REQUIRED:** KubeLB(EE): The prefix for the tenant namespaces created in the management cluster has been updated from `cluster-` to `tenant-`. The tenants will be migrated automatically to the new namespace, load balancers, and services. The load balancer IPs need to be rotated and previous namespace cleaned up ([#13093](https://github.com/kubermatic/kubermatic/pull/13093))
 - **ACTION REQUIRED:** For velero helm chart upgrade related change. If you use `velero.restic.deploy: true`, you will see new daemonset `node-agent` running in `velero` namespace. You might need to remove existing daemonset named `restic` manually ([#12998](https://github.com/kubermatic/kubermatic/pull/12998))
 - **ACTION REQUIRED:** For velero helm chart upgrade. If running node-agent daemonset along with velero, then following replacement should be made in the velero's values.yaml before proceeding with upgrade `velero.restic.deploy` with `velero.deployNodeAgent``velero.restic.resources` with `velero.nodeAgent.resources``velero.restic.nodeSelector` with `velero.nodeAgent.nodeSelector``velero.restic.affinity` with `velero.restic.affinity``velero.restic.tolerations` with `velero.nodeAgent.tolerations` ([#13118](https://github.com/kubermatic/kubermatic/pull/13118))
 - **ACTION REQUIRED:** [User MLA] If you had copied `values.yaml` of loki-distributed chart to further customize it, then please cleanup your copy of `values.yaml` for user-mla to retain your customization only ([#12967](https://github.com/kubermatic/kubermatic/pull/12967))
@@ -70,11 +70,11 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Application Catalog
 
-- EE: Add KubeVirt ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
+- EE: Add KubeVirt to the Default Applications Catalog ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
 - Upstream Documentation and SourceURLs can be added to ApplicationDefinitions ([#13019](https://github.com/kubermatic/kubermatic/pull/13019))
-- EE: Add k8sgpt operator to the Default Application Catalogue ([#13025](https://github.com/kubermatic/kubermatic/pull/13025))
+- EE: Add k8sgpt operator to the Default Applications Catalog ([#13025](https://github.com/kubermatic/kubermatic/pull/13025))
 - A logo can now be added to Applications for better visibility ([#13044](https://github.com/kubermatic/kubermatic/pull/13044))
-- Add documentation link, source code link and logo to the default applicaitons ([#13054](https://github.com/kubermatic/kubermatic/pull/13054))
+- Add documentation link, source code link and logo to the default applications ([#13054](https://github.com/kubermatic/kubermatic/pull/13054))
 - EE: Update default application definitions with latest helm chart version ([#13058](https://github.com/kubermatic/kubermatic/pull/13058))
 - Comments are now persisted in the values section of ApplicationDefinitions and ApplicationInstallations when using the new defaultValuesBlock and valuesBlock fields respectively ([#13075](https://github.com/kubermatic/kubermatic/pull/13075))
 
@@ -91,7 +91,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### New Feature
 
-- Add a special `CiliumNetworkPolicy` feature gate to `KubermaticConfiguration` that has to be set it Cilium is used as CNI for Seeds ([#12886](https://github.com/kubermatic/kubermatic/pull/12886))
 - Add `Seed.spec.metering.retentionDays` to configure the Prometheus retention; fix missing defaulting for `Seed.spec.metering.storageSize` ([#12843](https://github.com/kubermatic/kubermatic/pull/12843))
 - Add new admin option to enable/disable user cluster backups ([#12888](https://github.com/kubermatic/kubermatic/pull/12888))
 - Charts/kubermatic-operator: Ability to configure environment variables for the kubermatic-operator pod ([#12973](https://github.com/kubermatic/kubermatic/pull/12973))
@@ -100,7 +99,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - Add a new API type `ClusterBackupStorageLocation` for cluster backup integration
 - Deploy all Velero components on the user cluster, when backup is enabled ([#13010](https://github.com/kubermatic/kubermatic/pull/13010))
 - IAP ingresses can be configured to use an existing TLS secret instead of the one generated by the cert-manager ([#13061](https://github.com/kubermatic/kubermatic/pull/13061))
-- Update KubeLB CCM image to v0.5.0 ([#13023](https://github.com/kubermatic/kubermatic/pull/13023))
+- EE: Update KubeLB CCM image to v0.5.0 ([#13023](https://github.com/kubermatic/kubermatic/pull/13023))
 - Update KubeOne to [v1.7.2](https://github.com/kubermatic/kubeone/releases/tag/v1.7.2) ([#13076](https://github.com/kubermatic/kubermatic/pull/13076))
 - We maintain now a dedicated docker image for the conformance tester, mainly for internal use ([#13113](https://github.com/kubermatic/kubermatic/pull/13113))
 
@@ -121,6 +120,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Stop constantly re-deploying operating-system-manager when registry mirrors are configured ([#12972](https://github.com/kubermatic/kubermatic/pull/12972))
 - The Kubermatic installer will now detect DNS settings based on the Ingress instead of the nginx-ingress LoadBalancer, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
 - If the seed cluster is using Cilium as CNI, create CiliumClusterwideNetworkPolicy for api-server connectivity ([#12924](https://github.com/kubermatic/kubermatic/pull/12924))
+- Resolved an issue where logs were duplicated when multiple pods from the same service were deployed on the same Kubernetes node ([#13109](https://github.com/kubermatic/kubermatic/pull/13109))
 
 
 ### Updates
@@ -139,9 +139,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - Remove `CloudControllerReconcilledSuccessfully` (double L) Cluster condition, which was deprecated in KKP 2.21 and has since been replaced with `CloudControllerReconciledSuccessfully` (single L) ([#12867](https://github.com/kubermatic/kubermatic/pull/12867))
 - Remove CriticalAddonsOnly toleration from node-local-dns DaemonSet as it has more general tolerations configured ([#12957](https://github.com/kubermatic/kubermatic/pull/12957))
-- REVERTED [12886](https://github.com/kubermatic/kubermatic/pull/12886) ([#12892](https://github.com/kubermatic/kubermatic/pull/12892))
 - Some of high cardinality metrics were dropped from User-Cluster MLA prometheus. If your KKP installation was using some of those metrics for custom Grafana dashboards for user-clusters, your dashboards might stop showing some of the charts ([#12756](https://github.com/kubermatic/kubermatic/pull/12756))
-- Remove "Node Resource Usage" dashboard and associated Prometheus recording rules from Master/Seed MLA as data shown was incorrect ([#12950](https://github.com/kubermatic/kubermatic/pull/12950))
 - Deprecate v1.11 and v1.12 Cilium and Hubble KKP Addons, as Cilium CNI is managed by Applications from version 1.13 ([#12848](https://github.com/kubermatic/kubermatic/pull/12848))
 
 
@@ -179,13 +177,13 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 #### VMware Cloud Director: 
 
 - Support for attaching multiple networks to a vApp ([#6480](https://github.com/kubermatic/dashboard/pull/6480))
-- Added Flatcar as supported os ([#6391](https://github.com/kubermatic/dashboard/pull/6391))
-
+- Added Flatcar as supported OS ([#6391](https://github.com/kubermatic/dashboard/pull/6391))
+- Add support for configuring allowed IP allocation modes for VMware Cloud Director ([#6482](https://github.com/kubermatic/dashboard/pull/6482))
 
 ### API Changes
 
 - Support for edge provider in KKP API ([#6525](https://github.com/kubermatic/dashboard/pull/6525))
-- ValuesBlock and defaultValuesBlock fields are now available via the api ([#6562](https://github.com/kubermatic/dashboard/pull/6562))
+- ValuesBlock and defaultValuesBlock fields are now available via the API ([#6562](https://github.com/kubermatic/dashboard/pull/6562))
 
 ### New Feature
 
@@ -193,7 +191,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add K8sGPT to the Webshell ([#6501](https://github.com/kubermatic/dashboard/pull/6501))
 - Add new feature to create, restore and schedule backups for user cluster namespaces ([#6296](https://github.com/kubermatic/dashboard/pull/6296))
 - Add new page to manage backup storage location for the cluster backup feature ([#6478](https://github.com/kubermatic/dashboard/pull/6478))
-- Add support for configuring allowed IP allocation modes for VMware Cloud Director ([#6482](https://github.com/kubermatic/dashboard/pull/6482))
 - Add support for Edge provider ([#6502](https://github.com/kubermatic/dashboard/pull/6502))
 - Display source URL, documentation URL and logo of applications ([#6504](https://github.com/kubermatic/dashboard/pull/6504))
 - Display comments in application values ([#6510](https://github.com/kubermatic/dashboard/pull/6510))
