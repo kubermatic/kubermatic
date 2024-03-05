@@ -23,7 +23,7 @@ kind: ApplicationDefinition
 metadata:
   name: trivy-operator
 spec:
-  description: Trivy-Operator is Kubernetes-native security toolkit.
+  description: Trivy-Operator is a Kubernetes-native security toolkit.
   method: helm
   versions:
   - template:
