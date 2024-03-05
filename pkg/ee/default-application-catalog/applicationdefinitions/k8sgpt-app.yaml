@@ -23,7 +23,7 @@ kind: ApplicationDefinition
 metadata:
   name: k8sgpt
 spec:
-  description: K8sGPT is a tool for scanning your kubernetes clusters, diagnosing and triaging issues in simple english.
+  description: K8sGPT is a tool for scanning your Kubernetes clusters, diagnosing and triaging issues in simple English.
   method: helm
   versions:
     - template:
