@@ -1228,6 +1228,7 @@ func TestValidateVersion(t *testing.T) {
 				Version: semver.Semver("1.3.0"),
 				Cloud: kubermaticv1.CloudSpec{
 					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+					Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 				},
 			},
 			versionManager: version.New(
@@ -1257,6 +1258,7 @@ func TestValidateVersion(t *testing.T) {
 				Version: semver.Semver("1.3.0"),
 				Cloud: kubermaticv1.CloudSpec{
 					ProviderName: string(kubermaticv1.OpenstackCloudProvider),
+					Openstack:    &kubermaticv1.OpenstackCloudSpec{},
 				},
 			},
 			versionManager: version.New(
@@ -1295,7 +1297,7 @@ func TestValidateVersion(t *testing.T) {
 			err := ValidateVersion(test.spec, test.versionManager, test.currentVersion, nil)
 
 			if (err == nil) != test.valid {
-				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+				t.Errorf("Extected err == nil to be %v, got err: %v", test.valid, err)
 			}
 		})
 	}

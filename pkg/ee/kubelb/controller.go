@@ -37,6 +37,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
@@ -213,7 +214,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	namespace := cluster.Status.NamespaceName
+	namespace := fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name)
 
 	// Create namespace; which is equivalent to registering the tenant.
 	nsReconcilers := []reconciling.NamedNamespaceReconcilerFactory{
@@ -303,10 +304,11 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 }
 
 func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, kubeLBManagementClient ctrlruntimeclient.Client, kubeconfig []byte, dc kubermaticv1.Datacenter) error {
-	namespace := cluster.Status.NamespaceName
+	seedNamespace := cluster.Status.NamespaceName
+	tenantNamespace := fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name)
 
 	// Generate kubeconfig secret.
-	tenantKubeconfig, err := r.generateKubeconfig(ctx, kubeLBManagementClient, namespace, string(kubeconfig))
+	tenantKubeconfig, err := r.generateKubeconfig(ctx, kubeLBManagementClient, tenantNamespace, string(kubeconfig))
 	if err != nil {
 		return fmt.Errorf("failed to generate kubeconfig: %w", err)
 	}
@@ -316,7 +318,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	}
 
 	// Create kubeconfig secret in the user cluster namespace.
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, seedNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile kubeLB tenant kubeconfig secret: %w", err)
 	}
 
@@ -325,7 +327,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 		kubelbseedresources.ServiceAccountReconciler(),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, seedNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile service account: %w", err)
 	}
 
@@ -333,7 +335,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 

@@ -36,18 +36,18 @@ import (
 )
 
 const (
-	clusterBackupName                 = "velero-cluster-backup"
+	DeploymentName                    = "velero"
 	clusterbackupKubeConfigSecretName = "velero-kubeconfig"
 )
 
 // DeploymentReconciler creates the velero deployment in the user cluster namespace.
 func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return clusterBackupName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = resources.BaseAppLabels(clusterBackupName, nil)
+		return DeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = resources.BaseAppLabels(DeploymentName, nil)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(clusterBackupName, nil),
+				MatchLabels: resources.BaseAppLabels(DeploymentName, nil),
 			}
 			dep.Spec.Replicas = resources.Int32(1)
 
@@ -57,7 +57,7 @@ func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 			volumeMounts := getVolumeMounts()
 
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(clusterBackupName, nil),
+				Labels: resources.BaseAppLabels(DeploymentName, nil),
 				Annotations: map[string]string{
 					"prometheus.io/path":   "/metrics",
 					"prometheus.io/port":   "8085",
@@ -137,7 +137,7 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/scratch",
 		},
 		{
-			Name:      cloudCredentialsSecretName,
+			Name:      CloudCredentialsSecretName,
 			MountPath: "/credentials",
 		},
 	}
@@ -163,8 +163,8 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 		},
 		{
-			Name:         cloudCredentialsSecretName,
-			VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: cloudCredentialsSecretName}},
+			Name:         CloudCredentialsSecretName,
+			VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: CloudCredentialsSecretName}},
 		},
 	}
 	return vs

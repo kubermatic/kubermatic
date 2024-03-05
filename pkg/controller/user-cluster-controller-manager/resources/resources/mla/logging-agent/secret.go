@@ -116,18 +116,12 @@ logs:
             - __meta_kubernetes_pod_container_name
             target_label: container
           - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
+            replacement: /var/log/pods/$1/*/*.log
+            separator: _
             source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_name
             - __meta_kubernetes_pod_uid
-            - __meta_kubernetes_pod_container_name
-            target_label: __path__
-          - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-            - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
-            - __meta_kubernetes_pod_container_name
             target_label: __path__
 
       # Pods with a label 'app'
@@ -178,18 +172,12 @@ logs:
             - __meta_kubernetes_pod_container_name
             target_label: container
           - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
+            replacement: /var/log/pods/$1/*/*.log
+            separator: _
             source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_name
             - __meta_kubernetes_pod_uid
-            - __meta_kubernetes_pod_container_name
-            target_label: __path__
-          - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-            - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
-            - __meta_kubernetes_pod_container_name
             target_label: __path__
 
       # Pods with direct controllers, such as StatefulSet
@@ -238,18 +226,12 @@ logs:
             - __meta_kubernetes_pod_container_name
             target_label: container
           - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
+            replacement: /var/log/pods/$1/*/*.log
+            separator: _
             source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_name
             - __meta_kubernetes_pod_uid
-            - __meta_kubernetes_pod_container_name
-            target_label: __path__
-          - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-            - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
-            - __meta_kubernetes_pod_container_name
             target_label: __path__
 
       # Pods with indirect controllers, such as Deployment
@@ -299,18 +281,12 @@ logs:
             - __meta_kubernetes_pod_container_name
             target_label: container
           - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
+            replacement: /var/log/pods/$1/*/*.log
+            separator: _
             source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_name
             - __meta_kubernetes_pod_uid
-            - __meta_kubernetes_pod_container_name
-            target_label: __path__
-          - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-            - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
-            - __meta_kubernetes_pod_container_name
             target_label: __path__
       # All remaining pods not yet covered
       - job_name: kubernetes-other
@@ -362,18 +338,12 @@ logs:
             - __meta_kubernetes_pod_container_name
             target_label: container
           - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
+            replacement: /var/log/pods/$1/*/*.log
+            separator: _
             source_labels:
+            - __meta_kubernetes_namespace
+            - __meta_kubernetes_pod_name
             - __meta_kubernetes_pod_uid
-            - __meta_kubernetes_pod_container_name
-            target_label: __path__
-          - action: replace
-            replacement: /var/log/pods/*$1/*.log
-            separator: /
-            source_labels:
-            - __meta_kubernetes_pod_annotation_kubernetes_io_config_hash
-            - __meta_kubernetes_pod_container_name
             target_label: __path__
 `
 )

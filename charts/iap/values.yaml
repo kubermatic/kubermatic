@@ -54,6 +54,8 @@ iap:
     #   upstream_service: alertmanager.monitoring.svc.cluster.local
     #   upstream_port: 9093
     #   ingress:
+    #     ## (optional) Name of an existing TLS secret to use for the ingress of this iap deployment.
+    #     tlsSecretName: ""
     #     host: "alertmanager.kubermatic.tld"
     #     annotations: {}
     #

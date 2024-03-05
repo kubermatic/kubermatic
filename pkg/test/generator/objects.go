@@ -526,8 +526,6 @@ func RegisterScheme(builder runtime.SchemeBuilder) error {
 
 func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
-	ct.Kind = kubermaticv1.ConstraintKind
-	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 	ct.Name = name
 	ct.Namespace = namespace
 	ct.Spec = kubermaticv1.ConstraintSpec{

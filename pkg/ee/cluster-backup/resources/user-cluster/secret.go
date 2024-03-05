@@ -43,7 +43,7 @@ import (
 // SecretReconciler returns a function to create the Secret containing the backup destination credentials.
 func SecretReconciler(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return cloudCredentialsSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
+		return CloudCredentialsSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
 			refName := cbsl.Spec.Credential.Name
 			refNamespace := resources.KubermaticNamespace
 

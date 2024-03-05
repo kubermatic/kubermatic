@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"path"
 
@@ -91,11 +90,9 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		return util.NoStatusUpdate, err
 	}
 
-	values := make(map[string]interface{})
-	if len(applicationInstallation.Spec.Values.Raw) > 0 {
-		if err := json.Unmarshal(applicationInstallation.Spec.Values.Raw, &values); err != nil {
-			return util.NoStatusUpdate, fmt.Errorf("failed to unmarshall values: %w", err)
-		}
+	values, err := applicationInstallation.Spec.GetParsedValues()
+	if err != nil {
+		return util.NoStatusUpdate, fmt.Errorf("failed to unmarshall values: %w", err)
 	}
 
 	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, *deployOpts, auth)

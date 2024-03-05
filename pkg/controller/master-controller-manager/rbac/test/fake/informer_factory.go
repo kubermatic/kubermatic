@@ -115,7 +115,7 @@ func (i *dummySharedIndexInformer) AddIndexers(indexers cache.Indexers) error {
 }
 
 func (i *dummySharedIndexInformer) SetTransform(handler cache.TransformFunc) error {
-	panic("implement me")
+	return nil
 }
 
 func (i *dummySharedIndexInformer) GetIndexer() cache.Indexer {

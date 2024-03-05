@@ -23,6 +23,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -253,6 +254,40 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 						ChartVersion: "",
 						Credentials:  nil,
 					}}
+					return *s
+				}(),
+			},
+			1,
+		},
+		"valid values: with comment": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultValuesBlock = `
+# a yaml comment
+key: value`[1:]
+					return *s
+				}(),
+			},
+			0,
+		},
+		"invalid values: both defaultValues and defaultValuesBlock are set": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultValues = &runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)}
+					s.DefaultValuesBlock = "key: value"
+					return *s
+				}(),
+			},
+			2,
+		},
+		"invalid values: yaml syntax error": {
+			appskubermaticv1.ApplicationDefinition{
+				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
+					s := spec.DeepCopy()
+					s.DefaultValuesBlock = `invalid-yaml:
+invalid:test`
 					return *s
 				}(),
 			},

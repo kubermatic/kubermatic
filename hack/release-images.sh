@@ -63,6 +63,7 @@ make docker-build TAGS="$PRIMARY_TAG"
 make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
 docker build -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
 docker build -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
+docker build -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile .
 
 # switch to a multi platform-enabled builder
 docker buildx create --use
@@ -131,6 +132,7 @@ for TAG in $ALL_TAGS; do
   docker tag "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "$DOCKER_REPO/nodeport-proxy:$TAG"
   docker tag "$DOCKER_REPO/addons:$PRIMARY_TAG" "$DOCKER_REPO/addons:$TAG"
   docker tag "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "$DOCKER_REPO/etcd-launcher:$TAG"
+  docker tag "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" "$DOCKER_REPO/conformance-tests:$TAG"
 
   if [ -z "${NO_PUSH:-}" ]; then
     echodate "Pushing images"
@@ -138,6 +140,7 @@ for TAG in $ALL_TAGS; do
     docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
     docker push "$DOCKER_REPO/addons:$TAG"
     docker push "$DOCKER_REPO/etcd-launcher:$TAG"
+    docker push "$DOCKER_REPO/conformance-tests:$TAG"
 
     create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"

@@ -69,6 +69,16 @@ func ValidateApplicationInstallationSpec(ctx context.Context, client ctrlruntime
 		}
 	}
 	allErrs = append(allErrs, ValidateDeployOpts(spec.DeployOptions, specPath.Child("deployOptions"))...)
+
+	// Ensure that not both Values and ValuesBlock fields are set simultaneously.
+	// The values.Raw != "{}" is required because Values is of type runtime.Rawextension, which
+	// means it has the x-kubernetes-preserve-unknown-fields set to true, which in turn means that
+	// its null value when applied through the k8s-api is "{}" and not an empty byteslice.
+	if len(ai.Spec.Values.Raw) > 0 && string(ai.Spec.Values.Raw) != "{}" && ai.Spec.ValuesBlock != "" {
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("values"), "Only values or valuesBlock can be set, but not both simultaneously"))
+		allErrs = append(allErrs, field.Forbidden(specPath.Child("valuesBlock"), "Only values or valuesBlock can be set, but not both simultaneously"))
+	}
+
 	return allErrs
 }
 

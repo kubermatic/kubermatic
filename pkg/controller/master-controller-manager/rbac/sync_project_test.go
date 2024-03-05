@@ -296,10 +296,6 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:            "kubermatic:usersshkeys:owners",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
@@ -323,10 +319,6 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:usersshkeys:editors",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -392,10 +384,6 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						Name:            "kubermatic:clusters:owners",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
@@ -418,10 +406,6 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:clusters:editors",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -646,10 +630,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:            "kubermatic:usersshkeys:owners",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
@@ -661,10 +641,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:usersshkeys:editors",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
@@ -718,10 +694,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 						Name:            "kubermatic:clusters:owners",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
@@ -733,10 +705,6 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:clusters:editors",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
@@ -1716,10 +1684,6 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
@@ -1744,10 +1708,6 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1816,10 +1776,6 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
@@ -1843,10 +1799,6 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1989,7 +1941,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			name:          "Scenario 1: When a project is removed corresponding Subject from the RBAC Binding are removed",
 			projectToSync: test.CreateProject("plan9"),
 			projectResourcesToSync: []projectResource{
-
 				{
 					object: &corev1.Secret{
 						TypeMeta: metav1.TypeMeta{
@@ -2018,10 +1969,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
@@ -2034,10 +1981,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
@@ -2094,10 +2037,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
@@ -2110,10 +2049,6 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "RoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: nil,
 					RoleRef: rbacv1.RoleRef{

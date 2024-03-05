@@ -40,7 +40,7 @@ minio:
   ## Additional arguments to pass to minio binary
   extraArgs: []
   ## Update strategy for Deployments
-  DeploymentUpdate:
+  deploymentUpdate:
     type: Recreate
     maxUnavailable: 0
     maxSurge: 100%

@@ -30,8 +30,75 @@ spec:
       source:
         helm:
           chartName: flux2
-          chartVersion: 2.9.2
+          chartVersion: 2.12.2
           url: https://fluxcd-community.github.io/helm-charts
-    version: 2.0.1
+    version: 2.2.2
   defaultValues: {}
-
+  documentationURL: https://fluxcd.io/
+  sourceURL: https://github.com/fluxcd-community/helm-charts
+  logo: |+
+    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
+    AfA/lWU54yZCHtwAAAAASUVORK5CYII=
+  logoFormat: png 

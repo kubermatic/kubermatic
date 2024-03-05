@@ -40,11 +40,11 @@ import (
 )
 
 const (
-	clusterRoleBindingName = "velero"
+	ClusterRoleBindingName = "velero"
 	clusterBackupAppName   = "velero"
-	defaultBSLName         = "default-cluster-backup-bsl"
+	DefaultBSLName         = "default-cluster-backup-bsl"
 
-	cloudCredentialsSecretName           = "velero-cloud-credentials"
+	CloudCredentialsSecretName           = "velero-cloud-credentials"
 	defaultCloudCredentialsSecretKeyName = "cloud"
 
 	version       = "v1.12.0"
@@ -83,7 +83,7 @@ func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory
 // ClusterRoleBindingReconciler creates the clusterrolebinding for velero on the user cluster.
 func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {
-		return clusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return ClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(clusterBackupAppName, nil)
 			crb.RoleRef = rbacv1.RoleRef{
 				// too wide but probably needed to be able to do backups and restore.
@@ -106,7 +106,7 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 // BSLReconciler creates the default BackupStorage location is created for velero.
 func BSLReconciler(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) kkpreconciling.NamedBackupStorageLocationReconcilerFactory {
 	return func() (string, kkpreconciling.BackupStorageLocationReconciler) {
-		return defaultBSLName, func(bsl *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error) {
+		return DefaultBSLName, func(bsl *velerov1.BackupStorageLocation) (*velerov1.BackupStorageLocation, error) {
 			projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 			if !ok {
 				return nil, fmt.Errorf("cluster ProjectID label is not set")

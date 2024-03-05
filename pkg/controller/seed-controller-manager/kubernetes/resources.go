@@ -112,7 +112,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
-	if err := r.ensureNetworkPolicies(ctx, cluster, data); err != nil {
+	if err := r.ensureNetworkPolicies(ctx, cluster, data, config); err != nil {
 		return nil, err
 	}
 
@@ -197,6 +197,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	// Ensure that kubernetes-dashboard is completely removed, when disabled
 	if !cluster.Spec.IsKubernetesDashboardEnabled() {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
+			return nil, err
+		}
+	}
+
+	if cluster.Spec.DisableCSIDriver {
+		if err := r.ensureCSIDriverResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
 	}
@@ -340,8 +346,11 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 	creators := []reconciling.NamedServiceReconcilerFactory{
 		apiserver.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName),
 		etcd.ServiceReconciler(data),
-		machinecontroller.ServiceReconciler(),
 		userclusterwebhook.ServiceReconciler(),
+	}
+
+	if data.Cluster().Spec.Cloud.Edge == nil {
+		creators = append(creators, machinecontroller.ServiceReconciler())
 	}
 
 	if data.IsKonnectivityEnabled() {
@@ -376,12 +385,19 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 		apiserver.DeploymentReconciler(data, enableAPIserverOIDCAuthentication),
 		scheduler.DeploymentReconciler(data),
 		controllermanager.DeploymentReconciler(data),
-		machinecontroller.DeploymentReconciler(data),
-		machinecontroller.WebhookDeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
 		userclusterwebhook.DeploymentReconciler(data),
 	}
-	deployments = append(deployments, csi.DeploymentsReconcilers(data)...)
+
+	// BYO and Edge provider doesn't need machine controller.
+	if data.Cluster().Spec.Cloud.Edge == nil {
+		deployments = append(deployments, machinecontroller.DeploymentReconciler(data))
+		deployments = append(deployments, machinecontroller.WebhookDeploymentReconciler(data))
+	}
+
+	if !data.Cluster().Spec.DisableCSIDriver {
+		deployments = append(deployments, csi.DeploymentsReconcilers(data)...)
+	}
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		deployments = append(deployments, kubernetesdashboard.DeploymentReconciler(data))
@@ -439,7 +455,6 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TLSServingCertificateReconciler(data),
 		apiserver.KubeletClientCertificateReconciler(data),
 		apiserver.ServiceAccountKeyReconciler(),
-		machinecontroller.TLSServingCertificateReconciler(data),
 		userclusterwebhook.TLSServingCertificateReconciler(data),
 
 		// Kubeconfigs
@@ -456,7 +471,14 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TokenUsersReconciler(data),
 		resources.ViewerKubeconfigReconciler(data),
 	}
-	creators = append(creators, csi.SecretsReconcilers(ctx, data)...)
+
+	if data.Cluster().Spec.Cloud.Edge == nil {
+		creators = append(creators, machinecontroller.TLSServingCertificateReconciler(data))
+	}
+
+	if !data.Cluster().Spec.DisableCSIDriver {
+		creators = append(creators, csi.SecretsReconcilers(ctx, data)...)
+	}
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
@@ -532,11 +554,17 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	namedServiceAccountReconcilerFactories := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
-		machinecontroller.ServiceAccountReconciler,
-		machinecontroller.WebhookServiceAccountReconciler,
 		userclusterwebhook.ServiceAccountReconciler,
 	}
-	namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
+
+	if c.Spec.Cloud.Edge == nil {
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, machinecontroller.ServiceAccountReconciler)
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, machinecontroller.WebhookServiceAccountReconciler)
+	}
+
+	if !c.Spec.DisableCSIDriver {
+		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
+	}
 
 	if c.Spec.IsOperatingSystemManagerEnabled() {
 		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, operatingsystemmanager.ServiceAccountReconciler)
@@ -581,7 +609,9 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	namedRoleBindingReconcilerFactories := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingReconciler,
 	}
-	namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
+	if !c.Spec.DisableCSIDriver {
+		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
+	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, nodeportproxy.RoleBindingReconciler)
@@ -599,7 +629,9 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 		userclusterwebhook.ClusterRole(),
 	}
 
-	namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
+	if !c.Spec.DisableCSIDriver {
+		namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
+	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleReconcilerFactories, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
@@ -608,7 +640,7 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, namespace *corev1.Namespace) error {
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, namespace *corev1.Namespace) error {
 	namedClusterRoleBindingsReconcilerFactories := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		usercluster.ClusterRoleBinding(namespace),
 		userclusterwebhook.ClusterRoleBinding(namespace),
@@ -620,7 +652,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 	return nil
 }
 
-func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, cfg *kubermaticv1.KubermaticConfiguration) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
 		namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 			apiserver.DenyAllPolicyReconciler(),
@@ -660,8 +692,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			if err != nil {
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
-
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList))
+			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
 		}
 
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
@@ -686,7 +717,9 @@ func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedCo
 		apiserver.AdmissionControlReconciler(data),
 		apiserver.CABundleReconciler(data),
 	}
-	creators = append(creators, csi.ConfigMapsReconcilers(data)...)
+	if !data.Cluster().Spec.DisableCSIDriver {
+		creators = append(creators, csi.ConfigMapsReconcilers(data)...)
+	}
 
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, apiserver.EgressSelectorConfigReconciler())
@@ -774,12 +807,19 @@ func (r *Reconciler) ensureCronJobs(ctx context.Context, c *kubermaticv1.Cluster
 
 func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	controlPlaneDeploymentNames := []string{
-		resources.MachineControllerDeploymentName,
-		resources.MachineControllerWebhookDeploymentName,
 		resources.ApiserverDeploymentName,
 		resources.ControllerManagerDeploymentName,
 		resources.SchedulerDeploymentName,
 	}
+
+	// machine controller is not deployed for the edge clusters
+	if c.Spec.Cloud.Edge == nil {
+		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
+			resources.MachineControllerDeploymentName,
+			resources.MachineControllerWebhookDeploymentName,
+		)
+	}
+
 	if !data.IsKonnectivityEnabled() {
 		controlPlaneDeploymentNames = append(controlPlaneDeploymentNames,
 			resources.OpenVPNServerDeploymentName,
@@ -840,6 +880,16 @@ func (r *Reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Co
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure kubernetes-dashboard resources are removed/not present: %w", err)
+		}
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range csi.ResourcesForDeletion(data.Cluster()) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure CSI driver resources are removed/not present: %w", err)
 		}
 	}
 	return nil
@@ -933,7 +983,7 @@ func (r *Reconciler) ensureRBAC(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	if err := r.ensureClusterRoleBindings(ctx, cluster, namespace); err != nil {
+	if err := r.ensureClusterRoleBindings(ctx, namespace); err != nil {
 		return err
 	}
 

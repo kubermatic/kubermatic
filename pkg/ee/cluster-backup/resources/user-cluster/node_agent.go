@@ -38,12 +38,12 @@ import (
 )
 
 const (
-	daemonSetName = "node-agent"
+	DaemonSetName = "node-agent"
 )
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		daemonSetName: {
+		DaemonSetName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
 				corev1.ResourceCPU:    resource.MustParse("500m"),
@@ -57,26 +57,26 @@ var (
 
 	// the "name" label is required here. it's used by Velero to detect the daemonset pods on the nodes, if it's not there Velero will partiallyFail to do the backup: https://github.com/vmware-tanzu/velero/blob/b30a679e5b1c2cbd9021e1301580f2359ef981bf/pkg/nodeagent/node_agent.go#L84
 	veleroAddionalLabels = map[string]string{
-		"app.kubernetes.io/name": daemonSetName,
-		"name":                   daemonSetName,
+		"app.kubernetes.io/name": DaemonSetName,
+		"name":                   DaemonSetName,
 	}
 )
 
 // DaemonSetReconciler returns the function to create and update the Velero node-agent DaemonSet.
 func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetReconciler) {
-		return daemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
+		return DaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Namespace = resources.ClusterBackupNamespaceName
-			ds.Labels = resources.BaseAppLabels(daemonSetName, map[string]string{"component": "velero"})
+			ds.Labels = resources.BaseAppLabels(DaemonSetName, map[string]string{"component": "velero"})
 
 			ds.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(daemonSetName,
+				MatchLabels: resources.BaseAppLabels(DaemonSetName,
 					veleroAddionalLabels),
 			}
 
 			// has to be the same as the selector
 			ds.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(daemonSetName,
+				Labels: resources.BaseAppLabels(DaemonSetName,
 					veleroAddionalLabels),
 			}
 
@@ -97,8 +97,8 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 						VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 					},
 					{
-						Name:         cloudCredentialsSecretName,
-						VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: cloudCredentialsSecretName}},
+						Name:         CloudCredentialsSecretName,
+						VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{SecretName: CloudCredentialsSecretName}},
 					},
 				},
 				RestartPolicy:                 corev1.RestartPolicyAlways,
@@ -123,7 +123,7 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 func getContainers() []corev1.Container {
 	return []corev1.Container{
 		{
-			Name:  daemonSetName,
+			Name:  DaemonSetName,
 			Image: fmt.Sprintf("velero/velero:%s", version), ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/velero",
@@ -166,7 +166,7 @@ func getContainers() []corev1.Container {
 					MountPath: "/scratch",
 				},
 				{
-					Name:      cloudCredentialsSecretName,
+					Name:      CloudCredentialsSecretName,
 					MountPath: "/credentials",
 				},
 			},

@@ -1,4 +1,4 @@
-# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -477,6 +477,9 @@ spec:
                         binding:
                           additionalProperties:
                             properties:
+                              domainAttachmentType:
+                                description: 'DomainAttachmentType is a standard domain network attachment method kubevirt supports. Supported values: "tap". The standard domain attachment can be used instead or in addition to the sidecarImage. version: 1alphav1'
+                                type: string
                               networkAttachmentDefinition:
                                 description: 'NetworkAttachmentDefinition references to a NetworkAttachmentDefinition CR object. Format: <name>, <namespace>/<name>. If namespace is not specified, VMI namespace is assumed. version: 1alphav1'
                                 type: string
@@ -2350,6 +2353,9 @@ spec:
                         binding:
                           additionalProperties:
                             properties:
+                              domainAttachmentType:
+                                description: 'DomainAttachmentType is a standard domain network attachment method kubevirt supports. Supported values: "tap". The standard domain attachment can be used instead or in addition to the sidecarImage. version: 1alphav1'
+                                type: string
                               networkAttachmentDefinition:
                                 description: 'NetworkAttachmentDefinition references to a NetworkAttachmentDefinition CR object. Format: <name>, <namespace>/<name>. If namespace is not specified, VMI namespace is assumed. version: 1alphav1'
                                 type: string

@@ -44,10 +44,10 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/metrics-server","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--kubelet-insecure-tls","--kubelet-use-node-status-port","--secure-port","4443","--metric-resolution","15s","--kubelet-preferred-address-types","InternalIP","--v","1","--tls-cert-file","/etc/serving-cert/serving.crt","--tls-private-key-file","/etc/serving-cert/serving.key"]}'
+        - '{"command":"/metrics-server","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--kubelet-insecure-tls","--kubelet-use-node-status-port","--secure-port","10250","--metric-resolution","15s","--kubelet-preferred-address-types","InternalIP","--v","1","--tls-cert-file","/etc/serving-cert/serving.crt","--tls-private-key-file","/etc/serving-cert/serving.key"]}'
         command:
         - /http-prober-bin/http-prober
-        image: registry.k8s.io/metrics-server/metrics-server:v0.6.4
+        image: registry.k8s.io/metrics-server/metrics-server:v0.7.0
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -59,7 +59,7 @@ spec:
           timeoutSeconds: 1
         name: metrics-server
         ports:
-        - containerPort: 4443
+        - containerPort: 10250
           name: https
           protocol: TCP
         resources:
@@ -71,9 +71,14 @@ spec:
             memory: 200Mi
         securityContext:
           allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 1000
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: metrics-server

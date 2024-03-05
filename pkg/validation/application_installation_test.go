@@ -186,6 +186,28 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 				}(),
 			}, expectedError: `[spec.reconciliationInterval: Invalid value: "-10ns": should be a positive value, or zero to disable]`,
 		},
+		{
+			name: "Create ApplicationInstallation Failure - Both values and valuesBlock are set",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.Values = runtime.RawExtension{Raw: []byte("key: value")}
+					spec.ValuesBlock = "key: value"
+					return *spec
+				}(),
+			}, expectedError: `[spec.values: Forbidden: Only values or valuesBlock can be set, but not both simultaneously spec.valuesBlock: Forbidden: Only values or valuesBlock can be set, but not both simultaneously]`,
+		},
+		{
+			name: "Create ApplicationInstallation Success - ValuesBlock set and Values in default empty",
+			ai: &appskubermaticv1.ApplicationInstallation{
+				Spec: func() appskubermaticv1.ApplicationInstallationSpec {
+					spec := ai.Spec.DeepCopy()
+					spec.Values = runtime.RawExtension{Raw: []byte("{}")} // Raw.Runtime Extension gets defaulted to '{}' when set through k8s-api
+					spec.ValuesBlock = "key: value"
+					return *spec
+				}(),
+			}, expectedError: `[]`,
+		},
 	}
 
 	for _, testCase := range testCases {
