@@ -102,7 +102,7 @@ metadata:
   name: dex
 data:
   config.yaml: |
-    issuer: "https://cluster.example.dev/dex"
+    issuer: "https://kkp.example.com/dex"
     oauth2:
       skipApprovalScreen: true
       responseTypes:
@@ -130,15 +130,15 @@ data:
 
     staticClients:
       - RedirectURIs:
-        - https://cluster.example.dev
-        - https://cluster.example.dev/projects
+        - https://kkp.example.com
+        - https://kkp.example.com/projects
         id: kubermatic
         name: Kubermatic
         secret: <a-random-key>
       - RedirectURIs:
-        - https://cluster.example.dev/api/v1/kubeconfig
-        - https://cluster.example.dev/api/v2/kubeconfig/secret
-        - https://cluster.example.dev/api/v2/dashboard/login
+        - https://kkp.example.com/api/v1/kubeconfig
+        - https://kkp.example.com/api/v2/kubeconfig/secret
+        - https://kkp.example.com/api/v2/dashboard/login
         id: kubermaticIssuer
         name: Kubermatic OIDC Issuer
         secret: <a-random-key>
@@ -352,14 +352,14 @@ spec:
   tls:
   - secretName: dex-tls
     hosts:
-    - cluster.example.dev
+    - kkp.example.com
   defaultBackend:
     service:
       name: dex
       port:
         number: 5556
   rules:
-  - host: cluster.example.dev
+  - host: kkp.example.com
     http:
       paths:
       - path: /dex
