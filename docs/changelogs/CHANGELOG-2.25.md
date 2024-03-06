@@ -19,6 +19,18 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - Some of the values from earlier `values.yaml` are now incompatible with latest version. They are removed in the `values.yaml` in the current chart. But if you had copied the original values.yaml to customize it further, you may see that `kubermatic-installer` will detect such incompatible options and churn out errors and explain that action that needs to be taken.
     - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block.
 
+### Highlights
+- EE: Add KubeVirt ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
+- Upstream Documentation and SourceURLs can be added to ApplicationDefinitions ([#13019](https://github.com/kubermatic/kubermatic/pull/13019))
+- EE: Add k8sgpt operator to the Default Application Catalogue ([#13025](https://github.com/kubermatic/kubermatic/pull/13025))
+- Add K8sGPT to the Webshell ([#6501](https://github.com/kubermatic/dashboard/pull/6501))
+- Add new feature to create, restore and schedule backups for user cluster namespaces ([#6296](https://github.com/kubermatic/dashboard/pull/6296))
+- Add new page to manage backup storage location for the cluster backup feature ([#6478](https://github.com/kubermatic/dashboard/pull/6478))
+- Support for downloading backups from the UI ([#6521](https://github.com/kubermatic/dashboard/pull/6521))
+- Add support for Edge provider ([#6502](https://github.com/kubermatic/dashboard/pull/6502))
+- Display comments in application values ([#6510](https://github.com/kubermatic/dashboard/pull/6510))
+- Add Support for Kubernetes 1.29 ([#12936](https://github.com/kubermatic/kubermatic/pull/12936))
+
 
 ### API Changes
 
@@ -55,7 +67,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - Fixes leaking LoadBalancer reconciliation metric
     - Updates various dependencies 
 
-### GCP/GCE
+#### GCP/GCE
 
 - Add support for GCP/GCE cloud-controller-manager (CCM) ([#12955](https://github.com/kubermatic/kubermatic/pull/12955))
     - Existing user clusters can be migrated to the external CCM by setting the `externalCloudProvider` feature gate or using the KKP Dashboard.
@@ -68,7 +80,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Move CSI controller to seed cluster ([#13020](https://github.com/kubermatic/kubermatic/pull/13020))
 - Add support for configuring allowed IP allocation modes for VMware Cloud Director in KubermaticSettings ([#13002](https://github.com/kubermatic/kubermatic/pull/13002))
 
-### Application Catalog
+### Applications Catalog
 
 - EE: Add KubeVirt to the Default Applications Catalog ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
 - Upstream Documentation and SourceURLs can be added to ApplicationDefinitions ([#13019](https://github.com/kubermatic/kubermatic/pull/13019))
@@ -78,9 +90,11 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - EE: Update default application definitions with latest helm chart version ([#13058](https://github.com/kubermatic/kubermatic/pull/13058))
 - Comments are now persisted in the values section of ApplicationDefinitions and ApplicationInstallations when using the new defaultValuesBlock and valuesBlock fields respectively ([#13075](https://github.com/kubermatic/kubermatic/pull/13075))
 
+
 ### Kubermatic-installer
 
 - Update local KubeVirt chart to v1.1.1 and CDI to 1.58.1 ([#13088](https://github.com/kubermatic/kubermatic/pull/13088))
+- The Kubermatic installer will now detect DNS settings based on the Ingress instead of the nginx-ingress LoadBalancer, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
 
 
 ### User Cluster MLA
@@ -89,7 +103,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Minio has been updated to RELEASE.2023-04-28T18-11-17Z ([#13008](https://github.com/kubermatic/kubermatic/pull/13008))
 
 
-### New Feature
+### New Features
 
 - Add `Seed.spec.metering.retentionDays` to configure the Prometheus retention; fix missing defaulting for `Seed.spec.metering.storageSize` ([#12843](https://github.com/kubermatic/kubermatic/pull/12843))
 - Add new admin option to enable/disable user cluster backups ([#12888](https://github.com/kubermatic/kubermatic/pull/12888))
@@ -118,7 +132,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Fix the panic of the seed controller manager while checking CSI addon usage for user clusters, when a user cluster has PVs which were migrated from the in-tree provisioner to the CSI provisioner ([#13122](https://github.com/kubermatic/kubermatic/pull/13122))
 - No longer fail constructing vSphere endpoint when a `/` suffix is present in the datacenter configuration ([#12861](https://github.com/kubermatic/kubermatic/pull/12861))
 - Stop constantly re-deploying operating-system-manager when registry mirrors are configured ([#12972](https://github.com/kubermatic/kubermatic/pull/12972))
-- The Kubermatic installer will now detect DNS settings based on the Ingress instead of the nginx-ingress LoadBalancer, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
 - If the seed cluster is using Cilium as CNI, create CiliumClusterwideNetworkPolicy for api-server connectivity ([#12924](https://github.com/kubermatic/kubermatic/pull/12924))
 - Resolved an issue where logs were duplicated when multiple pods from the same service were deployed on the same Kubernetes node ([#13109](https://github.com/kubermatic/kubermatic/pull/13109))
 
@@ -139,7 +152,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - Remove `CloudControllerReconcilledSuccessfully` (double L) Cluster condition, which was deprecated in KKP 2.21 and has since been replaced with `CloudControllerReconciledSuccessfully` (single L) ([#12867](https://github.com/kubermatic/kubermatic/pull/12867))
 - Remove CriticalAddonsOnly toleration from node-local-dns DaemonSet as it has more general tolerations configured ([#12957](https://github.com/kubermatic/kubermatic/pull/12957))
-- Some of high cardinality metrics were dropped from User-Cluster MLA prometheus. If your KKP installation was using some of those metrics for custom Grafana dashboards for user-clusters, your dashboards might stop showing some of the charts ([#12756](https://github.com/kubermatic/kubermatic/pull/12756))
+- Some of high cardinality metrics were dropped from the User Cluster MLA prometheus. If your KKP installation was using some of those metrics for the custom Grafana dashboards for the user clusters, your dashboards might stop showing some of the charts ([#12756](https://github.com/kubermatic/kubermatic/pull/12756))
 - Deprecate v1.11 and v1.12 Cilium and Hubble KKP Addons, as Cilium CNI is managed by Applications from version 1.13 ([#12848](https://github.com/kubermatic/kubermatic/pull/12848))
 
 
@@ -154,38 +167,44 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Dashboard & API
 
-### Cloud Providers
+#### Cloud Providers
 
-#### Anexia
+##### Anexia
 
 - API change: Update MachineDeployment form for Anexia provider ([#6460](https://github.com/kubermatic/dashboard/pull/6460))
     - Add configuration support for named templates
     - Add configuration support for multiple disks- diskSize attribute gets automatically migrated to the disks attribute when saved- Fix error occurring when listing MachineDeployments which have named templates configured
 
-#### Azure
+##### Azure
 
 - Set LoadBalancerSKU on Azure clusters if the field is set in the preset ([#6506](https://github.com/kubermatic/dashboard/pull/6506))
 
-#### GCE
+##### GCE
 
-- Flatcar is now supported on GCE([#6399](https://github.com/kubermatic/dashboard/pull/6399))
+- Flatcar is now supported on GCE ([#6399](https://github.com/kubermatic/dashboard/pull/6399))
 
-#### vSphere
+##### Nutanix
+
+- Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
+
+##### vSphere
 
 - Fix a bug where dedicated credentials were incorrectly being required as mandatory input when editing provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
+- No longer fail constructing vSphere endpoint when a `/` suffix is present in the datacenter configuration ([#6403](https://github.com/kubermatic/dashboard/pull/6403))
 
-#### VMware Cloud Director: 
+
+##### VMware Cloud Director
 
 - Support for attaching multiple networks to a vApp ([#6480](https://github.com/kubermatic/dashboard/pull/6480))
 - Added Flatcar as supported OS ([#6391](https://github.com/kubermatic/dashboard/pull/6391))
 - Add support for configuring allowed IP allocation modes for VMware Cloud Director ([#6482](https://github.com/kubermatic/dashboard/pull/6482))
 
-### API Changes
+#### API Changes
 
 - Support for edge provider in KKP API ([#6525](https://github.com/kubermatic/dashboard/pull/6525))
 - ValuesBlock and defaultValuesBlock fields are now available via the API ([#6562](https://github.com/kubermatic/dashboard/pull/6562))
 
-### New Feature
+#### New Features
 
 - Add an option to enable/disable the cluster backup feature for user clusters ([#6493](https://github.com/kubermatic/dashboard/pull/6493))
 - Add K8sGPT to the Webshell ([#6501](https://github.com/kubermatic/dashboard/pull/6501))
@@ -201,15 +220,13 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Edge provider support in the node deployment spec ([#6545](https://github.com/kubermatic/dashboard/pull/6545))
 - Option to enable Cilium Ingress capabilities for user clusters ([#6490](https://github.com/kubermatic/dashboard/pull/6490))
 
-### Bugfixes
+#### Bugfixes
 
 - Fix a bug where Operating System Profiles were not being listed for GCP ([#6453](https://github.com/kubermatic/dashboard/pull/6453))
-- Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
 - Fix issue in editing and updating applications of cluster template ([#6415](https://github.com/kubermatic/dashboard/pull/6415))
 - Fix issue with cursor position inside YAML editor ([#6419](https://github.com/kubermatic/dashboard/pull/6419))
-- No longer fail constructing vSphere endpoint when a `/` suffix is present in the datacenter configuration ([#6403](https://github.com/kubermatic/dashboard/pull/6403))
 
-### Updates
+#### Updates
 
 - Update to alpine 3.19(latest available) version for container images ([#6503](https://github.com/kubermatic/dashboard/pull/6503))
 - KKP Dashboard is now built with Go 1.22.0 ([#6505](https://github.com/kubermatic/dashboard/pull/6505))
