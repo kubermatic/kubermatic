@@ -36,6 +36,10 @@ func (b *bringyourown) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.Clust
 	return nil
 }
 
+func (*bringyourown) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	return false
+}
+
 func (b *bringyourown) ValidateCloudSpec(_ context.Context, _ kubermaticv1.CloudSpec) error {
 	return nil
 }

@@ -83,6 +83,13 @@ type ReconcilingCloudProvider interface {
 	CloudProvider
 
 	ReconcileCluster(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
+
+	// Normally reconciling happens on a regular basis, but the interval between reconciliations can
+	// be quite long if migrations/upgrades need to happen. A cloud provider can implement this to
+	// decide based on the Cluster whether an immediate reconciliation is required. Cloud providers
+	// should be careful and not blindly just "return true" here, as that would defeat the whole
+	// "wait N minutes before doing expensive reconciliation" logic.
+	ClusterNeedsReconciling(*kubermaticv1.Cluster) bool
 }
 
 // ClusterUpdater defines a function to persist an update to a cluster.

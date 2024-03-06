@@ -68,6 +68,10 @@ func (v *VSphere) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	return v.reconcileCluster(ctx, cluster, update)
 }
 
+func (*VSphere) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	return false
+}
+
 func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	logger := v.log.With("cluster", cluster.Name)
 	username, password, err := getCredentialsForCluster(cluster.Spec.Cloud, v.secretKeySelector, v.dc)

@@ -76,6 +76,10 @@ func (g *gcp) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluste
 	return g.reconcileCluster(ctx, cluster, update, true, true)
 }
 
+func (*gcp) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	return false
+}
+
 func (g *gcp) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force, setTags bool) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.GCP.Network == "" && cluster.Spec.Cloud.GCP.Subnetwork == "" {

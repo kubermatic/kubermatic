@@ -20,6 +20,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
+
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -102,6 +105,16 @@ func (a *AmazonEC2) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 	return nil
 }
 
+func (*AmazonEC2) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	awsSpec := cluster.Spec.Cloud.AWS
+	if awsSpec == nil {
+		return false
+	}
+
+	// trigger migration for kubermatic#12936
+	return arn.IsARN(awsSpec.ControlPlaneRoleARN)
+}
+
 // ValidateCloudSpec validates the fields that the user can override while creating
 // a cluster. We only check those that must pre-exist in the AWS account
 // (i.e. the security group and VPC), because the others (like route table)
@@ -155,8 +168,11 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 		return fmt.Errorf("updating AWS security group ID is not supported (was %s, updated to %s)", oldSpec.AWS.SecurityGroupID, newSpec.AWS.SecurityGroupID)
 	}
 
-	if oldSpec.AWS.ControlPlaneRoleARN != "" && oldSpec.AWS.ControlPlaneRoleARN != newSpec.AWS.ControlPlaneRoleARN {
-		return fmt.Errorf("updating AWS control plane ARN is not supported (was %s, updated to %s)", oldSpec.AWS.ControlPlaneRoleARN, newSpec.AWS.ControlPlaneRoleARN)
+	// In KKP 2.25, the newly introduced AWS CCM version now requires full ARNs for roles instead of names
+	// only, so the immutability rules for this field are a bit more relaxed and allow to replace the old,
+	// plain role name with a more correct fully qualified ARN. See kubermatic#12936 for more information.
+	if err := validateRoleUpdate(oldSpec.AWS.ControlPlaneRoleARN, newSpec.AWS.ControlPlaneRoleARN); err != nil {
+		return fmt.Errorf("updating AWS control plane ARN is not supported: %w", err)
 	}
 
 	if oldSpec.AWS.InstanceProfileName != "" && oldSpec.AWS.InstanceProfileName != newSpec.AWS.InstanceProfileName {
@@ -164,6 +180,51 @@ func (a *AmazonEC2) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 	}
 
 	return nil
+}
+
+func validateRoleUpdate(oldValue, newValue string) error {
+	// no changes are made
+	if oldValue == newValue {
+		return nil
+	}
+
+	oldIsARN := arn.IsARN(oldValue)
+	newIsARN := arn.IsARN(newValue)
+
+	// never allow anything but valid ARNs
+	if !newIsARN {
+		return fmt.Errorf("%q is not a valid ARN", newValue)
+	}
+
+	// value is being set the first time
+	if oldValue == "" {
+		return nil
+	}
+
+	// cannot change one ARN into another
+	if oldIsARN && newIsARN {
+		return fmt.Errorf("cannot change role ARN from %q to %q", oldValue, newValue)
+	}
+
+	oldRoleName := getRoleName(oldValue)
+	newRoleName := getRoleName(newValue)
+
+	if oldRoleName != newRoleName {
+		return fmt.Errorf("cannot change role from %q to %q", oldRoleName, newRoleName)
+	}
+
+	return nil
+}
+
+func getRoleName(value string) string {
+	if arn.IsARN(value) {
+		parsed, _ := arn.Parse(value)
+
+		// resource is "role/<name>"
+		return path.Base(parsed.Resource)
+	}
+
+	return value
 }
 
 func (a *AmazonEC2) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
