@@ -21,6 +21,7 @@
 
 END OF TERMS AND CONDITIONS
 */
+
 package machine
 
 import (
@@ -30,6 +31,7 @@ import (
 
 	vmwareclouddirectortypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
