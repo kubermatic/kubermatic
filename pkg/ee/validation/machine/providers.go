@@ -26,6 +26,7 @@ package machine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -124,7 +125,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	case types.CloudProviderDigitalocean:
 		quotaUsage, err = getDigitalOceanResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderVMwareCloudDirector:
-		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
+		quotaUsage, err = GetVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderAnexia:
 		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
 	case types.CloudProviderEquinixMetal, types.CloudProviderPacket:
@@ -571,7 +572,7 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func GetVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
 	rawConfig, err := vmwareclouddirectortypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get VMware Cloud Director raw config: %w", err)
@@ -592,6 +593,10 @@ func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient 
 
 	if err := capacity.WithMemory(int(rawConfig.MemoryMB), "M"); err != nil {
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
+	}
+
+	if rawConfig.DiskSizeGB == nil {
+		return nil, errors.New("DiskSizeGB cannot be nil")
 	}
 
 	if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
