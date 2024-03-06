@@ -34,16 +34,11 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// MockCtrlRuntimeClient is a mock implementation of ctrlruntimeclient.Client
 type MockCtrlRuntimeClient struct {
 	ctrlruntimeclient.Client
-	// Add fields to simulate internal state or return values here
 }
 
-// Implement methods of ctrlruntimeclient.Client that your function calls
-
 func TestGetVMwareCloudDirectorResourceRequirements(t *testing.T) {
-	// Example test case for successful path
 	testCases := []struct {
 		name        string
 		config      *types.Config
