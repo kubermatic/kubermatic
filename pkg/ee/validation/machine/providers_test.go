@@ -21,7 +21,7 @@
 
 END OF TERMS AND CONDITIONS
 */
-package machine_test
+package machine
 
 import (
 	"context"
@@ -30,7 +30,6 @@ import (
 
 	vmwareclouddirectortypes "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"k8c.io/kubermatic/v2/pkg/ee/validation/machine"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -71,7 +70,7 @@ func TestGetVMwareCloudDirectorResourceRequirements(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockClient := &MockCtrlRuntimeClient{}
-			_, err := machine.GetVMwareCloudDirectorResourceRequirements(context.Background(), mockClient, tc.config)
+			_, err := getVMwareCloudDirectorResourceRequirements(context.Background(), mockClient, tc.config)
 			if err != nil {
 				if !tc.expectedErr {
 					t.Fatalf("unexpected error: %v", err)
