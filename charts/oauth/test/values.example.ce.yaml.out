@@ -268,7 +268,7 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '5558'
         kubermatic.io/chart: oauth
-        checksum/config: d05f0723557402cffb219d4b52616a7fcfe59d82acc8bb7a75485cd3dd17a758
+        checksum/config: 2f2f2cf8ac475c122c30a0628af7671747766cdad171d2f87a37daa26ecb84b3
         checksum/secrets: 14780be2ecc3df3e4c622bcd96f0e8b79630d685e9580d082ed178d50f62d78a
     spec:
       serviceAccountName: dex
