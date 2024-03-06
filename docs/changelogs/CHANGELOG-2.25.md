@@ -95,6 +95,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - Update local KubeVirt chart to v1.1.1 and CDI to 1.58.1 ([#13088](https://github.com/kubermatic/kubermatic/pull/13088))
 - The Kubermatic installer will now detect DNS settings based on the Ingress instead of the nginx-ingress LoadBalancer, allowing for other ingress solutions to be properly detected ([#12934](https://github.com/kubermatic/kubermatic/pull/12934))
+- Fix `mirror-images` command in installer not being able to extract the addons ([#12868](https://github.com/kubermatic/kubermatic/pull/12868))
 
 
 ### User Cluster MLA
@@ -122,7 +123,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - Fix insufficient RBAC permission for VPA recommender pod caused by [upstream release issue](https://github.com/kubernetes/autoscaler/issues/5982) ([#12872](https://github.com/kubermatic/kubermatic/pull/12872))
 - Fix cert-manager values block. cert-manager deployment will get updated as part of upgrade ([#12854](https://github.com/kubermatic/kubermatic/pull/12854))
-- Fix `mirror-images` command in installer not being able to extract the addons ([#12868](https://github.com/kubermatic/kubermatic/pull/12868))
 - Fix a bug where resources deployed in the user cluster namespace on seed, for CSI drivers, were not being removed when the CSI driver was disabled ([#13045](https://github.com/kubermatic/kubermatic/pull/13045))
 - Fix cases where, when using dedicated infra- and ccm-credentials, infra-credentials were always overwritten by ccm-credentials ([#12421](https://github.com/kubermatic/kubermatic/pull/12421))
 - Fix missing image registry override for hubble-ui components if Cilium is deployed as System Application ([#13139](https://github.com/kubermatic/kubermatic/pull/13139))
