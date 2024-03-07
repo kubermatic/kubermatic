@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -49,15 +50,18 @@ func (e *Cluster) StartEtcdCmd(log *zap.SugaredLogger) (*exec.Cmd, error) {
 }
 
 func etcdCmd(config *Cluster) []string {
+	podIPAddr := net.JoinHostPort(config.PodIP, "2379")
+	podIPMetricsAddr := net.JoinHostPort(config.PodIP, "2378")
+
 	cmd := []string{
 		fmt.Sprintf("--name=%s", config.PodName),
 		fmt.Sprintf("--data-dir=%s", config.DataDir),
 		fmt.Sprintf("--initial-cluster=%s", strings.Join(config.initialMembers, ",")),
 		fmt.Sprintf("--initial-cluster-token=%s", config.Token),
 		fmt.Sprintf("--initial-cluster-state=%s", config.initialState),
-		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.PodName, config.namespace, config.PodIP),
-		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.PodIP),
-		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.PodIP),
+		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s", config.PodName, config.namespace, podIPAddr),
+		fmt.Sprintf("--listen-client-urls=https://%s,https://127.0.0.1:2379", podIPAddr),
+		fmt.Sprintf("--listen-metrics-urls=http://%s,http://127.0.0.1:2378", podIPMetricsAddr),
 		"--client-cert-auth",
 		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
@@ -71,14 +75,14 @@ func etcdCmd(config *Cluster) []string {
 	// set TLS only peer URLs
 	if config.usePeerTLSOnly {
 		cmd = append(cmd, []string{
-			fmt.Sprintf("--listen-peer-urls=https://%s:2381", config.PodIP),
+			fmt.Sprintf("--listen-peer-urls=https://%s", net.JoinHostPort(config.PodIP, "2381")),
 			fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2381", config.PodName, config.namespace),
 			"--peer-client-cert-auth",
 		}...)
 	} else {
 		// 'mixed' mode clusters should start with both plaintext and HTTPS peer ports
 		cmd = append(cmd, []string{
-			fmt.Sprintf("--listen-peer-urls=http://%s:2380,https://%s:2381", config.PodIP, config.PodIP),
+			fmt.Sprintf("--listen-peer-urls=http://%s,https://%s", net.JoinHostPort(config.PodIP, "2380"), net.JoinHostPort(config.PodIP, "2381")),
 			fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380,https://%s.etcd.%s.svc.cluster.local:2381", config.PodName, config.namespace, config.PodName, config.namespace),
 		}...)
 	}

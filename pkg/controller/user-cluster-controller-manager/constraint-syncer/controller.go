@@ -178,7 +178,7 @@ func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconcilin
 			}
 
 			// set Match
-			matchMap, err := unmarshallToJSONMap(&constraint.Spec.Match)
+			matchMap, err := unmarshalToJSONMap(&constraint.Spec.Match)
 			if err != nil {
 				return nil, err
 			}
@@ -202,7 +202,7 @@ func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconcilin
 	}
 }
 
-func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
+func unmarshalToJSONMap(object interface{}) (map[string]interface{}, error) {
 	raw, err := json.Marshal(object)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling: %w", err)

@@ -301,7 +301,7 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 	if appDef.Spec.DefaultValues != nil {
 		if len(appDef.Spec.DefaultValues.Raw) > 0 {
 			if err := json.Unmarshal(appDef.Spec.DefaultValues.Raw, &values); err != nil {
-				return fmt.Errorf("failed to unmarshall ApplicationDefinition default values: %w", err)
+				return fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
 			}
 		}
 	}
@@ -349,11 +349,11 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				Duration: 60 * time.Minute, // reconcile the app periodically
 			}
 
-			// Unmarshall existing values
+			// Unmarshal existing values
 			values := make(map[string]any)
 			if len(app.Spec.Values.Raw) > 0 {
 				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
-					return app, fmt.Errorf("failed to unmarshall CNI values: %w", err)
+					return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
 				}
 			}
 

@@ -301,9 +301,9 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// get match
-			matchMap, err := unmarshallToJSONMap(tc.expectedConstraint.Spec.Match)
+			matchMap, err := unmarshalToJSONMap(tc.expectedConstraint.Spec.Match)
 			if err != nil {
-				t.Fatalf("failed to unmarshall expected match: %v", err)
+				t.Fatalf("failed to unmarshal expected match: %v", err)
 			}
 			resultMatch, found, err := unstructured.NestedFieldNoCopy(reqLabel.Object, "spec", "match")
 			if err != nil || !found {
