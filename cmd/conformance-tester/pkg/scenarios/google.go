@@ -37,6 +37,7 @@ type googleScenario struct {
 func (s *googleScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemFlatcar,
 	)
 }
 
