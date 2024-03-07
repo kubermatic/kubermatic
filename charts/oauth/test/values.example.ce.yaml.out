@@ -102,7 +102,7 @@ metadata:
   name: dex
 data:
   config.yaml: |
-    issuer: "https://cluster.example.dev/dex"
+    issuer: "https://kkp.example.com/dex"
     oauth2:
       skipApprovalScreen: true
       responseTypes:
@@ -130,15 +130,15 @@ data:
 
     staticClients:
       - RedirectURIs:
-        - https://cluster.example.dev
-        - https://cluster.example.dev/projects
+        - https://kkp.example.com
+        - https://kkp.example.com/projects
         id: kubermatic
         name: Kubermatic
         secret: <a-random-key>
       - RedirectURIs:
-        - https://cluster.example.dev/api/v1/kubeconfig
-        - https://cluster.example.dev/api/v2/kubeconfig/secret
-        - https://cluster.example.dev/api/v2/dashboard/login
+        - https://kkp.example.com/api/v1/kubeconfig
+        - https://kkp.example.com/api/v2/kubeconfig/secret
+        - https://kkp.example.com/api/v2/dashboard/login
         id: kubermaticIssuer
         name: Kubermatic OIDC Issuer
         secret: <a-random-key>
@@ -268,7 +268,7 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '5558'
         kubermatic.io/chart: oauth
-        checksum/config: d05f0723557402cffb219d4b52616a7fcfe59d82acc8bb7a75485cd3dd17a758
+        checksum/config: 2f2f2cf8ac475c122c30a0628af7671747766cdad171d2f87a37daa26ecb84b3
         checksum/secrets: 14780be2ecc3df3e4c622bcd96f0e8b79630d685e9580d082ed178d50f62d78a
     spec:
       serviceAccountName: dex
@@ -352,14 +352,14 @@ spec:
   tls:
   - secretName: dex-tls
     hosts:
-    - cluster.example.dev
+    - kkp.example.com
   defaultBackend:
     service:
       name: dex
       port:
         number: 5556
   rules:
-  - host: cluster.example.dev
+  - host: kkp.example.com
     http:
       paths:
       - path: /dex

@@ -34,7 +34,7 @@ spec:
     # a disabled Ingress, this must always be a valid hostname.
     # this domain must match what you configured as dex.ingress.host
     # in the values.yaml
-    domain: cluster.example.dev
+    domain: kkp.example.com
     certificateIssuer:
       # APIGroup is the group for the resource being referenced.
       # If APIGroup is not specified, the specified Kind must be in the core API group.
@@ -54,7 +54,7 @@ spec:
     issuerClientID: kubermaticIssuer
     # When using letsencrypt-prod replace with "false"
     skipTokenIssuerTLSVerify: true
-    tokenIssuer: https://cluster.example.dev/dex
+    tokenIssuer: https://kkp.example.com/dex
 
     # This must match the secret configured for the kubermaticIssuer client from
     # the dex clients in values.yaml.

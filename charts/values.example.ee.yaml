@@ -16,7 +16,7 @@
 dex:
   ingress:
     # configure your base domain, under which the Kubermatic dashboard shall be available
-    host: cluster.example.dev
+    host: kkp.example.com
 
   clients:
   # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
@@ -29,8 +29,8 @@ dex:
     secret: <a-random-key>
     RedirectURIs:
     # ensure the URLs below use the dex.ingress.host configured above
-    - https://cluster.example.dev
-    - https://cluster.example.dev/projects
+    - https://kkp.example.com
+    - https://kkp.example.com/projects
 
     # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
     # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
@@ -43,9 +43,9 @@ dex:
     secret: <a-random-key>
     RedirectURIs:
       # ensure the URLs below use the dex.ingress.host configured above
-      - https://cluster.example.dev/api/v1/kubeconfig
-      - https://cluster.example.dev/api/v2/kubeconfig/secret
-      - https://cluster.example.dev/api/v2/dashboard/login
+      - https://kkp.example.com/api/v1/kubeconfig
+      - https://kkp.example.com/api/v2/kubeconfig/secret
+      - https://kkp.example.com/api/v2/dashboard/login
 
   # Depending on your chosen login method, you need to configure either an OAuth provider like
   # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`
