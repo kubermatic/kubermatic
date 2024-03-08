@@ -112,7 +112,7 @@ func (*AmazonEC2) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
 	}
 
 	// trigger migration for kubermatic#12936
-	return arn.IsARN(awsSpec.ControlPlaneRoleARN)
+	return !arn.IsARN(awsSpec.ControlPlaneRoleARN)
 }
 
 // ValidateCloudSpec validates the fields that the user can override while creating
