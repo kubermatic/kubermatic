@@ -46,6 +46,7 @@ type vmwareCloudDirectorScenario struct {
 func (s *vmwareCloudDirectorScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemFlatcar,
 	)
 }
 
