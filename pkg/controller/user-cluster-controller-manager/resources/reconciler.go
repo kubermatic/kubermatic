@@ -95,10 +95,17 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
-		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigSecretName)
-		if err != nil {
-			return fmt.Errorf("failed to get csi config: %w", err)
+	cluster, err := r.getCluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve cluster: %w", err)
+	}
+
+	if !cluster.Spec.DisableCSIDriver {
+		if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
+			data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigSecretName)
+			if err != nil {
+				return fmt.Errorf("failed to get csi config: %w", err)
+			}
 		}
 	}
 
@@ -130,11 +137,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to get OPA resource requirements: %w", err)
 		}
-	}
-
-	cluster, err := r.getCluster(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
 	clusterVersion := cluster.Status.Versions.ControlPlane
@@ -1150,7 +1152,9 @@ type reconcileData struct {
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
 	clusterVersion   semver.Semver
-	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
+	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director and Nutanix,
+	// who need it to properly configure the external CSI driver; however this can be nil if the
+	// CSI driver has been explicitly disabled
 	csiCloudConfig                []byte
 	ccmMigration                  bool
 	monitoringRequirements        *corev1.ResourceRequirements
