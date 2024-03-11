@@ -30,6 +30,13 @@ spec:
         source:
           helm:
             chartName: argo-cd
+            chartVersion: 5.5.12
+            url: https://argoproj.github.io/argo-helm
+      version: v2.4.14
+    - template:
+        source:
+          helm:
+            chartName: argo-cd
             chartVersion: 6.0.0
             url: https://argoproj.github.io/argo-helm
       version: v2.10.0

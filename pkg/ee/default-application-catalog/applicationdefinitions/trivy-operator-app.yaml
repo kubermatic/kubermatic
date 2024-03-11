@@ -30,6 +30,13 @@ spec:
       source:
         helm:
           chartName: trivy-operator
+          chartVersion: 0.15.1
+          url: https://aquasecurity.github.io/helm-charts/
+    version: 0.15.1
+  - template:
+      source:
+        helm:
+          chartName: trivy-operator
           chartVersion: 0.20.5
           url: https://aquasecurity.github.io/helm-charts/
     version: 0.18.4
