@@ -46,7 +46,7 @@ func TestGetParsedValues(t *testing.T) {
 		},
 		"ValuesBlock set and Values Defaulted": {
 			appIn: ApplicationInstallationSpec{
-				Values:      runtime.RawExtension{},
+				Values:      runtime.RawExtension{Raw: []byte("{}")},
 				ValuesBlock: "not-empty:\n  value",
 			},
 			expResponse: map[string]interface{}{"not-empty": "value"},
