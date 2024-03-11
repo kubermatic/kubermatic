@@ -20,9 +20,10 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block.
 
 ### Highlights
-- EE: Add KubeVirt ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
+- EE: Add KubeVirt to the Default Applications Catalog ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
 - Upstream Documentation and SourceURLs can be added to ApplicationDefinitions ([#13019](https://github.com/kubermatic/kubermatic/pull/13019))
-- EE: Add k8sgpt operator to the Default Application Catalogue ([#13025](https://github.com/kubermatic/kubermatic/pull/13025))
+- EE: Add k8sgpt operator to the Default Applications Catalog ([#13025](https://github.com/kubermatic/kubermatic/pull/13025))
+- EE: Add nvidia-gpu-operator to the Default Applications Catalog ([#13147](https://github.com/kubermatic/kubermatic/pull/13147))
 - Add K8sGPT to the Webshell ([#6501](https://github.com/kubermatic/dashboard/pull/6501))
 - Add new feature to create, restore and schedule backups for user cluster namespaces ([#6296](https://github.com/kubermatic/dashboard/pull/6296))
 - Add new page to manage backup storage location for the cluster backup feature ([#6478](https://github.com/kubermatic/dashboard/pull/6478))
@@ -89,6 +90,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add documentation link, source code link and logo to the default applications ([#13054](https://github.com/kubermatic/kubermatic/pull/13054))
 - EE: Update default application definitions with latest helm chart version ([#13058](https://github.com/kubermatic/kubermatic/pull/13058))
 - Comments are now persisted in the values section of ApplicationDefinitions and ApplicationInstallations when using the new defaultValuesBlock and valuesBlock fields respectively ([#13075](https://github.com/kubermatic/kubermatic/pull/13075))
+- EE: Add nvidia-gpu-operator to the Default Applications Catalog ([#13147](https://github.com/kubermatic/kubermatic/pull/13147))
 
 
 ### Kubermatic-installer
@@ -134,7 +136,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Stop constantly re-deploying operating-system-manager when registry mirrors are configured ([#12972](https://github.com/kubermatic/kubermatic/pull/12972))
 - If the seed cluster is using Cilium as CNI, create CiliumClusterwideNetworkPolicy for api-server connectivity ([#12924](https://github.com/kubermatic/kubermatic/pull/12924))
 - Resolved an issue where logs were duplicated when multiple pods from the same service were deployed on the same Kubernetes node ([#13109](https://github.com/kubermatic/kubermatic/pull/13109))
-
+- Exclude `test` folders which contain symlinks that break once the archive is untarred. ([#13151](https://github.com/kubermatic/kubermatic/pull/13151))
 
 ### Updates
 
