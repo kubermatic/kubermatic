@@ -213,6 +213,10 @@ func (a *Azure) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Clus
 	return a.reconcileCluster(ctx, cluster, update, true, true)
 }
 
+func (*Azure) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	return false
+}
+
 func (a *Azure) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, force bool, setTags bool) (*kubermaticv1.Cluster, error) {
 	var err error
 	logger := a.log.With("cluster", cluster.Name)

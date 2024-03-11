@@ -448,7 +448,7 @@ func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logg
 		logger.Fatalf("Failed to initialize seed secret: %v", err)
 	}
 	addrRe := regexp.MustCompile(`([ ]*server:) https://127.0.0.1:[0-9]*`)
-	internalKubeconfig := addrRe.ReplaceAllString(string(k), fmt.Sprintf(`$1 https://%v:6443`, ip))
+	internalKubeconfig := addrRe.ReplaceAllString(string(k), fmt.Sprintf(`$1 https://%s`, net.JoinHostPort(ip, "6443")))
 
 	if err := os.WriteFile(internalKubeconfigPath, []byte(internalKubeconfig), 0600); err != nil {
 		logger.Fatalf("failed to write internal kubeconfig: %v", err)

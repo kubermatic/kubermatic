@@ -55,8 +55,10 @@ var (
 		},
 	}
 
-	// the "name" label is required here. it's used by Velero to detect the daemonset pods on the nodes, if it's not there Velero will partiallyFail to do the backup: https://github.com/vmware-tanzu/velero/blob/b30a679e5b1c2cbd9021e1301580f2359ef981bf/pkg/nodeagent/node_agent.go#L84
-	veleroAddionalLabels = map[string]string{
+	// The "name" label is required here: it's used by Velero to detect the daemonset pods on the nodes,
+	// if it's not there Velero will partially fail to do the backup:
+	// https://github.com/vmware-tanzu/velero/blob/b30a679e5b1c2cbd9021e1301580f2359ef981bf/pkg/nodeagent/node_agent.go#L84
+	veleroAdditionalLabels = map[string]string{
 		"app.kubernetes.io/name": DaemonSetName,
 		"name":                   DaemonSetName,
 	}
@@ -71,13 +73,13 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 
 			ds.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(DaemonSetName,
-					veleroAddionalLabels),
+					veleroAdditionalLabels),
 			}
 
 			// has to be the same as the selector
 			ds.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: resources.BaseAppLabels(DaemonSetName,
-					veleroAddionalLabels),
+					veleroAdditionalLabels),
 			}
 
 			ds.Spec.Template.Spec = corev1.PodSpec{

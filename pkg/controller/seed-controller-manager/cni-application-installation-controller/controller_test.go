@@ -349,7 +349,7 @@ func getApplicationInstallationValues(userClusterClient ctrlruntimeclient.Client
 	}
 	values := make(map[string]any)
 	if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
-		return nil, fmt.Errorf("failed to unmarshall CNI values: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal CNI values: %w", err)
 	}
 	return values, nil
 }

@@ -594,8 +594,10 @@ func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient 
 		return nil, fmt.Errorf("failed to parse memory size: %w", err)
 	}
 
-	if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
-		return nil, fmt.Errorf("failed to parse disk size: %w", err)
+	if rawConfig.DiskSizeGB != nil {
+		if err := capacity.WithStorage(int(*rawConfig.DiskSizeGB), "G"); err != nil {
+			return nil, fmt.Errorf("failed to parse disk size: %w", err)
+		}
 	}
 
 	return NewResourceDetailsFromCapacity(capacity)

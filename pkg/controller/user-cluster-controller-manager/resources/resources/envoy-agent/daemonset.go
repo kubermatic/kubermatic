@@ -37,11 +37,11 @@ var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		resources.EnvoyAgentDaemonSetName: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("32Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("64Mi"),
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
 				corev1.ResourceCPU:    resource.MustParse("1"),
 			},
 		},

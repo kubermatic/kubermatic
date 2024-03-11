@@ -92,7 +92,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 
 	values, err := applicationInstallation.Spec.GetParsedValues()
 	if err != nil {
-		return util.NoStatusUpdate, fmt.Errorf("failed to unmarshall values: %w", err)
+		return util.NoStatusUpdate, fmt.Errorf("failed to unmarshal values: %w", err)
 	}
 
 	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, *deployOpts, auth)

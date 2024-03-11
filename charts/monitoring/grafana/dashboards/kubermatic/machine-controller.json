@@ -94,7 +94,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "job:machine_controller_machines:sum{cluster=~\"$cluster\"}",
+          "expr": "job:machine_controller_machines_total:sum{cluster=~\"$cluster\"}",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ cluster }}",
@@ -441,7 +441,7 @@
         "name": "cluster",
         "options": [],
         "query": {
-          "query": "label_values(job:machine_controller_machines:sum,cluster)",
+          "query": "label_values(job:machine_controller_machines_total:sum,cluster)",
           "refId": "prometheus-cluster-Variable-Query"
         },
         "refresh": 2,

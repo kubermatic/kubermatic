@@ -386,7 +386,7 @@ func generateApplication(name string) apiv1.Application {
 	}`), &values)
 
 	if err != nil {
-		panic(fmt.Sprintf("can not unmarshall values: %v", err))
+		panic(fmt.Sprintf("can not unmarshal values: %v", err))
 	}
 
 	return apiv1.Application{

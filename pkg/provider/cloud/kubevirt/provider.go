@@ -102,6 +102,10 @@ func (k *kubevirt) InitializeCloudProvider(ctx context.Context, cluster *kuberma
 	return k.reconcileCluster(ctx, cluster, update)
 }
 
+func (*kubevirt) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
+	return false
+}
+
 func (k *kubevirt) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return k.reconcileCluster(ctx, cluster, update)
 }
