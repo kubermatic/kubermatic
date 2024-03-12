@@ -128,9 +128,16 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
-		spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
-			Type:    kubermaticv1.CNIPluginTypeCilium,
-			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
+		if spec.Cloud.Edge != nil {
+			spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCanal,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
+			}
+		} else {
+			spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+				Type:    kubermaticv1.CNIPluginTypeCilium,
+				Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
+			}
 		}
 	} else if spec.CNIPlugin.Version == "" {
 		spec.CNIPlugin.Version = cni.GetDefaultCNIPluginVersion(spec.CNIPlugin.Type)
