@@ -342,6 +342,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	modifiers := []reconciling.ObjectModifier{
 		common.OwnershipModifierFactory(config, r.scheme),
 		common.VolumeRevisionLabelsModifierFactory(ctx, r.Client),
+		common.VersionLabelModifierFactory(r.versions.Kubermatic),
 	}
 	// add the image pull secret wrapper only when an image pull secret is
 	// provided
