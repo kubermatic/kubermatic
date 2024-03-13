@@ -717,7 +717,6 @@ func generateVerbsForNamedSecretKindInNamespace(groupName string) ([]string, err
 	default:
 		return nil, nil
 	}
-
 }
 
 func generateVerbsForNamedCBSLKindInNamespace(groupName string) ([]string, error) {
