@@ -646,13 +646,28 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 	// special case - only the owners of a project and project managers can create secrets in "saSecretsNamespaceName" namespace
 	//
 	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
-		switch {
-		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
-			return []string{"create"}, nil
-		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == secretV1Kind:
-			return []string{"create"}, nil
-		case resourceKind == secretV1Kind:
-			return nil, nil
+		if resourceKind == secretV1Kind {
+			switch {
+			case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+				return []string{"create"}, nil
+			case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+				return []string{"create"}, nil
+			default:
+				return nil, nil
+			}
+		}
+
+		if resourceKind == kubermaticv1.ClusterBackupStorageLocationKind && namespace == resources.KubermaticNamespace {
+			switch {
+			case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+				return []string{"create"}, nil
+			case strings.HasPrefix(groupName, EditorGroupNamePrefix):
+				return []string{"create"}, nil
+			case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+				return []string{"create"}, nil
+			default:
+				return nil, nil
+			}
 		}
 	}
 
@@ -666,16 +681,32 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceName" namespace
 	//
 	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
-		switch {
-		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
-			return []string{"get", "update", "delete"}, nil
-		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == secretV1Kind:
-			return []string{"get", "update", "delete"}, nil
-		case resourceKind == secretV1Kind:
-			return nil, nil
+		if resourceKind == secretV1Kind {
+			switch {
+			case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+				return []string{"get", "update", "delete"}, nil
+			case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+				return []string{"get", "update", "delete"}, nil
+			default:
+				return nil, nil
+			}
 		}
 	}
 
+	if resourceKind == kubermaticv1.ClusterBackupStorageLocationKind && namespace == resources.KubermaticNamespace {
+		switch {
+		case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+			return []string{"get", "list", "create", "update", "delete"}, nil
+		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+			return []string{"get", "list", "create", "update", "delete"}, nil
+		case strings.HasPrefix(groupName, EditorGroupNamePrefix):
+			return []string{"get", "list", "create", "update", "delete"}, nil
+		case strings.HasPrefix(groupName, ViewerGroupNamePrefix):
+			return []string{"get", "list"}, nil
+		default:
+			return nil, nil
+		}
+	}
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs for group %q, kind %q and namespace %q", groupName, resourceKind, namespace)
 }

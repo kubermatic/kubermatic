@@ -22,6 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// ClusterBackupStorageLocationKind represents "Kind" defined in Kubernetes.
+	ClusterBackupStorageLocationKind = "ClusterBackupStorageLocation"
+)
+
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
