@@ -643,32 +643,17 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 }
 
 func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
-	// special case - only the owners of a project and project managers can create secrets in "saSecretsNamespaceName" namespace
+	// special case - only the owners of a project and project managers can create secrets in "kubermatic" namespace
 	//
-	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
-		if resourceKind == secretV1Kind {
-			switch {
-			case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
-				return []string{"create"}, nil
-			case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
-				return []string{"create"}, nil
-			default:
-				return nil, nil
-			}
-		}
+	if !isAcceptedNamespace(namespace) {
+		return nil, fmt.Errorf("unable to generate verbs, unsupported namespace %q given", namespace)
+	}
+	switch resourceKind {
+	case secretV1Kind:
+		return generateVerbsForNamespacedSecretKind(groupName)
 
-		if resourceKind == kubermaticv1.ClusterBackupStorageLocationKind && namespace == resources.KubermaticNamespace {
-			switch {
-			case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
-				return []string{"create"}, nil
-			case strings.HasPrefix(groupName, EditorGroupNamePrefix):
-				return []string{"create"}, nil
-			case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
-				return []string{"create"}, nil
-			default:
-				return nil, nil
-			}
-		}
+	case kubermaticv1.ClusterBackupStorageLocationKind:
+		return generateVerbsForNamespacedCBSLKind(groupName)
 	}
 
 	// unknown group passed
@@ -680,35 +665,77 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace string) ([]string, error) {
 	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceName" namespace
 	//
-	if namespace == saSecretsNamespaceName || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
-		if resourceKind == secretV1Kind {
-			switch {
-			case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
-				return []string{"get", "update", "delete"}, nil
-			case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
-				return []string{"get", "update", "delete"}, nil
-			default:
-				return nil, nil
-			}
-		}
+	if !isAcceptedNamespace(namespace) {
+		return nil, fmt.Errorf("unable to generate verbs, unsupported namespace %q given", namespace)
+	}
+	switch resourceKind {
+	case secretV1Kind:
+		return generateVerbsForNamedSecretKindInNamespace(groupName)
+
+	case kubermaticv1.ClusterBackupStorageLocationKind:
+		return generateVerbsForNamedCBSLKindInNamespace(groupName)
 	}
 
-	if resourceKind == kubermaticv1.ClusterBackupStorageLocationKind && namespace == resources.KubermaticNamespace {
-		switch {
-		case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
-			return []string{"get", "list", "create", "update", "delete"}, nil
-		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
-			return []string{"get", "list", "create", "update", "delete"}, nil
-		case strings.HasPrefix(groupName, EditorGroupNamePrefix):
-			return []string{"get", "list", "create", "update", "delete"}, nil
-		case strings.HasPrefix(groupName, ViewerGroupNamePrefix):
-			return []string{"get", "list"}, nil
-		default:
-			return nil, nil
-		}
-	}
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs for group %q, kind %q and namespace %q", groupName, resourceKind, namespace)
+}
+
+func isAcceptedNamespace(namespace string) bool {
+	if namespace != resources.KubermaticNamespace && !strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
+		return false
+	}
+	return true
+}
+
+func generateVerbsForNamespacedSecretKind(groupName string) ([]string, error) {
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+		return []string{"create"}, nil
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+		return []string{"create"}, nil
+	default:
+		return nil, nil
+	}
+}
+
+func generateVerbsForNamespacedCBSLKind(groupName string) ([]string, error) {
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+		return []string{"create"}, nil
+	case strings.HasPrefix(groupName, EditorGroupNamePrefix):
+		return []string{"create"}, nil
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+		return []string{"create"}, nil
+	default:
+		return nil, nil
+	}
+}
+
+func generateVerbsForNamedSecretKindInNamespace(groupName string) ([]string, error) {
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+		return []string{"get", "update", "delete"}, nil
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+		return []string{"get", "update", "delete"}, nil
+	default:
+		return nil, nil
+	}
+
+}
+
+func generateVerbsForNamedCBSLKindInNamespace(groupName string) ([]string, error) {
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix):
+		return []string{"get", "list", "create", "patch", "update", "delete"}, nil
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix):
+		return []string{"get", "list", "create", "patch", "update", "delete"}, nil
+	case strings.HasPrefix(groupName, EditorGroupNamePrefix):
+		return []string{"get", "list", "create", "patch", "update", "delete"}, nil
+	case strings.HasPrefix(groupName, ViewerGroupNamePrefix):
+		return []string{"get", "list"}, nil
+	default:
+		return nil, nil
+	}
 }
 
 func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
