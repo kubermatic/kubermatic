@@ -190,9 +190,12 @@ func VersionLabelModifierFactory(version string) reconciling.ObjectModifier {
 
 			deployment, ok := obj.(*appsv1.Deployment)
 			if !ok {
-				return obj, nil
+				return obj, fmt.Errorf("VersionLabelModifier is only implemented for deployments, not %T", obj)
 			}
 
+			if deployment.ObjectMeta.Labels == nil {
+				deployment.ObjectMeta.Labels = make(map[string]string)
+			}
 			deployment.ObjectMeta.Labels[resources.VersionLabel] = version
 			deployment.Spec.Template.Labels[resources.VersionLabel] = version
 
