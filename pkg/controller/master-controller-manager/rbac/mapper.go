@@ -681,10 +681,7 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 }
 
 func isAcceptedNamespace(namespace string) bool {
-	if namespace != resources.KubermaticNamespace && !strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix) {
-		return false
-	}
-	return true
+	return namespace == resources.KubermaticNamespace || strings.HasPrefix(namespace, resources.KubeOneNamespacePrefix)
 }
 
 func generateVerbsForNamespacedSecretKind(groupName string) ([]string, error) {
