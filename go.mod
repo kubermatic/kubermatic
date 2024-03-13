@@ -37,13 +37,13 @@ require (
 	github.com/go-test/deep v1.1.0
 	github.com/gobuffalo/flect v1.0.2
 	github.com/google/go-containerregistry v0.16.1
-	github.com/google/uuid v1.5.0
+	github.com/google/uuid v1.6.0
 	github.com/gophercloud/gophercloud v1.8.0
 	github.com/hetznercloud/hcloud-go v1.52.0
 	github.com/imdario/mergo v0.3.16
 	github.com/jackpal/gateway v1.0.10
 	github.com/kubermatic/grafanasdk v0.9.13
-	github.com/kubermatic/machine-controller v1.58.3-0.20240221144650-8cef3ecaab1a
+	github.com/kubermatic/machine-controller v1.59.0
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/olekukonko/tablewriter v0.0.5
@@ -71,11 +71,11 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.10
 	go.etcd.io/etcd/etcdutl/v3 v3.5.9
 	go.uber.org/zap v1.26.0
-	golang.org/x/crypto v0.17.0
-	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
-	golang.org/x/oauth2 v0.15.0
-	golang.org/x/sys v0.16.0
-	golang.org/x/tools v0.16.1
+	golang.org/x/crypto v0.19.0
+	golang.org/x/exp v0.0.0-20240205201215-2c58cdc269a3
+	golang.org/x/oauth2 v0.16.0
+	golang.org/x/sys v0.17.0
+	golang.org/x/tools v0.17.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/api v0.155.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240102182953-50ed04b92917
@@ -86,7 +86,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.12.2
 	k8c.io/kubeone v1.7.2
-	k8c.io/operating-system-manager v1.4.1-0.20231210203405-28d391f034d8
+	k8c.io/operating-system-manager v1.5.0
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.29.1
 	k8s.io/apiextensions-apiserver v0.29.1
@@ -96,7 +96,7 @@ require (
 	k8s.io/cli-runtime v0.29.1
 	k8s.io/client-go v0.29.1
 	k8s.io/code-generator v0.29.1
-	k8s.io/klog/v2 v2.110.1
+	k8s.io/klog/v2 v2.120.1
 	k8s.io/kube-aggregator v0.29.1
 	k8s.io/kubectl v0.29.1
 	k8s.io/metrics v0.29.1
@@ -188,7 +188,7 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.2 // indirect
 	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fatih/color v1.15.0 // indirect
@@ -212,7 +212,7 @@ require (
 	github.com/go-openapi/runtime v0.25.0 // indirect
 	github.com/go-openapi/spec v0.20.7 // indirect
 	github.com/go-openapi/strfmt v0.21.3 // indirect
-	github.com/go-openapi/swag v0.22.7 // indirect
+	github.com/go-openapi/swag v0.22.9 // indirect
 	github.com/go-openapi/validate v0.22.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
@@ -272,7 +272,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
@@ -308,7 +307,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.45.0 // indirect
+	github.com/prometheus/common v0.46.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
@@ -356,9 +355,9 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org v0.0.0-20230225012048-214862532bf5 // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
+	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/term v0.16.0 // indirect
+	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
@@ -370,7 +369,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/component-base v0.29.1 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20240105020646-a37d4de58910 // indirect
+	k8s.io/kube-openapi v0.0.0-20240126223410-2919ad4fcfec // indirect
 	k8s.io/kubelet v0.29.1 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.4 // indirect
