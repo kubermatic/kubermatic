@@ -58,15 +58,15 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 		return fmt.Errorf("failed to fetch ApplicationDefinitions: %w", err)
 	}
 
-	sublogger.Infof("Waiting for webhook %q with version %q to become ready", common.WebhookDeploymentName, opt.Versions.Kubermatic)
-	operatorDeploySelector := &appsv1.Deployment{
+	sublogger.Info("Waiting for KKP webhook to become ready…")
+	webhook := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      common.WebhookDeploymentName,
 			Namespace: resources.KubermaticNamespace,
 		},
 	}
-	if err := util.WaitForUpdatedDeployment(ctx, operatorDeploySelector, opt.Versions.Kubermatic, kubeClient, 5*time.Minute); err != nil {
-		return fmt.Errorf("failed waiting for webhook to come ready %w", err)
+	if err := util.WaitForDeploymentRollout(ctx, kubeClient, webhook, opt.Versions.Kubermatic, 5*time.Minute); err != nil {
+		return fmt.Errorf("failed waiting for webhook: %w", err)
 	}
 
 	creators := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{}
