@@ -26,14 +26,20 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -50,6 +56,17 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 	appDefFiles, err := GetAppDefFiles()
 	if err != nil {
 		return fmt.Errorf("failed to fetch ApplicationDefinitions: %w", err)
+	}
+
+	sublogger.Infof("Waiting for webhook %q with version %q to become ready", common.WebhookDeploymentName, opt.Versions.Kubermatic)
+	operatorDeploySelector := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      common.WebhookDeploymentName,
+			Namespace: resources.KubermaticNamespace,
+		},
+	}
+	if err := util.WaitForUpdatedDeployment(ctx, operatorDeploySelector, opt.Versions.Kubermatic, kubeClient, 5*time.Minute); err != nil {
+		return fmt.Errorf("failed waiting for webhook to come ready %w", err)
 	}
 
 	creators := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{}
