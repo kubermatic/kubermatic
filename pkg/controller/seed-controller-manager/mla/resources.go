@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -320,7 +321,7 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 				RunAsUser:    ptr.To[int64](1001),
 				RunAsNonRoot: ptr.To(true),
 			}
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
+
 			// hash for the annotation used to force deployment rollout upon configuration change
 			configHash := sha1.New()
 			configData, err := json.Marshal(settings)
@@ -328,9 +329,14 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 				return nil, fmt.Errorf("failed to encode MLAAdminSetting: %w", err)
 			}
 			configHash.Write(configData)
-			d.Spec.Template.Annotations = map[string]string{
+
+			kubernetes.EnsureLabels(&d.Spec.Template, d.Spec.Selector.MatchLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				configHashAnnotation: fmt.Sprintf("%x", configHash.Sum(nil)),
-			}
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "tmp,docker-entrypoint-d-override",
+			})
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",

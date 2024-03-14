@@ -123,6 +123,8 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				"prometheus.io/scrape": "true",
 				"prometheus.io/path":   "/metrics",
 				"prometheus.io/port":   "8085",
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: resources.ApplicationCacheVolumeName,
 			})
 
 			dep.Spec.Template.Spec.Volumes = volumes

@@ -19,6 +19,7 @@ package gatekeeper
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -84,17 +85,19 @@ var (
 func ControllerDeploymentReconciler(enableMutation bool, imageRewriter registry.ImageRewriter, resourceOverride *corev1.ResourceRequirements) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = controllerName
-			dep.Labels = resources.BaseAppLabels(controllerName, gatekeeperControllerLabels)
+			baseLabels := resources.BaseAppLabels(controllerName, gatekeeperControllerLabels)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
+				MatchLabels: baseLabels,
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, baseLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: auditEmptyDirName,
+			})
 
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = ptr.To[int64](60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
