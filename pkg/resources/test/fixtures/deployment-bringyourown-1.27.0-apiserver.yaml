@@ -15,6 +15,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: audit-log,konnectivity-uds
         prometheus.io/path: /metrics
         prometheus.io/port: "30000"
         prometheus.io/scrape_with_kube_cert: "true"
