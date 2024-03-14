@@ -21,6 +21,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -54,8 +55,6 @@ var (
 func DeploymentReconciler(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.CoreDNSDeploymentName
-			dep.Namespace = metav1.NamespaceSystem
 			dep.Labels = resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(2)
@@ -67,9 +66,15 @@ func DeploymentReconciler(kubernetesVersion *semverlib.Version, replicas *int32,
 			// where coredns is switched from a manifest based addon to a user-cluster-controller-manager resource
 			if dep.Spec.Selector == nil {
 				dep.Spec.Selector = &metav1.LabelSelector{
-					MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
-						map[string]string{"app.kubernetes.io/name": "kube-dns"}),
+					MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName, map[string]string{
+						"app.kubernetes.io/name": "kube-dns",
+					}),
 				}
+			}
+
+			if dep.Spec.Template.ObjectMeta.Labels == nil {
+				// has to be the same as the selector
+				dep.Spec.Template.ObjectMeta.Labels = dep.Spec.Selector.MatchLabels
 			}
 
 			iptr := intstr.FromInt(1)
@@ -81,13 +86,10 @@ func DeploymentReconciler(kubernetesVersion *semverlib.Version, replicas *int32,
 					MaxSurge:       &sptr,
 				},
 			}
-			// has to be the same as the selector
-			if dep.Spec.Template.ObjectMeta.Labels == nil {
-				dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-					Labels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
-						map[string]string{"app.kubernetes.io/name": "kube-dns"}),
-				}
-			}
+
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "tmp",
+			})
 
 			dep.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSDefault

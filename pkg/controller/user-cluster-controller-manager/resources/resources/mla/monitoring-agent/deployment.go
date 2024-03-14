@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -82,7 +83,12 @@ func DeploymentReconciler(overrides *corev1.ResourceRequirements, replicas *int3
 			if replicas != nil {
 				deployment.Spec.Replicas = replicas
 			}
-			deployment.Spec.Template.ObjectMeta.Labels = controllerLabels
+
+			kubernetes.EnsureLabels(&deployment.Spec.Template, controllerLabels)
+			kubernetes.EnsureAnnotations(&deployment.Spec.Template, map[string]string{
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: storageVolumeName,
+			})
+
 			deployment.Spec.Template.Spec.ServiceAccountName = resources.MLAMonitoringAgentServiceAccountName
 			deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:    ptr.To[int64](65534),

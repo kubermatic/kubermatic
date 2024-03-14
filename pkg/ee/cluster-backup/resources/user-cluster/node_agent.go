@@ -27,6 +27,7 @@ package userclusterresources
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -68,19 +69,17 @@ var (
 func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetReconciler) {
 		return DaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-			ds.Namespace = resources.ClusterBackupNamespaceName
 			ds.Labels = resources.BaseAppLabels(DaemonSetName, map[string]string{"component": "velero"})
 
+			podLabels := resources.BaseAppLabels(DaemonSetName, veleroAdditionalLabels)
 			ds.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(DaemonSetName,
-					veleroAdditionalLabels),
+				MatchLabels: podLabels,
 			}
 
-			// has to be the same as the selector
-			ds.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(DaemonSetName,
-					veleroAdditionalLabels),
-			}
+			kubernetes.EnsureLabels(&ds.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&ds.Spec.Template, map[string]string{
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "scratch",
+			})
 
 			ds.Spec.Template.Spec = corev1.PodSpec{
 				Containers: getContainers(),

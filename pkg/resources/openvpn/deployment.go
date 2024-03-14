@@ -112,6 +112,8 @@ func DeploymentReconciler(data openVPNDeploymentReconcilerData) reconciling.Name
 				"prometheus.io/path":   "/metrics",
 				"prometheus.io/port":   fmt.Sprintf("%d", exporterPort),
 				"prometheus.io/scrape": "true",
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "openvpn-status",
 			})
 
 			_, podNet, err := net.ParseCIDR(data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0])
