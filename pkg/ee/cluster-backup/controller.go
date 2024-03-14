@@ -143,6 +143,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if err != nil {
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		return reconcile.Result{}, err
 	}
 
 	return *result, err

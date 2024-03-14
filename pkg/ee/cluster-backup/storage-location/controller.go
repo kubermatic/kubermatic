@@ -33,8 +33,10 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/backupstore"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -48,7 +50,8 @@ import (
 )
 
 const (
-	ControllerName = "cluster-backup-storage-location-controller"
+	ControllerName   = "cluster-backup-storage-location-controller"
+	CleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials"
 )
 
 type reconciler struct {
@@ -88,6 +91,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		log.Debug("ClusterBackupStorageLocation not found")
 		return reconcile.Result{}, nil
 	}
+	if cbsl.DeletionTimestamp != nil {
+		return reconcile.Result{}, r.cleanup(ctx, cbsl)
+	}
 
 	if cbsl.Spec.Provider != "aws" {
 		log.Infow("unsupported provider, skipping..", "provider", cbsl.Spec.Provider)
@@ -100,22 +106,21 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.reconcile(ctx, cbsl)
 	if err != nil {
 		r.recorder.Event(cbsl, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		return reconcile.Result{}, err
 	}
 	return reconcile.Result{}, nil
 }
 
 func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
-	creds := &corev1.Secret{}
-	err := r.Client.Get(ctx,
-		types.NamespacedName{
-			Name:      cbsl.Spec.Credential.Name,
-			Namespace: cbsl.Namespace,
-		},
-		creds,
-	)
+	creds, err := r.getCredentials(ctx, cbsl)
 	if err != nil {
 		return fmt.Errorf("failed to get the credentials secret: %w", err)
 	}
+
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cbsl, CleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to add finalizer: %w", err)
+	}
+
 	store, err := backupstore.NewBackupStore(ctx, cbsl, creds)
 	if err != nil {
 		return fmt.Errorf("failed to create backup store: %w", err)
@@ -153,4 +158,28 @@ func (r *reconciler) updateCBSLStatus(ctx context.Context, cbsl *kubermaticv1.Cl
 		// we patch anyway even if there is no changes because we want to update the LastValidationTime.
 		return r.Client.Status().Patch(ctx, updatedCBSL, ctrlruntimeclient.MergeFrom(cbsl))
 	})
+}
+
+func (r *reconciler) cleanup(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
+	creds, err := r.getCredentials(ctx, cbsl)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return kuberneteshelper.TryRemoveFinalizer(ctx, r.Client, cbsl, CleanupFinalizer)
+		}
+		return fmt.Errorf("failed to get the credentials secret: %w", err)
+	}
+	if err := r.Client.Delete(ctx, creds); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete credentials secret: %w", err)
+	}
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.Client, cbsl, CleanupFinalizer)
+}
+
+func (r *reconciler) getCredentials(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation) (*corev1.Secret, error) {
+	creds := &corev1.Secret{}
+	return creds, r.Client.Get(ctx, types.NamespacedName{
+		Name:      cbsl.Spec.Credential.Name,
+		Namespace: cbsl.Namespace,
+	},
+		creds,
+	)
 }
