@@ -59,6 +59,7 @@ aws-ebs-csi-driver:
 	  --set 'controller.k8sTagClusterId=\{{ "{{ .Cluster.Name }}" }}' \
 	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
+	  --set 'controller.podAnnotations.cluster-autoscaler\.kubernetes\.io/safe-to-evict-local-volumes=socket-dir' \
 	  --api-versions 'policy/v1/PodDisruptionBudget' \
 	  --skip-tests \
 	  >> $(OUTPUT_FILE)

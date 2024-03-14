@@ -590,6 +590,8 @@ spec:
         app.kubernetes.io/version: "1.26.0"
         app.kubernetes.io/component: csi-driver
         app.kubernetes.io/managed-by: Helm
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       nodeSelector:
         kubernetes.io/os: linux
