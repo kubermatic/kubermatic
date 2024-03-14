@@ -25,7 +25,7 @@ hubble:
 	helm repo update
 	cat hubble/_header.txt > $(OUTPUT_FILE)
 	helm template cilium cilium/cilium \
-	  --version 1.12.2 \
+	  --version 1.12.13 \
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)

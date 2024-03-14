@@ -19,7 +19,6 @@
 {{ if or (eq .Cluster.CNIPlugin.Version "v1.12") (hasPrefix "1.13" .Cluster.CNIPlugin.Version) }}
 # NOTE: 1.13 above allows proper uninstallation by the addon-controller by migration to Applications infra for Cilium CNI as of 1.13
 # We rely on KKP webhooks to make sure the migration is allowed only by upgrade from 1.12 to 1.13
-
 ---
 # Source: cilium/templates/hubble-relay/serviceaccount.yaml
 apiVersion: v1
@@ -53,10 +52,10 @@ data:
     cluster-name: default
     peer-service: "hubble-peer.kube-system.svc.cluster.local:443"
     listen-address: :4245
-    dial-timeout: 
-    retry-timeout: 
-    sort-buffer-len-max: 
-    sort-buffer-drain-timeout: 
+    dial-timeout:
+    retry-timeout:
+    sort-buffer-len-max:
+    sort-buffer-drain-timeout:
     tls-client-cert-file: /var/lib/hubble-relay/tls/client.crt
     tls-client-key-file: /var/lib/hubble-relay/tls/client.key
     tls-hubble-server-ca-files: /var/lib/hubble-relay/tls/hubble-server-ca.crt
@@ -210,24 +209,6 @@ spec:
       port: 80
       targetPort: 8081
 ---
-# Source: cilium/templates/hubble/peer-service.yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: hubble-peer
-  namespace: kube-system
-  labels:
-    k8s-app: cilium
-spec:
-  selector:
-    k8s-app: cilium
-  ports:
-  - name: peer-service
-    port: 443
-    protocol: TCP
-    targetPort: 4244
-  internalTrafficPolicy: Local
----
 # Source: cilium/templates/hubble-relay/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -329,6 +310,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp-dir
       labels:
         k8s-app: hubble-ui
     spec:
@@ -348,11 +330,11 @@ spec:
         - name: http
           containerPort: 8081
         volumeMounts:
-          - name: hubble-ui-nginx-conf
-            mountPath: /etc/nginx/conf.d/default.conf
-            subPath: nginx.conf
-          - name: tmp-dir
-            mountPath: /tmp
+        - name: hubble-ui-nginx-conf
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: nginx.conf
+        - name: tmp-dir
+          mountPath: /tmp
         terminationMessagePolicy: FallbackToLogsOnError
       - name: backend
         image: "{{ Image "quay.io/cilium/hubble-ui-backend:v0.11.0@sha256:14c04d11f78da5c363f88592abae8d2ecee3cbe009f443ef11df6ac5f692d839" }}"
@@ -381,7 +363,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: hubble-generate-certs-394f790584
+  name: hubble-generate-certs-c26869f410
   namespace: kube-system
   labels:
     k8s-app: hubble-generate-certs
@@ -458,5 +440,24 @@ spec:
           automountServiceAccountToken: true
           restartPolicy: OnFailure
       ttlSecondsAfterFinished: 1800
+---
+# Source: cilium/templates/hubble/peer-service.yaml
+# NOTE: missing if chart rendered with "agent: false"
+apiVersion: v1
+kind: Service
+metadata:
+  name: hubble-peer
+  namespace: kube-system
+  labels:
+    k8s-app: cilium
+spec:
+  selector:
+    k8s-app: cilium
+  ports:
+  - name: peer-service
+    port: 443
+    protocol: TCP
+    targetPort: 4244
+  internalTrafficPolicy: Local
 {{ end }}
 {{ end }}
