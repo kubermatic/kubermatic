@@ -21,6 +21,7 @@ package vmwareclouddirector
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -116,9 +117,12 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "socket-dir",
+			})
+
 			dep.Spec.Template.Spec.ServiceAccountName = resources.VMwareCloudDirectorCSIServiceAccountName
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {

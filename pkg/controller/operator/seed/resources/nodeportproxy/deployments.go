@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -62,13 +63,14 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 				},
 			}
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Annotations = map[string]string{
-				"prometheus.io/scrape":       "true",
-				"prometheus.io/port":         strconv.Itoa(EnvoyPort),
-				"prometheus.io/metrics_path": "/stats/prometheus",
-				"fluentbit.io/parser":        "json_iso",
-			}
+			kubernetes.EnsureLabels(&d.Spec.Template, d.Spec.Selector.MatchLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
+				"prometheus.io/scrape":                                  "true",
+				"prometheus.io/port":                                    strconv.Itoa(EnvoyPort),
+				"prometheus.io/metrics_path":                            "/stats/prometheus",
+				"fluentbit.io/parser":                                   "json_iso",
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "envoy-config",
+			})
 
 			d.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
 			d.Spec.Template.Spec.ServiceAccountName = ServiceAccountName

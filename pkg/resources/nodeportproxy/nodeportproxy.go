@@ -212,6 +212,11 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 			}
 
 			kubernetes.EnsureLabels(&d.Spec.Template, baseLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: volumeMountNameEnvoyConfig,
+			})
+
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}

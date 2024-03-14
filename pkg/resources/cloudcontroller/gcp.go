@@ -69,6 +69,9 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 			}
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "scratch",
+			})
 
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
 				resources.UserClusterDNSPolicyAndConfig(data)
