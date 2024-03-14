@@ -156,6 +156,10 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update to Kubernetes 1.29 / controller-runtime 0.17.1 ([#13066](https://github.com/kubermatic/kubermatic/pull/13066))
 - Update Vertical Pod Autoscaler to 1.0 ([#12863](https://github.com/kubermatic/kubermatic/pull/12863))
 - Increase the default resources for VPA components to prevent OOMs ([#12887](https://github.com/kubermatic/kubermatic/pull/12887))
+- Update OSM and MC ([#13175](https://github.com/kubermatic/kubermatic/pull/13175))
+    - Update operating-system-manager to [v1.5.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.5.0)
+    - Update machine-controller to [v1.59.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.59.0)
+
 
 
 ### Cleanup
