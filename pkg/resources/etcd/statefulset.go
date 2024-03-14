@@ -115,6 +115,10 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 			}
 
 			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "launcher",
+			})
 
 			etcdEnv := []corev1.EnvVar{
 				{
