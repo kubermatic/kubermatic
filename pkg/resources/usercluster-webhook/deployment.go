@@ -201,11 +201,10 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				},
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.New(resources.UserClusterControllerDeploymentName))
+			d.Spec.Template, err = apiserver.IsRunningWrapper(data, d.Spec.Template, sets.New(resources.UserClusterControllerDeploymentName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
-			d.Spec.Template.Spec = *wrappedPodSpec
 
 			return d, nil
 		}
