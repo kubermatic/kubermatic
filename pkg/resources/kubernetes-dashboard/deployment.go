@@ -57,6 +57,7 @@ const (
 	Namespace     = "kubernetes-dashboard"
 	ContainerPort = 9090
 	AppLabel      = resources.AppLabelKey + "=" + name
+	tmpVolumeName = "tmp-volume"
 )
 
 // kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components.
@@ -90,6 +91,10 @@ func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploym
 			}
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: tmpVolumeName,
+			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -145,7 +150,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 				MountPath: "/etc/kubernetes/kubeconfig",
 				ReadOnly:  true,
 			}, {
-				Name:      "tmp-volume",
+				Name:      tmpVolumeName,
 				MountPath: "/tmp",
 			},
 		},
@@ -169,7 +174,7 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		}, {
-			Name: "tmp-volume",
+			Name: tmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
