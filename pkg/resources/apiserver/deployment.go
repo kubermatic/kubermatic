@@ -97,12 +97,16 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 
 			address := data.Cluster().Status.Address
 
+			// these volumes should not block the autoscaler from evicting the pod
+			safeToEvictVolumes := []string{resources.AuditLogVolumeName, resources.KonnectivityUDS}
+
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Labels: podLabels,
 				Annotations: map[string]string{
-					"prometheus.io/scrape_with_kube_cert": "true",
-					"prometheus.io/path":                  "/metrics",
-					"prometheus.io/port":                  fmt.Sprint(address.Port),
+					"prometheus.io/scrape_with_kube_cert":                   "true",
+					"prometheus.io/path":                                    "/metrics",
+					"prometheus.io/port":                                    fmt.Sprint(address.Port),
+					resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join(safeToEvictVolumes, ","),
 				},
 			}
 
