@@ -17,7 +17,12 @@ limitations under the License.
 package rbac
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 )
@@ -208,5 +213,183 @@ func TestGenerateVerbsForResources(t *testing.T) {
 				t.Fatalf("incorrect verbs were returned, got: %v, want: %v, err: %v", returnedVerbs, test.expectedVerbs, err)
 			}
 		})
+	}
+}
+
+func TestIsAcceptedNamespace(t *testing.T) {
+	tests := []struct {
+		namespace string
+		expected  bool
+	}{
+		{resources.KubermaticNamespace, true},
+		{fmt.Sprintf("%s_namespace", resources.KubeOneNamespacePrefix), true},
+		{"different_namespace", false},
+		{"kubermatic_suffix", false}, // Test for suffix condition
+		{"", false},                  // Test for empty string
+	}
+
+	for _, tc := range tests {
+		actual := isAcceptedNamespace(tc.namespace)
+		if actual != tc.expected {
+			t.Errorf("check(%q) = %v, expected %v", tc.namespace, actual, tc.expected)
+		}
+	}
+}
+
+func TestGenerateVerbsForNamespacedResource(t *testing.T) {
+	tests := []struct {
+		name          string
+		groupName     string
+		resourceKind  string
+		namespace     string
+		expectedVerbs []string
+		wantErr       bool
+	}{
+		// Test successful creation of secrets in project namespaces
+		{
+			name:          "Owner in project namespace (secret)",
+			groupName:     OwnerGroupNamePrefix + "-2wsx3edc",
+			resourceKind:  secretV1Kind,
+			namespace:     resources.KubeOneNamespacePrefix + "my-project",
+			expectedVerbs: []string{"create"},
+			wantErr:       false,
+		},
+		{
+			name:          "Project manager in project namespace (secret)",
+			groupName:     ProjectManagerGroupNamePrefix + "-2wsx3edc",
+			resourceKind:  secretV1Kind,
+			namespace:     resources.KubeOneNamespacePrefix + "your-project",
+			expectedVerbs: []string{"create"},
+			wantErr:       false,
+		},
+		{
+			name:          "Non-owner in project namespace (secret)",
+			groupName:     "other-group",
+			resourceKind:  secretV1Kind,
+			namespace:     resources.KubeOneNamespacePrefix + "other-project",
+			expectedVerbs: nil,
+			wantErr:       false,
+		},
+		// Test successful creation of CBSL in kubermatic namespace
+		{
+			name:          "Owner in kubermatic namespace (CBSL)",
+			groupName:     OwnerGroupNamePrefix + "-2wsx3edc",
+			resourceKind:  kubermaticv1.ClusterBackupStorageLocationKind,
+			namespace:     resources.KubermaticNamespace,
+			expectedVerbs: []string{"create"},
+			wantErr:       false,
+		},
+		{
+			name:          "Editor in kubermatic namespace (CBSL)",
+			groupName:     EditorGroupNamePrefix + "-2wsx3edc",
+			resourceKind:  kubermaticv1.ClusterBackupStorageLocationKind,
+			namespace:     resources.KubermaticNamespace,
+			expectedVerbs: []string{"create"},
+			wantErr:       false,
+		},
+		{
+			name:          "Project manager in kubermatic namespace (CBSL)",
+			groupName:     ProjectManagerGroupNamePrefix + "-2wsx3edc",
+			resourceKind:  kubermaticv1.ClusterBackupStorageLocationKind,
+			namespace:     resources.KubermaticNamespace,
+			expectedVerbs: []string{"create"},
+			wantErr:       false,
+		},
+		// Test denied creation of CBSL in non-kubermatic namespace
+		{
+			name:          "Owner in non-kubermatic namespace (CBSL)",
+			groupName:     OwnerGroupNamePrefix + "-2wsx3edc",
+			resourceKind:  kubermaticv1.ClusterBackupStorageLocationKind,
+			namespace:     "other-namespace",
+			expectedVerbs: nil,
+			wantErr:       true,
+		},
+		// Test unknown group
+		{
+			name:          "Unknown group",
+			groupName:     "unknown-group",
+			resourceKind:  "unknown-kind",
+			namespace:     resources.KubermaticNamespace,
+			expectedVerbs: nil,
+			wantErr:       true,
+		},
+	}
+
+	for _, tc := range tests {
+		actualVerbs, actualError := generateVerbsForNamespacedResource(tc.groupName, tc.resourceKind, tc.namespace)
+		if !reflect.DeepEqual(actualVerbs, tc.expectedVerbs) || (tc.wantErr && actualError == nil) || (!tc.wantErr && actualError != nil) {
+			t.Errorf("Test: %s - generateVerbsForNamespacedResource(%q, %q, %q) = %v, %v; expected %v, wantErr: %v", tc.name, tc.groupName, tc.resourceKind, tc.namespace, actualVerbs, actualError, tc.expectedVerbs, tc.wantErr)
+		}
+	}
+}
+
+func TestGenerateVerbsForNamedResourceInNamespace(t *testing.T) {
+	tests := []struct {
+		name          string
+		groupName     string
+		resourceKind  string
+		namespace     string
+		expectedVerbs []string
+		wantErr       bool
+	}{
+		// Namespace and kind acceptance cases
+		{
+			name:          "Owner can get, update, and delete secrets in saSecretsNamespaceName",
+			groupName:     OwnerGroupNamePrefix + "-group",
+			resourceKind:  secretV1Kind,
+			namespace:     saSecretsNamespaceName,
+			expectedVerbs: []string{"get", "update", "delete"},
+			wantErr:       false,
+		},
+		{
+			name:          "Project Manager can get, update, and delete secrets in KubeOneNamespacePrefix namespace",
+			groupName:     ProjectManagerGroupNamePrefix + "-group",
+			resourceKind:  secretV1Kind,
+			namespace:     resources.KubeOneNamespacePrefix + "some-namespace",
+			expectedVerbs: []string{"get", "update", "delete"},
+			wantErr:       false,
+		},
+		{
+			name:          "Unsupported Namespace for secrets",
+			groupName:     OwnerGroupNamePrefix + "-group",
+			resourceKind:  secretV1Kind,
+			namespace:     "unsupported-namespace",
+			expectedVerbs: nil,
+			wantErr:       true,
+		},
+		{
+			name:          "Unsupported Kind for secrets",
+			groupName:     OwnerGroupNamePrefix + "-group",
+			resourceKind:  "unsupported-kind",
+			namespace:     saSecretsNamespaceName,
+			expectedVerbs: nil,
+			wantErr:       true,
+		},
+
+		// CBSL in KubermaticNamespace
+		{
+			name:          "Owner can fully manage CBSL in KubermaticNamespace",
+			groupName:     OwnerGroupNamePrefix + "-group",
+			resourceKind:  kubermaticv1.ClusterBackupStorageLocationKind,
+			namespace:     resources.KubermaticNamespace,
+			expectedVerbs: []string{"get", "list", "create", "patch", "update", "delete"},
+			wantErr:       false,
+		},
+		// Unknown Group
+		{
+			name:          "Unknown Group",
+			groupName:     "unknown-group",
+			resourceKind:  secretV1Kind,
+			namespace:     resources.KubermaticNamespace,
+			expectedVerbs: nil,
+			wantErr:       false,
+		},
+	}
+
+	for _, tc := range tests {
+		actualVerbs, actualError := generateVerbsForNamedResourceInNamespace(tc.groupName, tc.resourceKind, tc.namespace)
+		if !reflect.DeepEqual(actualVerbs, tc.expectedVerbs) || (tc.wantErr && actualError == nil) || (!tc.wantErr && actualError != nil) {
+			t.Errorf("Test: %s - generateVerbsForNamedResourceInNamespace(%q, %q, %q) = %v, %v; expected %v, wantErr: %v", tc.name, tc.groupName, tc.resourceKind, tc.namespace, actualVerbs, actualError, tc.expectedVerbs, tc.wantErr)
+		}
 	}
 }

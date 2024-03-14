@@ -179,6 +179,31 @@ func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntime
 	}
 }
 
+// VersionLabelModifierFactory adds the version label for Deployments and their corresponding pods.
+func VersionLabelModifierFactory(version string) reconciling.ObjectModifier {
+	return func(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+			obj, err := create(existing)
+			if err != nil {
+				return obj, err
+			}
+
+			deployment, ok := obj.(*appsv1.Deployment)
+			if !ok {
+				return obj, fmt.Errorf("VersionLabelModifier is only implemented for deployments, not %T", obj)
+			}
+
+			if deployment.ObjectMeta.Labels == nil {
+				deployment.ObjectMeta.Labels = make(map[string]string)
+			}
+			deployment.ObjectMeta.Labels[resources.VersionLabel] = version
+			deployment.Spec.Template.Labels[resources.VersionLabel] = version
+
+			return obj, nil
+		}
+	}
+}
+
 func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 	if s.Data == nil {
 		s.Data = make(map[string][]byte)
