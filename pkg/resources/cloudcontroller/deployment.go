@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -28,6 +29,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -93,6 +95,13 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				modified, err := creator(dep)
 				if err != nil {
 					return nil, err
+				}
+
+				baseLabels := resources.BaseAppLabels(name, nil)
+				kubernetes.EnsureLabels(modified, baseLabels)
+
+				modified.Spec.Selector = &metav1.LabelSelector{
+					MatchLabels: baseLabels,
 				}
 
 				containerNames := sets.New(ccmContainerName)

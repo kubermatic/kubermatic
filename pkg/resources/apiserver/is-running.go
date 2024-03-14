@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
@@ -58,18 +58,7 @@ func IsRunningWrapper(data isRunningInitContainerData, specTemplate corev1.PodTe
 
 	// add the temp volume to the list of non-blocking volumes
 	annotation := resources.ClusterAutoscalerSafeToEvictVolumesAnnotation
-	safeVolumes := sets.New(emptyDirVolumeName)
-
-	existing, ok := specTemplate.Annotations[annotation]
-	if ok {
-		parts := strings.Split(existing, ",")
-		safeVolumes.Insert(parts...)
-	}
-
-	if specTemplate.Annotations == nil {
-		specTemplate.Annotations = map[string]string{}
-	}
-	specTemplate.Annotations[annotation] = strings.Join(sets.List(safeVolumes), ",")
+	kubernetes.EnsureAnnotationContains(&specTemplate, annotation, ",", emptyDirVolumeName)
 
 	return specTemplate, nil
 }

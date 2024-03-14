@@ -19,6 +19,7 @@ package kubestatemetrics
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -56,12 +57,12 @@ const (
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.KubeStateMetricsDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.KubeStateMetricsDeploymentName
-			dep.Labels = resources.BaseAppLabels(name, nil)
+			baseLabels := resources.BaseAppLabels(resources.KubeStateMetricsDeploymentName, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil),
+				MatchLabels: baseLabels,
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
@@ -71,14 +72,12 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					// do not specify a port so that Prometheus automatically
-					// scrapes both the metrics and the telemetry endpoints
-					"prometheus.io/scrape": "true",
-				},
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				// do not specify a port so that Prometheus automatically
+				// scrapes both the metrics and the telemetry endpoints
+				"prometheus.io/scrape": "true",
+			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
 

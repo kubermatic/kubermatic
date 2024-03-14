@@ -19,13 +19,13 @@ package cloudcontroller
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
@@ -38,21 +38,14 @@ const (
 func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (name string, create reconciling.DeploymentReconciler) {
 		return AnexiaCCMDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-			deployment.Labels = resources.BaseAppLabels(AnexiaCCMDeploymentName, nil)
 			deployment.Spec.Replicas = resources.Int32(1)
-
-			deployment.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(AnexiaCCMDeploymentName, nil),
-			}
 
 			podLabels, err := data.GetPodTemplateLabels(AnexiaCCMDeploymentName, deployment.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("unable to get pod template labels: %w", err)
 			}
 
-			deployment.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-			}
+			kubernetes.EnsureLabels(&deployment.Spec.Template, podLabels)
 
 			deployment.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)

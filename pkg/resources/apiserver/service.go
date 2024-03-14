@@ -63,9 +63,7 @@ func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL s
 				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
 			}
 
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: name,
-			}
+			se.Spec.Selector = resources.BaseAppLabels(name, nil)
 
 			if len(se.Spec.Ports) == 0 {
 				se.Spec.Ports = []corev1.ServicePort{

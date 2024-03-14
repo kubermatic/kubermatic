@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
@@ -66,8 +67,8 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.ApiserverDeploymentName
-			dep.Labels = resources.BaseAppLabels(name, nil)
+			baseLabels := resources.BaseAppLabels(resources.ApiserverDeploymentName, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
@@ -75,7 +76,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil),
+				MatchLabels: baseLabels,
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			dep.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
@@ -100,15 +101,13 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			// these volumes should not block the autoscaler from evicting the pod
 			safeToEvictVolumes := []string{resources.AuditLogVolumeName, resources.KonnectivityUDS}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					"prometheus.io/scrape_with_kube_cert":                   "true",
-					"prometheus.io/path":                                    "/metrics",
-					"prometheus.io/port":                                    fmt.Sprint(address.Port),
-					resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join(safeToEvictVolumes, ","),
-				},
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/scrape_with_kube_cert":                   "true",
+				"prometheus.io/path":                                    "/metrics",
+				"prometheus.io/port":                                    fmt.Sprint(address.Port),
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join(safeToEvictVolumes, ","),
+			})
 
 			etcdEndpoints := etcd.GetClientEndpoints(data.Cluster().Status.NamespaceName)
 
