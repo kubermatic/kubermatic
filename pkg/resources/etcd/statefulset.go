@@ -25,6 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -93,7 +94,6 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				enableDataCorruptionChecks = true
 			}
 
-			set.Name = resources.EtcdStatefulSetName
 			set.Spec.Replicas = resources.Int32(replicas)
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
@@ -105,17 +105,16 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				MatchLabels: baseLabels,
 			}
 
+			set.Spec.Template.Name = name
+			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+
 			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Name:   name,
-				Labels: podLabels,
-			}
-			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
+			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
 
 			etcdEnv := []corev1.EnvVar{
 				{
@@ -207,9 +206,9 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 					Name:          "peer-tls",
 				})
 
-				set.Spec.Template.ObjectMeta.Annotations = map[string]string{
+				kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
 					resources.EtcdTLSEnabledAnnotation: "",
-				}
+				})
 
 				if enableTLSOnly {
 					etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "PEER_TLS_MODE", Value: "strict"})

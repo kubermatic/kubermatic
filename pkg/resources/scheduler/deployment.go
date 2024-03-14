@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -55,8 +56,8 @@ const (
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.SchedulerDeploymentName
-			dep.Labels = resources.BaseAppLabels(name, nil)
+			baseLabels := resources.BaseAppLabels(name, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			version := data.Cluster().Status.Versions.Scheduler.Semver()
 			flags := []string{
@@ -87,7 +88,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil),
+				MatchLabels: baseLabels,
 			}
 
 			volumes := getVolumes(data.IsKonnectivityEnabled())
@@ -100,16 +101,14 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/path":                  "/metrics",
+				"prometheus.io/scrape_with_kube_cert": "true",
+				"prometheus.io/port":                  "10259",
+			})
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					"prometheus.io/path":                  "/metrics",
-					"prometheus.io/scrape_with_kube_cert": "true",
-					"prometheus.io/port":                  "10259",
-				},
-			}
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {

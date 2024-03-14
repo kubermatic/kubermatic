@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -33,13 +34,11 @@ import (
 func ServiceReconciler() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return resources.UserClusterWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.UserClusterWebhookServiceName
-			se.Labels = resources.BaseAppLabels(resources.UserClusterWebhookServiceName, nil)
+			baseLabels := resources.BaseAppLabels(resources.UserClusterWebhookServiceName, nil)
+			kubernetes.EnsureLabels(se, baseLabels)
 
 			se.Spec.Type = corev1.ServiceTypeClusterIP
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: resources.UserClusterWebhookDeploymentName,
-			}
+			se.Spec.Selector = resources.BaseAppLabels(resources.UserClusterWebhookDeploymentName, nil)
 			se.Spec.Ports = []corev1.ServicePort{
 				{
 					Name:       "seed",

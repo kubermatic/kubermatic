@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -60,12 +61,12 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 				"-namespace", "kube-system",
 			}
 
-			dep.Name = resources.OperatingSystemManagerWebhookDeploymentName
-			dep.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil)
+			baseLabels := resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil),
+				MatchLabels: baseLabels,
 			}
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -78,7 +79,7 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
@@ -176,13 +177,11 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 func ServiceReconciler() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return resources.OperatingSystemManagerWebhookServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.OperatingSystemManagerWebhookServiceName
-			se.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil)
+			baseLabels := resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil)
+			kubernetes.EnsureLabels(se, baseLabels)
 
 			se.Spec.Type = corev1.ServiceTypeClusterIP
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: resources.OperatingSystemManagerWebhookDeploymentName,
-			}
+			se.Spec.Selector = baseLabels
 			se.Spec.Ports = []corev1.ServicePort{
 				{
 					Name:       "webhook-server",
