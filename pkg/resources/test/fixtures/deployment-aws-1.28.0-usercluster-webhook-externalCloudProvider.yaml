@@ -2,6 +2,8 @@
 
 metadata:
   creationTimestamp: null
+  labels:
+    app: usercluster-webhook
   name: usercluster-webhook
   namespace: cluster-de-test-01
 spec:
@@ -13,6 +15,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         fluentbit.io/parser: json_iso
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
