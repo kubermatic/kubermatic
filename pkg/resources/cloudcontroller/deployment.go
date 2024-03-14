@@ -108,11 +108,10 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 					containerNames.Insert(openvpnSidecar.Name)
 				}
 
-				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
+				modified.Spec.Template, err = apiserver.IsRunningWrapper(data, modified.Spec.Template, containerNames)
 				if err != nil {
 					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 				}
-				modified.Spec.Template.Spec = *wrappedPodSpec
 
 				return modified, nil
 			}

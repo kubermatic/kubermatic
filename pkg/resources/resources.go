@@ -441,6 +441,13 @@ const (
 	// TopologyKeyZone defines the topology key for the node's cloud provider zone.
 	TopologyKeyZone = "topology.kubernetes.io/zone"
 
+	// ClusterAutoscalerSafeToEvictVolumesAnnotation is an annotation that contains a comma-separated
+	// list of hostPath/emptyDir volumes that should not block the pod from being evicted by the
+	// cluster-autoscaler.
+	// See https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-types-of-pods-can-prevent-ca-from-removing-a-node
+	// for more information.
+	ClusterAutoscalerSafeToEvictVolumesAnnotation = "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes"
+
 	// MachineCRDName defines the CRD name for machine objects.
 	MachineCRDName = "machines.cluster.k8s.io"
 	// MachineSetCRDName defines the CRD name for machineset objects.
