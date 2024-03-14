@@ -22,6 +22,7 @@
 #  - add KKP CABundle
 #  - load cloud-config
 #  - add NetworkPolicy
+#  - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 #
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -60,6 +61,8 @@ spec:
     metadata:
       labels:
         app: csi-cinder-controllerplugin
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       serviceAccount: csi-cinder-controller-sa
       securityContext:
