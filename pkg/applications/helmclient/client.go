@@ -37,6 +37,7 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/downloader"
+	"helm.sh/helm/v3/pkg/engine"
 	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/release"
@@ -245,6 +246,7 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}, deployOpts DeployOpts, auth AuthSettings) (*release.Release, error) {
 	currentRelease, err := h.actionConfig.Releases.Last(releaseName)
 	if err != nil {
+		h.logger.Debugw("Installing helm release", "release", releaseName)
 		return h.Install(chartLoc, releaseName, values, deployOpts, auth)
 	}
 
@@ -253,16 +255,65 @@ func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values
 		return nil, err
 	}
 
-	newConfig, err := chartutil.CoalesceValues(chart, values)
+	currentValues, err := chartutil.CoalesceValues(currentRelease.Chart, currentRelease.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	if !reflect.DeepEqual(currentRelease.Manifest, newConfig) {
+	newValues, err := chartutil.CoalesceValues(chart, values)
+	if err != nil {
+		return nil, err
+	}
+
+	currentManifests, err := h.renderManifests(currentRelease.Chart, currentValues)
+	if err != nil {
+		return nil, err
+	}
+
+	newManifests, err := h.renderManifests(chart, newValues)
+	if err != nil {
+		return nil, err
+	}
+
+	if !reflect.DeepEqual(chart.AppVersion(), currentRelease.Chart.AppVersion()) && !reflect.DeepEqual(currentValues, newValues) && !reflect.DeepEqual(currentManifests, newManifests) {
+		h.logger.Debugw("detected changes between helm releases, running helm upgrade", "release", releaseName)
 		return h.Upgrade(chartLoc, releaseName, values, deployOpts, auth)
 	}
 
 	return currentRelease, nil
+}
+
+func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values) (string, error) {
+	options := chartutil.ReleaseOptions{
+		Name:      chart.Name(),
+		Namespace: h.targetNamespace,
+		IsUpgrade: true,
+		IsInstall: true,
+	}
+
+	valuesToRender, err := chartutil.ToRenderValues(chart, values, options, nil)
+	if err != nil {
+		return "", err
+	}
+
+	restConfig, err := h.restClientGetter.ToRESTConfig()
+	if err != nil {
+		return "", err
+	}
+
+	engine := engine.New(restConfig)
+	manifests, err := engine.Render(chart, valuesToRender)
+	if err != nil {
+		return "", err
+	}
+
+	// Combine all manifests into a single string.
+	var allManifests strings.Builder
+	for _, manifest := range manifests {
+		allManifests.WriteString(manifest)
+	}
+
+	return allManifests.String(), nil
 }
 
 // Install the chart located at chartLoc into targetNamespace. If the chart was already installed, an error is returned.
