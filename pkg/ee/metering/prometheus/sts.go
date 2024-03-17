@@ -73,7 +73,7 @@ func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv
 				{
 					Name:            Name,
 					Image:           getPrometheusImage(getRegistry),
-					ImagePullPolicy: "IfNotPresent",
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args: []string{
 						fmt.Sprintf("--storage.tsdb.retention.time=%dd", seed.Spec.Metering.RetentionDays),
 						"--config.file=/etc/config/prometheus.yml",
