@@ -891,6 +891,7 @@ spec:
     metadata:
       annotations:
         checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,tmp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -1015,6 +1016,7 @@ spec:
     metadata:
       annotations:
         checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
@@ -1135,6 +1137,7 @@ spec:
     metadata:
       annotations:
         checksum/config: c1c01847f718c05c33ebbe772556d082801a709e80b7b986ec56f5dd1b5fcb48
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,temp
         prometheus.io/port: "3100"
         prometheus.io/scrape: "true"
       labels:
