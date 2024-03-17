@@ -49,6 +49,10 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
 			args = append(args, fmt.Sprintf("--output-prefix=%s", seed.Name))
 
+			if mrc.Format != "" {
+				args = append(args, fmt.Sprintf("--output-format=%s", mrc.Format))
+			}
+
 			if mrc.Monthly {
 				args = append(args, "--last-month")
 			} else {
