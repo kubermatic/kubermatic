@@ -216,3 +216,32 @@ presubmits:
             requests:
               memory: 7Gi
               cpu: 2
+
+  - name: pre-kubermatic-test-build-utility-images
+    decorate: true
+    always_run: false
+    run_if_changed: "(hack/release-sidecar-images.sh|hack/images/|cmd/(alertmanager-authorization-server|http-prober|s3-exporter)/)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-docker-mirror: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.22-node-18-kind-0.22-5
+          command:
+            - "./hack/release-utility-images.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: DRY_RUN
+              value: "true"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 4Gi
+              cpu: 2

@@ -13,6 +13,9 @@
 # limitations under the License.
 
 FROM docker.io/alpine:3.18
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/startup-script/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 RUN apk add --no-cache bash util-linux
 ADD manage-startup-script.sh /

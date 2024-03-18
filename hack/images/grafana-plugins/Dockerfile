@@ -16,7 +16,9 @@
 # so distroless is currently not a choice.
 
 FROM docker.io/alpine:3.18
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/grafana-plugins/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 RUN mkdir -p /plugins
 WORKDIR /plugins

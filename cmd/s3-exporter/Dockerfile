@@ -13,8 +13,10 @@
 # limitations under the License.
 
 FROM gcr.io/distroless/static-debian12
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/s3-exporter/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-COPY ./s3-exporter /usr/local/bin/
+COPY ./_build/s3-exporter /usr/local/bin/
 
 ENTRYPOINT ["s3-exporter"]
