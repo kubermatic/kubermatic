@@ -254,9 +254,8 @@ spec:
 
 func TestValidatorForObject(t *testing.T) {
 	tt := map[string]struct {
-		in           runtime.Object
-		expValidator bool
-		expErr       bool
+		in     runtime.Object
+		expErr bool
 	}{
 		"k8c.io crd": {
 			in: &kubermaticv1.Cluster{
@@ -265,8 +264,6 @@ func TestValidatorForObject(t *testing.T) {
 					Kind:       "Cluster",
 				},
 			},
-			expValidator: true,
-			expErr:       false,
 		},
 		"apps.k8c.io crd": {
 			in: &appskubermaticv1.ApplicationDefinition{
@@ -275,8 +272,6 @@ func TestValidatorForObject(t *testing.T) {
 					Kind:       "ApplicationDefinition",
 				},
 			},
-			expValidator: true,
-			expErr:       false,
 		},
 		"invalid kind": {
 			in: &corev1.Pod{
@@ -285,23 +280,27 @@ func TestValidatorForObject(t *testing.T) {
 					Kind:       "Pod",
 				},
 			},
-			expValidator: false,
-			expErr:       true,
+			expErr: true,
 		},
 	}
 
 	for name, tc := range tt {
 		t.Run(name, func(t *testing.T) {
-			res, err := NewValidatorForObject(tc.in)
-
-			if res != nil {
-				if tc.expValidator && res == nil {
-					t.Errorf("Root Schema is empty, when it should not be")
+			validator, err := NewValidatorForObject(tc.in)
+			if err != nil {
+				if tc.expErr {
+					return
 				}
+
+				t.Fatalf("Received unexpected error: %v", err)
 			}
 
-			if !tc.expErr && err != nil {
-				t.Errorf("Expected error to be nil, but got %q", err)
+			if tc.expErr {
+				t.Fatalf("Should have errored, but got validator: %+v", validator)
+			}
+
+			if validator == nil {
+				t.Fatal("Returned no error, but also no validator.")
 			}
 		})
 	}
