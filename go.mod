@@ -97,7 +97,6 @@ require (
 	k8s.io/cli-runtime v0.29.1
 	k8s.io/client-go v0.29.1
 	k8s.io/code-generator v0.29.1
-	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kube-aggregator v0.29.1
 	k8s.io/kubectl v0.29.1
@@ -378,6 +377,7 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/component-base v0.29.1 // indirect
+	k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240126223410-2919ad4fcfec // indirect
 	k8s.io/kubelet v0.29.1 // indirect
