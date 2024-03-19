@@ -504,9 +504,9 @@ func getSubnetByID(netClient *gophercloud.ServiceClient, id string) (*ossubnets.
 	case 1:
 		return &allSubnets[0], nil
 	case 0:
-		return nil, fmt.Errorf("subnet pool named '%s' not found", id)
+		return nil, fmt.Errorf("subnet with id '%s' not found", id)
 	default:
-		return nil, fmt.Errorf("found %d subnet pools for id '%s', expected exactly one", len(allSubnets), id)
+		return nil, fmt.Errorf("found %d subnet for id '%s', expected exactly one", len(allSubnets), id)
 	}
 }
 
@@ -522,9 +522,9 @@ func getSubnetByName(netClient *gophercloud.ServiceClient, name string) (*ossubn
 	case 1:
 		return &allSubnets[0], nil
 	case 0:
-		return nil, fmt.Errorf("subnet pool named '%s' not found", name)
+		return nil, fmt.Errorf("subnet named '%s' not found", name)
 	default:
-		return nil, fmt.Errorf("found %d subnet pools for id '%s', expected exactly one", len(allSubnets), name)
+		return nil, fmt.Errorf("found %d subnet for name '%s', expected exactly one", len(allSubnets), name)
 	}
 }
 

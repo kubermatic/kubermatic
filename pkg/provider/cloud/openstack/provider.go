@@ -199,28 +199,6 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 	})
 }
 
-// We start by adding the finalizers, note that this is safe because the
-// clean-up is idempotent, if the cluster is deleted when resources associated
-// to the finalizer are not created yet, it does not fail.
-// The reason behind is that we have several controllers adding finalizers
-// to the Cluster resource at the moment, and to avoid race conditions we
-// need to use optimistic locking and return immediately in case of
-// conflicts to retry later.
-func ensureFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers []string, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	var err error
-
-	if len(finalizers) > 0 {
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, finalizers...)
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return cluster, nil
-}
-
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration.
 func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -228,7 +206,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 }
 
 // ReconcileCluster reconcile the cluster resources
-// reconcile network, security group, subnets, routers and attach routers to subnet
+// reconcile network, security group, subnets, routers and attach routers to subnet.
 func (os *Provider) ReconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	return os.reconcileCluster(ctx, cluster, update, true)
 }
@@ -252,7 +230,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 			return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
 		}
 	}
-	//Reconciling the Network
+	// Reconciling the Network
 	if force || cluster.Spec.Cloud.Openstack.Network == "" {
 		cluster, err = reconcileNetwork(ctx, netClient, cluster, update)
 		if err != nil {
@@ -281,7 +259,6 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		}
 	}
 	return cluster, nil
-
 }
 
 func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
@@ -528,6 +505,9 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.RouterID = router.ID
 		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update RouterID in the cluster spec: %w", err)
+		}
 		err = attachSubnetsIfNeeded(netClient, cluster)
 		return cluster, err
 	}
