@@ -44,6 +44,12 @@ dex:
     scheme: "https"
     # if set to "non-existent", no Ingress resource will be created
     class: "nginx"
+    # Map of ingress provider specific annotations for the dex ingress. Values passed through helm tpl engine.
+    # annotations:
+    #   nginx.ingress.kubernetes.io/enable-opentracing: "true"
+    #   nginx.ingress.kubernetes.io/enable-access-log: "true"
+    #   nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    annotations: {}
   expiry:
     signingKeys: "6h"
     idTokens: "24h"
