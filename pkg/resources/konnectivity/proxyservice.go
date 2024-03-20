@@ -33,9 +33,8 @@ import (
 func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return resources.KonnectivityProxyServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: "apiserver", // because konnectivity proxy runs in sidecar in apiserver pod
-			}
+			// because konnectivity proxy runs in sidecar in apiserver pod
+			se.Spec.Selector = resources.BaseAppLabels(resources.ApiserverDeploymentName, nil)
 
 			if se.Annotations == nil {
 				se.Annotations = make(map[string]string)

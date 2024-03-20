@@ -10,13 +10,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: openstack-cloud-controller-manager
+      app: azure-cloud-controller-manager
   strategy: {}
   template:
     metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
       creationTimestamp: null
       labels:
-        app: openstack-cloud-controller-manager
+        app: azure-cloud-controller-manager
         cluster: de-test-01
     spec:
       automountServiceAccountToken: false

@@ -265,6 +265,8 @@ spec:
       annotations:
         "consul.hashicorp.com/connect-inject": "false"
         "consul.hashicorp.com/config-checksum": 0c3eb6ce33226c599419e7286c447e31765e9161fa21076f45af5b3036ae838f
+        "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes": "extra-config"
+        
     spec:
       affinity:
         podAntiAffinity:

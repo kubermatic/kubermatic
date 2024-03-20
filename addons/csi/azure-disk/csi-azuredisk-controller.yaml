@@ -19,6 +19,7 @@
 # - removal of tolerations
 # - set spec.replicas=1 since leader elections are configured
 # - mount cloud-config instead of using host path
+# - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
@@ -53,6 +54,8 @@ spec:
     metadata:
       labels:
         app: csi-azuredisk-controller
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       hostNetwork: true
       serviceAccountName: csi-azuredisk-controller-sa

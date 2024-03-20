@@ -31,6 +31,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: node-agent
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: scratch
     spec:
       containers:
       - name: node-agent

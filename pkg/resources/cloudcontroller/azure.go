@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -28,7 +29,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
@@ -53,22 +53,14 @@ var (
 func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return AzureCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = AzureCCMDeploymentName
-			dep.Labels = resources.BaseAppLabels(AzureCCMDeploymentName, nil)
 			dep.Spec.Replicas = resources.Int32(1)
 
-			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(OpenstackCCMDeploymentName, nil),
-			}
-
-			podLabels, err := data.GetPodTemplateLabels(OpenstackCCMDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(AzureCCMDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
 				return nil, err
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
 				resources.UserClusterDNSPolicyAndConfig(data)

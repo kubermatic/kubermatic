@@ -19,8 +19,8 @@ package kubernetesdashboard
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -50,22 +50,26 @@ const (
 	scraperName      = resources.MetricsScraperDeploymentName
 	scraperImageName = "kubernetesui/metrics-scraper"
 	scraperTag       = "v1.0.8"
+	tmpVolumeName    = "tmp-volume"
 )
 
 // DeploymentReconciler returns the function to create and update the dashboard-metrics-scraper deployment.
 func DeploymentReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return scraperName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = scraperName
-			dep.Labels = resources.BaseAppLabels(scraperName, nil)
-			dep.Namespace = kubernetesdashboard.Namespace
+			baseLabels := resources.BaseAppLabels(scraperName, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
+
 			dep.Spec.Replicas = resources.Int32(2)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(scraperName, nil),
+				MatchLabels: baseLabels,
 			}
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(scraperName, nil),
-			}
+
+			kubernetes.EnsureLabels(&dep.Spec.Template, baseLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: tmpVolumeName,
+			})
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
@@ -98,7 +102,7 @@ func getContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 			Command:         []string{"/metrics-sidecar"},
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name:      "tmp-volume",
+					Name:      tmpVolumeName,
 					MountPath: "/tmp",
 				},
 			},
@@ -121,7 +125,7 @@ func getContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 func getVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "tmp-volume",
+			Name: tmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},

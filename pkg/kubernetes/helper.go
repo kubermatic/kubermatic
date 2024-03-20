@@ -395,6 +395,34 @@ func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
 	o.SetLabels(labels)
 }
 
+func EnsureAnnotations(o metav1.Object, toEnsure map[string]string) {
+	annotations := o.GetAnnotations()
+
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	for key, value := range toEnsure {
+		annotations[key] = value
+	}
+	o.SetAnnotations(annotations)
+}
+
+func EnsureAnnotationContains(o metav1.Object, annotation string, separator string, toEnsure ...string) {
+	values := sets.New[string]()
+
+	existing, ok := o.GetAnnotations()[annotation]
+	if ok {
+		parts := strings.Split(existing, separator)
+		values.Insert(parts...)
+	}
+
+	values.Insert(toEnsure...)
+
+	EnsureAnnotations(o, map[string]string{
+		annotation: strings.Join(sets.List(values), separator),
+	})
+}
+
 type SeedClientMap map[string]ctrlruntimeclient.Client
 
 type SeedVisitorFunc func(seedName string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error

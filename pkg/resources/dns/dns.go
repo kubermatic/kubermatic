@@ -22,6 +22,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -95,12 +96,13 @@ type deploymentReconcilerData interface {
 func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.DNSResolverDeploymentName
-			dep.Labels = resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
+			baseLabels := resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
+
 			dep.Spec.Replicas = resources.Int32(2)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil),
+				MatchLabels: baseLabels,
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
@@ -110,15 +112,12 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 				return nil, fmt.Errorf("failed to get pod labels: %w", err)
 			}
 
-			dep.Spec.Template.ObjectMeta.Labels = podLabels
-
-			if dep.Spec.Template.ObjectMeta.Annotations == nil {
-				dep.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
-			}
-
-			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/scrape"] = "true"
-			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/path"] = "/metrics"
-			dep.Spec.Template.ObjectMeta.Annotations["prometheus.io/port"] = "9253"
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/path":   "/metrics",
+				"prometheus.io/scrape": "true",
+				"prometheus.io/port":   "9253",
+			})
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{

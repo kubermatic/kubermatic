@@ -27,6 +27,7 @@ package userclusterresources
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -44,10 +45,11 @@ const (
 func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return DeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = resources.BaseAppLabels(DeploymentName, nil)
+			baseLabels := resources.BaseAppLabels(DeploymentName, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(DeploymentName, nil),
+				MatchLabels: baseLabels,
 			}
 			dep.Spec.Replicas = resources.Int32(1)
 
@@ -56,14 +58,13 @@ func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 			volumes := getVolumes()
 			volumeMounts := getVolumeMounts()
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: resources.BaseAppLabels(DeploymentName, nil),
-				Annotations: map[string]string{
-					"prometheus.io/path":   "/metrics",
-					"prometheus.io/port":   "8085",
-					"prometheus.io/scrape": "true",
-				},
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, baseLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/path":   "/metrics",
+				"prometheus.io/port":   "8085",
+				"prometheus.io/scrape": "true",
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "plugins,scratch",
+			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
