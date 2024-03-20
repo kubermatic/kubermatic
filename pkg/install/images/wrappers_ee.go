@@ -1,0 +1,54 @@
+//go:build ee
+
+/*
+Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package images
+
+import (
+	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
+	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/reconciler/pkg/reconciling"
+
+	appsv1 "k8s.io/api/apps/v1"
+)
+
+// getAdditionalImagesFromReconcilers returns the images used by the reconcilers for Enterprise Edition addons/components.
+func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (images []string, err error) {
+	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
+		kubelb.DeploymentReconciler(templateData),
+		velero.DeploymentReconciler(),
+	}
+
+	for _, createFunc := range deploymentReconcilers {
+		_, creator := createFunc()
+		deployment, err := creator(&appsv1.Deployment{})
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
+	}
+
+	_, creator := velero.DaemonSetReconciler()()
+	daemonset, err := creator(&appsv1.DaemonSet{})
+	if err != nil {
+		return nil, err
+	}
+	images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
+
+	return images, err
+}
