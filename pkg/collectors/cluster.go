@@ -41,6 +41,7 @@ type ClusterCollector struct {
 	clusterCreated *prometheus.Desc
 	clusterDeleted *prometheus.Desc
 	clusterInfo    *prometheus.Desc
+	clusterOwner   *prometheus.Desc
 }
 
 func newClusterCollector(client ctrlruntimeclient.Reader) *ClusterCollector {
@@ -75,6 +76,15 @@ func newClusterCollector(client ctrlruntimeclient.Reader) *ClusterCollector {
 			},
 			nil,
 		),
+		clusterOwner: prometheus.NewDesc(
+			clusterPrefix+"owner",
+			"Synthetic metric that maps clusters to their owners",
+			[]string{
+				"cluster_name",
+				"user",
+			},
+			nil,
+		),
 	}
 }
 
@@ -90,10 +100,23 @@ func (cc ClusterCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect gets called by prometheus to collect the metrics.
 func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
+	ctx := context.Background()
+
 	clusters := &kubermaticv1.ClusterList{}
-	if err := cc.client.List(context.Background(), clusters); err != nil {
+	if err := cc.client.List(ctx, clusters); err != nil {
 		utilruntime.HandleError(fmt.Errorf("failed to list clusters in ClusterCollector: %w", err))
 		return
+	}
+
+	users := &kubermaticv1.UserList{}
+	if err := cc.client.List(ctx, users); err != nil {
+		utilruntime.HandleError(fmt.Errorf("failed to list users in ClusterCollector: %w", err))
+		return
+	}
+
+	userMap := map[string]string{}
+	for _, user := range users.Items {
+		userMap[user.Spec.Email] = user.Name
 	}
 
 	kubernetesLabelSet := sets.New[string]()
@@ -110,11 +133,11 @@ func (cc ClusterCollector) Collect(ch chan<- prometheus.Metric) {
 	}, append([]string{"name"}, prometheusLabels...))
 
 	for _, cluster := range clusters.Items {
-		cc.collectCluster(ch, &cluster, kubernetesLabels, labelsGauge)
+		cc.collectCluster(ch, &cluster, kubernetesLabels, userMap, labelsGauge)
 	}
 }
 
-func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, kubernetesLabels []string, labelsGaugeVec *prometheus.GaugeVec) {
+func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kubermaticv1.Cluster, kubernetesLabels []string, users map[string]string, labelsGaugeVec *prometheus.GaugeVec) {
 	ch <- prometheus.MustNewConstMetric(
 		cc.clusterCreated,
 		prometheus.GaugeValue,
@@ -130,6 +153,26 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 			c.Name,
 		)
 	}
+
+	var clusterOwner string
+	if email := c.Status.UserEmail; email != "" {
+		if userName := users[email]; userName != "" {
+			clusterOwner = userName
+		} else {
+			// For regular users the lookup above should never fail, so including the
+			// e-mail here should not leak PII, but be helpful for automations with
+			// non-existent users.
+			clusterOwner = email
+		}
+	}
+
+	ch <- prometheus.MustNewConstMetric(
+		cc.clusterOwner,
+		prometheus.GaugeValue,
+		1,
+		c.Name,
+		clusterOwner,
+	)
 
 	infoLabels, err := cc.clusterInfoLabels(c)
 	if err != nil {
@@ -155,7 +198,9 @@ func (cc *ClusterCollector) collectCluster(ch chan<- prometheus.Metric, c *kuber
 		}
 	}
 
-	labelsGaugeVec.WithLabelValues(clusterLabels...).Collect(ch)
+	gauge := labelsGaugeVec.WithLabelValues(clusterLabels...)
+	gauge.Set(1)
+	gauge.Collect(ch)
 }
 
 func (cc *ClusterCollector) clusterInfoLabels(cluster *kubermaticv1.Cluster) ([]string, error) {
