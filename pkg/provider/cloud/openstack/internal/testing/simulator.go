@@ -199,7 +199,9 @@ func (s *SecGroupRule) SubResources() []ResourceBuilder {
 	return nil
 }
 
-type Subnet subnets.Subnet
+type Subnet struct {
+	subnets.Subnet
+}
 
 func (s Subnet) GetID() string {
 	return s.ID

@@ -118,7 +118,7 @@ func (os *Provider) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 }
 
 func (os *Provider) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
-	return true
+	return false
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
@@ -245,9 +245,17 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 			return nil, err
 		}
 	}
-	// All machines will live in one dedicated security group.
+	// Reconciling the subnets.All machines will live in one dedicated subnet.
 	if force || cluster.Spec.Cloud.Openstack.SubnetID == "" || cluster.Spec.Cloud.Openstack.IPv6SubnetID == "" {
-		cluster, err = reconcileSubnet(ctx, netClient, cluster, update, os.dc.DNSServers)
+		network, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network, false)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get network '%s': %w", cluster.Spec.Cloud.Openstack.Network, err)
+		}
+		cluster, err = reconcileIPv4Subnet(ctx, netClient, cluster, update, network.ID, os.dc.DNSServers)
+		if err != nil {
+			return nil, err
+		}
+		cluster, err = reconcileIPv6Subnet(ctx, netClient, cluster, update, network.ID, os.dc.DNSServers)
 		if err != nil {
 			return nil, err
 		}
@@ -269,7 +277,6 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		existingNetwork, err := getNetworkByName(netClient, networkName, false)
 		if err != nil {
 			if !isNotFoundErr(err) {
-				// If there's an error other than the network not being found, return it
 				return nil, fmt.Errorf("failed to check for existing network: %w", err)
 			}
 		}
@@ -277,24 +284,13 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 			return cluster, nil
 		}
 	}
-	network, err := getNetworkByName(netClient, resourceNamePrefix+cluster.Name, false)
-	if err != nil {
-		if !isNotFoundErr(err) {
-			return nil, fmt.Errorf("failed to check network: %w", err)
-		}
-	} else {
-		if network != nil {
-			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-				cluster.Spec.Cloud.Openstack.Network = network.Name
-			})
-			if err != nil {
-				return nil, fmt.Errorf("failed to update network cluster : %w", err)
-			}
-			return cluster, nil
-		}
+
+	// If NetworkName not specified, Create network with name kubernetes-clusterid
+	if networkName == "" {
+		networkName = cluster.Name
 	}
 
-	newNetwork, err := createKubermaticNetwork(netClient, cluster.Name)
+	newNetwork, err := createKubermaticNetwork(netClient, networkName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the kubermatic network: %w", err)
 	}
@@ -303,7 +299,7 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		cluster.Spec.Cloud.Openstack.Network = newNetwork.Name
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to update network cluster : %w", err)
+		return nil, fmt.Errorf("failed to update network cluster: %w", err)
 	}
 	return cluster, nil
 }
@@ -322,16 +318,10 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 			return cluster, nil
 		}
 	}
-	err := validateSecurityGroupsExist(netClient, []string{resourceNamePrefix + cluster.Name})
-	if err == nil {
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.SecurityGroups = resourceNamePrefix + cluster.Name
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update the kubermatic security group: %w", err)
-		}
-		return cluster, nil
+	if securityGroup == "" {
+		securityGroup = resourceNamePrefix + cluster.Name
 	}
+
 	lowPort, highPort := resources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
 		WithCluster(cluster).
@@ -342,11 +332,11 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
 
 	req := createKubermaticSecurityGroupRequest{
-		clusterName: cluster.Name,
-		ipv4Rules:   ipv4Network,
-		ipv6Rules:   ipv6Network,
-		lowPort:     lowPort,
-		highPort:    highPort,
+		secGroupName: securityGroup,
+		ipv4Rules:    ipv4Network,
+		ipv6Rules:    ipv6Network,
+		lowPort:      lowPort,
+		highPort:     highPort,
 	}
 
 	req.nodePortsCIDRs = resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
@@ -365,21 +355,64 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 	return cluster, nil
 }
 
-func reconcileSubnet(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, dnservers []string) (*kubermaticv1.Cluster, error) {
-	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
+func reconcileIPv6Subnet(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, network string, dnservers []string) (*kubermaticv1.Cluster, error) {
 	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
+	if ipv6Network {
+		if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
+			// The Subnet ID is specified, try to find the subnet by ID
+			_, err := getSubnetByID(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID)
+			if err != nil {
+				if !isNotFoundErr(err) {
+					return nil, fmt.Errorf("failed to get subnet by ID: %w", err)
+				}
+			} else {
+				return cluster, nil
+			}
+		}
 
-	network, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network, false)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get network '%s': %w", cluster.Spec.Cloud.Openstack.Network, err)
+		// Subnet not found by ID, try finding by name
+		subnet, err := getSubnetByName(netClient, resourceNamePrefix+cluster.Name+"-ipv6")
+		if err != nil {
+			if !isNotFoundErr(err) {
+				return nil, fmt.Errorf("failed to get subnet by name: %w", err)
+			}
+		} else {
+			// Subnet found by name, update the cluster spec with the found subnet ID and return
+			// Update the cluster spec with the new subnet ID
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to update IPv6 subnet to the cluster:: %w", err)
+			}
+			return cluster, nil
+		}
+		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
+		// Proceed to create a new subnet
+		subnet, err = createKubermaticIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, dnservers)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create the IPv6 subnet: %w", err)
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kubernetes.AddFinalizer(cluster, IPv6SubnetCleanupFinalizer, RouterIPv6SubnetLinkCleanupFinalizer)
+			cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update IPv6 subnet ID: %w", err)
+		}
 	}
+	return cluster, nil
+}
+
+func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, network string, dnservers []string) (*kubermaticv1.Cluster, error) {
+	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
+
 	if ipv4Network {
 		if cluster.Spec.Cloud.Openstack.SubnetID != "" {
 			// The Subnet ID is specified, try to find the subnet by ID
 			_, err := getSubnetByID(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
 			if err != nil {
 				if !isNotFoundErr(err) {
-					// An error other than "not found", return it
 					return nil, fmt.Errorf("failed to get subnet by ID: %w", err)
 				}
 			} else {
@@ -392,10 +425,8 @@ func reconcileSubnet(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		subnet, err := getSubnetByName(netClient, resourceNamePrefix+cluster.Name)
 		if err != nil {
 			if !isNotFoundErr(err) {
-				// An error other than "not found", return it
 				return nil, fmt.Errorf("failed to get subnet by name: %w", err)
 			}
-			// Subnet not found by name, proceed to create a new subnet
 		} else {
 			// Subnet found by name, update the cluster spec with the found subnet ID and return
 			// Update the cluster spec with the new subnet ID
@@ -409,7 +440,7 @@ func reconcileSubnet(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createKubermaticSubnet(netClient, cluster.Name, network.ID, dnservers)
+		subnet, err = createKubermaticSubnet(netClient, cluster.Name, network, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic IPv4 subnet: %w", err)
 		}
@@ -422,57 +453,6 @@ func reconcileSubnet(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to update IPv4 subnet to the cluster:: %w", err)
 		}
-		return cluster, nil
-	}
-
-	if ipv6Network {
-		if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
-			// The Subnet ID is specified, try to find the subnet by ID
-			_, err := getSubnetByID(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID)
-			if err != nil {
-				if !isNotFoundErr(err) {
-					// An error other than "not found", return it
-					return nil, fmt.Errorf("failed to get subnet by ID: %w", err)
-				}
-			} else {
-				// Subnet found by ID, no action needed, return the cluster
-				return cluster, nil
-			}
-		}
-
-		// Subnet not found by ID, try finding by name
-		subnet, err := getSubnetByName(netClient, resourceNamePrefix+cluster.Name+"-ipv6")
-		if err != nil {
-			if !isNotFoundErr(err) {
-				// An error other than "not found", return it
-				return nil, fmt.Errorf("failed to get subnet by name: %w", err)
-			}
-			// Subnet not found by name, proceed to create a new subnet
-		} else {
-			// Subnet found by name, update the cluster spec with the found subnet ID and return
-			// Update the cluster spec with the new subnet ID
-			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-				cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
-			})
-			if err != nil {
-				return nil, fmt.Errorf("failed to update IPv4 subnet to the cluster:: %w", err)
-			}
-			return cluster, nil
-		}
-		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
-		// Proceed to create a new subnet
-		subnet, err = createKubermaticIPv6Subnet(netClient, cluster.Name, network.ID, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, dnservers)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create the v6 subnet: %w", err)
-		}
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, IPv6SubnetCleanupFinalizer, RouterIPv6SubnetLinkCleanupFinalizer)
-			cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update v6 subnet ID: %w", err)
-		}
-		return cluster, nil
 	}
 	return cluster, nil
 }
@@ -496,7 +476,6 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 	router, err := getRouterByName(netClient, resourceNamePrefix+cluster.Name)
 	if err != nil {
 		if !isNotFoundErr(err) {
-			// An error other than "not found", return it
 			return nil, fmt.Errorf("failed to get router by name: %w", err)
 		}
 	} else if router != nil {
@@ -559,32 +538,32 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 }
 
 func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster) error {
-	var ipv4Attached, ipv6Attached bool
-
-	// Check if the router is already attached to the IPv4 subnet
+	// Check if the router is already attached to the IPv4 subnet and attach to missing subnet if necessary
 	if cluster.Spec.Cloud.Openstack.SubnetID != "" {
-		router, err := getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
-		ipv4Attached = err == nil && router != ""
-	}
-	// Check if the router is already attached to the IPv6 subnet
-	if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
-		router, err := getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID)
-		ipv6Attached = err == nil && router != ""
-	}
-
-	// Attach to missing subnets if necessary
-	if !ipv4Attached && cluster.Spec.Cloud.Openstack.SubnetID != "" {
-		_, err := attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID)
-		kubernetes.AddFinalizer(cluster, RouterSubnetLinkCleanupFinalizer)
+		err := linkSubnetToRouter(netClient, cluster, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterSubnetLinkCleanupFinalizer)
 		if err != nil {
 			return err
 		}
 	}
 
-	if !ipv6Attached && cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
-		_, err := attachSubnetToRouter(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID)
-		kubernetes.AddFinalizer(cluster, RouterIPv6SubnetLinkCleanupFinalizer)
+	// Check if the router is already attached to the IPv6 subnetand attach to missing subnet if necessary
+	if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
+		err := linkSubnetToRouter(netClient, cluster, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterIPv6SubnetLinkCleanupFinalizer)
+		if err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func linkSubnetToRouter(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, subnetID string, routerID string, finalizer string) error {
+	var ipAttached bool
+	router, err := getRouterIDForSubnet(netClient, subnetID)
+	ipAttached = err == nil && router != ""
+	if !ipAttached {
+		_, err := attachSubnetToRouter(netClient, subnetID, routerID)
+		kubernetes.AddFinalizer(cluster, finalizer)
 		if err != nil {
 			return err
 		}

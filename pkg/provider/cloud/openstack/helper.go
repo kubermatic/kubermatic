@@ -202,7 +202,7 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 }
 
 type createKubermaticSecurityGroupRequest struct {
-	clusterName    string
+	secGroupName   string
 	ipv4Rules      bool
 	ipv6Rules      bool
 	nodePortsCIDRs kubermaticv1.NetworkRanges
@@ -211,8 +211,7 @@ type createKubermaticSecurityGroupRequest struct {
 }
 
 func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
-	secGroupName := resourceNamePrefix + req.clusterName
-	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
+	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: req.secGroupName})
 	if err != nil {
 		return "", fmt.Errorf("failed to get security groups: %w", err)
 	}
@@ -221,7 +220,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 	switch len(secGroups) {
 	case 0:
 		gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
-			Name:        secGroupName,
+			Name:        req.secGroupName,
 			Description: "Contains security rules for the Kubernetes worker nodes",
 		})
 		if gres.Err != nil {
@@ -236,7 +235,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 		securityGroupID = secGroups[0].ID
 	default:
 		return "", fmt.Errorf("there are already %d security groups with name %q, dont know which one to use",
-			len(secGroups), secGroupName)
+			len(secGroups), req.secGroupName)
 	}
 
 	var rules []ossecuritygrouprules.CreateOpts
@@ -351,7 +350,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 		}
 	}
 
-	return secGroupName, nil
+	return req.secGroupName, nil
 }
 
 func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
