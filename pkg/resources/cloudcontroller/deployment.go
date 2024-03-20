@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
@@ -27,6 +28,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -77,6 +79,13 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 					return nil, err
 				}
 
+				baseLabels := resources.BaseAppLabels(name, nil)
+				kubernetes.EnsureLabels(modified, baseLabels)
+
+				modified.Spec.Selector = &metav1.LabelSelector{
+					MatchLabels: baseLabels,
+				}
+
 				containerNames := sets.New(ccmContainerName)
 
 				if !data.IsKonnectivityEnabled() {
@@ -90,11 +99,10 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 					containerNames.Insert(openvpnSidecar.Name)
 				}
 
-				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, modified.Spec.Template.Spec, containerNames)
+				modified.Spec.Template, err = apiserver.IsRunningWrapper(data, modified.Spec.Template, containerNames)
 				if err != nil {
 					return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 				}
-				modified.Spec.Template.Spec = *wrappedPodSpec
 
 				return modified, nil
 			}

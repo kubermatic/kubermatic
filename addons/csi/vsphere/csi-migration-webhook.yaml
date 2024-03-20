@@ -75,6 +75,8 @@ spec:
       labels:
         app: csi-migration-webhook
         role: csi-migration-webhook
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       serviceAccountName: csi-migration-webhook
       containers:

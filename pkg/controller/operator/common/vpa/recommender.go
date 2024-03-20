@@ -27,7 +27,9 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
 )
 
@@ -108,6 +110,19 @@ func RecommenderDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, 
 			}
 
 			return d, nil
+		}
+	}
+}
+
+func RecommenderPDBReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	maxUnavailable := intstr.FromInt(1)
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
+		return RecommenderName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
+			pdb.Spec.MaxUnavailable = &maxUnavailable
+			pdb.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: appPodLabels(RecommenderName),
+			}
+			return pdb, nil
 		}
 	}
 }

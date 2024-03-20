@@ -26,6 +26,8 @@ hubble:
     enabled: true
   ui:
     enabled: true
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp-dir
 
 kubeProxyReplacement: strict
 agent: false

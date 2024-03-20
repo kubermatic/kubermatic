@@ -37,3 +37,10 @@ patches:
             type: RuntimeDefault
     target:
       kind: Deployment
+  - patch: |-
+      - op: add
+        path: /spec/template/metadata/annotations
+        value:
+          cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
+    target:
+      kind: Deployment

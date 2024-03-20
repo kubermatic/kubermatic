@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -202,12 +203,20 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 	volumeMountNameEnvoyConfig := "envoy-config"
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.NodePortProxyEnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Name = resources.NodePortProxyEnvoyDeploymentName
-			d.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
+			baseLabels := resources.BaseAppLabels(envoyAppLabelValue, nil)
+			kubernetes.EnsureLabels(d, baseLabels)
+
 			d.Spec.Replicas = resources.Int32(2)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(envoyAppLabelValue, nil)}
-			d.Spec.Template.Labels = resources.BaseAppLabels(envoyAppLabelValue, nil)
+				MatchLabels: baseLabels,
+			}
+
+			kubernetes.EnsureLabels(&d.Spec.Template, baseLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: volumeMountNameEnvoyConfig,
+			})
+
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
 				{Name: resources.ImagePullSecretName},
 			}

@@ -15,6 +15,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:

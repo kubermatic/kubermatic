@@ -145,6 +145,7 @@ spec:
         prometheus.io/port: "9000"
         prometheus.io/metrics_path: /minio/prometheus/metrics
         kubermatic.io/chart: minio
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: minio-backup
         backup.velero.io/backup-volumes: minio-backup
         pre.hook.backup.velero.io/container: backup
         pre.hook.backup.velero.io/timeout: 60m

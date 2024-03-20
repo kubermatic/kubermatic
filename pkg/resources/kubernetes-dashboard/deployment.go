@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -56,6 +57,7 @@ const (
 	Namespace     = "kubernetes-dashboard"
 	ContainerPort = 9090
 	AppLabel      = resources.AppLabelKey + "=" + name
+	tmpVolumeName = "tmp-volume"
 )
 
 // kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components.
@@ -69,12 +71,12 @@ type kubernetesDashboardData interface {
 func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return name, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = name
-			dep.Labels = resources.BaseAppLabels(name, nil)
+			baseLabels := resources.BaseAppLabels(name, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(2)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil),
+				MatchLabels: baseLabels,
 			}
 
 			volumes := getVolumes()
@@ -88,9 +90,11 @@ func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploym
 				return nil, err
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: tmpVolumeName,
+			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -102,11 +106,10 @@ func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploym
 			}
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, kubermaticv1.AntiAffinityTypePreferred)
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(name))
+			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(name))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
-			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
@@ -147,7 +150,7 @@ func getContainers(data kubernetesDashboardData, existingContainers []corev1.Con
 				MountPath: "/etc/kubernetes/kubeconfig",
 				ReadOnly:  true,
 			}, {
-				Name:      "tmp-volume",
+				Name:      tmpVolumeName,
 				MountPath: "/tmp",
 			},
 		},
@@ -171,7 +174,7 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		}, {
-			Name: "tmp-volume",
+			Name: tmpVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},

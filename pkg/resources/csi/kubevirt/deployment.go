@@ -19,6 +19,7 @@ package kubevirt
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -85,9 +86,13 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					"app": name,
 				},
 			}
-			d.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-			}
+
+			kubernetes.EnsureLabels(&d.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "socket-dir",
+			})
+
 			d.Spec.Template.Spec.DNSPolicy, d.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err

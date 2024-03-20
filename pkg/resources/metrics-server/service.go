@@ -17,6 +17,7 @@ limitations under the License.
 package metricsserver
 
 import (
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -28,11 +29,10 @@ import (
 func ServiceReconciler() reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return resources.MetricsServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.MetricsServerServiceName
-			labels := resources.BaseAppLabels(name, nil)
-			se.Labels = labels
+			baseLabels := resources.BaseAppLabels(name, nil)
+			kubernetes.EnsureLabels(se, baseLabels)
 
-			se.Spec.Selector = labels
+			se.Spec.Selector = baseLabels
 			se.Spec.Ports = []corev1.ServicePort{
 				{
 					Port:       443,
