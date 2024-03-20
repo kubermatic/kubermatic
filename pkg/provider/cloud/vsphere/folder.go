@@ -95,7 +95,7 @@ func deleteVMFolder(ctx context.Context, session *Session, folderPath string) er
 	if err != nil {
 		return fmt.Errorf("failed to trigger folder deletion: %w", err)
 	}
-	if err := task.Wait(ctx); err != nil {
+	if err := task.WaitEx(ctx); err != nil {
 		return fmt.Errorf("failed to wait for deletion of folder: %w", err)
 	}
 

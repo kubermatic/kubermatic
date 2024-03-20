@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
     kubermatic.k8c.io/location: master,seed
   name: userprojectbindings.kubermatic.k8c.io
 spec:
@@ -31,13 +31,24 @@ spec:
       name: v1
       schema:
         openAPIV3Schema:
-          description: UserProjectBinding specifies a binding between a user and a project This resource is used by the user management to manipulate members of the given project.
+          description: |-
+            UserProjectBinding specifies a binding between a user and a project
+            This resource is used by the user management to manipulate members of the given project.
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -45,7 +56,9 @@ spec:
               description: Spec describes a KKP user and project binding.
               properties:
                 group:
-                  description: Group is the user's group, determining their permissions within the project. Must be one of `owners`, `editors`, `viewers` or `projectmanagers`.
+                  description: |-
+                    Group is the user's group, determining their permissions within the project.
+                    Must be one of `owners`, `editors`, `viewers` or `projectmanagers`.
                   type: string
                 projectID:
                   description: ProjectID is the name of the target project.

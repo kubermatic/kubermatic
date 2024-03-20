@@ -487,9 +487,6 @@ func GetContainerRuntime(ctx context.Context,
 		return "", fmt.Errorf("error creating selector requirement: %w", err)
 	}
 	selector := labels.NewSelector().Add(*nodeReq)
-	if err != nil {
-		return "", fmt.Errorf("error converting node label selector to map: %w", err)
-	}
 
 	controlPlaneNode, err := clusterClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{
 		Limit:         1,

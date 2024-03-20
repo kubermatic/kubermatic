@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.13.0
+    controller-gen.kubebuilder.io/version: v0.14.0
     kubermatic.k8c.io/location: master,seed
   name: presets.kubermatic.k8c.io
 spec:
@@ -18,13 +18,25 @@ spec:
     - name: v1
       schema:
         openAPIV3Schema:
-          description: Presets are preconfigured cloud provider credentials that can be applied to new clusters. This frees end users from having to know the actual credentials used for their clusters.
+          description: |-
+            Presets are preconfigured cloud provider credentials that can be applied
+            to new clusters. This frees end users from having to know the actual
+            credentials used for their clusters.
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -41,7 +53,9 @@ spec:
                       description: The client secret corresponding to the given service principal.
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -68,7 +82,9 @@ spec:
                       description: The Access Key Secret used to authenticate against Alibaba.
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -81,7 +97,9 @@ spec:
                   description: Access data for Anexia.
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -99,31 +117,45 @@ spec:
                       description: The Access key ID used to authenticate against AWS.
                       type: string
                     assumeRoleARN:
-                      description: Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+                      description: |-
+                        Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+                        to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
                       type: string
                     assumeRoleExternalID:
-                      description: An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem".
+                      description: |-
+                        An arbitrary string that may be needed when calling the STS AssumeRole API operation.
+                        Using an external ID can help to prevent the "confused deputy problem".
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     instanceProfileName:
-                      description: Instance profile to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      description: |-
+                        Instance profile to use. This can be configured, but if left empty will be
+                        automatically filled in during reconciliation.
                       type: string
                     roleARN:
-                      description: ARN to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      description: |-
+                        ARN to use. This can be configured, but if left empty will be
+                        automatically filled in during reconciliation.
                       type: string
                     routeTableID:
-                      description: Route table to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      description: |-
+                        Route table to use. This can be configured, but if left empty will be
+                        automatically filled in during reconciliation.
                       type: string
                     secretAccessKey:
                       description: The Secret Access Key used to authenticate against AWS.
                       type: string
                     securityGroupID:
-                      description: Security group to use. This can be configured, but if left empty will be automatically filled in during reconciliation.
+                      description: |-
+                        Security group to use. This can be configured, but if left empty will be
+                        automatically filled in during reconciliation.
                       type: string
                     vpcID:
                       description: AWS VPC to use. Must be configured.
@@ -142,7 +174,9 @@ spec:
                       description: The client secret corresponding to the given service principal.
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -154,16 +188,28 @@ spec:
                         - basic
                       type: string
                     resourceGroup:
-                      description: The resource group that will be used to look up and create resources for the cluster in. If set to empty string at cluster creation, a new resource group will be created and this field will be updated to the generated resource group's name.
+                      description: |-
+                        The resource group that will be used to look up and create resources for the cluster in.
+                        If set to empty string at cluster creation, a new resource group will be created and this field will be updated to
+                        the generated resource group's name.
                       type: string
                     routeTable:
-                      description: The name of a route table associated with the subnet referenced by `subnet`. If set to empty string at cluster creation, a new route table will be created and this field will be updated to the generated route table's name. If no subnet is defined at cluster creation, this field should be empty as well.
+                      description: |-
+                        The name of a route table associated with the subnet referenced by `subnet`.
+                        If set to empty string at cluster creation, a new route table will be created and this field will be updated to
+                        the generated route table's name. If no subnet is defined at cluster creation, this field should be empty as well.
                       type: string
                     securityGroup:
-                      description: The name of a security group associated with the subnet referenced by `subnet`. If set to empty string at cluster creation, a new security group will be created and this field will be updated to the generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.
+                      description: |-
+                        The name of a security group associated with the subnet referenced by `subnet`.
+                        If set to empty string at cluster creation, a new security group will be created and this field will be updated to
+                        the generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.
                       type: string
                     subnet:
-                      description: The name of a subnet in the VNet referenced by `vnet`. If set to empty string at cluster creation, a new subnet will be created and this field will be updated to the generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.
+                      description: |-
+                        The name of a subnet in the VNet referenced by `vnet`.
+                        If set to empty string at cluster creation, a new subnet will be created and this field will be updated to
+                        the generated subnet's name. If no VNet is defined at cluster creation, this field should be empty as well.
                       type: string
                     subscriptionID:
                       description: The Azure Subscription used for the user cluster.
@@ -172,10 +218,15 @@ spec:
                       description: The Azure Active Directory Tenant used for the user cluster.
                       type: string
                     vnet:
-                      description: The name of the VNet resource used for setting up networking in. If set to empty string at cluster creation, a new VNet will be created and this field will be updated to the generated VNet's name.
+                      description: |-
+                        The name of the VNet resource used for setting up networking in.
+                        If set to empty string at cluster creation, a new VNet will be created and this field will be updated to
+                        the generated VNet's name.
                       type: string
                     vnetResourceGroup:
-                      description: 'Optional: Defines a second resource group that will be used for VNet related resources instead. If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.'
+                      description: |-
+                        Optional: Defines a second resource group that will be used for VNet related resources instead.
+                        If left empty, NO additional resource group will be created and all VNet related resources use the resource group defined by `resourceGroup`.
                       type: string
                   required:
                     - clientID
@@ -188,7 +239,9 @@ spec:
                   description: Access data for DigitalOcean.
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -206,13 +259,21 @@ spec:
                       description: The Access key ID used to authenticate against AWS.
                       type: string
                     assumeRoleARN:
-                      description: 'Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session. required: false'
+                      description: |-
+                        Defines the ARN for an IAM role that should be assumed when handling resources on AWS. It will be used
+                        to acquire temporary security credentials using an STS AssumeRole API operation whenever creating an AWS session.
+                        required: false
                       type: string
                     assumeRoleExternalID:
-                      description: 'An arbitrary string that may be needed when calling the STS AssumeRole API operation. Using an external ID can help to prevent the "confused deputy problem". required: false'
+                      description: |-
+                        An arbitrary string that may be needed when calling the STS AssumeRole API operation.
+                        Using an external ID can help to prevent the "confused deputy problem".
+                        required: false
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -230,7 +291,9 @@ spec:
                 fake:
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -244,7 +307,9 @@ spec:
                   description: Access data for Google Cloud Platform(GCP).
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -263,7 +328,9 @@ spec:
                   description: Access data for Google Kubernetes Engine(GKE).
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -277,13 +344,19 @@ spec:
                   description: Access data for Hetzner.
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     network:
-                      description: Network is the pre-existing Hetzner network in which the machines are running. While machines can be in multiple networks, a single one must be chosen for the HCloud CCM to work. If this is empty, the network configured on the datacenter will be used.
+                      description: |-
+                        Network is the pre-existing Hetzner network in which the machines are running.
+                        While machines can be in multiple networks, a single one must be chosen for the
+                        HCloud CCM to work.
+                        If this is empty, the network configured on the datacenter will be used.
                       type: string
                     token:
                       description: Token is used to authenticate with the Hetzner API.
@@ -295,7 +368,9 @@ spec:
                   description: Access data for KuberVirt.
                   properties:
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -326,7 +401,9 @@ spec:
                       description: Prism Element Username for CSI driver.
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -335,7 +412,9 @@ spec:
                       description: Password corresponding to the provided user.
                       type: string
                     projectName:
-                      description: 'Optional: Nutanix project to use. If none is given, no project will be used.'
+                      description: |-
+                        Optional: Nutanix project to use. If none is given,
+                        no project will be used.
                       type: string
                     proxyURL:
                       description: 'Optional: To configure a HTTP proxy to access Nutanix Prism Central.'
@@ -356,7 +435,9 @@ spec:
                     applicationCredentialSecret:
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     domain:
                       type: string
@@ -398,7 +479,9 @@ spec:
                     billingCycle:
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -415,7 +498,11 @@ spec:
                     type: string
                   type: array
                 requiredEmails:
-                  description: RequiredEmails is a list of e-mail addresses that this presets should be restricted to. Each item in the list can be either a full e-mail address or just a domain name. This restriction is only enforced in the KKP API.
+                  description: |-
+                    RequiredEmails is a list of e-mail addresses that this presets should
+                    be restricted to. Each item in the list can be either a full e-mail
+                    address or just a domain name. This restriction is only enforced in the
+                    KKP API.
                   items:
                     type: string
                   type: array
@@ -426,7 +513,9 @@ spec:
                       description: The VMware Cloud Director API token.
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
@@ -435,7 +524,9 @@ spec:
                       description: The name of organization to use.
                       type: string
                     ovdcNetwork:
-                      description: 'The name of organizational virtual data center network that will be associated with the VMs and vApp. Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.'
+                      description: |-
+                        The name of organizational virtual data center network that will be associated with the VMs and vApp.
+                        Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.
                       type: string
                     ovdcNetworks:
                       description: OVDCNetworks is the list of organizational virtual data center networks that will be attached to the vApp and can be consumed the VMs.
@@ -459,10 +550,16 @@ spec:
                   description: Access data for vSphere.
                   properties:
                     basePath:
-                      description: BasePath configures a vCenter folder path that KKP will create an individual cluster folder in. If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path, the BasePath part will be appended to the RootPath to construct the full path. For both cases, the full folder structure needs to exist. KKP will only try to create the cluster folder.
+                      description: |-
+                        BasePath configures a vCenter folder path that KKP will create an individual cluster folder in.
+                        If it's an absolute path, the RootPath configured in the datacenter will be ignored. If it is a relative path,
+                        the BasePath part will be appended to the RootPath to construct the full path. For both cases,
+                        the full folder structure needs to exist. KKP will only try to create the cluster folder.
                       type: string
                     datacenter:
-                      description: If datacenter is set, this preset is only applicable to the configured datacenter.
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
                       type: string
                     datastore:
                       description: Datastore to be used for storing virtual machines and as a default for dynamic volume provisioning, it is mutually exclusive with DatastoreCluster.

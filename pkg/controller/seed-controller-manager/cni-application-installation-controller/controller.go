@@ -23,7 +23,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"

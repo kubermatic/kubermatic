@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	"k8s.io/gengo/examples/set-gen/sets"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
