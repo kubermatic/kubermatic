@@ -32,16 +32,37 @@ import (
 func TestClusterLabelsMetric(t *testing.T) {
 	kubermaticFakeClient := fake.
 		NewClientBuilder().
-		WithObjects(&kubermaticv1.Cluster{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "cluster1",
-				Labels: map[string]string{
-					"UPPERCASE":            "123",
-					"is-credential-preset": "true",
-					"project-id":           "my-project",
+		WithObjects(
+			&kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster1",
+					Labels: map[string]string{
+						"UPPERCASE":            "123",
+						"is-credential-preset": "true",
+						"project-id":           "my-project",
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					UserEmail: "test@example.com",
 				},
 			},
-		}).
+			&kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster2",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					UserEmail: "valid-user@example.com",
+				},
+			},
+			&kubermaticv1.User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "username",
+				},
+				Spec: kubermaticv1.UserSpec{
+					Email: "valid-user@example.com",
+				},
+			},
+		).
 		Build()
 
 	registry := prometheus.NewRegistry()
@@ -52,10 +73,22 @@ func TestClusterLabelsMetric(t *testing.T) {
 	expected := `
 # HELP kubermatic_cluster_labels Kubernetes labels on Cluster resources
 # TYPE kubermatic_cluster_labels gauge
-kubermatic_cluster_labels{label_is_credential_preset="true",label_project_id="my-project",label_uppercase="123",name="cluster1"} 0
+kubermatic_cluster_labels{label_is_credential_preset="",label_project_id="",label_uppercase="",name="cluster2"} 1
+kubermatic_cluster_labels{label_is_credential_preset="true",label_project_id="my-project",label_uppercase="123",name="cluster1"} 1
 `
 
 	if err := testutil.CollectAndCompare(registry, strings.NewReader(expected), "kubermatic_cluster_labels"); err != nil {
-		t.Fatal(err)
+		t.Error(err)
+	}
+
+	expected = `
+# HELP kubermatic_cluster_owner Synthetic metric that maps clusters to their owners
+# TYPE kubermatic_cluster_owner gauge
+kubermatic_cluster_owner{cluster_name="cluster1",user="test@example.com"} 1
+kubermatic_cluster_owner{cluster_name="cluster2",user="username"} 1
+`
+
+	if err := testutil.CollectAndCompare(registry, strings.NewReader(expected), "kubermatic_cluster_owner"); err != nil {
+		t.Error(err)
 	}
 }

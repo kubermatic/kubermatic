@@ -159,7 +159,7 @@ func (c *clusterBackupCollector) collectDestination(ctx context.Context, ch chan
 	return nil
 }
 
-func (c *clusterBackupCollector) setMetricsForCluster(ch chan<- prometheus.Metric, destination *kubermaticv1.BackupDestination, allObjects []minio.ObjectInfo, destName string, clusterName string) {
+func (c *clusterBackupCollector) setMetricsForCluster(ch chan<- prometheus.Metric, _ *kubermaticv1.BackupDestination, allObjects []minio.ObjectInfo, destName string, clusterName string) {
 	var clusterObjects []minio.ObjectInfo
 	for _, object := range allObjects {
 		if strings.HasPrefix(object.Key, fmt.Sprintf("%s-", clusterName)) {
