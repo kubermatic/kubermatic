@@ -478,6 +478,13 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 		images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
 	}
 
+	// Add images for Enterprise Edition addons/components.
+	additionalImages, err := getAdditionalImagesFromReconcilers(templateData)
+	if err != nil {
+		return nil, err
+	}
+
+	images = append(images, additionalImages...)
 	return images, nil
 }
 
@@ -637,6 +644,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.VMwareCloudDirectorCSIKubeconfigSecretName,
 		resources.CSICloudConfigSecretName,
 		resources.VMwareCloudDirectorCSISecretName,
+		resources.KubeLBCCMKubeconfigSecretName,
+		resources.KubeLBManagerKubeconfigSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
