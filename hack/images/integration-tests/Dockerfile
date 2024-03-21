@@ -13,7 +13,9 @@
 # limitations under the License.
 
 FROM quay.io/kubermatic/build:go-1.22-node-18-kind-0.22-5
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/integration-tests/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 # envtest binaries are not available for all k8s patch releases, so beware when updating
 ENV KUBE_VERSION=1.29.1

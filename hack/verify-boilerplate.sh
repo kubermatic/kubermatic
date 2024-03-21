@@ -24,6 +24,8 @@ CONTAINERIZE_IMAGE=quay.io/kubermatic-labs/boilerplate:v0.2.0 containerize hack/
 echodate "Checking Kubermatic CE licenses..."
 boilerplate \
   -boilerplates hack/boilerplate/ce \
+  -exclude 'cmd/*/settings.sh' \
+  -exclude 'hack/images/*/settings.sh' \
   -exclude addons/canal/canal.yaml \
   -exclude pkg/controller/seed-controller-manager/addon/testdata/istio \
   -exclude hack/ci/testdata/crdmigration \

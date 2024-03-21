@@ -17,10 +17,26 @@
 set -euo pipefail
 
 cd $(dirname $0)
+source ../lib.sh
 
-REPOSITORY=quay.io/kubermatic/util
-VERSION=2.4.0
-SUFFIX=""
+REPOSITORY="$1"
+source "$REPOSITORY/settings.sh"
 
-docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}${SUFFIX}" .
-docker push "${REPOSITORY}:${VERSION}${SUFFIX}"
+DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
+DRY_RUN=${DRY_RUN:-true}
+IMAGE="$DOCKER_REPO/$REPOSITORY:$TAG"
+HEAD="$(git rev-parse HEAD)"
+
+docker build \
+  --no-cache \
+  --pull \
+  --tag "$IMAGE" \
+  --label "org.opencontainers.image.version=$TAG" \
+  --label "org.opencontainers.image.revision=$HEAD" \
+  "$REPOSITORY"
+
+if $DRY_RUN; then
+  echodate "Set \$DRY_RUN=false to push the image."
+else
+  docker push "$IMAGE"
+fi

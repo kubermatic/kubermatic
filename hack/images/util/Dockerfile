@@ -13,7 +13,9 @@
 # limitations under the License.
 
 FROM docker.io/alpine:3.18
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/util/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
     # https://dl.minio.io/client/mc/release/linux-amd64/
 ENV MC_VERSION=RELEASE.2023-11-20T16-30-59Z \
