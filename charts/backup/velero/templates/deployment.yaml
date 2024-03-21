@@ -33,6 +33,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "8085"
         kubermatic.io/chart: velero
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: plugins,scratch
 {{- with .Values.velero.podAnnotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}

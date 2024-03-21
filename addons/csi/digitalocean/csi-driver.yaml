@@ -19,6 +19,7 @@
 # - add a securityContext
 # - add a dedicated secret for csi driver
 # - StorageClasses and VolumeSnapshotClasses have been moved to the default-storage-class addon
+# - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if eq .Cluster.CloudProviderName "digitalocean" }}
 
@@ -73,6 +74,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: csi-do-plugin
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: csi-do-controller
         role: csi-do

@@ -18,6 +18,7 @@
 # - image source includes registry templating
 # - set replicas=1 (pod has a leader election)
 # - removal of tolerations
+# - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
@@ -52,6 +53,8 @@ spec:
     metadata:
       labels:
         app: csi-azurefile-controller
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       hostNetwork: true  # only required for MSI enabled cluster
       serviceAccountName: csi-azurefile-controller-sa

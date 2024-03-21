@@ -57,6 +57,8 @@ spec:
     metadata:
       labels:
         app: csi-cinder-controllerplugin
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       serviceAccount: csi-cinder-controller-sa
       securityContext:

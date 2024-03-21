@@ -29,6 +29,7 @@ spec:
         app: grafana
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: grafana-storage,grafana-datasources
     spec:
       {{- if .Values.grafana.imagePullSecrets }}
       imagePullSecrets: {{- toYaml .Values.grafana.imagePullSecrets | nindent 8 }}

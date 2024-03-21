@@ -517,6 +517,7 @@ loki-distributed:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
     # -- Labels for table-manager service
     serviceLabels: {}
     # -- Additional CLI args for the table-manager
@@ -812,6 +813,7 @@ loki-distributed:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,temp
     # -- Labels for compactor service
     serviceLabels: {}
     # -- Additional CLI args for the compactor
@@ -878,6 +880,7 @@ loki-distributed:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,tmp
     # -- Labels for ruler service
     serviceLabels: {}
     # -- Additional CLI args for the ruler

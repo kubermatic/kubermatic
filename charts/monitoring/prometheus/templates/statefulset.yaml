@@ -38,6 +38,7 @@ spec:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '9090'
         kubermatic.io/chart: prometheus
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: backup
         {{- if .Values.prometheus.backup.enabled }}
         backup.velero.io/backup-volumes: backup
         pre.hook.backup.velero.io/container: backup

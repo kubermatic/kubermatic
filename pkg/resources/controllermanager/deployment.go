@@ -23,6 +23,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
@@ -60,8 +61,8 @@ const (
 func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.ControllerManagerDeploymentName
-			dep.Labels = resources.BaseAppLabels(name, nil)
+			baseLabels := resources.BaseAppLabels(name, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()
 
@@ -76,7 +77,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, nil),
+				MatchLabels: baseLabels,
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
@@ -102,14 +103,12 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				return nil, err
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					"prometheus.io/path":                  "/metrics",
-					"prometheus.io/scrape_with_kube_cert": "true",
-					"prometheus.io/port":                  "10257",
-				},
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/path":                  "/metrics",
+				"prometheus.io/scrape_with_kube_cert": "true",
+				"prometheus.io/port":                  "10257",
+			})
 
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
@@ -198,11 +197,10 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(name, kubermaticv1.AntiAffinityTypePreferred)
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.New(name))
+			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(name))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
-			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}

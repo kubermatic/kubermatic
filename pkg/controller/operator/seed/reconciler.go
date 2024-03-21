@@ -587,7 +587,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 			vpa.AdmissionControllerDeploymentReconciler(cfg, r.versions),
 		}
 
-		// no ownership because these resources are most likely in a different namespace than Kubermatic
+		// no ownership because these resources are not in the kubermatic namespace
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, client, volumeLabelModifier); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Deployments: %w", err)
 		}
@@ -625,6 +625,19 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *kub
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
+	if cfg.Spec.FeatureGates[features.VerticalPodAutoscaler] {
+		creators = append(creators,
+			vpa.RecommenderPDBReconciler(),
+			vpa.UpdaterPDBReconciler(),
+			vpa.AdmissionControllerPDBReconciler(),
+		)
+
+		// no ownership because these resources are not in the kubermatic namespace
+		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, client); err != nil {
+			return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -657,7 +670,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 			vpa.AdmissionControllerServiceReconciler(),
 		}
 
-		// no ownership because these resources are most likely in a different namespace than Kubermatic
+		// no ownership because these resources are not in the kubermatic namespace
 		if err := reconciling.ReconcileServices(ctx, creators, metav1.NamespaceSystem, client); err != nil {
 			return fmt.Errorf("failed to reconcile VPA Services: %w", err)
 		}

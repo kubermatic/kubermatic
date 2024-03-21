@@ -34,6 +34,7 @@ spec:
       annotations:
         fluentbit.io/parser: json_iso
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha1sum }}
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: shared-config
     spec:
       serviceAccountName: '{{ template "name" .}}'
       {{- if .Values.karma.imagePullSecrets }}

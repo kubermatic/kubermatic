@@ -484,6 +484,8 @@ spec:
       app: gcp-compute-persistent-disk-csi-driver
   template:
     metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: gcp-compute-persistent-disk-csi-driver
     spec:

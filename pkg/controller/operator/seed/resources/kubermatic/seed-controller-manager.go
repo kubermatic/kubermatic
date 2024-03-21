@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -42,17 +43,20 @@ func seedControllerManagerPodLabels() map[string]string {
 func SeedControllerManagerDeploymentReconciler(workerName string, versions kubermatic.Versions, cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			sharedAddonVolume := "addons"
+
 			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: seedControllerManagerPodLabels(),
 			}
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Annotations = map[string]string{
+			kubernetes.EnsureLabels(&d.Spec.Template, d.Spec.Selector.MatchLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
 				"fluentbit.io/parser":  "json_iso",
-			}
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: sharedAddonVolume,
+			})
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
@@ -97,7 +101,6 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				args = append(args, fmt.Sprintf("-machine-controller-image-repository=%s", mcCfg.ImageRepository))
 			}
 
-			sharedAddonVolume := "addons"
 			volumes := []corev1.Volume{
 				{
 					Name: sharedAddonVolume,

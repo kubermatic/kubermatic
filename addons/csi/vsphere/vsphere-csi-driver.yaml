@@ -24,6 +24,7 @@
 #   - remove node selector for operator
 #   - set "improved-volume-topology": "false"
 #   - set "improved-csi-idempotency": "false"
+#   - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "vsphere" }}
@@ -245,6 +246,8 @@ spec:
       labels:
         app: vsphere-csi-controller
         role: vsphere-csi
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       priorityClassName: system-cluster-critical
       affinity:

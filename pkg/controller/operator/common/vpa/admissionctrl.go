@@ -30,6 +30,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	certutil "k8s.io/client-go/util/cert"
@@ -140,6 +141,19 @@ func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfigu
 			}
 
 			return d, nil
+		}
+	}
+}
+
+func AdmissionControllerPDBReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
+	minAvailable := intstr.FromInt(1)
+	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
+		return AdmissionControllerName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
+			pdb.Spec.MinAvailable = &minAvailable
+			pdb.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: appPodLabels(AdmissionControllerName),
+			}
+			return pdb, nil
 		}
 	}
 }

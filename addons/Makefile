@@ -25,7 +25,7 @@ hubble:
 	helm repo update
 	cat hubble/_header.txt > $(OUTPUT_FILE)
 	helm template cilium cilium/cilium \
-	  --version 1.12.2 \
+	  --version 1.12.13 \
 	  --namespace kube-system \
 	  --values values-hubble.yaml \
 	  >> $(OUTPUT_FILE)
@@ -59,6 +59,7 @@ aws-ebs-csi-driver:
 	  --set 'controller.k8sTagClusterId=\{{ .Cluster.Name }}' \
 	  --set 'node.securityContext.seccompProfile.type=RuntimeDefault' \
 	  --set 'controller.securityContext.seccompProfile.type=RuntimeDefault' \
+	  --set 'controller.podAnnotations.cluster-autoscaler\.kubernetes\.io/safe-to-evict-local-volumes=socket-dir' \
 	  --api-versions 'policy/v1/PodDisruptionBudget' \
 	  --skip-tests \
 	  >> $(OUTPUT_FILE)
