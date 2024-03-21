@@ -74,13 +74,11 @@ cluster-autoscaler:
 	mkdir -p cluster-autoscaler
 	cat cluster-autoscaler/_header.txt > $(OUTPUT_FILE)
 	helm --namespace kube-system template cluster-autoscaler autoscaler/cluster-autoscaler \
-	  --version 9.34.1 \
+	  --version 9.36.0 \
 	  --set 'cloudProvider=clusterapi' \
-	  --set 'autoDiscovery.clusterName=\{{ "{{ .Cluster.Name }}" }}' \
+	  --set 'autoDiscovery.labels[0].namespace=kube-system' \
 	  --set 'extraEnv.CAPI_GROUP=cluster.k8s.io' \
 	  --set 'securityContext.seccompProfile.type=RuntimeDefault' \
-	  --set 'tolerations[0].effect=NoSchedule' \
-	  --set 'tolerations[0].key=node-role.kubernetes.io/master' \
 	  >> $(OUTPUT_FILE)
 	cat cluster-autoscaler/_footer.txt >> $(OUTPUT_FILE)
 	./templatify-images.sh $(OUTPUT_FILE)
