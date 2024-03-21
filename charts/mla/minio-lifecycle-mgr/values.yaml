@@ -14,7 +14,7 @@
 lifecycleMgr:
   image:
     repository: docker.io/minio/mc
-    tag: latest
+    tag: RELEASE.2024-03-13T23-51-57Z
     pullPolicy: IfNotPresent
   # list of image pull secret references, e.g.
   # imagePullSecrets:
