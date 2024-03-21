@@ -5,6 +5,28 @@
 - [v2.24.2](#v2242)
 - [v2.24.3](#v2243)
 - [v2.24.4](#v2244)
+- [v2.24.5](#v2245)
+
+## [v2.24.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.5)
+
+### Bugfixes
+
+- Add images for Velero and KubeLB to mirrored images list ([#13198](https://github.com/kubermatic/kubermatic/pull/13198))
+- Exclude `test` folders which contain symlinks that break once the archive is untarred ([#13151](https://github.com/kubermatic/kubermatic/pull/13151))
+- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))
+- Fix a bug where dedicated vSphere credentials were incorrectly being required as mandatory input when editing provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
+- Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
+- Fix missing image registry override for hubble-ui components if Cilium is deployed as System Application ([#13139](https://github.com/kubermatic/kubermatic/pull/13139))
+- Fix: usercluster-controller-manager failed to reconcile cluster with disable CSI drivers ([#13183](https://github.com/kubermatic/kubermatic/pull/13183))
+- Fix Azure loadbalancer-related issues by updating Azure CCM from v1.28.0 to v1.28.5 for the user clusters created with Kubernetes v1.28 ([#13173](https://github.com/kubermatic/kubermatic/pull/13173))
+
+### Chore
+
+- Update to Go 1.21.8 ([#13164](https://github.com/kubermatic/kubermatic/pull/13164), [#6593](https://github.com/kubermatic/dashboard/pull/6593))
+
+### Design
+
+- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13197](https://github.com/kubermatic/kubermatic/pull/13197))
 
 ## [v2.24.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.4)
 
@@ -29,7 +51,7 @@
 ### Updates
 
 - Update metering to v1.1.2, fixing an error when a custom CA bundle is used ([#13013](https://github.com/kubermatic/kubermatic/pull/13013))
-- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1) ([#13082](https://github.com/kubermatic/kubermatic/pull/13082)) 
+- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1) ([#13082](https://github.com/kubermatic/kubermatic/pull/13082))
   - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes.
 - Update go-git. This enables Applications to work with private Azure DevOps Git repositories ([#12995](https://github.com/kubermatic/kubermatic/pull/12995))
 
@@ -41,7 +63,7 @@
 - **ACTION REQUIRED:** User Cluster MLA `cortex` chart has been upgraded to resolve issues for cortex-compactor and improve stability of the User Cluster MLA feature. Few actions are required to be taken to use new upgraded charts ([#12935](https://github.com/kubermatic/kubermatic/pull/12935))
     - Refer to [Upstream helm chart values](https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml) to see the latest default values
     - Some of the values from earlier `values.yaml` are now incompatible with latest version. They are removed in the `values.yaml` in the current chart. But if you had copied the original values.yaml to customize it further, you may see that `kubermatic-installer` will detect such incompatible options and churn out errors and explain that action that needs to be taken.
-    - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block 
+    - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block
 
 ### Updates
 
@@ -139,7 +161,7 @@ This release adds support for [KubeLB](https://docs.kubermatic.com/kubelb/), a c
     - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
     - Removal of `average-available-cpu-cores`, use `average-available-cpu-millicores` instead
   - Namespace reports
-    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead 
+    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
 - Add `monthly` parameter for metering monthly report generation ([#12544](https://github.com/kubermatic/kubermatic/pull/12544))
 - Update metering component to v1.1.1, fixing highly inaccurate data in cluster reports (see [Action Required](#action-required) for more details) ([#12822](https://github.com/kubermatic/kubermatic/pull/12822))
 

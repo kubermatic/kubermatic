@@ -1,6 +1,17 @@
 # Kubermatic 2.25
 
 - [v2.25.0](#v2250)
+- [v2.25.1](#v2251)
+
+## [2.25.1](https://github.com/kubermatic/kubermatic/releases/tag/2.25.1)
+
+### Bugfixes
+
+- Add images for Velero and KubeLB to mirrored images list ([#13192](https://github.com/kubermatic/kubermatic/pull/13192))
+
+### Design
+
+- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13180](https://github.com/kubermatic/kubermatic/pull/13180))
 
 ## [v2.25.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.0)
 
@@ -48,8 +59,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add Support for Kubernetes 1.29 ([#12936](https://github.com/kubermatic/kubermatic/pull/12936))
 - Add support for Kubernetes v1.26.13, v1.27.10, v1.28.6, v1.29.1 ([#12981](https://github.com/kubermatic/kubermatic/pull/12981))
 - Update supported kubernetes versions ([#13079](https://github.com/kubermatic/kubermatic/pull/13079)):
-    - Add 1.29.2/1.28.7/1.27.11 to the list of supported Kubernetes releases. 
-    - Add 1.29 to the list of supported EKS versions. 
+    - Add 1.29.2/1.28.7/1.27.11 to the list of supported Kubernetes releases.
+    - Add 1.29 to the list of supported EKS versions.
     - Add 1.29 / remove 1.26 from the list of supported AKS versions
 - Remove support for Kubernetes 1.26 ([#13032](https://github.com/kubermatic/kubermatic/pull/13032))
 - Remove 1.25 from list of supported versions on AKS (EOL on January 14th) ([#12962](https://github.com/kubermatic/kubermatic/pull/12962))
@@ -70,7 +81,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.5 ([#12909](https://github.com/kubermatic/kubermatic/pull/12909))
     - Fixes leaking LoadBalancer reconciliation metric
-    - Updates various dependencies 
+    - Updates various dependencies
 
 #### GCP/GCE
 
