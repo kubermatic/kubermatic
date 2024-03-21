@@ -19,6 +19,7 @@ package prometheus
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -64,12 +65,12 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 				set = &appsv1.StatefulSet{}
 			}
 
-			set.Name = resources.PrometheusStatefulSetName
-
 			requiredBaseLabels := map[string]string{"cluster": data.Cluster().Name}
-			set.Labels = resources.BaseAppLabels(name, requiredBaseLabels)
+			baseLabels := resources.BaseAppLabels(name, requiredBaseLabels)
+
+			kubernetes.EnsureLabels(set, baseLabels)
 			set.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(name, requiredBaseLabels),
+				MatchLabels: baseLabels,
 			}
 
 			set.Spec.Replicas = resources.Int32(1)
@@ -81,9 +82,12 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-			}
+			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: volumeDataName,
+			})
+
 			set.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
 			set.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				FSGroup:      resources.Int64(2000),

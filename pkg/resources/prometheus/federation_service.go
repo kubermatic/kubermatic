@@ -28,16 +28,15 @@ import (
 func ServiceReconciler(data *resources.TemplateData) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return name, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = name
-			se.Labels = resources.BaseAppLabels(name, nil)
-			// We need to set cluster: user for the ServiceMonitor which federates metrics8
-			se.Labels["cluster"] = "user"
+			se.Labels = resources.BaseAppLabels(name, map[string]string{
+				// We need to set cluster: user for the ServiceMonitor which federates metrics
+				"cluster": "user",
+			})
 
 			se.Spec.ClusterIP = "None"
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: "prometheus",
-				"cluster":             data.Cluster().Name,
-			}
+			se.Spec.Selector = resources.BaseAppLabels("prometheus", map[string]string{
+				"cluster": data.Cluster().Name,
+			})
 			se.Spec.Ports = []corev1.ServicePort{
 				{
 					Name:       "web",

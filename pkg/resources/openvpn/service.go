@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -32,8 +33,8 @@ import (
 func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.OpenVPNServerServiceName
-			se.Labels = resources.BaseAppLabels(name, nil)
+			baseLabels := resources.BaseAppLabels(name, nil)
+			kubernetes.EnsureLabels(se, baseLabels)
 
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
@@ -54,9 +55,7 @@ func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.N
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
 			}
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: name,
-			}
+			se.Spec.Selector = baseLabels
 			if len(se.Spec.Ports) == 0 {
 				se.Spec.Ports = make([]corev1.ServicePort, 1)
 			}

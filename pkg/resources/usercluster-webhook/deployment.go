@@ -21,6 +21,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -62,30 +63,26 @@ type webhookData interface {
 	GetEnvVars() ([]corev1.EnvVar, error)
 }
 
-func webhookPodLabels() map[string]string {
-	return map[string]string{
-		resources.AppLabelKey: resources.UserClusterWebhookDeploymentName,
-	}
-}
-
 // DeploymentReconciler returns the function to create and update the user cluster webhook deployment.
 func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.UserClusterWebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Name = resources.UserClusterWebhookDeploymentName
+			baseLabels := resources.BaseAppLabels(resources.UserClusterWebhookDeploymentName, nil)
+			kubernetes.EnsureLabels(d, baseLabels)
+
 			d.Spec.Replicas = ptr.To[int32](1)
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: webhookPodLabels(),
+				MatchLabels: baseLabels,
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Annotations = map[string]string{
+			kubernetes.EnsureLabels(&d.Spec.Template, baseLabels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8080",
 				"fluentbit.io/parser":  "json_iso",
-			}
+			})
 
 			projectID, ok := data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
 			if !ok {
@@ -201,11 +198,10 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				},
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.New(resources.UserClusterControllerDeploymentName))
+			d.Spec.Template, err = apiserver.IsRunningWrapper(data, d.Spec.Template, sets.New(resources.UserClusterControllerDeploymentName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
-			d.Spec.Template.Spec = *wrappedPodSpec
 
 			return d, nil
 		}

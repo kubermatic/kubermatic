@@ -35,12 +35,12 @@ cortex:
     limits:
       # Note: below defaults were changed by cortex from 0.7.0 to 1.7.0. So not keeping old defaults in upgrade to helm chart v2.1.0
       # enforce_metric_name: false
-      
-      # Note: max_query_lookback is limiting query only till 7 days. This is not needed. We should control storage via retention_period. 
+
+      # Note: max_query_lookback is limiting query only till 7 days. This is not needed. We should control storage via retention_period.
       # Query should be allowed to go back until last of storage.
       # ref: https://github.com/kubermatic/mla/commit/b49e93289fe013452ba4b4134f9da4ef7ef88df1
       # max_query_lookback: 168h
-      
+
       # Note: below were added for HA setup and stability of the cluster in kubermatic setup. So should be kept.
       accept_ha_samples: true
       max_label_names_per_series: 40
@@ -177,6 +177,8 @@ cortex:
             name: minio
             key: rootPassword
   distributor:
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
     extraVolumes:
       - name: cortex-runtime-config
         configMap:
@@ -238,6 +240,8 @@ cortex:
     extraArgs:
       ruler-storage.s3.access-key-id: $(ACCESS_KEY)
       ruler-storage.s3.secret-access-key: $(SECRET_KEY)
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage,tmp
     extraVolumes:
       - name: cortex-runtime-config
         configMap:
@@ -264,6 +268,8 @@ cortex:
     extraArgs:
       blocks-storage.s3.access-key-id: $(ACCESS_KEY)
       blocks-storage.s3.secret-access-key: $(SECRET_KEY)
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
     extraVolumes:
       - name: cortex-runtime-config
         configMap:
@@ -338,18 +344,24 @@ cortex:
         name: "cortex-runtime-config"
   memcached-blocks-index:
     enabled: true
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
     resources:
       requests:
         cpu: 5m
   memcached-blocks:
     enabled: true
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
     resources:
       requests:
         cpu: 5m
   memcached-blocks-metadata:
     enabled: true
+    podAnnotations:
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
     resources:
       requests:

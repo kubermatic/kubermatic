@@ -18,6 +18,7 @@
 # modifications:
 # - seccomp profile in DaemonSet hcloud-csi-node
 # - seccomp profile in Deployment hcloud-csi-controller
+# - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
@@ -313,6 +314,8 @@ spec:
         app.kubernetes.io/instance: hcloud-csi
         app.kubernetes.io/component: controller
         app: hcloud-csi-controller
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
     spec:
       serviceAccountName: hcloud-csi-controller
       securityContext:

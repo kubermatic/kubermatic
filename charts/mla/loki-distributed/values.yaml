@@ -115,6 +115,7 @@ loki-distributed:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
     extraArgs:
       - -s3.access-key-id=$(rootUser)
       - -s3.secret-access-key=$(rootPassword)
@@ -128,6 +129,7 @@ loki-distributed:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,temp
     extraArgs:
       - -s3.access-key-id=$(rootUser)
       - -s3.secret-access-key=$(rootPassword)
@@ -139,6 +141,7 @@ loki-distributed:
     podAnnotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data,tmp
     extraArgs:
       - -ruler.storage.s3.access-key-id=$(rootUser)
       - -ruler.storage.s3.secret-access-key=$(rootPassword)

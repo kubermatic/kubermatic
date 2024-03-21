@@ -26,6 +26,7 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -83,11 +84,10 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 				return nil, err
 			}
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(Name))
+			deployment.Spec.Template, err = apiserver.IsRunningWrapper(data, deployment.Spec.Template, sets.New(Name))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
-			deployment.Spec.Template.Spec = *wrappedPodSpec
 
 			return deployment, nil
 		}
@@ -99,12 +99,12 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = resources.OperatingSystemManagerDeploymentName
-			dep.Labels = resources.BaseAppLabels(Name, nil)
+			baseLabels := resources.BaseAppLabels(Name, nil)
+			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(Name, nil),
+				MatchLabels: baseLabels,
 			}
 
 			volumes := []corev1.Volume{getKubeconfigVolume()}
@@ -115,14 +115,12 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					"prometheus.io/scrape": "true",
-					"prometheus.io/path":   "/metrics",
-					"prometheus.io/port":   "8080",
-				},
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/scrape": "true",
+				"prometheus.io/path":   "/metrics",
+				"prometheus.io/port":   "8080",
+			})
 
 			clusterDNSIP := resources.NodeLocalDNSCacheAddress
 			if !data.NodeLocalDNSCacheEnabled() {

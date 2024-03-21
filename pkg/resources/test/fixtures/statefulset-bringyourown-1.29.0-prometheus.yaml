@@ -16,6 +16,8 @@ spec:
   serviceName: ""
   template:
     metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"

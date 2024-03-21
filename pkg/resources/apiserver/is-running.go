@@ -23,6 +23,7 @@ import (
 
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
@@ -47,7 +48,22 @@ type isRunningInitContainerData interface {
 // then mounting that volume onto all named containers and replacing the command with a call to
 // the `http-prober` binary. The http prober binary gets the original command as serialized string
 // and does an syscall.Exec onto it once the apiserver became reachable.
-func IsRunningWrapper(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.Set[string], crdsToWaitFor ...string) (*corev1.PodSpec, error) {
+func IsRunningWrapper(data isRunningInitContainerData, specTemplate corev1.PodTemplateSpec, containersToWrap sets.Set[string], crdsToWaitFor ...string) (corev1.PodTemplateSpec, error) {
+	updatedSpec, err := wrapPodSpec(data, specTemplate.Spec, containersToWrap, crdsToWaitFor...)
+	if err != nil {
+		return specTemplate, err
+	}
+
+	specTemplate.Spec = *updatedSpec
+
+	// add the temp volume to the list of non-blocking volumes
+	annotation := resources.ClusterAutoscalerSafeToEvictVolumesAnnotation
+	kubernetes.EnsureAnnotationContains(&specTemplate, annotation, ",", emptyDirVolumeName)
+
+	return specTemplate, nil
+}
+
+func wrapPodSpec(data isRunningInitContainerData, spec corev1.PodSpec, containersToWrap sets.Set[string], crdsToWaitFor ...string) (*corev1.PodSpec, error) {
 	if containersToWrap.Len() == 0 {
 		return nil, errors.New("no containers to wrap passed")
 	}

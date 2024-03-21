@@ -19,6 +19,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: openvpn-status
         prometheus.io/path: /metrics
         prometheus.io/port: "9176"
         prometheus.io/scrape: "true"
