@@ -125,7 +125,7 @@ func getSeeds(now metav1.Time) map[string]*kubermaticv1.Seed {
 					Enabled:          true,
 					StorageSize:      "10Gi",
 					StorageClassName: "test",
-					ReportConfigurations: map[string]*kubermaticv1.MeteringReportConfiguration{
+					ReportConfigurations: map[string]kubermaticv1.MeteringReportConfiguration{
 						"weekly-test": {
 							Schedule: "0 1 * * 6",
 							Interval: 7,

@@ -430,7 +430,7 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
-	if mcjr := metering.CronJobReconciler("reportName", &kubermaticv1.MeteringReportConfiguration{}, "caBundleName", templateData.RewriteImage, seed); mcjr != nil {
+	if mcjr := metering.CronJobReconciler("reportName", kubermaticv1.MeteringReportConfiguration{}, "caBundleName", templateData.RewriteImage, seed); mcjr != nil {
 		cronjobReconcilers = append(cronjobReconcilers, mcjr)
 	}
 

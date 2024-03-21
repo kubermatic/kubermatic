@@ -39,10 +39,14 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+func cronJobName(reportName string) string {
+	return "metering-" + reportName
+}
+
 // CronJobReconciler returns the func to create/update the metering report cronjob.
-func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedCronJobReconcilerFactory {
+func CronJobReconciler(reportName string, mrc kubermaticv1.MeteringReportConfiguration, caBundleName string, getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedCronJobReconcilerFactory {
 	return func() (string, reconciling.CronJobReconciler) {
-		return reportName, func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
+		return cronJobName(reportName), func(job *batchv1.CronJob) (*batchv1.CronJob, error) {
 			var args []string
 			args = append(args, fmt.Sprintf("--ca-bundle=%s", "/opt/ca-bundle/ca-bundle.pem"))
 			args = append(args, fmt.Sprintf("--prometheus-api=http://%s.%s.svc", prometheus.Name, seed.Namespace))
