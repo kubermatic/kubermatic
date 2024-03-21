@@ -70,8 +70,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -90,8 +90,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 automountServiceAccountToken: true
@@ -104,8 +104,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
 rules:
   - apiGroups:
@@ -270,8 +270,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -290,8 +290,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 rules:
@@ -320,8 +320,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 roleRef:
@@ -341,8 +341,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -366,8 +366,8 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.28.2"
-    helm.sh/chart: "cluster-autoscaler-9.34.1"
+    app.kubernetes.io/version: "1.29.0"
+    helm.sh/chart: "cluster-autoscaler-9.36.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -393,7 +393,7 @@ spec:
             - ./cluster-autoscaler
             - --cloud-provider=clusterapi
             - --namespace=kube-system
-            - --node-group-auto-discovery=clusterapi:clusterName={{ .Cluster.Name }}
+            - --node-group-auto-discovery=clusterapi:namespace=kube-system
             - --logtostderr=true
             - --stderrthreshold=info
             - --v=4
@@ -418,8 +418,7 @@ spec:
             {}
       serviceAccountName: cluster-autoscaler-clusterapi-cluster-autoscaler
       tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
+        []
       securityContext:
         seccompProfile:
           type: RuntimeDefault
