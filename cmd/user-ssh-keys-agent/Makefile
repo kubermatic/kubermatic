@@ -25,4 +25,4 @@ build:
 
 .PHONY: docker
 docker: build
-	docker build -t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) .
+	docker build --tag $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .

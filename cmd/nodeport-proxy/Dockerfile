@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.18
-LABEL maintainer="support@kubermatic.com"
+FROM docker.io/alpine:3.19
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/nodeport-proxy/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 ADD ./_build/lb-updater /
 ADD ./_build/envoy-manager /

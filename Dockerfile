@@ -12,23 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.18
-LABEL maintainer="support@kubermatic.com"
+FROM docker.io/alpine:3.19
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 
 # To support a wider range of Kubernetes userclusters, we ship multiple
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.29.1/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.29
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.27.10/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.27
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.29.3/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.29
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.27.12/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.27
 
 RUN wget -O- https://get.helm.sh/helm-v3.13.3-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
 # We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
 
-# Do not needless copy all binaries into the image.
+# Do not needless copy all files from _build/ into the image.
 COPY ./_build/kubermatic-operator \
      ./_build/kubermatic-installer \
      ./_build/kubermatic-webhook \

@@ -13,7 +13,9 @@
 # limitations under the License.
 
 FROM gcr.io/distroless/static-debian12
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/user-ssh-keys-agent/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 COPY ./_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
 

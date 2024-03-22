@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export CGO_ENABLED=0
+
 DOCKER_REPO ?= "quay.io/kubermatic"
-GOOS ?= $(shell go env GOOS)
 
 .PHONY: build
 build:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -v -o ./_build/conformance-tester .
+	go build -v -o ./_build/conformance-tester .
 
 .PHONY: docker
 docker: build
-	docker build -t $(DOCKER_REPO)/conformance-tests:$(TAG) .
+	docker build --tag $(DOCKER_REPO)/conformance-tests:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .

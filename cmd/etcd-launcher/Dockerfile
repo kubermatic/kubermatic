@@ -13,6 +13,10 @@
 # limitations under the License.
 
 FROM busybox:1.32.1
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/etcd-launcher/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 COPY ./_build/etcd-launcher /
+
+ENTRYPOINT [ "/etcd-launcher" ]
