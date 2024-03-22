@@ -33,11 +33,6 @@ type caGetter func() (*triple.KeyPair, error)
 func GetClientCertificateReconciler(name, commonName string, organizations []string, dataCertKey, dataKeyKey string, getCA caGetter) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return name, func(se *corev1.Secret) (*corev1.Secret, error) {
-			// TODO: Remove this after the backup controller has been adapter to the new reconciling behaviour
-			if se == nil {
-				se = &corev1.Secret{}
-			}
-
 			ca, err := getCA()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get CA: %w", err)
