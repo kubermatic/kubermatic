@@ -56,7 +56,6 @@ func TLSCertificateReconciler(data tlsCertificateReconcilerData) reconciling.Nam
 			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 				etcdClusterSize = kubermaticv1.MaxEtcdClusterSize
 			}
-			// TODO: make this dynamic based on existing pod count
 			for i := 0; i < etcdClusterSize; i++ {
 				// Member name
 				podName := fmt.Sprintf("etcd-%d", i)
