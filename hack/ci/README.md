@@ -10,28 +10,10 @@ a dummy release in a dedicated GitHub repo. The purpose is to
 * test that releasing code actually works, and
 * to provide test builds for internal purposes.
 
-## deploy-dev-asia.sh
-
-This script is used as a postsubmit job and updates the dev-asia seed
-cluster after every commit to main.
-
 ## deploy-dev.sh
 
 This script is used as a postsubmit job and updates the dev master
 cluster after every commit to main.
-
-## deploy-offline.sh
-
-This script is used as a postsubmit job and updates the offline
-test cluster.
-
-## deploy-run-2-lab-alpha.sh
-
-TBD
-
-## deploy-run-lab-stable.sh
-
-TBD
 
 ## deploy.sh
 
@@ -72,12 +54,6 @@ job to (mostly) ensure that the changes will work.
 This script compiles the KKP binaries and then builds and pushes all
 container images by using `hack/release-images.sh`. It is only
 useful as part of another script to setup KKP for testing.
-
-## run-api-e2e.sh
-
-This script sets up a local KKP installation in kind, deploys a
-couple of test Presets and Users and then runs the e2e tests for the
-API.
 
 ## run-cilium-e2e-test.sh
 
@@ -175,11 +151,6 @@ This serves as the precursor for all other tests.
 This script should be sourced, not called, so callers get the variables
 it sets.
 
-## sync-apiclient.sh
-
-This script is run as a postsubmit to copy the generated API client
-into the github.com/kubermatic/go-kubermatic repository.
-
 ## test-github-release.sh
 
 This script is used for an optional presubmit to test changes to
@@ -194,6 +165,10 @@ For every changed chart in a PR, it tries to find a `test/` directory
 inside the chart and then execute it. The purpose is to run some
 static tests for our Helm charts, as not all of them are tested
 in the conformance tests.
+
+## trivy-scan.sh
+
+TBD
 
 ## update-docs.sh
 
