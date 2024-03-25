@@ -50,7 +50,7 @@ func TestMeteringReconciling(t *testing.T) {
 		configuration   *kubermaticv1.KubermaticConfiguration
 		seedsOnMaster   []string
 		syncedSeeds     sets.Set[string] // seeds where the seed-sync-controller copied the Seed CR over already
-		assertion       func(test *testcase, reconciler *Reconciler) error
+		assertion       func(t *testing.T, test *testcase, reconciler *Reconciler) error
 	}
 
 	tests := []testcase{
@@ -60,7 +60,7 @@ func TestMeteringReconciling(t *testing.T) {
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-metering-config"},
 			syncedSeeds:     sets.New("seed-with-metering-config"),
-			assertion: func(test *testcase, reconciler *Reconciler) error {
+			assertion: func(t *testing.T, test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
@@ -73,7 +73,7 @@ func TestMeteringReconciling(t *testing.T) {
 				seedClient := reconciler.seedClients[test.seedToReconcile]
 
 				cronJob := batchv1.CronJob{}
-				err := seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob)
+				err := seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "metering-weekly-test"}, &cronJob)
 				if err != nil {
 					return fmt.Errorf("failed to find reporting cronjob: %w", err)
 				}
@@ -87,7 +87,7 @@ func TestMeteringReconciling(t *testing.T) {
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-metering-config"},
 			syncedSeeds:     sets.New("seed-with-metering-config"),
-			assertion: func(test *testcase, reconciler *Reconciler) error {
+			assertion: func(t *testing.T, test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				// reconciling to the initial state
@@ -99,13 +99,13 @@ func TestMeteringReconciling(t *testing.T) {
 
 				// asserting that reporting cron job exists
 				cronJob := batchv1.CronJob{}
-				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "metering-weekly-test"}, &cronJob))
 
 				seed := &kubermaticv1.Seed{}
 				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: test.seedToReconcile}, seed))
 
 				// removing reports from metering configuration
-				seed.Spec.Metering.ReportConfigurations = map[string]*kubermaticv1.MeteringReportConfiguration{}
+				seed.Spec.Metering.ReportConfigurations = map[string]kubermaticv1.MeteringReportConfiguration{}
 				must(t, seedClient.Update(ctx, seed))
 
 				// letting the controller clean up
@@ -133,7 +133,7 @@ func TestMeteringReconciling(t *testing.T) {
 			configuration:   &k8cConfig,
 			seedsOnMaster:   []string{"seed-with-metering-config"},
 			syncedSeeds:     sets.New("seed-with-metering-config"),
-			assertion: func(test *testcase, reconciler *Reconciler) error {
+			assertion: func(t *testing.T, test *testcase, reconciler *Reconciler) error {
 				ctx := context.Background()
 
 				// reconciling to the initial state
@@ -145,7 +145,7 @@ func TestMeteringReconciling(t *testing.T) {
 
 				// asserting that reporting cron job exists
 				cronJob := batchv1.CronJob{}
-				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "weekly-test"}, &cronJob))
+				must(t, seedClient.Get(ctx, types.NamespacedName{Namespace: "kubermatic", Name: "metering-weekly-test"}, &cronJob))
 
 				// asserting that metering statefulSet exists
 				statefulSet := appsv1.StatefulSet{}
@@ -194,7 +194,7 @@ func TestMeteringReconciling(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			reconciler := createTestReconciler(allSeeds, test.configuration, test.seedsOnMaster, test.syncedSeeds)
 
-			if err := test.assertion(&test, reconciler); err != nil {
+			if err := test.assertion(t, &test, reconciler); err != nil {
 				t.Fatalf("Failure: %v", err)
 			}
 		})

@@ -4894,18 +4894,9 @@ func (in *MeteringConfiguration) DeepCopyInto(out *MeteringConfiguration) {
 	*out = *in
 	if in.ReportConfigurations != nil {
 		in, out := &in.ReportConfigurations, &out.ReportConfigurations
-		*out = make(map[string]*MeteringReportConfiguration, len(*in))
+		*out = make(map[string]MeteringReportConfiguration, len(*in))
 		for key, val := range *in {
-			var outVal *MeteringReportConfiguration
-			if val == nil {
-				(*out)[key] = nil
-			} else {
-				inVal := (*in)[key]
-				in, out := &inVal, &outVal
-				*out = new(MeteringReportConfiguration)
-				(*in).DeepCopyInto(*out)
-			}
-			(*out)[key] = outVal
+			(*out)[key] = *val.DeepCopy()
 		}
 	}
 }

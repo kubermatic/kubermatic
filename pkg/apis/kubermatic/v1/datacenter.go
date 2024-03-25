@@ -929,7 +929,7 @@ type MeteringConfiguration struct {
 	// +kubebuilder:default:={weekly: {schedule: "0 1 * * 6", interval: 7}}
 
 	// ReportConfigurations is a map of report configuration definitions.
-	ReportConfigurations map[string]*MeteringReportConfiguration `json:"reports,omitempty"`
+	ReportConfigurations map[string]MeteringReportConfiguration `json:"reports,omitempty"`
 }
 
 type MeteringReportConfiguration struct {

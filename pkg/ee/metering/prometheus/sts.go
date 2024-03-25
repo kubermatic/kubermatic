@@ -29,6 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -53,25 +54,19 @@ func getPrometheusImage(overwriter registry.ImageRewriter) string {
 func prometheusStatefulSet(getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) reconciling.NamedStatefulSetReconcilerFactory {
 	return func() (string, reconciling.StatefulSetReconciler) {
 		return Name, func(sts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-			if sts.Labels == nil {
-				sts.Labels = make(map[string]string)
-			}
-			sts.Labels[common.NameLabel] = Name
+			basicLabels := map[string]string{common.NameLabel: Name}
+			kubernetes.EnsureLabels(sts, basicLabels)
 
 			sts.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: map[string]string{common.NameLabel: Name},
+				MatchLabels: basicLabels,
 			}
 			sts.Spec.Replicas = ptr.To[int32](1)
 			sts.Spec.ServiceName = Name + "-headless"
 			sts.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			sts.Spec.PodManagementPolicy = appsv1.OrderedReadyPodManagement
 
-			if sts.Spec.Template.Labels == nil {
-				sts.Spec.Template.Labels = make(map[string]string)
-			}
-
-			sts.Spec.Template.Labels[common.NameLabel] = Name
 			sts.Spec.Template.Name = Name
+			kubernetes.EnsureLabels(&sts.Spec.Template, basicLabels)
 			sts.Spec.Template.Spec.ServiceAccountName = Name
 
 			sts.Spec.Template.Spec.Containers = []corev1.Container{

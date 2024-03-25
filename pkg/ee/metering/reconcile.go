@@ -43,7 +43,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -141,75 +140,67 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 }
 
 // cleanupOrphanedReportingCronJobs compares defined metering reports with existing reporting cronjobs and removes cronjobs with missing report configuration.
-func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, activeReports map[string]*kubermaticv1.MeteringReportConfiguration, namespace string) error {
-	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client, namespace)
+func cleanupOrphanedReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, desiredReports map[string]kubermaticv1.MeteringReportConfiguration, namespace string) error {
+	existingCronJobs, err := fetchExistingReportingCronJobs(ctx, client, namespace)
 	if err != nil {
 		return err
 	}
 
-	existingReportingCronJobNamedMap := make(map[string]batchv1.CronJob, len(existingReportingCronJobs.Items))
-	for _, existingCronJob := range existingReportingCronJobs.Items {
-		existingReportingCronJobNamedMap[existingCronJob.Name] = existingCronJob
+	existingCronJobMap := map[string]batchv1.CronJob{}
+	for i, job := range existingCronJobs {
+		existingCronJobMap[job.Name] = existingCronJobs[i]
 	}
 
-	activeReportsSet := sets.StringKeySet(activeReports)
-	existingReportingCronJobsSet := sets.StringKeySet(existingReportingCronJobNamedMap)
-	orphanedCronJobNames := existingReportingCronJobsSet.Difference(activeReportsSet)
+	desiredCronJobs := sets.NewString()
+	for name := range desiredReports {
+		desiredCronJobs.Insert(cronJobName(name))
+	}
 
-	for cronJobName, existingCronJob := range existingReportingCronJobNamedMap {
-		if orphanedCronJobNames.Has(cronJobName) {
-			policy := metav1.DeletePropagationBackground
-			delOpts := &ctrlruntimeclient.DeleteOptions{
-				PropagationPolicy: &policy,
-			}
-			if err := client.Delete(ctx, &existingCronJob, delOpts); err != nil {
-				return fmt.Errorf("failed to remove an orphaned reporting cronjob (%s): %w", cronJobName, err)
-			}
+	orphanedCronJobNames := sets.StringKeySet(existingCronJobMap).Difference(desiredCronJobs)
+
+	for name := range orphanedCronJobNames {
+		job := existingCronJobMap[name]
+		policy := metav1.DeletePropagationBackground
+		delOpts := &ctrlruntimeclient.DeleteOptions{
+			PropagationPolicy: &policy,
+		}
+		if err := client.Delete(ctx, &job, delOpts); err != nil {
+			return fmt.Errorf("failed to remove an orphaned reporting cronjob (%s): %w", name, err)
 		}
 	}
+
 	return nil
 }
 
 // fetchExistingReportingCronJobs returns a list of all existing reporting cronjobs.
-func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (*batchv1.CronJobList, error) {
-	existingReportingCronJobs := &batchv1.CronJobList{}
+func fetchExistingReportingCronJobs(ctx context.Context, client ctrlruntimeclient.Client, namespace string) ([]batchv1.CronJob, error) {
+	jobs := &batchv1.CronJobList{}
 	listOpts := []ctrlruntimeclient.ListOption{
 		ctrlruntimeclient.InNamespace(namespace),
 		ctrlruntimeclient.ListOption(ctrlruntimeclient.MatchingLabels{common.ComponentLabel: meteringName}),
 	}
-	if err := client.List(ctx, existingReportingCronJobs, listOpts...); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to list reporting cronjobs: %w", err)
-		}
+	if err := client.List(ctx, jobs, listOpts...); err != nil {
+		return nil, fmt.Errorf("failed to list reporting cronjobs: %w", err)
 	}
-	return existingReportingCronJobs, nil
+
+	return jobs.Items, nil
 }
 
 // undeploy removes all metering components expect the pvc used by prometheus.
 func undeploy(ctx context.Context, client ctrlruntimeclient.Client, namespace string) error {
-	var key types.NamespacedName
-
 	existingReportingCronJobs, err := fetchExistingReportingCronJobs(ctx, client, namespace)
 	if err != nil {
 		return err
 	}
 
-	for _, cronJob := range existingReportingCronJobs.Items {
-		key := types.NamespacedName{Namespace: cronJob.Namespace, Name: cronJob.Name}
-		if err := cleanupResource(ctx, client, key, &batchv1.CronJob{}); err != nil {
+	for _, cronJob := range existingReportingCronJobs {
+		if err := cleanupResource(ctx, client, ctrlruntimeclient.ObjectKeyFromObject(&cronJob), &batchv1.CronJob{}); err != nil {
 			return fmt.Errorf("failed to cleanup metering CronJob: %w", err)
 		}
 	}
 
-	key.Namespace = namespace
-	key.Name = SecretName
-
-	if err := cleanupResource(ctx, client, key, &corev1.Secret{}); err != nil {
-		return fmt.Errorf("failed to cleanup metering s3 secret: %w", err)
-	}
-
 	// prometheus resources
-	key.Name = prometheus.Name
+	key := types.NamespacedName{Name: prometheus.Name, Namespace: namespace}
 	if err := cleanupResource(ctx, client, key, &corev1.Service{}); err != nil {
 		return fmt.Errorf("failed to cleanup metering prometheus Service: %w", err)
 	}
@@ -233,14 +224,10 @@ func undeploy(ctx context.Context, client ctrlruntimeclient.Client, namespace st
 }
 
 func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key types.NamespacedName, obj ctrlruntimeclient.Object) error {
-	if err := client.Get(ctx, key, obj); err != nil {
-		if apierrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
+	obj.SetNamespace(key.Namespace)
+	obj.SetName(key.Name)
 
-	return client.Delete(ctx, obj)
+	return ctrlruntimeclient.IgnoreNotFound(client.Delete(ctx, obj))
 }
 
 func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
