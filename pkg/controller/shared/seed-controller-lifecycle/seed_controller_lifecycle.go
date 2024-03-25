@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -98,11 +97,9 @@ func Add(
 	// prepare a shared cache across all future master managers; this cache
 	// will be wrapped so that ctrlruntime cannot start and stop it, which
 	// would cause it to close the same channels multiple times and panic
-	resync := 2 * time.Second
 	cache, err := cache.New(mgr.GetConfig(), cache.Options{
-		Scheme:     mgr.GetScheme(),
-		Mapper:     mgr.GetRESTMapper(),
-		SyncPeriod: &resync,
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
 	})
 	if err != nil {
 		return err
