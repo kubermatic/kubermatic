@@ -41,17 +41,27 @@ metadata:
 data:
   envoy.yaml: |
     admin:
-      access_log_path: /tmp/admin_access.log
       address:
         socket_address:
           protocol: TCP
           address: 127.0.0.1
           port_value: 9901
-      
+
+    # not yet a stable API, but would solve:
+    #    > There is no configured limit to the number of allowed active downstream connections.
+    #    > Configure a limit in `envoy.resource_monitors.downstream_connections` resource monitor.
+    #
+    # overload_manager:
+    #   resource_monitors:
+    #   - name: "envoy.resource_monitors.global_downstream_max_connections"
+    #     typed_config:
+    #       "@type": type.googleapis.com/envoy.extensions.resource_monitors.downstream_connections.v3.DownstreamConnectionsConfig
+    #       max_active_downstream_connections: 100
+
     static_resources:
       listeners:
 
-      ### authorization and path rewiting proxy ###
+      ### authorization and path rewriting proxy ###
       - name: listener_http
         address:
           socket_address:
@@ -61,7 +71,7 @@ data:
         filter_chains:
         - filters:
           - name: envoy.filters.network.http_connection_manager
-            typed_config:  
+            typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
               stat_prefix: ingress_http
               access_log:
@@ -75,7 +85,7 @@ data:
                 - name: local_service
                   domains: ["*"]
                   # Added this to allow per-route filter disabling for healthcheck endpoint
-                  # Ref: https://www.envoyproxy.io/docs/envoy/v1.18.4/configuration/http/http_filters/ext_authz_filter#per-route-configuration
+                  # Ref: https://www.envoyproxy.io/docs/envoy/v1.29.2/configuration/http/http_filters/ext_authz_filter#per-route-configuration
                   typed_per_filter_config:
                     envoy.filters.http.ext_authz:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute
@@ -84,10 +94,9 @@ data:
                           virtual_host: local_service
                   routes:
                   # Added healthcheck route with Authz filter disabled.
-                  # Ref: https://www.envoyproxy.io/docs/envoy/v1.18.4/configuration/http/http_filters/ext_authz_filter#per-route-configuration
+                  # Ref: https://www.envoyproxy.io/docs/envoy/v1.29.2/configuration/http/http_filters/ext_authz_filter#per-route-configuration
                   - match:
                       safe_regex:
-                        google_re2: {}
                         regex: '/ready$'
                     route:
                       cluster: service_backend
@@ -98,24 +107,20 @@ data:
                   # redirect if the path contains only cluster ID without slash (append slash at the end)
                   - match:
                       safe_regex:
-                        google_re2: {}
                         regex: '^/([[:alnum:]]+)$'
                     redirect:
                       regex_rewrite:
                         pattern:
-                          google_re2: {}
                           regex: '^/([[:alnum:]]+)$'
                         substitution: '/\1/'
 
                   # strip tenant ID from the path
                   - match:
                       safe_regex:
-                        google_re2: {}
                         regex: '^/(.+?)/(.*)'
                     route:
                       regex_rewrite:
                         pattern:
-                          google_re2: {}
                           regex: '^/(.+?)/(.*)'
                         substitution: '/api/prom/alertmanager/\2'
                       cluster: service_backend
@@ -132,6 +137,8 @@ data:
                   status_on_error:
                     code: ServiceUnavailable
               - name: envoy.filters.http.router
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
       ### limited access to envoy stats and health ###
       - name: service_stats
@@ -162,6 +169,8 @@ data:
                       cluster: service_stats
               http_filters:
               - name: envoy.filters.http.router
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
 
       clusters:
       - name: service_backend
@@ -182,7 +191,11 @@ data:
       - name: ext-authz
         type: STRICT_DNS
         connect_timeout: 2s
-        http2_protocol_options: {}
+        typed_extension_protocol_options:
+          envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+            "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+            explicit_http_config:
+              http2_protocol_options: {}
         load_assignment:
           cluster_name: ext-authz
           endpoints:
@@ -366,13 +379,24 @@ spec:
         app.kubernetes.io/name: alertmanager-authz-server
     spec:
       serviceAccountName: alertmanager-authz-server
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: authz-server
-          image: 'quay.io/kubermatic/alertmanager-authorization-server:0.3.1'
+          image: 'quay.io/kubermatic/alertmanager-authorization-server:0.3.2'
+          args:
+            - "-address=0.0.0.0:50051"
+            - -log-debug=true
+            - -log-format=json
           ports:
             - containerPort: 50051
-          args:
-            - -log-debug=true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
             limits:
               cpu: 200m
@@ -431,12 +455,18 @@ spec:
         prometheus.io/metrics_path: /stats/prometheus
         prometheus.io/port: "9902"
         prometheus.io/scrape: "true"
+        checksum/envoy-config: 3c0a21b9487766c1666b8cdcf94149009069426e596eb0bafc707d865c3949cb
       labels:
         app.kubernetes.io/name: alertmanager-proxy
     spec:
       containers:
         - name: envoy
-          image: 'docker.io/envoyproxy/envoy:v1.18.3'
+          image: 'docker.io/envoyproxy/envoy:v1.29.2'
+          args:
+            - --config-path
+            - /etc/envoy/envoy.yaml
+            - --log-level
+            - info
           ports:
             - containerPort: 8080
               name: proxy

@@ -45,7 +45,7 @@ spec:
         - name: authz-server
           image: '{{ .Values.alertmanagerProxy.authz.image.repository }}:{{ .Values.alertmanagerProxy.authz.image.tag }}'
           args:
-            - -address={{ .Values.alertmanagerProxy.authz.listenAddress.host }}:{{ .Values.alertmanagerProxy.authz.listenAddress.port }}
+            - "-address={{ .Values.alertmanagerProxy.authz.listenAddress.host }}:{{ .Values.alertmanagerProxy.authz.listenAddress.port }}"
             - -log-debug={{ .Values.alertmanagerProxy.authz.logging.debug }}
             - -log-format={{ .Values.alertmanagerProxy.authz.logging.format }}
           ports:
