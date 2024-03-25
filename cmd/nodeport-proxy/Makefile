@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export CGO_ENABLED=0
+
 DOCKER_REPO ?= "quay.io/kubermatic"
-GOOS ?= $(shell go env GOOS)
 
 .PHONY: lb-updater
 lb-updater:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/lb-updater -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/lb-updater
+	go build -o ./_build/lb-updater -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/lb-updater
 
 .PHONY: envoy-manager
 envoy-manager:
-	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/envoy-manager -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/envoy-manager
+	go build -o ./_build/envoy-manager -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/envoy-manager
 
 .PHONY: build
 build: envoy-manager lb-updater
@@ -32,7 +33,8 @@ clean:
 
 .PHONY: docker
 docker: build
-	docker build -t $(DOCKER_REPO)/nodeport-proxy:$(TAG) .
+	docker build --tag $(DOCKER_REPO)/nodeport-proxy:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .
 
+.PHONY: test
 test:
 	go test ./...

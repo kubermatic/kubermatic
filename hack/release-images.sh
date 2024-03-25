@@ -59,11 +59,12 @@ fi
 
 # build Docker images
 PRIMARY_TAG="${1}"
+VERSION_LABEL="org.opencontainers.image.version=${KUBERMATICDOCKERTAG:-$PRIMARY_TAG}"
 make docker-build TAGS="$PRIMARY_TAG"
 make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
-docker build -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
-docker build -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
-docker build -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile .
+docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
+docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
+docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile .
 
 # switch to a multi platform-enabled builder
 docker buildx create --use
@@ -79,12 +80,13 @@ buildx_build() {
     # --push would support building multiple archs at the same time.
     docker buildx build \
       --load \
-      --platform="linux/$arch" \
-      --build-arg="GOPROXY=${GOPROXY:-}" \
+      --platform "linux/$arch" \
+      --build-arg "GOPROXY=${GOPROXY:-}" \
       --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
       --provenance false \
       --file "$file" \
       --tag "$repository:$tag-$arch" \
+      --label "$VERSION_LABEL" \
       $context
   done
 }

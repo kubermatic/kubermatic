@@ -93,7 +93,7 @@ docker-build: build
 ifndef DOCKER_BIN
 	$(error "Docker not available in your environment, please install it and retry.")
 endif
-	$(DOCKER_BIN) build $(DOCKER_BUILD_FLAG) .
+	$(DOCKER_BIN) build $(DOCKER_BUILD_FLAG) --label "org.opencontainers.image.version=$(KUBERMATICDOCKERTAG)" .
 
 .PHONY: docker-push
 docker-push:

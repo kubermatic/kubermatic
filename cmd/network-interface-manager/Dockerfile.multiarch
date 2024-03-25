@@ -29,7 +29,9 @@ COPY . .
 RUN make -C ./cmd/network-interface-manager build
 
 FROM gcr.io/distroless/static-debian12
-LABEL maintainer="support@kubermatic.com"
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/network-interface-manager/Dockerfile.multiarch"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 COPY --from=builder /go/src/k8c.io/kubermatic/cmd/network-interface-manager/_build/network-interface-manager /usr/local/bin/network-interface-manager
 

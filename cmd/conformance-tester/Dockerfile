@@ -12,16 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.18
-LABEL maintainer="support@kubermatic.com"
-ENV KUBECTL_VERSION=v1.27.6
+FROM docker.io/alpine:3.19
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/conformance-tester/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
+
+ENV KUBECTL_VERSION=v1.28.8
 
 RUN apk add --no-cache -U bash ca-certificates curl jq
 
-RUN curl -Lo /usr/bin/kubectl \
-    https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl && \
-    kubectl version --short --client
+    kubectl version --client
 
 COPY ./_build/conformance-tester /usr/local/bin/conformance-tester
+
 WORKDIR /conformance-tester
+USER nobody
+ENTRYPOINT [ "conformance-tester" ]
