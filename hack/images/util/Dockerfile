@@ -12,28 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.18
+FROM docker.io/alpine:3.19
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/util/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
     # https://dl.minio.io/client/mc/release/linux-amd64/
-ENV MC_VERSION=RELEASE.2023-11-20T16-30-59Z \
-    KUBECTL_VERSION=v1.27.8 \
+ENV MC_VERSION=RELEASE.2024-03-13T23-51-57Z \
+    KUBECTL_VERSION=v1.28.8 \
     # https://github.com/helm/helm/releases
-    HELM_VERSION=v3.13.2 \
+    HELM_VERSION=v3.14.3 \
     # https://github.com/hashicorp/vault/releases
-    VAULT_VERSION=1.15.2 \
+    VAULT_VERSION=1.15.6 \
     # https://github.com/jqlang/jq/releases
-    JQ_VERSION=1.7 \
+    JQ_VERSION=1.7.1 \
     # https://github.com/mikefarah/yq/releases
-    YQ_VERSION=4.40.3
+    YQ_VERSION=4.42.1
 
 # ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
 RUN apk add --no-cache -U \
     bash \
     ca-certificates \
-    'curl>=8.4.0-r0' \
+    curl \
     git \
     iproute2 \
     iptables \
@@ -60,7 +60,7 @@ RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/archi
 
 RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl && \
-    kubectl version --short --client
+    kubectl version --client
 
 RUN curl --fail -L https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz | tar -xzO linux-amd64/helm > /usr/local/bin/helm && \
     chmod +x /usr/local/bin/helm && \
