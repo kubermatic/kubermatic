@@ -44,7 +44,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/integration-tests:8-4
+        - image: quay.io/kubermatic/integration-tests:k8s-1.29.1-rev0
           command:
             - make
             - test-integration
