@@ -28,7 +28,7 @@ grafana:
     tag: 2.5.0
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
-    tag: 1.3.2
+    tag: 1.3.3
 
   # list of image pull secret references, e.g.
   # imagePullSecrets:
