@@ -345,34 +345,20 @@ func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error)
 	return secret.Data, nil
 }
 
-// During the release of KKP 2.23, this was migrated from ConfigMaps to Secrets.
-// To ensure a smooth transition, this function first checks for the Secret and then
-// falls back to the ConfigMap.
-// TODO: Remove this fallback in KKP 2.24.
 func (r *reconciler) cloudConfig(ctx context.Context, secretName string) ([]byte, error) {
 	name := types.NamespacedName{Namespace: r.namespace, Name: secretName}
 
 	secret := &corev1.Secret{}
-	if err := r.seedClient.Get(ctx, name, secret); err == nil {
-		value, exists := secret.Data[resources.CloudConfigKey]
-		if !exists {
-			return nil, fmt.Errorf("cloud-config Secret contains no data for key %s", resources.CloudConfigKey)
-		}
-
-		return value, nil
+	if err := r.seedClient.Get(ctx, name, secret); err != nil {
+		return nil, err
 	}
 
-	configmap := &corev1.ConfigMap{}
-	if err := r.seedClient.Get(ctx, name, configmap); err != nil {
-		return nil, fmt.Errorf("failed to get legacy cloud-config ConfigMap: %w", err)
-	}
-
-	value, exists := configmap.Data[resources.CloudConfigKey]
+	value, exists := secret.Data[resources.CloudConfigKey]
 	if !exists {
-		return nil, fmt.Errorf("cloud-config ConfigMap contains no data for key %s", resources.CloudConfigKey)
+		return nil, fmt.Errorf("cloud-config Secret contains no data for key %s", resources.CloudConfigKey)
 	}
 
-	return []byte(value), nil
+	return value, nil
 }
 
 func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging *corev1.ResourceRequirements, monitoringReplicas *int32, err error) {
