@@ -27,6 +27,7 @@ package storagelocation
 import (
 	"context"
 	"fmt"
+	"time"
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
@@ -45,6 +46,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -52,6 +54,9 @@ import (
 const (
 	ControllerName   = "cluster-backup-storage-location-controller"
 	CleanupFinalizer = "kubermatic.k8c.io/cleanup-credentials"
+
+	// Regularly check S3 bucket availability.
+	requeueInterval = 30 * time.Minute
 )
 
 type reconciler struct {
@@ -76,9 +81,10 @@ func Add(mgr manager.Manager, numWorkers int, log *zap.SugaredLogger) error {
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ClusterBackupStorageLocation{}), &handler.EnqueueRequestForObject{}); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ClusterBackupStorageLocation{}), &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
 		return fmt.Errorf("failed to create watch for ClusterBackupStorageLocation: %w", err)
 	}
+
 	return nil
 }
 
@@ -88,7 +94,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
 	if err := r.Client.Get(ctx, request.NamespacedName, cbsl); err != nil {
-		log.Debug("ClusterBackupStorageLocation not found")
 		return reconcile.Result{}, nil
 	}
 	if cbsl.DeletionTimestamp != nil {
@@ -96,19 +101,24 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if cbsl.Spec.Provider != "aws" {
-		log.Infow("unsupported provider, skipping..", "provider", cbsl.Spec.Provider)
+		log.Infow("unsupported provider, skipping.", "provider", cbsl.Spec.Provider)
 		return reconcile.Result{}, nil
 	}
 	if cbsl.Spec.Credential == nil {
-		log.Info("no credentials secret reference, skipping..")
+		log.Info("no credentials secret reference, skipping.")
 		return reconcile.Result{}, nil
 	}
+
 	err := r.reconcile(ctx, cbsl)
 	if err != nil {
 		r.recorder.Event(cbsl, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, err
 	}
-	return reconcile.Result{}, nil
+
+	return reconcile.Result{
+		Requeue:      true,
+		RequeueAfter: requeueInterval,
+	}, nil
 }
 
 func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
@@ -141,15 +151,16 @@ func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBa
 }
 
 func (r *reconciler) updateCBSLStatus(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation, phase velerov1.BackupStorageLocationPhase, message string) error {
+	key := types.NamespacedName{
+		Namespace: cbsl.Namespace,
+		Name:      cbsl.Name,
+	}
+
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if err := r.Client.Get(ctx,
-			types.NamespacedName{
-				Namespace: cbsl.Namespace,
-				Name:      cbsl.Name},
-			cbsl,
-		); err != nil {
+		if err := r.Client.Get(ctx, key, cbsl); err != nil {
 			return err
 		}
+
 		updatedCBSL := cbsl.DeepCopy()
 		updatedCBSL.Status.Message = message
 		updatedCBSL.Status.Phase = phase
@@ -176,10 +187,14 @@ func (r *reconciler) cleanup(ctx context.Context, cbsl *kubermaticv1.ClusterBack
 
 func (r *reconciler) getCredentials(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation) (*corev1.Secret, error) {
 	creds := &corev1.Secret{}
-	return creds, r.Client.Get(ctx, types.NamespacedName{
+	key := types.NamespacedName{
 		Name:      cbsl.Spec.Credential.Name,
 		Namespace: cbsl.Namespace,
-	},
-		creds,
-	)
+	}
+
+	if err := r.Client.Get(ctx, key, creds); err != nil {
+		return nil, err
+	}
+
+	return creds, nil
 }
