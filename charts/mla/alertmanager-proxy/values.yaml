@@ -18,11 +18,12 @@ alertmanagerProxy:
     backendPort: 8080
     image:
       repository: "docker.io/envoyproxy/envoy"
-      tag: "v1.18.3"
+      tag: "v1.29.2"
     # list of image pull secret references, e.g.
     # imagePullSecrets:
     #   - name: docker-io-pull-secret
     imagePullSecrets: []
+    logLevel: info
     replicas: 1
     resources:
       requests:
@@ -46,7 +47,7 @@ alertmanagerProxy:
   authz:
     image:
       repository: "quay.io/kubermatic/alertmanager-authorization-server"
-      tag: "0.3.1"
+      tag: "0.3.2"
     # list of image pull secret references, e.g.
     # imagePullSecrets:
     #   - name: quay-io-pull-secret
@@ -59,6 +60,12 @@ alertmanagerProxy:
       limits:
         cpu: 200m
         memory: 64Mi
+    logging:
+      debug: true
+      format: json # json or console
+    listenAddress:
+      host: 0.0.0.0
+      port: 50051
     nodeSelector: {}
     affinity:
       podAntiAffinity:

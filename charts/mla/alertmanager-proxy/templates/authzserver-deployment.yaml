@@ -37,13 +37,24 @@ spec:
       imagePullSecrets: {{- toYaml .Values.alertmanagerProxy.authz.imagePullSecrets | nindent 8 }}
       {{- end }}
       serviceAccountName: alertmanager-authz-server
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: authz-server
           image: '{{ .Values.alertmanagerProxy.authz.image.repository }}:{{ .Values.alertmanagerProxy.authz.image.tag }}'
-          ports:
-            - containerPort: 50051
           args:
-            - -log-debug=true
+            - -address={{ .Values.alertmanagerProxy.authz.listenAddress.host }}:{{ .Values.alertmanagerProxy.authz.listenAddress.port }}
+            - -log-debug={{ .Values.alertmanagerProxy.authz.logging.debug }}
+            - -log-format={{ .Values.alertmanagerProxy.authz.logging.format }}
+          ports:
+            - containerPort: {{ .Values.alertmanagerProxy.authz.listenAddress.port }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
           resources:
 {{ toYaml .Values.alertmanagerProxy.authz.resources | indent 12 }}
       nodeSelector:
