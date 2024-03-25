@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Create a changelog since last release, commit and create a new release tag
+###
+###     Usage:
+###     changelog-gen.sh -r v2.x.x - create changelog, commit and tag new release, using closed PRs release-note
+
 set -euo pipefail
 
 cd $(dirname $0)/..

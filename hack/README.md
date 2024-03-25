@@ -17,6 +17,10 @@ Generate test coverage statistics for Go packages.
 
     --html      Additionally create HTML report and open it in browser
 
+## fmt-grafana-dashboard.sh
+
+TBD
+
 ## lib.sh
 
 Contains commonly used functions for the other scripts.
@@ -26,16 +30,6 @@ Contains commonly used functions for the other scripts.
 This README.md generator
 
 That generates README.md with all scripts from this directory described.
-
-## publish-s3-exporter.sh
-
-Releases a new quay.io/kubermatic/s3-exporter Docker image; must be
-run manually whenever the s3-exporter is updated.
-
-## release-alertmanager-authorization-server-image.sh
-
-Releases a new quay.io/kubermatic/alertmanager-authorization-server Docker image; must be
-run manually whenever the alertmanager-authorization-server is updated.
 
 ## release-images.sh
 
@@ -55,6 +49,13 @@ The images are tagged with all arguments given to the script, i.e
 
 Before running this script, all binaries in `cmd/` must have been
 built already by running `make build`.
+
+## release-utility-images.sh
+
+This script builds all the utility container images required by or provided
+in KKP, like the http-prober, S3 exporter, util etc.
+These utilities are not versioned together with KKP and so this script will
+only build and push images if they are not yet present in the target registry.
 
 ## retag-images.sh
 
@@ -161,6 +162,10 @@ TBD
 
 TBD
 
+## update-gatekeeper-crds.sh
+
+TBD
+
 ## update-grafana-dashboards.sh
 
 TBD
@@ -215,6 +220,10 @@ Go and YAML files. This script is not part of the pre-verify Prowjob.
 TBD
 
 ## verify-spelling.sh
+
+TBD
+
+## versions-gen.sh
 
 TBD
 
