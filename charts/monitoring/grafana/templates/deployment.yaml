@@ -29,7 +29,7 @@ spec:
         app: grafana
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmaps.yaml") . | sha256sum }}
-        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: grafana-storage,grafana-datasources
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: grafana-datasources
     spec:
       {{- if .Values.grafana.imagePullSecrets }}
       imagePullSecrets: {{- toYaml .Values.grafana.imagePullSecrets | nindent 8 }}
@@ -88,20 +88,6 @@ spec:
         {{- end }}
       {{- end }}
 
-      - image: '{{ $.Values.grafana.pluginImage.repository }}:{{ $.Values.grafana.pluginImage.tag }}'
-        name: plugin-installer
-        command: [/bin/sh]
-        args:
-        - -c
-        - |
-          set -euo pipefail
-          echo "Installing plugins..."
-          cp -r /plugins /var/lib/grafana
-          ls -1 /var/lib/grafana/plugins
-        volumeMounts:
-        - mountPath: /var/lib/grafana
-          name: grafana-storage
-
       containers:
       - image: '{{ .Values.grafana.image.repository }}:{{ .Values.grafana.image.tag }}'
         name: grafana
@@ -111,9 +97,6 @@ spec:
         resources:
 {{ toYaml .Values.grafana.resources | indent 10 }}
         volumeMounts:
-        - mountPath: /var/lib/grafana
-          name: grafana-storage
-          readOnly: false
         - mountPath: /etc/grafana
           name: grafana-config
           readOnly: true
@@ -142,8 +125,6 @@ spec:
         runAsUser: 65534
       serviceAccountName: grafana
       volumes:
-      - emptyDir: {}
-        name: grafana-storage
       - emptyDir: {}
         name: grafana-datasources
       - name: grafana-config
