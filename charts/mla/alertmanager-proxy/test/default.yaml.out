@@ -385,7 +385,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: authz-server
-          image: 'quay.io/kubermatic/alertmanager-authorization-server:0.3.2'
+          image: 'quay.io/kubermatic/alertmanager-authorization-server:0.3.3'
           args:
             - "-address=0.0.0.0:50051"
             - -log-debug=true
