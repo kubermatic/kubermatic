@@ -46,7 +46,7 @@ alertmanagerProxy:
   authz:
     image:
       repository: "quay.io/kubermatic/alertmanager-authorization-server"
-      tag: "0.3.0"
+      tag: "0.3.1"
     # list of image pull secret references, e.g.
     # imagePullSecrets:
     #   - name: quay-io-pull-secret
