@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/distroless/static-debian12
+FROM gcr.io/distroless/static-debian12:nonroot
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/alertmanager-authorization-server/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 COPY ./_build/alertmanager-authorization-server /usr/local/bin/
-
-USER nobody
 
 ENTRYPOINT ["alertmanager-authorization-server"]
