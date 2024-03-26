@@ -19,6 +19,7 @@ package testing
 import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/external"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+	"github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 )
 
 // IDs used when a new resource is created.
@@ -56,4 +57,8 @@ var ExternalNetwork = Network{
 
 var InternalNetwork = Network{
 	Network: networks.Network{Name: "kubernetes-cluster-xyz", ID: NetworkID},
+}
+
+var SubnetTest = Subnet{
+	Subnet: subnets.Subnet{ID: SubnetID, Name: "kubernetes-cluster-xyz"},
 }

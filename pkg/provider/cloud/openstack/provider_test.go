@@ -222,6 +222,7 @@ func TestInitializeCloudProvider(t *testing.T) {
 			resources: []ostesting.Resource{
 				&ostesting.ExternalNetwork,
 				&ostesting.InternalNetwork,
+				&ostesting.SubnetTest,
 				&ostesting.Router{
 					ID: ostesting.RouterID,
 				},
@@ -337,6 +338,7 @@ func TestInitializeCloudProvider(t *testing.T) {
 			resources: []ostesting.Resource{
 				&ostesting.ExternalNetwork,
 				&ostesting.InternalNetwork,
+				&ostesting.SubnetTest,
 			},
 			wantCluster: kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
