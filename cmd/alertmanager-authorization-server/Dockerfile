@@ -19,4 +19,6 @@ LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 COPY ./_build/alertmanager-authorization-server /usr/local/bin/
 
+USER nobody
+
 ENTRYPOINT ["alertmanager-authorization-server"]

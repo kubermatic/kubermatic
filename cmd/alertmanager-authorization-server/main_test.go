@@ -104,7 +104,7 @@ func TestAuthorize(t *testing.T) {
 				client: client,
 				log:    log,
 			}
-			authorized, err := server.authorize(context.Background(), tc.userEmail, tc.clusterID)
+			authorized, _, err := server.authorize(context.Background(), tc.userEmail, tc.clusterID)
 			assert.Equal(t, tc.expectedAuthorized, authorized)
 			if tc.expectedError {
 				assert.Error(t, err)
