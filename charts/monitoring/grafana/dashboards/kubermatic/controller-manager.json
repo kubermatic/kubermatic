@@ -34,19 +34,21 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 28,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -70,10 +72,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -88,7 +86,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-red",
+                  "fixedColor": "red",
                   "mode": "fixed"
                 }
               }
@@ -103,32 +101,8 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "dark-green",
+                  "fixedColor": "green",
                   "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "Reconciles"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
                 }
               }
             ]
@@ -136,7 +110,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 0,
         "y": 1
@@ -161,7 +135,7 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "sum(rate(controller_runtime_reconcile_errors_total{controller=~\"$controller\"}[5m]))",
+          "expr": "sum(rate(controller_runtime_reconcile_errors_total{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m]))",
           "legendFormat": "Errors",
           "range": true,
           "refId": "A"
@@ -172,7 +146,7 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "sum(rate(controller_runtime_reconcile_total{controller=~\"$controller\"}[5m]))",
+          "expr": "sum(rate(controller_runtime_reconcile_total{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m]))",
           "hide": false,
           "legendFormat": "Reconciles",
           "range": true,
@@ -197,19 +171,21 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 28,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -233,10 +209,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -244,7 +216,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 12,
         "y": 1
@@ -269,7 +241,7 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=~\"$controller\"}[1m])) by (le, controller))",
+          "expr": "histogram_quantile(0.5, sum(rate(controller_runtime_reconcile_time_seconds_bucket{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m])) by (le, controller))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -280,23 +252,11 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=~\"$controller\"}[1m])) by (le, controller))",
+          "expr": "histogram_quantile(0.95, sum(rate(controller_runtime_reconcile_time_seconds_bucket{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m])) by (le, controller))",
           "hide": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
-          },
-          "editorMode": "code",
-          "expr": "sum(rate(controller_runtime_reconcile_time_seconds_sum{controller=~\"$controller\"}[1m])) / sum(rate(controller_runtime_reconcile_time_seconds_count{controller=~\"$controller\"}[1m]))",
-          "hide": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "C"
         }
       ],
       "timeRegions": [],
@@ -310,7 +270,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 11
       },
       "id": 131,
       "panels": [],
@@ -330,19 +290,21 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 28,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -366,10 +328,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -377,10 +335,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 0,
-        "y": 10
+        "y": 12
       },
       "id": 361,
       "options": {
@@ -402,7 +360,7 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "sum(rate(workqueue_adds_total{name=~\"$controller\"}[5m])) by (name)",
+          "expr": "sum(rate(workqueue_adds_total{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",name=~\"$controller\"}[5m])) by (name)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -426,19 +384,21 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 28,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -462,10 +422,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -473,10 +429,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
         "x": 12,
-        "y": 10
+        "y": 12
       },
       "id": 534,
       "options": {
@@ -498,7 +454,7 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "sum(rate(workqueue_depth{mame=~\"$controller\"}[5m])) by (name)",
+          "expr": "sum(rate(workqueue_depth{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",name=~\"$controller\"}[5m])) by (name)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -522,19 +478,21 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
+            "fillOpacity": 28,
+            "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -558,10 +516,6 @@
               {
                 "color": "green",
                 "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -569,10 +523,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 12,
-        "x": 6,
-        "y": 18
+        "x": 0,
+        "y": 22
       },
       "id": 593,
       "options": {
@@ -594,7 +548,7 @@
             "uid": "P1809F7CD0C75ACF3"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.7, sum(rate(workqueue_queue_duration_seconds_bucket{name=~\"$controller\"}[5m])) by (name, le))",
+          "expr": "histogram_quantile(0.7, sum(rate(workqueue_queue_duration_seconds_bucket{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",name=~\"$controller\"}[5m])) by (name, le))",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -608,8 +562,7 @@
   ],
   "refresh": "30s",
   "revision": 1,
-  "schemaVersion": 38,
-  "style": "dark",
+  "schemaVersion": 39,
   "tags": [],
   "templating": {
     "list": [
@@ -617,7 +570,7 @@
         "current": {},
         "hide": 0,
         "includeAll": false,
-        "label": "Data Source",
+        "label": "Datasource",
         "multi": false,
         "name": "datasource",
         "options": [],
@@ -629,12 +582,45 @@
         "type": "datasource"
       },
       {
+        "hide": 2,
+        "name": "namespace",
+        "query": "kubermatic",
+        "skipUrlSync": false,
+        "type": "constant"
+      },
+      {
         "allValue": ".*",
         "current": {},
         "datasource": {
           "uid": "$datasource"
         },
-        "definition": "label_values(controller_runtime_reconcile_time_seconds_bucket,controller)",
+        "definition": "label_values(controller_runtime_reconcile_time_seconds_bucket{namespace=\"$namespace\"},app_kubernetes_io_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Controller Manager",
+        "multi": false,
+        "name": "controller_manager",
+        "options": [],
+        "query": {
+          "query": "label_values(controller_runtime_reconcile_time_seconds_bucket{namespace=\"$namespace\"},app_kubernetes_io_name)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 1,
+        "tagValuesQuery": "",
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {},
+        "datasource": {
+          "uid": "$datasource"
+        },
+        "definition": "label_values(controller_runtime_reconcile_time_seconds_bucket{app_kubernetes_io_name=~\"$controller_manager\",namespace=\"$namespace\"},controller)",
         "hide": 0,
         "includeAll": true,
         "label": "Controller",
@@ -642,8 +628,8 @@
         "name": "controller",
         "options": [],
         "query": {
-          "query": "label_values(controller_runtime_reconcile_time_seconds_bucket,controller)",
-          "refId": "StandardVariableQuery"
+          "query": "label_values(controller_runtime_reconcile_time_seconds_bucket{app_kubernetes_io_name=~\"$controller_manager\",namespace=\"$namespace\"},controller)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 2,
         "regex": "",
@@ -688,6 +674,6 @@
   "timezone": "",
   "title": "Controller Manager",
   "uid": "7lVLbg84k",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }
