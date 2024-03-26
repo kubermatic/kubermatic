@@ -21,8 +21,8 @@ grafana:
 
   replicas: 1
   image:
-    repository: docker.io/grafana/grafana
-    tag: 9.5.1
+    repository: docker.io/grafana/grafana-oss
+    tag: 10.4.1
   utilImage:
     repository: quay.io/kubermatic/util
     tag: 2.5.0
@@ -40,10 +40,10 @@ grafana:
     requests:
       # Rationalized based on real world usage
       cpu: 10m
-      memory: 48Mi
+      memory: 96Mi
     limits:
       cpu: 1
-      memory: 128Mi
+      memory: 256Mi
 
   nodeSelector: {}
   affinity:
