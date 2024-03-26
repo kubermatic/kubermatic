@@ -247,6 +247,13 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 					Datacenters: map[string]kubermaticv1.Datacenter{
 						testCluster.Spec.Cloud.DatacenterName: {},
 					},
+					NodeportProxy: kubermaticv1.NodeportProxyConfig{
+						Envoy: kubermaticv1.NodePortProxyComponentEnvoy{
+							NodeportProxyComponent: kubermaticv1.NodeportProxyComponent{
+								DockerRepository: defaulting.DefaultEnvoyDockerRepository,
+							},
+						},
+					},
 				},
 			}, nil
 		},
