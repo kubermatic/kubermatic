@@ -63,6 +63,9 @@ const (
 	RouterSubnetLinkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-subnet-link-v2"
 	// RouterIPv6SubnetLinkCleanupFinalizer will instruct the deletion of the link between the router and the IPv6 subnet.
 	RouterIPv6SubnetLinkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-router-subnet-link-ipv6"
+
+	// FloatingIPPoolIDAnnotation stores the ID of the floating IP pool (external network).
+	FloatingIPPoolIDAnnotation = "kubermatic.k8c.io/openstack-floating-ip-pool-id"
 )
 
 type getClientFunc func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error)
@@ -88,7 +91,7 @@ func NewCloudProvider(
 		dc:                dc.Spec.Openstack,
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
-		getClientFunc:     getNetClientForCluster,
+		getClientFunc:     GetNetClientForCluster,
 	}, nil
 }
 
@@ -131,7 +134,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.Network != "" {
-		network, err := getNetworkByName(netClient, spec.Openstack.Network, false)
+		network, err := GetNetworkByName(netClient, spec.Openstack.Network, false)
 		if err != nil {
 			return fmt.Errorf("failed to get network %q: %w", spec.Openstack.Network, err)
 		}
@@ -146,7 +149,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.FloatingIPPool != "" {
-		_, err := getNetworkByName(netClient, spec.Openstack.FloatingIPPool, true)
+		_, err := GetNetworkByName(netClient, spec.Openstack.FloatingIPPool, true)
 		if err != nil {
 			return fmt.Errorf("failed to get floating ip pool %q: %w", spec.Openstack.FloatingIPPool, err)
 		}
@@ -287,16 +290,36 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 	}
 
 	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
-		extNetwork, err := getExternalNetwork(netClient)
+		extNetwork, err := getDefaultExternalNetwork(netClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get external network: %w", err)
 		}
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
+
+			if cluster.Annotations == nil {
+				cluster.Annotations = make(map[string]string)
+			}
+			cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
 			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
 		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
+		}
+	} else {
+		extNetwork, err := GetNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get external network by name: %w", err)
+		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			if cluster.Annotations == nil {
+				cluster.Annotations = make(map[string]string)
+			}
+			cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
+			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update cluster floating IP pool ID annotation: %w", err)
 		}
 	}
 
@@ -342,7 +365,7 @@ func (os *Provider) InitializeCloudProvider(ctx context.Context, cluster *kuberm
 		}
 	}
 
-	network, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network, false)
+	network, err := GetNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get network '%s': %w", cluster.Spec.Cloud.Openstack.Network, err)
 	}
@@ -722,7 +745,7 @@ func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 	return nil
 }
 
-func getNetClientForCluster(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+func GetNetClientForCluster(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
 	creds, err := GetCredentialsForCluster(cluster, secretKeySelector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
