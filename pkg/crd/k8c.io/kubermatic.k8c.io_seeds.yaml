@@ -2153,6 +2153,13 @@ spec:
                     reports:
                       additionalProperties:
                         properties:
+                          format:
+                            default: csv
+                            description: Format is the file format of the generated report, one of "csv" or "json" (defaults to "csv").
+                            enum:
+                              - csv
+                              - json
+                            type: string
                           interval:
                             default: 7
                             description: |-

@@ -932,6 +932,15 @@ type MeteringConfiguration struct {
 	ReportConfigurations map[string]MeteringReportConfiguration `json:"reports,omitempty"`
 }
 
+// MeteringReportFormat maps directly to the values supported by the kubermatic-metering tool.
+// +kubebuilder:validation:Enum=csv;json
+type MeteringReportFormat string
+
+const (
+	MeteringReportFormatCSV  MeteringReportFormat = "csv"
+	MeteringReportFormatJSON MeteringReportFormat = "json"
+)
+
 type MeteringReportConfiguration struct {
 	// +kubebuilder:default:=`0 1 * * 6`
 
@@ -962,6 +971,10 @@ type MeteringReportConfiguration struct {
 
 	// Types of reports to generate. Available report types are cluster and namespace. By default, all types of reports are generated.
 	Types []string `json:"type,omitempty"`
+
+	// Format is the file format of the generated report, one of "csv" or "json" (defaults to "csv").
+	// +kubebuilder:default=csv
+	Format MeteringReportFormat `json:"format,omitempty"`
 }
 
 // OIDCProviderConfiguration allows to configure OIDC provider at the Seed level. If set, it overwrites the OIDC configuration from the KubermaticConfiguration.
