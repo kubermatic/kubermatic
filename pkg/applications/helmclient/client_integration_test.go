@@ -262,7 +262,7 @@ func TestHelmClient(t *testing.T) {
 			},
 		},
 		{
-			name: "installOrUpgrade from archive should upgrade chart when it was already installed and values changed",
+			name: "installOrUpgrade from archive should upgrade v1 chart when it was already installed and its version changed to v2",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
 				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
@@ -275,7 +275,20 @@ func TestHelmClient(t *testing.T) {
 			},
 		},
 		{
-			name: "installOrUpgrade from archive should not upgrade chart when it was already installed and its values weren't changed",
+			name: "installOrUpgrade from archive should upgrade v1 chart when it was already installed and its values changed",
+			testFunc: func(t *testing.T) {
+				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
+				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}}, map[string]string{"hello": "world", "foo": "bar"}, test.DefaultVersionLabel, 2)
+				// check only desired release are stored on cluster
+				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
+					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
+					{Name: "sh.helm.release.v1." + releaseName + ".v2", Version: "2"},
+				})
+			},
+		},
+		{
+			name: "installOrUpgrade from archive should not upgrade v1 chart when it was already installed and its values weren't changed",
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
 				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
