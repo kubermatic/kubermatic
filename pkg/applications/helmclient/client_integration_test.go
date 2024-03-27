@@ -266,20 +266,7 @@ func TestHelmClient(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
 				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
-				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, test.DefaultDataV2, test.DefaultVersionLabelV2, 2)
-				// check only desired release are stored on cluster
-				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
-					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
-					{Name: "sh.helm.release.v1." + releaseName + ".v2", Version: "2"},
-				})
-			},
-		},
-		{
-			name: "installOrUpgrade from archive should upgrade chart when it was already installed and values changed",
-			testFunc: func(t *testing.T) {
-				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}, test.VersionLabelKey: "another-version"}, test.DefaultDataV2, test.DefaultVersionLabelV2, 2)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 2)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -292,19 +279,7 @@ func TestHelmClient(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
 				installTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
-				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV2Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 1)
-				// check only desired release are stored on cluster
-				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
-					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
-				})
-			},
-		},
-		{
-			name: "installOrUpgrade from archive should upgrade chart when it was already installed and its values weren't changed",
-			testFunc: func(t *testing.T) {
-				ns := test.CreateNamespaceWithCleanup(t, ctx, client)
-				installTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, false)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 1)
+				installOrUpgradeTest(t, ctx, client, ns, chartArchiveV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 1)
 				// check only desired release are stored on cluster
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{
 					{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"},
@@ -493,12 +468,12 @@ func TestHelmClient(t *testing.T) {
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}})
 
 				// upgrade
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV1Path, map[string]interface{}{}, test.DefaultData, test.DefaultVersionLabel, 2)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 2)
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v1", Version: "1"}, {Name: "sh.helm.release.v1." + releaseName + ".v2", Version: "2"}})
 
 				// history limit is 2 so these next upgrades should trigger a clean up of old helm release
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 3)
-				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{}, test.DefaultDataV2, test.DefaultVersionLabelV2, 4)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"hello": "world"}}, map[string]string{"hello": "world", "foo-version-2": "bar-version-2"}, test.DefaultVersionLabelV2, 3)
+				installOrUpgradeTest(t, ctx, client, ns, chartDirV2Path, map[string]interface{}{test.CmDataKey: map[string]interface{}{"next": "update"}}, map[string]string{"next": "update", "foo-version-2": "bar-version-2"}, test.DefaultVersionLabelV2, 4)
 				checkExpectedReleases(t, ctx, client, ns, []test.ReleaseStorageInfo{{Name: "sh.helm.release.v1." + releaseName + ".v3", Version: "3"}, {Name: "sh.helm.release.v1." + releaseName + ".v4", Version: "4"}})
 			},
 		},

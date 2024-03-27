@@ -252,7 +252,7 @@ func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values
 
 	chart, err := loader.Load(chartLoc)
 	if err != nil {
-		return nil, err
+		return currentRelease, err
 	}
 
 	currentValues, err := chartutil.CoalesceValues(currentRelease.Chart, currentRelease.Config)
@@ -275,12 +275,25 @@ func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values
 		return nil, err
 	}
 
-	if !reflect.DeepEqual(chart.AppVersion(), currentRelease.Chart.AppVersion()) && !reflect.DeepEqual(currentValues, newValues) && !reflect.DeepEqual(currentManifests, newManifests) {
-		h.logger.Debugw("detected changes between helm releases, running helm upgrade", "release", releaseName)
+	if h.shouldUpgrade(chart, currentRelease, currentValues, newValues, currentManifests, newManifests) {
+		h.logger.Debugw("Detected changes between helm releases, running helm upgrade", "release", releaseName)
 		return h.Upgrade(chartLoc, releaseName, values, deployOpts, auth)
 	}
 
 	return currentRelease, nil
+}
+
+func (h HelmClient) shouldUpgrade(chart *chart.Chart, currentRelease *release.Release, currentValues map[string]interface{}, newValues map[string]interface{}, currentManifests string, newManifests string) bool {
+	if !reflect.DeepEqual(chart.AppVersion(), currentRelease.Chart.AppVersion()) {
+		return true
+	}
+	if !reflect.DeepEqual(currentValues, newValues) {
+		return true
+	}
+	if !reflect.DeepEqual(currentManifests, newManifests) {
+		return true
+	}
+	return false
 }
 
 func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values) (string, error) {
