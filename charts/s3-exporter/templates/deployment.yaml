@@ -36,28 +36,30 @@ spec:
       {{- if .Values.s3Exporter.imagePullSecrets }}
       imagePullSecrets: {{- toYaml .Values.s3Exporter.imagePullSecrets | nindent 8 }}
       {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: s3-exporter
           image: '{{ .Values.s3Exporter.image.repository }}:{{ .Values.s3Exporter.image.tag }}'
           args:
-          - -endpoint={{ .Values.s3Exporter.endpoint }}
-          - -access-key-id=$(ACCESS_KEY_ID)
-          - -secret-access-key=$(SECRET_ACCESS_KEY)
-          - -bucket={{ .Values.s3Exporter.bucket }}
-{{- if .Values.s3Exporter.caBundleConfigMap }}
-          - -ca-bundle=/etc/cabundle/cabundle.pem
-{{- end }}
+            - -endpoint={{ .Values.s3Exporter.endpoint }}
+            - -bucket={{ .Values.s3Exporter.bucket }}
+            {{- if .Values.s3Exporter.caBundleConfigMap }}
+            - -ca-bundle=/etc/cabundle/cabundle.pem
+            {{- end }}
           env:
-          - name: ACCESS_KEY_ID
-            valueFrom:
-              secretKeyRef:
-                name: kubermatic-s3-credentials
-                key: ACCESS_KEY_ID
-          - name: SECRET_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                name: kubermatic-s3-credentials
-                key: SECRET_ACCESS_KEY
+            - name: ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: kubermatic-s3-credentials
+                  key: ACCESS_KEY_ID
+            - name: SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: kubermatic-s3-credentials
+                  key: SECRET_ACCESS_KEY
           resources:
 {{ toYaml .Values.s3Exporter.resources | indent 12 }}
 {{- with .Values.s3Exporter.caBundleConfigMap }}
@@ -65,6 +67,11 @@ spec:
             - name: cabundle
               mountPath: /etc/cabundle
               readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: cabundle
           configMap:
