@@ -499,6 +499,8 @@ spec:
     # ReportConfigurations is a map of report configuration definitions.
     reports:
       weekly:
+        # Format is the file format of the generated report, one of "csv" or "json" (defaults to "csv").
+        format: ""
         # Interval defines the number of days consulted in the metering report.
         # Ignored when `Monthly` is set to true
         interval: 7

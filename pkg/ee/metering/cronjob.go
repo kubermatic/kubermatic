@@ -30,12 +30,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 )
 
@@ -49,6 +51,10 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 			args = append(args, fmt.Sprintf("--output-dir=%s", reportName))
 			args = append(args, fmt.Sprintf("--output-prefix=%s", seed.Name))
 
+			if mrc.Format != "" {
+				args = append(args, fmt.Sprintf("--output-format=%s", mrc.Format))
+			}
+
 			if mrc.Monthly {
 				args = append(args, "--last-month")
 			} else {
@@ -58,11 +64,10 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 			// needs to be last
 			args = append(args, mrc.Types...)
 
-			if job.Labels == nil {
-				job.Labels = make(map[string]string)
-			}
-			job.Labels[common.NameLabel] = reportName
-			job.Labels[common.ComponentLabel] = meteringName
+			kubernetes.EnsureLabels(job, map[string]string{
+				common.NameLabel:      reportName,
+				common.ComponentLabel: meteringName,
+			})
 
 			job.Spec.Schedule = mrc.Schedule
 			job.Spec.JobTemplate.Spec.Parallelism = ptr.To[int32](1)
@@ -70,13 +75,19 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 			job.Spec.JobTemplate.Spec.Template.Spec.DeprecatedServiceAccount = ""
 			job.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 			job.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+			job.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: ptr.To(true),
+				RunAsUser:    ptr.To[int64](65532),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
 
 			job.Spec.JobTemplate.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            reportName,
 					Image:           getMeteringImage(getRegistry),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/metering"},
 					Args:            args,
 					Env: []corev1.EnvVar{
 						{
@@ -131,6 +142,12 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 							ReadOnly:  true,
 						},
 					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
+						},
+					},
 				},
 			}
 
@@ -146,6 +163,7 @@ func CronJobReconciler(reportName string, mrc *kubermaticv1.MeteringReportConfig
 					},
 				},
 			}
+
 			return job, nil
 		}
 	}
