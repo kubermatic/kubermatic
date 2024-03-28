@@ -34,6 +34,7 @@ spec:
         prometheus.io/metrics_path: /stats/prometheus
         prometheus.io/port: "9902"
         prometheus.io/scrape: "true"
+        checksum/envoy-config: {{ include (print $.Template.BasePath "/proxy-configmap.yaml") $ | sha256sum }}
       labels:
         app.kubernetes.io/name: alertmanager-proxy
     spec:
@@ -43,6 +44,11 @@ spec:
       containers:
         - name: envoy
           image: '{{ .Values.alertmanagerProxy.proxy.image.repository }}:{{ .Values.alertmanagerProxy.proxy.image.tag }}'
+          args:
+            - --config-path
+            - /etc/envoy/envoy.yaml
+            - --log-level
+            - {{ .Values.alertmanagerProxy.proxy.logLevel }}
           ports:
             - containerPort: 8080
               name: proxy
