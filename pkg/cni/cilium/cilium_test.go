@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -221,7 +222,7 @@ func TestValidateImmutableValues(t *testing.T) {
 		name            string
 		want            field.ErrorList
 		immutableValues []string
-		acceptedFields  []string
+		acceptedFields  []exclusion
 		fieldPath       *field.Path
 		oldValues       map[string]any
 		newValues       map[string]any
@@ -229,7 +230,7 @@ func TestValidateImmutableValues(t *testing.T) {
 		{
 			name:            "equal spec",
 			immutableValues: []string{"values"},
-			acceptedFields:  []string{},
+			acceptedFields:  []exclusion{},
 			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec"),
 			oldValues:       oldValues,
@@ -238,7 +239,7 @@ func TestValidateImmutableValues(t *testing.T) {
 		{
 			name:            "equal values",
 			immutableValues: []string{"cni", "ipam", "ipv6"},
-			acceptedFields:  []string{},
+			acceptedFields:  []exclusion{},
 			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec").Child("values"),
 			oldValues:       oldValues,
@@ -247,7 +248,7 @@ func TestValidateImmutableValues(t *testing.T) {
 		{
 			name:            "ipam modified",
 			immutableValues: []string{"cni", "ipam", "ipv6"},
-			acceptedFields:  []string{},
+			acceptedFields:  []exclusion{},
 			want:            field.ErrorList{field.Invalid(field.NewPath("spec").Child("values").Child("ipam"), alteredValues["ipam"], "value is immutable")},
 			fieldPath:       field.NewPath("spec").Child("values"),
 			oldValues:       oldValues,
@@ -256,7 +257,7 @@ func TestValidateImmutableValues(t *testing.T) {
 		{
 			name:            "ipam modified, but the clusterPoolIPv4PodCIDRList is accepted",
 			immutableValues: []string{"cni", "ipam", "ipv6"},
-			acceptedFields:  []string{"ipam.operator.clusterPoolIPv4PodCIDRList"},
+			acceptedFields:  []exclusion{{fullPath: "ipam.operator.clusterPoolIPv4PodCIDRList", pathParts: strings.Split("ipam.operator.clusterPoolIPv4PodCIDRList", ".")}},
 			want:            field.ErrorList{},
 			fieldPath:       field.NewPath("spec").Child("values"),
 			oldValues:       oldValues,
