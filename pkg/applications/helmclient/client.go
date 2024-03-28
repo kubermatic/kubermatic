@@ -320,7 +320,6 @@ func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values)
 		return "", err
 	}
 
-	// Combine all manifests into a single string.
 	var allManifests strings.Builder
 	for _, manifest := range manifests {
 		allManifests.WriteString(manifest)
