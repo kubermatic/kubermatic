@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 lifecycleMgr:
+  ## Set default imageTag for `minio/mc` to `RELEASE.2024-03-13T23-51-57Z`
+  ## (which at the time corresponded to `latest`)
+  ##
   image:
     repository: docker.io/minio/mc
     tag: RELEASE.2024-03-13T23-51-57Z
