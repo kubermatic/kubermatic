@@ -27,7 +27,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - `velero.restic.deploy` with `velero.deployNodeAgent`
     - `velero.restic.resources` with `velero.nodeAgent.resources`
     - `velero.restic.nodeSelector` with `velero.nodeAgent.nodeSelector`
-    - `velero.restic.affinity` with `velero.restic.affinity`
+    - `velero.restic.affinity` with `velero.nodeAgent.affinity`
     - `velero.restic.tolerations` with `velero.nodeAgent.tolerations`
 - **ACTION REQUIRED:** [User MLA] If you had copied `values.yaml` of loki-distributed chart to further customize it, then please cleanup your copy of `values.yaml` for user-mla to retain your customization only ([#12967](https://github.com/kubermatic/kubermatic/pull/12967))
 - **ACTION REQUIRED:** [User MLA] Cortex chart upgraded to resolve issues for cortex-compactor and improve stability of user-cluster MLA feature. Few actions are required to be taken to use new upgraded charts ([#12935](https://github.com/kubermatic/kubermatic/pull/12935)):
