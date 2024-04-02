@@ -329,11 +329,11 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 	exclusions := []exclusion{
 		{
 			fullPath:  "cni.chainingMode",
-			pathParts: strings.Split("cni.chainingMode", "."),
+			pathParts: []string{"cni", "chainingMode"},
 		},
 		{
 			fullPath:  "ipam.operator.clusterPoolIPv4PodCIDR",
-			pathParts: strings.Split("ipam.operator.clusterPoolIPv4PodCIDR", "."),
+			pathParts: []string{"ipam", "operator", "clusterPoolIPv4PodCIDR"},
 		},
 	}
 	allErrs = append(allErrs, validateImmutableValues(newValues, oldValues, fieldPath, []string{
