@@ -23,6 +23,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - Refer to [Upstream helm chart values](https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml) to see the latest default values.
     - Some of the values from earlier `values.yaml` are now incompatible with latest version. They are removed in the `values.yaml` in the current chart. But if you had copied the original values.yaml to customize it further, you may see that `kubermatic-installer` will detect such incompatible options and churn out errors and explain that action that needs to be taken.
     - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block.
+- **ACTION REQUIRED:** [User MLA] minio has been updated to RELEASE.2023-04-28T18-11-17Z.
+    - Before upgrading from older versions please refer to [the upgrade notes](https://docs.kubermatic.com/kubermatic/v2.25/installation/upgrading/upgrade-from-2.24-to-2.25/) to verify if you're affected and how to move forward.
 
 ### Highlights
 - EE: Add KubeVirt to the Default Applications Catalog ([#12851](https://github.com/kubermatic/kubermatic/pull/12851))
