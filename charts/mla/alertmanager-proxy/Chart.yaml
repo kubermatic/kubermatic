@@ -15,7 +15,7 @@
 apiVersion: v2
 name: alertmanager-proxy
 version: v9.9.9-dev
-appVersion: 0.3.1
+appVersion: 0.3.3
 description: A Helm chart to install KKP MLA Alertmanager Proxy.
 keywords:
   - kubermatic

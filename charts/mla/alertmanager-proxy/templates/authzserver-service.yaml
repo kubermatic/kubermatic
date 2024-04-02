@@ -22,8 +22,8 @@ spec:
   type: ClusterIP
   ports:
     - name: http
-      port: 50051
-      targetPort: 50051
+      port: {{ .Values.alertmanagerProxy.authz.listenAddress.port }}
+      targetPort: {{ .Values.alertmanagerProxy.authz.listenAddress.port }}
       protocol: TCP
   selector:
     app.kubernetes.io/name: alertmanager-authz-server
