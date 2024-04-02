@@ -217,7 +217,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		return nil, err
 	}
 
-	if !force || cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
+	if  cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
 		extNetwork, err := getExternalNetwork(netClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get external network: %w", err)

@@ -57,7 +57,7 @@ const (
 )
 
 func getRouterByName(netClient *gophercloud.ServiceClient, name string) (*osrouters.Router, error) {
-	routers, err := getAllRouters(netClient, osrouters.ListOpts{Name: name})
+	routers, err := listRouters(netClient, osrouters.ListOpts{Name: name})
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func getRouterByName(netClient *gophercloud.ServiceClient, name string) (*osrout
 }
 
 func getRouterByID(netClient *gophercloud.ServiceClient, id string) (*osrouters.Router, error) {
-	routers, err := getAllRouters(netClient, osrouters.ListOpts{ID: id})
+	routers, err := listRouters(netClient, osrouters.ListOpts{ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func getRouterByID(netClient *gophercloud.ServiceClient, id string) (*osrouters.
 	}
 }
 
-func getAllRouters(netClient *gophercloud.ServiceClient, listOpts osrouters.ListOpts) ([]osrouters.Router, error) {
+func listRouters(netClient *gophercloud.ServiceClient, listOpts osrouters.ListOpts) ([]osrouters.Router, error) {
 	allPages, err := osrouters.List(netClient, listOpts).AllPages()
 	if err != nil {
 		return nil, err
