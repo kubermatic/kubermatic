@@ -26,7 +26,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
@@ -248,8 +247,11 @@ func (h HelmClient) DownloadChart(url string, chartName string, version string, 
 func (h HelmClient) InstallOrUpgrade(chartLoc string, releaseName string, values map[string]interface{}, deployOpts DeployOpts, auth AuthSettings) (*release.Release, error) {
 	currentRelease, err := h.actionConfig.Releases.Last(releaseName)
 	if err != nil {
-		h.logger.Debugw("Installing helm release", "release", releaseName)
-		return h.Install(chartLoc, releaseName, values, deployOpts, auth)
+		if errors.Is(err, driver.ErrReleaseNotFound) {
+			h.logger.Debugw("Installing helm release", "release", releaseName)
+			return h.Install(chartLoc, releaseName, values, deployOpts, auth)
+		}
+		return nil, err
 	}
 
 	upgradeNeeded, err := h.shouldUpgrade(chartLoc, currentRelease, values)
@@ -291,7 +293,7 @@ func (h HelmClient) shouldUpgrade(chartLoc string, currentRelease *release.Relea
 		return false, err
 	}
 
-	return !reflect.DeepEqual(chart.AppVersion(), currentRelease.Chart.AppVersion()) ||
+	return chart.AppVersion() != currentRelease.Chart.AppVersion() ||
 		!equality.Semantic.DeepEqual(currentValues, newValues) ||
 		!equality.Semantic.DeepEqual(currentManifests, newManifests), nil
 }
