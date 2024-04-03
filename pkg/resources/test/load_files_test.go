@@ -28,6 +28,7 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"go.uber.org/zap"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -181,6 +182,21 @@ var (
     - 'foo.bar:12345'
 `,
 				},
+			},
+		},
+	}
+
+	seed = &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-seed",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			ProxySettings: &kubermaticv1.ProxySettings{
+				HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
+			},
+			MLA: &kubermaticv1.SeedMLASettings{
+				UserClusterMLAEnabled: true,
 			},
 		},
 	}
@@ -392,6 +408,16 @@ func TestLoadFiles(t *testing.T) {
 	markFixtureUsed := func(fixtureName string) {
 		filename := fixtureName + ".yaml"
 		allFiles.Delete(filename)
+	}
+
+	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("Failed to apply defaults to KubermaticConfiguration: %v", err)
+	}
+
+	defaultedSeed, err := defaulting.DefaultSeed(seed, defaultedConfig, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("Failed to apply defaults to Seed: %v", err)
 	}
 
 	for _, ver := range kubernetesVersions {
@@ -767,18 +793,8 @@ func TestLoadFiles(t *testing.T) {
 						WithClient(dynamicClient).
 						WithCluster(cluster).
 						WithDatacenter(datacenter).
-						WithSeed(&kubermaticv1.Seed{
-							ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
-							Spec: kubermaticv1.SeedSpec{
-								ProxySettings: &kubermaticv1.ProxySettings{
-									HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
-								},
-								MLA: &kubermaticv1.SeedMLASettings{
-									UserClusterMLAEnabled: true,
-								},
-							},
-						}).
-						WithKubermaticConfiguration(config).
+						WithKubermaticConfiguration(defaultedConfig).
+						WithSeed(defaultedSeed).
 						WithNodeAccessNetwork("192.0.2.0/24").
 						WithEtcdDiskSize(resource.MustParse("5Gi")).
 						WithBackupPeriod(20 * time.Minute).

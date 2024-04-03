@@ -154,6 +154,7 @@ type nodePortProxyData interface {
 	RewriteImage(string) (string, error)
 	NodePortProxyTag() string
 	Cluster() *kubermaticv1.Cluster
+	Seed() *kubermaticv1.Seed
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
 
@@ -237,6 +238,8 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				},
 			}
 
+			seed := data.Seed()
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "envoy-manager",
 				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, imageName, data.NodePortProxyTag()))),
@@ -263,7 +266,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: registry.Must(data.RewriteImage(fmt.Sprintf("envoyproxy/envoy-distroless:%s", versions.Envoy))),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", seed.Spec.NodeportProxy.Envoy.DockerRepository, versions.Envoy))),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
