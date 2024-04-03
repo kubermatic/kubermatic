@@ -67,7 +67,7 @@ func getRouterByName(netClient *gophercloud.ServiceClient, name string) (*osrout
 	case 0:
 		return nil, fmt.Errorf("router with name '%s' not found", name)
 	default:
-		return nil, fmt.Errorf("found %d router for name '%s', expected exactly one", len(routers), name)
+		return nil, fmt.Errorf("found %d routers for name '%s', expected exactly one", len(routers), name)
 	}
 }
 
@@ -82,7 +82,7 @@ func getRouterByID(netClient *gophercloud.ServiceClient, id string) (*osrouters.
 	case 0:
 		return nil, fmt.Errorf("router with ID '%s' not found", id)
 	default:
-		return nil, fmt.Errorf("found %d router for ID '%s', expected exactly one", len(routers), id)
+		return nil, fmt.Errorf("found %d routers for ID '%s', expected exactly one", len(routers), id)
 	}
 }
 
@@ -353,7 +353,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 	return req.secGroupName, nil
 }
 
-func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
+func createUserClusterNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
 	iTrue := true
 	res := osnetworks.Create(netClient, osnetworks.CreateOpts{
 		Name:         resourceNamePrefix + clusterName,
@@ -505,7 +505,7 @@ func getSubnetByID(netClient *gophercloud.ServiceClient, id string) (*ossubnets.
 	case 0:
 		return nil, fmt.Errorf("subnet with id '%s' not found", id)
 	default:
-		return nil, fmt.Errorf("found %d subnet for id '%s', expected exactly one", len(allSubnets), id)
+		return nil, fmt.Errorf("found %d subnets for id '%s', expected exactly one", len(allSubnets), id)
 	}
 }
 
@@ -523,7 +523,7 @@ func getSubnetByName(netClient *gophercloud.ServiceClient, name string) (*ossubn
 	case 0:
 		return nil, fmt.Errorf("subnet named '%s' not found", name)
 	default:
-		return nil, fmt.Errorf("found %d subnet for name '%s', expected exactly one", len(allSubnets), name)
+		return nil, fmt.Errorf("found %d subnets for name '%s', expected exactly one", len(allSubnets), name)
 	}
 }
 

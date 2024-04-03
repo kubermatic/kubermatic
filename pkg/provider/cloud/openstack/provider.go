@@ -245,7 +245,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 			return nil, err
 		}
 	}
-	// Reconciling the subnets.All machines will live in one dedicated subnet.
+	// Reconciling the subnets. All machines will live in one dedicated subnet.
 	if force || cluster.Spec.Cloud.Openstack.SubnetID == "" || cluster.Spec.Cloud.Openstack.IPv6SubnetID == "" {
 		network, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.Network, false)
 		if err != nil {
@@ -290,7 +290,7 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		networkName = cluster.Name
 	}
 
-	newNetwork, err := createKubermaticNetwork(netClient, networkName)
+	newNetwork, err := createUserClusterNetwork(netClient, networkName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the kubermatic network: %w", err)
 	}
@@ -343,7 +343,7 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 
 	secGroupName, err := createKubermaticSecurityGroup(netClient, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the kubermatic security group: %w", err)
+		return nil, fmt.Errorf("failed to create the user cluster security group: %w", err)
 	}
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
@@ -383,7 +383,7 @@ func reconcileIPv6Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 				cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
 			})
 			if err != nil {
-				return nil, fmt.Errorf("failed to update IPv6 subnet to the cluster:: %w", err)
+				return nil, fmt.Errorf("failed to update IPv6 subnet to the cluster: %w", err)
 			}
 			return cluster, nil
 		}
@@ -434,7 +434,7 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 				cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 			})
 			if err != nil {
-				return nil, fmt.Errorf("failed to update IPv4 subnet to the cluster:: %w", err)
+				return nil, fmt.Errorf("failed to update IPv4 subnet to the cluster: %w", err)
 			}
 			return cluster, nil
 		}
@@ -451,7 +451,7 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to update IPv4 subnet to the cluster:: %w", err)
+			return nil, fmt.Errorf("failed to update IPv4 subnet to the cluster: %w", err)
 		}
 	}
 	return cluster, nil
@@ -563,10 +563,10 @@ func linkSubnetToRouter(netClient *gophercloud.ServiceClient, cluster *kubermati
 	ipAttached = err == nil && router != ""
 	if !ipAttached {
 		_, err := attachSubnetToRouter(netClient, subnetID, routerID)
-		kubernetes.AddFinalizer(cluster, finalizer)
 		if err != nil {
 			return err
 		}
+		kubernetes.AddFinalizer(cluster, finalizer)
 	}
 	return nil
 }
