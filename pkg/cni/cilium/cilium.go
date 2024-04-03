@@ -326,14 +326,21 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	// Validate immutability of specific top-level value subtrees, managed solely by KKP
+	exclusions := []exclusion{
+		{
+			fullPath:  "cni.chainingMode",
+			pathParts: []string{"cni", "chainingMode"},
+		},
+		{
+			fullPath:  "ipam.operator.clusterPoolIPv4PodCIDR",
+			pathParts: []string{"ipam", "operator", "clusterPoolIPv4PodCIDR"},
+		},
+	}
 	allErrs = append(allErrs, validateImmutableValues(newValues, oldValues, fieldPath, []string{
 		"cni",
 		"ipam",
 		"ipv6",
-	}, []string{
-		"cni.chainingMode",
-		"ipam.operator.clusterPoolIPv4PodCIDR",
-	})...)
+	}, exclusions)...)
 
 	// Validate that mandatory top-level values are present
 	allErrs = append(allErrs, validateMandatoryValues(newValues, fieldPath, []string{
@@ -361,22 +368,27 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 	}
 	allErrs = append(allErrs, validateImmutableValues(newOperator, oldOperator, operPath, []string{
 		"securityContext",
-	}, []string{})...)
+	}, []exclusion{})...)
 
 	return allErrs
 }
 
-func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string, excludedKeys []string) field.ErrorList {
+type exclusion struct {
+	fullPath  string
+	pathParts []string
+}
+
+func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *field.Path, immutableValues []string, exclusions []exclusion) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allowedValues := map[string]bool{}
 
 	for _, v := range immutableValues {
-		for _, exclusion := range excludedKeys {
-			if strings.HasPrefix(exclusion, v) {
-				if excludedKeyExists(newValues, strings.Split(exclusion, ".")...) {
+		for _, exclusion := range exclusions {
+			if strings.HasPrefix(exclusion.fullPath, v) {
+				if excludedKeyExists(newValues, exclusion.pathParts...) {
 					allowedValues[v] = true
 				}
-				if excludedKeyExists(oldValues, strings.Split(exclusion, ".")...) {
+				if excludedKeyExists(oldValues, exclusion.pathParts...) {
 					allowedValues[v] = true
 				}
 			}
