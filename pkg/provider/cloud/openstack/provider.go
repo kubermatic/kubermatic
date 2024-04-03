@@ -331,7 +331,7 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
 	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
 
-	req := createKubermaticSecurityGroupRequest{
+	req := createSecurityGroupRequest{
 		secGroupName: securityGroup,
 		ipv4Rules:    ipv4Network,
 		ipv6Rules:    ipv6Network,
@@ -341,7 +341,7 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 
 	req.nodePortsCIDRs = resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
 
-	secGroupName, err := createKubermaticSecurityGroup(netClient, req)
+	secGroupName, err := createSecurityGroup(netClient, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the user cluster security group: %w", err)
 	}
@@ -389,7 +389,7 @@ func reconcileIPv6Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createKubermaticIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, dnservers)
+		subnet, err = createIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the IPv6 subnet: %w", err)
 		}
@@ -440,7 +440,7 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createKubermaticSubnet(netClient, cluster.Name, network, dnservers)
+		subnet, err = createSubnet(netClient, cluster.Name, network, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic IPv4 subnet: %w", err)
 		}
@@ -517,7 +517,7 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		return cluster, nil
 	}
 	// Router not found by name, create a new router
-	router, err = createKubermaticRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
+	router, err = createRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new router: %w", err)
 	}
