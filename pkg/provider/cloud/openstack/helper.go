@@ -56,6 +56,49 @@ const (
 	resourceNamePrefix = "kubernetes-"
 )
 
+func getRouterByName(netClient *gophercloud.ServiceClient, name string) (*osrouters.Router, error) {
+	routers, err := listRouters(netClient, osrouters.ListOpts{Name: name})
+	if err != nil {
+		return nil, err
+	}
+	switch len(routers) {
+	case 1:
+		return &routers[0], nil
+	case 0:
+		return nil, fmt.Errorf("router with name '%s' not found", name)
+	default:
+		return nil, fmt.Errorf("found %d routers for name '%s', expected exactly one", len(routers), name)
+	}
+}
+
+func getRouterByID(netClient *gophercloud.ServiceClient, id string) (*osrouters.Router, error) {
+	routers, err := listRouters(netClient, osrouters.ListOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	switch len(routers) {
+	case 1:
+		return &routers[0], nil
+	case 0:
+		return nil, fmt.Errorf("router with ID '%s' not found", id)
+	default:
+		return nil, fmt.Errorf("found %d routers for ID '%s', expected exactly one", len(routers), id)
+	}
+}
+
+func listRouters(netClient *gophercloud.ServiceClient, listOpts osrouters.ListOpts) ([]osrouters.Router, error) {
+	allPages, err := osrouters.List(netClient, listOpts).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	allRouters, err := osrouters.ExtractRouters(allPages)
+	if err != nil {
+		return nil, err
+	}
+	return allRouters, nil
+}
+
 func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygroups.ListOpts) ([]ossecuritygroups.SecGroup, error) {
 	page, err := ossecuritygroups.List(netClient, opts).AllPages()
 	if err != nil {
@@ -158,8 +201,8 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 	return nil
 }
 
-type createKubermaticSecurityGroupRequest struct {
-	clusterName    string
+type createSecurityGroupRequest struct {
+	secGroupName   string
 	ipv4Rules      bool
 	ipv6Rules      bool
 	nodePortsCIDRs kubermaticv1.NetworkRanges
@@ -167,9 +210,8 @@ type createKubermaticSecurityGroupRequest struct {
 	highPort       int
 }
 
-func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
-	secGroupName := resourceNamePrefix + req.clusterName
-	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
+func createSecurityGroup(netClient *gophercloud.ServiceClient, req createSecurityGroupRequest) (string, error) {
+	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: req.secGroupName})
 	if err != nil {
 		return "", fmt.Errorf("failed to get security groups: %w", err)
 	}
@@ -178,7 +220,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 	switch len(secGroups) {
 	case 0:
 		gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
-			Name:        secGroupName,
+			Name:        req.secGroupName,
 			Description: "Contains security rules for the Kubernetes worker nodes",
 		})
 		if gres.Err != nil {
@@ -193,7 +235,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 		securityGroupID = secGroups[0].ID
 	default:
 		return "", fmt.Errorf("there are already %d security groups with name %q, dont know which one to use",
-			len(secGroups), secGroupName)
+			len(secGroups), req.secGroupName)
 	}
 
 	var rules []ossecuritygrouprules.CreateOpts
@@ -308,10 +350,10 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 		}
 	}
 
-	return secGroupName, nil
+	return req.secGroupName, nil
 }
 
-func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
+func createUserClusterNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
 	iTrue := true
 	res := osnetworks.Create(netClient, osnetworks.CreateOpts{
 		Name:         resourceNamePrefix + clusterName,
@@ -352,7 +394,7 @@ func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 	return res.ExtractErr()
 }
 
-func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
+func createSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
 	iTrue := true
 	subnetOpts := ossubnets.CreateOpts{
 		Name:       resourceNamePrefix + clusterName,
@@ -382,7 +424,7 @@ func createKubermaticSubnet(netClient *gophercloud.ServiceClient, clusterName, n
 	return res.Extract()
 }
 
-func createKubermaticIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, networkID, subnetPoolName string, dnsServers []string) (*ossubnets.Subnet, error) {
+func createIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, networkID, subnetPoolName string, dnsServers []string) (*ossubnets.Subnet, error) {
 	subnetOpts := ossubnets.CreateOpts{
 		Name:            resourceNamePrefix + clusterName + "-ipv6",
 		NetworkID:       networkID,
@@ -449,6 +491,54 @@ func getSubnetPoolByName(netClient *gophercloud.ServiceClient, name string) (*su
 	}
 }
 
+func getSubnetByID(netClient *gophercloud.ServiceClient, id string) (*ossubnets.Subnet, error) {
+	listOpts := ossubnets.ListOpts{
+		ID: id,
+	}
+	allSubnets, err := getAllSubnets(netClient, listOpts)
+	if err != nil {
+		return nil, err
+	}
+	switch len(allSubnets) {
+	case 1:
+		return &allSubnets[0], nil
+	case 0:
+		return nil, fmt.Errorf("subnet with id '%s' not found", id)
+	default:
+		return nil, fmt.Errorf("found %d subnets for id '%s', expected exactly one", len(allSubnets), id)
+	}
+}
+
+func getSubnetByName(netClient *gophercloud.ServiceClient, name string) (*ossubnets.Subnet, error) {
+	listOpts := ossubnets.ListOpts{
+		Name: name,
+	}
+	allSubnets, err := getAllSubnets(netClient, listOpts)
+	if err != nil {
+		return nil, err
+	}
+	switch len(allSubnets) {
+	case 1:
+		return &allSubnets[0], nil
+	case 0:
+		return nil, fmt.Errorf("subnet named '%s' not found", name)
+	default:
+		return nil, fmt.Errorf("found %d subnets for name '%s', expected exactly one", len(allSubnets), name)
+	}
+}
+
+func getAllSubnets(netClient *gophercloud.ServiceClient, listOpts ossubnets.ListOpts) ([]ossubnets.Subnet, error) {
+	allPages, err := ossubnets.List(netClient, listOpts).AllPages()
+	if err != nil {
+		return nil, err
+	}
+	allSubnets, err := ossubnets.ExtractSubnets(allPages)
+	if err != nil {
+		return nil, err
+	}
+	return allSubnets, nil
+}
+
 func getAllSubnetPools(netClient *gophercloud.ServiceClient, listOpts subnetpools.ListOpts) ([]subnetpools.SubnetPool, error) {
 	allPages, err := subnetpools.List(netClient, listOpts).AllPages()
 	if err != nil {
@@ -461,7 +551,7 @@ func getAllSubnetPools(netClient *gophercloud.ServiceClient, listOpts subnetpool
 	return allSubnetPools, nil
 }
 
-func createKubermaticRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
+func createRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
 	extNetwork, err := getNetworkByName(netClient, extNetworkName, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get external network %q: %w", extNetworkName, err)
