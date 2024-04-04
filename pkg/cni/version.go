@@ -69,8 +69,8 @@ var (
 			"1.13.3", // also affected by CVE-2023-34242, but kept here because 1.13.4 breaks IPSec support
 			"1.13.4",
 			"1.13.6", // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
-			"1.13.8", // CVE-2023-44487 (High Severity)
-			"1.14.3", // CVE-2024-28860, CVE-2024-28248 (High Severity)
+			"1.13.7", // CVE-2023-44487 (High Severity)
+			"1.13.8", // CVE-2024-28860, CVE-2024-28248 (High Severity)
 			"1.14.1", // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
 			"1.14.2", // CVE-2023-44487 (High Severity)
 			"1.14.3", // CVE-2024-28860, CVE-2024-28248 (High Severity)
