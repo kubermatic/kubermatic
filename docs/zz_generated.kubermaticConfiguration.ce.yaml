@@ -12,7 +12,6 @@ spec:
       - node-exporter
       - kube-state-metrics
       - multus
-      - hubble
       - metallb
     # DebugLog enables more verbose logging.
     debugLog: false
