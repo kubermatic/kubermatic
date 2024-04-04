@@ -32,7 +32,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
-		kubermaticv1.CNIPluginTypeCanal:  "v3.26",
+		kubermaticv1.CNIPluginTypeCanal:  "v3.27",
 		kubermaticv1.CNIPluginTypeCilium: "1.14.3",
 	}
 )
@@ -47,7 +47,7 @@ var (
 	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
 	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.24", "v3.25", "v3.26"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.25", "v3.26", "v3.27"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"v1.11",
 			"v1.12",
@@ -62,7 +62,7 @@ var (
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
 	// by the validation webhook for backward compatibility.
 	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.8", "v3.19", "v3.20", "v3.21", "v3.22", "v3.23"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.8", "v3.19", "v3.20", "v3.21", "v3.22", "v3.23", "v3.24"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"1.13.0", // CVE-2023-34242
 			"1.13.3", // also affected by CVE-2023-34242, but kept here because 1.13.4 breaks IPSec support
