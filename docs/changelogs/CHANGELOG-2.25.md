@@ -1,17 +1,6 @@
 # Kubermatic 2.25
 
 - [v2.25.0](#v2250)
-- [v2.25.1](#v2251)
-
-## [2.25.1](https://github.com/kubermatic/kubermatic/releases/tag/2.25.1)
-
-### Bugfixes
-
-- Add images for Velero and KubeLB to mirrored images list ([#13192](https://github.com/kubermatic/kubermatic/pull/13192))
-
-### Design
-
-- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13180](https://github.com/kubermatic/kubermatic/pull/13180))
 
 ## [v2.25.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.0)
 
