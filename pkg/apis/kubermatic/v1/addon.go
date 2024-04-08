@@ -36,6 +36,7 @@ const (
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // Addon specifies a cluster addon. Addons can be installed into user clusters
@@ -94,8 +95,23 @@ type AddonList struct {
 	Items []Addon `json:"items"`
 }
 
+// +kubebuilder:validation:Enum=New;Healthy;Unhealthy
+type AddonPhase string
+
+// These are the valid phases of a project.
+const (
+	AddonNew       AddonPhase = "New"
+	AddonHealthy   AddonPhase = "Healthy"
+	AddonUnhealthy AddonPhase = "Unhealthy"
+)
+
 // AddonStatus contains information about the reconciliation status.
 type AddonStatus struct {
+	// Phase is a description of the current addon status, summarizing the various conditions.
+	// This field is for informational purpose only and no logic should be tied to the phase.
+	// +kubebuilder:default=New
+	Phase AddonPhase `json:"phase,omitempty"`
+
 	Conditions map[AddonConditionType]AddonCondition `json:"conditions,omitempty"`
 }
 

@@ -151,6 +151,16 @@ spec:
                       - status
                     type: object
                   type: object
+                phase:
+                  default: New
+                  description: |-
+                    Phase is a description of the current addon status, summarizing the various conditions.
+                    This field is for informational purpose only and no logic should be tied to the phase.
+                  enum:
+                    - New
+                    - Healthy
+                    - Unhealthy
+                  type: string
               type: object
           type: object
       served: true

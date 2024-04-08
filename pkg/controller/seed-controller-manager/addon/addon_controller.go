@@ -312,12 +312,28 @@ func addonReconcileWrapper(
 	errs := []error{err}
 	err = kubermaticv1helper.UpdateAddonStatus(ctx, client, addon, func(a *kubermaticv1.Addon) {
 		setAddonCondition(a, conditionType, reconcilingStatus)
+		a.Status.Phase = getAddonPhase(a)
 	})
 	if ctrlruntimeclient.IgnoreNotFound(err) != nil {
 		errs = append(errs, err)
 	}
 
 	return result, kerrors.NewAggregate(errs)
+}
+
+func getAddonPhase(addon *kubermaticv1.Addon) kubermaticv1.AddonPhase {
+	reconciledCond, wasReconciled := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
+
+	switch {
+	case reconciledCond.Status == corev1.ConditionTrue:
+		return kubermaticv1.AddonHealthy
+
+	case wasReconciled:
+		return kubermaticv1.AddonUnhealthy
+
+	default:
+		return kubermaticv1.AddonNew
+	}
 }
 
 // garbageCollectAddon is called when the cluster that owns the addon is gone
@@ -733,6 +749,8 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	oldAddon := addon.DeepCopy()
 
 	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	addon.Status.Phase = getAddonPhase(addon)
+
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
