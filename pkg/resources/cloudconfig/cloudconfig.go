@@ -126,7 +126,6 @@ func CloudConfig(
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
 				UseOctavia:           useOctavia,
-				FloatingNetworkID:    cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation],
 			},
 			Version: cluster.Status.Versions.ControlPlane.String(),
 		}

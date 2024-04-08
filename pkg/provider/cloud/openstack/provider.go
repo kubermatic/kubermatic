@@ -91,7 +91,7 @@ func NewCloudProvider(
 		dc:                dc.Spec.Openstack,
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
-		getClientFunc:     GetNetClientForCluster,
+		getClientFunc:     getNetClientForCluster,
 	}, nil
 }
 
@@ -138,7 +138,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.Network != "" {
-		network, err := GetNetworkByName(netClient, spec.Openstack.Network, false)
+		network, err := getNetworkByName(netClient, spec.Openstack.Network, false)
 		if err != nil {
 			return fmt.Errorf("failed to get network %q: %w", spec.Openstack.Network, err)
 		}
@@ -153,7 +153,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.FloatingIPPool != "" {
-		_, err := GetNetworkByName(netClient, spec.Openstack.FloatingIPPool, true)
+		_, err := getNetworkByName(netClient, spec.Openstack.FloatingIPPool, true)
 		if err != nil {
 			return fmt.Errorf("failed to get floating ip pool %q: %w", spec.Openstack.FloatingIPPool, err)
 		}
@@ -238,7 +238,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 			return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
 		}
 	} else {
-		extNetwork, err := GetNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
+		extNetwork, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get external network by name: %w", err)
 		}
@@ -894,7 +894,7 @@ func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 	return nil
 }
 
-func GetNetClientForCluster(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+func getNetClientForCluster(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
 	creds, err := GetCredentialsForCluster(cluster, secretKeySelector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
