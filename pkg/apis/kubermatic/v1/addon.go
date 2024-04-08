@@ -29,7 +29,8 @@ const (
 	// AddonKindName represents "Kind" defined in Kubernetes.
 	AddonKindName = "Addon"
 
-	AddonResourcesCreated AddonConditionType = "AddonResourcesCreatedSuccessfully"
+	AddonResourcesCreated       AddonConditionType = "AddonResourcesCreatedSuccessfully"
+	AddonReconciledSuccessfully AddonConditionType = "AddonReconciledSuccessfully"
 )
 
 // +kubebuilder:object:generate=true
@@ -98,7 +99,7 @@ type AddonStatus struct {
 	Conditions map[AddonConditionType]AddonCondition `json:"conditions,omitempty"`
 }
 
-// +kubebuilder:validation:Enum=AddonResourcesCreatedSuccessfully
+// +kubebuilder:validation:Enum=AddonResourcesCreatedSuccessfully;AddonReconciledSuccessfully
 
 type AddonConditionType string
 
