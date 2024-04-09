@@ -23,8 +23,11 @@ source hack/lib.sh
 function change_minor() {
   local delimiter=.
   local array=($(echo "$1" | tr $delimiter '\n'))
-  array[1]=$((array[1]+$2))
-  echo $(local IFS=$delimiter ; echo "${array[*]}")
+  array[1]=$((array[1] + $2))
+  echo $(
+    local IFS=$delimiter
+    echo "${array[*]}"
+  )
 }
 
 # determine current and previous versions/branches
