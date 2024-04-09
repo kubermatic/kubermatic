@@ -34,6 +34,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -41,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -70,6 +72,7 @@ const (
 	addonEnsureLabelKey       = "addons.kubermatic.io/ensure"
 	migratedHetznerCSIAddon   = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
 	migratedVsphereCSIAddon   = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
+	migratedAzureCSIAddon     = "kubermatic.k8c.io/migrated-azure-csi-addon"
 	csiAddonStorageClassLabel = "kubermatic-addon=csi"
 	CSIAddonName              = "csi"
 	pvMigrationAnnotation     = "pv.kubernetes.io/migrated-to"
@@ -579,6 +582,30 @@ func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.Sugar
 	return nil
 }
 
+// Between v2.24 and v2.25, the roleRef in a ClusterRoleBinding for the Azure CSI changed.
+func (r *Reconciler) migrateAzureCSIRBAC(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get kube client: %w", err)
+	}
+
+	crb := &rbacv1.ClusterRoleBinding{}
+	if err := cl.Get(ctx, types.NamespacedName{Name: "csi-azuredisk-node-secret-binding"}, crb); apierrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return fmt.Errorf("failed to get ClusterRoleBinding: %w", err)
+	}
+
+	if crb.RoleRef.Name != "csi-azuredisk-node-role" {
+		log.Infof("Deleting Azure ClusterRoleBinding %s to allow upgrade", crb.Name)
+		if err := cl.Delete(ctx, crb); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete ClusterRoleBinding: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
@@ -608,29 +635,38 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 		var annotation string
 
-		if cluster.Annotations[migratedHetznerCSIAddon] != ver {
-			if cluster.Spec.Cloud.Hetzner != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			switch {
+			case cluster.Spec.Cloud.Hetzner != nil && cluster.Annotations[migratedHetznerCSIAddon] != ver:
 				if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 				}
 
 				annotation = migratedHetznerCSIAddon
-			} else if cluster.Spec.Cloud.VSphere != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+
+			case cluster.Spec.Cloud.VSphere != nil && cluster.Annotations[migratedVsphereCSIAddon] != ver:
 				if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 				}
 
 				annotation = migratedVsphereCSIAddon
+
+			case cluster.Spec.Cloud.Azure != nil && cluster.Annotations[migratedAzureCSIAddon] != ver:
+				if err := r.migrateAzureCSIRBAC(ctx, log, cluster); err != nil {
+					return fmt.Errorf("failed to migrate Azure CSI RBAC: %w", err)
+				}
+
+				annotation = migratedAzureCSIAddon
 			}
 		}
 
 		if annotation != "" {
-			if cluster.Annotations == nil {
-				cluster.Annotations = make(map[string]string)
-			}
-			cluster.Annotations[annotation] = ver
+			kubernetes.EnsureAnnotations(cluster, map[string]string{
+				annotation: ver,
+			})
+
 			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("failed to set cluster annotation", zap.Error(err), "annotation", annotation)
+				log.Errorw("Failed to set cluster annotation", zap.Error(err), "annotation", annotation)
 			}
 		}
 	}
