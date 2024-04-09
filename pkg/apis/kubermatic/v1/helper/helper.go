@@ -33,6 +33,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+type AddonPatchFunc func(addon *kubermaticv1.Addon)
+
+// UpdateAddonStatus will attempt to patch the status of the given addon.
+func UpdateAddonStatus(ctx context.Context, client ctrlruntimeclient.Client, addon *kubermaticv1.Addon, patch AddonPatchFunc) error {
+	key := ctrlruntimeclient.ObjectKeyFromObject(addon)
+
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// fetch the current state of the addon
+		if err := client.Get(ctx, key, addon); err != nil {
+			return err
+		}
+
+		// modify it
+		original := addon.DeepCopy()
+		patch(addon)
+
+		// save some work
+		if reflect.DeepEqual(original.Status, addon.Status) {
+			return nil
+		}
+
+		// update the status
+		return client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(original))
+	})
+}
+
 type ClusterPatchFunc func(cluster *kubermaticv1.Cluster)
 
 // UpdateClusterStatus will attempt to patch the cluster status

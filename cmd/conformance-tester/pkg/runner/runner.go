@@ -392,6 +392,10 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed waiting for control plane to become ready: %w", err)
 	}
 
+	if err := r.checkAddons(ctx, report, log, cluster); err != nil {
+		return fmt.Errorf("failed waiting for addons to become ready: %w", err)
+	}
+
 	if err := util.JUnitWrapper("[KKP] Add LB and PV Finalizers", report, func() error {
 		return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
@@ -755,9 +759,37 @@ func (r *TestRunner) updateClusterToNextMinor(
 		return fmt.Errorf("failed to wait for all pods to get ready: %w", err)
 	}
 
+	if err := r.checkAddons(ctx, report, log, cluster); err != nil {
+		return fmt.Errorf("failed waiting for addons to become ready: %w", err)
+	}
+
 	log.Info("Cluster update complete.")
 
 	return nil
+}
+
+func (r *TestRunner) checkAddons(ctx context.Context, report *reporters.JUnitTestSuite, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	return util.JUnitWrapper("[KKP] Wait for addons", report, func() error {
+		return wait.PollLog(ctx, log, 2*time.Second, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+			addons := kubermaticv1.AddonList{}
+			if err := r.opts.SeedClusterClient.List(ctx, &addons, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+				return err, nil
+			}
+
+			unhealthyAddons := sets.New[string]()
+			for _, addon := range addons.Items {
+				if addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully].Status != corev1.ConditionTrue {
+					unhealthyAddons.Insert(addon.Name)
+				}
+			}
+
+			if unhealthyAddons.Len() > 0 {
+				return fmt.Errorf("unhealthy addons: %v", sets.List(unhealthyAddons)), nil
+			}
+
+			return nil, nil
+		})
+	})
 }
 
 func (r *TestRunner) getKubeconfig(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, error) {

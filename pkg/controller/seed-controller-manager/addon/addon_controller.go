@@ -49,6 +49,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -249,23 +250,34 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := addonReconcileWrapper(
 		ctx,
 		r.Client,
-		r.workerName,
-		cluster,
-		r.versions,
-		kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess,
-		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, log, addon, cluster)
+		addon,
+		kubermaticv1.AddonReconciledSuccessfully,
+		func(ctx context.Context) (*reconcile.Result, error) {
+			return kubermaticv1helper.ClusterReconcileWrapper(
+				ctx,
+				r.Client,
+				r.workerName,
+				cluster,
+				r.versions,
+				kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess,
+				func() (*reconcile.Result, error) {
+					result, err := r.reconcile(ctx, log, addon, cluster)
+					if err != nil {
+						r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+						r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+							"failed to reconcile Addon %q: %v", addon.Name, err)
+					}
+
+					return result, err
+				},
+			)
 		},
 	)
 
 	if err != nil {
-		r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
-			"failed to reconcile Addon %q: %v", addon.Name, err)
-
 		return reconcile.Result{}, err
 	}
 
@@ -280,6 +292,48 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	return *result, nil
+}
+
+func addonReconcileWrapper(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	addon *kubermaticv1.Addon,
+	conditionType kubermaticv1.AddonConditionType,
+	reconcile func(ctx context.Context) (*reconcile.Result, error),
+) (*reconcile.Result, error) {
+	reconcilingStatus := corev1.ConditionFalse
+	result, err := reconcile(ctx)
+
+	// Only set to true if we had no error and don't want to reqeue the cluster
+	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
+		reconcilingStatus = corev1.ConditionTrue
+	}
+
+	errs := []error{err}
+	err = kubermaticv1helper.UpdateAddonStatus(ctx, client, addon, func(a *kubermaticv1.Addon) {
+		setAddonCondition(a, conditionType, reconcilingStatus)
+		a.Status.Phase = getAddonPhase(a)
+	})
+	if ctrlruntimeclient.IgnoreNotFound(err) != nil {
+		errs = append(errs, err)
+	}
+
+	return result, kerrors.NewAggregate(errs)
+}
+
+func getAddonPhase(addon *kubermaticv1.Addon) kubermaticv1.AddonPhase {
+	reconciledCond, wasReconciled := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
+
+	switch {
+	case reconciledCond.Status == corev1.ConditionTrue:
+		return kubermaticv1.AddonHealthy
+
+	case wasReconciled:
+		return kubermaticv1.AddonUnhealthy
+
+	default:
+		return kubermaticv1.AddonNew
+	}
 }
 
 // garbageCollectAddon is called when the cluster that owns the addon is gone
@@ -695,6 +749,8 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	oldAddon := addon.DeepCopy()
 
 	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	addon.Status.Phase = getAddonPhase(addon)
+
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
