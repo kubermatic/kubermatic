@@ -1,0 +1,203 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Cluster
+metadata:
+  creationTimestamp: "2024-04-09T10:54:25Z"
+  finalizers:
+  - kubermatic.k8c.io/alertmanager
+  - kubermatic.k8c.io/cleanup-credentials-secrets
+  - kubermatic.k8c.io/cleanup-etcdbackupconfigs
+  - kubermatic.k8c.io/cleanup-kubermatic-constraints
+  - kubermatic.k8c.io/cleanup-kubevirt-namespace
+  - kubermatic.k8c.io/cleanup-namespace
+  - kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.k8c.io/delete-nodes
+  - kubermatic.k8c.io/mla
+  generation: 3
+  labels:
+    project-id: b92gxwjjgc
+  name: q9zvvdffm5
+  resourceVersion: "372744773"
+  uid: c558fdaf-5ae1-46b8-8214-b7a96c315d60
+spec:
+  auditLogging: {}
+  cloud:
+    dc: kv-hamburg
+    kubevirt:
+      credentialsReference:
+        name: credential-kubevirt-q9zvvdffm5
+        namespace: kubermatic
+      storageClasses:
+      - isDefaultClass: true
+        name: px-csi-db
+    providerName: kubevirt
+  clusterNetwork:
+    dnsDomain: cluster.local
+    ipFamily: IPv4
+    ipvs:
+      strictArp: true
+    konnectivityEnabled: true
+    nodeCidrMaskSizeIPv4: 24
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+      - 172.26.0.0/16
+    proxyMode: ebpf
+    services:
+      cidrBlocks:
+      - 10.241.0.0/20
+    tunnelingAgentIP: 100.64.30.10
+  cniPlugin:
+    type: cilium
+    version: 1.14.3
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+    konnectivityProxy: {}
+    nodePortProxyEnvoy:
+      resources: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableOperatingSystemManager: true
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  features:
+    apiserverNetworkPolicy: true
+    ccmClusterName: true
+    etcdLauncher: true
+    externalCloudProvider: true
+  humanReadableName: test cluster
+  kubelb:
+    enabled: false
+  kubernetesDashboard:
+    enabled: true
+  mla:
+    monitoringEnabled: true
+  oidc: {}
+  opaIntegration:
+    webhookTimeoutSeconds: 10
+  pause: false
+  version: 1.28.7
+status:
+  address:
+    adminToken: xxxxxx.xxxxxxxxxxxxxxxx
+    externalName: yadda.yadda.yadda
+    internalURL: apiserver-external.cluster-q9zvvdffm5.svc.cluster.local.
+    ip: 1.2.3.4
+    port: 6443
+    url: https://yadda.yadda.yadda:6443
+  conditions:
+    AddonControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:12Z"
+      lastTransitionTime: "2024-04-09T10:55:12Z"
+      status: "True"
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:08Z"
+      lastTransitionTime: "2024-04-09T10:55:08Z"
+      status: "True"
+    CNIControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:25Z"
+      status: "False"
+    CSIAddonInUse:
+      kubermaticVersion: 4a0ef6fa2f4706caf3aec9d18b95918e5b813993
+      lastHeartbeatTime: "2024-04-09T10:55:37Z"
+      status: "False"
+    CloudControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:32Z"
+      lastTransitionTime: "2024-04-09T10:54:32Z"
+      status: "True"
+    ClusterBackupControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:07Z"
+      lastTransitionTime: "2024-04-09T10:55:07Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:43Z"
+      status: "True"
+    ClusterInitialized:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:30Z"
+      message: Cluster has been initialized successfully
+      status: "True"
+    EtcdClusterInitialized:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:11Z"
+      message: Etcd Cluster has been initialized successfully
+      status: "True"
+    IPAMControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:27Z"
+      status: "True"
+    MLAControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:33Z"
+      lastTransitionTime: "2024-04-09T10:54:33Z"
+      status: "True"
+    MachineDeploymentReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:25Z"
+      lastTransitionTime: "2024-04-09T10:55:25Z"
+      status: "True"
+    MonitoringControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:21Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:55:29Z"
+      lastTransitionTime: "2024-04-09T10:55:29Z"
+      message: All control plane components are up to date
+      reason: ClusterUpdateSuccessful
+      status: "True"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:26Z"
+      status: "True"
+    UpdateProgress:
+      kubermaticVersion: v2.25.0-41-g4a0ef6fa2
+      lastHeartbeatTime: "2024-04-09T10:54:44Z"
+      message: No update in progress, cluster has reached its desired version.
+      reason: UpToDate
+      status: "True"
+  extendedHealth:
+    alertmanagerConfig: HealthStatusUp
+    apiserver: HealthStatusUp
+    applicationController: HealthStatusUp
+    cloudProviderInfrastructure: HealthStatusUp
+    controller: HealthStatusUp
+    etcd: HealthStatusUp
+    konnectivity: HealthStatusUp
+    kubernetesDashboard: HealthStatusUp
+    machineController: HealthStatusUp
+    mlaGateway: HealthStatusUp
+    monitoring: HealthStatusDown
+    operatingSystemManager: HealthStatusUp
+    scheduler: HealthStatusUp
+    userClusterControllerManager: HealthStatusUp
+  lastProviderReconciliation: "2024-04-09T10:55:37Z"
+  namespaceName: cluster-q9zvvdffm5
+  phase: Running
+  resourceUsage:
+    cpu: "2"
+    memory: 8Gi
+    storage: 10G
+  userEmail: user@example.com
+  versions:
+    apiserver: 1.28.7
+    controlPlane: 1.28.7
+    controllerManager: 1.28.7
+    scheduler: 1.28.7
