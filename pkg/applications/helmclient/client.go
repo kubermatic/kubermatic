@@ -89,14 +89,25 @@ type AuthSettings struct {
 	// RegistryConfigFile is the path to registry config file. It's dockercfg
 	// file that follows the same format rules as ~/.docker/config.json
 	RegistryConfigFile string
+
+	// PlainHTTP enforces using plain HTTP, useful for when the protocol
+	// cannot be inferred directly (for example because OCI can be accessed
+	// both via HTTP and HTTPS).
+	PlainHTTP bool
 }
 
 // newRegistryClient returns a new registry client with authentication is RegistryConfigFile is defined.
 func (a *AuthSettings) newRegistryClient() (*registry.Client, error) {
-	if a.RegistryConfigFile == "" {
-		return registry.NewClient()
+	opts := []registry.ClientOption{}
+	if a.RegistryConfigFile != "" {
+		opts = append(opts, registry.ClientOptCredentialsFile(a.RegistryConfigFile))
 	}
-	return registry.NewClient(registry.ClientOptCredentialsFile(a.RegistryConfigFile))
+
+	if a.PlainHTTP {
+		opts = append(opts, registry.ClientOptPlainHTTP())
+	}
+
+	return registry.NewClient(opts...)
 }
 
 // registryClientAndGetterOptions return registry.Client and authentication options for Getter.
