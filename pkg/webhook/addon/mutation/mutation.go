@@ -138,7 +138,7 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 	addon.Spec.Cluster = corev1.ObjectReference{
 		Name:       cluster.Name,
 		Namespace:  "",
-		UID:        cluster.UID,
+		UID:        "",
 		APIVersion: cluster.APIVersion,
 		Kind:       "Cluster",
 	}

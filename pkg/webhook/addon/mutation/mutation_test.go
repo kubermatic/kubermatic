@@ -63,7 +63,6 @@ func TestHandle(t *testing.T) {
 		APIVersion: cluster.APIVersion,
 		Kind:       cluster.Kind,
 		Name:       cluster.Name,
-		UID:        cluster.UID,
 	}
 
 	tests := []struct {
@@ -98,7 +97,6 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/cluster/apiVersion", "kubermatic.k8c.io/v1"),
 				jsonpatch.NewOperation("add", "/spec/cluster/kind", "Cluster"),
 				jsonpatch.NewOperation("add", "/spec/cluster/name", "xyz"),
-				jsonpatch.NewOperation("add", "/spec/cluster/uid", "12345"),
 			},
 		},
 		{
@@ -132,7 +130,7 @@ func TestHandle(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cluster/apiVersion", "kubermatic.k8c.io/v1"),
 				jsonpatch.NewOperation("replace", "/spec/cluster/kind", "Cluster"),
 				jsonpatch.NewOperation("replace", "/spec/cluster/name", "xyz"),
-				jsonpatch.NewOperation("replace", "/spec/cluster/uid", "12345"),
+				jsonpatch.NewOperation("remove", "/spec/cluster/uid", nil),
 			},
 		},
 		{
