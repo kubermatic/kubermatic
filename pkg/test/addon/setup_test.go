@@ -89,9 +89,9 @@ func setupEnvForUpgrade(t *testing.T, client ctrlruntimeclient.Client, provider 
 	// ClusterRoleBinding for Azure's CSI was changed.
 	// https://github.com/kubermatic/kubermatic/pull/13250
 	if addonName == "csi" && provider == kubermaticv1.AzureCloudProvider {
-		driver := &rbacv1.ClusterRoleBinding{}
-		driver.Name = "csi-azuredisk-node-secret-binding"
-		if err := client.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
+		crb := &rbacv1.ClusterRoleBinding{}
+		crb.Name = "csi-azuredisk-node-secret-binding"
+		if err := client.Delete(ctx, crb); err != nil && !apierrors.IsNotFound(err) {
 			t.Fatalf("Failed to delete Azure CSI ClusterRoleBinding: %v", err)
 		}
 	}
