@@ -1,4 +1,4 @@
-//-- go:build addonupgrade
+//go:build addon_integration
 
 /*
 Copyright 2024 The Kubermatic Kubernetes Platform contributors.

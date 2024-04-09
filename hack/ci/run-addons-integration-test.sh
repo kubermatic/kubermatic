@@ -33,9 +33,13 @@ CURRENT_RELEASE=
 PREVIOUS_BRANCH=
 PREVIOUS_RELEASE=
 
+# fetch branches
+git remote add origin https://github.com/kubermatic/kubermatic
+git fetch origin --quiet
+
 if [[ "$CURRENT_BRANCH" == "main" ]]; then
   # find the most recent release branch and return its version, like "v2.25"
-  PREVIOUS_RELEASE="$(git branch --list 'release/v*' --format '%(refname:lstrip=3)' | sort -rV | head -n1)"
+  PREVIOUS_RELEASE="$(git branch --remotes --list 'origin/release/v*' --format '%(refname:lstrip=4)' | sort -rV | head -n1)"
   CURRENT_RELEASE="$(change_minor "$PREVIOUS_RELEASE" 1)"
 elif [[ "$CURRENT_BRANCH" =~ ^release/v ]]; then
   CURRENT_RELEASE="$(basename "$CURRENT_BRANCH")"
@@ -62,13 +66,14 @@ currentAddons="$(mktemp -d)"
 cp -ar addons/* "$currentAddons"
 
 previousAddons="$(mktemp -d)"
-git checkout "$PREVIOUS_BRANCH" -- addons/
+rm -rf addons/
+git checkout "origin/$PREVIOUS_BRANCH" -- addons/
 cp -ar addons/* "$previousAddons"
 
 # check if addons are compatible
 echodate "Testing addon upgrade compatibility…"
 
-go_test addon_integration -timeout 30m -tags addon_integration -v ./pkg/test/addon \
+go_test addon_integration -timeout 30m -tags addon_integration ./pkg/test/addon \
   -previous "$previousAddons" \
   -current "$currentAddons"
 

@@ -34,8 +34,7 @@ var (
 		kubermaticv1.VMwareCloudDirectorCloudProvider,
 	}
 
-	// anyProvider is used when we want to test against, but do not care against
-	// which provider
+	// anyProvider is used when we want to test against, but do not care against which provider.
 	anyProvider = []kubermaticv1.ProviderType{kubermaticv1.AWSCloudProvider}
 
 	AddonProviderMatrix = map[string][]kubermaticv1.ProviderType{

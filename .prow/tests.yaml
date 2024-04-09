@@ -255,7 +255,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.22-3
+        - image: quay.io/kubermatic/integration-tests:k8s-1.29.1-rev0
           command:
             - "./hack/ci/run-addons-integration-test.sh"
           resources:
