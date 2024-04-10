@@ -86,6 +86,17 @@ spec:
         - name: ca
           mountPath: /etc/ssl/certs
         {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          seccompProfile:
+            type: RuntimeDefault
       volumes:
       - name: config
         configMap:
@@ -101,10 +112,6 @@ spec:
           - key: {{ $.Values.iap.customProviderCA.secretKey }}
             path: {{ $.Values.iap.customProviderCA.secretKey }}
       {{- end }}
-      securityContext:
-        fsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
       nodeSelector:
 {{ toYaml $.Values.iap.nodeSelector | indent 8 }}
       affinity:
