@@ -392,10 +392,6 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed waiting for control plane to become ready: %w", err)
 	}
 
-	if err := r.checkAddons(ctx, report, log, cluster); err != nil {
-		return fmt.Errorf("failed waiting for addons to become ready: %w", err)
-	}
-
 	if err := util.JUnitWrapper("[KKP] Add LB and PV Finalizers", report, func() error {
 		return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 			if err := r.opts.SeedClusterClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
@@ -492,6 +488,10 @@ func (r *TestRunner) executeTests(
 		},
 	)); err != nil {
 		return fmt.Errorf("failed to wait for all pods to get ready: %w", err)
+	}
+
+	if err := r.checkAddons(ctx, report, log, cluster); err != nil {
+		return fmt.Errorf("failed waiting for addons to become ready: %w", err)
 	}
 
 	if err := r.testCluster(ctx, log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
