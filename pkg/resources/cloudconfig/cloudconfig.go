@@ -30,6 +30,7 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	openstackprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
 )
@@ -104,6 +105,7 @@ func CloudConfig(
 		if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
 			useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
 		}
+
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
 				AuthURL:                     dc.Spec.Openstack.AuthURL,
@@ -134,6 +136,12 @@ func CloudConfig(
 
 		if cluster.Spec.Cloud.Openstack.IngressHostnameSuffix != nil {
 			openstackCloudConfig.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.Openstack.IngressHostnameSuffix
+		}
+
+		// we won't throw an error here for backwards compatibility and instead simply not set
+		// the floating-ip-pool-id field if the annotation is not there.
+		if cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation] != "" {
+			openstackCloudConfig.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstackprovider.FloatingIPPoolIDAnnotation]
 		}
 
 		cloudConfig, err = openstack.CloudConfigToString(openstackCloudConfig)

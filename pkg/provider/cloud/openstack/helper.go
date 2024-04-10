@@ -154,7 +154,7 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExter
 	}
 }
 
-func getExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExternalExt, error) {
+func getDefaultExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWithExternalExt, error) {
 	existingNetworks, err := getAllNetworks(netClient, osnetworks.ListOpts{})
 	if err != nil {
 		return nil, err
