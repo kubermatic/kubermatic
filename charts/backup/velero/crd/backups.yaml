@@ -1,10 +1,10 @@
-# This file has been generated with Velero v1.10.1. Do not edit.
----
+# This file has been generated with Velero v1.13.1. Do not edit.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.12.0
   labels:
     component: velero
   name: backups.velero.io
@@ -36,6 +36,9 @@ spec:
                 csiSnapshotTimeout:
                   description: CSISnapshotTimeout specifies the time used to wait for CSI VolumeSnapshot status turns to ReadyToUse during creation, before returning error as timeout. The default value is 10 minute.
                   type: string
+                datamover:
+                  description: DataMover specifies the data mover to be used by the backup. If DataMover is "" or "velero", the built-in data mover will be used.
+                  type: string
                 defaultVolumesToFsBackup:
                   description: DefaultVolumesToFsBackup specifies whether pod volume file system backup should be used for all volumes by default.
                   nullable: true
@@ -44,6 +47,18 @@ spec:
                   description: "DefaultVolumesToRestic specifies whether restic should be used to take a backup of all pod volumes by default. Deprecated: this field is no longer used and will be removed entirely in future. Use DefaultVolumesToFsBackup instead."
                   nullable: true
                   type: boolean
+                excludedClusterScopedResources:
+                  description: ExcludedClusterScopedResources is a slice of cluster-scoped resource type names to exclude from the backup. If set to "*", all cluster-scoped resource types are excluded. The default value is empty.
+                  items:
+                    type: string
+                  nullable: true
+                  type: array
+                excludedNamespaceScopedResources:
+                  description: ExcludedNamespaceScopedResources is a slice of namespace-scoped resource type names to exclude from the backup. If set to "*", all namespace-scoped resource types are excluded. The default value is empty.
+                  items:
+                    type: string
+                  nullable: true
+                  type: array
                 excludedNamespaces:
                   description: ExcludedNamespaces contains a list of namespaces that are not included in the backup.
                   items:
@@ -119,6 +134,7 @@ spec:
                                 description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
                           name:
                             description: Name is the name of this hook.
                             type: string
@@ -198,6 +214,18 @@ spec:
                   description: IncludeClusterResources specifies whether cluster-scoped resources should be included for consideration in the backup.
                   nullable: true
                   type: boolean
+                includedClusterScopedResources:
+                  description: IncludedClusterScopedResources is a slice of cluster-scoped resource type names to include in the backup. If set to "*", all cluster-scoped resource types are included. The default value is empty, which means only related cluster-scoped resources are included.
+                  items:
+                    type: string
+                  nullable: true
+                  type: array
+                includedNamespaceScopedResources:
+                  description: IncludedNamespaceScopedResources is a slice of namespace-scoped resource type names to include in the backup. The default value is "*".
+                  items:
+                    type: string
+                  nullable: true
+                  type: array
                 includedNamespaces:
                   description: IncludedNamespaces is a slice of namespace names to include objects from. If empty, all namespaces are included.
                   items:
@@ -210,6 +238,9 @@ spec:
                     type: string
                   nullable: true
                   type: array
+                itemOperationTimeout:
+                  description: ItemOperationTimeout specifies the time used to wait for asynchronous BackupItemAction operations The default value is 1 hour.
+                  type: string
                 labelSelector:
                   description: LabelSelector is a metav1.LabelSelector to filter with when adding individual objects to the backup. If empty or nil, all objects are included. Optional.
                   nullable: true
@@ -241,6 +272,7 @@ spec:
                       description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                       type: object
                   type: object
+                  x-kubernetes-map-type: atomic
                 metadata:
                   properties:
                     labels:
@@ -280,6 +312,7 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                    x-kubernetes-map-type: atomic
                   nullable: true
                   type: array
                 orderedResources:
@@ -288,8 +321,29 @@ spec:
                   description: OrderedResources specifies the backup order of resources of specific Kind. The map key is the resource name and value is a list of object names separated by commas. Each resource name has format "namespace/objectname".  For cluster resources, simply use "objectname".
                   nullable: true
                   type: object
+                resourcePolicy:
+                  description: ResourcePolicy specifies the referenced resource policies that backup should follow
+                  properties:
+                    apiGroup:
+                      description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
+                      type: string
+                    kind:
+                      description: Kind is the type of resource being referenced
+                      type: string
+                    name:
+                      description: Name is the name of resource being referenced
+                      type: string
+                  required:
+                    - kind
+                    - name
+                  type: object
+                  x-kubernetes-map-type: atomic
+                snapshotMoveData:
+                  description: SnapshotMoveData specifies whether snapshot data should be moved
+                  nullable: true
+                  type: boolean
                 snapshotVolumes:
-                  description: SnapshotVolumes specifies whether to take cloud snapshots of any PV's referenced in the set of objects included in the Backup.
+                  description: SnapshotVolumes specifies whether to take snapshots of any PV's referenced in the set of objects included in the Backup.
                   nullable: true
                   type: boolean
                 storageLocation:
@@ -298,6 +352,14 @@ spec:
                 ttl:
                   description: TTL is a time.Duration-parseable string describing how long the Backup should be retained for.
                   type: string
+                uploaderConfig:
+                  description: UploaderConfig specifies the configuration for the uploader.
+                  nullable: true
+                  properties:
+                    parallelFilesUpload:
+                      description: ParallelFilesUpload is the number of files parallel uploads to perform when using the uploader.
+                      type: integer
+                  type: object
                 volumeSnapshotLocations:
                   description: VolumeSnapshotLocations is a list containing names of VolumeSnapshotLocations associated with this backup.
                   items:
@@ -307,6 +369,15 @@ spec:
             status:
               description: BackupStatus captures the current status of a Velero backup.
               properties:
+                backupItemOperationsAttempted:
+                  description: BackupItemOperationsAttempted is the total number of attempted async BackupItemAction operations for this backup.
+                  type: integer
+                backupItemOperationsCompleted:
+                  description: BackupItemOperationsCompleted is the total number of successfully completed async BackupItemAction operations for this backup.
+                  type: integer
+                backupItemOperationsFailed:
+                  description: BackupItemOperationsFailed is the total number of async BackupItemAction operations for this backup which ended with an error.
+                  type: integer
                 completionTimestamp:
                   description: CompletionTimestamp records the time a backup was completed. Completion time is recorded even on failed backups. Completion time is recorded before uploading the backup object. The server's time is used for CompletionTimestamps
                   format: date-time
@@ -332,12 +403,27 @@ spec:
                 formatVersion:
                   description: FormatVersion is the backup format version, including major, minor, and patch version.
                   type: string
+                hookStatus:
+                  description: HookStatus contains information about the status of the hooks.
+                  nullable: true
+                  properties:
+                    hooksAttempted:
+                      description: HooksAttempted is the total number of attempted hooks Specifically, HooksAttempted represents the number of hooks that failed to execute and the number of hooks that executed successfully.
+                      type: integer
+                    hooksFailed:
+                      description: HooksFailed is the total number of hooks which ended with an error
+                      type: integer
+                  type: object
                 phase:
                   description: Phase is the current state of the Backup.
                   enum:
                     - New
                     - FailedValidation
                     - InProgress
+                    - WaitingForPluginOperations
+                    - WaitingForPluginOperationsPartiallyFailed
+                    - Finalizing
+                    - FinalizingPartiallyFailed
                     - Completed
                     - PartiallyFailed
                     - Failed
