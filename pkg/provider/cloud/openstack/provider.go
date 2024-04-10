@@ -221,19 +221,18 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	// Reconciling the external Network (the floating IP pool used for machines and LBs)
-	if force {
-		if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
-			cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			cluster, err = fetchExtNetwork(ctx, netClient, cluster, update)
-			if err != nil {
-				return nil, err
-			}
+	if force || cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
+		cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cluster, err = fetchExtNetwork(ctx, netClient, cluster, update)
+		if err != nil {
+			return nil, err
 		}
 	}
+
 	// Reconciling the Network
 	if force || cluster.Spec.Cloud.Openstack.Network == "" {
 		cluster, err = reconcileNetwork(ctx, netClient, cluster, update)
