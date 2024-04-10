@@ -21,10 +21,14 @@ velero:
     tag: v1.13.1
     pullPolicy: IfNotPresent
 
-  # CLI flags to pass to velero server; note that the two flags
+  # CLI flags to pass to velero server; note that the flags `uploader-type`,
   # `default-backup-storage-location` and `default-volume-snapshot-locations`
   # are automatically set via the configuration below
   serverFlags: []
+
+  # For backwards-compatibility reasons this is kept on Restic, but Kopia is
+  # the default since Velero 1.12.
+  uploaderType: restic
 
   # Init containers to add to the Velero deployment's pod spec.
   # At least one plugin provider image is required.
