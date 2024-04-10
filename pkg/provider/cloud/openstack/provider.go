@@ -220,37 +220,18 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		return nil, err
 	}
 
-	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
-		extNetwork, err := getDefaultExternalNetwork(netClient)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get external network: %w", err)
-		}
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
-
-			if cluster.Annotations == nil {
-				cluster.Annotations = make(map[string]string)
+	// Reconciling the external Network (the floating IP pool used for machines and LBs)
+	if force {
+		if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
+			cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
+			if err != nil {
+				return nil, err
 			}
-			cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
-			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
-		}
-	} else {
-		extNetwork, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get external network by name: %w", err)
-		}
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			if cluster.Annotations == nil {
-				cluster.Annotations = make(map[string]string)
+		} else {
+			cluster, err = fetchExtNetwork(ctx, netClient, cluster, update)
+			if err != nil {
+				return nil, err
 			}
-			cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
-			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update cluster floating IP pool ID annotation: %w", err)
 		}
 	}
 	// Reconciling the Network
@@ -326,6 +307,46 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		return nil, fmt.Errorf("failed to update network cluster: %w", err)
 	}
 	return cluster, nil
+}
+
+func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	extNetwork, err := getDefaultExternalNetwork(netClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get external network: %w", err)
+	}
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
+
+		if cluster.Annotations == nil {
+			cluster.Annotations = make(map[string]string)
+		}
+		cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
+		// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
+	}
+
+	return cluster, err
+}
+
+func fetchExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	extNetwork, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get external network by name: %w", err)
+	}
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		if cluster.Annotations == nil {
+			cluster.Annotations = make(map[string]string)
+		}
+		cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
+		// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to update cluster floating IP pool ID annotation: %w", err)
+	}
+
+	return cluster, err
 }
 
 func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
