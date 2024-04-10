@@ -39,17 +39,32 @@ spec:
       imagePullSecrets: {{- toYaml .Values.dex.imagePullSecrets | nindent 8 }}
       {{- end }}
       containers:
-      - image: {{ .Values.dex.image.repository }}:{{ .Values.dex.image.tag }}
-        name: dex
-        command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
+      - name: dex
+        image: {{ .Values.dex.image.repository }}:{{ .Values.dex.image.tag }}
+        command:
+        - dex
+        - serve
+        - /etc/dex/cfg/config.yaml
         {{- if .Values.dex.env }}
         env: {{ toYaml .Values.dex.env | trim | nindent 8 }}
         {{- end }}
         ports:
         - name: https
           containerPort: 5556
+        {{- if .Values.dex.grpc }}
+        - name: gprc
+          containerPort: 5557
+        {{- end }}
         - name: telemetry
           containerPort: 5558
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: telemetry
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: telemetry
         volumeMounts:
         - name: config
           mountPath: /etc/dex/cfg
