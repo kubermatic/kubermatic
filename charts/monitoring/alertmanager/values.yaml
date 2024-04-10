@@ -18,8 +18,8 @@ alertmanager:
     tag: v0.25.0
     pullPolicy: IfNotPresent
   configReloaderImage:
-    repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.8.0
+    repository: ghcr.io/jimmidyson/configmap-reload
+    tag: v0.12.0
     pullPolicy: IfNotPresent
   # list of image pull secret references, e.g.
   # imagePullSecrets:

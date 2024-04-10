@@ -126,9 +126,9 @@ spec:
         image: '{{ .Values.prometheus.configReloaderImage.repository }}:{{ .Values.prometheus.configReloaderImage.tag }}'
         imagePullPolicy: {{ .Values.prometheus.configReloaderImage.pullPolicy }}
         args:
-        - --volume-dir=/etc/prometheus/config
-        - --volume-dir=/etc/prometheus/rules
-        - --webhook-url=http://localhost:9090/-/reload
+        - -volume-dir=/etc/prometheus/config
+        - -volume-dir=/etc/prometheus/rules
+        - -webhook-url=http://localhost:9090/-/reload
         resources:
 {{ toYaml .Values.prometheus.containers.reloader.resources | indent 10 }}
         volumeMounts:
