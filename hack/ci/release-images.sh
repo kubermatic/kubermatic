@@ -98,7 +98,7 @@ if [ -z "${NO_IMAGES:-}" ]; then
 
   # prepare Helm charts, do not use $KUBERMATICDOCKERTAG for the chart version,
   # as it could just be a git hash and we need to ensure a proper semver version
-  set_helm_charts_version "${GIT_HEAD_TAG:-v9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
+  set_helm_charts_version "${GIT_HEAD_TAG:-9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
 
   # make sure that the main container image contains ready made CRDs, as the installer
   # will take them from the operator chart and not use the compiled-in versions.

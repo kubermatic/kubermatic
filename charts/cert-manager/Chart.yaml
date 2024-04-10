@@ -14,7 +14,7 @@
 
 apiVersion: v2
 name: cert-manager
-version: v9.9.9-dev
+version: 9.9.9-dev
 appVersion: v1.12.2
 description: A Helm chart for cert-manager
 keywords:

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 apiVersion: v2
-version: v9.9.9-dev
+version: 9.9.9-dev
 appVersion: 10.2.2
 description: The leading tool for querying and visualizing time series and metrics.
 home: https://grafana.net
