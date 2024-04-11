@@ -1,0 +1,283 @@
+---
+# Source: karma/templates/serviceaccount.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: 'release-name'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+    app.kubernetes.io/version: '9.9.9-dev'
+    app.kubernetes.io/managed-by: helm
+---
+# Source: karma/templates/configmap.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'release-name-config'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+    app.kubernetes.io/version: '9.9.9-dev'
+    app.kubernetes.io/managed-by: helm
+data:
+  karma.yaml: |
+    log:
+      config: false
+      level: warning
+      format: json
+    
+    filters:
+      default:
+      # only show active alerts
+      - "@state=active"
+    
+    receivers:
+      strip:
+      # prevent alerts from showing up multiple times
+      - '@critical-alerts'
+    
+    # If Prometheus is setup behind an authenticated proxy
+    # (like Keycloak-Gatekeeper or OAuth2-Proxy), Karma will
+    # not be able to reach Prometheus.
+    # For these cases you can configure a rewrite rule to
+    # change the Prometheus address for example from "prometheus.example.com"
+    # to "prometheus.monitoring.svc.cluster.cluster" to use
+    # in-cluster access to Prometheus.
+    # See https://github.com/prymitive/karma/blob/main/docs/CONFIGURATION.md#alert-history
+    # for more information
+    history:
+      rewrite:
+        - source: 'http://(.+)-[0-9]+:9090'
+          uri: 'http://$1.monitoring.svc.cluster.local:9090'
+    
+    alertmanager:
+      interval: 60s
+      servers:
+---
+# Source: karma/templates/role.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: 'release-name-seed-reader'
+  namespace: 'kubermatic'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+    app.kubernetes.io/version: '9.9.9-dev'
+    app.kubernetes.io/managed-by: helm
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Source: karma/templates/rolebinding.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: 'release-name-seed-reader'
+  namespace: 'kubermatic'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+    app.kubernetes.io/version: '9.9.9-dev'
+    app.kubernetes.io/managed-by: helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'release-name-seed-reader'
+subjects:
+- kind: ServiceAccount
+  name: 'release-name'
+  namespace: 'default'
+---
+# Source: karma/templates/service.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: 'release-name'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+    app.kubernetes.io/version: '9.9.9-dev'
+    app.kubernetes.io/managed-by: helm
+spec:
+  ports:
+  - name: web
+    port: 8080
+    targetPort: web
+  selector:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+---
+# Source: karma/templates/deployment.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 'release-name'
+  labels:
+    app.kubernetes.io/name: karma
+    app.kubernetes.io/instance: 'release-name'
+    app.kubernetes.io/version: '9.9.9-dev'
+    app.kubernetes.io/managed-by: helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: karma
+      app.kubernetes.io/instance: 'release-name'
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: karma
+        app.kubernetes.io/instance: 'release-name'
+      annotations:
+        fluentbit.io/parser: json_iso
+        checksum/config: 90284989610a88b00e34c41dd8a5911801e5a704
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: shared-config
+    spec:
+      serviceAccountName: 'release-name'
+      initContainers:
+      - name: init-seeds
+        image: 'quay.io/kubermatic/util:2.5.0'
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -euo pipefail
+
+          ns=kubermatic
+          out=/etc/karma-shared/karma.yaml
+
+          cp /etc/karma/karma.yaml $out
+
+          kubectl -n "$ns" get services -l 'app.kubernetes.io/name=seed-proxy' -o "custom-columns=name:{.metadata.labels['app\.kubernetes\.io/instance']}" --no-headers | while read seed; do
+            echo "  - name: $seed" >> $out
+            echo "    uri: http://seed-proxy-$seed.$ns.svc.cluster.local:8001/api/v1/namespaces/monitoring/services/alertmanager:web/proxy/" >> $out
+            echo "    proxy: true" >> $out
+          done
+        volumeMounts:
+        - name: config
+          mountPath: /etc/karma
+        - name: shared-config
+          mountPath: /etc/karma-shared
+      containers:
+      - name: karma
+        image: 'ghcr.io/prymitive/karma:v0.120'
+        imagePullPolicy: IfNotPresent
+        args:
+        - --config.file=/etc/karma/karma.yaml
+        ports:
+        - containerPort: 8080
+          name: web
+        volumeMounts:
+        - name: shared-config
+          mountPath: /etc/karma
+      volumes:
+      - name: config
+        configMap:
+          name: 'release-name-config'
+      - name: shared-config
+        emptyDir: {}
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: release-name
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []
