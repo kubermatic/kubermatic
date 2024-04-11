@@ -1,10 +1,10 @@
-# This file has been generated with Velero v1.10.1. Do not edit.
----
+# This file has been generated with Velero v1.13.1. Do not edit.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.7.0
+    controller-gen.kubebuilder.io/version: v0.12.0
   labels:
     component: velero
   name: schedules.velero.io
@@ -58,11 +58,17 @@ spec:
                 schedule:
                   description: Schedule is a Cron expression defining when to run the Backup.
                   type: string
+                skipImmediately:
+                  description: 'SkipImmediately specifies whether to skip backup if schedule is due immediately from `schedule.status.lastBackup` timestamp when schedule is unpaused or if schedule is new. If true, backup will be skipped immediately when schedule is unpaused if it is due based on .Status.LastBackupTimestamp or schedule is new, and will run at next schedule time. If false, backup will not be skipped immediately when schedule is unpaused, but will run at next schedule time. If empty, will follow server configuration (default: false).'
+                  type: boolean
                 template:
                   description: Template is the definition of the Backup to be run on the provided schedule
                   properties:
                     csiSnapshotTimeout:
                       description: CSISnapshotTimeout specifies the time used to wait for CSI VolumeSnapshot status turns to ReadyToUse during creation, before returning error as timeout. The default value is 10 minute.
+                      type: string
+                    datamover:
+                      description: DataMover specifies the data mover to be used by the backup. If DataMover is "" or "velero", the built-in data mover will be used.
                       type: string
                     defaultVolumesToFsBackup:
                       description: DefaultVolumesToFsBackup specifies whether pod volume file system backup should be used for all volumes by default.
@@ -72,6 +78,18 @@ spec:
                       description: "DefaultVolumesToRestic specifies whether restic should be used to take a backup of all pod volumes by default. Deprecated: this field is no longer used and will be removed entirely in future. Use DefaultVolumesToFsBackup instead."
                       nullable: true
                       type: boolean
+                    excludedClusterScopedResources:
+                      description: ExcludedClusterScopedResources is a slice of cluster-scoped resource type names to exclude from the backup. If set to "*", all cluster-scoped resource types are excluded. The default value is empty.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
+                    excludedNamespaceScopedResources:
+                      description: ExcludedNamespaceScopedResources is a slice of namespace-scoped resource type names to exclude from the backup. If set to "*", all namespace-scoped resource types are excluded. The default value is empty.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
                     excludedNamespaces:
                       description: ExcludedNamespaces contains a list of namespaces that are not included in the backup.
                       items:
@@ -147,6 +165,7 @@ spec:
                                     description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                               name:
                                 description: Name is the name of this hook.
                                 type: string
@@ -226,6 +245,18 @@ spec:
                       description: IncludeClusterResources specifies whether cluster-scoped resources should be included for consideration in the backup.
                       nullable: true
                       type: boolean
+                    includedClusterScopedResources:
+                      description: IncludedClusterScopedResources is a slice of cluster-scoped resource type names to include in the backup. If set to "*", all cluster-scoped resource types are included. The default value is empty, which means only related cluster-scoped resources are included.
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
+                    includedNamespaceScopedResources:
+                      description: IncludedNamespaceScopedResources is a slice of namespace-scoped resource type names to include in the backup. The default value is "*".
+                      items:
+                        type: string
+                      nullable: true
+                      type: array
                     includedNamespaces:
                       description: IncludedNamespaces is a slice of namespace names to include objects from. If empty, all namespaces are included.
                       items:
@@ -238,6 +269,9 @@ spec:
                         type: string
                       nullable: true
                       type: array
+                    itemOperationTimeout:
+                      description: ItemOperationTimeout specifies the time used to wait for asynchronous BackupItemAction operations The default value is 1 hour.
+                      type: string
                     labelSelector:
                       description: LabelSelector is a metav1.LabelSelector to filter with when adding individual objects to the backup. If empty or nil, all objects are included. Optional.
                       nullable: true
@@ -269,6 +303,7 @@ spec:
                           description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                           type: object
                       type: object
+                      x-kubernetes-map-type: atomic
                     metadata:
                       properties:
                         labels:
@@ -308,6 +343,7 @@ spec:
                             description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                       nullable: true
                       type: array
                     orderedResources:
@@ -316,8 +352,29 @@ spec:
                       description: OrderedResources specifies the backup order of resources of specific Kind. The map key is the resource name and value is a list of object names separated by commas. Each resource name has format "namespace/objectname".  For cluster resources, simply use "objectname".
                       nullable: true
                       type: object
+                    resourcePolicy:
+                      description: ResourcePolicy specifies the referenced resource policies that backup should follow
+                      properties:
+                        apiGroup:
+                          description: APIGroup is the group for the resource being referenced. If APIGroup is not specified, the specified Kind must be in the core API group. For any other third-party types, APIGroup is required.
+                          type: string
+                        kind:
+                          description: Kind is the type of resource being referenced
+                          type: string
+                        name:
+                          description: Name is the name of resource being referenced
+                          type: string
+                      required:
+                        - kind
+                        - name
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    snapshotMoveData:
+                      description: SnapshotMoveData specifies whether snapshot data should be moved
+                      nullable: true
+                      type: boolean
                     snapshotVolumes:
-                      description: SnapshotVolumes specifies whether to take cloud snapshots of any PV's referenced in the set of objects included in the Backup.
+                      description: SnapshotVolumes specifies whether to take snapshots of any PV's referenced in the set of objects included in the Backup.
                       nullable: true
                       type: boolean
                     storageLocation:
@@ -326,6 +383,14 @@ spec:
                     ttl:
                       description: TTL is a time.Duration-parseable string describing how long the Backup should be retained for.
                       type: string
+                    uploaderConfig:
+                      description: UploaderConfig specifies the configuration for the uploader.
+                      nullable: true
+                      properties:
+                        parallelFilesUpload:
+                          description: ParallelFilesUpload is the number of files parallel uploads to perform when using the uploader.
+                          type: integer
+                      type: object
                     volumeSnapshotLocations:
                       description: VolumeSnapshotLocations is a list containing names of VolumeSnapshotLocations associated with this backup.
                       items:
@@ -345,6 +410,11 @@ spec:
               properties:
                 lastBackup:
                   description: LastBackup is the last time a Backup was run for this Schedule schedule
+                  format: date-time
+                  nullable: true
+                  type: string
+                lastSkipped:
+                  description: LastSkipped is the last time a Schedule was skipped
                   format: date-time
                   nullable: true
                   type: string

@@ -47,6 +47,7 @@ spec:
         - /velero
         args:
         - server
+        - '--uploader-type={{ .Values.velero.uploaderType }}'
         {{- range .Values.velero.serverFlags }}
         - '{{ . }}'
         {{- end }}

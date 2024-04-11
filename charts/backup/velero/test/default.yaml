@@ -11,19 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-apiVersion: v2
-name: velero
-version: 9.9.9-dev
-appVersion: v1.13.1
-description: A Helm chart for Velero
-keywords:
-  - kubermatic
-  - backup
-  - velero
-home: https://velero.io/
-sources:
-  - https://github.com/vmware-tanzu/velero
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
