@@ -93,6 +93,17 @@ spec:
           requests:
             cpu: 25m
             memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /opt/webhook-serving-cert/
           name: webhook-serving-cert

@@ -75,6 +75,17 @@ spec:
           requests:
             cpu: 50m
             memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: operatingsystemmanager-kubeconfig

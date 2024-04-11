@@ -36,7 +36,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-namespace","cluster-de-test-01","-tls-cert-path=/tmp/cert/cert.pem","-tls-key-path=/tmp/cert/key.pem","-use-osm"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-listen-address","0.0.0.0:9876","-namespace","cluster-de-test-01","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-tls-cert-path","/etc/kubernetes/pki/serving-cert/cert.pem","-tls-key-path","/etc/kubernetes/pki/serving-cert/key.pem","-use-osm"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
@@ -100,11 +100,22 @@ spec:
           requests:
             cpu: 10m
             memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /etc/kubernetes/worker-kubeconfig
           name: machinecontroller-kubeconfig
           readOnly: true
-        - mountPath: /tmp/cert
+        - mountPath: /etc/kubernetes/pki/serving-cert
           name: machinecontroller-webhook-serving-cert
           readOnly: true
         - mountPath: /etc/kubernetes/pki/ca-bundle

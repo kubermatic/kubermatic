@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: applications-cache,http-prober-bin
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: applications-cache,http-prober-bin,temp
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
         prometheus.io/scrape: "true"
@@ -126,6 +126,17 @@ spec:
           requests:
             cpu: 25m
             memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: internal-admin-kubeconfig
@@ -133,6 +144,8 @@ spec:
         - mountPath: /opt/ca-bundle/
           name: ca-bundle
           readOnly: true
+        - mountPath: /tmp/
+          name: temp
         - mountPath: /applications-cache
           name: applications-cache
         - mountPath: /http-prober-bin
@@ -158,6 +171,8 @@ spec:
       - configMap:
           name: ca-bundle
         name: ca-bundle
+      - emptyDir: {}
+        name: temp
       - emptyDir:
           sizeLimit: 300Mi
         name: applications-cache
