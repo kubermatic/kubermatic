@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -44,6 +45,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 	return func() (string, reconciling.DeploymentReconciler) {
 		return common.SeedControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			sharedAddonVolume := "addons"
+			tempVolume := "temp"
 
 			d.Spec.Replicas = cfg.Spec.SeedController.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
@@ -55,7 +57,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
 				"fluentbit.io/parser":  "json_iso",
-				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: sharedAddonVolume,
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join([]string{sharedAddonVolume, tempVolume}, ","),
 			})
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
@@ -109,6 +111,12 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 					},
 				},
 				{
+					Name: tempVolume,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
 					Name: "ca-bundle",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -125,6 +133,10 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 					Name:      sharedAddonVolume,
 					MountPath: "/opt/addons/",
 					ReadOnly:  true,
+				},
+				{
+					Name:      tempVolume,
+					MountPath: "/tmp/",
 				},
 				{
 					Name:      "ca-bundle",
