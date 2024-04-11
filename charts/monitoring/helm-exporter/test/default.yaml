@@ -11,21 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-helm-exporter:
-  namespacesIgnore: cluster-.*,kubeone-.*
-  # many of the charts in the KKP distribution are not from public registries,
-  # making these scans pointless
-  latestChartVersion: false
-  intervalDuration: 5m
-
-  image:
-    pullPolicy: IfNotPresent
-
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 500m
-      memory: 128Mi
