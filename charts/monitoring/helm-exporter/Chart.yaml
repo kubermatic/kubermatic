@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: helm-exporter
-version: v9.9.9-dev
+version: 9.9.9-dev
 appVersion: 1.2.5
 description: Exports Helm release information to Prometheus
 keywords:

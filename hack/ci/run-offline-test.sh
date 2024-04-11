@@ -132,7 +132,7 @@ retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Building and pushing Docker images"
 
 # prepare Helm charts
-set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}"
+set_helm_charts_version "9.9.9-${GIT_HEAD_HASH}"
 
 retry 5 ./../release-images.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
 echodate "Successfully finished building and pushing quay images"

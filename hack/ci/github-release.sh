@@ -207,11 +207,11 @@ if ! $DRY_RUN; then
   releaseID=$(echo "$releasedata" | jq -r '.id')
 fi
 
-# prepare source for archiving (prepend "v9.9.9" if GIT_TAG is only
+# prepare source for archiving (prepend "9.9.9" if GIT_TAG is only
 # a hash, because Helm requires a semver version)
 CHART_TAG="$GIT_TAG"
 if [[ "$CHART_TAG" != v* ]]; then
-  CHART_TAG="v9.9.9-$CHART_TAG"
+  CHART_TAG="9.9.9-$CHART_TAG"
 fi
 
 set_helm_charts_version "$CHART_TAG" "$GIT_TAG"

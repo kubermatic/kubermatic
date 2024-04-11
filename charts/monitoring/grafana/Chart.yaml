@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: grafana
-version: v9.9.9-dev
+version: 9.9.9-dev
 appVersion: 9.5.1
 description: Grafana for Kubermatic
 keywords:

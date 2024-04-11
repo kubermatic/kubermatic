@@ -86,7 +86,7 @@ function deploy {
 # silence complaints by Helm
 chmod 600 "$KUBECONFIG"
 
-set_helm_charts_version "v9.9.9-${GIT_HEAD_HASH}" "${GIT_HEAD_HASH}"
+set_helm_charts_version "9.9.9-${GIT_HEAD_HASH}" "${GIT_HEAD_HASH}"
 copy_crds_to_chart
 set_crds_version_annotation
 

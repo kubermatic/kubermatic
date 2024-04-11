@@ -435,7 +435,11 @@ set_helm_charts_version() {
   local version="$1"
   local dockerTag="${2:-$version}"
 
-  echodate "Setting Helm chart version to $version..."
+  # trim leading v; Helm allows "v1.2.3" as chart versions, but some other tools
+  # consuming charts are more strict and require pure, prefixless semvers.
+  local semver="${version#v}"
+
+  echodate "Setting Helm chart version to $semver..."
 
   while IFS= read -r -d '' chartFile; do
     chart="$(basename $(dirname "$chartFile"))"
@@ -443,7 +447,7 @@ set_helm_charts_version() {
       continue
     fi
 
-    yq --inplace ".version = \"$version\"" "$chartFile"
+    yq --inplace ".version = \"$semver\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
       yq --inplace ".appVersion = \"$version\"" "$chartFile"
       yq --inplace ".kubermaticOperator.image.tag = \"$dockerTag\"" "$(dirname "$chartFile")/values.yaml"
