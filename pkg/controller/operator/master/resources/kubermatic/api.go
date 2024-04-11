@@ -242,11 +242,11 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
-			tag := versions.UI
-			if cfg.Spec.UI.DockerTag != "" {
-				tag = cfg.Spec.UI.DockerTag
-			} else if cfg.Spec.UI.DockerTagSuffix != "" {
-				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.UI.DockerTagSuffix)
+			tag := versions.Kubermatic
+			if cfg.Spec.API.DockerTag != "" {
+				tag = cfg.Spec.API.DockerTag
+			} else if cfg.Spec.API.DockerTagSuffix != "" {
+				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.API.DockerTagSuffix)
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes

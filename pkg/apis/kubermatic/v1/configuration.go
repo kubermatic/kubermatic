@@ -130,6 +130,17 @@ type KubermaticAuthConfiguration struct {
 type KubermaticAPIConfiguration struct {
 	// DockerRepository is the repository containing the Kubermatic REST API image.
 	DockerRepository string `json:"dockerRepository,omitempty"`
+	// DockerTag is used to overwrite the Kubermatic API Docker image tag and is only for development
+	// purposes. This field must not be set in production environments. If DockerTag is specified then
+	// DockerTagSuffix will be ignored.
+	// ---
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
+	// DockerTagSuffix is appended to the KKP version used for referring to the custom Kubermatic API image.
+	// If left empty, either the `DockerTag` if specified or the original Kubermatic API Docker image tag will be used.
+	// With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
+	DockerTagSuffix string `json:"dockerTagSuffix,omitempty"`
 	// AccessibleAddons is a list of addons that should be enabled in the API.
 	AccessibleAddons []string `json:"accessibleAddons,omitempty"`
 	// PProfEndpoint controls the port the API should listen on to provide pprof
@@ -156,7 +167,7 @@ type KubermaticUIConfiguration struct {
 	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
 	// DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image.
 	// If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used.
-	// With DockerTagSuffix the tag becomes <KKP_VERSION:SUFFIX> i.e. "v2.15.0-SUFFIX".
+	// With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
 	DockerTagSuffix string `json:"dockerTagSuffix,omitempty"`
 	// Config sets flags for various dashboard features.
 	Config string `json:"config,omitempty"`
