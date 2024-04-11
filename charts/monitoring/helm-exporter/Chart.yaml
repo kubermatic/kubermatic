@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
+apiVersion: v2
 name: helm-exporter
 version: 9.9.9-dev
-appVersion: 1.2.5
+appVersion: 1.2.16
 description: Exports Helm release information to Prometheus
 keywords:
   - kubermatic
@@ -25,6 +25,8 @@ keywords:
 home: https://github.com/sstarcher/helm-exporter
 sources:
   - https://github.com/sstarcher/helm-exporter
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
+  - https://github.com/sstarcher/helm-charts
+dependencies:
+  - repository: https://shanestarcher.com/helm-charts/
+    name: helm-exporter
+    version: 1.2.16

@@ -1,0 +1,199 @@
+---
+# Source: helm-exporter/charts/helm-exporter/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: release-name-helm-exporter
+  labels:
+
+    helm.sh/chart: helm-exporter-1.2.16_77ad21d
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.2.16"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: helm-exporter/charts/helm-exporter/templates/configmap.yaml
+kind: ConfigMap
+apiVersion: v1
+metadata:
+    name: release-name-helm-exporter
+    labels:
+        
+        helm.sh/chart: helm-exporter-1.2.16_77ad21d
+        app.kubernetes.io/name: helm-exporter
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/version: "1.2.16"
+        app.kubernetes.io/managed-by: Helm
+data:
+    config.yaml: |-
+      helmRegistries:
+        override:
+        - allowAllReleases: true
+          charts: []
+          registry:
+            url: ""
+        overrideChartNames: {}
+        registryNames: []
+---
+# Source: helm-exporter/charts/helm-exporter/templates/role.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-name-helm-exporter
+  labels:
+
+    helm.sh/chart: helm-exporter-1.2.16_77ad21d
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.2.16"
+    app.kubernetes.io/managed-by: Helm
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - secrets
+  verbs:
+  - get
+  - watch
+  - list
+---
+# Source: helm-exporter/charts/helm-exporter/templates/role_binding.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: release-name-helm-exporter
+  labels:
+
+    helm.sh/chart: helm-exporter-1.2.16_77ad21d
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.2.16"
+    app.kubernetes.io/managed-by: Helm
+subjects:
+- kind: ServiceAccount
+  namespace: default
+  name: release-name-helm-exporter
+roleRef:
+  kind: ClusterRole
+  name: release-name-helm-exporter
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: helm-exporter/charts/helm-exporter/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-helm-exporter
+  labels:
+    helm.sh/chart: helm-exporter-1.2.16_77ad21d
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.2.16"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    prometheus.io/scrape: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9571
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+---
+# Source: helm-exporter/charts/helm-exporter/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-helm-exporter
+  labels:
+    helm.sh/chart: helm-exporter-1.2.16_77ad21d
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.2.16"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: helm-exporter
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: helm-exporter
+        app.kubernetes.io/instance: release-name
+      annotations:
+        checksum/config: a1b2b2b3ceea048f065e7d31bb25639a16a5cc05bdc7d53173de1cdc3cb6373f
+    spec:
+      serviceAccountName: release-name-helm-exporter
+      securityContext:
+        {}
+      containers:
+        - name: helm-exporter
+          securityContext:
+            {}
+          image: "sstarcher/helm-exporter:1.2.16"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-config"
+            - "/config/config.yaml"
+            - "-namespaces-ignore"
+            - "cluster-.*,kubeone-.*"
+            - "-latest-chart-version=false"
+            - "-interval-duration=5m"
+          ports:
+            - name: http
+              containerPort: 9571
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+          volumeMounts:
+            - mountPath: /config
+              name: release-name-helm-exporter
+      volumes:
+      - name: release-name-helm-exporter
+        configMap:
+          name: release-name-helm-exporter
+---
+# Source: helm-exporter/charts/helm-exporter/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "release-name-helm-exporter-test-connection"
+  labels:
+
+    helm.sh/chart: helm-exporter-1.2.16_77ad21d
+    app.kubernetes.io/name: helm-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "1.2.16"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['release-name-helm-exporter:9571/healthz']
+  restartPolicy: Never
