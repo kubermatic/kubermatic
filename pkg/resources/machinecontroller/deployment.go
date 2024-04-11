@@ -106,7 +106,16 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := []corev1.Volume{getKubeconfigVolume(), getCABundleVolume()}
+			volumes := []corev1.Volume{
+				getKubeconfigVolume(),
+				getCABundleVolume(),
+				{
+					Name: "temp",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			}
 			dep.Spec.Template.Spec.Volumes = volumes
 
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
@@ -119,6 +128,8 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 				"prometheus.io/scrape": "true",
 				"prometheus.io/path":   "/metrics",
 				"prometheus.io/port":   "8080",
+				// these volumes should not block the autoscaler from evicting the pod
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "temp",
 			})
 
 			clusterDNSIP := resources.NodeLocalDNSCacheAddress
@@ -178,6 +189,25 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 							Name:      resources.CABundleConfigMapName,
 							MountPath: "/etc/kubernetes/pki/ca-bundle",
 							ReadOnly:  true,
+						},
+						{
+							Name:      "temp",
+							MountPath: "/tmp",
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						RunAsNonRoot:             resources.Bool(true),
+						RunAsUser:                resources.Int64(65534),
+						RunAsGroup:               resources.Int64(65534),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
+						},
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
 				},

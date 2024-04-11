@@ -59,10 +59,10 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 			args := []string{
 				"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 				"-listen-address", "0.0.0.0:9876",
-				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 				"-namespace", data.Cluster().Status.NamespaceName,
-				"-tls-cert-path=/tmp/cert/cert.pem",
-				"-tls-key-path=/tmp/cert/key.pem",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-tls-cert-path", "/etc/kubernetes/pki/serving-cert/cert.pem",
+				"-tls-key-path", "/etc/kubernetes/pki/serving-cert/key.pem",
 			}
 
 			// Enable validations corresponding to OSM
@@ -160,13 +160,28 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 						},
 						{
 							Name:      resources.MachineControllerWebhookServingCertSecretName,
-							MountPath: "/tmp/cert",
+							MountPath: "/etc/kubernetes/pki/serving-cert",
 							ReadOnly:  true,
 						},
 						{
 							Name:      resources.CABundleConfigMapName,
 							MountPath: "/etc/kubernetes/pki/ca-bundle",
 							ReadOnly:  true,
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						RunAsNonRoot:             resources.Bool(true),
+						RunAsUser:                resources.Int64(65534),
+						RunAsGroup:               resources.Int64(65534),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
+						},
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
 				},

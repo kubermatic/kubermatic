@@ -156,6 +156,21 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 							ReadOnly:  true,
 						},
 					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						RunAsNonRoot:             resources.Bool(true),
+						RunAsUser:                resources.Int64(65534),
+						RunAsGroup:               resources.Int64(65534),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
+						},
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 				},
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, webhookResourceRequirements, nil, dep.Annotations)
