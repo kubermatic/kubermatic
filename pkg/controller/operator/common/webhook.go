@@ -22,6 +22,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
@@ -162,18 +163,19 @@ func WebhookRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration) rec
 func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions kubermatic.Versions, seed *kubermaticv1.Seed, removeSeed bool) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return WebhookDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			labels := webhookPodLabels()
 			d.Spec.Replicas = cfg.Spec.Webhook.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: webhookPodLabels(),
+				MatchLabels: labels,
 			}
 			d.Spec.Template.Spec.ServiceAccountName = WebhookServiceAccountName
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Annotations = map[string]string{
+			kubernetes.EnsureLabels(&d.Spec.Template, labels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8080",
 				"fluentbit.io/parser":  "json_iso",
-			}
+			})
 
 			args := []string{
 				"-webhook-cert-dir=/opt/webhook-serving-cert/",
@@ -319,6 +321,7 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 							},
 						},
 					},
+					SecurityContext: &ContainerSecurityContext,
 				},
 			}
 

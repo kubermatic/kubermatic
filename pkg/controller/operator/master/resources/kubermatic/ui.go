@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -46,7 +47,7 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				MatchLabels: uiPodLabels(),
 			}
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
+			kubernetes.EnsureLabels(&d.Spec.Template, d.Spec.Selector.MatchLabels)
 
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsNonRoot: ptr.To(true),
@@ -85,8 +86,9 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts: volumeMounts,
-					Resources:    cfg.Spec.UI.Resources,
+					VolumeMounts:    volumeMounts,
+					Resources:       cfg.Spec.UI.Resources,
+					SecurityContext: &common.ContainerSecurityContext,
 				},
 			}
 

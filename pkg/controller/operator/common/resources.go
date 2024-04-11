@@ -97,6 +97,24 @@ const (
 	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
 )
 
+var (
+	// ContainerSecurityContext is a default common security context for containers
+	// in the kubermatic/kubermatic container image.
+	ContainerSecurityContext = corev1.SecurityContext{
+		AllowPrivilegeEscalation: resources.Bool(false),
+		ReadOnlyRootFilesystem:   resources.Bool(true),
+		RunAsNonRoot:             resources.Bool(true),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				corev1.Capability("ALL"),
+			},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
+	}
+)
+
 func DockercfgSecretReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return DockercfgSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {

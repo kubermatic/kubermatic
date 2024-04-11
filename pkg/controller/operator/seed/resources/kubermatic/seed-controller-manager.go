@@ -186,8 +186,9 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts: volumeMounts,
-					Resources:    cfg.Spec.SeedController.Resources,
+					VolumeMounts:    volumeMounts,
+					Resources:       cfg.Spec.SeedController.Resources,
+					SecurityContext: &common.ContainerSecurityContext,
 				},
 			}
 
