@@ -104,6 +104,8 @@ var (
 		AllowPrivilegeEscalation: resources.Bool(false),
 		ReadOnlyRootFilesystem:   resources.Bool(true),
 		RunAsNonRoot:             resources.Bool(true),
+		RunAsUser:                resources.Int64(65534),
+		RunAsGroup:               resources.Int64(65534),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				corev1.Capability("ALL"),
