@@ -15,7 +15,7 @@
 apiVersion: v2
 name: loki
 version: 9.9.9-dev
-appVersion: v2.5.0
+appVersion: v2.9.6
 description: "Loki: like Prometheus, but for logs."
 keywords:
   - kubermatic
@@ -32,4 +32,4 @@ maintainers:
 dependencies:
   - name: loki
     repository: https://grafana.github.io/helm-charts
-    version: 2.11.0
+    version: 5.47.2
