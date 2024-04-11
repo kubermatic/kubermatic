@@ -73,3 +73,12 @@ spec:
           protocol: TCP
         resources:
 {{ .Values.kubermaticOperator.resources | toYaml | indent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
