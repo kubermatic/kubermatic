@@ -735,6 +735,8 @@ type ComponentSettings struct {
 	KonnectivityProxy KonnectivityProxySettings `json:"konnectivityProxy,omitempty"`
 	// UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
 	UserClusterController *ControllerSettings `json:"userClusterController,omitempty"`
+	// OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
+	OperatingSystemManager *ControllerSettings `json:"operatingSystemManager,omitempty"`
 }
 
 type APIServerSettings struct {
