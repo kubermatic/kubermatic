@@ -17,12 +17,6 @@ promtail:
 
   deploymentStrategy: RollingUpdate
 
-  initContainer:
-    enabled: false
-    fsInotifyMaxUserInstances: 256
-    image:
-      repository: library/busybox
-
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "3101" # .Values.config.serverPort

@@ -32,7 +32,7 @@ loki:
   tracing:
     jaegerAgentHost:
 
-  config:
+  loki:
     auth_enabled: false
     ingester:
       chunk_idle_period: 3m

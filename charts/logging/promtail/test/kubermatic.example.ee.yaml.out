@@ -6,10 +6,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-5.1.0
+    helm.sh/chart: promtail-6.15.5
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.5.0"
+    app.kubernetes.io/version: "2.9.3"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: promtail/charts/promtail/templates/secret.yaml
@@ -19,16 +19,18 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-5.1.0
+    helm.sh/chart: promtail-6.15.5
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.5.0"
+    app.kubernetes.io/version: "2.9.3"
     app.kubernetes.io/managed-by: Helm
 stringData:
   promtail.yaml: |
     server:
       log_level: info
+      log_format: logfmt
       http_listen_port: 3101
+      
     
     clients:
       - backoff_config:
@@ -330,6 +332,14 @@ stringData:
                   namespace: event.metadata.namespace
             - labels:
                 namespace: ""
+      
+      
+    
+    limits_config:
+      
+    
+    tracing:
+      enabled: false
 ---
 # Source: promtail/charts/promtail/templates/clusterrole.yaml
 kind: ClusterRole
@@ -337,10 +347,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: promtail
   labels:
-    helm.sh/chart: promtail-5.1.0
+    helm.sh/chart: promtail-6.15.5
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.5.0"
+    app.kubernetes.io/version: "2.9.3"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups:
@@ -362,10 +372,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: promtail
   labels:
-    helm.sh/chart: promtail-5.1.0
+    helm.sh/chart: promtail-6.15.5
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.5.0"
+    app.kubernetes.io/version: "2.9.3"
     app.kubernetes.io/managed-by: Helm
 subjects:
   - kind: ServiceAccount
@@ -383,10 +393,10 @@ metadata:
   name: promtail
   namespace: default
   labels:
-    helm.sh/chart: promtail-5.1.0
+    helm.sh/chart: promtail-6.15.5
     app.kubernetes.io/name: promtail
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.5.0"
+    app.kubernetes.io/version: "2.9.3"
     app.kubernetes.io/managed-by: Helm
 spec:
   selector:
@@ -401,25 +411,26 @@ spec:
         app.kubernetes.io/name: promtail
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: cc68b18e6a6109f9b8542a69f8132d80081e6f4b1207440351d8730aa85bf357
+        checksum/config: be7da1e1d7b29628cecbe524ed9d54f3b3d6dd9f64a13185876bf8ba78152594
         prometheus.io/port: "3101"
         prometheus.io/scrape: "true"
     spec:
       serviceAccountName: promtail
+      enableServiceLinks: true
       securityContext:
         runAsGroup: 0
         runAsUser: 0
       containers:
         - name: promtail
-          image: "docker.io/grafana/promtail:2.5.0"
+          image: "docker.io/grafana/promtail:2.9.3"
           imagePullPolicy: IfNotPresent
           args:
             - "-config.file=/etc/promtail/promtail.yaml"
           volumeMounts:
             - name: config
               mountPath: /etc/promtail
-            - name: run
-              mountPath: /run/promtail
+            - mountPath: /run/promtail
+              name: run
             - mountPath: /var/lib/docker/containers
               name: containers
               readOnly: true
@@ -447,7 +458,7 @@ spec:
           readinessProbe:
             failureThreshold: 5
             httpGet:
-              path: /ready
+              path: '/ready'
               port: http-metrics
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -471,9 +482,9 @@ spec:
         - name: config
           secret:
             secretName: promtail
-        - name: run
-          hostPath:
+        - hostPath:
             path: /run/promtail
+          name: run
         - hostPath:
             path: /var/lib/docker/containers
           name: containers
