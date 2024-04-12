@@ -291,7 +291,7 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	valuesBackend := map[string]any{}
 
 	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
-		values["kubeProxyReplacement"] = "strict"
+		values["kubeProxyReplacement"] = "true"
 		values["k8sServiceHost"] = cluster.Status.Address.ExternalName
 		values["k8sServicePort"] = cluster.Status.Address.Port
 
@@ -302,7 +302,7 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 			}
 		}
 	} else {
-		values["kubeProxyReplacement"] = "disabled"
+		values["kubeProxyReplacement"] = "false"
 		values["sessionAffinity"] = true
 		valuesCni["chainingMode"] = "portmap"
 	}
