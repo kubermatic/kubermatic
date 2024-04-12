@@ -73,6 +73,8 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				volumeMounts = append(volumeMounts, cfg.Spec.UI.ExtraVolumeMounts...)
 			}
 
+			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "webserver",

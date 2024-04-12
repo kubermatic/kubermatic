@@ -180,6 +180,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				)
 			}
 
+			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				createAddonsInitContainer(cfg.Spec.UserCluster.Addons, sharedAddonVolume, versions.Kubermatic),

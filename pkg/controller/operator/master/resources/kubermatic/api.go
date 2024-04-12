@@ -253,6 +253,7 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
+			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "api",

@@ -103,14 +103,20 @@ var (
 	ContainerSecurityContext = corev1.SecurityContext{
 		AllowPrivilegeEscalation: resources.Bool(false),
 		ReadOnlyRootFilesystem:   resources.Bool(true),
-		RunAsNonRoot:             resources.Bool(true),
-		RunAsUser:                resources.Int64(65534),
-		RunAsGroup:               resources.Int64(65534),
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				corev1.Capability("ALL"),
 			},
 		},
+	}
+
+	// PodSecurityContext is a default common security context for Pods
+	// using the kubermatic/kubermatic image.
+	PodSecurityContext = corev1.PodSecurityContext{
+		RunAsNonRoot: resources.Bool(true),
+		RunAsUser:    resources.Int64(65534),
+		RunAsGroup:   resources.Int64(65534),
+		FSGroup:      resources.Int64(65534),
 		SeccompProfile: &corev1.SeccompProfile{
 			Type: corev1.SeccompProfileTypeRuntimeDefault,
 		},

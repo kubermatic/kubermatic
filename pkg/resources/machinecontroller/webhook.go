@@ -115,6 +115,16 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 				tag = t
 			}
 
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: resources.Bool(true),
+				RunAsUser:    resources.Int64(65534),
+				RunAsGroup:   resources.Int64(65534),
+				FSGroup:      resources.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
@@ -172,16 +182,10 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: resources.Bool(false),
 						ReadOnlyRootFilesystem:   resources.Bool(true),
-						RunAsNonRoot:             resources.Bool(true),
-						RunAsUser:                resources.Int64(65534),
-						RunAsGroup:               resources.Int64(65534),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{
 								corev1.Capability("ALL"),
 							},
-						},
-						SeccompProfile: &corev1.SeccompProfile{
-							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
 				},

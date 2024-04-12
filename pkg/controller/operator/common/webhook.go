@@ -288,6 +288,7 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
+			d.Spec.Template.Spec.SecurityContext = &PodSecurityContext
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "webhook",
