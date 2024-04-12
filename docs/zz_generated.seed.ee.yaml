@@ -438,6 +438,8 @@ spec:
         # otherwise to an implementation-defined value. Requests cannot exceed Limits.
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         requests: null
+    # OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
+    operatingSystemManager: null
     # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
       resources: null
