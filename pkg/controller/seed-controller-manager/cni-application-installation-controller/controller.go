@@ -39,7 +39,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -49,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -292,12 +292,10 @@ func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kube
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
-	if appDef.Spec.DefaultValues != nil {
-		if len(appDef.Spec.DefaultValues.Raw) > 0 {
-			if err := json.Unmarshal(appDef.Spec.DefaultValues.Raw, &values); err != nil {
-				return fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
-			}
-		}
+
+	values, err := appDef.Spec.GetParsedDefaultValues()
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
 	}
 	return nil
 }
@@ -344,11 +342,9 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 
 			// Unmarshal existing values
-			values := make(map[string]any)
-			if len(app.Spec.Values.Raw) > 0 {
-				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
-					return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
-				}
+			values, err := app.Spec.GetParsedValues()
+			if err != nil {
+				return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
 			}
 
 			// If (and only if) existing values is empty, use the initial values
@@ -370,11 +366,11 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 
 			// Set new values
-			rawValues, err := json.Marshal(values)
+			rawValues, err := yaml.Marshal(values)
 			if err != nil {
 				return app, fmt.Errorf("failed to marshall CNI values: %w", err)
 			}
-			app.Spec.Values = runtime.RawExtension{Raw: rawValues}
+			app.Spec.ValuesBlock = string(rawValues)
 
 			return app, nil
 		}
