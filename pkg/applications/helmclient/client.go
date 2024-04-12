@@ -309,7 +309,7 @@ func (h HelmClient) shouldUpgrade(chartLoc string, currentRelease *release.Relea
 		!equality.Semantic.DeepEqual(currentManifests, newManifests), nil
 }
 
-func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values) (string, error) {
+func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values) (map[string]string, error) {
 	options := chartutil.ReleaseOptions{
 		Name:      chart.Name(),
 		Namespace: h.targetNamespace,
@@ -319,26 +319,21 @@ func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values)
 
 	valuesToRender, err := chartutil.ToRenderValues(chart, values, options, nil)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	restConfig, err := h.restClientGetter.ToRESTConfig()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	engine := engine.New(restConfig)
 	manifests, err := engine.Render(chart, valuesToRender)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var allManifests strings.Builder
-	for _, manifest := range manifests {
-		allManifests.WriteString(manifest)
-	}
-
-	return allManifests.String(), nil
+	return manifests, nil
 }
 
 // Install the chart located at chartLoc into targetNamespace. If the chart was already installed, an error is returned.
