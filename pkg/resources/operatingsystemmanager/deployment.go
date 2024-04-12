@@ -55,7 +55,8 @@ var (
 	}
 )
 
-	Tag  = "v1.3.4"
+const (
+	Tag = "v1.3.4"
 )
 
 type operatingSystemManagerData interface {
@@ -81,11 +82,7 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 				return nil, err
 			}
 
-<<<<<<< HEAD
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(Name))
-=======
-			deployment.Spec.Template, err = apiserver.IsRunningWrapper(data, deployment.Spec.Template, sets.New(resources.OperatingSystemManagerContainerName))
->>>>>>> 5020237f6 (Add spec.componentsOverride.operatingSystemManager to clusters)
+			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, deployment.Spec.Template.Spec, sets.New(resources.OperatingSystemManagerContainerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
@@ -101,20 +98,15 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-<<<<<<< HEAD
 			dep.Name = resources.OperatingSystemManagerDeploymentName
-			dep.Labels = resources.BaseAppLabels(Name, nil)
-=======
-			baseLabels := resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
-			kubernetes.EnsureLabels(dep, baseLabels)
->>>>>>> 5020237f6 (Add spec.componentsOverride.operatingSystemManager to clusters)
+			dep.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas != nil {
 				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas
 			}
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(Name, nil),
+				MatchLabels: resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil),
 			}
 
 			volumes := []corev1.Volume{getKubeconfigVolume()}
