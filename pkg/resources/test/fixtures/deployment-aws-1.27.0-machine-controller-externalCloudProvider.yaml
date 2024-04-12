@@ -101,11 +101,6 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
-          runAsGroup: 65534
-          runAsNonRoot: true
-          runAsUser: 65534
-          seccompProfile:
-            type: RuntimeDefault
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: machinecontroller-kubeconfig
@@ -130,6 +125,13 @@ spec:
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: kubermatic-machine-controller
       volumes:
       - name: machinecontroller-kubeconfig
