@@ -18,7 +18,6 @@ package operatingsystemmanager
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -29,7 +28,7 @@ import (
 func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+			r.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -76,7 +75,7 @@ func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 func KubePublicRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+			r.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
@@ -98,7 +97,7 @@ func KubePublicRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 func DefaultRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+			r.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
