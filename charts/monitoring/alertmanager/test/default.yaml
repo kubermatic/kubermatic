@@ -12,19 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: alertmanager
-version: 9.9.9-dev
-appVersion: v0.27.0
-description: Alertmanager for Kubermatic
-keywords:
-  - kubermatic
-  - monitoring
-  - prometheus
-  - alertmanager
-home: https://prometheus.io/
-sources:
-  - https://github.com/kubermatic/kubermatic
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
+# This file is used for the testing, do not remove!

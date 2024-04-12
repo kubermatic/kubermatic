@@ -65,15 +65,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        livenessProbe:
-          failureThreshold: 10
-          httpGet:
-            path: /api/v1/status
-            port: web
-            scheme: HTTP
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 3
         ports:
         - containerPort: 9093
           name: web
@@ -81,10 +72,19 @@ spec:
         - containerPort: 6783
           name: mesh
           protocol: TCP
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /-/healthy
+            port: web
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 3
         readinessProbe:
           failureThreshold: 10
           httpGet:
-            path: /api/v1/status
+            path: /-/ready
             port: web
             scheme: HTTP
           initialDelaySeconds: 3
