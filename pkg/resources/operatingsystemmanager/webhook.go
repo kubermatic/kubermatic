@@ -38,7 +38,7 @@ import (
 
 var (
 	webhookResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
+		resources.OperatingSystemManagerContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
 				corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -95,7 +95,7 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
+					Name:    resources.OperatingSystemManagerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/webhook"},
 					Args:    args,
@@ -163,7 +163,7 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
-			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(Name))
+			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(resources.OperatingSystemManagerContainerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
