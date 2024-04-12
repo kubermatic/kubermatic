@@ -65,6 +65,8 @@ const (
 	SchedulerDeploymentName = "scheduler"
 	// OperatingSystemManagerDeploymentName is the name for the operating-system-manager deployment.
 	OperatingSystemManagerDeploymentName = "operating-system-manager"
+	// OperatingSystemManagerContainerName is the name for the container created within the operating-system-manager deployment.
+	OperatingSystemManagerContainerName = "operating-system-manager"
 	// OperatingSystemManagerWebhookDeploymentName is the name for the operating-system-manager webhook deployment.
 	OperatingSystemManagerWebhookDeploymentName = "operating-system-manager-webhook"
 	// OperatingSystemManagerWebhookServiceName is the name for the operating-system-manager webhook service.
@@ -1610,6 +1612,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.UserClusterController != nil && componentSettings.UserClusterController.Resources != nil {
 		r[UserClusterControllerContainerName] = componentSettings.UserClusterController.Resources.DeepCopy()
+	}
+	if componentSettings.OperatingSystemManager != nil && componentSettings.OperatingSystemManager.Resources != nil {
+		r[OperatingSystemManagerContainerName] = componentSettings.OperatingSystemManager.Resources.DeepCopy()
 	}
 
 	return r

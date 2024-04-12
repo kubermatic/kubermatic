@@ -43,7 +43,7 @@ import (
 
 var (
 	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
+		resources.OperatingSystemManagerContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("128Mi"),
 				corev1.ResourceCPU:    resource.MustParse("50m"),
@@ -57,8 +57,7 @@ var (
 )
 
 const (
-	Name = "operating-system-manager"
-	Tag  = "v1.4.1"
+	Tag = "v1.4.1"
 )
 
 type operatingSystemManagerData interface {
@@ -84,7 +83,7 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 				return nil, err
 			}
 
-			deployment.Spec.Template, err = apiserver.IsRunningWrapper(data, deployment.Spec.Template, sets.New(Name))
+			deployment.Spec.Template, err = apiserver.IsRunningWrapper(data, deployment.Spec.Template, sets.New(resources.OperatingSystemManagerContainerName))
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
@@ -99,10 +98,13 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			baseLabels := resources.BaseAppLabels(Name, nil)
+			baseLabels := resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
+			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas != nil {
+				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas
+			}
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -110,7 +112,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			volumes := []corev1.Volume{getKubeconfigVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(resources.OperatingSystemManagerDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
@@ -167,7 +169,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
+					Name:    resources.OperatingSystemManagerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
 					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(nil), data.Cluster().Spec.ImagePullSecret),
@@ -212,9 +214,13 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+			}
+
+			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && len(data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Tolerations) > 0 {
+				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Tolerations
 			}
 
 			return dep, nil
