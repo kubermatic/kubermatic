@@ -23,13 +23,13 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"reflect"
 	"strings"
 	"time"
 
 	"go.uber.org/zap"
 
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"
+	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -48,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/json"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -155,27 +156,57 @@ func Add(
 		return requests
 	})
 
-	// Only react to cluster update events when our condition changed, or when CNI config changed
 	clusterPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			oldObj := e.ObjectOld.(*kubermaticv1.Cluster)
 			newObj := e.ObjectNew.(*kubermaticv1.Cluster)
-			oldCondition := oldObj.Status.Conditions[kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess]
-			newCondition := newObj.Status.Conditions[kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess]
-			if !reflect.DeepEqual(oldCondition, newCondition) {
+
+			reconcile, err := shouldReconcileCluster(oldObj, newObj)
+			if err != nil {
+				utilruntime.HandleError(fmt.Errorf("failed to diff clusters: %w", err))
 				return true
 			}
-			if !reflect.DeepEqual(oldObj.Spec.CNIPlugin, newObj.Spec.CNIPlugin) {
-				return true
-			}
-			return false
+
+			return reconcile
 		},
 	}
 	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), enqueueClusterAddons, clusterPredicate); err != nil {
 		return err
 	}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Addon{}), &handler.EnqueueRequestForObject{})
+	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Addon{}), &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{})
+}
+
+func shouldReconcileCluster(oldCluster, newCluster *kubermaticv1.Cluster) (bool, error) {
+	// kubeconfig and credentials are external Secrets, so they can have no influence on this
+	// decision and can be left with dummy values; in a more elaborate implementation, the real
+	// kubeconfig/credentials resourceVersions could be remembered also in the AddonStatus, but at
+	// that point we're re-implementing the Applications feature.
+	// If kubeconfig/credentials change, we rely on the auto-resync behaviour of Kubernetes.
+
+	createData := func(cluster *kubermaticv1.Cluster) (*addonutils.TemplateData, error) {
+		return addonutils.NewTemplateData(
+			cluster,
+			resources.Credentials{},
+			"<kubeconfig>",
+			"1.2.3.4", // cluster DNS
+			"5.6.7.8", // DNS resolver
+			nil,
+			nil,
+		)
+	}
+
+	oldData, err := createData(oldCluster)
+	if err != nil {
+		return false, fmt.Errorf("failed to create template data for old cluster: %w", err)
+	}
+
+	newData, err := createData(newCluster)
+	if err != nil {
+		return false, fmt.Errorf("failed to create template data for new cluster: %w", err)
+	}
+
+	return !equality.Semantic.DeepEqual(oldData, newData), nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -204,12 +235,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, r.garbageCollectAddon(ctx, log, addon)
 	}
 
+	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
+
 	if cluster.Status.Versions.ControlPlane == "" {
 		log.Debug("Skipping because the cluster has no version status yet, skipping")
 		return reconcile.Result{}, nil
 	}
 
-	log = r.log.With("cluster", cluster.Name, "addon", addon.Name)
+	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
+		log.Debug("API server is not running, trying again in 3 seconds")
+		return reconcile.Result{RequeueAfter: 3 * time.Second}, nil
+	}
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
@@ -263,11 +299,6 @@ func (r *Reconciler) garbageCollectAddon(ctx context.Context, log *zap.SugaredLo
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
-		log.Debug("API server is not running, trying again in 3 seconds")
-		return &reconcile.Result{RequeueAfter: 3 * time.Second}, nil
-	}
-
 	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if all required resources exist: %w", err)
@@ -652,6 +683,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	}
 
 	oldAddon := addon.DeepCopy()
+
 	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }

@@ -132,6 +132,13 @@ func NewTemplateData(
 		}
 	}
 
+	var clusterVersion *semverlib.Version
+	if s := cluster.Status.Versions.ControlPlane.Semver(); s != nil {
+		clusterVersion = s
+	} else {
+		clusterVersion = cluster.Spec.Version.Semver()
+	}
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -149,8 +156,8 @@ func NewTemplateData(
 			OwnerEmail:        cluster.Status.UserEmail,
 			Address:           cluster.Status.Address,
 			CloudProviderName: providerName,
-			Version:           semverlib.MustParse(cluster.Status.Versions.ControlPlane.String()),
-			MajorMinorVersion: cluster.Status.Versions.ControlPlane.MajorMinor(),
+			Version:           clusterVersion,
+			MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()),
 			Features:          sets.KeySet(cluster.Spec.Features),
 			Network: ClusterNetwork{
 				DNSDomain:            cluster.Spec.ClusterNetwork.DNSDomain,
