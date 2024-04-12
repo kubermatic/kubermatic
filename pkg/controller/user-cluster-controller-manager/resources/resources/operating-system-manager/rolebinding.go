@@ -18,7 +18,6 @@ package operatingsystemmanager
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -33,7 +32,7 @@ func KubeSystemRoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFac
 func RoleBindingReconciler() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.OperatingSystemManagerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = resources.BaseAppLabels(operatingsystemmanager.Name, nil)
+			rb.Labels = resources.BaseAppLabels(resources.OperatingSystemManagerDeploymentName, nil)
 
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.OperatingSystemManagerRoleName,
