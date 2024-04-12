@@ -326,7 +326,6 @@ func (h HelmClient) renderManifests(chart *chart.Chart, values chartutil.Values)
 	if err != nil {
 		return nil, err
 	}
-
 	engine := engine.New(restConfig)
 	manifests, err := engine.Render(chart, valuesToRender)
 	if err != nil {
