@@ -15,7 +15,7 @@
 dex:
   image:
     repository: "ghcr.io/dexidp/dex"
-    tag: "v2.36.0"
+    tag: "v2.39.1"
   # list of image pull secret references, e.g.
   # imagePullSecrets:
   #   - name: gchr-io-pull-secret

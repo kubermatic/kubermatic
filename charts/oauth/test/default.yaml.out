@@ -126,48 +126,17 @@ data:
       idTokens: 24h
       signingKeys: 6h
 ---
-# Source: oauth/templates/cluster-role.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: oauth/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: 'release-name'
 rules:
-- apiGroups: ["dex.coreos.com"] # API group created by dex
-  resources: ["*"]
-  verbs: ["*"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
-  verbs: ["create"] # To manage its own resources identity must be able to create customresourcedefinitions.
+  verbs: ["list", "create"]
 ---
-# Source: oauth/templates/cluster-role-binding.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: oauth/templates/rbac.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -176,6 +145,44 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: 'release-name'
+subjects:
+- kind: ServiceAccount
+  name: dex
+  namespace: 'default'
+---
+# Source: oauth/templates/rbac.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dex
+rules:
+- apiGroups: ["dex.coreos.com"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+# Source: oauth/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dex
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dex
 subjects:
 - kind: ServiceAccount
   name: dex
@@ -249,9 +256,12 @@ spec:
     spec:
       serviceAccountName: dex
       containers:
-      - image: ghcr.io/dexidp/dex:v2.36.0
-        name: dex
-        command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
+      - name: dex
+        image: ghcr.io/dexidp/dex:v2.39.1
+        command:
+        - dex
+        - serve
+        - /etc/dex/cfg/config.yaml
         env: 
         - name: KUBERNETES_POD_NAMESPACE
           valueFrom:
@@ -262,6 +272,14 @@ spec:
           containerPort: 5556
         - name: telemetry
           containerPort: 5558
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: telemetry
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: telemetry
         volumeMounts:
         - name: config
           mountPath: /etc/dex/cfg
