@@ -296,7 +296,7 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 
 	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
-		cluster.Spec.Cloud.Openstack.Network = networkName
+		cluster.Spec.Cloud.Openstack.Network = resourceNamePrefix + networkName
 	})
 
 	if err != nil {
