@@ -17,27 +17,25 @@
 - Fix high CPU usage in master-controller-manager ([#13209](https://github.com/kubermatic/kubermatic/pull/13209))
 - Fix increased reconcile rate for ClusterBackupStorageLocation objects on seed clusters ([#13218](https://github.com/kubermatic/kubermatic/pull/13218))
 
+### New Features
+
+- Add new `kubermatic_cluster_owner` metric on seed clusters, with `cluster_name` and `user` labels ([#13194](https://github.com/kubermatic/kubermatic/pull/13194))
+
 ### Updates
-
-- Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13245](https://github.com/kubermatic/kubermatic/pull/13245))
-- Update Cilium to 1.14.9 and 1.13.14, mitigating CVE-2024-28860 and CVE-2024-28248 ([#13242](https://github.com/kubermatic/kubermatic/pull/13242))
-
-### Cleanup
-
-- Addons reconciliation is triggered more consistently for changes to Cluster objects, reducing the overall number of unnecessary addon reconciliations ([#13252](https://github.com/kubermatic/kubermatic/pull/13252))
-
-### Design
-
-- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13180](https://github.com/kubermatic/kubermatic/pull/13180))
-
-### New Feature
 
 - KKP(EE): Bump to Metering 1.2.1 ([#13185](https://github.com/kubermatic/kubermatic/pull/13185))
     - Update Metering to v1.2.1.
     - Add `format` to metering report configuration, allowing to generate JSON files instead of CSV.
     - Add `cloud-provider`, `datacenter` and `cluster-owner` columns to the generated metering reports
-- Add new `kubermatic_cluster_owner` metric on seed clusters, with `cluster_name` and `user` labels ([#13194](https://github.com/kubermatic/kubermatic/pull/13194))
+- Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13245](https://github.com/kubermatic/kubermatic/pull/13245))
+- Update Cilium to 1.14.9 and 1.13.14, mitigating CVE-2024-28860 and CVE-2024-28248 ([#13242](https://github.com/kubermatic/kubermatic/pull/13242))
+- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13180](https://github.com/kubermatic/kubermatic/pull/13180))
 - The image tag in the included `mla/minio-lifecycle-mgr` helm chart has been changed from `latest` to `RELEASE.2024-03-13T23-51-57Z` ([#13199](https://github.com/kubermatic/kubermatic/pull/13199))
+
+### Cleanup
+
+- Addons reconciliation is triggered more consistently for changes to Cluster objects, reducing the overall number of unnecessary addon reconciliations ([#13252](https://github.com/kubermatic/kubermatic/pull/13252))
+
 
 ## [v2.25.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.0)
 
