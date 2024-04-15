@@ -1,0 +1,197 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    kubermatic.k8c.io/migrated-hetzner-csi-addon: v2.25.0
+  creationTimestamp: "2024-04-05T13:05:50Z"
+  finalizers:
+  - kubermatic.k8c.io/cleanup-credentials-secrets
+  - kubermatic.k8c.io/cleanup-etcdbackupconfigs
+  - kubermatic.k8c.io/cleanup-kubelb-ccm
+  - kubermatic.k8c.io/cleanup-kubermatic-constraints
+  - kubermatic.k8c.io/cleanup-namespace
+  - kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.k8c.io/delete-nodes
+  generation: 5
+  labels:
+    is-credential-preset: "true"
+    project-id: l9xc9ncnwz
+  name: dxdrgjffxh
+  resourceVersion: "436538763"
+  uid: ed30a00e-9029-40b7-94a7-46cce0a0d6fe
+spec:
+  auditLogging: {}
+  cloud:
+    dc: hetzner-fsn1
+    hetzner:
+      credentialsReference:
+        name: credential-hetzner-dxdrgjffxh
+        namespace: kubermatic
+    providerName: hetzner
+  clusterNetwork:
+    dnsDomain: cluster.local
+    ipFamily: IPv4
+    konnectivityEnabled: true
+    nodeCidrMaskSizeIPv4: 24
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+      - 172.25.0.0/16
+    proxyMode: iptables
+    services:
+      cidrBlocks:
+      - 10.240.16.0/20
+    tunnelingAgentIP: 100.64.30.10
+  cniPlugin:
+    type: cilium
+    version: 1.14.3
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+    konnectivityProxy: {}
+    nodePortProxyEnvoy:
+      resources: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableOperatingSystemManager: true
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  features:
+    apiserverNetworkPolicy: true
+    etcdLauncher: true
+    externalCloudProvider: true
+  humanReadableName: test cluster
+  kubelb:
+    enabled: true
+  kubernetesDashboard: {}
+  mla: {}
+  oidc: {}
+  opaIntegration:
+    webhookTimeoutSeconds: 10
+  pause: false
+  version: 1.28.7
+status:
+  address:
+    adminToken: xxxxxx.xxxxxxxxxxxxxxxx
+    externalName: yadda.yadda.yadda
+    internalURL: apiserver-external.cluster-dxdrgjffxh.svc.cluster.local.
+    ip: 1.2.3.4
+    port: 6443
+    url: https://yadda.yadda.yadda:6443
+  conditions:
+    AddonControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-07T16:54:27Z"
+      lastTransitionTime: "2024-04-07T16:54:27Z"
+      status: "True"
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T16:01:48Z"
+      lastTransitionTime: "2024-04-08T16:01:48Z"
+      status: "True"
+    CNIControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:05:51Z"
+      status: "False"
+    CSIAddonInUse:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T16:59:16Z"
+      status: "False"
+    CloudControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:05:52Z"
+      status: "True"
+    ClusterBackupControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:07:06Z"
+      lastTransitionTime: "2024-04-05T13:07:06Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-07T13:17:27Z"
+      lastTransitionTime: "2024-04-07T13:17:27Z"
+      status: "True"
+    ClusterInitialized:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:07:45Z"
+      message: Cluster has been initialized successfully
+      status: "True"
+    EtcdClusterInitialized:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:07:06Z"
+      message: Etcd Cluster has been initialized successfully
+      status: "True"
+    IPAMControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:05:55Z"
+      status: "True"
+    KubeLBControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T15:43:24Z"
+      lastTransitionTime: "2024-04-08T15:43:24Z"
+      status: "True"
+    MLAControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:05:57Z"
+      status: "True"
+    MachineDeploymentReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:07:24Z"
+      lastTransitionTime: "2024-04-05T13:07:24Z"
+      status: "True"
+    MonitoringControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:07:23Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T16:03:09Z"
+      lastTransitionTime: "2024-04-08T16:03:09Z"
+      message: All control plane components are up to date
+      reason: ClusterUpdateSuccessful
+      status: "True"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T13:05:51Z"
+      status: "True"
+    UpdateProgress:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-07T17:27:24Z"
+      message: No update in progress, cluster has reached its desired version.
+      reason: UpToDate
+      status: "True"
+  extendedHealth:
+    apiserver: HealthStatusUp
+    applicationController: HealthStatusUp
+    cloudProviderInfrastructure: HealthStatusUp
+    controller: HealthStatusUp
+    etcd: HealthStatusUp
+    konnectivity: HealthStatusUp
+    kubelb: HealthStatusUp
+    kubernetesDashboard: HealthStatusUp
+    machineController: HealthStatusUp
+    operatingSystemManager: HealthStatusUp
+    scheduler: HealthStatusUp
+    userClusterControllerManager: HealthStatusUp
+  namespaceName: cluster-dxdrgjffxh
+  phase: Running
+  resourceUsage:
+    cpu: "0"
+    memory: "0"
+    storage: "0"
+  userEmail: user@example.com
+  versions:
+    apiserver: 1.28.7
+    controlPlane: 1.28.7
+    controllerManager: 1.28.7
+    scheduler: 1.28.7

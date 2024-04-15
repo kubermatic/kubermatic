@@ -216,3 +216,23 @@ presubmits:
             requests:
               memory: 7Gi
               cpu: 2
+
+  - name: pre-kubermatic-test-addon-upgrades
+    decorate: true
+    always_run: false
+    run_if_changed: "(addons/|pkg/test/addon|pkg/addon|pkg/controller/seed-controller-manager/addon.*)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/integration-tests:k8s-1.29.1-rev0
+          command:
+            - "./hack/ci/run-addons-integration-test.sh"
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 4Gi
+              cpu: 2

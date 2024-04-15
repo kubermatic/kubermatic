@@ -1,0 +1,184 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    kubermatic.io/initial-cni-values-request: ""
+  creationTimestamp: "2024-04-08T21:29:41Z"
+  finalizers:
+  - kubermatic.k8c.io/cleanup-credentials-secrets
+  - kubermatic.k8c.io/cleanup-etcdbackupconfigs
+  - kubermatic.k8c.io/cleanup-kubermatic-constraints
+  - kubermatic.k8c.io/cleanup-namespace
+  - kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.k8c.io/delete-nodes
+  generation: 3
+  labels:
+    project-id: b92gxwjjgc
+  name: i44l9s7vrm
+  resourceVersion: "372348939"
+  uid: 119363e4-1132-45e7-8b87-f6811ba96a49
+spec:
+  auditLogging: {}
+  cloud:
+    dc: do-fra1
+    digitalocean:
+      credentialsReference:
+        name: credential-digitalocean-i44l9s7vrm
+        namespace: kubermatic
+    providerName: digitalocean
+  clusterNetwork:
+    dnsDomain: cluster.local
+    ipFamily: IPv4
+    ipvs:
+      strictArp: true
+    konnectivityEnabled: true
+    nodeCidrMaskSizeIPv4: 24
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+      - 172.25.0.0/16
+    proxyMode: ipvs
+    services:
+      cidrBlocks:
+      - 10.240.16.0/20
+    tunnelingAgentIP: 100.64.30.10
+  cniPlugin:
+    type: canal
+    version: v3.26
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+    konnectivityProxy: {}
+    nodePortProxyEnvoy:
+      resources: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableOperatingSystemManager: true
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  features:
+    apiserverNetworkPolicy: true
+    etcdLauncher: true
+    externalCloudProvider: true
+  humanReadableName: test cluster
+  kubelb:
+    enabled: false
+  kubernetesDashboard: {}
+  mla: {}
+  oidc: {}
+  opaIntegration:
+    webhookTimeoutSeconds: 10
+  pause: false
+  version: 1.28.7
+status:
+  address:
+    adminToken: xxxxxx.xxxxxxxxxxxxxxxx
+    externalName: yadda.yadda.yadda
+    internalURL: apiserver-external.cluster-i44l9s7vrm.svc.cluster.local.
+    ip: 1.2.3.4
+    port: 6443
+    url: https://yadda.yadda.yadda:6443
+  conditions:
+    AddonControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:31:01Z"
+      lastTransitionTime: "2024-04-08T21:31:01Z"
+      status: "True"
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:30:21Z"
+      lastTransitionTime: "2024-04-08T21:30:21Z"
+      status: "True"
+    CSIAddonInUse:
+      kubermaticVersion: ea50f1ae5a39272476d98a054e83208c2191be0d
+      lastHeartbeatTime: "2024-04-08T21:30:50Z"
+      status: "False"
+    CloudControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:42Z"
+      status: "True"
+    ClusterBackupControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:30:20Z"
+      lastTransitionTime: "2024-04-08T21:30:20Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:56Z"
+      status: "True"
+    ClusterInitialized:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:30:47Z"
+      message: Cluster has been initialized successfully
+      status: "True"
+    EtcdClusterInitialized:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:30:22Z"
+      message: Etcd Cluster has been initialized successfully
+      status: "True"
+    IPAMControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:44Z"
+      status: "True"
+    MLAControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:44Z"
+      status: "True"
+    MachineDeploymentReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:42Z"
+      status: "True"
+    MonitoringControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:30:34Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:30:44Z"
+      lastTransitionTime: "2024-04-08T21:30:44Z"
+      message: All control plane components are up to date
+      reason: ClusterUpdateSuccessful
+      status: "True"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:42Z"
+      status: "True"
+    UpdateProgress:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T21:29:56Z"
+      message: No update in progress, cluster has reached its desired version.
+      reason: UpToDate
+      status: "True"
+  extendedHealth:
+    apiserver: HealthStatusUp
+    applicationController: HealthStatusUp
+    cloudProviderInfrastructure: HealthStatusUp
+    controller: HealthStatusUp
+    etcd: HealthStatusUp
+    konnectivity: HealthStatusUp
+    machineController: HealthStatusUp
+    operatingSystemManager: HealthStatusUp
+    scheduler: HealthStatusUp
+    userClusterControllerManager: HealthStatusUp
+  namespaceName: cluster-i44l9s7vrm
+  phase: Running
+  resourceUsage:
+    cpu: "2"
+    memory: 2048M
+    storage: 60G
+  userEmail: user@example.com
+  versions:
+    apiserver: 1.28.7
+    controlPlane: 1.28.7
+    controllerManager: 1.28.7
+    scheduler: 1.28.7
