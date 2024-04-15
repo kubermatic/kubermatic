@@ -13,20 +13,7 @@
 # limitations under the License.
 
 loki:
-  image:
-    repository: docker.io/grafana/loki
   fullnameOverride: loki
-
-  affinity: {}
-  # podAntiAffinity:
-  #   requiredDuringSchedulingIgnoredDuringExecution:
-  #   - labelSelector:
-  #       matchExpressions:
-  #       - key: app
-  #         operator: In
-  #         values:
-  #         - loki
-  #     topologyKey: "kubernetes.io/hostname"
 
   # enable tracing for debug, need install jaeger and specify right jaeger_agent_host
   tracing:
@@ -48,7 +35,7 @@ loki:
       reject_old_samples: true
       reject_old_samples_max_age: 144h
       retention_period: 720h
-    schema_config:
+    schemaConfig:
       configs:
       - from: 2018-04-15
         store: boltdb
@@ -64,25 +51,27 @@ loki:
         index:
           prefix: index_
           period: 24h
-    server:
-      http_listen_port: 3100
+      - from: 2022-01-11
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v12
+        index:
+          prefix: loki_index_
+          period: 24h
     storage_config:
       boltdb:
-        directory: /data/loki/index
+        directory: /var/loki/index
       filesystem:
-        directory: /data/loki/chunks
+        directory: /var/loki/chunks
       boltdb_shipper:
-        active_index_directory: /data/loki/boltdb-shipper-active
-        cache_location: /data/loki/boltdb-shipper-cache
+        active_index_directory: /var/loki/boltdb-shipper-active
+        cache_location: /var/loki/boltdb-shipper-cache
         cache_ttl: 24h
         shared_store: filesystem
     chunk_store_config:
       max_look_back_period: 720h
-    table_manager:
-      retention_deletes_enabled: true
-      retention_period: 720h
     compactor:
-      working_directory: /data/loki/boltdb-shipper-compactor
+      working_directory: /var/loki/boltdb-shipper-compactor
       shared_store: filesystem
       compaction_interval: 10m
       retention_enabled: true
@@ -90,46 +79,59 @@ loki:
       retention_delete_worker_count: 150
       max_compaction_parallelism: 10
 
+  tableManager:
+    retention_deletes_enabled: true
+    retention_period: 720h
 
-  ## The app name of loki clients
-  client: {}
-    # name:
+  singleBinary:
+    replicas: 1
 
-  nodeSelector: {}
+    persistence:
+      enabled: true
+      size: 15Gi
+      storageClass: kubermatic-fast
 
-  persistence:
-    enabled: true
-    size: 15Gi
-    storageClassName: kubermatic-fast
+    resources:
+      limits:
+        cpu: "1"
+        # Increased based on real world usage where Loki crashes on longer time periods
+        memory: 1Gi
+      requests:
+        cpu: 300m
+        memory: 256Mi
 
-  podLabels: {}
+    podLabels: {}
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "3100"
+      cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
 
-  podAnnotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "3100"
+    affinity: {}
+    # podAntiAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #   - labelSelector:
+    #       matchExpressions:
+    #       - key: app
+    #         operator: In
+    #         values:
+    #         - loki
+    #     topologyKey: "kubernetes.io/hostname"
 
-  rbac:
-    pspEnabled: false
+    nodeSelector: {}
+    tolerations: []
 
-  replicas: 1
+  gateway:
+    enabled: false
 
-  resources:
-    limits:
-      cpu: "1"
-      # Increased based on real world usage where Loki crashes on longer time periods
-      memory: 1Gi
-    requests:
-      cpu: 300m
-      memory: 256Mi
+  test:
+    enabled: false
 
-  service:
-    type: ClusterIP
-    nodePort:
-    port: 3100
-    annotations: {}
-    labels: {}
-
-  tolerations: []
-
-  updateStrategy:
-    type: RollingUpdate
+  monitoring:
+    dashboards:
+      enabled: false
+    selfMonitoring:
+      enabled: false
+      grafanaAgent:
+        installOperator: false
+    lokiCanary:
+      enabled: false
