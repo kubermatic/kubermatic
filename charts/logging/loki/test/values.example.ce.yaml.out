@@ -282,10 +282,6 @@ spec:
       partition: 0
   serviceName: loki-headless
   revisionHistoryLimit: 10
-  
-  persistentVolumeClaimRetentionPolicy:
-    whenDeleted: Delete
-    whenScaled: Delete
   selector:
     matchLabels:
       app.kubernetes.io/name: loki
@@ -359,6 +355,16 @@ spec:
             requests:
               cpu: 300m
               memory: 256Mi
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: loki
+                  app.kubernetes.io/instance: release-name
+                  app.kubernetes.io/component: single-binary
+              topologyKey: kubernetes.io/hostname
+        
       volumes:
         - name: tmp
           emptyDir: {}
