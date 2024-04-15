@@ -68,12 +68,12 @@ loki:
       http_listen_port: 3100
     storage_config:
       boltdb:
-        directory: /data/loki/index
+        directory: /var/loki/index
       filesystem:
-        directory: /data/loki/chunks
+        directory: /var/loki/chunks
       boltdb_shipper:
-        active_index_directory: /data/loki/boltdb-shipper-active
-        cache_location: /data/loki/boltdb-shipper-cache
+        active_index_directory: /var/loki/boltdb-shipper-active
+        cache_location: /var/loki/boltdb-shipper-cache
         cache_ttl: 24h
         shared_store: filesystem
     chunk_store_config:
@@ -82,7 +82,7 @@ loki:
       retention_deletes_enabled: true
       retention_period: 720h
     compactor:
-      working_directory: /data/loki/boltdb-shipper-compactor
+      working_directory: /var/loki/boltdb-shipper-compactor
       shared_store: filesystem
       compaction_interval: 10m
       retention_enabled: true
@@ -111,8 +111,6 @@ loki:
   rbac:
     pspEnabled: false
 
-  replicas: 1
-
   resources:
     limits:
       cpu: "1"
@@ -133,3 +131,22 @@ loki:
 
   updateStrategy:
     type: RollingUpdate
+
+  # This chart is tweaked for a small-scale seed setup.
+
+  gateway:
+    enabled: false
+
+  singleBinary:
+    replicas: 1
+
+  test:
+    enabled: false
+
+  monitoring:
+    selfMonitoring:
+      enabled: false
+      grafanaAgent:
+        installOperator: false
+    lokiCanary:
+      enabled: false
