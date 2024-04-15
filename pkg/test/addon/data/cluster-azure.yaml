@@ -1,0 +1,179 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Cluster
+metadata:
+  creationTimestamp: "2024-04-08T17:02:08Z"
+  finalizers:
+  - kubermatic.k8c.io/cleanup-azure-availability-set
+  - kubermatic.k8c.io/cleanup-azure-resource-group
+  - kubermatic.k8c.io/cleanup-azure-route-table
+  - kubermatic.k8c.io/cleanup-azure-security-group
+  - kubermatic.k8c.io/cleanup-azure-subnet
+  - kubermatic.k8c.io/cleanup-azure-vnet
+  - kubermatic.k8c.io/cleanup-credentials-secrets
+  - kubermatic.k8c.io/cleanup-etcdbackupconfigs
+  - kubermatic.k8c.io/cleanup-kubermatic-constraints
+  - kubermatic.k8c.io/cleanup-namespace
+  - kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.k8c.io/delete-nodes
+  generation: 9
+  labels:
+    project-id: b92gxwjjgc
+  name: bxtnbqjk8j
+  resourceVersion: "372216410"
+  uid: 02c6f17e-4c9f-4b81-8df2-a139760f0f1c
+spec:
+  auditLogging: {}
+  cloud:
+    azure:
+      assignAvailabilitySet: true
+      availabilitySet: kubernetes-bxtnbqjk8j
+      credentialsReference:
+        name: credential-azure-bxtnbqjk8j
+        namespace: kubermatic
+      loadBalancerSKU: standard
+      nodePortsAllowedIPRanges:
+        cidrBlocks: []
+      resourceGroup: kubernetes-bxtnbqjk8j
+      routeTable: kubernetes-bxtnbqjk8j
+      securityGroup: kubernetes-bxtnbqjk8j
+      subnet: kubernetes-bxtnbqjk8j
+      vnet: kubernetes-bxtnbqjk8j
+      vnetResourceGroup: ""
+    dc: azure-westeurope
+    providerName: azure
+  clusterNetwork:
+    dnsDomain: cluster.local
+    ipFamily: IPv4
+    ipvs:
+      strictArp: true
+    konnectivityEnabled: true
+    nodeCidrMaskSizeIPv4: 24
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+      - 172.25.0.0/16
+    proxyMode: ebpf
+    services:
+      cidrBlocks:
+      - 10.240.16.0/20
+    tunnelingAgentIP: 100.64.30.10
+  cniPlugin:
+    type: cilium
+    version: 1.14.3
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+    konnectivityProxy: {}
+    nodePortProxyEnvoy:
+      resources: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableOperatingSystemManager: true
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  features:
+    apiserverNetworkPolicy: true
+    ccmClusterName: true
+    etcdLauncher: true
+    externalCloudProvider: true
+  humanReadableName: test cluster
+  kubelb:
+    enabled: false
+  kubernetesDashboard: {}
+  mla: {}
+  oidc: {}
+  opaIntegration:
+    webhookTimeoutSeconds: 10
+  pause: false
+  version: 1.28.7
+status:
+  address:
+    adminToken: xxxxxx.xxxxxxxxxxxxxxxx
+    externalName: yadda.yadda.yadda
+    internalURL: apiserver-external.cluster-bxtnbqjk8j.svc.cluster.local.
+    ip: 1.2.3.4
+    port: 6443
+    url: https://yadda.yadda.yadda:6443
+  conditions:
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:42Z"
+      lastTransitionTime: "2024-04-08T17:02:42Z"
+      status: "True"
+    CNIControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:08Z"
+      status: "False"
+    CloudControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:27Z"
+      lastTransitionTime: "2024-04-08T17:02:27Z"
+      status: "True"
+    ClusterBackupControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:41Z"
+      lastTransitionTime: "2024-04-08T17:02:41Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:24Z"
+      lastTransitionTime: "2024-04-08T17:02:24Z"
+      status: "True"
+    IPAMControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:09Z"
+      status: "True"
+    MLAControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:09Z"
+      status: "True"
+    MachineDeploymentReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:09Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:09Z"
+      message: Some control plane components did not finish updating
+      reason: ClusterUpdateSuccessful
+      status: "False"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:08Z"
+      status: "True"
+    UpdateProgress:
+      kubermaticVersion: v2.25.0-38-gea50f1ae5
+      lastHeartbeatTime: "2024-04-08T17:02:28Z"
+      message: No update in progress, cluster has reached its desired version.
+      reason: UpToDate
+      status: "True"
+  extendedHealth:
+    apiserver: HealthStatusUp
+    applicationController: HealthStatusProvisioning
+    cloudProviderInfrastructure: HealthStatusUp
+    controller: HealthStatusProvisioning
+    etcd: HealthStatusProvisioning
+    konnectivity: HealthStatusUp
+    machineController: HealthStatusProvisioning
+    operatingSystemManager: HealthStatusProvisioning
+    scheduler: HealthStatusProvisioning
+    userClusterControllerManager: HealthStatusProvisioning
+  lastProviderReconciliation: "2024-04-08T17:02:27Z"
+  namespaceName: cluster-bxtnbqjk8j
+  phase: Creating
+  userEmail: user@example.com
+  versions:
+    apiserver: 1.28.7
+    controlPlane: 1.28.7
+    controllerManager: 1.28.7
+    scheduler: 1.28.7
