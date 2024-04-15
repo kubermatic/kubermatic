@@ -12,6 +12,31 @@
 - [v2.23.9](#v2239)
 - [v2.23.10](#v22310)
 - [v2.23.11](#v22311)
+- [v2.23.12](#v22312)
+- [v2.23.13](#v22313)
+
+## [v2.23.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.13)
+
+### API Changes
+
+- Add `spec.componentsOverride.operatingSystemManager` to allow overriding OSM settings and resources ([#13288](https://github.com/kubermatic/kubermatic/pull/13288))
+
+### Bugfixes
+
+- Fix high CPU usage in master-controller-manager ([#13217](https://github.com/kubermatic/kubermatic/pull/13217))
+
+
+## [v2.23.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.12)
+
+### Bugfixes
+
+- Exclude `test` folders which contain symlinks that break once the archive is untarred ([#13151](https://github.com/kubermatic/kubermatic/pull/13151))
+- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))       
+- Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
+- Fix a bug where dedicated credentials were incorrectly being required as mandatory input when editing vSphere provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
+
+### Chore
+- Update to Go 1.20.13 ([#13165](https://github.com/kubermatic/kubermatic/pull/13165)) and ([#6594](https://github.com/kubermatic/dashboard/pull/6594))
 
 ## [v2.23.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.11)
 

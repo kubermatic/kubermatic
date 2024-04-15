@@ -5,6 +5,49 @@
 - [v2.24.2](#v2242)
 - [v2.24.3](#v2243)
 - [v2.24.4](#v2244)
+- [v2.24.5](#v2245)
+- [v2.24.6](#v2246)
+
+## [v2.24.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.6)
+
+### API Changes
+
+- Add `spec.componentsOverride.operatingSystemManager` to allow overriding OSM settings and resources ([#13287](https://github.com/kubermatic/kubermatic/pull/13287))
+
+### Bugfixes
+
+- Fix high CPU usage in master-controller-manager ([#13209](https://github.com/kubermatic/kubermatic/pull/13209))
+
+### Updates
+
+- Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13246](https://github.com/kubermatic/kubermatic/pull/13246))
+- Update to Go 1.21.9 ([#13247](https://github.com/kubermatic/kubermatic/pull/13247))
+
+### Cleanup
+
+- Addons reconciliation is triggered more consistently for changes to Cluster objects, reducing the overall number of unnecessary addon reconciliations ([#13252](https://github.com/kubermatic/kubermatic/pull/13252))
+
+## [v2.24.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.5)
+
+### Bugfixes
+
+- Add images for Velero and KubeLB to mirrored images list ([#13198](https://github.com/kubermatic/kubermatic/pull/13198))
+- Exclude `test` folders which contain symlinks that break once the archive is untarred ([#13151](https://github.com/kubermatic/kubermatic/pull/13151))
+- Fix missing image registry override for hubble-ui components if Cilium is deployed as System Application ([#13139](https://github.com/kubermatic/kubermatic/pull/13139))
+- Fix: usercluster-controller-manager failed to reconcile cluster with disable CSI drivers ([#13183](https://github.com/kubermatic/kubermatic/pull/13183))
+- Fix Azure loadbalancer-related issues by updating Azure CCM from v1.28.0 to v1.28.5 for the user clusters created with Kubernetes v1.28 ([#13173](https://github.com/kubermatic/kubermatic/pull/13173))
+- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))       
+- Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
+- Fix a bug where dedicated credentials were incorrectly being required as mandatory input when editing vSphere provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
+
+
+### Chore
+
+- Update to Go 1.21.8 ([#13164](https://github.com/kubermatic/kubermatic/pull/13164)) and ([#6593](https://github.com/kubermatic/dashboard/pull/6593))
+
+### Design
+
+- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13197](https://github.com/kubermatic/kubermatic/pull/13197))
 
 ## [v2.24.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.4)
 
