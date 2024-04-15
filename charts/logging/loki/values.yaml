@@ -90,6 +90,7 @@ loki:
       enabled: true
       size: 15Gi
       storageClass: kubermatic-fast
+      enableStatefulSetAutoDeletePVC: false
 
     resources:
       limits:
@@ -105,20 +106,6 @@ loki:
       prometheus.io/scrape: "true"
       prometheus.io/port: "3100"
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
-
-    affinity: {}
-    # podAntiAffinity:
-    #   requiredDuringSchedulingIgnoredDuringExecution:
-    #   - labelSelector:
-    #       matchExpressions:
-    #       - key: app
-    #         operator: In
-    #         values:
-    #         - loki
-    #     topologyKey: "kubernetes.io/hostname"
-
-    nodeSelector: {}
-    tolerations: []
 
   gateway:
     enabled: false
