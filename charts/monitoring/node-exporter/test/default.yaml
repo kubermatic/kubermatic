@@ -12,19 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: node-exporter
-version: 9.9.9-dev
-appVersion: v1.7.0
-description: Prometheus Node Exporter for Kubermatic
-keywords:
-  - kubermatic
-  - monitoring
-  - prometheus
-  - node-exporter
-home: https://github.com/prometheus/node_exporter
-sources:
-  - https://github.com/helm/charts/tree/master/stable/prometheus-node-exporter
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
+# This file is used for the testing, do not remove!
