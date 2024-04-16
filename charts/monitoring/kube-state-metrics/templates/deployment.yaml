@@ -27,12 +27,13 @@ spec:
         app: kube-state-metrics
         app.kubernetes.io/component: exporter
         app.kubernetes.io/name: kube-state-metrics
-        app.kubernetes.io/version: 2.8.2
+        app.kubernetes.io/version: '{{ .Values.kubeStateMetrics.image.tag }}'
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8080'
         kubermatic.io/chart: kube-state-metrics
         fluentbit.io/parser: glog
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     spec:
       serviceAccountName: kube-state-metrics
       automountServiceAccountToken: true
@@ -53,6 +54,8 @@ spec:
         - name: customresourcestate-config
           mountPath: /etc/customresourcestate
           readOnly: true
+        - name: tmp
+          mountPath: /tmp
         {{- end }}
         ports:
         - containerPort: 8080
@@ -62,7 +65,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /
-            port: 8081
+            port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 5
         livenessProbe:
@@ -78,6 +81,10 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
           runAsUser: 65534
+          runAsGroup: 65534
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
         resources:
 {{ toYaml .Values.kubeStateMetrics.resources | indent 10 }}
 
@@ -112,8 +119,10 @@ spec:
           periodSeconds: 10
         resources:
 {{ toYaml .Values.kubeStateMetrics.resizer.resources | indent 10 }}
-{{- if .Values.kubeStateMetrics.customResourceState.enabled }}
       volumes:
+        - name: tmp
+          emptyDir: {}
+{{- if .Values.kubeStateMetrics.customResourceState.enabled }}
         - name: customresourcestate-config
           configMap:
             name: kube-state-metrics-customresourcestate-config
