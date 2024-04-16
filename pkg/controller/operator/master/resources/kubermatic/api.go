@@ -22,6 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -170,17 +171,19 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				},
 			}
 
+			labels := apiPodLabels()
+
 			d.Spec.Replicas = cfg.Spec.API.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: apiPodLabels(),
+				MatchLabels: labels,
 			}
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Annotations = map[string]string{
+			kubernetes.EnsureLabels(&d.Spec.Template, labels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
 				"fluentbit.io/parser":  "json_iso",
-			}
+			})
 
 			d.Spec.Template.Spec.ServiceAccountName = apiServiceAccountName
 
@@ -250,6 +253,7 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
+			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "api",
@@ -269,9 +273,10 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					VolumeMounts:   volumeMounts,
-					Resources:      cfg.Spec.API.Resources,
-					ReadinessProbe: &probe,
+					VolumeMounts:    volumeMounts,
+					Resources:       cfg.Spec.API.Resources,
+					ReadinessProbe:  &probe,
+					SecurityContext: &common.ContainerSecurityContext,
 				},
 			}
 

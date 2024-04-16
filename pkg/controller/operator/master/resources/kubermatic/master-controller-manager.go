@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -40,17 +41,19 @@ func masterControllerManagerPodLabels() map[string]string {
 func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return common.MasterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
+			labels := masterControllerManagerPodLabels()
+
 			d.Spec.Replicas = cfg.Spec.MasterController.Replicas
 			d.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: masterControllerManagerPodLabels(),
+				MatchLabels: labels,
 			}
 
-			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Annotations = map[string]string{
+			kubernetes.EnsureLabels(&d.Spec.Template, labels)
+			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				"prometheus.io/scrape": "true",
 				"prometheus.io/port":   "8085",
 				"fluentbit.io/parser":  "json_iso",
-			}
+			})
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
@@ -73,6 +76,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
+			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
@@ -87,7 +91,8 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					Resources: cfg.Spec.MasterController.Resources,
+					Resources:       cfg.Spec.MasterController.Resources,
+					SecurityContext: &common.ContainerSecurityContext,
 				},
 			}
 

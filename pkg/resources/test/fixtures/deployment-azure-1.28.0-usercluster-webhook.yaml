@@ -99,6 +99,12 @@ spec:
           requests:
             cpu: 25m
             memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /opt/webhook-serving-cert/
           name: webhook-serving-cert
@@ -124,6 +130,13 @@ spec:
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: usercluster-webhook
       volumes:
       - name: webhook-serving-cert

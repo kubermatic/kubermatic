@@ -59,10 +59,10 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 			args := []string{
 				"-worker-cluster-kubeconfig", "/etc/kubernetes/worker-kubeconfig/kubeconfig",
 				"-listen-address", "0.0.0.0:9876",
-				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 				"-namespace", data.Cluster().Status.NamespaceName,
-				"-tls-cert-path=/tmp/cert/cert.pem",
-				"-tls-key-path=/tmp/cert/key.pem",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+				"-tls-cert-path", "/etc/kubernetes/pki/serving-cert/cert.pem",
+				"-tls-key-path", "/etc/kubernetes/pki/serving-cert/key.pem",
 			}
 
 			// Enable validations corresponding to OSM
@@ -115,6 +115,16 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 				tag = t
 			}
 
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: resources.Bool(true),
+				RunAsUser:    resources.Int64(65534),
+				RunAsGroup:   resources.Int64(65534),
+				FSGroup:      resources.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
@@ -160,13 +170,22 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 						},
 						{
 							Name:      resources.MachineControllerWebhookServingCertSecretName,
-							MountPath: "/tmp/cert",
+							MountPath: "/etc/kubernetes/pki/serving-cert",
 							ReadOnly:  true,
 						},
 						{
 							Name:      resources.CABundleConfigMapName,
 							MountPath: "/etc/kubernetes/pki/ca-bundle",
 							ReadOnly:  true,
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
 						},
 					},
 				},

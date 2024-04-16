@@ -161,6 +161,16 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				},
 			}
 
+			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: resources.Bool(true),
+				RunAsUser:    resources.Int64(65534),
+				RunAsGroup:   resources.Int64(65534),
+				FSGroup:      resources.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -192,6 +202,15 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 						ProbeHandler: corev1.ProbeHandler{
 							TCPSocket: &corev1.TCPSocketAction{
 								Port: intstr.Parse("metrics"),
+							},
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
 							},
 						},
 					},

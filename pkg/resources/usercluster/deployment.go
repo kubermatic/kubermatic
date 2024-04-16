@@ -124,7 +124,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				"prometheus.io/path":   "/metrics",
 				"prometheus.io/port":   "8085",
 				// these volumes should not block the autoscaler from evicting the pod
-				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: resources.ApplicationCacheVolumeName,
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join([]string{resources.ApplicationCacheVolumeName, "temp"}, ","),
 			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
@@ -266,6 +266,16 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				return nil, err
 			}
 
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				RunAsNonRoot: resources.Bool(true),
+				RunAsUser:    resources.Int64(65534),
+				RunAsGroup:   resources.Int64(65534),
+				FSGroup:      resources.Int64(65534),
+				SeccompProfile: &corev1.SeccompProfile{
+					Type: corev1.SeccompProfileTypeRuntimeDefault,
+				},
+			}
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -296,6 +306,15 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 						TimeoutSeconds:   15,
 					},
 					VolumeMounts: getVolumeMounts(data),
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						ReadOnlyRootFilesystem:   resources.Bool(true),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
+						},
+					},
 				},
 			}
 
@@ -336,6 +355,12 @@ func getVolumes(data userclusterControllerData) []corev1.Volume {
 			},
 		},
 		{
+			Name: "temp",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
 			Name: resources.ApplicationCacheVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
@@ -370,6 +395,10 @@ func getVolumeMounts(data userclusterControllerData) []corev1.VolumeMount {
 			Name:      "ca-bundle",
 			MountPath: "/opt/ca-bundle/",
 			ReadOnly:  true,
+		},
+		{
+			Name:      "temp",
+			MountPath: "/tmp/",
 		},
 		{
 			Name:      resources.ApplicationCacheVolumeName,
