@@ -145,7 +145,7 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 	return nil
 }
 
-// IsReleaseStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries
+// IsReleaseStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries.
 func (a *ApplicationManager) IsReleaseStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
 	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
@@ -155,7 +155,7 @@ func (a *ApplicationManager) IsReleaseStuck(ctx context.Context, log *zap.Sugare
 	return templateProvider.IsReleaseStuck(applicationInstallation)
 }
 
-// Rollback rolls an Application back to the previous release
+// Rollback rolls an Application back to the previous release.
 func (a *ApplicationManager) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {

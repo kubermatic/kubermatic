@@ -260,7 +260,7 @@ func (h HelmTemplate) IsReleaseStuck(applicationInstallation *appskubermaticv1.A
 	return true, nil
 }
 
-// Rollback rolls an Application back to the previous release
+// Rollback rolls an Application back to the previous release.
 func (h HelmTemplate) Rollback(applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
 	if err != nil {
