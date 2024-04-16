@@ -289,14 +289,18 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		}
 	}
 
-	// If NetworkName not specified, Create network with name kubernetes-clusterid
+	// This variable will be used to update the cluster object.
+	network := networkName
+
+	// If NetworkName not specified, Create network with name kubernetes-clusterid.
 	if networkName == "" {
+		network = resourceNamePrefix + cluster.Name
 		networkName = cluster.Name
 	}
 
 	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
-		cluster.Spec.Cloud.Openstack.Network = resourceNamePrefix + networkName
+		cluster.Spec.Cloud.Openstack.Network = network
 	})
 
 	if err != nil {
