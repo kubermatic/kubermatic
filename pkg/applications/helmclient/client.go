@@ -416,7 +416,7 @@ func (h HelmClient) Uninstall(releaseName string) (*release.UninstallReleaseResp
 	return uninstallReleaseResponse, err
 }
 
-// GetMetadata wraps helms GetMetadata command to be used with our ActionConfig
+// GetMetadata wraps helms GetMetadata command to be used with our ActionConfig.
 func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
 	client := action.NewGetMetadata(h.actionConfig)
 	res, err := client.Run(releaseName)
@@ -426,7 +426,7 @@ func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
 	return res, nil
 }
 
-// Rollback wraps helms Rollback command to be used with our ActionConfig
+// Rollback wraps helms Rollback command to be used with our ActionConfig.
 func (h HelmClient) Rollback(releaseName string) error {
 	client := action.NewRollback(h.actionConfig)
 	err := client.Run(releaseName)
