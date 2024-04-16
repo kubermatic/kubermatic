@@ -1,0 +1,201 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: Cluster
+metadata:
+  creationTimestamp: "2024-04-05T12:23:15Z"
+  finalizers:
+  - kubermatic.k8c.io/cleanup-credentials-secrets
+  - kubermatic.k8c.io/cleanup-etcdbackupconfigs
+  - kubermatic.k8c.io/cleanup-gcp-firewall-icmp
+  - kubermatic.k8c.io/cleanup-gcp-firewall-nodeport
+  - kubermatic.k8c.io/cleanup-gcp-firewall-self
+  - kubermatic.k8c.io/cleanup-gcp-routes
+  - kubermatic.k8c.io/cleanup-kubermatic-constraints
+  - kubermatic.k8c.io/cleanup-namespace
+  - kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.k8c.io/delete-nodes
+  generation: 5
+  labels:
+    is-credential-preset: "true"
+    project-id: l9xc9ncnwz
+  name: tcqm6m2jsw
+  resourceVersion: "436540953"
+  uid: ef0ce36b-3cba-43cf-8e01-9e649d55900a
+spec:
+  auditLogging: {}
+  cloud:
+    dc: gcp-westeurope
+    gcp:
+      credentialsReference:
+        name: credential-gcp-tcqm6m2jsw
+        namespace: kubermatic
+      network: global/networks/default
+      nodePortsAllowedIPRanges:
+        cidrBlocks: []
+      subnetwork: ""
+    providerName: gcp
+  clusterNetwork:
+    dnsDomain: cluster.local
+    ipFamily: IPv4
+    ipvs:
+      strictArp: true
+    konnectivityEnabled: true
+    nodeCidrMaskSizeIPv4: 24
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+      - 172.25.0.0/16
+    proxyMode: ebpf
+    services:
+      cidrBlocks:
+      - 10.240.16.0/20
+    tunnelingAgentIP: 100.64.30.10
+  cniPlugin:
+    type: cilium
+    version: 1.14.3
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+    konnectivityProxy: {}
+    nodePortProxyEnvoy:
+      resources: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableOperatingSystemManager: true
+  enableUserSSHKeyAgent: true
+  exposeStrategy: Tunneling
+  features:
+    apiserverNetworkPolicy: true
+    ccmClusterName: true
+    etcdLauncher: true
+    externalCloudProvider: true
+  humanReadableName: test cluster
+  kubelb:
+    enabled: false
+  kubernetesDashboard:
+    enabled: true
+  mla: {}
+  oidc: {}
+  opaIntegration:
+    webhookTimeoutSeconds: 10
+  pause: false
+  version: 1.29.2
+status:
+  address:
+    adminToken: xxxxxx.xxxxxxxxxxxxxxxx
+    externalName: yadda.yadda.yadda
+    internalURL: apiserver-external.cluster-tcqm6m2jsw.svc.cluster.local.
+    ip: 1.2.3.4
+    port: 6443
+    url: https://yadda.yadda.yadda:6443
+  conditions:
+    AddonControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:25:20Z"
+      status: "True"
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T13:13:20Z"
+      lastTransitionTime: "2024-04-08T13:13:20Z"
+      status: "True"
+    CNIControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:15Z"
+      status: "False"
+    CSIAddonInUse:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T17:03:54Z"
+      status: "False"
+    CloudControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:27Z"
+      lastTransitionTime: "2024-04-05T12:23:27Z"
+      status: "True"
+    ClusterBackupControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:24:07Z"
+      lastTransitionTime: "2024-04-05T12:24:07Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:34Z"
+      status: "True"
+    ClusterInitialized:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:26:46Z"
+      message: Cluster has been initialized successfully
+      status: "True"
+    EtcdClusterInitialized:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:24:15Z"
+      message: Etcd Cluster has been initialized successfully
+      status: "True"
+    IPAMControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:19Z"
+      status: "True"
+    MLAControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:23Z"
+      lastTransitionTime: "2024-04-05T12:23:23Z"
+      status: "True"
+    MachineDeploymentReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:15Z"
+      status: "True"
+    MonitoringControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:24:24Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T16:24:04Z"
+      lastTransitionTime: "2024-04-08T16:24:04Z"
+      message: All control plane components are up to date
+      reason: ClusterUpdateSuccessful
+      status: "True"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-05T12:23:15Z"
+      status: "True"
+    UpdateProgress:
+      kubermaticVersion: v2.25.0
+      lastHeartbeatTime: "2024-04-08T13:04:48Z"
+      message: No update in progress, cluster has reached its desired version.
+      reason: UpToDate
+      status: "True"
+  extendedHealth:
+    apiserver: HealthStatusUp
+    applicationController: HealthStatusUp
+    cloudProviderInfrastructure: HealthStatusUp
+    controller: HealthStatusUp
+    etcd: HealthStatusUp
+    konnectivity: HealthStatusUp
+    kubernetesDashboard: HealthStatusUp
+    machineController: HealthStatusUp
+    operatingSystemManager: HealthStatusUp
+    scheduler: HealthStatusUp
+    userClusterControllerManager: HealthStatusUp
+  lastProviderReconciliation: "2024-04-08T13:04:48Z"
+  namespaceName: cluster-tcqm6m2jsw
+  phase: Running
+  resourceUsage:
+    cpu: "6"
+    memory: 12288M
+    storage: 75G
+  userEmail: user@example.com
+  versions:
+    apiserver: 1.29.2
+    controlPlane: 1.29.2
+    controllerManager: 1.29.2
+    oldestNodeVersion: 1.29.2
+    scheduler: 1.29.2
