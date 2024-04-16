@@ -1504,8 +1504,7 @@ spec:
                     konnectivityEnabled:
                       description: |-
                         Deprecated: KonnectivityEnabled enables konnectivity for controlplane to node network communication.
-                        As OpenVPN will be removed in the future KKP versions, clusters with konnectivity disabled will not be supported.
-                        All existing clusters with OpenVPN should migrate to the Konnectivity.
+                        This field is a noop, konnectivity is always deployed.
                       type: boolean
                     nodeCidrMaskSizeIPv4:
                       description: |-
@@ -3292,13 +3291,6 @@ spec:
                         - HealthStatusProvisioning
                       type: string
                     monitoring:
-                      enum:
-                        - HealthStatusDown
-                        - HealthStatusUp
-                        - HealthStatusProvisioning
-                      type: string
-                    openvpn:
-                      description: ' Deprecated: OpenVPN will be removed entirely in the future.'
                       enum:
                         - HealthStatusDown
                         - HealthStatusUp

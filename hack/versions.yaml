@@ -98,13 +98,6 @@ products:
       - goFunction:
           function: callKonnectivityVersion
 
-  - name: OpenVPN
-    source: https://github.com/kubermatic/openvpn
-    occurrences:
-      - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/resources/openvpn
-          constant: version
-
   - name: Kubernetes Dashboard
     source: https://github.com/kubernetes/dashboard
     occurrences:
