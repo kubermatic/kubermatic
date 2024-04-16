@@ -84,10 +84,10 @@ func getDefaultExternalNetwork(netClient *gophercloud.ServiceClient) (*NetworkWi
 	return nil, errors.New("no external network found")
 }
 
-func createUserClusterNetwork(netClient *gophercloud.ServiceClient, clusterName string) (*osnetworks.Network, error) {
+func createUserClusterNetwork(netClient *gophercloud.ServiceClient, networkName string) (*osnetworks.Network, error) {
 	iTrue := true
 	res := osnetworks.Create(netClient, osnetworks.CreateOpts{
-		Name:         resourceNamePrefix + clusterName,
+		Name:         networkName,
 		AdminStateUp: &iTrue,
 	})
 	if res.Err != nil {
