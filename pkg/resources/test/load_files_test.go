@@ -54,6 +54,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
@@ -685,6 +686,20 @@ func TestLoadFiles(t *testing.T) {
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.KonnectivityKubeconfigSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.KonnectivityProxyTLSSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
 							caBundleConfigMap,
 							&corev1.ConfigMap{
 								ObjectMeta: metav1.ObjectMeta{
@@ -711,6 +726,13 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.AdmissionControlConfigMapName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.ConfigMap{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.KonnectivityKubeApiserverEgress,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
@@ -754,6 +776,21 @@ func TestLoadFiles(t *testing.T) {
 										},
 									},
 									ClusterIP: "192.0.2.15",
+								},
+							},
+							&corev1.Service{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      resources.KonnectivityProxyServiceName,
+									Namespace: cluster.Status.NamespaceName,
+								},
+								Spec: corev1.ServiceSpec{
+									Ports: []corev1.ServicePort{
+										{
+											Port:       443,
+											Protocol:   corev1.ProtocolTCP,
+											TargetPort: intstr.FromInt32(8132),
+										},
+									},
 								},
 							},
 						).
