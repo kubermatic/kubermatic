@@ -102,7 +102,6 @@ type controllerRunOptions struct {
 	ccmMigration                      bool
 	ccmMigrationCompleted             bool
 	nutanixCSIEnabled                 bool
-	isKonnectivityEnabled             bool
 	konnectivityServerHost            string
 	konnectivityServerPort            int
 	konnectivityKeepaliveTime         string
@@ -151,7 +150,6 @@ func main() {
 	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
 	flag.BoolVar(&runOp.ccmMigrationCompleted, "ccm-migration-completed", false, "cluster has been successfully migrated.")
 	flag.BoolVar(&runOp.nutanixCSIEnabled, "nutanix-csi-enabled", false, "enable Nutanix CSI")
-	flag.BoolVar(&runOp.isKonnectivityEnabled, "konnectivity-enabled", false, "Enable Konnectivity.")
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.StringVar(&runOp.konnectivityKeepaliveTime, "konnectivity-keepalive-time", "1m", "Konnectivity keepalive time.")
@@ -195,10 +193,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed parsing clusterURL", zap.Error(err))
 	}
-	if !runOp.isKonnectivityEnabled && runOp.openvpnServerPort == 0 {
-		log.Fatal("-openvpn-server-port must be set")
-	}
-	if runOp.isKonnectivityEnabled && runOp.konnectivityServerHost == "" {
+	if runOp.konnectivityServerHost == "" {
 		log.Fatal("-konnectivity-server-host must be set when Konnectivity is enabled")
 	}
 	if len(runOp.caBundleFile) == 0 {
@@ -322,7 +317,6 @@ func main() {
 		},
 		runOp.clusterName,
 		runOp.nutanixCSIEnabled,
-		runOp.isKonnectivityEnabled,
 		runOp.konnectivityServerHost,
 		runOp.konnectivityServerPort,
 		runOp.konnectivityKeepaliveTime,

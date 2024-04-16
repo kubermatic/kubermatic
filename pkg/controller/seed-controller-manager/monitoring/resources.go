@@ -48,8 +48,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
-
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(client).
@@ -63,7 +61,6 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithBackupPeriod(20 * time.Minute).
 		WithVersions(r.versions).
-		WithKonnectivityEnabled(konnectivityEnabled).
 		Build(), nil
 }
 

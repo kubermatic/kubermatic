@@ -69,7 +69,7 @@ func digitalOceanDeploymentReconciler(data *resources.TemplateData) reconciling.
 			version := DigitaloceanCCMVersion(data.Cluster().Spec.Version)
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
-			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
+			dep.Spec.Template.Spec.Volumes = getVolumes(true)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    ccmContainerName,

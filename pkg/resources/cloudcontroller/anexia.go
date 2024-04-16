@@ -48,7 +48,7 @@ func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedD
 			kubernetes.EnsureLabels(&deployment.Spec.Template, podLabels)
 
 			deployment.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
-			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
+			deployment.Spec.Template.Spec.Volumes = getVolumes(true)
 			deployment.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,

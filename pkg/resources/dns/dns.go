@@ -25,7 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -89,7 +88,6 @@ type deploymentReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	RewriteImage(string) (string, error)
-	IsKonnectivityEnabled() bool
 }
 
 // DeploymentReconciler returns the function to create and update the DNS resolver deployment.
@@ -106,7 +104,7 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled())
+			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(resources.DNSResolverDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get pod labels: %w", err)
@@ -151,16 +149,6 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				resources.DNSResolverDeploymentName: defaultResourceRequirements.DeepCopy(),
 			}
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
-					*openvpnSidecar,
-				)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
-			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
@@ -175,7 +163,7 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 	}
 }
 
-func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+func getVolumes() []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.DNSResolverConfigMapName,
@@ -201,16 +189,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 				},
 			},
 		},
-	}
-	if !isKonnectivityEnabled {
-		vs = append(vs, corev1.Volume{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		})
 	}
 	return vs
 }

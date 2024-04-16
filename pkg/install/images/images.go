@@ -361,8 +361,8 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	return crane.Copy(image.Source, image.Destination, options...)
 }
 
-func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
-	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle)
+func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
+	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -425,9 +425,7 @@ func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.Te
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
 	}
 
-	if templateData.IsKonnectivityEnabled() {
-		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
-	}
+	deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
 	if mcjr := metering.CronJobReconciler("reportName", kubermaticv1.MeteringReportConfiguration{}, "caBundleName", templateData.RewriteImage, seed); mcjr != nil {
@@ -500,7 +498,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	caBundleConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -517,12 +515,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	dnsResolverConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.DNSResolverConfigMapName,
-			Namespace: mockNamespaceName,
-		},
-	}
-	openvpnClientConfigsConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.OpenVPNClientConfigsConfigMapName,
 			Namespace: mockNamespaceName,
 		},
 	}
@@ -549,7 +541,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			caBundleConfigMap,
 			prometheusConfigMap,
 			dnsResolverConfigMap,
-			openvpnClientConfigsConfigMap,
 			auditConfigMap,
 			admissionControlConfigMap,
 			konnectivityKubeApiserverEgressConfigMap,
@@ -672,7 +663,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-	fakeCluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(konnectivityEnabled) //nolint:staticcheck
 	fakeCluster.Spec.CNIPlugin = cniPlugin
 	fakeCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureEtcdLauncher: true}
 	if enabled, exists := config.Spec.FeatureGates[kubermaticv1.ClusterFeatureEtcdLauncher]; exists && !enabled {
@@ -717,7 +707,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithFailureDomainZoneAntiaffinity(false).
 		WithVersions(kubermaticVersions).
 		WithCABundle(caBundle).
-		WithKonnectivityEnabled(konnectivityEnabled).
 		Build(), nil
 }
 

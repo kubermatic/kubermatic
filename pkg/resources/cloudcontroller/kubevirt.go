@@ -68,7 +68,7 @@ func kubevirtDeploymentReconciler(data *resources.TemplateData) reconciling.Name
 			}
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
-			dep.Spec.Template.Spec.Volumes = append(getVolumes(data.IsKonnectivityEnabled(), false), []corev1.Volume{
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(false), []corev1.Volume{
 				{
 					Name: resources.CloudConfigSeedSecretName,
 					VolumeSource: corev1.VolumeSource{

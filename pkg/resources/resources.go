@@ -245,10 +245,6 @@ const (
 	CloudConfigSeedSecretName = "cloud-config"
 	// CloudConfigKey is the key under which the cloud-config in the cloud-config Secret can be found.
 	CloudConfigKey = "config"
-	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster.
-	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
-	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster.
-	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
 	// ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism.
 	ClusterInfoConfigMapName = "cluster-info"
 	// PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config.
@@ -555,20 +551,6 @@ const (
 	TokensSecretKey = "tokens.csv"
 	// ViewersTokenSecretKey viewersToken.
 	ViewerTokenSecretKey = "viewerToken"
-	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesn't work as it has
-	// the key hardcoded.
-	OpenVPNCACertKey = CACertSecretKey
-	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesn't work as it has
-	// the key hardcoded.
-	OpenVPNCAKeyKey = CAKeySecretKey
-	// OpenVPNServerKeySecretKey server.key.
-	OpenVPNServerKeySecretKey = "server.key"
-	// OpenVPNServerCertSecretKey server.crt.
-	OpenVPNServerCertSecretKey = "server.crt"
-	// OpenVPNInternalClientKeySecretKey client.key.
-	OpenVPNInternalClientKeySecretKey = "client.key"
-	// OpenVPNInternalClientCertSecretKey client.crt.
-	OpenVPNInternalClientCertSecretKey = "client.crt"
 	// EtcdTLSCertSecretKey etcd-tls.crt.
 	EtcdTLSCertSecretKey = "etcd-tls.crt"
 	// EtcdTLSKeySecretKey etcd-tls.key.
@@ -1202,40 +1184,12 @@ func InClusterApiserverIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 type userClusterDNSPolicyAndConfigData interface {
 	Cluster() *kubermaticv1.Cluster
 	ClusterIPByServiceName(name string) (string, error)
-	IsKonnectivityEnabled() bool
 }
 
 // UserClusterDNSPolicyAndConfig returns a DNSPolicy and DNSConfig to configure Pods to use user cluster DNS.
 func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.DNSPolicy, *corev1.PodDNSConfig, error) {
-	if d.IsKonnectivityEnabled() {
-		// custom DNS resolver in not needed in Konnectivity setup
-		return corev1.DNSClusterFirst, nil, nil
-	}
-	// If Konnectivity is NOT enabled, we deploy a custom DNS resolver
-	// for the user cluster in Seed. To use it, we set the DNS policy to DNSNone
-	// and set the custom DNS resolver's CLusterIP in the DNSConfig.
-	dnsConfigOptionNdots := "5"
-	dnsConfigResolverIP, err := d.ClusterIPByServiceName(DNSResolverServiceName)
-	if err != nil {
-		return corev1.DNSNone, nil, err
-	}
-	if len(d.Cluster().Spec.ClusterNetwork.DNSDomain) == 0 {
-		return corev1.DNSNone, nil, fmt.Errorf("invalid (empty) DNSDomain in ClusterNetwork spec for cluster %s", d.Cluster().Name)
-	}
-	return corev1.DNSNone, &corev1.PodDNSConfig{
-		Nameservers: []string{dnsConfigResolverIP},
-		Searches: []string{
-			fmt.Sprintf("kube-system.svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
-			fmt.Sprintf("svc.%s", d.Cluster().Spec.ClusterNetwork.DNSDomain),
-			d.Cluster().Spec.ClusterNetwork.DNSDomain,
-		},
-		Options: []corev1.PodDNSConfigOption{
-			{
-				Name:  "ndots",
-				Value: &dnsConfigOptionNdots,
-			},
-		},
-	}, nil
+	// custom DNS resolver in not needed in Konnectivity setup
+	return corev1.DNSClusterFirst, nil, nil
 }
 
 // BaseAppLabels returns the minimum required labels.

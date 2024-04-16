@@ -247,15 +247,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 						versionLogger.Debug("Collecting images…")
 
-						// Collect images without & with Konnectivity, as Konnecctivity / OpenVPN can be switched in clusters
-						// at any time. Remove the non-Konnectivity option once OpenVPN option is finally removed.
-
-						imagesWithoutKonnectivity, err := images.GetImagesForVersion(
+						images, err := images.GetImagesForVersion(
 							versionLogger,
 							clusterVersion,
 							cloudSpec,
 							cniPlugin,
-							false,
 							kubermaticConfig,
 							allAddons,
 							versions,
@@ -265,24 +261,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 						if err != nil {
 							return fmt.Errorf("failed to get images: %w", err)
 						}
-						imageSet.Insert(imagesWithoutKonnectivity...)
-
-						imagesWithKonnectivity, err := images.GetImagesForVersion(
-							versionLogger,
-							clusterVersion,
-							cloudSpec,
-							cniPlugin,
-							true,
-							kubermaticConfig,
-							allAddons,
-							versions,
-							caBundle,
-							options.RegistryPrefix,
-						)
-						if err != nil {
-							return fmt.Errorf("failed to get images: %w", err)
-						}
-						imageSet.Insert(imagesWithKonnectivity...)
+						imageSet.Insert(images...)
 					}
 				}
 			}

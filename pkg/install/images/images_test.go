@@ -77,7 +77,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 				cni := fmt.Sprintf("%s_%s", cniPlugin.Type, cniPlugin.Version)
 				clog := plog.WithField("cni", cni)
 
-				images, err := GetImagesForVersion(clog, clusterVersion, cloudSpec, cniPlugin, false, config, allAddons, kubermaticVersions, caBundle, "")
+				images, err := GetImagesForVersion(clog, clusterVersion, cloudSpec, cniPlugin, config, allAddons, kubermaticVersions, caBundle, "")
 				if err != nil {
 					t.Errorf("Error calling getImagesForVersion for %s / %s / %s: %v", cloudSpec.ProviderName, clusterVersion.Version.String(), cni, err)
 				}

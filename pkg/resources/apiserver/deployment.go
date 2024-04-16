@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -84,8 +83,8 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
 
-			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditLogEnabled)
-			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
+			volumes := getVolumes(enableEncryptionConfiguration, auditLogEnabled)
+			volumeMounts := getVolumeMounts(enableEncryptionConfiguration)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
 
@@ -122,28 +121,10 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			var konnectivityProxySidecar *corev1.Container
-			var openvpnSidecar *corev1.Container
-			var dnatControllerSidecar *corev1.Container
 
-			if data.IsKonnectivityEnabled() {
-				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
-				}
-			} else {
-				openvpnSidecar, err = vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
-				}
-
-				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
-					data,
-					"dnat-controller",
-					fmt.Sprintf("https://127.0.0.1:%d", address.Port),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
-				}
+			konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
 			}
 
 			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, version)
@@ -199,27 +180,13 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			var defResourceRequirements map[string]*corev1.ResourceRequirements
-			if data.IsKonnectivityEnabled() {
-				dep.Spec.Template.Spec.Containers = []corev1.Container{
-					*konnectivityProxySidecar,
-					*apiserverContainer,
-				}
-				defResourceRequirements = map[string]*corev1.ResourceRequirements{
-					name:                          defaultResourceRequirements.DeepCopy(),
-					konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
-				}
-			} else {
-				dep.Spec.Template.Spec.Containers = []corev1.Container{
-					*openvpnSidecar,
-					*dnatControllerSidecar,
-					*apiserverContainer,
-				}
-
-				defResourceRequirements = map[string]*corev1.ResourceRequirements{
-					name:                       defaultResourceRequirements.DeepCopy(),
-					openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
-					dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
-				}
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				*konnectivityProxySidecar,
+				*apiserverContainer,
+			}
+			defResourceRequirements = map[string]*corev1.ResourceRequirements{
+				name:                          defaultResourceRequirements.DeepCopy(),
+				konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
 			}
 
 			overrides := resources.GetOverrides(data.Cluster().Spec.ComponentsOverride)
@@ -392,9 +359,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		audiences = []string{issuer}
 	}
 
-	if data.IsKonnectivityEnabled() {
-		audiences = append(audiences, "system:konnectivity-server")
-	}
+	audiences = append(audiences, "system:konnectivity-server")
 
 	flags = append(flags,
 		"--service-account-issuer", issuer,
@@ -402,7 +367,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--api-audiences", strings.Join(audiences, ","),
 	)
 
-	flags = append(flags, "--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(cluster, data.IsKonnectivityEnabled()))
+	flags = append(flags, "--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(cluster, true))
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
 	if cloudProviderName != "" && cloudProviderName != resources.CloudProviderExternalFlag {
@@ -449,10 +414,8 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, strings.Join(fg, ","))
 	}
 
-	if data.IsKonnectivityEnabled() {
-		flags = append(flags, "--egress-selector-config-file",
-			"/etc/kubernetes/konnectivity/egress-selector-configuration.yaml")
-	}
+	flags = append(flags, "--egress-selector-config-file",
+		"/etc/kubernetes/konnectivity/egress-selector-configuration.yaml")
 
 	if enableEncryption {
 		flags = append(flags, "--encryption-provider-config",
@@ -478,7 +441,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(isEncryptionEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -547,19 +510,18 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 		},
 	}
 
-	if isKonnectivityEnabled {
-		vms = append(vms, []corev1.VolumeMount{
-			{
-				Name:      resources.KonnectivityUDS,
-				MountPath: "/etc/kubernetes/konnectivity-server",
-			},
-			{
-				Name:      resources.KonnectivityKubeApiserverEgress,
-				MountPath: "/etc/kubernetes/konnectivity",
-				ReadOnly:  true,
-			},
-		}...)
-	}
+	// Konnectivity volume mounts.
+	vms = append(vms, []corev1.VolumeMount{
+		{
+			Name:      resources.KonnectivityUDS,
+			MountPath: "/etc/kubernetes/konnectivity-server",
+		},
+		{
+			Name:      resources.KonnectivityKubeApiserverEgress,
+			MountPath: "/etc/kubernetes/konnectivity",
+			ReadOnly:  true,
+		},
+	}...)
 
 	if isEncryptionEnabled {
 		vms = append(vms, corev1.VolumeMount{
@@ -572,7 +534,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool) []corev1.Volume {
+func getVolumes(isEncryptionEnabled, isAuditEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -691,64 +653,43 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 		},
 	}
 
-	if isKonnectivityEnabled {
-		vs = append(vs, []corev1.Volume{
-			{
-				Name: resources.KonnectivityKubeconfigSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  resources.KonnectivityKubeconfigSecretName,
-						DefaultMode: intPtr(420),
+	vs = append(vs, []corev1.Volume{
+		{
+			Name: resources.KonnectivityKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.KonnectivityKubeconfigSecretName,
+					DefaultMode: intPtr(420),
+				},
+			},
+		},
+		{
+			Name: resources.KonnectivityProxyTLSSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  resources.KonnectivityProxyTLSSecretName,
+					DefaultMode: intPtr(420),
+				},
+			},
+		},
+		{
+			Name: resources.KonnectivityUDS,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+		{
+			Name: resources.KonnectivityKubeApiserverEgress,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.KonnectivityKubeApiserverEgress,
 					},
+					DefaultMode: intPtr(420),
 				},
 			},
-			{
-				Name: resources.KonnectivityProxyTLSSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName:  resources.KonnectivityProxyTLSSecretName,
-						DefaultMode: intPtr(420),
-					},
-				},
-			},
-			{
-				Name: resources.KonnectivityUDS,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			{
-				Name: resources.KonnectivityKubeApiserverEgress,
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: resources.KonnectivityKubeApiserverEgress,
-						},
-						DefaultMode: intPtr(420),
-					},
-				},
-			},
-		}...)
-	} else {
-		vs = append(vs, []corev1.Volume{
-			{
-				Name: resources.OpenVPNClientCertificatesSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.OpenVPNClientCertificatesSecretName,
-					},
-				},
-			},
-			{
-				Name: resources.KubeletDnatControllerKubeconfigSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
-					},
-				},
-			},
-		}...)
-	}
+		},
+	}...)
 
 	if isEncryptionEnabled {
 		vs = append(vs, corev1.Volume{

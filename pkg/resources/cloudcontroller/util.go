@@ -29,7 +29,7 @@ const (
 	v129 = "1.29"
 )
 
-func getVolumes(isKonnectivityEnabled bool, mountCloudConfig bool) []corev1.Volume {
+func getVolumes(mountCloudConfig bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.CloudControllerManagerKubeconfigSecretName,
@@ -56,16 +56,6 @@ func getVolumes(isKonnectivityEnabled bool, mountCloudConfig bool) []corev1.Volu
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.CloudConfigSeedSecretName,
-				},
-			},
-		})
-	}
-	if !isKonnectivityEnabled {
-		vs = append(vs, corev1.Volume{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
 				},
 			},
 		})

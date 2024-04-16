@@ -97,7 +97,6 @@ func Add(
 	userClusterMLA UserClusterMLA,
 	clusterName string,
 	nutanixCSIEnabled bool,
-	konnectivity bool,
 	konnectivityServerHost string,
 	konnectivityServerPort int,
 	konnectivityKeepaliveTime string,
@@ -128,7 +127,6 @@ func Add(
 		cloudProvider:             kubermaticv1.ProviderType(cloudProviderName),
 		clusterName:               clusterName,
 		nutanixCSIEnabled:         nutanixCSIEnabled,
-		isKonnectivityEnabled:     konnectivity,
 		konnectivityServerHost:    konnectivityServerHost,
 		konnectivityServerPort:    konnectivityServerPort,
 		konnectivityKeepaliveTime: konnectivityKeepaliveTime,
@@ -320,10 +318,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
 	return resources.GetClusterRootCA(ctx, r.namespace, r.seedClient)
-}
-
-func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
-	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
 }
 
 func (r *reconciler) mlaGatewayCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {

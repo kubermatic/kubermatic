@@ -685,13 +685,6 @@ func TestLoadFiles(t *testing.T) {
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
-							&corev1.ConfigMap{
-								ObjectMeta: metav1.ObjectMeta{
-									ResourceVersion: "123456",
-									Name:            resources.OpenVPNClientConfigsConfigMapName,
-									Namespace:       cluster.Status.NamespaceName,
-								},
-							},
 							caBundleConfigMap,
 							&corev1.ConfigMap{
 								ObjectMeta: metav1.ObjectMeta{
@@ -733,20 +726,6 @@ func TestLoadFiles(t *testing.T) {
 										},
 									},
 									ClusterIP: "192.0.2.10",
-								},
-							},
-							&corev1.Service{
-								ObjectMeta: metav1.ObjectMeta{
-									Name:      resources.OpenVPNServerServiceName,
-									Namespace: cluster.Status.NamespaceName,
-								},
-								Spec: corev1.ServiceSpec{
-									Ports: []corev1.ServicePort{
-										{
-											NodePort: 30003,
-										},
-									},
-									ClusterIP: "192.0.2.13",
 								},
 							},
 							&corev1.Service{

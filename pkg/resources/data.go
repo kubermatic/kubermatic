@@ -86,7 +86,6 @@ type TemplateData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 
 	userClusterMLAEnabled bool
-	isKonnectivityEnabled bool
 
 	tunnelingAgentIP string
 
@@ -156,11 +155,6 @@ func (td *TemplateDataBuilder) WithEtcdDiskSize(etcdDiskSize resource.Quantity) 
 
 func (td *TemplateDataBuilder) WithUserClusterMLAEnabled(enabled bool) *TemplateDataBuilder {
 	td.data.userClusterMLAEnabled = enabled
-	return td
-}
-
-func (td *TemplateDataBuilder) WithKonnectivityEnabled(enabled bool) *TemplateDataBuilder {
-	td.data.isKonnectivityEnabled = enabled
 	return td
 }
 
@@ -316,11 +310,6 @@ func (d *TemplateData) NodePortProxyTag() string {
 // UserClusterMLAEnabled returns userClusterMLAEnabled.
 func (d *TemplateData) UserClusterMLAEnabled() bool {
 	return d.userClusterMLAEnabled
-}
-
-// IsKonnectivityEnabled returns isKonnectivityEnabled.
-func (d *TemplateData) IsKonnectivityEnabled() bool {
-	return d.isKonnectivityEnabled
 }
 
 // NodeAccessNetwork returns the node access network.

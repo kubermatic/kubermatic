@@ -73,7 +73,6 @@ type userclusterControllerData interface {
 	KubermaticDockerTag() string
 	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
-	IsKonnectivityEnabled() bool
 	DC() *kubermaticv1.Datacenter
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
@@ -166,27 +165,19 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-log-debug=true")
 			}
 
-			if data.IsKonnectivityEnabled() {
-				args = append(args, "-konnectivity-enabled=true")
+			args = append(args, "-konnectivity-enabled=true")
 
-				kHost := address.ExternalName
-				if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-					kHost = fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, kHost)
-				}
-				kPort, err := data.GetKonnectivityServerPort()
-				if err != nil {
-					return nil, err
-				}
-				args = append(args, "-konnectivity-server-host", kHost)
-				args = append(args, "-konnectivity-server-port", fmt.Sprint(kPort))
-				args = append(args, "-konnectivity-keepalive-time", data.GetKonnectivityKeepAliveTime())
-			} else {
-				openvpnServerPort, err := data.GetOpenVPNServerPort()
-				if err != nil {
-					return nil, err
-				}
-				args = append(args, "-openvpn-server-port", fmt.Sprint(openvpnServerPort))
+			kHost := address.ExternalName
+			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+				kHost = fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, kHost)
 			}
+			kPort, err := data.GetKonnectivityServerPort()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, "-konnectivity-server-host", kHost)
+			args = append(args, "-konnectivity-server-port", fmt.Sprint(kPort))
+			args = append(args, "-konnectivity-keepalive-time", data.GetKonnectivityKeepAliveTime())
 
 			if data.Cluster().Spec.Features[kubermaticv1.KubeSystemNetworkPolicies] {
 				args = append(args, "-enable-network-policies")

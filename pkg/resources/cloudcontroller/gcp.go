@@ -83,7 +83,7 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			dep.Spec.Template.Spec.Volumes = append(
-				getVolumes(data.IsKonnectivityEnabled(), true),
+				getVolumes(true),
 				corev1.Volume{
 					Name: "cloud-credentials",
 					VolumeSource: corev1.VolumeSource{

@@ -68,7 +68,7 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 			}
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
-			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), false)
+			dep.Spec.Template.Spec.Volumes = getVolumes(false)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:  ccmContainerName,
