@@ -110,17 +110,7 @@ spec:
           name: cloud-config-csi
         - mountPath: /etc/kubernetes/vcloud/basic-auth
           name: vcloud-basic-auth-volume
-      dnsConfig:
-        nameservers:
-        - 192.0.2.14
-        options:
-        - name: ndots
-          value: "5"
-        searches:
-        - kube-system.svc.cluster.local
-        - svc.cluster.local
-        - cluster.local
-      dnsPolicy: None
+      dnsPolicy: ClusterFirst
       serviceAccountName: vcloud-csi
       volumes:
       - emptyDir: {}

@@ -33,9 +33,10 @@ spec:
         cloud-config-secret-revision: "123456"
         cluster: de-test-01
         front-proxy-ca-secret-revision: "123456"
+        konnectivity-kubeconfig-secret-revision: "123456"
+        konnectivityproxy-tls-secret-revision: "123456"
+        kube-apiserver-egress-configmap-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
-        kubeletdnatcontroller-kubeconfig-secret-revision: "123456"
-        openvpn-client-certificates-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
         tokens-secret-revision: "123456"
     spec:
@@ -51,86 +52,64 @@ spec:
       automountServiceAccountToken: true
       containers:
       - args:
-        - --client
-        - --proto
-        - tcp
-        - --dev
-        - tun
-        - --auth-nocache
-        - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local.
-        - "1194"
-        - --nobind
-        - --connect-timeout
-        - "5"
-        - --connect-retry
-        - "1"
-        - --ca
-        - /etc/openvpn/pki/client/ca.crt
-        - --cert
-        - /etc/openvpn/pki/client/client.crt
-        - --key
-        - /etc/openvpn/pki/client/client.key
-        - --remote-cert-tls
-        - server
-        - --link-mtu
-        - "1432"
-        - --cipher
-        - AES-256-GCM
-        - --auth
-        - SHA1
-        - --keysize
-        - "256"
-        - --script-security
-        - "2"
-        - --status
-        - /run/openvpn-status
-        - --log
-        - /dev/stdout
+        - --logtostderr=true
+        - -v=3
+        - --cluster-key=/etc/kubernetes/pki/konnectivityproxy-tls.key
+        - --cluster-cert=/etc/kubernetes/pki/konnectivityproxy-tls.crt
+        - --uds-name=/etc/kubernetes/konnectivity-server/konnectivity-server.socket
+        - --kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig
+        - --server-count=1
+        - --mode=grpc
+        - --server-port=0
+        - --agent-port=8132
+        - --admin-port=8133
+        - --health-port=8134
+        - --agent-namespace=kube-system
+        - --agent-service-account=system-konnectivity-agent
+        - --delete-existing-uds-file=true
+        - --authentication-audience=system:konnectivity-server
+        - --proxy-strategies=default
+        - --keepalive-time=1m
         command:
-        - /usr/sbin/openvpn
-        image: quay.io/kubermatic/openvpn:v2.5.2-r0
-        name: openvpn-client
+        - /proxy-server
+        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.1.5
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8134
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: konnectivity-server
+        ports:
+        - containerPort: 8132
+          name: agentport
+          protocol: TCP
+        - containerPort: 8133
+          name: adminport
+          protocol: TCP
+        - containerPort: 8134
+          name: healthport
+          protocol: TCP
         resources:
           limits:
-            cpu: "1"
-            memory: 32Mi
+            cpu: "2"
+            memory: 200Mi
           requests:
-            cpu: 5m
-            memory: 5Mi
-        securityContext:
-          privileged: true
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
-        - mountPath: /etc/openvpn/pki/client
-          name: openvpn-client-certificates
-          readOnly: true
-      - args:
-        - -kubeconfig
-        - /etc/kubernetes/kubeconfig/kubeconfig
-        - -node-access-network
-        - 192.0.2.0/24
-        - -master
-        - https://127.0.0.1:30000
-        command:
-        - /usr/local/bin/kubeletdnat-controller
-        image: quay.io/kubermatic/kubeletdnat-controller:v0.0.0-test
-        name: dnat-controller
-        resources:
-          limits:
-            cpu: 100m
-            memory: 512Mi
-          requests:
-            cpu: 5m
-            memory: 16Mi
-        securityContext:
-          capabilities:
-            add:
-            - NET_ADMIN
-          procMount: Default
-          runAsUser: 0
-        volumeMounts:
+        - mountPath: /etc/kubernetes/konnectivity-server
+          name: konnectivity-uds
         - mountPath: /etc/kubernetes/kubeconfig
-          name: kubeletdnatcontroller-kubeconfig
+          name: konnectivity-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/
+          name: konnectivityproxy-tls
           readOnly: true
       - args:
         - --advertise-address
@@ -209,9 +188,9 @@ spec:
         - --service-account-signing-key-file
         - /etc/kubernetes/service-account-key/sa.key
         - --api-audiences
-        - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000
+        - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000,system:konnectivity-server
         - --kubelet-preferred-address-types
-        - ExternalIP,InternalIP
+        - InternalIP,ExternalIP
         - --cloud-provider
         - digitalocean
         - --cloud-config
@@ -228,6 +207,8 @@ spec:
         - 'oidc:'
         - --oidc-groups-claim
         - groups
+        - --egress-selector-config-file
+        - /etc/kubernetes/konnectivity/egress-selector-configuration.yaml
         command:
         - /usr/local/bin/kube-apiserver
         env:
@@ -315,17 +296,12 @@ spec:
         - mountPath: /etc/kubernetes/adm-control
           name: adm-control
           readOnly: true
-      dnsConfig:
-        nameservers:
-        - 192.0.2.14
-        options:
-        - name: ndots
-          value: "5"
-        searches:
-        - kube-system.svc.cluster.local
-        - svc.cluster.local
-        - cluster.local
-      dnsPolicy: None
+        - mountPath: /etc/kubernetes/konnectivity-server
+          name: konnectivity-uds
+        - mountPath: /etc/kubernetes/konnectivity
+          name: kube-apiserver-egress
+          readOnly: true
+      dnsPolicy: ClusterFirst
       imagePullSecrets:
       - name: dockercfg
       initContainers:
@@ -388,10 +364,18 @@ spec:
       - configMap:
           name: adm-control
         name: adm-control
-      - name: openvpn-client-certificates
+      - name: konnectivity-kubeconfig
         secret:
-          secretName: openvpn-client-certificates
-      - name: kubeletdnatcontroller-kubeconfig
+          defaultMode: 420
+          secretName: konnectivity-kubeconfig
+      - name: konnectivityproxy-tls
         secret:
-          secretName: kubeletdnatcontroller-kubeconfig
+          defaultMode: 420
+          secretName: konnectivityproxy-tls
+      - emptyDir: {}
+        name: konnectivity-uds
+      - configMap:
+          defaultMode: 420
+          name: kube-apiserver-egress
+        name: kube-apiserver-egress
 status: {}
