@@ -27,14 +27,14 @@ spec:
 # limitations under the License.
 
 apiVersion: v1
-automountServiceAccountToken: false
 kind: ServiceAccount
 metadata:
   labels:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
+    app.kubernetes.io/version: 'v2.12.0'
   name: kube-state-metrics
+automountServiceAccountToken: false
 ---
 # Source: kube-state-metrics/templates/crs-configmap.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -57,7 +57,7 @@ metadata:
   labels:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
+    app.kubernetes.io/version: 'v2.12.0'
 data:
   config.yaml: |
     spec:
@@ -111,7 +111,7 @@ metadata:
   labels:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
+    app.kubernetes.io/version: 'v2.12.0'
   name: kube-state-metrics
 rules:
 - apiGroups:
@@ -267,7 +267,7 @@ metadata:
   labels:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
+    app.kubernetes.io/version: 'v2.12.0'
   name: kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -356,7 +356,7 @@ metadata:
   labels:
     app.kubernetes.io/component: exporter
     app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
+    app.kubernetes.io/version: 'v2.12.0'
   name: kube-state-metrics
 spec:
   clusterIP: None
@@ -400,28 +400,28 @@ spec:
         app: kube-state-metrics
         app.kubernetes.io/component: exporter
         app.kubernetes.io/name: kube-state-metrics
-        app.kubernetes.io/version: 2.8.2
+        app.kubernetes.io/version: 'v2.12.0'
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8080'
         kubermatic.io/chart: kube-state-metrics
         fluentbit.io/parser: glog
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     spec:
       serviceAccountName: kube-state-metrics
       automountServiceAccountToken: true
       containers:
       - name: kube-state-metrics
         image: 'registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.12.0'
-        # Ref: https://kubernetes.io/blog/2021/04/13/kube-state-metrics-v-2-0/#what-is-new-in-v2-0
-        # Issue and solutions: https://github.com/kubernetes/kube-state-metrics/issues/1501#issuecomment-863020915
-        # and https://github.com/kubernetes/kube-state-metrics/issues/1489#issuecomment-851970288
         args:
-        - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance]
+        - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance],persistentvolumeclaims=[excluded-from-alerts]
         - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
         volumeMounts:
         - name: customresourcestate-config
           mountPath: /etc/customresourcestate
           readOnly: true
+        - name: tmp
+          mountPath: /tmp
         ports:
         - containerPort: 8080
           name: http-metrics
@@ -430,7 +430,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /
-            port: 8081
+            port: 8080
           initialDelaySeconds: 5
           timeoutSeconds: 5
         livenessProbe:
@@ -446,6 +446,10 @@ spec:
             - ALL
           readOnlyRootFilesystem: true
           runAsUser: 65534
+          runAsGroup: 65534
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
         resources:
           limits:
             cpu: 2
@@ -491,6 +495,8 @@ spec:
             cpu: 50m
             memory: 32Mi
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: customresourcestate-config
           configMap:
             name: kube-state-metrics-customresourcestate-config
