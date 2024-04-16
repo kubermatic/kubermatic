@@ -249,9 +249,11 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return fmt.Errorf("failed to check if the previous release is stuck: %w", err)
 	}
 	if stuck {
+		log.Infof("Release %q seems to be stuck in pending even after timeout, attempting rollback now")
 		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
 			return fmt.Errorf("failed to rollback release: %w", err)
 		}
+		log.Infof("Release %q has been rolled back successfully")
 	}
 
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
