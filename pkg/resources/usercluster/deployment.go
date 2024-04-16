@@ -165,8 +165,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-log-debug=true")
 			}
 
-			args = append(args, "-konnectivity-enabled=true")
-
 			kHost := address.ExternalName
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 				kHost = fmt.Sprintf("%s.%s", resources.KonnectivityProxyServiceName, kHost)

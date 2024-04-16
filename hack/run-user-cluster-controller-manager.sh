@@ -83,7 +83,6 @@ if $(echo ${CLUSTER_RAW} | jq -r '.spec.clusterNetwork.konnectivityEnabled'); th
     KONNECTIVITY_SERVER_HOST="konnectivity-server.$(echo ${CLUSTER_RAW} | jq -r '.status.address.externalName')"
     ARGS="$ARGS -tunneling-agent-ip=100.64.30.10"
   fi
-  ARGS="$ARGS -konnectivity-enabled=true"
   ARGS="$ARGS -konnectivity-server-host=${KONNECTIVITY_SERVER_HOST}"
   ARGS="$ARGS -konnectivity-server-port=${KONNECTIVITY_SERVER_PORT}"
 else
