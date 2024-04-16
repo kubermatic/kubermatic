@@ -12,18 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: prometheus
-version: 9.9.9-dev
-appVersion: v2.51.1
-description: Prometheus Monitoring for Kubernetes
-keywords:
-  - kubermatic
-  - monitoring
-  - prometheus
-home: https://prometheus.io/
-sources:
-  - https://github.com/helm/charts/tree/master/stable/prometheus
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
+# This file is used for the testing, do not remove!

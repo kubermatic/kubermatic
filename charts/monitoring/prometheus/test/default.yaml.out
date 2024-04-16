@@ -1,0 +1,2244 @@
+---
+# Source: prometheus/templates/statefulset.yaml
+apiVersion: policy/v1
+
+kind: PodDisruptionBudget
+metadata:
+  name: 'release-name'
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: 'release-name'
+---
+# Source: prometheus/templates/serviceaccount.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: 'release-name'
+---
+# Source: prometheus/templates/configmaps.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'release-name-config'
+data:
+  prometheus.yaml: |
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+  
+    global:
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      evaluation_interval: 30s
+    rule_files:
+    - /etc/prometheus/rules/general-*.yaml
+    - /etc/prometheus/rules/kubermatic-seed-*.yaml
+    - /etc/prometheus/rules/kubermatic-master-*.yaml
+    - /etc/prometheus/rules/managed-*.yaml
+    alerting:
+      alertmanagers:
+      - {"kubernetes_sd_configs":[{"api_server":null,"namespaces":{"names":["default"]},"role":"endpoints"}],"path_prefix":"/","relabel_configs":[{"action":"keep","regex":"alertmanager","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_name"]},{"action":"keep","regex":"web","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_endpoint_port_name"]}],"scheme":"http","timeout":"10s"}
+    scrape_configs:
+    - {"bearer_token_file":"/var/run/secrets/kubernetes.io/serviceaccount/token","job_name":"apiserver","kubernetes_sd_configs":[{"role":"endpoints"}],"relabel_configs":[{"action":"keep","regex":"default;kubernetes;https","source_labels":["__meta_kubernetes_namespace","__meta_kubernetes_service_name","__meta_kubernetes_endpoint_port_name"]}],"scheme":"https","tls_config":{"ca_file":"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"}}
+    - {"job_name":"blackbox-exporter-user-cluster-apiservers"}
+    - {"bearer_token_file":"/var/run/secrets/kubernetes.io/serviceaccount/token","job_name":"cadvisor","kubernetes_sd_configs":[{"role":"node"}],"relabel_configs":[{"action":"labelmap","regex":"__meta_kubernetes_node_label_(.+)"},{"replacement":"kubernetes.default.svc:443","target_label":"__address__"},{"regex":"(.+)","replacement":"/api/v1/nodes/${1}/proxy/metrics/cadvisor","source_labels":["__meta_kubernetes_node_name"],"target_label":"__metrics_path__"}],"scheme":"https","tls_config":{"ca_file":"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"}}
+    - {"honor_labels":true,"job_name":"clusters","kubernetes_sd_configs":[{"role":"endpoints"}],"metrics_path":"/federate","params":{"match[]":["{kubermatic=\"federate\"}"]},"relabel_configs":[{"action":"keep","regex":"user","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_label_cluster"]},{"action":"keep","regex":"web","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_endpoint_port_name"]},{"action":"replace","regex":"(.*)","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_namespace"],"target_label":"namespace"},{"action":"replace","regex":"(.*)","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_pod_name"],"target_label":"pod"},{"action":"replace","regex":"(.*)","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_name"],"target_label":"service"},{"action":"replace","regex":"(.*)","replacement":"web","separator":";","target_label":"endpoint"}],"scheme":"http"}
+    - {"honor_labels":true,"job_name":"kube-state-metrics","kubernetes_sd_configs":[{"api_server":null,"namespaces":{"names":["default"]},"role":"endpoints"}],"metric_relabel_configs":[{"action":"drop","regex":".*prow-(e2e|kubermatic)-.*","source_labels":["namespace"]},{"action":"replace","regex":"cluster-([a-z0-9]+)","replacement":"$1","source_labels":["namespace"],"target_label":"cluster"}],"metrics_path":"/metrics","relabel_configs":[{"action":"keep","regex":"kube-state-metrics","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_label_app_kubernetes_io_name"]},{"action":"keep","regex":"http-metrics","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_endpoint_port_name"]},{"action":"replace","regex":"(.*)","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_namespace"],"target_label":"namespace"},{"action":"replace","regex":"(.*)","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_pod_name"],"target_label":"pod"},{"action":"replace","regex":"(.*)","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_name"],"target_label":"service"},{"action":"replace","regex":"(.*)","replacement":"${1}","separator":";","source_labels":["__meta_kubernetes_service_name"],"target_label":"job"},{"action":"replace","regex":"(.+)","replacement":"${1}","separator":";","source_labels":["__meta_kubernetes_service_label_app_kubernetes_io_name"],"target_label":"job"},{"action":"replace","regex":"(.*)","replacement":"http-metrics","separator":";","target_label":"endpoint"}],"scrape_interval":"1m","scrape_timeout":"30s"}
+    - {"bearer_token_file":"/var/run/secrets/kubernetes.io/serviceaccount/token","job_name":"kubelet","kubernetes_sd_configs":[{"role":"node"}],"relabel_configs":[{"action":"labelmap","regex":"__meta_kubernetes_node_label_(.+)"},{"replacement":"kubernetes.default.svc:443","target_label":"__address__"},{"regex":"(.+)","replacement":"/api/v1/nodes/${1}/proxy/metrics","source_labels":["__meta_kubernetes_node_name"],"target_label":"__metrics_path__"}],"scheme":"https","tls_config":{"ca_file":"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"}}
+    - {"job_name":"minio-job"}
+    - {"bearer_token_file":"/var/run/secrets/kubernetes.io/serviceaccount/token","job_name":"node-exporter","kubernetes_sd_configs":[{"role":"pod"}],"relabel_configs":[{"action":"keep","regex":"default;node-exporter","source_labels":["__meta_kubernetes_namespace","__meta_kubernetes_pod_label_app"]},{"action":"keep","regex":".*true.*","source_labels":["__meta_kubernetes_pod_annotation_kubermatic_scrape","__meta_kubernetes_pod_annotation_prometheus_io_scrape"]},{"action":"replace","regex":"^([^:]+)(?::\\d+)?;(\\d+)$","replacement":"$1:$2","source_labels":["__address__","__meta_kubernetes_pod_annotation_kubermatic_scrape_port"],"target_label":"__address__"},{"action":"replace","regex":"^([^:]+)(?::\\d+)?;(\\d+)$","replacement":"$1:$2","source_labels":["__address__","__meta_kubernetes_pod_annotation_prometheus_io_port"],"target_label":"__address__"},{"action":"labelmap","regex":"__meta_kubernetes_pod_label_(.+)"},{"action":"replace","regex":"(.*)","replacement":"$1","source_labels":["__meta_kubernetes_namespace"],"target_label":"namespace"},{"action":"replace","regex":"(.*)","replacement":"$1","source_labels":["__meta_kubernetes_pod_name"],"target_label":"pod"},{"action":"replace","regex":"(.+)","replacement":"$1","source_labels":["__meta_kubernetes_pod_node_name"],"target_label":"node_name"}],"scheme":"https","tls_config":{"ca_file":"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt","insecure_skip_verify":true}}
+    - {"job_name":"pods","kubernetes_sd_configs":[{"role":"pod"}],"metric_relabel_configs":[{"action":"replace","regex":"cluster-([a-z0-9]+)","replacement":"$1","source_labels":["namespace"],"target_label":"cluster"}],"relabel_configs":[{"action":"drop","regex":"default;node-exporter","source_labels":["__meta_kubernetes_namespace","__meta_kubernetes_pod_label_app"]},{"action":"drop","regex":"default;kube-state-metrics","source_labels":["__meta_kubernetes_namespace","__meta_kubernetes_pod_label_app"]},{"action":"drop","regex":"cluster-.*","source_labels":["__meta_kubernetes_namespace"]},{"action":"keep","regex":".*true.*","source_labels":["__meta_kubernetes_pod_annotation_kubermatic_scrape","__meta_kubernetes_pod_annotation_prometheus_io_scrape"]},{"action":"replace","regex":"(.+)","source_labels":["__meta_kubernetes_pod_annotation_prometheus_io_metrics_path"],"target_label":"__metrics_path__"},{"action":"replace","regex":"(.+)","source_labels":["__meta_kubernetes_pod_annotation_prometheus_io_path"],"target_label":"__metrics_path__"},{"action":"replace","regex":"(.+)","source_labels":["__meta_kubernetes_pod_annotation_kubermatic_metrics_path"],"target_label":"__metrics_path__"},{"action":"replace","regex":"(.+)","source_labels":["__meta_kubernetes_pod_annotation_kubermatic_metric_path"],"target_label":"__metrics_path__"},{"action":"replace","regex":"^([^:]+)(?::\\d+)?;(\\d+)$","replacement":"$1:$2","source_labels":["__address__","__meta_kubernetes_pod_annotation_kubermatic_scrape_port"],"target_label":"__address__"},{"action":"replace","regex":"^([^:]+)(?::\\d+)?;(\\d+)$","replacement":"$1:$2","source_labels":["__address__","__meta_kubernetes_pod_annotation_prometheus_io_scrape_port"],"target_label":"__address__"},{"action":"replace","regex":"^([^:]+)(?::\\d+)?;(\\d+)$","replacement":"$1:$2","source_labels":["__address__","__meta_kubernetes_pod_annotation_prometheus_io_port"],"target_label":"__address__"},{"action":"replace","regex":"(https?)","source_labels":["__meta_kubernetes_pod_annotation_prometheus_io_scheme"],"target_label":"__scheme__"},{"action":"labelmap","regex":"__meta_kubernetes_pod_label_(.+)"},{"action":"replace","regex":"(.*)","replacement":"$1","source_labels":["__meta_kubernetes_namespace"],"target_label":"namespace"},{"action":"replace","regex":"(.*)","replacement":"$1","source_labels":["__meta_kubernetes_pod_name"],"target_label":"pod"}]}
+---
+# Source: prometheus/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'release-name-rules'
+data:
+  general-blackbox-exporter.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: blackbox-exporter
+        rules:
+          - alert: HttpProbeFailed
+            annotations:
+              message: Probing the blackbox-exporter target {{ $labels.instance }} failed.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpprobefailed
+            expr: probe_success != 1
+            for: 5m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: blackbox-exporter
+          - alert: HttpProbeSlow
+            annotations:
+              message: "{{ $labels.instance }} takes {{ $value }} seconds to respond."
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpprobeslow
+            expr: sum by (instance) (probe_http_duration_seconds) > 3
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: blackbox-exporter
+          - alert: HttpCertExpiresSoon
+            annotations:
+              message: The certificate for {{ $labels.instance }} expires in less than 3 days.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpcertexpiressoon
+            expr: probe_ssl_earliest_cert_expiry - time() < 3*24*3600
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: blackbox-exporter
+          - alert: HttpCertExpiresVerySoon
+            annotations:
+              message: The certificate for {{ $labels.instance }} expires in less than 24 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpcertexpiresverysoon
+            expr: probe_ssl_earliest_cert_expiry - time() < 24*3600
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }}"
+              service: blackbox-exporter
+    
+  general-cadvisor.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: cadvisor
+        rules:
+          - record: namespace:container_memory_usage_bytes:sum
+            expr: |
+              sum by (namespace) (
+                container_memory_usage_bytes{job="cadvisor", image!="", container!=""}
+              )
+          - record: namespace:container_cpu_usage_seconds_total:sum_rate
+            expr: |
+              sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace)
+          - record: namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
+            expr: |
+              sum by (namespace, pod, container) (
+                rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])
+              )
+    
+  general-cert-manager.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: cert-manager
+        rules:
+          - alert: CertManagerCertExpiresSoon
+            annotations:
+              message: The certificate {{ $labels.name }} expires in less than 3 days.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-certmanagercertexpiressoon
+            expr: certmanager_certificate_expiration_timestamp_seconds - time() < 3*24*3600
+            labels:
+              severity: warning
+              resource: "{{ $labels.name }}"
+              service: cert-manager
+          - alert: CertManagerCertExpiresVerySoon
+            annotations:
+              message: The certificate {{ $labels.name }} expires in less than 24 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-certmanagercertexpiresverysoon
+            expr: certmanager_certificate_expiration_timestamp_seconds - time() < 24*3600
+            labels:
+              severity: critical
+              resource: "{{ $labels.name }}"
+              service: cert-manager
+    
+  general-helm-exporter.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: helm-exporter
+        rules:
+          - alert: HelmReleaseNotDeployed
+            annotations:
+              message: The Helm release `{{ $labels.release }}` (`{{ $labels.chart }}` chart in namespace `{{ $labels.exported_namespace }}`) in version {{ $labels.version }} has not been ready for more than 15 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-helmreleasenotdeployed
+            expr: helm_chart_info != 1
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.release }}"
+              service: helm-exporter
+    
+  general-kube-apiserver.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kube-apiserver
+        rules:
+          - record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
+            expr: |
+              histogram_quantile(0.99, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
+            labels:
+              quantile: "0.99"
+          - record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
+            expr: |
+              histogram_quantile(0.9, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
+            labels:
+              quantile: "0.9"
+          - record: cluster_quantile:apiserver_request_duration_seconds:histogram_quantile
+            expr: |
+              histogram_quantile(0.5, sum(rate(apiserver_request_duration_seconds_bucket{job="apiserver"}[5m])) without(instance, pod))
+            labels:
+              quantile: "0.5"
+          ############################################################
+          # alerts
+          ############################################################
+          - alert: KubernetesApiserverDown
+            annotations:
+              message: KubernetesApiserver has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubernetesapiserverdown
+            expr: absent(up{job="apiserver"} == 1)
+            for: 15m
+            labels:
+              severity: critical
+              resource: apiserver
+              service: kubernetes
+          - alert: KubeAPITerminatedRequests
+            annotations:
+              message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
+            expr: |
+              sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
+                /
+              (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+            for: 5m
+            labels:
+              severity: warning
+              resource: apiserver
+              service: kubernetes
+          - alert: KubeAPITerminatedRequests
+            annotations:
+              message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
+            expr: |
+              sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
+                /
+              (sum(rate(apiserver_request_total{job="apiserver"}[10m])) + sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m])) ) > 0.20
+            for: 10m
+            labels:
+              severity: critical
+              resource: apiserver
+              service: kubernetes
+          - alert: KubeClientCertificateExpiration
+            annotations:
+              message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
+            expr: |
+              apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+              and
+              histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 604800
+            labels:
+              severity: warning
+              resource: apiserver
+              service: kubernetes
+          - alert: KubeClientCertificateExpiration
+            annotations:
+              message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
+            expr: |
+              apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
+              and
+              histogram_quantile(0.01, sum by (job, instance, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m]))) < 86400
+            labels:
+              severity: critical
+              resource: apiserver
+              service: kubernetes
+    
+  general-kube-kubelet.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kube-kubelet
+        rules:
+          - alert: KubeletDown
+            annotations:
+              message: Kubelet has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletdown
+            expr: absent(up{job="kubelet"} == 1)
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }}"
+              service: kubelet
+          - alert: KubePersistentVolumeFillingUp
+            annotations:
+              message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+            expr: |
+              (
+                kubelet_volume_stats_available_bytes{job="kubelet"}
+                  /
+                kubelet_volume_stats_capacity_bytes{job="kubelet"}
+              ) < 0.05
+              and
+              kubelet_volume_stats_used_bytes{job="kubelet"} > 0
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            for: 1m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+              service: kubelet
+          - alert: KubePersistentVolumeFillingUp
+            annotations:
+              message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+            expr: |
+              (
+                kubelet_volume_stats_available_bytes{job="kubelet"}
+                  /
+                kubelet_volume_stats_capacity_bytes{job="kubelet"}
+              ) < 0.10
+              and
+              kubelet_volume_stats_used_bytes{job="kubelet"} > 0
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            for: 1m
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+              service: kubelet
+          - alert: KubePersistentVolumeInodesFillingUp
+            annotations:
+              message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage }} free inodes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
+            expr: |
+              (
+                kubelet_volume_stats_inodes_free{job="kubelet"}
+                  /
+                kubelet_volume_stats_inodes{job="kubelet"}
+              ) < 0.03
+              and
+              kubelet_volume_stats_inodes_used{job="kubelet"} > 0
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            for: 1m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+              service: kubelet
+          - alert: KubePersistentVolumeInodesFillingUp
+            annotations:
+              message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to run out of inodes within four days. Currently {{ $value | humanizePercentage }} of its inodes are free.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
+            expr: |
+              (
+                kubelet_volume_stats_inodes_free{job="kubelet"}
+                  /
+                kubelet_volume_stats_inodes{job="kubelet"}
+              ) < 0.15
+              and
+              kubelet_volume_stats_inodes_used{job="kubelet"} > 0
+              and
+              predict_linear(kubelet_volume_stats_inodes_free{job="kubelet"}[6h], 4 * 24 * 3600) < 0
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_access_mode{ access_mode="ReadOnlyMany"} == 1
+              unless on(namespace, persistentvolumeclaim)
+              kube_persistentvolumeclaim_labels{label_excluded_from_alerts="true"} == 1
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+              service: kubelet
+          - alert: KubePersistentVolumeErrors
+            annotations:
+              message: The persistent volume {{ $labels.persistentvolume }} has status {{ $labels.phase }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeerrors
+            expr: |
+              kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
+            for: 5m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }}"
+              service: kubelet
+          - alert: KubeletTooManyPods
+            annotations:
+              message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubelettoomanypods
+            expr: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: kubelet
+          - alert: KubeletClientErrors
+            annotations:
+              message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletclienterrors
+            expr: |
+              (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
+                /
+              sum(rate(rest_client_requests_total{job="kubelet"}[5m])) by (instance))
+              * 100 > 1
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: kubelet
+          # a dedicated rule for pods to include more helpful labels in the message like the instance and job name
+          - alert: KubeClientErrors
+            annotations:
+              message: The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclienterrors
+            expr: |
+              (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="pods"}[5m])) by (namespace, pod)
+                /
+              sum(rate(rest_client_requests_total{job="pods"}[5m])) by (namespace, pod))
+              * 100 > 1
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: kubelet
+          - alert: KubeletRuntimeErrors
+            annotations:
+              message: The kubelet on {{ $labels.instance }} is having an elevated error rate for container runtime operations.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletruntimeerrors
+            expr: |
+              sum(rate(kubelet_runtime_operations_errors_total{job="kubelet"}[5m])) by (instance) > 0.1
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}"
+              service: kubelet
+          - alert: KubeletCGroupManagerDurationHigh
+            annotations:
+              message: The kubelet's cgroup manager duration on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletcgroupmanagerlatencyhigh
+            expr: |
+              sum(rate(kubelet_cgroup_manager_duration_seconds{quantile="0.9"}[5m])) by (instance) * 1000 > 1
+            for: 15m
+            labels:
+              resource: "{{ $labels.instance }}"
+              service: kubelet
+              severity: warning
+          - alert: KubeletPodWorkerDurationHigh
+            annotations:
+              message: The kubelet's pod worker duration for {{ $labels.operation_type }} operations on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletpodworkerdurationhigh
+            expr: |
+              sum(rate(kubelet_pod_worker_duration_seconds{quantile="0.9"}[5m])) by (instance, operation_type) * 1000 > 250
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }}/{{ $labels.operation_type }}"
+              service: kubelet
+          - alert: KubeVersionMismatch
+            annotations:
+              message: There are {{ $value }} different versions of Kubernetes components running.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeversionmismatch
+            expr: count(count(kubernetes_build_info{job!="dns"}) by (gitVersion)) > 1
+            for: 1h
+            labels:
+              severity: warning
+    
+  general-kube-state-metrics.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kube-state-metrics
+        rules:
+          - record: ":kube_pod_info_node_count:"
+            expr: |
+              sum(min(kube_pod_info) by (node))
+          - record: "node_namespace_pod:kube_pod_info:"
+            expr: |
+              max(kube_pod_info{job="kube-state-metrics"}) by (node, namespace, pod)
+          - record: namespace_name:container_cpu_usage_seconds_total:sum_rate
+            expr: |
+              sum by (namespace, label_app) (
+                  sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace, pod)
+                * on (namespace, pod) group_left (label_app)
+                  sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
+              )
+          - record: namespace_name:container_memory_usage_bytes:sum
+            expr: |
+              sum by (namespace, label_app) (
+                  sum(container_memory_usage_bytes{job="cadvisor",image!="", container!=""}) by (pod, namespace)
+                * on (namespace, pod) group_left (label_app)
+                  sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
+              )
+          - record: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum
+            expr: |
+              sum by (namespace, label_app) (
+                  sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="memory"}) by (namespace, pod)
+                * on (namespace, pod) group_left (label_app)
+                  sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
+              )
+          - record: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum
+            expr: |
+              sum by (namespace, label_app) (
+                  sum(kube_pod_container_resource_requests{job="kube-state-metrics",resource="cpu"} and on(pod) kube_pod_status_scheduled{condition="true"}) by (namespace, pod)
+                * on (namespace, pod) group_left (label_app)
+                  sum(kube_pod_labels{job="kube-state-metrics"}) by (namespace, pod, label_app)
+              )
+          ############################################################
+          # alerts
+          ############################################################
+          - alert: KubeStateMetricsDown
+            annotations:
+              message: KubeStateMetrics has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatemetricsdown
+            expr: absent(up{job="kube-state-metrics"} == 1)
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
+              service: kube-state-metrics
+          - alert: KubePodCrashLooping
+            annotations:
+              message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubepodcrashlooping
+            expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", job="kube-state-metrics"}[5m]) >= 1
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
+          - alert: KubePodNotReady
+            annotations:
+              message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than an hour.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubepodnotready
+            expr: sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
+            for: 30m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.pod }}"
+          - alert: KubeDeploymentGenerationMismatch
+            annotations:
+              message: Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment }} does not match, this indicates that the Deployment has failed but has not been rolled back.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedeploymentgenerationmismatch
+            expr: |
+              kube_deployment_status_observed_generation{job="kube-state-metrics"}
+                !=
+              kube_deployment_metadata_generation{job="kube-state-metrics"}
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.deployment }}"
+          - alert: KubeDeploymentReplicasMismatch
+            annotations:
+              message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for longer than an hour.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedeploymentreplicasmismatch
+            expr: |
+              kube_deployment_spec_replicas{job="kube-state-metrics"}
+                !=
+              kube_deployment_status_replicas_available{job="kube-state-metrics"}
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.deployment }}"
+          - alert: KubeStatefulSetReplicasMismatch
+            annotations:
+              message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has not matched the expected number of replicas for longer than 15 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatefulsetreplicasmismatch
+            expr: |
+              kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
+                !=
+              kube_statefulset_status_replicas{job="kube-state-metrics"}
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
+          - alert: KubeStatefulSetGenerationMismatch
+            annotations:
+              message: StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset }} does not match, this indicates that the StatefulSet has failed but has not been rolled back.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatefulsetgenerationmismatch
+            expr: |
+              kube_statefulset_status_observed_generation{job="kube-state-metrics"}
+                !=
+              kube_statefulset_metadata_generation{job="kube-state-metrics"}
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
+          - alert: KubeStatefulSetUpdateNotRolledOut
+            annotations:
+              message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update has not been rolled out.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatefulsetupdatenotrolledout
+            expr: |
+              max without (revision) (
+                kube_statefulset_status_current_revision{job="kube-state-metrics"}
+                  unless
+                kube_statefulset_status_update_revision{job="kube-state-metrics"}
+              )
+                *
+              (
+                kube_statefulset_replicas{job="kube-state-metrics"}
+                  !=
+                kube_statefulset_status_replicas_updated{job="kube-state-metrics"}
+              )
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.statefulset }}"
+          - alert: KubeDaemonSetRolloutStuck
+            annotations:
+              message: Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are scheduled and ready.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedaemonsetrolloutstuck
+            expr: |
+              kube_daemonset_status_number_ready{job="kube-state-metrics"}
+                /
+              kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"} * 100 < 100
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
+          - alert: KubeDaemonSetNotScheduled
+            annotations:
+              message: "{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are not scheduled."
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedaemonsetnotscheduled
+            expr: |
+              kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"}
+                -
+              kube_daemonset_status_current_number_scheduled{job="kube-state-metrics"} > 0
+            for: 10m
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
+          - alert: KubeDaemonSetMisScheduled
+            annotations:
+              message: "{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are running where they are not supposed to run."
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedaemonsetmisscheduled
+            expr: kube_daemonset_status_number_misscheduled{job="kube-state-metrics"} > 0
+            for: 10m
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.daemonset }}"
+          - alert: KubeCronJobRunning
+            annotations:
+              message: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h to complete.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecronjobrunning
+            expr: "time() - kube_cronjob_next_schedule_time{job=\"kube-state-metrics\"} > max by(namespace, cronjob) (\n  kube_cronjob_next_schedule_time - \n  kube_cronjob_status_last_schedule_time\n)\n"
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.cronjob }}"
+          - alert: KubeJobCompletion
+            annotations:
+              message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour to complete.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubejobcompletion
+            expr: |
+              time() - max by(namespace, job_name, cluster) (kube_job_status_start_time{job="kube-state-metrics"}
+                and
+              kube_job_status_active{job="kube-state-metrics"} > 0) > 43200
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.job_name }}"
+          - alert: KubeJobFailed
+            annotations:
+              message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubejobfailed
+            expr: kube_job_status_failed{job="kube-state-metrics"} > 0
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.job_name }}"
+          - alert: KubeCPUOvercommit
+            annotations:
+              message: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecpuovercommit
+            expr: |
+              sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
+                -
+              (sum(kube_node_status_allocatable{resource="cpu"}) - max(kube_node_status_allocatable{resource="cpu"}))
+                > 0
+              and
+              (sum(kube_node_status_allocatable{resource="cpu"})
+                -
+              max(kube_node_status_allocatable{resource="cpu"}))
+                > 0
+            for: 10m
+            labels:
+              severity: critical
+              resource: cluster
+              service: kube-state-metrics
+          - alert: KubeMemOvercommit
+            annotations:
+              message: Cluster has overcommitted memory resource requests for namespaces.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubememovercommit
+            expr: |
+              sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
+                /
+              sum(node_memory_MemTotal_bytes{app="node-exporter"})
+                > 1.5
+            for: 5m
+            labels:
+              severity: warning
+              resource: cluster
+              service: kube-state-metrics
+          - alert: KubeMemOvercommit
+            annotations:
+              message: Cluster has overcommitted memory resource requests for Pods by {{ $value }} bytes and cannot tolerate node failure.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubememovercommit
+            expr: |
+              sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
+                -
+              (sum(kube_node_status_allocatable{resource="memory"}) - max(kube_node_status_allocatable{resource="memory"}))
+                > 0
+              and
+              (sum(kube_node_status_allocatable{resource="memory"})
+                -
+              max(kube_node_status_allocatable{resource="memory"}))
+                > 0
+            for: 10m
+            labels:
+              severity: critical
+              resource: cluster
+              service: kube-state-metrics
+          - alert: KubeQuotaExceeded
+            annotations:
+              message: Namespace {{ $labels.namespace }} is using {{ printf "%0.0f" $value }}% of its {{ $labels.resource }} quota.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubequotaexceeded
+            expr: |
+              100 * kube_resourcequota{job="kube-state-metrics", type="used"}
+                / ignoring(instance, job, type)
+              (kube_resourcequota{job="kube-state-metrics", type="hard"} > 0)
+                > 90
+            for: 15m
+            labels:
+              severity: warning
+              resource: cluster
+              service: kube-state-metrics
+          - alert: KubePodOOMKilled
+            annotations:
+              message: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 30 minutes.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubepodoomkilled
+            expr: |
+              (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 30m >= 2)
+              and
+              ignoring (reason) min_over_time(kube_pod_container_status_last_terminated_reason{reason="OOMKilled"}[30m]) == 1
+            for: 0m
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}/{{ $labels.pod }}/{{ $labels.container }}"
+          - alert: KubeNodeNotReady
+            annotations:
+              message: "{{ $labels.node }} has been unready for more than an hour."
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubenodenotready
+            expr: kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.node }}"
+    
+  general-node-exporter.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: node-exporter
+        rules:
+          - record: node:node_num_cpu:sum
+            expr: |
+              count by (node) (sum by (node, cpu) (
+                node_cpu_seconds_total{app="node-exporter"}
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              ))
+          - record: :node_cpu_utilisation:avg1m
+            expr: |
+              1 - avg(rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m]))
+          - record: node:node_cpu_utilisation:avg1m
+            expr: |
+              1 - avg by (node) (
+                rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m])
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:)
+          - record: ":node_cpu_saturation_load1:"
+            expr: |
+              sum(node_load1{app="node-exporter"})
+              /
+              sum(node:node_num_cpu:sum)
+          - record: "node:node_cpu_saturation_load1:"
+            expr: |
+              sum by (node) (
+                node_load1{app="node-exporter"}
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+              /
+              node:node_num_cpu:sum
+          - record: node:cluster_cpu_utilisation:ratio
+            expr: |
+              node:node_cpu_utilisation:avg1m
+                *
+              node:node_num_cpu:sum
+                /
+              scalar(sum(node:node_num_cpu:sum))
+          - record: ":node_memory_utilisation:"
+            expr: |
+              1 -
+              sum(node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
+              /
+              sum(node_memory_MemTotal_bytes{app="node-exporter"})
+          - record: node:node_memory_bytes_available:sum
+            expr: |
+              sum by (node) (
+                (node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
+                * on (namespace, pod) group_left(node)
+                  node_namespace_pod:kube_pod_info:
+              )
+          - record: node:node_memory_bytes_total:sum
+            expr: |
+              sum by (node) (
+                node_memory_MemTotal_bytes{app="node-exporter"}
+                * on (namespace, pod) group_left(node)
+                  node_namespace_pod:kube_pod_info:
+              )
+          - record: node:node_memory_utilisation:ratio
+            expr: |
+              (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
+              /
+              scalar(sum(node:node_memory_bytes_total:sum))
+          - record: :node_memory_swap_io_bytes:sum_rate
+            expr: |
+              1e3 * sum(
+                (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
+                + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
+              )
+          - record: "node:node_memory_utilisation:"
+            expr: |
+              1 -
+              sum by (node) (
+                (node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+              /
+              sum by (node) (
+                node_memory_MemTotal_bytes{app="node-exporter"}
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+          - record: "node:node_memory_utilisation_2:"
+            expr: |
+              1 - (node:node_memory_bytes_available:sum / node:node_memory_bytes_total:sum)
+          - record: node:node_memory_swap_io_bytes:sum_rate
+            expr: |
+              1e3 * sum by (node) (
+                (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
+                + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
+                * on (namespace, pod) group_left(node)
+                  node_namespace_pod:kube_pod_info:
+              )
+          - record: node:cluster_memory_utilisation:ratio
+            expr: |
+              (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
+              /
+              scalar(sum(node:node_memory_bytes_total:sum))
+          - record: :node_disk_utilisation:avg_irate
+            expr: |
+              avg(irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]))
+          - record: node:node_disk_utilisation:avg_irate
+            expr: |
+              avg by (node) (
+                irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m])
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+          - record: :node_disk_saturation:avg_irate
+            expr: |
+              avg(irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3)
+          - record: node:node_disk_saturation:avg_irate
+            expr: |
+              avg by (node) (
+                irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+          - record: "node:node_filesystem_usage:"
+            expr: |
+              max by (namespace, pod, device) ((node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}
+              - node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
+              / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
+          - record: "node:node_filesystem_avail:"
+            expr: |
+              max by (namespace, pod, device) (node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"} / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
+          - record: :node_net_utilisation:sum_irate
+            expr: |
+              sum(irate(node_network_receive_bytes_total{app="node-exporter",device!~"veth.+"}[1m])) +
+              sum(irate(node_network_transmit_bytes_total{app="node-exporter",device!~"veth.+"}[1m]))
+          - record: node:node_net_utilisation:sum_irate
+            expr: |
+              sum by (node) (
+                (irate(node_network_receive_bytes_total{app="node-exporter",device!~"veth.+"}[1m]) +
+                irate(node_network_transmit_bytes_total{app="node-exporter",device!~"veth.+"}[1m]))
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+          - record: :node_net_saturation:sum_irate
+            expr: |
+              sum(irate(node_network_receive_drop_total{app="node-exporter",device!~"veth.+"}[1m])) +
+              sum(irate(node_network_transmit_drop_total{app="node-exporter",device!~"veth.+"}[1m]))
+          - record: node:node_net_saturation:sum_irate
+            expr: |
+              sum by (node) (
+                (irate(node_network_receive_drop_total{app="node-exporter",device!~"veth.+"}[1m]) +
+                irate(node_network_transmit_drop_total{app="node-exporter",device!~"veth.+"}[1m]))
+              * on (namespace, pod) group_left(node)
+                node_namespace_pod:kube_pod_info:
+              )
+          ############################################################
+          # alerts
+          ############################################################
+          - alert: NodeFilesystemSpaceFillingUp
+            annotations:
+              message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 24 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
+            expr: |
+              predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
+              and
+              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemSpaceFillingUp
+            annotations:
+              message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 4 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
+            expr: |
+              predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
+              and
+              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemOutOfSpace
+            annotations:
+              message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
+            expr: |
+              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 30m
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemOutOfSpace
+            annotations:
+              message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
+            expr: |
+              node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 10m
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemFilesOutOfSpace
+            annotations:
+              message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
+            expr: |
+              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemFilesFillingUp
+            annotations:
+              message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
+            expr: |
+              predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
+              and
+              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} < 0.4
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemFilesFillingUp
+            annotations:
+              message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 4 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
+            expr: |
+              predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
+              and
+              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} < 0.2
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeFilesystemOutOfFiles
+            annotations:
+              message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available inodes left.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
+            expr: |
+              node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
+              and
+              node_filesystem_readonly{app="node-exporter",fstype=~"ext.|xfs"} == 0
+            for: 1h
+            labels:
+              severity: warning
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeNetworkReceiveErrs
+            annotations:
+              message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while receiving packets ({{ $value }} errors in two minutes)."
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworkreceiveerrs
+            expr: increase(node_network_receive_errs_total[2m]) > 10
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeNetworkTransmitErrs
+            annotations:
+              message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while transmitting packets ({{ $value }} errors in two minutes)."
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworktransmiterrs
+            expr: increase(node_network_transmit_errs_total[2m]) > 10
+            for: 1h
+            labels:
+              severity: critical
+              resource: "{{ $labels.instance }} {{ $labels.device }}"
+              service: "node-exporter"
+          - alert: NodeTimeDrift
+            annotations:
+              message: Time on Node {{ $labels.node_name }} drifts by a {{ $value }} seconds.
+            expr: abs(timestamp(node_time_seconds) - node_time_seconds) > 1
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.node_name }}"
+              service: "node-exporter"
+    
+  general-prometheus.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: prometheus
+        rules:
+          - alert: PromScrapeFailed
+            annotations:
+              message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promscrapefailed
+            expr: up != 1
+            for: 15m
+            labels:
+              severity: warning
+              resource: "{{ $labels.job }}/{{ $labels.instance }}"
+              service: prometheus
+          - alert: PromBadConfig
+            annotations:
+              message: Prometheus failed to reload config.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-prombadconfig
+            expr: prometheus_config_last_reload_successful{job="prometheus"} == 0
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.job }}/{{ $labels.instance }}"
+              service: prometheus
+          - alert: PromAlertmanagerBadConfig
+            annotations:
+              message: Alertmanager failed to reload config.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promalertmanagerbadconfig
+            expr: alertmanager_config_last_reload_successful{job="alertmanager"} == 0
+            for: 10m
+            labels:
+              severity: critical
+              resource: "{{ $labels.job }}/{{ $labels.instance }}"
+              service: prometheus
+          - alert: PromAlertsFailed
+            annotations:
+              message: Alertmanager failed to send an alert.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promalertsfailed
+            expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m])) by (namespace) > 0
+            for: 5m
+            labels:
+              severity: critical
+              resource: "{{ $labels.job }}/{{ $labels.instance }}"
+              service: prometheus
+          - alert: PromRemoteStorageFailures
+            annotations:
+              message: Prometheus failed to send {{ printf "%.1f" $value }}% samples.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promremotestoragefailures
+            expr: |
+              (rate(prometheus_remote_storage_failed_samples_total{job="prometheus"}[1m]) * 100)
+                /
+              (rate(prometheus_remote_storage_failed_samples_total{job="prometheus"}[1m]) + rate(prometheus_remote_storage_succeeded_samples_total{job="prometheus"}[1m]))
+                > 1
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.job }}/{{ $labels.instance }}"
+              service: prometheus
+          - alert: PromRuleFailures
+            annotations:
+              message: Prometheus failed to evaluate {{ printf "%.1f" $value }} rules/sec.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promrulefailures
+            expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) > 0
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.job }}/{{ $labels.instance }}"
+              service: prometheus
+    
+  general-velero.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: velero
+        rules:
+          - alert: VeleroBackupTakesTooLong
+            annotations:
+              message: Last backup with schedule {{ $labels.schedule }} has not finished successfully within 60min.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-velerobackuptakestoolong
+            expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600
+            for: 5m
+            labels:
+              severity: warning
+              resource: "{{ $labels.schedule }}"
+              service: "velero"
+          - alert: VeleroNoRecentBackup
+            annotations:
+              message: There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-veleronorecentbackup
+            expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
+            labels:
+              severity: critical
+              resource: "{{ $labels.schedule }}"
+              service: "velero"
+    
+  general-vertical-pod-autoscaler.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: vertical-pod-autoscaler
+        rules:
+          # These rules provide metrics to be consumed by Kubernetes' VPA. The VPA only needs a tiny fraction
+          # of the labels available on the container_* metrics, so we reduce them with the inner query to
+          # only contain pod name, namespace and name.
+          # Because the VPA does not allow to change the metric name it queries, but only the job selector,
+          # we "cheat" by re-using the same metric name and injecting a custom job ("cadvisor-vpa") label.
+          - record: container_cpu_usage_seconds_total
+            expr: |
+              label_replace(
+                sum(container_cpu_usage_seconds_total{job="cadvisor", pod=~".+", name!="POD", name!=""}) by (pod, namespace, name),
+                "job", "cadvisor-vpa", "", ""
+              )
+          - record: container_memory_usage_bytes
+            expr: |
+              label_replace(
+                sum(container_memory_usage_bytes{job="cadvisor", pod=~".+", name!="POD", name!=""}) by (pod, namespace, name),
+                "job", "cadvisor-vpa", "", ""
+              )
+    
+  kubermatic-master-kubermatic.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kubermatic
+        rules:
+          - alert: KubermaticAPIDown
+            annotations:
+              message: KubermaticAPI has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticapidown
+            expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-api"} == 1)
+            for: 15m
+            labels:
+              severity: critical
+              service: kubermatic-master
+          - alert: KubermaticAPITooManyErrors
+            annotations:
+              message: Kubermatic API is returning a high rate of HTTP 5xx responses.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticapitoomanyerrors
+            expr: sum(rate(http_requests_total{app_kubernetes_io_name="kubermatic-api",code=~"5.."}[5m])) > 0.1
+            for: 15m
+            labels:
+              severity: warning
+              service: kubermatic-master
+          - alert: KubermaticAPITooManyInitNodeDeloymentFailures
+            annotations:
+              message: Kubermatic API is failing to create too many initial node deployments.
+            expr: sum(rate(kubermatic_api_failed_init_node_deployment_total[5m])) > 0.01
+            for: 15m
+            labels:
+              severity: warning
+          - alert: KubermaticMasterControllerManagerDown
+            annotations:
+              message: Kubermatic Master Controller Manager has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticmastercontrollermanagerdown
+            expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-master-controller-manager"} == 1)
+            for: 15m
+            labels:
+              severity: critical
+              service: kubermatic-master
+          - alert: KubermaticSeedNotHealthy
+            annotations:
+              message: The Seed cluster {{ $labels.seed_name }} cannot be reached or reconciled properly.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticseednothealthy
+            expr: kubermatic_seed_info{phase!="Healthy"}
+            for: 5m
+            labels:
+              severity: warning
+              service: kubermatic-master
+    
+  kubermatic-seed-kubermatic.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kubermatic
+        rules:
+          - alert: KubermaticTooManyUnhandledErrors
+            annotations:
+              message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermatictoomanyunhandlederrors
+            expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
+            for: 10m
+            labels:
+              severity: warning
+              resource: "{{ $labels.namespace }}"
+              service: kubermatic-seed
+          - alert: KubermaticClusterDeletionTakesTooLong
+            annotations:
+              message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticclusterdeletiontakestoolong
+            expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
+            for: 0m
+            labels:
+              severity: warning
+              resource: "{{ $labels.cluster }}"
+              service: kubermatic-seed
+          - alert: KubermaticAddonDeletionTakesTooLong
+            annotations:
+              message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticaddondeletiontakestoolong
+            expr: (time() - max by (cluster,addon) (kubermatic_addon_deleted)) > 30*60
+            for: 0m
+            labels:
+              severity: warning
+              resource: "{{ $labels.cluster }}/{{ $labels.addon }}"
+              service: kubermatic-seed
+          - alert: KubermaticAddonTakesTooLongToReconcile
+            annotations:
+              message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related resources created for more than 30min.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticaddonreconciliationtakestoolong
+            expr: |
+              kubermatic_addon_reconcile_failed * on(cluster) group_left() max by(cluster) (kubermatic_cluster_created)
+              - kubermatic_addon_reconcile_failed * on(cluster) group_left() max by(cluster) (kubermatic_cluster_deleted)
+              > 0
+            for: 30m
+            labels:
+              severity: warning
+              resource: "{{ $labels.cluster }}/{{ $labels.addon }}"
+              service: kubermatic-seed
+          - alert: KubermaticSeedControllerManagerDown
+            annotations:
+              message: Kubermatic Seed Controller Manager has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticseedcontrollermanagerdown
+            expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-seed-controller-manager"} == 1)
+            for: 15m
+            labels:
+              severity: critical
+              service: kubermatic-seed
+          - alert: OpenVPNServerDown
+            annotations:
+              message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
+            expr: (kube_deployment_status_replicas_available{cluster!="",deployment="openvpn-server"} != kube_deployment_spec_replicas{cluster!="",deployment="openvpn-server"}) and count(kubermatic_cluster_info) > 0
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.cluster }}"
+              service: kubermatic-seed
+          - alert: UserClusterPrometheusAbsent
+            annotations:
+              message: There is no Prometheus in cluster {{ $labels.name }}.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
+            expr: |
+              (
+                kubermatic_cluster_info * on (name) group_left
+                label_replace(up{job="clusters"}, "name", "$1", "namespace", "cluster-(.+)")
+                or
+                kubermatic_cluster_info * 0
+              ) == 0
+            for: 15m
+            labels:
+              severity: critical
+              resource: "{{ $labels.name }}"
+              service: kubermatic-seed
+          # This is a dummy alert that is triggered for paused clusters to inhibit all other alerts from such clusters.
+          # The label_replace() is used to create a new "cluster" label that will be used for the inhibitions as well.
+          - alert: KubermaticClusterPaused
+            annotations:
+              message: Cluster {{ $labels.name }} has been paused and will not be reconciled until the pause flag is reset.
+            expr: label_replace(kubermatic_cluster_info{pause="true"}, "cluster", "$0", "name", ".+")
+            labels:
+              severity: informational
+              resource: "{{ $labels.name }}"
+              service: kubermatic-seed
+    
+  managed-kube-controller-manager.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kube-controller-manager
+        rules:
+          - record: :ready_kube_controller_managers:sum
+            expr: |
+              sum (
+                (sum by (pod) (kube_pod_labels{label_component="kube-controller-manager"}))
+                * on (pod)
+                (sum by (pod) (kube_pod_status_ready{condition="true"}))
+              )
+          - alert: KubeControllerManagerDown
+            annotations:
+              message: No healthy controller-manager pods exist inside the cluster.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecontrollermanagerdown
+            expr: absent(:ready_kube_controller_managers:sum) or :ready_kube_controller_managers:sum == 0
+            for: 10m
+            labels:
+              severity: critical
+              resource: kube-controller-manager
+              service: kubernetes
+    
+  managed-kube-scheduler.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: kube-scheduler
+        rules:
+          - record: :ready_kube_schedulers:sum
+            expr: |
+              sum (
+                (sum by (pod) (kube_pod_labels{label_component="kube-scheduler"}))
+                * on (pod)
+                (sum by (pod) (kube_pod_status_ready{condition="true"}))
+              )
+          - alert: KubeSchedulerDown
+            annotations:
+              message: No healthy scheduler pods exist inside the cluster.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeschedulerdown
+            expr: absent(:ready_kube_schedulers:sum) or :ready_kube_schedulers:sum == 0
+            for: 10m
+            labels:
+              severity: critical
+              resource: kube-scheduler
+              service: kubernetes
+    
+  usercluster-mla-cortex.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: cortex
+        rules:
+          - alert: CortexDistributorDown
+            annotations:
+              message: Cortex-distributor has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexdistributordown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="distributor",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexQuerierDown
+            annotations:
+              message: Cortex-querier has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexquerierdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="querier",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexQueryFrontendDown
+            annotations:
+              message: Cortex-query-frontend has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexqueryfrontenddown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="query-frontend",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexRulerDown
+            annotations:
+              message: Cortex-ruler has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexrulerdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ruler",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexMemcachedBlocksDown
+            annotations:
+              message: Cortex-memcached-blocks has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksdown
+            expr: absent(up{job="pods",namespace="mla", app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexMemcachedBlocksMetadataDown
+            annotations:
+              message: Cortex-memcached-blocks-metadata has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksmetadatadown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks-metadata"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexMemcachedBlocksIndexDown
+            annotations:
+              message: Cortex-memcached-blocks-index has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksindexdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks-index"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexAlertmanagerDown
+            annotations:
+              message: Cortex-alertmanager has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexalertmanagerdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="alertmanager",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexCompactorDown
+            annotations:
+              message: Cortex-compactor has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexcompactordown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="compactor",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexIngesterDown
+            annotations:
+              message: Cortex-ingester has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexingesterdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ingester",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+          - alert: CortexStoreGatewayDown
+            annotations:
+              message: Cortex-store-gateway has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexstoregatewaydown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="store-gateway",app_kubernetes_io_name="cortex"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: cortex
+              service: cortex
+    
+  usercluster-mla-loki-distributed.yaml: |
+    # This file has been generated, DO NOT EDIT.
+    
+    # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    groups:
+      - name: loki-distributed
+        rules:
+          - alert: LokiIngesterDown
+            annotations:
+              message: Loki-ingester has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokiingesterdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ingester",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiDistributorDown
+            annotations:
+              message: Loki-distributor has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokidistributordown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="distributor",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiQuerierDown
+            annotations:
+              message: Loki-querier has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokiquerierdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="querier",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiQueryFrontendDown
+            annotations:
+              message: Loki-query-frontend has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokiqueryfrontenddown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="query-frontend",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiTableManagerDown
+            annotations:
+              message: Loki-table-manager has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokitablemanagerdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="table-manager",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiCompactorDown
+            annotations:
+              message: Loki-compactor has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokicompactordown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="compactor",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiRulerDown
+            annotations:
+              message: Loki-ruler has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokirulerdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ruler",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiMemcachedChunksDown
+            annotations:
+              message: Loki-memcached-chunks has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedchunksdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-chunks",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiMemcachedFrontendDown
+            annotations:
+              message: Loki-memcached-frontend has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedfrontenddown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-frontend",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiMemcachedIndexQueriesDown
+            annotations:
+              message: Loki-memcached-index-queries has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedindexqueriesdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-index-queries",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+          - alert: LokiMemcachedIndexWritesDown
+            annotations:
+              message: Loki-memcached-index-writes has disappeared from Prometheus target discovery.
+              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedindexwritesdown
+            expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-index-writes",app_kubernetes_io_name="loki-distributed"} == 1)
+            for: 15m
+            labels:
+              severity: warning
+              resource: loki
+              service: loki
+---
+# Source: prometheus/templates/clusterrole.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: 'release-name'
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+# Source: prometheus/templates/clusterrolebinding.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: 'release-name'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'release-name'
+subjects:
+- kind: ServiceAccount
+  name: 'release-name'
+  namespace: 'default'
+---
+# Source: prometheus/templates/role.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: 'release-name'
+  namespace: default
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Source: prometheus/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: 'release-name'
+  namespace: kube-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - services
+  - endpoints
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+---
+# Source: prometheus/templates/rolebinding.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: 'release-name'
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'release-name'
+subjects:
+- kind: ServiceAccount
+  name: 'release-name'
+  namespace: 'default'
+---
+# Source: prometheus/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: 'release-name'
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'release-name'
+subjects:
+- kind: ServiceAccount
+  name: 'release-name'
+  namespace: 'default'
+---
+# Source: prometheus/templates/service.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: 'release-name'
+  labels:
+    app: 'release-name'
+spec:
+  ports:
+  - name: web
+    port: 9090
+    targetPort: web
+  selector:
+    app: 'release-name'
+---
+# Source: prometheus/templates/statefulset.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: 'release-name'
+spec:
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: release-name
+  serviceName: 'release-name'
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: release-name # deprecated
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/instance: release-name
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9090'
+        kubermatic.io/chart: prometheus
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: backup
+        backup.velero.io/backup-volumes: backup
+        pre.hook.backup.velero.io/container: backup
+        pre.hook.backup.velero.io/timeout: '60m'
+        pre.hook.backup.velero.io/command: '["/bin/sh", "-c", "rm -rf /prometheus/snapshots/* && curl -s -XPOST \"http://127.0.0.1:9090/api/v1/admin/tsdb/snapshot?skip_head=true\" && rsync --archive /prometheus/snapshots/*/ /backup"]'
+    spec:
+      containers:
+      - name: prometheus
+        image: 'quay.io/prometheus/prometheus:v2.51.1'
+        command: [/bin/sh]
+        args:
+        - -c
+        - |
+          set -euo pipefail
+
+          echo "Cleaning up block compaction leftovers..."
+          find /var/prometheus/data -type d -name '*.tmp' -maxdepth 1 -print -exec rm -r {} \;
+
+          echo "Starting Prometheus..."
+          exec /bin/prometheus \
+            --config.file=/etc/prometheus/config/prometheus.yaml \
+            --storage.tsdb.no-lockfile \
+            --storage.tsdb.path=/var/prometheus/data \
+            --storage.tsdb.retention.time=15d \
+            --storage.tsdb.wal-compression \
+            --web.enable-lifecycle \
+            --web.enable-admin-api \
+            --web.external-url=https:// \
+        ports:
+        - containerPort: 9090
+          name: web
+        livenessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /-/healthy
+            port: web
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        readinessProbe:
+          failureThreshold: 120
+          httpGet:
+            path: /-/ready
+            port: web
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 2
+            memory: 6Gi
+          requests:
+            cpu: 1
+            memory: 3Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus/config/
+          readOnly: false
+        - name: rules
+          mountPath: /etc/prometheus/rules/
+          readOnly: false
+        - name: db
+          mountPath: /var/prometheus/data
+          readOnly: false
+          subPath: prometheus-db
+
+      - name: reloader
+        image: 'ghcr.io/jimmidyson/configmap-reload:v0.12.0'
+        imagePullPolicy: IfNotPresent
+        args:
+        - -volume-dir=/etc/prometheus/config
+        - -volume-dir=/etc/prometheus/rules
+        - -webhook-url=http://localhost:9090/-/reload
+        resources:
+          limits:
+            cpu: 5m
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 24Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus/config/
+          readOnly: false
+        - name: rules
+          mountPath: /etc/prometheus/rules/
+          readOnly: false
+      - name: backup
+        image: 'quay.io/kubermatic/util:2.5.0'
+        args:
+        - /bin/sh
+        - -c
+        - while true; do sleep 1h; done
+        volumeMounts:
+        - name: db
+          mountPath: /prometheus
+          readOnly: false
+          subPath: prometheus-db
+        - name: backup
+          mountPath: /backup
+          readOnly: false
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+        resources:
+          limits:
+            cpu: 500m
+            memory: 10Gi
+          requests:
+            cpu: 100m
+            memory: 64Mi
+      serviceAccountName: 'release-name'
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 1000
+      volumes:
+      - name: config
+        configMap:
+          name: 'release-name-config'
+      - name: rules
+        configMap:
+          name: 'release-name-rules'
+      - name: backup
+        emptyDir: {}
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: release-name
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        []
+  volumeClaimTemplates:
+  - metadata:
+      name: db
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi
+      storageClassName: kubermatic-fast
