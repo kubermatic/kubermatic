@@ -288,7 +288,6 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 			return cluster, nil
 		}
 	} else {
-
 		// If NetworkName not specified, Create network with name kubernetes-clusterid.
 		networkName = resourceNamePrefix + cluster.Name
 	}
