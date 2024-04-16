@@ -1115,7 +1115,6 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 
 type reconcileData struct {
 	caCert            *triple.KeyPair
-	openVPNCACert     *resources.ECDSAKeyPair
 	mlaGatewayCACert  *resources.ECDSAKeyPair
 	userSSHKeys       map[string][]byte
 	cloudProviderName string
