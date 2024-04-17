@@ -1,4 +1,4 @@
-# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: telemetry
-description: A Helm chart to install Kubermatic telemetry agents
-version: 9.9.9-dev
-appVersion: v0.5.2
-keywords:
-  - telemetry
-maintainers:
-  - name: Kubermatic GmbH
-    email: support@kubermatic.com
+telemetry:
+  uuid: "fake-uuid-here"

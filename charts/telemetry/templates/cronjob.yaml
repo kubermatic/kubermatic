@@ -30,7 +30,7 @@ spec:
           initContainers:
             - name: kubernetes-agent
               image: "{{ .Values.telemetry.kubernetesAgent.image.repository }}:{{ .Values.telemetry.kubernetesAgent.image.tag | default .Chart.AppVersion }}"
-              imagePullPolicy: {{ .Values.telemetry.kubernetesAgent.image.pullPolicy }}
+              imagePullPolicy: {{ default .Values.telemetry.kubernetesAgent.image.pullPolicy "IfNotPresent" }}
               command:
                 - kubernetes-agent
               args:
@@ -45,7 +45,7 @@ spec:
                 {{- toYaml .Values.telemetry.resources | nindent 16 }}
             - name: kubermatic-agent
               image: "{{ .Values.telemetry.kubermaticAgent.image.repository }}:{{ .Values.telemetry.kubermaticAgent.image.tag | default .Chart.AppVersion }}"
-              imagePullPolicy: {{ .Values.telemetry.kubermaticAgent.image.pullPolicy }}
+              imagePullPolicy: {{ default .Values.telemetry.kubermaticAgent.image.pullPolicy "IfNotPresent" }}
               command:
                 - kubermatic-agent
               args:
@@ -61,7 +61,7 @@ spec:
           containers:
             - name: reporter
               image: "{{ .Values.telemetry.reporter.image.repository }}:{{ .Values.telemetry.reporter.image.tag | default .Chart.AppVersion }}"
-              imagePullPolicy: {{ .Values.telemetry.reporter.image.pullPolicy }}
+              imagePullPolicy: {{ default .Values.telemetry.reporter.image.pullPolicy "IfNotPresent" }}
               command:
                 - reporter
               args:
