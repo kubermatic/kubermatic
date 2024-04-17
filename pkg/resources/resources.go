@@ -77,8 +77,6 @@ const (
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
 	// MetricsServerDeploymentName is the name for the metrics-server deployment.
 	MetricsServerDeploymentName = "metrics-server"
-	// OpenVPNServerDeploymentName is the name for the openvpn server deployment.
-	OpenVPNServerDeploymentName = "openvpn-server"
 	// DNSResolverDeploymentName is the name of the dns resolver deployment.
 	DNSResolverDeploymentName = "dns-resolver"
 	// DNSResolverConfigMapName is the name of the dns resolvers configmap.
@@ -133,8 +131,6 @@ const (
 	EtcdServiceName = "etcd"
 	// EtcdDefragCronJobName is the name for the defrag cronjob deployment.
 	EtcdDefragCronJobName = "etcd-defragger"
-	// OpenVPNServerServiceName is the name for the openvpn server service.
-	OpenVPNServerServiceName = "openvpn-server"
 	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service.
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService.
@@ -205,12 +201,6 @@ const (
 	TokensSecretName = "tokens"
 	// ViewerTokenSecretName is the name for the secret containing the viewer token.
 	ViewerTokenSecretName = "viewer-token"
-	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA.
-	OpenVPNCASecretName = "openvpn-ca"
-	// OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates.
-	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
-	// OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates.
-	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
 	// CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
 	CloudConfigSecretName = "cloud-config"
 	// CSICloudConfigSecretName is the name for the secret containing the cloud-config used by the csi driver inside the user cluster.
@@ -996,7 +986,6 @@ const (
 	NetworkPolicyDefaultDenyAllEgress               = "default-deny-all-egress"
 	NetworkPolicyEtcdAllow                          = "etcd-allow"
 	NetworkPolicyDNSAllow                           = "dns-allow"
-	NetworkPolicyOpenVPNServerAllow                 = "openvpn-server-allow"
 	NetworkPolicyMachineControllerWebhookAllow      = "machine-controller-webhook-allow"
 	NetworkPolicyUserClusterWebhookAllow            = "usercluster-webhook-allow"
 	NetworkPolicyOperatingSystemManagerWebhookAllow = "operating-system-manager-webhook-allow"
@@ -1366,11 +1355,6 @@ func GetClusterRootCA(ctx context.Context, namespace string, client ctrlruntimec
 // GetClusterFrontProxyCA returns the frontproxy CA of the cluster from the lister.
 func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*triple.KeyPair, error) {
 	return getRSAClusterCAFromLister(ctx, namespace, FrontProxyCASecretName, client)
-}
-
-// GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister.
-func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
-	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
 }
 
 // GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister.

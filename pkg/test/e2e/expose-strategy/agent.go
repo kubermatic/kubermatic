@@ -106,11 +106,6 @@ func (a *AgentConfig) newAgentConfigMap(ns string) *corev1.ConfigMap {
 		Listeners: []envoyagent.Listener{
 			{
 				BindAddress: "0.0.0.0",
-				BindPort:    1194,
-				Authority:   net.JoinHostPort(fmt.Sprintf("openvpn-server.%s.svc.cluster.local", ns), "1194"),
-			},
-			{
-				BindAddress: "0.0.0.0",
 				BindPort:    6443,
 				Authority:   net.JoinHostPort(fmt.Sprintf("apiserver-external.%s.svc.cluster.local", ns), "443"),
 			},

@@ -427,11 +427,6 @@ func (d *TemplateData) GetFrontProxyCA() (*triple.KeyPair, error) {
 	return GetClusterFrontProxyCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
-// GetOpenVPNCA returns the root ca for the OpenVPN.
-func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
-	return GetOpenVPNCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
-}
-
 // GetMLAGatewayCA returns the root CA for the MLA Gateway.
 func (d *TemplateData) GetMLAGatewayCA() (*ECDSAKeyPair, error) {
 	return GetMLAGatewayCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
@@ -441,21 +436,6 @@ func (d *TemplateData) GetMLAGatewayCA() (*ECDSAKeyPair, error) {
 // This will force pods being restarted as soon as one of the secrets/configmaps get updated.
 func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
 	return GetPodTemplateLabels(d.ctx, d.client, appName, d.cluster.Name, d.cluster.Status.NamespaceName, volumes, additionalLabels)
-}
-
-// GetOpenVPNServerPort returns the nodeport of the external apiserver service.
-func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
-	// When using tunneling expose strategy the port is fixed
-	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-		return 1194, nil
-	}
-	service := &corev1.Service{}
-	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: OpenVPNServerServiceName}
-	if err := d.client.Get(d.ctx, key, service); err != nil {
-		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %w", err)
-	}
-
-	return service.Spec.Ports[0].NodePort, nil
 }
 
 // GetKonnectivityServerPort returns the nodeport of the external Konnectivity Server service.

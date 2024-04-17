@@ -33,8 +33,7 @@ import (
 )
 
 const (
-	ccmContainerName           = "cloud-controller-manager"
-	openvpnClientContainerName = "openvpn-client"
+	ccmContainerName = "cloud-controller-manager"
 )
 
 type ccmDeploymentReconcilerFunc func(*resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory

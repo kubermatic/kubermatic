@@ -793,12 +793,6 @@ items:
 - apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
-    name: openvpn
-    labels:
-      addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8c.io/v1
-  kind: Addon
-  metadata:
     name: rbac
     labels:
       addons.kubermatic.io/ensure: true

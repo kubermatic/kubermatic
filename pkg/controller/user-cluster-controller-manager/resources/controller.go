@@ -81,7 +81,6 @@ func Add(
 	clusterURL *url.URL,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	overwriteRegistry string,
-	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
 	registerReconciledCheck func(name string, check healthz.Checker) error,
@@ -110,7 +109,6 @@ func Add(
 		clusterURL:                clusterURL,
 		clusterIsPaused:           clusterIsPaused,
 		imageRewriter:             registry.GetImageRewriterFunc(overwriteRegistry),
-		openvpnServerPort:         openvpnServerPort,
 		kasSecurePort:             kasSecurePort,
 		tunnelingAgentIP:          tunnelingAgentIP,
 		log:                       log,
@@ -266,7 +264,6 @@ type reconciler struct {
 	clusterURL                *url.URL
 	clusterIsPaused           userclustercontrollermanager.IsPausedChecker
 	imageRewriter             registry.ImageRewriter
-	openvpnServerPort         uint32
 	kasSecurePort             uint32
 	tunnelingAgentIP          net.IP
 	dnsClusterIP              string

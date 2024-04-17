@@ -556,16 +556,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			ClusterIP: "192.0.2.10",
 		},
 	}
-	openvpnserverService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.OpenVPNServerServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 96}},
-			ClusterIP: "192.0.2.2",
-		},
-	}
 	dnsService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.DNSResolverServiceName,
@@ -590,7 +580,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	serviceList := &corev1.ServiceList{
 		Items: []corev1.Service{
 			apiServerService,
-			openvpnserverService,
 			dnsService,
 			konnectivityService,
 		},
@@ -609,9 +598,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.ControllerManagerKubeconfigSecretName,
 		resources.SchedulerKubeconfigSecretName,
 		resources.KubeStateMetricsKubeconfigSecretName,
-		resources.OpenVPNCASecretName,
-		resources.OpenVPNServerCertificatesSecretName,
-		resources.OpenVPNClientCertificatesSecretName,
 		resources.FrontProxyCASecretName,
 		resources.KubeletDnatControllerKubeconfigSecretName,
 		resources.PrometheusApiserverClientCertificateSecretName,

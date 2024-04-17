@@ -77,7 +77,6 @@ type controllerRunOptions struct {
 	namespace                         string
 	clusterURL                        string
 	clusterName                       string
-	openvpnServerPort                 int
 	kasSecurePort                     int
 	tunnelingAgentIP                  flagopts.IPValue
 	overwriteRegistry                 string
@@ -127,7 +126,6 @@ func main() {
 	flag.StringVar(&runOp.clusterName, "cluster-name", "", "Cluster name")
 	flag.StringVar(&runOp.dnsClusterIP, "dns-cluster-ip", "", "KubeDNS service IP for the cluster")
 	flag.BoolVar(&runOp.nodeLocalDNSCache, "node-local-dns-cache", false, "Enable NodeLocal DNS Cache in user cluster")
-	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.IntVar(&runOp.kasSecurePort, "kas-secure-port", 6443, "Secure KAS port")
 	flag.Var(&runOp.tunnelingAgentIP, "tunneling-agent-ip", "If specified the tunneling agent will bind to this IP address, otherwise it will not be deployed.")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
@@ -296,7 +294,6 @@ func main() {
 		clusterURL,
 		isPausedChecker,
 		runOp.overwriteRegistry,
-		uint32(runOp.openvpnServerPort),
 		uint32(runOp.kasSecurePort),
 		runOp.tunnelingAgentIP.IP,
 		mgr.AddReadyzCheck,

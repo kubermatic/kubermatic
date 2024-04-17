@@ -64,7 +64,6 @@ type userclusterControllerData interface {
 	RewriteImage(string) (string, error)
 	Cluster() *kubermaticv1.Cluster
 	NodeLocalDNSCacheEnabled() bool
-	GetOpenVPNServerPort() (int32, error)
 	GetKonnectivityServerPort() (int32, error)
 	GetKonnectivityKeepAliveTime() string
 	GetTunnelingAgentIP() string
