@@ -212,10 +212,10 @@ func getDeployOpts(appDefinition *appskubermaticv1.ApplicationDefinition, appIns
 	return helmclient.NewDeployOpts(false, 0, false, false)
 }
 
-// IsReleaseStuck aims to identify if a helm release is stuck. This targets an upstream issue in helm, which has not been resolved. For further details see:
+// IsStuck aims to identify if a helm release is stuck. This targets an upstream issue in helm, which has not been resolved. For further details see:
 // - https://github.com/helm/helm/issues/7476
 // - https://github.com/helm/helm/issues/4558
-func (h HelmTemplate) IsReleaseStuck(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+func (h HelmTemplate) IsStuck(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
 	// if the release was successful, exit early
 	if applicationInstallation.Status.Conditions[appskubermaticv1.Ready].Status == "True" {
 		return false, nil

@@ -59,7 +59,7 @@ func (a *ApplicationInstallerRecorder) Delete(ctx context.Context, log *zap.Suga
 	return util.NoStatusUpdate, nil
 }
 
-func (a *ApplicationInstallerRecorder) IsReleaseStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+func (a *ApplicationInstallerRecorder) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
 	// NOOP
 	return false, nil
 }
@@ -90,7 +90,7 @@ func (a ApplicationInstallerLogger) Delete(ctx context.Context, log *zap.Sugared
 	return util.NoStatusUpdate, nil
 }
 
-func (a ApplicationInstallerLogger) IsReleaseStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+func (a ApplicationInstallerLogger) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
 	// NOOP
 	return false, nil
 }
@@ -137,7 +137,7 @@ func (c CustomApplicationInstaller) Delete(ctx context.Context, log *zap.Sugared
 	return util.NoStatusUpdate, nil
 }
 
-func (c CustomApplicationInstaller) IsReleaseStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+func (c CustomApplicationInstaller) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
 	// NOOP
 	return false, nil
 }

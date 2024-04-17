@@ -244,7 +244,7 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 
 	// Because some upstream tools are not completely idempotent, we need a check to make sure a release is not stuck.
 	// This should be run before we make any changes to the status field, so we can use it in our analysis
-	stuck, err := r.appInstaller.IsReleaseStuck(ctx, log, r.seedClient, r.userClient, appInstallation)
+	stuck, err := r.appInstaller.IsStuck(ctx, log, r.seedClient, r.userClient, appInstallation)
 	if err != nil {
 		return fmt.Errorf("failed to check if the previous release is stuck: %w", err)
 	}
