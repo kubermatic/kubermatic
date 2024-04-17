@@ -68,7 +68,6 @@ type metricsServerData interface {
 	DNATControllerImage() string
 	DNATControllerTag() string
 	NodeAccessNetwork() string
-	IsKonnectivityEnabled() bool
 }
 
 // TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics
@@ -97,7 +96,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled())
+			volumes := getVolumes()
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
@@ -122,7 +121,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 						"--secure-port", "10250",
 						"--metric-resolution", "15s",
 						// We use the same as the API server as we use the same dnat-controller
-						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), data.IsKonnectivityEnabled()),
+						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), true),
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
 						"--tls-private-key-file", servingCertMountFolder + "/" + resources.ServingCertKeySecretKey,
@@ -198,7 +197,7 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 	}
 }
 
-func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
+func getVolumes() []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.MetricsServerKubeconfigSecretName,
@@ -216,26 +215,6 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 				},
 			},
 		},
-	}
-	if !isKonnectivityEnabled {
-		vs = append(vs, []corev1.Volume{
-			{
-				Name: resources.OpenVPNClientCertificatesSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.OpenVPNClientCertificatesSecretName,
-					},
-				},
-			},
-			{
-				Name: resources.KubeletDnatControllerKubeconfigSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
-					},
-				},
-			},
-		}...)
 	}
 	return vs
 }

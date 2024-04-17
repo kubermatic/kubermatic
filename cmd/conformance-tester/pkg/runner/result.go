@@ -65,7 +65,6 @@ func (r *Results) PrintSummary() {
 	fmt.Printf("  Name Prefix............: %q\n", r.Options.NamePrefix)
 	fmt.Printf("  OSM Enabled............: %v\n", r.Options.OperatingSystemManagerEnabled)
 	fmt.Printf("  Dualstack Enabled......: %v\n", r.Options.DualStackEnabled)
-	fmt.Printf("  Konnectivity Enabled...: %v\n", r.Options.KonnectivityEnabled)
 	fmt.Printf("  Cluster Updates Enabled: %v\n", r.Options.TestClusterUpdate)
 	fmt.Printf("  Enabled Tests..........: %v\n", sets.List(r.Options.Tests))
 	fmt.Printf("  Scenario Options.......: %v\n", sets.List(r.Options.ScenarioOptions))
@@ -160,11 +159,10 @@ func (r *Results) WriteToFile(filename string) error {
 
 	output := ResultsFile{
 		Configuration: TestConfiguration{
-			OSMEnabled:          r.Options.OperatingSystemManagerEnabled,
-			DualstackEnabled:    r.Options.DualStackEnabled,
-			KonnectivityEnabled: r.Options.KonnectivityEnabled,
-			TestClusterUpdate:   r.Options.TestClusterUpdate,
-			Tests:               sets.List(r.Options.Tests),
+			OSMEnabled:        r.Options.OperatingSystemManagerEnabled,
+			DualstackEnabled:  r.Options.DualStackEnabled,
+			TestClusterUpdate: r.Options.TestClusterUpdate,
+			Tests:             sets.List(r.Options.Tests),
 		},
 		Results: r.Scenarios,
 	}
@@ -272,11 +270,10 @@ type ResultsFile struct {
 }
 
 type TestConfiguration struct {
-	OSMEnabled          bool     `json:"osmEnabled"`
-	DualstackEnabled    bool     `json:"dualstackEnabled"`
-	KonnectivityEnabled bool     `json:"konnectivityEnabled"`
-	TestClusterUpdate   bool     `json:"testClusterUpdate"`
-	Tests               []string `json:"tests"`
+	OSMEnabled        bool     `json:"osmEnabled"`
+	DualstackEnabled  bool     `json:"dualstackEnabled"`
+	TestClusterUpdate bool     `json:"testClusterUpdate"`
+	Tests             []string `json:"tests"`
 }
 
 func LoadResultsFile(filename string) (*ResultsFile, error) {

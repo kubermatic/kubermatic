@@ -282,7 +282,6 @@ type reconciler struct {
 	cloudProvider             kubermaticv1.ProviderType
 	clusterName               string
 	nutanixCSIEnabled         bool
-	isKonnectivityEnabled     bool
 	konnectivityServerHost    string
 	konnectivityServerPort    int
 	konnectivityKeepaliveTime string

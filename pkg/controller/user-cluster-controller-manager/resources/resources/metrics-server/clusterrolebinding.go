@@ -25,7 +25,7 @@ import (
 )
 
 // ClusterRoleBindingResourceReaderReconciler returns the ClusterRoleBinding required for the metrics server to read all required resources.
-func ClusterRoleBindingResourceReaderReconciler(isKonnectivityEnabled bool) reconciling.NamedClusterRoleBindingReconcilerFactory {
+func ClusterRoleBindingResourceReaderReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.MetricsServerResourceReaderClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.BaseAppLabels(Name, nil)
@@ -36,24 +36,13 @@ func ClusterRoleBindingResourceReaderReconciler(isKonnectivityEnabled bool) reco
 				APIGroup: rbacv1.GroupName,
 			}
 
-			if isKonnectivityEnabled {
-				// metrics server running in the user cluster - ServiceAccount
-				crb.Subjects = []rbacv1.Subject{
-					{
-						Kind:      rbacv1.ServiceAccountKind,
-						Name:      resources.MetricsServerServiceAccountName,
-						Namespace: metav1.NamespaceSystem,
-					},
-				}
-			} else {
-				// metrics server running in the seed cluster - User
-				crb.Subjects = []rbacv1.Subject{
-					{
-						Kind:     rbacv1.UserKind,
-						Name:     resources.MetricsServerCertUsername,
-						APIGroup: rbacv1.GroupName,
-					},
-				}
+			// metrics server running in the user cluster - ServiceAccount
+			crb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      resources.MetricsServerServiceAccountName,
+					Namespace: metav1.NamespaceSystem,
+				},
 			}
 
 			return crb, nil
@@ -62,12 +51,7 @@ func ClusterRoleBindingResourceReaderReconciler(isKonnectivityEnabled bool) reco
 }
 
 // ClusterRoleBindingAuthDelegatorReconciler returns the ClusterRoleBinding required for the metrics server to create token review requests.
-func ClusterRoleBindingAuthDelegatorReconciler(isKonnectivityEnabled bool) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	if !isKonnectivityEnabled {
-		// metrics server running in the seed cluster
-		return resources.ClusterRoleBindingAuthDelegatorReconciler(resources.MetricsServerCertUsername)
-	}
-
+func ClusterRoleBindingAuthDelegatorReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		// metrics server running in the user cluster
 		return "metrics-server:system:auth-delegator", func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {

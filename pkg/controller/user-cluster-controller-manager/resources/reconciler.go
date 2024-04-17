@@ -337,14 +337,12 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		}
 	}
 
-	if r.isKonnectivityEnabled {
-		creators = []reconciling.NamedServiceAccountReconcilerFactory{
-			konnectivity.ServiceAccountReconciler(),
-			metricsserver.ServiceAccountReconciler(), // required only if metrics-server is running in user cluster
-		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", metav1.NamespaceSystem, err)
-		}
+	creators = []reconciling.NamedServiceAccountReconcilerFactory{
+		konnectivity.ServiceAccountReconciler(),
+		metricsserver.ServiceAccountReconciler(), // required only if metrics-server is running in user cluster
+	}
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
 	creators = []reconciling.NamedServiceAccountReconcilerFactory{}
@@ -454,7 +452,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	// kube-system
 	creators := []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.KubeSystemRoleBindingReconciler(),
-		metricsserver.RolebindingAuthReaderReconciler(r.isKonnectivityEnabled),
+		metricsserver.RolebindingAuthReaderReconciler(),
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingReconciler(),
@@ -579,14 +577,15 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		machinecontroller.NodeBootstrapperClusterRoleBindingReconciler(),
 		machinecontroller.NodeSignerClusterRoleBindingReconciler(),
 		dnatcontroller.ClusterRoleBindingReconciler(),
-		metricsserver.ClusterRoleBindingResourceReaderReconciler(r.isKonnectivityEnabled),
-		metricsserver.ClusterRoleBindingAuthDelegatorReconciler(r.isKonnectivityEnabled),
+		metricsserver.ClusterRoleBindingResourceReaderReconciler(),
+		metricsserver.ClusterRoleBindingAuthDelegatorReconciler(),
 		scheduler.ClusterRoleBindingAuthDelegatorReconciler(),
 		controllermanager.ClusterRoleBindingAuthDelegator(),
 		clusterautoscaler.ClusterRoleBindingReconciler(),
 		systembasicuser.ClusterRoleBinding,
 		cloudcontroller.ClusterRoleBindingReconciler(),
 		coredns.ClusterRoleBindingReconciler(),
+		konnectivity.ClusterRoleBindingReconciler(),
 	}
 
 	if data.kubernetesDashboardEnabled {
@@ -603,10 +602,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, mlamonitoringagent.ClusterRoleBindingReconciler())
-	}
-
-	if r.isKonnectivityEnabled {
-		creators = append(creators, konnectivity.ClusterRoleBindingReconciler())
 	}
 
 	if data.operatingSystemManagerEnabled {
@@ -718,13 +713,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) error {
 	creatorsKubeSystem := []reconciling.NamedServiceReconcilerFactory{
 		coredns.ServiceReconciler(r.dnsClusterIP),
-	}
-	if r.isKonnectivityEnabled {
-		// metrics-server running in user cluster - ClusterIP service
-		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ServiceReconciler(data.ipFamily))
-	} else {
-		// metrics-server running in seed cluster - ExternalName service
-		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ExternalNameServiceReconciler(r.namespace))
+		metricsserver.ServiceReconciler(data.ipFamily),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1053,14 +1042,12 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		}
 	}
 
-	if r.isKonnectivityEnabled {
-		creators := []reconciling.NamedDeploymentReconcilerFactory{
-			konnectivity.DeploymentReconciler(data.clusterVersion, r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.imageRewriter),
-			metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
-		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
-		}
+	creators := []reconciling.NamedDeploymentReconcilerFactory{
+		konnectivity.DeploymentReconciler(data.clusterVersion, r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.imageRewriter),
+		metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
+	}
+	if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
 	return nil
@@ -1070,15 +1057,13 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		kubesystem.DefaultNetworkPolicyReconciler(),
 		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()),
+		metricsserver.NetworkPolicyReconciler(),
+		konnectivity.NetworkPolicyReconciler(),
 	}
 
 	if r.userSSHKeyAgent {
 		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
 			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()))
-	}
-
-	if r.isKonnectivityEnabled {
-		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, metricsserver.NetworkPolicyReconciler(), konnectivity.NetworkPolicyReconciler())
 	}
 
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1091,6 +1076,8 @@ func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcil
 func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 	creators := []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 		coredns.PodDisruptionBudgetReconciler(),
+		konnectivity.PodDisruptionBudgetReconciler(),
+		metricsserver.PodDisruptionBudgetReconciler(),
 	}
 	// OPA relate resources
 	if r.opaIntegration {
@@ -1101,12 +1088,7 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 			return fmt.Errorf("failed to reconcile PodDisruptionBudgets in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
-	if r.isKonnectivityEnabled {
-		creators = append(creators,
-			konnectivity.PodDisruptionBudgetReconciler(),
-			metricsserver.PodDisruptionBudgetReconciler(),
-		)
-	}
+
 	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}

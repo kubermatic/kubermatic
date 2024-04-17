@@ -25,7 +25,7 @@ import (
 )
 
 // RolebindingAuthReaderReconciler returns a func to create/update the RoleBinding used by the metrics-server to get access to the token subject review API.
-func RolebindingAuthReaderReconciler(isKonnectivityEnabled bool) reconciling.NamedRoleBindingReconcilerFactory {
+func RolebindingAuthReaderReconciler() reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingReconciler) {
 		return resources.MetricsServerAuthReaderRoleName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			rb.Labels = resources.BaseAppLabels(Name, nil)
@@ -36,24 +36,13 @@ func RolebindingAuthReaderReconciler(isKonnectivityEnabled bool) reconciling.Nam
 				APIGroup: rbacv1.GroupName,
 			}
 
-			if isKonnectivityEnabled {
-				// metrics server running in the user cluster - ServiceAccount
-				rb.Subjects = []rbacv1.Subject{
-					{
-						Kind:      rbacv1.ServiceAccountKind,
-						Name:      resources.MetricsServerServiceAccountName,
-						Namespace: metav1.NamespaceSystem,
-					},
-				}
-			} else {
-				// metrics server running in the seed cluster - User
-				rb.Subjects = []rbacv1.Subject{
-					{
-						Kind:     rbacv1.UserKind,
-						Name:     resources.MetricsServerCertUsername,
-						APIGroup: rbacv1.GroupName,
-					},
-				}
+			// metrics server running in the user cluster - ServiceAccount
+			rb.Subjects = []rbacv1.Subject{
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      resources.MetricsServerServiceAccountName,
+					Namespace: metav1.NamespaceSystem,
+				},
 			}
 
 			return rb, nil
