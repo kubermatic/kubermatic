@@ -287,24 +287,26 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		if existingNetwork != nil {
 			return cluster, nil
 		}
+	} else {
+		// If NetworkName not specified, Create network with name kubernetes-clusterid.
+		networkName = resourceNamePrefix + cluster.Name
 	}
 
-	// If NetworkName not specified, Create network with name kubernetes-clusterid
-	if networkName == "" {
-		networkName = cluster.Name
-	}
-
-	newNetwork, err := createUserClusterNetwork(netClient, networkName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create the kubermatic network: %w", err)
-	}
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
-		cluster.Spec.Cloud.Openstack.Network = newNetwork.Name
+		cluster.Spec.Cloud.Openstack.Network = networkName
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to update network cluster: %w", err)
 	}
+
+	_, err = createUserClusterNetwork(netClient, networkName)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create the kubermatic network: %w", err)
+	}
+
 	return cluster, nil
 }
 
@@ -385,16 +387,16 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 
 	req.nodePortsCIDRs = resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
 
-	secGroupName, err := createSecurityGroup(netClient, req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create the user cluster security group: %w", err)
-	}
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
-		cluster.Spec.Cloud.Openstack.SecurityGroups = secGroupName
+		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add security group name to cluster: %w", err)
+	}
+	_, err = createSecurityGroup(netClient, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create the user cluster security group: %w", err)
 	}
 	return cluster, nil
 }
