@@ -256,9 +256,5 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 		}
 	}
 
-	// KonnectivityEnabled is a no-op field, defaulting it to true to make sure no one gets the impression
-	// you can still disable it.
-	specClusterNetwork.KonnectivityEnabled = ptr.To(true) //nolint:staticcheck
-
 	return specClusterNetwork
 }
