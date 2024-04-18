@@ -30,6 +30,9 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// Anexia CCM is sourced from
+// https://github.com/anexia-it/k8s-anexia-ccm/releases
+
 const (
 	AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
 	anexiaCCMVersion        = "1.5.5"
