@@ -25,6 +25,11 @@
 
 - Fix high CPU usage in master-controller-manager ([#13217](https://github.com/kubermatic/kubermatic/pull/13217))
 
+### Updates
+
+- Add Canal CNI version v3.27.3 ([#13308](https://github.com/kubermatic/kubermatic/pull/13308))
+- Add support for Kubernetes 1.27.13 (fixes CVE-2024-3177) ([#13300](https://github.com/kubermatic/kubermatic/pull/13300))
+
 
 ## [v2.23.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.12)
 
