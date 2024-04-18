@@ -21,6 +21,7 @@
 ### Updates
 
 - Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13246](https://github.com/kubermatic/kubermatic/pull/13246))
+- Add support for Kubernetes 1.27.13 and 1.28.9 (fixes CVE-2024-3177) ([#13299](https://github.com/kubermatic/kubermatic/pull/13299))     
 - Update to Go 1.21.9 ([#13247](https://github.com/kubermatic/kubermatic/pull/13247))
 
 ### Cleanup
