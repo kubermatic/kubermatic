@@ -1,6 +1,46 @@
 # Kubermatic 2.25
 
 - [v2.25.0](#v2250)
+- [v2.25.1](#v2251)
+
+## [v2.25.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.1)
+
+### API Changes
+
+- Add `spec.componentsOverride.operatingSystemManager` to allow overriding OSM settings and resources ([#13285](https://github.com/kubermatic/kubermatic/pull/13285))
+
+### Bugfixes
+
+- Add images for Velero and KubeLB to mirrored images list ([#13192](https://github.com/kubermatic/kubermatic/pull/13192))
+- Cluster-autoscaler addon now works based on the namespace instead of cluster names; all MachineDeployments in the `kube-system` namespace are scaled ([#13202](https://github.com/kubermatic/kubermatic/pull/13202))
+- Fix `csi` Addon not applying cleanly on Azure user clusters that were created with KKP <= 2.24 ([#13250](https://github.com/kubermatic/kubermatic/pull/13250))
+- Fix high CPU usage in master-controller-manager ([#13209](https://github.com/kubermatic/kubermatic/pull/13209))
+- Fix increased reconcile rate for ClusterBackupStorageLocation objects on seed clusters ([#13218](https://github.com/kubermatic/kubermatic/pull/13218))
+- Fix telemetry agent container images not starting up ([#13309](https://github.com/kubermatic/kubermatic/pull/13309))
+- Resolve conflict in determining available Kubernetes versions where upgrades where possible in `Cluster` object but not via the Dashboard ([#6651](https://github.com/kubermatic/dashboard/pull/6651))
+
+### New Features
+
+- Add new `kubermatic_cluster_owner` metric on seed clusters, with `cluster_name` and `user` labels ([#13194](https://github.com/kubermatic/kubermatic/pull/13194))
+
+### Updates
+
+- KKP(EE): Bump to Metering 1.2.1 ([#13185](https://github.com/kubermatic/kubermatic/pull/13185))
+    - Update Metering to v1.2.1.
+    - Add `format` to metering report configuration, allowing to generate JSON files instead of CSV.
+    - Add `cloud-provider`, `datacenter` and `cluster-owner` columns to the generated metering reports
+- Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13245](https://github.com/kubermatic/kubermatic/pull/13245))
+- Add support for Kubernetes 1.27.13, 1.28.9 and 1.29.4 (fixes CVE-2024-3177) ([#13298](https://github.com/kubermatic/kubermatic/pull/13298))
+- Update Cilium to 1.14.9 and 1.13.14, mitigating CVE-2024-28860 and CVE-2024-28248 ([#13242](https://github.com/kubermatic/kubermatic/pull/13242))
+- Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13180](https://github.com/kubermatic/kubermatic/pull/13180))
+- The image tag in the included `mla/minio-lifecycle-mgr` helm chart has been changed from `latest` to `RELEASE.2024-03-13T23-51-57Z` ([#13199](https://github.com/kubermatic/kubermatic/pull/13199))
+- Update to Go 1.22.2 ([#6650](https://github.com/kubermatic/dashboard/pull/6650))
+
+### Cleanup
+
+- Addons reconciliation is triggered more consistently for changes to Cluster objects, reducing the overall number of unnecessary addon reconciliations ([#13252](https://github.com/kubermatic/kubermatic/pull/13252))
+
+
 
 ## [v2.25.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.0)
 
