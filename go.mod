@@ -84,7 +84,7 @@ require (
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.12.2
+	helm.sh/helm/v3 v3.14.3
 	k8c.io/kubeone v1.7.2
 	k8c.io/operating-system-manager v1.5.0
 	k8c.io/reconciler v0.5.0
@@ -165,7 +165,7 @@ require (
 	github.com/clarketm/json v1.13.4 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cncf/xds/go v0.0.0-20230607035331-e9ce68804cb4 // indirect
-	github.com/containerd/containerd v1.7.11 // indirect
+	github.com/containerd/containerd v1.7.12 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
@@ -282,7 +282,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
-	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
+	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
@@ -313,7 +313,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
-	github.com/rubenv/sql-migrate v1.3.1 // indirect
+	github.com/rubenv/sql-migrate v1.5.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
