@@ -58,6 +58,19 @@ spec:
                     dockerRepository:
                       description: DockerRepository is the repository containing the Kubermatic REST API image.
                       type: string
+                    dockerTag:
+                      description: |-
+                        DockerTag is used to overwrite the Kubermatic API Docker image tag and is only for development
+                        purposes. This field must not be set in production environments. If DockerTag is specified then
+                        DockerTagSuffix will be ignored.
+                        ---
+                      type: string
+                    dockerTagSuffix:
+                      description: |-
+                        DockerTagSuffix is appended to the KKP version used for referring to the custom Kubermatic API image.
+                        If left empty, either the `DockerTag` if specified or the original Kubermatic API Docker image tag will be used.
+                        With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
+                      type: string
                     pprofEndpoint:
                       description: |-
                         PProfEndpoint controls the port the API should listen on to provide pprof
@@ -456,7 +469,7 @@ spec:
                       description: |-
                         DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image.
                         If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used.
-                        With DockerTagSuffix the tag becomes <KKP_VERSION:SUFFIX> i.e. "v2.15.0-SUFFIX".
+                        With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
                       type: string
                     extraVolumeMounts:
                       description: ExtraVolumeMounts allows to mount additional volumes into the UI container.
