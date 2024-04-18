@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	version = "v2.45.0"
+	version = "v2.51.1"
 )
 
 func getPrometheusImage(overwriter registry.ImageRewriter) string {
