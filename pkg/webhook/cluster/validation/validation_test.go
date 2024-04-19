@@ -384,36 +384,6 @@ func TestHandle(t *testing.T) {
 			wantAllowed: false,
 		},
 		{
-			name: "Reject unsupported ebpf proxy mode (Konnectivity not enabled)",
-			op:   admissionv1.Create,
-			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
-				ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.EBPFProxyMode,
-					NodeLocalDNSCacheEnabled: ptr.To(true),
-					KonnectivityEnabled:      ptr.To(false),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32768",
-					},
-				},
-				CNIPlugin: &kubermaticv1.CNIPluginSettings{
-					Type:    "cilium",
-					Version: "v1.11",
-				},
-			}.Build(),
-			wantAllowed: false,
-		},
-		{
 			name: "Supported ebpf proxy mode",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{

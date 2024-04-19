@@ -106,6 +106,10 @@ func testAddonCanBeApplied(t *testing.T, addonName string, provider kubermaticv1
 func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[string]*addon.Addon) {
 	previousAddonNames := sets.KeySet(previousAddons)
 
+	// remove openvpn, as it has been removed from 2.25 to 2.26.
+	// can be removed once 2.26 has been released.
+	previousAddonNames.Delete("openvpn")
+
 	for _, addonName := range sets.List(previousAddonNames) {
 		providersToTest, exists := AddonProviderMatrix[addonName]
 		if !exists {
