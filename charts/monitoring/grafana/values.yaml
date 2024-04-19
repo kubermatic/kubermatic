@@ -117,7 +117,7 @@ grafana:
       disable_login_form: true
 
       # Change this to the URL that will be used to redirect the user
-      # to after signing out from Grafana whne using external OIDC.
+      # to after signing out from Grafana when using external OIDC.
       signout_redirect_url: ""
 
       # Set this to true to allow Viewers to
