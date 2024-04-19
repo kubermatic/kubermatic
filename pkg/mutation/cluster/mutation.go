@@ -68,6 +68,10 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 		}
 	}
 
+	if newCluster.Spec.ClusterNetwork.KonnectivityEnabled == nil { //nolint:staticcheck
+		newCluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(true) //nolint:staticcheck
+	}
+
 	return nil
 }
 

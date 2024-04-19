@@ -895,9 +895,11 @@ type ClusterNetworkingConfig struct {
 	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
 
+	// +kubebuilder:default=true
+
 	// Deprecated: KonnectivityEnabled enables konnectivity for controlplane to node network communication.
-	// As OpenVPN will be removed in the future KKP versions, clusters with konnectivity disabled will not be supported.
-	// All existing clusters with OpenVPN should migrate to the Konnectivity.
+	// Konnectivity is the only supported choice for controlplane to node network communication. This field is
+	// defaulted to true and setting it to false is rejected. It will be removed in a future release.
 	KonnectivityEnabled *bool `json:"konnectivityEnabled,omitempty"`
 
 	// TunnelingAgentIP is the address used by the tunneling agents
