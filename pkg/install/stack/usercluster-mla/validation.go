@@ -149,21 +149,9 @@ func validateHelmValues(helmValues *yamled.Document, opt stack.DeployOptions) []
 	failures := []error{}
 
 	if opt.MLAIncludeIap {
-		path := yamled.Path{"iap", "deployments", "grafana", "client_secret"}
-		grafanaClientSecret, _ := helmValues.GetString(path)
-		if err := ValidateIapBlockSecret(grafanaClientSecret, path.String()); err != nil {
-			failures = append(failures, err)
-		}
-
-		path = yamled.Path{"iap", "deployments", "grafana", "encryption_key"}
+		path := yamled.Path{"iap", "deployments", "grafana", "encryption_key"}
 		grafanaEncryptionKey, _ := helmValues.GetString(path)
 		if err := ValidateIapBlockSecret(grafanaEncryptionKey, path.String()); err != nil {
-			failures = append(failures, err)
-		}
-
-		path = yamled.Path{"iap", "deployments", "alertmanager", "client_secret"}
-		alertmanagerClientSecret, _ := helmValues.GetString(path)
-		if err := ValidateIapBlockSecret(alertmanagerClientSecret, path.String()); err != nil {
 			failures = append(failures, err)
 		}
 
