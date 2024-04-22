@@ -39,6 +39,7 @@ Support for minor releases is a bit more involved to add. There are a couple of 
 need to be updated.
 
 Before a new minor can be added to KKP, the `build` Docker image must be updated to:
+
 - include test binaries for the new Kubernetes version
 - include the appropriate kubectl versions
 
@@ -50,25 +51,15 @@ Once new Docker images are ready, KKP can be updated as well.
   minor (just copy an existing job and adjust accordingly). Make sure to change the Docker
   image tag for the e2e images to use the new tag you just created with the new test binaries.
 - Update the CSI addon manifests (`addon/csi/*.yaml`) to include the new minor version.
-- Ensure a kubelet ConfigMap for the new minor exists in `addons/kubelet-configmap/kubelet-configmap.yaml`.
-- Update `addons/rbac/allow-kubeadm-join-configmap.yaml` to include the new ConfigMap.
-- Update the CCM manifests located in `pkg/resources/cloudcontroller`) to
-  include the new minor version.
-  - The latest OpenStack CCM version can be found in the
-  [`kubernetes/cloud-provider-openstack` repository](https://github.com/kubernetes/cloud-provider-openstack).
-  - The latest vSphere CCM version can be found in the
-  [`kubernetes/cloud-provider-vsphere` repository](https://github.com/kubernetes/cloud-provider-vsphere)
-  - The latest Hetzner CCM version can be found in the
-  [`hetznercloud/hcloud-cloud-controller-manager` repository](https://github.com/hetznercloud/hcloud-cloud-controller-manager)
+- Update the CCM manifests located in `pkg/resources/cloudcontroller`) to include the new minor version.
 - Update the cluster-autoscaler addon manifests (`addon/cluster-autoscaler`) to include the new minor version.
 - The conformance-tests runner (`cmd/conformance-tester/pkg/tests/conformance.go`) has a list of
   exclusion filters to skip tests that cannot work in the CI environment. Make sure to
   update said list, or else you will be greeted by lots of NodePort Service related
   errors.
-- Update the `pkg/controller/operator/common/defaults.go`. Set the default version to
-  the most recent version minus 1 (i.e. if 1.19.2 is the most recent version we support,
-  set the default to the latest 1.18 version) and make sure to define upgrade paths
-  for previous Kubernetes versions as well.
+- Update the `pkg/defaulting/configuration.go`. Set the default version to the most recent version
+  minus 1 (i.e. if 1.19.2 is the most recent version we support, set the default to the latest 1.18
+  version) and make sure to define upgrade paths for previous Kubernetes versions as well.
 - Update `pkg/resources/test/load_files_test.go` `TestLoadFiles()` to make it generate
   manifests for the new minor version.
 - Update `pkg/util/kubectl/kubectl.go` to use the appropriate kubectl version for the
