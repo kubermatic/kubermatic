@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	kubermaticmonitoring "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-monitoring"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	userclustermla "k8c.io/kubermatic/v2/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -81,6 +82,8 @@ type DeployOptions struct {
 	MLASkipMinioLifecycleMgr bool
 	MLAForceMLASecrets       bool
 	MLAIncludeIap            bool
+
+	MonitoringIncludeIap bool
 
 	DeployDefaultAppCatalog bool
 
@@ -145,6 +148,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
+	cmd.PersistentFlags().BoolVar(&opt.MonitoringIncludeIap, "monitoring-include-iap", false, "(Kubermatic Monitoring Stack) Include Identity-Aware Proxy installation")
+
 	wrapDeployFlags(cmd.PersistentFlags(), &opt)
 
 	cmd.PersistentFlags().StringSliceVar(&opt.SkipCharts, "skip-charts", nil, "skip helm chart deployment (some of cert-manager, nginx-ingress-controller, dex)")
@@ -193,6 +198,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 
 		var kubermaticStack stack.Stack
 		switch stackName {
+		case "monitoring":
+			kubermaticStack = kubermaticmonitoring.NewStack()
 		case "usercluster-mla":
 			kubermaticStack = userclustermla.NewStack()
 		case "kubermatic-seed":
@@ -239,6 +246,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			MLASkipMinioLifecycleMgr:           opt.MLASkipMinioLifecycleMgr,
 			MLAForceSecrets:                    opt.MLAForceMLASecrets,
 			MLAIncludeIap:                      opt.MLAIncludeIap,
+			MonitoringIncludeIap:               opt.MonitoringIncludeIap,
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,

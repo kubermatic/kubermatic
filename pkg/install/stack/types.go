@@ -63,6 +63,8 @@ type DeployOptions struct {
 	MLAForceSecrets          bool
 	MLAIncludeIap            bool
 
+	MonitoringIncludeIap bool
+
 	DeployDefaultAppCatalog bool
 
 	SkipCharts []string
