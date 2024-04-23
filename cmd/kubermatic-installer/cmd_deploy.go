@@ -167,47 +167,14 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			fields["git"] = versions.KubermaticCommit
 		}
 
-		stackName := ""
-		if len(args) > 0 {
-			stackName = args[0]
-		}
-		if stackName == "usercluster-mla" && opt.HelmTimeout <= UserClusterMinHelmTimeout {
-			logger.Infof("🚦️ For usercluster-mla deployment, it is recommended to use Helm timeout value of at least %v. Overriding the current value of %s.", UserClusterMinHelmTimeout, opt.HelmTimeout)
-			opt.HelmTimeout = UserClusterMinHelmTimeout
-		}
-
-		// error out early if there is no useful Helm binary
-		helmClient, err := helm.NewCLI(opt.HelmBinary, opt.Kubeconfig, opt.KubeContext, opt.HelmTimeout, logger)
+		helmClient, err := setupHelmClient(logger, opt)
 		if err != nil {
-			return fmt.Errorf("failed to create Helm client: %w", err)
+			return fmt.Errorf("failed to create the helm client: %w", err)
 		}
 
-		helmVersion, err := helmClient.Version()
+		kubermaticStack, err := setupKubermaticStack(logger, args, opt)
 		if err != nil {
-			return fmt.Errorf("failed to check Helm version: %w", err)
-		}
-
-		if helmVersion.LessThan(MinHelmVersion) {
-			return fmt.Errorf(
-				"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
-				MinHelmVersion,
-				opt.HelmBinary,
-				helmVersion,
-			)
-		}
-
-		var kubermaticStack stack.Stack
-		switch stackName {
-		case "monitoring":
-			kubermaticStack = kubermaticmonitoring.NewStack()
-		case "usercluster-mla":
-			kubermaticStack = userclustermla.NewStack()
-		case "kubermatic-seed":
-			kubermaticStack = kubermaticseed.NewStack()
-		case "kubermatic-master", "":
-			kubermaticStack = kubermaticmaster.NewStack()
-		default:
-			return fmt.Errorf("unknown stack %q specified", stackName)
+			return fmt.Errorf("failed to define the stack: %w", err)
 		}
 
 		logger.WithFields(fields).Info("🚀 Initializing installer…")
@@ -229,7 +196,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		}
 
 		deployOptions := stack.DeployOptions{
-			HelmClient:                         helmClient,
+			HelmClient:                         *helmClient,
 			HelmValues:                         helmValues,
 			KubermaticConfiguration:            kubermaticConfig,
 			RawKubermaticConfiguration:         rawKubermaticConfig,
@@ -377,4 +344,54 @@ func greeting() string {
 	}
 
 	return greetings[rand.Intn(len(greetings))]
+}
+
+func setupHelmClient(logger *logrus.Logger, opt *DeployOptions) (*helm.Client, error) {
+	// error out early if there is no useful Helm binary
+	helmClient, err := helm.NewCLI(opt.HelmBinary, opt.Kubeconfig, opt.KubeContext, opt.HelmTimeout, logger)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Helm client: %w", err)
+	}
+
+	helmVersion, err := helmClient.Version()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Helm version: %w", err)
+	}
+
+	if helmVersion.LessThan(MinHelmVersion) {
+		return nil, fmt.Errorf(
+			"the installer requires Helm >= %s, but detected %q as %s (use --helm-binary or $HELM_BINARY to override)",
+			MinHelmVersion,
+			opt.HelmBinary,
+			helmVersion,
+		)
+	}
+
+	return &helmClient, nil
+}
+
+func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptions) (stack.Stack, error) {
+	stackName := ""
+	if len(args) > 0 {
+		stackName = args[0]
+	}
+	if stackName == "usercluster-mla" && opt.HelmTimeout <= UserClusterMinHelmTimeout {
+		logger.Infof("🚦️ For usercluster-mla deployment, it is recommended to use Helm timeout value of at least %v. Overriding the current value of %s.", UserClusterMinHelmTimeout, opt.HelmTimeout)
+		opt.HelmTimeout = UserClusterMinHelmTimeout
+	}
+
+	var kubermaticStack stack.Stack
+	switch stackName {
+	case "monitoring":
+		kubermaticStack = kubermaticmonitoring.NewStack()
+	case "usercluster-mla":
+		kubermaticStack = userclustermla.NewStack()
+	case "kubermatic-seed":
+		kubermaticStack = kubermaticseed.NewStack()
+	case "kubermatic-master", "":
+		kubermaticStack = kubermaticmaster.NewStack()
+	default:
+		return nil, fmt.Errorf("unknown stack %q specified", stackName)
+	}
+	return kubermaticStack, nil
 }
