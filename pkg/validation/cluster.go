@@ -448,9 +448,9 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 		}
 	}
 
-	if n.KonnectivityEnabled != nil && *n.KonnectivityEnabled == false { //nolint:staticcheck
+	if n.KonnectivityEnabled != nil && !*n.KonnectivityEnabled { //nolint:staticcheck
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("konnectivityEnabled"), n.KonnectivityEnabled, //nolint:staticcheck
-			fmt.Sprintf("Konnectivity can no longer be disabled")),
+			"Konnectivity can no longer be disabled"),
 		)
 	}
 
