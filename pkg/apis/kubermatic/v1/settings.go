@@ -19,6 +19,7 @@ package v1
 import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,6 +60,7 @@ type SettingSpec struct {
 	// +kubebuilder:default=false
 
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
+	// Deprecated: EnableWebTerminal is deprecated and should be removed in KKP 2.27+. Please use webTerminalOptions instead. When webTerminalOptions.enabled is set then this field will be ignored.
 	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
 
 	// +kubebuilder:default=true
@@ -99,6 +101,10 @@ type SettingSpec struct {
 	// ProviderConfiguration are the cloud provider specific configurations on dashboard.
 	// +optional
 	ProviderConfiguration ProviderConfiguration `json:"providerConfiguration,omitempty"`
+
+	// WebTerminalOptions are the configurations for the Web Terminal feature.
+	// +optional
+	WebTerminalOptions *WebTerminalOptions `json:"webTerminalOptions,omitempty"`
 
 	// MachineDeploymentVMResourceQuota is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
 	MachineDeploymentVMResourceQuota *MachineFlavorFilter `json:"machineDeploymentVMResourceQuota,omitempty"`
@@ -167,6 +173,17 @@ type ProviderConfiguration struct {
 
 	// VMwareCloudDirector are the configurations for VMware Cloud Director provider.
 	VMwareCloudDirector VMwareCloudDirectorSettings `json:"vmwareCloudDirector,omitempty"`
+}
+
+type WebTerminalOptions struct {
+	// Enabled enables the Web Terminal feature for the user clusters.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// EnableInternetAccess enables the Web Terminal feature to access the internet.
+	EnableInternetAccess bool `json:"enableInternetAccess,omitempty"`
+
+	// AdditionalEnvironmentVariables are the additional environment variables that can be set for the Web Terminal.
+	AdditionalEnvironmentVariables []corev1.EnvVar `json:"additionalEnvironmentVariables,omitempty"`
 }
 
 type OpenStack struct {
