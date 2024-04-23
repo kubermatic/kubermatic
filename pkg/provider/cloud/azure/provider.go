@@ -292,7 +292,7 @@ func (a *Azure) DefaultCloudSpec(ctx context.Context, clusterSpec *kubermaticv1.
 	}
 
 	if clusterSpec.Cloud.Azure.LoadBalancerSKU == "" {
-		clusterSpec.Cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureBasicLBSKU
+		clusterSpec.Cloud.Azure.LoadBalancerSKU = kubermaticv1.AzureStandardLBSKU
 	}
 
 	if clusterSpec.Cloud.Azure.NodePortsAllowedIPRanges == nil {
