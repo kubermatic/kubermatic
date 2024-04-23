@@ -51,7 +51,7 @@ const (
 	BlackboxExporterReleaseName = BlackboxExporterChartName
 	BlackboxExporterNamespace   = MonitoringNamespace
 
-	AlertManagerChartName   = "alert-manager"
+	AlertManagerChartName   = "alertmanager"
 	AlertManagerReleaseName = AlertManagerChartName
 	AlertManagerNamespace   = MonitoringNamespace
 
@@ -61,7 +61,7 @@ const (
 
 	MonitoringIAPChartName = "iap"
 	IAPReleaseName         = MonitoringIAPChartName
-	IAPNamespace           = "iap"
+	IAPNamespace           = MonitoringNamespace
 )
 
 type Monitoring struct{}
