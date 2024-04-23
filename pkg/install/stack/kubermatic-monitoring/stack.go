@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 
 	"github.com/sirupsen/logrus"
 
@@ -58,6 +59,14 @@ const (
 	PrometheusChartName   = "prometheus"
 	PrometheusReleaseName = PrometheusChartName
 	PrometheusNamespace   = MonitoringNamespace
+
+	HelmExporterChartName   = "helm-exporter"
+	HelmExporterReleaseName = HelmExporterChartName
+	HelmExporterNamespace   = MonitoringNamespace
+
+	KarmaChartName   = "karma"
+	KarmaReleaseName = KarmaChartName
+	KarmaNamespace   = MonitoringNamespace
 
 	MonitoringIAPChartName = "iap"
 	IAPReleaseName         = MonitoringIAPChartName
@@ -101,6 +110,14 @@ func (s *Monitoring) Deploy(ctx context.Context, opt stack.DeployOptions) error 
 		return fmt.Errorf("failed to deploy Prometheus: %w", err)
 	}
 
+	if err := deployHelmExporter(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Helm Exporter: %w", err)
+	}
+
+	if err := deployKarma(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Karma: %w", err)
+	}
+
 	if opt.MonitoringIncludeIap {
 		if err := deployIap(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 			return fmt.Errorf("failed to deploy IAP: %w", err)
@@ -111,6 +128,10 @@ func (s *Monitoring) Deploy(ctx context.Context, opt stack.DeployOptions) error 
 }
 
 func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, NodeExporterChartName) {
+		logger.Info("⭕ Skipping Node Exporter deployment.")
+		return nil
+	}
 	logger.Info("📦 Deploying Node Exporter ...")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -144,6 +165,10 @@ func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ct
 }
 
 func deployKubeStateMetrics(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, KubeStateMetricsChartName) {
+		logger.Info("⭕ Skipping Kube State Metrics deployment.")
+		return nil
+	}
 	logger.Info("📦 Deploying Kube State Metrics…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -171,6 +196,10 @@ func deployKubeStateMetrics(ctx context.Context, logger *logrus.Entry, kubeClien
 }
 
 func deployGrafana(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, GrafanaChartName) {
+		logger.Info("⭕ Skipping Grafana deployment.")
+		return nil
+	}
 	logger.Info("📦 Deploying Grafana…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -198,6 +227,10 @@ func deployGrafana(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrun
 }
 
 func deployBlackboxExporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, BlackboxExporterChartName) {
+		logger.Info("⭕ Skipping Blackbox Exporter deployment.")
+		return nil
+	}
 	logger.Info("📦 Deploying Blackbox Exporter…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -225,6 +258,10 @@ func deployBlackboxExporter(ctx context.Context, logger *logrus.Entry, kubeClien
 }
 
 func deployAlertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, AlertManagerChartName) {
+		logger.Info("⭕ Skipping Alert Manager deployment.")
+		return nil
+	}
 	logger.Info("📦 Deploying Alert Manager…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -252,6 +289,11 @@ func deployAlertManager(ctx context.Context, logger *logrus.Entry, kubeClient ct
 }
 
 func deployPrometheus(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, PrometheusChartName) {
+		logger.Info("⭕ Skipping Prometheus deployment.")
+		return nil
+	}
+
 	logger.Info("📦 Deploying Prometheus…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -270,6 +312,70 @@ func deployPrometheus(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, PrometheusNamespace, PrometheusReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
+	}
+
+	logger.Info("✅ Success.")
+
+	return nil
+}
+
+func deployHelmExporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, HelmExporterChartName) {
+		logger.Info("⭕ Skipping Helm Exporter deployment.")
+		return nil
+	}
+
+	logger.Info("📦 Deploying Helm Exporter…")
+	sublogger := log.Prefix(logger, "   ")
+
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MonitoringChartsPrefix, HelmExporterChartName))
+	if err != nil {
+		return fmt.Errorf("failed to load Helm chart: %w", err)
+	}
+
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, HelmExporterNamespace); err != nil {
+		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, HelmExporterNamespace, HelmExporterReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check to Helm release: %w", err)
+	}
+
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, HelmExporterNamespace, HelmExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %w", err)
+	}
+
+	logger.Info("✅ Success.")
+
+	return nil
+}
+
+func deployKarma(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, KarmaChartName) {
+		logger.Info("⭕ Skipping Karma deployment.")
+		return nil
+	}
+
+	logger.Info("📦 Deploying Karma…")
+	sublogger := log.Prefix(logger, "   ")
+
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MonitoringChartsPrefix, KarmaChartName))
+	if err != nil {
+		return fmt.Errorf("failed to load Helm chart: %w", err)
+	}
+
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, KarmaNamespace); err != nil {
+		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, KarmaNamespace, KarmaReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check to Helm release: %w", err)
+	}
+
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KarmaNamespace, KarmaReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
