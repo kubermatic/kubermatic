@@ -32,6 +32,10 @@
 {{ $version = "v1.28.3" }}
 {{ $snapshot = "v6.2.1" }}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.29" }}
+{{ $version = "v1.29.2" }}
+{{ $snapshot = "v6.2.2" }}
+{{ end }}
 
 ---
 apiVersion: storage.k8s.io/v1
