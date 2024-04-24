@@ -24,6 +24,7 @@ metadata:
   name: nvidia-gpu-operator
 spec:
   description: Nvidia GPU management for Kubernetes
+  displayName: NVIDIA GPU Operator
   method: helm
   versions:
     - template:

@@ -85,6 +85,9 @@ spec:
                 description:
                   description: Description of the application. what is its purpose
                   type: string
+                displayName:
+                  description: DisplayName is the name for the application that will be displayed in the UI.
+                  type: string
                 documentationURL:
                   description: |-
                     DocumentationURL holds a link to official documentation of the Application
