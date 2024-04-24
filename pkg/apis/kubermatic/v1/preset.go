@@ -188,7 +188,7 @@ type Azure struct {
 	// If set to empty string at cluster creation, a new security group will be created and this field will be updated to
 	// the generated security group's name. If no subnet is defined at cluster creation, this field should be empty as well.
 	SecurityGroup string `json:"securityGroup,omitempty"`
-	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "standard" will be used
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 

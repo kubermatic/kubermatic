@@ -182,7 +182,7 @@ spec:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
                     loadBalancerSKU:
-                      description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+                      description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "standard" will be used
                       enum:
                         - standard
                         - basic

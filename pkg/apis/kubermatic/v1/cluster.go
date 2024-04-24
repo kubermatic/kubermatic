@@ -1075,7 +1075,7 @@ type AzureCloudSpec struct {
 	// at cluster creation and `AssignAvailabilitySet` is set to `true`, a new availability set will be created and this field
 	// will be updated to the generated availability set's name.
 	AvailabilitySet string `json:"availabilitySet"`
-	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used.
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "standard" will be used.
 	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"` //nolint:tagliatelle
 }
 
