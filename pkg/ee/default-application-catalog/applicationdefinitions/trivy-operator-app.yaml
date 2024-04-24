@@ -24,6 +24,7 @@ metadata:
   name: trivy-operator
 spec:
   description: Trivy-Operator is a Kubernetes-native security toolkit.
+  displayName: Trivy Operator
   method: helm
   versions:
   - template:

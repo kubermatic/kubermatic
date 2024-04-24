@@ -24,6 +24,7 @@ metadata:
   name: metallb
 spec:
   description: MetalLB is a load-balancer implementation for bare metal Kubernetes clusters, using standard routing protocols.
+  displayName: MetalLB
   method: helm
   versions:
   - template:

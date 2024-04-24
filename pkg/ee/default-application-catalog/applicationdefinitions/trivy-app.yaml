@@ -24,6 +24,7 @@ metadata:
   name: trivy
 spec:
   description: Trivy is a simple and comprehensive vulnerability/misconfiguration/secret scanner for containers and other artifacts.
+  displayName: Trivy
   method: helm
   versions:
   - template:

@@ -187,6 +187,9 @@ type ApplicationVersion struct {
 
 // ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
 type ApplicationDefinitionSpec struct {
+	// DisplayName is the name for the application that will be displayed in the UI.
+	DisplayName string `json:"displayName,omitempty"`
+
 	// Description of the application. what is its purpose
 	Description string `json:"description"`
 

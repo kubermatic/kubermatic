@@ -24,6 +24,7 @@ metadata:
   name: argocd
 spec:
   description: Argo CD - Declarative, GitOps Continuous Delivery Tool for Kubernetes.
+  displayName: Argo CD
   method: helm
   versions:
     - template:

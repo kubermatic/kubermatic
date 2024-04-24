@@ -24,6 +24,7 @@ metadata:
   name: nginx
 spec:
   description: Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer.
+  displayName: NGINX Ingress Controller
   method: helm
   versions:
   - template:

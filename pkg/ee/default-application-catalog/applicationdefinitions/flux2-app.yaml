@@ -24,6 +24,7 @@ metadata:
   name: flux2
 spec:
   description: Flux is a tool for keeping Kubernetes clusters in sync with sources of configuration (like Git repositories), and automating updates to configuration when there is new code to deploy.
+  displayName: Flux
   method: helm
   versions:
   - template:
@@ -108,4 +109,4 @@ spec:
     o49OGgmr7PZtXxzLb59ykEr6Drp0KyGwioD3C5k39Wmpk9QDW2qek250PfPkS7rGukcfSwgSZokv
     w6/2IpE59zAwHsekr8hz3dec7sivG7fl+i8JEo6bQuILVD59JtN0c2YoV+/1ZhtNB9YS/5eZ/8fX
     AfA/lWU54yZCHtwAAAAASUVORK5CYII=
-  logoFormat: png 
+  logoFormat: png

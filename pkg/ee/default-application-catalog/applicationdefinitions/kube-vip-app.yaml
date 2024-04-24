@@ -24,6 +24,7 @@ metadata:
   name: kube-vip
 spec:
   description: kube-vip provides Kubernetes clusters with a virtual IP and load balancer for both the control plane (for building a highly-available cluster) and Kubernetes Services of type LoadBalancer without relying on any external hardware or software.
+  displayName: kube-vip
   method: helm
   versions:
   - template:
