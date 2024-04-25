@@ -324,7 +324,7 @@ type KubermaticAddonsConfiguration struct {
 
 // SystemApplicationsConfiguration contains configuration for system Applications (e.g. CNI).
 type SystemApplicationsConfiguration struct {
-	// HelmRepository specifies OCI repository containing Helm charts of system Applications.
+	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
 	HelmRepository string `json:"helmRepository,omitempty"`
 	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
 	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json
