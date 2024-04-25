@@ -1460,7 +1460,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         helmRepository:
-                          description: HelmRepository specifies OCI repository containing Helm charts of system Applications.
+                          description: HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
                           type: string
                       type: object
                   type: object
