@@ -48,9 +48,9 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -144,10 +144,7 @@ func Add(
 	r.seedClient = seedMgr.GetClient()
 	r.cache = mgr.GetCache()
 
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
+	bldr := builder.ControllerManagedBy(mgr).Named(controllerName)
 
 	mapFn := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		log.Debugw("Controller got triggered", "type", fmt.Sprintf("%T", o), "name", o.GetName(), "namespace", o.GetNamespace())
@@ -196,9 +193,7 @@ func Add(
 		},
 	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
-			return fmt.Errorf("failed to create watch for %T: %w", t, err)
-		}
+		bldr.Watches(t, mapFn, builder.WithPredicates(predicateIgnoreLeaderLeaseRenew))
 	}
 
 	seedTypesToWatch := []ctrlruntimeclient.Object{
@@ -206,10 +201,14 @@ func Add(
 		&corev1.ConfigMap{},
 	}
 	for _, t := range seedTypesToWatch {
-		if err := c.Watch(source.Kind(seedMgr.GetCache(), t), mapFn); err != nil {
-			return fmt.Errorf("failed to watch %T in seed: %w", t, err)
-		}
+		bldr.WatchesRawSource(source.Kind(
+			seedMgr.GetCache(),
+			t,
+			mapFn,
+		))
 	}
+
+	var clusterObj ctrlruntimeclient.Object = &kubermaticv1.Cluster{}
 
 	// Watch cluster if user cluster MLA is enabled so that controller can get resource requirements for user cluster MLA components.
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
@@ -223,9 +222,8 @@ func Add(
 				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
 			},
 		}
-		if err := c.Watch(source.Kind(seedMgr.GetCache(), &kubermaticv1.Cluster{}), mapFn, clusterPredicate); err != nil {
-			return fmt.Errorf("failed to watch cluster in seed: %w", err)
-		}
+
+		bldr.WatchesRawSource(source.Kind(seedMgr.GetCache(), clusterObj, mapFn, clusterPredicate))
 	}
 
 	// Watch cluster if user cluster OPA is enabled so that controller can get resource requirements for user cluster OPA components.
@@ -240,9 +238,13 @@ func Add(
 				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
 			},
 		}
-		if err := c.Watch(source.Kind(seedMgr.GetCache(), &kubermaticv1.Cluster{}), mapFn, clusterPredicate); err != nil {
-			return fmt.Errorf("failed to watch cluster in seed: %w", err)
-		}
+
+		bldr.WatchesRawSource(source.Kind(seedMgr.GetCache(), clusterObj, mapFn, clusterPredicate))
+	}
+
+	_, err = bldr.Build(r)
+	if err != nil {
+		return err
 	}
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster

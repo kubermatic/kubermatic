@@ -34,8 +34,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -83,32 +83,22 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		appInstaller:    appInstaller,
 	}
 
-	c, err := controller.New(controllerName, userMgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller %s: %w", controllerName, err)
-	}
+	_, err := builder.ControllerManagedBy(userMgr).
+		Named(controllerName).
+		// update of the status with conditions or HelmInfo triggers an update event. To avoid reconciling in loop, we filter
+		// update event on generation. We also allow update events if annotations have changed so that the user can force a
+		// reconciliation without changing the spec.
+		For(&appskubermaticv1.ApplicationInstallation{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+		// We also watch ApplicationDefinition because it contains information about how to install the application. Moreover
+		// if KKP admin deletes ApplicationDefinition, the related application must also be deleted.
+		WatchesRawSource(source.Kind(
+			seedMgr.GetCache(),
+			&appskubermaticv1.ApplicationDefinition{},
+			handler.TypedEnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(r.userClient)),
+		)).
+		Build(r)
 
-	// update of the status with conditions or HelmInfo triggers an update event. To avoid reconciling in loop, we filter
-	// update event on generation. We also allow update events if annotations have changed so that the user can force a
-	// reconciliation without changing the spec.
-	if err = c.Watch(source.Kind(userMgr.GetCache(), &appskubermaticv1.ApplicationInstallation{}), &handler.EnqueueRequestForObject{}, predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})); err != nil {
-		return fmt.Errorf("failed to create watch for ApplicationInstallation: %w", err)
-	}
-
-	// We also watch ApplicationDefinition because it contains information about how to install the application. Moreover
-	// if KKP admin deletes ApplicationDefinition, the related application must also be deleted.
-	appDefInformer, err := seedMgr.GetCache().GetInformer(ctx, &appskubermaticv1.ApplicationDefinition{})
-	if err != nil {
-		return fmt.Errorf("failed to get informer for applicationDefinition: %w", err)
-	}
-
-	if err = c.Watch(&source.Informer{Informer: appDefInformer}, handler.EnqueueRequestsFromMapFunc(enqueueAppInstallationForAppDef(r.userClient))); err != nil {
-		return fmt.Errorf("failed to watch applicationDefinition: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile ApplicationInstallation (i.e. install / update or uninstall application into the user-cluster).
@@ -354,8 +344,8 @@ func (r *reconciler) traceWarning(appInstallation *appskubermaticv1.ApplicationI
 
 // enqueueAppInstallationForAppDef fan-out updates from applicationDefinition to the ApplicationInstallation that reference
 // this applicationDefinition.
-func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(context.Context, ctrlruntimeclient.Object) []reconcile.Request {
-	return func(ctx context.Context, applicationDefinition ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(context.Context, *appskubermaticv1.ApplicationDefinition) []reconcile.Request {
+	return func(ctx context.Context, applicationDefinition *appskubermaticv1.ApplicationDefinition) []reconcile.Request {
 		appList := &appskubermaticv1.ApplicationInstallationList{}
 		if err := userClient.List(ctx, appList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list applicationInstallation: %w", err))

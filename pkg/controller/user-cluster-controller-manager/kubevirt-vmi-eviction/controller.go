@@ -31,11 +31,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -71,37 +70,19 @@ func Add(ctx context.Context, log *zap.SugaredLogger, userMgr, kubevirtInfraMgr 
 		clusterIsPaused: clusterIsPaused,
 	}
 
-	c, err := controller.New(controllerName, userMgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller %s: %w", controllerName, err)
-	}
+	_, err := builder.ControllerManagedBy(userMgr).
+		Named(controllerName).
+		WatchesRawSource(source.Kind(
+			kubevirtInfraMgr.GetCache(),
+			&kubevirtv1.VirtualMachineInstance{},
+			&handler.TypedEnqueueRequestForObject[*kubevirtv1.VirtualMachineInstance]{},
+			kubermaticpred.TypedFactory(func(vmi *kubevirtv1.VirtualMachineInstance) bool {
+				return vmi.Status.EvacuationNodeName != ""
+			}),
+		)).
+		Build(r)
 
-	vmiInformer, err := kubevirtInfraMgr.GetCache().GetInformer(ctx, &kubevirtv1.VirtualMachineInstance{})
-	if err != nil {
-		return fmt.Errorf("failed to get informer for VirtualMachineInstance: %w", err)
-	}
-
-	if err = c.Watch(
-		&source.Informer{Informer: vmiInformer},
-		&handler.EnqueueRequestForObject{},
-		EvacuationNodeNamePredicates(),
-	); err != nil {
-		return fmt.Errorf("failed to watch VirtualMachineInstance: %w", err)
-	}
-
-	return nil
-}
-
-// EvacuationNodeNamePredicates returns a predicate func to only process objects with vmi.Status.EvacuationNodeName != "".
-func EvacuationNodeNamePredicates() predicate.Funcs {
-	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
-		if vmi, ok := o.(*kubevirtv1.VirtualMachineInstance); ok {
-			return vmi.Status.EvacuationNodeName != ""
-		}
-		return false
-	})
+	return err
 }
 
 // Reconcile:

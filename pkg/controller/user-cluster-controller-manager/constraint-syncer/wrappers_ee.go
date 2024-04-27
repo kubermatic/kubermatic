@@ -55,7 +55,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		}
 
 		// constraint creation
-		if err := r.createConstraint(ctx, constraint, log); err != nil {
+		if err := r.createConstraint(ctx, constraint); err != nil {
 			return err
 		}
 	}

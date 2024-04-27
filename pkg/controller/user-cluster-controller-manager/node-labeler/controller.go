@@ -29,14 +29,12 @@ import (
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -60,12 +58,6 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 		recorder: mgr.GetEventRecorderFor(controllerName),
 		labels:   labels,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
 	// Ignore update events that don't touch the labels
 	labelsChangedPredicate := predicate.Funcs{
@@ -74,11 +66,12 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 		},
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &handler.EnqueueRequestForObject{}, labelsChangedPredicate); err != nil {
-		return fmt.Errorf("failed to establish watch for nodes: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(controllerName).
+		For(&corev1.Node{}, builder.WithPredicates(labelsChangedPredicate)).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
