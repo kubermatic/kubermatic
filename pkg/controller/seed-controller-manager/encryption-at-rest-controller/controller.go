@@ -40,12 +40,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -101,39 +100,23 @@ func Add(
 		overwriteRegistry: overwriteRegistry,
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return err
-	}
+	enqueueCluster := controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &corev1.Secret{}),
-		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
-		predicateutil.ByName(resources.EncryptionConfigurationSecretName),
-	); err != nil {
-		return fmt.Errorf("failed to create watcher for corev1.Secret: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Cluster{}, builder.WithPredicates(predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
+			cluster := o.(*kubermaticv1.Cluster)
+			return cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()
+		}))).
+		Watches(&corev1.Secret{}, enqueueCluster, builder.WithPredicates(predicateutil.ByName(resources.EncryptionConfigurationSecretName))).
+		Watches(&appsv1.Deployment{}, enqueueCluster, builder.WithPredicates(predicateutil.ByName(resources.ApiserverDeploymentName))).
+		Watches(&batchv1.Job{}, enqueueCluster, builder.WithPredicates(predicateutil.ByLabel(resources.AppLabelKey, encryptionresources.AppLabelValue))).
+		Build(reconciler)
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &appsv1.Deployment{}),
-		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
-		predicateutil.ByName(resources.ApiserverDeploymentName),
-	); err != nil {
-		return fmt.Errorf("failed to create watcher for appsv1.Deployment: %w", err)
-	}
-
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &batchv1.Job{}),
-		controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()),
-		predicateutil.ByLabel(resources.AppLabelKey, encryptionresources.AppLabelValue),
-	); err != nil {
-		return fmt.Errorf("failed to create watcher for batchv1.Job: %w", err)
-	}
-
-	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}, predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
-		cluster := o.(*kubermaticv1.Cluster)
-		return cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()
-	}))
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

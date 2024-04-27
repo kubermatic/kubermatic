@@ -18,7 +18,6 @@ package pvwatcher
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -34,14 +33,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -70,27 +68,23 @@ func Add(
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 	// reconcile PVCs in ClaimLost phase only
-	LostClaimPredicates := predicate.Funcs{
+	lostClaimPredicates := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			newObj := e.ObjectNew.(*corev1.PersistentVolumeClaim)
 			return newObj.Status.Phase == corev1.ClaimLost
 		},
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.PersistentVolumeClaim{}), &handler.EnqueueRequestForObject{},
-		LostClaimPredicates,
-		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
-		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %w", err)
-	}
-	return nil
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&corev1.PersistentVolumeClaim{}, builder.WithPredicates(lostClaimPredicates, predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName))).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

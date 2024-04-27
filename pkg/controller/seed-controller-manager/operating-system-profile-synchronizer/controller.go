@@ -40,6 +40,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -47,7 +48,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -101,34 +101,22 @@ func Add(
 		seedClient:                    mgr.GetClient(),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
-
-	// Watch changes for Custom Operating System Profiles.
 	customOSP := &unstructured.Unstructured{}
 	customOSP.SetAPIVersion(operatingSystemManagerAPIVersion)
 	customOSP.SetKind(customOperatingSystemProfileKind)
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), customOSP),
-		&handler.EnqueueRequestForObject{},
-		kubermaticpred.ByNamespace(namespace),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for customOperatingSystemProfiles: %w", err)
-	}
+	_, err = builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		// Watch changes for Custom Operating System Profiles.
+		For(customOSP, builder.WithPredicates(kubermaticpred.ByNamespace(namespace))).
+		// Watch changes for OSPs and then enqueue all the clusters where OSM is enabled.
+		Watches(&kubermaticv1.Cluster{}, enqueueOperatingSystemProfiles(reconciler.seedClient, namespace), builder.WithPredicates(workerlabel.Predicate(workerName), withEventFilter())).
+		Build(reconciler)
 
-	// Watch changes for OSPs and then enqueue all the clusters.
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
-		enqueueOperatingSystemProfiles(reconciler.seedClient, namespace),
-		workerlabel.Predicate(workerName),
-		withEventFilter(),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
-	}
-	return nil
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -36,12 +36,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -87,27 +87,16 @@ func Add(
 		userClusterClients:        map[string]ctrlruntimeclient.Client{},
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err = builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.ConstraintTemplate{}).
+		Watches(&kubermaticv1.Cluster{}, enqueueAllConstraintTemplates(reconciler.seedClient, reconciler.log), builder.WithPredicates(workerlabel.Predicate(workerName))).
+		Build(reconciler)
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
-		enqueueAllConstraintTemplates(reconciler.seedClient, reconciler.log),
-		workerlabel.Predicate(workerName),
-	); err != nil {
-		return fmt.Errorf("failed to establish watch for clusters: %w", err)
-	}
-
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.ConstraintTemplate{}),
-		&handler.EnqueueRequestForObject{},
-	); err != nil {
-		return fmt.Errorf("failed to create watch for constraintTemplates: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile reconciles the kubermatic constraint template on the seed cluster to all user clusters

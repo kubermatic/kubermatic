@@ -36,12 +36,11 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -78,16 +77,15 @@ func Add(
 		seedClient:              mgr.GetClient(),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err = builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.ClusterTemplateInstance{}).
+		Build(reconciler)
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ClusterTemplateInstance{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for seed cluster template instance: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile reconciles the kubermatic cluster template instance in the seed cluster.

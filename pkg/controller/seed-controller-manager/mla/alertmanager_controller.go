@@ -43,12 +43,12 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	controllerruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -89,22 +89,6 @@ func newAlertmanagerReconciler(
 		alertmanagerController: alertmanagerController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch Cluster: %w", err)
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Alertmanager{}), util.EnqueueClusterForNamespacedObject(client)); err != nil {
-		return fmt.Errorf("failed to watch Alertmanager: %w", err)
-	}
-
 	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		alertmanager := &kubermaticv1.Alertmanager{}
 		if err := client.Get(ctx, types.NamespacedName{
@@ -130,9 +114,17 @@ func newAlertmanagerReconciler(
 
 		return []reconcile.Request{}
 	})
-	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), enqueueClusterForSecret); err != nil {
-		return fmt.Errorf("failed to watch Secret: %w", err)
-	}
+
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Cluster{}).
+		Watches(&kubermaticv1.Alertmanager{}, util.EnqueueClusterForNamespacedObject(client)).
+		Watches(&corev1.Secret{}, enqueueClusterForSecret).
+		Build(reconciler)
+
 	return err
 }
 

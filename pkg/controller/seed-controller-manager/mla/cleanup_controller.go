@@ -27,11 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -56,25 +55,19 @@ func newCleanupReconciler(
 		cleanupController: cleanupController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-	request := reconcile.Request{NamespacedName: types.NamespacedName{Name: "identifier", Namespace: ""}}
-	src := source.Func(func(ctx context.Context, h handler.EventHandler, q workqueue.RateLimitingInterface, p ...predicate.Predicate) error {
-		q.Add(request)
-		return nil
-	})
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		// trigger the controller once on startup
+		WatchesRawSource(source.Func(func(ctx context.Context, rli workqueue.RateLimitingInterface) error {
+			rli.Add(reconcile.Request{NamespacedName: types.NamespacedName{Name: "identifier", Namespace: ""}})
+			return nil
+		})).
+		Build(reconciler)
 
-	if err := c.Watch(src, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 type cleanupReconciler struct {
@@ -86,9 +79,8 @@ type cleanupReconciler struct {
 	cleanupController *cleanupController
 }
 
-func (r *cleanupReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("request", request)
-	log.Debug("Processing")
+func (r *cleanupReconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
+	r.log.Debug("Processing")
 
 	if err := r.cleanupController.Cleanup(ctx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to cleanup: %w", err)

@@ -28,17 +28,15 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type ruleGroupSyncReconciler struct {
@@ -70,34 +68,22 @@ func newRuleGroupSyncReconciler(
 		ruleGroupSyncController: ruleGroupSyncController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
-	enqueueRuleGroup := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlruntimeclient.Object) []reconcile.Request {
-		ruleGroup := &kubermaticv1.RuleGroup{}
-		nn := types.NamespacedName{
+	enqueueSourceRuleGroup := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlruntimeclient.Object) []reconcile.Request {
+		return []reconcile.Request{{NamespacedName: types.NamespacedName{
 			Name:      object.GetName(),
 			Namespace: reconciler.ruleGroupSyncController.mlaNamespace,
-		}
-		err = client.Get(ctx, nn, ruleGroup)
-		if apierrors.IsNotFound(err) {
-			return []reconcile.Request{}
-		}
-		if err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to get rulegroup: %w", err))
-		}
-		return []reconcile.Request{{NamespacedName: nn}}
+		}}}
 	})
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.RuleGroup{}), enqueueRuleGroup); err != nil {
-		return fmt.Errorf("failed to watch RuleGroup: %w", err)
-	}
-	return nil
+
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		Watches(&kubermaticv1.RuleGroup{}, enqueueSourceRuleGroup).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

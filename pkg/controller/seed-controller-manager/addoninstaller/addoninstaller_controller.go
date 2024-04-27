@@ -40,12 +40,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/yaml"
 )
 
@@ -76,6 +75,14 @@ func Add(
 	configGetter provider.KubermaticConfigurationGetter,
 	versions kubermatic.Versions,
 ) error {
+	// Add index on IsDefault flag
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
+		a := rawObj.(*kubermaticv1.Addon)
+		return []string{strconv.FormatBool(a.Spec.IsDefault)}
+	}); err != nil {
+		return fmt.Errorf("failed to add index on Addon IsDefault flag: %w", err)
+	}
+
 	log = log.Named(ControllerName)
 
 	reconciler := &Reconciler{
@@ -87,31 +94,16 @@ func Add(
 		versions:     versions,
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Cluster{}).
+		Watches(&kubermaticv1.Addon{}, util.EnqueueClusterForNamespacedObject(mgr.GetClient())).
+		Build(reconciler)
 
-	// Add index on IsDefault flag
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
-		a := rawObj.(*kubermaticv1.Addon)
-		return []string{strconv.FormatBool(a.Spec.IsDefault)}
-	}); err != nil {
-		return fmt.Errorf("failed to add index on Addon IsDefault flag: %w", err)
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for Clusters: %w", err)
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Addon{}), util.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-		return fmt.Errorf("failed to create watch for Addons: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

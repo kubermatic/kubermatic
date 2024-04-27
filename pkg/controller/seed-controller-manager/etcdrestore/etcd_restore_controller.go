@@ -40,14 +40,13 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -94,15 +93,6 @@ func Add(
 		seedGetter: seedGetter,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
 	incompleteRestorePredicates := predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			restore := e.Object.(*kubermaticv1.EtcdRestore)
@@ -114,7 +104,15 @@ func Add(
 		},
 	}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.EtcdRestore{}), &handler.EnqueueRequestForObject{}, incompleteRestorePredicates)
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.EtcdRestore{}, builder.WithPredicates(incompleteRestorePredicates)).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

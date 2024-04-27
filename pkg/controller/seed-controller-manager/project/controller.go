@@ -31,12 +31,11 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -60,22 +59,16 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger, workerCount int) error {
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: workerCount})
-	if err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: workerCount,
+		}).
+		For(&kubermaticv1.Project{}).
+		Watches(&kubermaticv1.Cluster{}, util.EnqueueProjectForCluster()).
+		Build(reconciler)
 
-	// watch all Projects
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return err
-	}
-
-	// watch all Clusters, but enqueue the owning project
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), util.EnqueueProjectForCluster()); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
