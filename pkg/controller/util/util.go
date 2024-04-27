@@ -56,7 +56,11 @@ func EnqueueClusterForNamespacedObject(client ctrlruntimeclient.Client) handler.
 // if any. The seedName is put into the namespace field
 // It is used by various controllers to react to changes in the resources in the cluster namespace.
 func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+	return TypedEnqueueClusterForNamespacedObjectWithSeedName[ctrlruntimeclient.Object](client, seedName, clusterSelector)
+}
+
+func TypedEnqueueClusterForNamespacedObjectWithSeedName[T ctrlruntimeclient.Object](client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.TypedEventHandler[T] {
+	return handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, a T) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		listOpts := &ctrlruntimeclient.ListOptions{
 			LabelSelector: clusterSelector,
@@ -83,7 +87,11 @@ func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Clie
 // as namespace. If it gets an object with a non-empty name, it will log an error and not enqueue
 // anything.
 func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+	return TypedEnqueueClusterScopedObjectWithSeedName[ctrlruntimeclient.Object](seedName)
+}
+
+func TypedEnqueueClusterScopedObjectWithSeedName[T ctrlruntimeclient.Object](seedName string) handler.TypedEventHandler[T] {
+	return handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, a T) []reconcile.Request {
 		if a.GetNamespace() != "" {
 			utilruntime.HandleError(fmt.Errorf("EnqueueClusterScopedObjectWithSeedName was used with namespace scoped object %s/%s of type %T", a.GetNamespace(), a.GetName(), a))
 		}

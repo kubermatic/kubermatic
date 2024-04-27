@@ -65,7 +65,7 @@ func Add(
 	workerName string,
 ) error {
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
+	workerNamePredicate := workerlabel.Predicate(workerName)
 	versionChangedPredicate := predicate.ResourceVersionChangedPredicate{}
 
 	// As the seedlifecyclecontroller skips uninitialized seeds, we do
@@ -241,7 +241,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 
 	// Seeds are not managed by the operator, but we still need to be notified when
 	// they are marked for deletion inside seed clusters
-	if err := watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace), workerlabel.Predicates(workerName)); err != nil {
+	if err := watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace), workerlabel.Predicate(workerName)); err != nil {
 		return err
 	}
 

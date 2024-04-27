@@ -31,14 +31,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -70,9 +69,8 @@ func Add(
 		seedClients:     kuberneteshelper.SeedClientMap{},
 	}
 
-	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
+	for seedName, seedManager := range seedManagers {
+		r.seedClients[seedName] = seedManager.GetClient()
 	}
 
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
@@ -81,20 +79,15 @@ func Add(
 		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
 	})
 
-	for seedName, seedManager := range seedManagers {
-		r.seedClients[seedName] = seedManager.GetClient()
-	}
+	_, err := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.User{}, builder.WithPredicates(serviceAccountPredicate, withEventFilter())).
+		Build(r)
 
-	if err := c.Watch(
-		source.Kind(masterManager.GetCache(), &kubermaticv1.User{}),
-		&handler.EnqueueRequestForObject{},
-		serviceAccountPredicate,
-		withEventFilter(),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for user objects in master cluster: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func withEventFilter() predicate.Predicate {

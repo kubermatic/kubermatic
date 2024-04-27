@@ -31,14 +31,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const ControllerName = "kkp-usersshkey-project-ownership-controller"
@@ -58,17 +57,6 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 
 		recorder: mgr.GetEventRecorderFor(ControllerName),
 		log:      log,
-	}
-
-	// Create a new controller
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to UserSSHKey
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserSSHKey{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return err
 	}
 
 	// Notice when projects appear, then enqueue all keys that are in the project
@@ -98,11 +86,13 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 		},
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueRelatedKeys, onlyNewProjects); err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		For(&kubermaticv1.UserSSHKey{}).
+		Watches(&kubermaticv1.Project{}, enqueueRelatedKeys, builder.WithPredicates(onlyNewProjects)).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

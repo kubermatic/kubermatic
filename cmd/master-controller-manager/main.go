@@ -127,7 +127,7 @@ func main() {
 	}
 	ctrlCtx.workerNameLabelSelector = selector
 
-	ctrlCtx.workerNamePredicate = workerlabel.Predicates(runOpts.workerName)
+	ctrlCtx.workerNamePredicate = workerlabel.Predicate(runOpts.workerName)
 
 	// for development purposes, a local configuration file
 	// can be used to provide the KubermaticConfiguration

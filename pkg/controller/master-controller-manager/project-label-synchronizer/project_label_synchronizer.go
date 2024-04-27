@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -52,16 +52,8 @@ type reconciler struct {
 
 // requestFromCluster returns a reconcile.Request for the project the given
 // cluster belongs to, if any.
-func requestFromCluster(log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(_ context.Context, mo ctrlruntimeclient.Object) []reconcile.Request {
-		cluster, ok := mo.(*kubermaticv1.Cluster)
-		if !ok {
-			err := fmt.Errorf("Object was not a cluster but a %T", mo)
-			log.Error(err)
-			utilruntime.HandleError(err)
-			return nil
-		}
-
+func requestFromCluster(log *zap.SugaredLogger) handler.TypedEventHandler[*kubermaticv1.Cluster] {
+	return handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, cluster *kubermaticv1.Cluster) []reconcile.Request {
 		labelValue, hasLabel := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 		if !hasLabel {
 			log.Debugw("Cluster has no project label", "cluster", cluster.Name)
@@ -93,29 +85,30 @@ func Add(
 		workerNameLabelSelector: workerSelector,
 	}
 
-	ctrlOpts := controller.Options{
-		Reconciler:              r,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, masterManager, ctrlOpts)
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	bldr := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Project{})
+
+	workerNamePred := workerlabel.TypedPredicate[*kubermaticv1.Cluster](workerName)
+	handler := requestFromCluster(log)
 
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
 
-		seedClusterWatch := source.Kind(seedManager.GetCache(), &kubermaticv1.Cluster{})
-		if err := c.Watch(seedClusterWatch, requestFromCluster(log), workerlabel.Predicates(workerName)); err != nil {
-			return fmt.Errorf("failed to watch clusters in seed %q: %w", seedName, err)
-		}
+		bldr.WatchesRawSource(source.Kind(
+			seedManager.GetCache(),
+			&kubermaticv1.Cluster{},
+			handler,
+			workerNamePred,
+		))
 	}
 
-	if err := c.Watch(source.Kind(masterManager.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch projects: %w", err)
-	}
+	_, err = bldr.Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

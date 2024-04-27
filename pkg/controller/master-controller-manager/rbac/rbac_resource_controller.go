@@ -27,12 +27,10 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type resourcesController struct {
@@ -51,31 +49,31 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 	log.Debug("considering master cluster provider for resources")
 
 	for _, resource := range resources {
-		clonedObject := resource.object.DeepCopyObject()
+		rlog := log.With("kind", resource.object.GetObjectKind().GroupVersionKind().Kind)
+		if resource.destination == destinationSeed {
+			rlog.Debug("skipping adding a shared informer and indexer for master provider, as it is meant only for the seed cluster provider")
+			continue
+		}
+
+		clonedObject := resource.object.DeepCopyObject().(ctrlruntimeclient.Object)
 
 		mc := &resourcesController{
 			projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
-			log:                   log.With("kind", clonedObject.GetObjectKind().GroupVersionKind().Kind),
+			log:                   rlog,
 			metrics:               metrics,
 			projectResources:      resources,
 			client:                mgr.GetClient(),
 			restMapper:            mgr.GetRESTMapper(),
 			providerName:          "master",
-			objectType:            clonedObject.(ctrlruntimeclient.Object),
+			objectType:            clonedObject,
 		}
 
 		// Create a new controller
-		rcc, err := controller.New("rbac_generator_resources", mgr, controller.Options{Reconciler: mc})
+		_, err := builder.ControllerManagedBy(mgr).
+			Named("rbac_generator_resources").
+			For(clonedObject, builder.WithPredicates(predicateutil.Factory(resource.predicate))).
+			Build(mc)
 		if err != nil {
-			return nil, err
-		}
-
-		if resource.destination == destinationSeed {
-			mc.log.Debug("skipping adding a shared informer and indexer for master provider, as it is meant only for the seed cluster provider")
-			continue
-		}
-
-		if err = rcc.Watch(source.Kind(mgr.GetCache(), clonedObject.(ctrlruntimeclient.Object)), &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 			return nil, err
 		}
 	}
@@ -85,31 +83,32 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		seedLog.Debug("building controllers for seed", seedName)
 
 		for _, resource := range resources {
-			clonedObject := resource.object.DeepCopyObject()
+			rlog := seedLog.With("kind", resource.object.GetObjectKind().GroupVersionKind().Kind)
+
+			if len(resource.destination) == 0 {
+				rlog.Debugf("skipping adding a shared informer and indexer, as it is meant only for the master cluster provider")
+				continue
+			}
+
+			clonedObject := resource.object.DeepCopyObject().(ctrlruntimeclient.Object)
 
 			c := &resourcesController{
 				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", seedName)),
-				log:                   seedLog.With("kind", clonedObject.GetObjectKind().GroupVersionKind().Kind),
+				log:                   rlog,
 				metrics:               metrics,
 				projectResources:      resources,
 				client:                seedManager.GetClient(),
 				restMapper:            seedManager.GetRESTMapper(),
 				providerName:          seedName,
-				objectType:            clonedObject.(ctrlruntimeclient.Object),
+				objectType:            clonedObject,
 			}
 
 			// Create a new controller
-			rc, err := controller.New(fmt.Sprintf("rbac_generator_resources_%s", seedName), seedManager, controller.Options{Reconciler: c})
+			_, err := builder.ControllerManagedBy(seedManager).
+				Named(fmt.Sprintf("rbac_generator_resources_%s", seedName)).
+				For(clonedObject, builder.WithPredicates(predicateutil.Factory(resource.predicate))).
+				Build(c)
 			if err != nil {
-				return nil, err
-			}
-
-			if len(resource.destination) == 0 {
-				c.log.Debugf("skipping adding a shared informer and indexer, as it is meant only for the master cluster provider")
-				continue
-			}
-
-			if err = rc.Watch(source.Kind(seedManager.GetCache(), clonedObject.(ctrlruntimeclient.Object)), &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 				return nil, err
 			}
 		}

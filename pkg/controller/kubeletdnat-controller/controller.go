@@ -34,13 +34,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -84,44 +84,43 @@ func Add(
 		log:                      log,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: 1,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 1,
+		}).
+		Watches(&corev1.Node{}, &handler.Funcs{
+			CreateFunc: func(_ context.Context, e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+				queue.Add(reconcile.Request{})
+			},
+			DeleteFunc: func(_ context.Context, e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+				queue.Add(reconcile.Request{})
+			},
+			GenericFunc: func(_ context.Context, e event.GenericEvent, queue workqueue.RateLimitingInterface) {
+				queue.Add(reconcile.Request{})
+			},
+			UpdateFunc: func(_ context.Context, e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+				newNode, ok := e.ObjectNew.(*corev1.Node)
+				if !ok {
+					log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)
+					queue.Add(reconcile.Request{})
+				}
+				oldNode, ok := e.ObjectOld.(*corev1.Node)
+				if !ok {
+					log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectOld)
+					queue.Add(reconcile.Request{})
+				}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), &handler.Funcs{
-		CreateFunc: func(_ context.Context, e event.CreateEvent, queue workqueue.RateLimitingInterface) {
-			queue.Add(reconcile.Request{})
-		},
-		DeleteFunc: func(_ context.Context, e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
-			queue.Add(reconcile.Request{})
-		},
-		GenericFunc: func(_ context.Context, e event.GenericEvent, queue workqueue.RateLimitingInterface) {
-			queue.Add(reconcile.Request{})
-		},
-		UpdateFunc: func(_ context.Context, e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
-			newNode, ok := e.ObjectNew.(*corev1.Node)
-			if !ok {
-				log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)
-				queue.Add(reconcile.Request{})
-			}
-			oldNode, ok := e.ObjectOld.(*corev1.Node)
-			if !ok {
-				log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectOld)
-				queue.Add(reconcile.Request{})
-			}
+				// Only sync if nodes changed their addresses. Since Nodes get updated every 5 sec due to the HeartBeat
+				// it would otherwise cause a lot of useless syncs
+				if !equality.Semantic.DeepEqual(newNode.Status.Addresses, oldNode.Status.Addresses) {
+					queue.Add(reconcile.Request{})
+				}
+			},
+		}).
+		Build(reconciler)
 
-			// Only sync if nodes changed their addresses. Since Nodes get updated every 5 sec due to the HeartBeat
-			// it would otherwise cause a lot of useless syncs
-			if !equality.Semantic.DeepEqual(newNode.Status.Addresses, oldNode.Status.Addresses) {
-				queue.Add(reconcile.Request{})
-			}
-		},
-	})
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -45,7 +46,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -105,23 +105,24 @@ func main() {
 		log.Fatalw("Failed to construct mgr", zap.Error(err))
 	}
 
-	r := &LBUpdater{
-		client:      mgr.GetClient(),
-		lbNamespace: lbNamespace,
-		lbName:      lbName,
-		namespace:   namespace,
-		log:         log,
-		opts:        opts,
-	}
-
-	ctrl, err := controller.New("lb-updater", mgr,
-		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})
+	_, err = builder.ControllerManagedBy(mgr).
+		Named("lb-updater").
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 1,
+		}).
+		Watches(&corev1.Service{}, controllerutil.EnqueueConst("")).
+		Build(&LBUpdater{
+			client:      mgr.GetClient(),
+			lbNamespace: lbNamespace,
+			lbName:      lbName,
+			namespace:   namespace,
+			log:         log,
+			opts:        opts,
+		})
 	if err != nil {
 		log.Fatalw("Failed to construct controller", zap.Error(err))
 	}
-	if err := ctrl.Watch(source.Kind(mgr.GetCache(), &corev1.Service{}), controllerutil.EnqueueConst("")); err != nil {
-		log.Fatalw("Failed to add watch for Service", zap.Error(err))
-	}
+
 	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("Manager ended", zap.Error(err))
 	}

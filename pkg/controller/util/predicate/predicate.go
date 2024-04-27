@@ -27,18 +27,22 @@ import (
 // on CREATE, UPDATE and DELETE events. For UPDATE events, the filter is applied
 // to both the old and new object and OR's the result.
 func Factory(filter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
+	return TypedFactory(filter)
+}
+
+func TypedFactory[T ctrlruntimeclient.Object](filter func(o T) bool) predicate.TypedFuncs[T] {
 	if filter == nil {
-		return predicate.Funcs{}
+		return predicate.TypedFuncs[T]{}
 	}
 
-	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
+	return predicate.TypedFuncs[T]{
+		CreateFunc: func(e event.TypedCreateEvent[T]) bool {
 			return filter(e.Object)
 		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
+		UpdateFunc: func(e event.TypedUpdateEvent[T]) bool {
 			return filter(e.ObjectOld) || filter(e.ObjectNew)
 		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
+		DeleteFunc: func(e event.TypedDeleteEvent[T]) bool {
 			return filter(e.Object)
 		},
 	}
@@ -70,8 +74,12 @@ func ByNamespace(namespace string) predicate.Funcs {
 
 // ByName returns a predicate func that only includes objects in the given names.
 func ByName(names ...string) predicate.Funcs {
-	namesSet := sets.New[string](names...)
-	return Factory(func(o ctrlruntimeclient.Object) bool {
+	return TypedByName[ctrlruntimeclient.Object](names...)
+}
+
+func TypedByName[T ctrlruntimeclient.Object](names ...string) predicate.TypedFuncs[T] {
+	namesSet := sets.New(names...)
+	return TypedFactory(func(o T) bool {
 		return namesSet.Has(o.GetName())
 	})
 }

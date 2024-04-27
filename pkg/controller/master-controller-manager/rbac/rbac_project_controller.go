@@ -25,13 +25,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -72,13 +70,12 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	}
 
 	// Create a new controller
-	cc, err := controller.New("rbac_generator_for_project", mgr, controller.Options{Reconciler: c})
-	if err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named("rbac_generator_for_project").
+		For(&kubermaticv1.Project{}, builder.WithPredicates(workerPredicate)).
+		Build(c)
 
-	// Watch for changes to Projects
-	return cc.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), &handler.EnqueueRequestForObject{}, workerPredicate)
+	return err
 }
 
 func (c *projectController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {

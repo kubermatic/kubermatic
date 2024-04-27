@@ -75,7 +75,7 @@ func Add(
 	}
 
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
+	workerNamePredicate := workerlabel.Predicate(workerName)
 
 	// put the config's identifier on the queue
 	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {

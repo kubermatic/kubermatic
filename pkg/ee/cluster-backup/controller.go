@@ -104,7 +104,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConn
 		return fmt.Errorf("failed to create controller: %w", err)
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}, workerlabel.Predicates(workerName), predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}, workerlabel.Predicate(workerName), predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
 		// Only watch clusters that are in a state where they can be reconciled.
 		return !cluster.Spec.Pause && cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""

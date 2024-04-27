@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -82,41 +83,34 @@ func Add(
 		seedClients:  kuberneteshelper.SeedClientMap{},
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		Watches(&kubermaticv1.UserSSHKey{}, enqueueAllClusters(reconciler.seedClients, workerSelector))
 
 	for seedName, seedManager := range seedManagers {
 		reconciler.seedClients[seedName] = seedManager.GetClient()
 
-		secretSource := source.Kind(seedManager.GetCache(), &corev1.Secret{})
-		if err := c.Watch(
-			secretSource,
-			controllerutil.EnqueueClusterForNamespacedObjectWithSeedName(seedManager.GetClient(), seedName, workerSelector),
-			predicateutil.ByName(resources.UserSSHKeys),
-		); err != nil {
-			return fmt.Errorf("failed to establish watch for secrets in seed %s: %w", seedName, err)
-		}
+		bldr.WatchesRawSource(source.Kind(
+			seedManager.GetCache(),
+			&corev1.Secret{},
+			controllerutil.TypedEnqueueClusterForNamespacedObjectWithSeedName[*corev1.Secret](seedManager.GetClient(), seedName, workerSelector),
+			predicateutil.TypedByName[*corev1.Secret](resources.UserSSHKeys),
+		))
 
-		clusterSource := source.Kind(seedManager.GetCache(), &kubermaticv1.Cluster{})
-		if err := c.Watch(
-			clusterSource,
-			controllerutil.EnqueueClusterScopedObjectWithSeedName(seedName),
-			workerlabel.Predicates(workerName),
-		); err != nil {
-			return fmt.Errorf("failed to establish watch for clusters in seed %s: %w", seedName, err)
-		}
+		bldr.WatchesRawSource(source.Kind(
+			seedManager.GetCache(),
+			&kubermaticv1.Cluster{},
+			controllerutil.TypedEnqueueClusterScopedObjectWithSeedName[*kubermaticv1.Cluster](seedName),
+			workerlabel.TypedPredicate[*kubermaticv1.Cluster](workerName),
+		))
 	}
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.UserSSHKey{}),
-		enqueueAllClusters(reconciler.seedClients, workerSelector),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for userSSHKey: %w", err)
-	}
+	_, err = bldr.Build(reconciler)
 
-	return nil
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

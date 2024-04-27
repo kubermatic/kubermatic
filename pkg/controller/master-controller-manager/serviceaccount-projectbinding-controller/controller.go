@@ -35,14 +35,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -64,20 +63,10 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 		recorder: mgr.GetEventRecorderFor(controllerName),
 		log:      log,
 	}
-	// Create a new controller
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
 
-	// Watch for changes to User
 	isServiceAccount := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		return kubermaticv1helper.IsProjectServiceAccount(object.GetName())
 	})
-
-	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.User{}), &handler.EnqueueRequestForObject{}, isServiceAccount); err != nil {
-		return err
-	}
 
 	// Notice when projects appear, then enqueue all service account users in that project
 	enqueueRelatedUsers := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -106,11 +95,15 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 		},
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueRelatedUsers, onlyNewProjects); err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(controllerName).
+		// Watch for changes to service account Users
+		For(&kubermaticv1.User{}, builder.WithPredicates(isServiceAccount)).
+		// watch all KubermaticConfigurations in the given namespace
+		Watches(&kubermaticv1.Project{}, enqueueRelatedUsers, builder.WithPredicates(onlyNewProjects)).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconcileServiceAccountProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

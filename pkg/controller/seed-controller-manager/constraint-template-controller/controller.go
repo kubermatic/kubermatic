@@ -95,7 +95,7 @@ func Add(
 	if err := c.Watch(
 		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
 		enqueueAllConstraintTemplates(reconciler.seedClient, reconciler.log),
-		workerlabel.Predicates(workerName),
+		workerlabel.Predicate(workerName),
 	); err != nil {
 		return fmt.Errorf("failed to establish watch for clusters: %w", err)
 	}

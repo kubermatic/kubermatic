@@ -42,13 +42,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -63,18 +61,11 @@ type Reconciler struct {
 }
 
 // Add creates a cluster controller.
-func Add(
-	ctx context.Context,
-	mgr manager.Manager,
-	log *zap.SugaredLogger) error {
+func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error {
 	reconciler := &Reconciler{
 		log:      log.Named(ControllerName),
 		Client:   mgr.GetClient(),
 		recorder: mgr.GetEventRecorderFor(ControllerName),
-	}
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
-	if err != nil {
-		return err
 	}
 
 	// Watch for changes to ExternalCluster except KubeOne and generic clusters.
@@ -83,7 +74,18 @@ func Add(
 		return ok && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterKubeOneProvider && externalCluster.Spec.CloudSpec.ProviderName != kubermaticv1.ExternalClusterBringYourOwnProvider
 	})
 
-	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ExternalCluster{}), &handler.EnqueueRequestForObject{}, skipKubeOneClusters, predicate.GenerationChangedPredicate{})
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		For(
+			&kubermaticv1.ExternalCluster{},
+			builder.WithPredicates(
+				skipKubeOneClusters,
+				predicate.GenerationChangedPredicate{},
+			),
+		).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

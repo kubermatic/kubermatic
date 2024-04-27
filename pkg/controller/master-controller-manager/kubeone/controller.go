@@ -51,14 +51,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/utils/ptr"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/yaml"
 )
 
@@ -108,33 +106,7 @@ type reconciler struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 }
 
-func Add(
-	ctx context.Context,
-	mgr manager.Manager,
-	log *zap.SugaredLogger) error {
-	reconciler := &reconciler{
-		Client:            mgr.GetClient(),
-		log:               log.Named(ControllerName),
-		secretKeySelector: provider.SecretKeySelectorValueFuncFactory(ctx, mgr.GetClient()),
-	}
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
-	if err != nil {
-		return err
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ExternalCluster{}),
-		&handler.EnqueueRequestForObject{},
-		withEventFilter()); err != nil {
-		return fmt.Errorf("failed to create externalcluster watcher: %w", err)
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &batchv1.Job{}),
-		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), &kubermaticv1.ExternalCluster{}, handler.OnlyControllerOwner()),
-		updateEventsOnly(),
-	); err != nil {
-		return fmt.Errorf("failed to create kubeone job watcher: %w", err)
-	}
-
+func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podPhaseKey, func(rawObj ctrlruntimeclient.Object) []string {
 		pod := rawObj.(*corev1.Pod)
 		return []string{string(pod.Status.Phase)}
@@ -142,7 +114,19 @@ func Add(
 		return fmt.Errorf("failed to add index on pod.Status.Phase: %w", err)
 	}
 
-	return nil
+	reconciler := &reconciler{
+		Client:            mgr.GetClient(),
+		log:               log.Named(ControllerName),
+		secretKeySelector: provider.SecretKeySelectorValueFuncFactory(ctx, mgr.GetClient()),
+	}
+
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		For(&kubermaticv1.ExternalCluster{}, builder.WithPredicates(withEventFilter())).
+		Owns(&batchv1.Job{}, builder.WithPredicates(updateEventsOnly())).
+		Build(reconciler)
+
+	return err
 }
 
 func updateEventsOnly() predicate.Predicate {

@@ -98,7 +98,7 @@ func Add(
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), handler.EnqueueRequestsFromMapFunc(enqueueSecret(r.client, r.namespace)), workerlabel.Predicates(workerName), noDeleteEventPredicate()); err != nil {
+	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), handler.EnqueueRequestsFromMapFunc(enqueueSecret(r.client, r.namespace)), workerlabel.Predicate(workerName), noDeleteEventPredicate()); err != nil {
 		return fmt.Errorf("failed to create watch for secrets: %w", err)
 	}
 
