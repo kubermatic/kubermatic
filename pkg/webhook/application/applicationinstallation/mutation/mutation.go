@@ -37,7 +37,7 @@ import (
 // AdmissionHandler for mutating Kubermatic ApplicationInstallation CRD.
 type AdmissionHandler struct {
 	log     *zap.SugaredLogger
-	decoder *admission.Decoder
+	decoder admission.Decoder
 }
 
 // NewAdmissionHandler returns a new ApplicationInstallation AdmissionHandler.
