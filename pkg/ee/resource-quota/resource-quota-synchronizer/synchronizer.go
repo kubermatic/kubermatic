@@ -37,12 +37,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -72,23 +70,16 @@ func Add(masterMgr manager.Manager,
 		recorder:     masterMgr.GetEventRecorderFor(ControllerName),
 	}
 
-	c, err := controller.New(ControllerName, masterMgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
-
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
 	}
 
-	// Watch for changes to ResourceQuota
-	if err := c.Watch(source.Kind(masterMgr.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch resource quotas: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(masterMgr).
+		Named(ControllerName).
+		For(&kubermaticv1.ResourceQuota{}).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func resourceQuotaReconcilerFactory(rq *kubermaticv1.ResourceQuota) reconciling.NamedResourceQuotaReconcilerFactory {

@@ -42,13 +42,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -73,19 +72,15 @@ func Add(mgr manager.Manager, numWorkers int, log *zap.SugaredLogger) error {
 		log:      log,
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.ClusterBackupStorageLocation{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Build(reconciler)
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ClusterBackupStorageLocation{}), &handler.EnqueueRequestForObject{}, predicate.GenerationChangedPredicate{}); err != nil {
-		return fmt.Errorf("failed to create watch for ClusterBackupStorageLocation: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

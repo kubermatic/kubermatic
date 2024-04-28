@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -68,24 +69,26 @@ func Add(mgr manager.Manager,
 		seedClients:  map[string]ctrlruntimeclient.Client{},
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.ResourceQuota{})
 
 	for seedName, seedManager := range seedManagers {
 		reconciler.seedClients[seedName] = seedManager.GetClient()
 
-		if err := c.Watch(source.Kind(seedManager.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
-			return fmt.Errorf("failed to establish watch for resource quotas in seed %q: %w", seedName, err)
-		}
+		bldr.WatchesRawSource(source.Kind(
+			seedManager.GetCache(),
+			&kubermaticv1.ResourceQuota{},
+			&handler.TypedEnqueueRequestForObject[*kubermaticv1.ResourceQuota]{},
+		))
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.ResourceQuota{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for resource quota: %w", err)
-	}
+	_, err := bldr.Build(reconciler)
 
-	return nil
+	return err
 }
 
 // Reconcile calculates the resource usage for a resource quota and sets the local usage.

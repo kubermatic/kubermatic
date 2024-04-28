@@ -43,12 +43,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const controllerName = "resource_usage_controller"
@@ -76,19 +74,13 @@ func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName s
 		recorder:        userMgr.GetEventRecorderFor(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
-	c, err := controller.New(controllerName, userMgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
-	// Watch for changes to Machines
-	if err = c.Watch(source.Kind(userMgr.GetCache(), &clusterv1alpha1.Machine{}), &handler.EnqueueRequestForObject{}, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
-		return fmt.Errorf("failed to establish watch for Machines: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(userMgr).
+		Named(controllerName).
+		For(&clusterv1alpha1.Machine{}, builder.WithPredicates(predicate.ByNamespace(metav1.NamespaceSystem))).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
