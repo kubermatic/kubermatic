@@ -94,13 +94,13 @@ require (
 	k8s.io/apimachinery v0.30.0
 	k8s.io/apiserver v0.30.0
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
-	k8s.io/cli-runtime v0.29.3
+	k8s.io/cli-runtime v0.30.0
 	k8s.io/client-go v0.30.0
 	k8s.io/code-generator v0.30.0
 	k8s.io/klog/v2 v2.120.1
-	k8s.io/kube-aggregator v0.29.3
-	k8s.io/kubectl v0.29.3
-	k8s.io/metrics v0.29.3
+	k8s.io/kube-aggregator v0.30.0
+	k8s.io/kubectl v0.30.0
+	k8s.io/metrics v0.30.0
 	k8s.io/test-infra v0.0.0-20240318095924-244bb169e955
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
 	kubevirt.io/api v1.2.0
