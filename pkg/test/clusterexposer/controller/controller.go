@@ -31,8 +31,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -64,30 +64,17 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		outerAPIReader: outer.GetAPIReader(),
 		jobID:          jobID,
 	}
-	c, err := controller.New(controllerName, inner, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
-	if err := c.Watch(
-		source.Kind(inner.GetCache(), &corev1.Service{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.Factory(
-			func(o ctrlruntimeclient.Object) bool {
-				if _, exists := o.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
-					return true
-				}
-				return false
-			},
-		),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for services in the inner cluster: %w", err)
-	}
+	exposedServicesOnly := predicate.Factory(
+		func(o ctrlruntimeclient.Object) bool {
+			if _, exists := o.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
+				return true
+			}
+			return false
+		},
+	)
 
-	outerServiceWatch := source.Kind(outer.GetCache(), &corev1.Service{})
-	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+	outererServiceMapper := func(_ context.Context, a *corev1.Service) []reconcile.Request {
 		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
 		if !exists {
 			return nil
@@ -101,15 +88,24 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		return []reconcile.Request{{
 			NamespacedName: types.NamespacedName{Namespace: split[0], Name: split[1]},
 		}}
-	})
-	outerServicePredicate := predicate.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetLabels()[labelKey] == jobID
-	})
-	if err := c.Watch(outerServiceWatch, outererServiceMapper, outerServicePredicate); err != nil {
-		return fmt.Errorf("failed to create watch for services in outer cluster: %w", err)
 	}
 
-	return nil
+	outerServicePredicate := predicate.TypedFactory(func(o *corev1.Service) bool {
+		return o.GetLabels()[labelKey] == jobID
+	})
+
+	_, err := builder.ControllerManagedBy(inner).
+		Named(controllerName).
+		For(&corev1.Service{}, builder.WithPredicates(exposedServicesOnly)).
+		WatchesRawSource(source.Kind(
+			outer.GetCache(),
+			&corev1.Service{},
+			handler.TypedEnqueueRequestsFromMapFunc(outererServiceMapper),
+			outerServicePredicate,
+		)).
+		Build(r)
+
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
