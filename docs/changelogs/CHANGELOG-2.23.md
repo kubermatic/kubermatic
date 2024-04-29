@@ -14,6 +14,26 @@
 - [v2.23.11](#v22311)
 - [v2.23.12](#v22312)
 - [v2.23.13](#v22313)
+- [v2.23.14](#v22314)
+
+## [v2.23.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.14)
+
+### New Feature
+
+- Seed MLA: introduce `signout_redirect_url` field to configure the URL to redirect the user to after signing out from Grafana ([#13313](https://github.com/kubermatic/kubermatic/pull/13313))
+
+### Bugfixes
+
+- Enable `local` command for Enterprise Edition ([#13333](https://github.com/kubermatic/kubermatic/pull/13333))
+- Fix template value for MachineDeployments in edit mode ([#6669](https://github.com/kubermatic/dashboard/pull/6669))
+- Hotfix to mitigate a bug in new releases of Chromium that causes browser crashes on `mat-select` component. For more details: https://issuetracker.google.com/issues/335553723 ([#6667](https://github.com/kubermatic/dashboard/pull/6667))
+- Improve Helm repository prefix handling for system applications; only prepend `oci://` prefix if it doesn't already exist in the specified URL ([#13343](https://github.com/kubermatic/kubermatic/pull/13343))
+- Installer does not validate IAP `client_secrets` for Grafana and Alertmanager the same way it does for `encryption_key` ([#13315](https://github.com/kubermatic/kubermatic/pull/13315))
+
+### Chore
+
+- Update machine-controller to v1.57.7 ([#13347](https://github.com/kubermatic/kubermatic/pull/13347))
+
 
 ## [v2.23.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.13)
 
@@ -36,7 +56,7 @@
 ### Bugfixes
 
 - Exclude `test` folders which contain symlinks that break once the archive is untarred ([#13151](https://github.com/kubermatic/kubermatic/pull/13151))
-- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))       
+- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))
 - Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
 - Fix a bug where dedicated credentials were incorrectly being required as mandatory input when editing vSphere provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
 
