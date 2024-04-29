@@ -43,7 +43,7 @@ require (
 	github.com/imdario/mergo v0.3.16
 	github.com/jackpal/gateway v1.0.10
 	github.com/kubermatic/grafanasdk v0.9.13
-	github.com/kubermatic/machine-controller v1.59.0
+	github.com/kubermatic/machine-controller v1.59.1
 	github.com/minio/minio-go/v7 v7.0.59
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/olekukonko/tablewriter v0.0.5
