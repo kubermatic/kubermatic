@@ -7,6 +7,27 @@
 - [v2.24.4](#v2244)
 - [v2.24.5](#v2245)
 - [v2.24.6](#v2246)
+- [v2.24.7](#v2247)
+
+## [v2.24.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.7)
+
+### New Feature
+
+- Monitoring: introduce `signout_redirect_url` field to configure the URL to redirect the user to after signing out from Grafana ([#13313](https://github.com/kubermatic/kubermatic/pull/13313))
+
+### Bugfixes
+
+- Enable `local` command for Enterprise Edition ([#13333](https://github.com/kubermatic/kubermatic/pull/13333))
+- Fix template value for MachineDeployments in edit mode ([#6669](https://github.com/kubermatic/dashboard/pull/6669))
+- Hotfix to mitigate a bug in new releases of Chromium that causes browser crashes on `mat-select` component. For more details: https://issuetracker.google.com/issues/335553723 ([#6667](https://github.com/kubermatic/dashboard/pull/6667))
+- Fix Azure CCM not being reconciled because of labelling changes ([#13334](https://github.com/kubermatic/kubermatic/pull/13334))
+- Improve Helm repository prefix handling for system applications; only prepend `oci://` prefix if it doesn't already exist in the specified URL ([#13336](https://github.com/kubermatic/kubermatic/pull/13336))
+- Installer does not validate IAP `client_secrets` for Grafana and Alertmanager the same way it does for `encryption_key` ([#13315](https://github.com/kubermatic/kubermatic/pull/13315))
+
+### Chore
+
+- Update machine-controller to v1.58.4 ([#13348](https://github.com/kubermatic/kubermatic/pull/13348))
+
 
 ## [v2.24.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.6)
 
@@ -21,7 +42,7 @@
 ### Updates
 
 - Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13246](https://github.com/kubermatic/kubermatic/pull/13246))
-- Add support for Kubernetes 1.27.13 and 1.28.9 (fixes CVE-2024-3177) ([#13299](https://github.com/kubermatic/kubermatic/pull/13299))     
+- Add support for Kubernetes 1.27.13 and 1.28.9 (fixes CVE-2024-3177) ([#13299](https://github.com/kubermatic/kubermatic/pull/13299))
 - Update to Go 1.21.9 ([#13247](https://github.com/kubermatic/kubermatic/pull/13247))
 
 ### Cleanup
@@ -37,7 +58,7 @@
 - Fix missing image registry override for hubble-ui components if Cilium is deployed as System Application ([#13139](https://github.com/kubermatic/kubermatic/pull/13139))
 - Fix: usercluster-controller-manager failed to reconcile cluster with disable CSI drivers ([#13183](https://github.com/kubermatic/kubermatic/pull/13183))
 - Fix Azure loadbalancer-related issues by updating Azure CCM from v1.28.0 to v1.28.5 for the user clusters created with Kubernetes v1.28 ([#13173](https://github.com/kubermatic/kubermatic/pull/13173))
-- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))       
+- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))
 - Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
 - Fix a bug where dedicated credentials were incorrectly being required as mandatory input when editing vSphere provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
 
