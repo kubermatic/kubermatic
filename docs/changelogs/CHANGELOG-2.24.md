@@ -7,6 +7,27 @@
 - [v2.24.4](#v2244)
 - [v2.24.5](#v2245)
 - [v2.24.6](#v2246)
+- [v2.24.7](#v2247)
+
+## [v2.24.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.7)
+
+### New Feature
+
+- Monitoring: introduce `signout_redirect_url` field to configure the URL to redirect the user to after signing out from Grafana ([#13313](https://github.com/kubermatic/kubermatic/pull/13313))
+
+### Bugfixes
+
+- Enable `local` command for Enterprise Edition ([#13333](https://github.com/kubermatic/kubermatic/pull/13333))
+- Fix template value for MachineDeployments in edit mode ([#6669](https://github.com/kubermatic/dashboard/pull/6669))
+- Hotfix to mitigate a bug in new releases of Chromium that causes browser crashes on `mat-select` component. For more details: https://issuetracker.google.com/issues/335553723 ([#6667](https://github.com/kubermatic/dashboard/pull/6667))
+- Fix Azure CCM not being reconciled because of labelling changes ([#13334](https://github.com/kubermatic/kubermatic/pull/13334))
+- Improve Helm repository prefix handling for system applications; only prepend `oci://` prefix if it doesn't already exist in the specified URL ([#13336](https://github.com/kubermatic/kubermatic/pull/13336))
+- Installer does not validate IAP `client_secrets` for Grafana and Alertmanager the same way it does for `encryption_key` ([#13315](https://github.com/kubermatic/kubermatic/pull/13315))
+
+### Chore
+
+- Update machine-controller to v1.58.4 ([#13348](https://github.com/kubermatic/kubermatic/pull/13348))
+
 
 ## [v2.24.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.6)
 
@@ -21,7 +42,7 @@
 ### Updates
 
 - Add Canal CNI version v3.27.3, having a fix to the ipset incompatibility bug ([#13246](https://github.com/kubermatic/kubermatic/pull/13246))
-- Add support for Kubernetes 1.27.13 and 1.28.9 (fixes CVE-2024-3177) ([#13299](https://github.com/kubermatic/kubermatic/pull/13299))     
+- Add support for Kubernetes 1.27.13 and 1.28.9 (fixes CVE-2024-3177) ([#13299](https://github.com/kubermatic/kubermatic/pull/13299))
 - Update to Go 1.21.9 ([#13247](https://github.com/kubermatic/kubermatic/pull/13247))
 
 ### Cleanup
@@ -37,7 +58,7 @@
 - Fix missing image registry override for hubble-ui components if Cilium is deployed as System Application ([#13139](https://github.com/kubermatic/kubermatic/pull/13139))
 - Fix: usercluster-controller-manager failed to reconcile cluster with disable CSI drivers ([#13183](https://github.com/kubermatic/kubermatic/pull/13183))
 - Fix Azure loadbalancer-related issues by updating Azure CCM from v1.28.0 to v1.28.5 for the user clusters created with Kubernetes v1.28 ([#13173](https://github.com/kubermatic/kubermatic/pull/13173))
-- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))       
+- Fix a bug where OSPs were not being listed for VMware Cloud Director ([#6592](https://github.com/kubermatic/dashboard/pull/6592))
 - Fix invalid project ID in API requests for Nutanix provider ([#6572](https://github.com/kubermatic/dashboard/pull/6572))
 - Fix a bug where dedicated credentials were incorrectly being required as mandatory input when editing vSphere provider settings for a cluster ([#6567](https://github.com/kubermatic/dashboard/pull/6567))
 
@@ -73,7 +94,7 @@
 ### Updates
 
 - Update metering to v1.1.2, fixing an error when a custom CA bundle is used ([#13013](https://github.com/kubermatic/kubermatic/pull/13013))
-- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1) ([#13082](https://github.com/kubermatic/kubermatic/pull/13082)) 
+- Update operating-system-manager (OSM) to [v1.4.1](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.4.1) ([#13082](https://github.com/kubermatic/kubermatic/pull/13082))
   - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes.
 - Update go-git. This enables Applications to work with private Azure DevOps Git repositories ([#12995](https://github.com/kubermatic/kubermatic/pull/12995))
 
@@ -85,7 +106,7 @@
 - **ACTION REQUIRED:** User Cluster MLA `cortex` chart has been upgraded to resolve issues for cortex-compactor and improve stability of the User Cluster MLA feature. Few actions are required to be taken to use new upgraded charts ([#12935](https://github.com/kubermatic/kubermatic/pull/12935))
     - Refer to [Upstream helm chart values](https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml) to see the latest default values
     - Some of the values from earlier `values.yaml` are now incompatible with latest version. They are removed in the `values.yaml` in the current chart. But if you had copied the original values.yaml to customize it further, you may see that `kubermatic-installer` will detect such incompatible options and churn out errors and explain that action that needs to be taken.
-    - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block 
+    - The memcached-* charts are now subcharts of cortex chart so if you provided configuration for `memcached-*` blocks in your `values.yaml` for user-mla, you must move them under `cortex:` block
 
 ### Updates
 
@@ -183,7 +204,7 @@ This release adds support for [KubeLB](https://docs.kubermatic.com/kubelb/), a c
     - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
     - Removal of `average-available-cpu-cores`, use `average-available-cpu-millicores` instead
   - Namespace reports
-    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead 
+    - Removal of `total-used-cpu-seconds`, use `average-used-cpu-millicores` instead
 - Add `monthly` parameter for metering monthly report generation ([#12544](https://github.com/kubermatic/kubermatic/pull/12544))
 - Update metering component to v1.1.1, fixing highly inaccurate data in cluster reports (see [Action Required](#action-required) for more details) ([#12822](https://github.com/kubermatic/kubermatic/pull/12822))
 
