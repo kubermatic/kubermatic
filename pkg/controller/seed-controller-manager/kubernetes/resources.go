@@ -55,6 +55,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -430,8 +431,39 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 }
 
 func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	if cluster.Spec.Cloud.ProviderName == string(kubermaticv1.AzureCloudProvider) {
+		if err := r.migrateAzureCCM(ctx, cluster); err != nil {
+			return fmt.Errorf("failed to migrate Azure CCM Deployment: %w", err)
+		}
+	}
+
 	creators := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
 	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r)
+}
+
+// In #13180 and its backports the label selectors for the Azure CCM were fixed, but since they are
+// immutable, the old CCM Deployment has to be deleted once.
+func (r *Reconciler) migrateAzureCCM(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	key := types.NamespacedName{
+		Name:      cloudcontroller.AzureCCMDeploymentName,
+		Namespace: cluster.Status.NamespaceName,
+	}
+
+	dep := appsv1.Deployment{}
+	if err := r.Get(ctx, key, &dep); err != nil {
+		return ctrlruntimeclient.IgnoreNotFound(err)
+	}
+
+	// already migrated
+	if dep.Spec.Selector.MatchLabels[resources.AppLabelKey] == cloudcontroller.AzureCCMDeploymentName {
+		return nil
+	}
+
+	if err := r.Delete(ctx, &dep); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GetSecretReconcilers returns all SecretReconcilers that are currently in use.
