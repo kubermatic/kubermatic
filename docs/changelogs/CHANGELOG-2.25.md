@@ -2,6 +2,29 @@
 
 - [v2.25.0](#v2250)
 - [v2.25.1](#v2251)
+- [v2.25.2](#v2252)
+
+## [v2.25.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.2)
+
+### New Feature
+
+- Seed MLA: introduce `signout_redirect_url` field in Grafana chart to configure the URL to redirect the user to after signing out from Grafana ([#13313](https://github.com/kubermatic/kubermatic/pull/13313))
+
+### Bugfixes
+
+- Add CSIDriver support for DigitalOcean and Azure File in Kubernetes 1.29 ([#13335](https://github.com/kubermatic/kubermatic/pull/13335))
+- Enable `local` command in the installer for Enterprise Edition ([#13333](https://github.com/kubermatic/kubermatic/pull/13333))
+- Fix Azure CCM not being reconciled because of labelling changes ([#13334](https://github.com/kubermatic/kubermatic/pull/13334))
+- Fix template value for MachineDeployments in edit mode ([#6669](https://github.com/kubermatic/dashboard/pull/6669))
+- Hotfix to mitigate a bug in new releases of Chromium that causes browser crashes on `mat-select` component. For more details: https://issuetracker.google.com/issues/335553723 ([#6667](https://github.com/kubermatic/dashboard/pull/6667))
+- Improve Helm repository prefix handling for system applications; only prepend `oci://` prefix if it doesn't already exist in the specified URL ([#13336](https://github.com/kubermatic/kubermatic/pull/13336))
+- Installer does not validate IAP `client_secrets` for Grafana and Alertmanager the same way it does for `encryption_key` ([#13315](https://github.com/kubermatic/kubermatic/pull/13315))
+
+### Chore
+
+- Update machine-controller to v1.59.1 ([#13350](https://github.com/kubermatic/kubermatic/pull/13350))
+
+
 
 ## [v2.25.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.1)
 
