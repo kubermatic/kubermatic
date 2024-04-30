@@ -152,7 +152,7 @@ function ship_archive() {
   fi
 
   if ! $DRY_RUN; then
-    echodate "Upload $buildTarget archive..."
+    echodate "Uploading $buildTarget archive..."
     upload_archive "$archive"
     rm -- "$archive"
   fi
