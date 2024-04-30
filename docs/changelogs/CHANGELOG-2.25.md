@@ -3,6 +3,18 @@
 - [v2.25.0](#v2250)
 - [v2.25.1](#v2251)
 - [v2.25.2](#v2252)
+- [v2.25.3](#v2253)
+
+## [v2.25.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.3)
+
+### Bugfixes
+
+* [ACTION REQUIRED] The latest Ubuntu 22.04 images ship with cloud-init 24.x package. This package has breaking changes and thus rendered our OSPs as incompatible. It's recommended to refresh your machines with latest provided OSPs to ensure that a system-wide package update, that updates cloud-init to 24.x, doesn't break the machines ([#13359](https://github.com/kubermatic/kubermatic/pull/13359))
+
+### Updates
+
+* Update operating-system-manager to v1.5.1.
+
 
 ## [v2.25.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.2)
 
