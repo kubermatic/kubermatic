@@ -168,12 +168,6 @@ func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	// If secrets upgrade wasn't forced and there's no newer version, don't upgrade the secrets
-	if !opt.MLAForceSecrets && (release != nil && !release.Version.LessThan(chart.Version)) {
-		logger.Info("⏭️  Skipped.")
-		return nil
-	}
-
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, NodeExporterNamespace, NodeExporterReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
