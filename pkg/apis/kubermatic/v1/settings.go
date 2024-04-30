@@ -73,6 +73,9 @@ type SettingSpec struct {
 	// EnableClusterBackup enables the Cluster Backup feature in the dashboard.
 	EnableClusterBackups *bool `json:"enableClusterBackup,omitempty"`
 
+	// EnableEtcdBackup enables the etcd Backup feature in the dashboard.
+	EnableEtcdBackup bool `json:"enableEtcdBackup,omitempty"`
+
 	// DisableAdminKubeconfig disables the admin kubeconfig functionality on the dashboard.
 	DisableAdminKubeconfig bool `json:"disableAdminKubeconfig,omitempty"`
 
