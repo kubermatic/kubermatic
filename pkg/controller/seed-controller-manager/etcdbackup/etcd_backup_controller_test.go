@@ -221,7 +221,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: metav1.NewTime(time.Unix(10, 0).UTC()),
-					BackupName:    "testbackup.db",
+					BackupName:    "testbackup.db.gz",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -328,7 +328,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 				},
 				{
 					ScheduledTime: metav1.NewTime(time.Unix(1200, 0).UTC()),
-					BackupName:    "testbackup-1970-01-01t00-20-00.db",
+					BackupName:    "testbackup-1970-01-01t00-20-00.db.gz",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -347,7 +347,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: metav1.NewTime(time.Unix(3600*24*15, 0).UTC()),
-					BackupName:    "testbackup-1970-01-16t00-00-00.db",
+					BackupName:    "testbackup-1970-01-16t00-00-00.db.gz",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
@@ -366,7 +366,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: metav1.NewTime(time.Unix(10, 0).UTC()),
-					BackupName:    "long-backup-config-name-abcdefghijk.db",
+					BackupName:    "long-backup-config-name-abcdefghijk.db.gz",
 					JobName:       "testcluster-backup-long-backup-config-name-abcdefghijk-creaxxxx",
 					DeleteJobName: "testcluster-backup-long-backup-config-name-abcdefghijk-delexxxx",
 				},
