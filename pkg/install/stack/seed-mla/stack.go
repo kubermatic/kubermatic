@@ -102,7 +102,7 @@ func (s *Monitoring) Deploy(ctx context.Context, opt stack.DeployOptions) error 
 	}
 
 	if err := deployKubeStateMetrics(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Kube State Metrics: %w", err)
+		return fmt.Errorf("failed to deploy kube-state-metrics: %w", err)
 	}
 
 	if err := deployGrafana(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -114,7 +114,7 @@ func (s *Monitoring) Deploy(ctx context.Context, opt stack.DeployOptions) error 
 	}
 
 	if err := deployAlertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Alert Manager: %w", err)
+		return fmt.Errorf("failed to deploy Alertmanager: %w", err)
 	}
 
 	if err := deployPrometheus(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -179,10 +179,10 @@ func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 func deployKubeStateMetrics(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, KubeStateMetricsChartName) {
-		logger.Info("⭕ Skipping Kube State Metrics deployment.")
+		logger.Info("⭕ Skipping kube-state-metrics deployment.")
 		return nil
 	}
-	logger.Info("📦 Deploying Kube State Metrics…")
+	logger.Info("📦 Deploying kube-state-metrics…")
 	sublogger := log.Prefix(logger, "   ")
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MonitoringChartsPrefix, KubeStateMetricsChartName))
@@ -272,10 +272,10 @@ func deployBlackboxExporter(ctx context.Context, logger *logrus.Entry, kubeClien
 
 func deployAlertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, AlertManagerChartName) {
-		logger.Info("⭕ Skipping Alert Manager deployment.")
+		logger.Info("⭕ Skipping Alertmanager deployment.")
 		return nil
 	}
-	logger.Info("📦 Deploying Alert Manager…")
+	logger.Info("📦 Deploying Alertmanager…")
 	sublogger := log.Prefix(logger, "   ")
 
 	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, MonitoringChartsPrefix, AlertManagerChartName))

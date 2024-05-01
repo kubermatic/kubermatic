@@ -87,6 +87,10 @@ func ValidateIapBlockSecret(value string, path string) error {
 	return nil
 }
 
+// isBlockSecret checks if the provided value is a valid block secret based on its length.
+// A valid block secret must have a length of 16, 24, or 32 characters to match common
+// encryption key lengths (e.g., AES-128, AES-192, AES-256).
+// It returns true if the value matches one of these lengths, otherwise false
 func isBlockSecret(value string) bool {
 	switch len(value) {
 	case 16, 24, 32:
