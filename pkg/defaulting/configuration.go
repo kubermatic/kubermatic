@@ -748,7 +748,7 @@ command:
     --secret_key=$SECRET_ACCESS_KEY \
     --host=$ENDPOINT \
     --host-bucket='%(bucket).'$ENDPOINT \
-    put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
+    put /backup/snapshot.db.gz s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
 volumeMounts:
 - name: etcd-backup
   mountPath: /backup

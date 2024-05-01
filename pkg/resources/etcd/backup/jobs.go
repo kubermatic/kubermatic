@@ -196,7 +196,8 @@ func snapshotCommand(cluster *kubermaticv1.Cluster) []string {
 		"--etcd-client-cert-file=/etc/etcd/pki/client/backup-etcd-client.crt",
 		"--etcd-client-key-file=/etc/etcd/pki/client/backup-etcd-client.key",
 		fmt.Sprintf("--cluster=%s", cluster.Name),
-		"--file=/backup/snapshot.db",
+		"--file=/backup/snapshot.db.gz",
+		"--compress=gzip",
 	}
 }
 
