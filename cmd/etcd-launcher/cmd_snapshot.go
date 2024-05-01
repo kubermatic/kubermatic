@@ -17,33 +17,24 @@ limitations under the License.
 package main
 
 import (
-	"compress/gzip"
-	"context"
 	"fmt"
-	"io"
-	"os"
 	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
-	client "go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
 )
 
-type snapshotOptions struct {
+type snapshotCmdOptions struct {
 	options
 
-	file        string
-	compression string
+	snapshotOptions etcd.SnapshotOptions
 }
 
-var validCompressions = []string{"gzip"}
-
 func SnapshotCommand(log *zap.SugaredLogger) *cobra.Command {
-	opt := snapshotOptions{}
+	opt := snapshotCmdOptions{}
 
 	cmd := &cobra.Command{
 		Use:          "snapshot",
@@ -53,8 +44,8 @@ func SnapshotCommand(log *zap.SugaredLogger) *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.CopyInto(&opt.options)
 
-			if opt.compression != "" && !slices.Contains(validCompressions, opt.compression) {
-				return fmt.Errorf("invalid --compression algorithm, must be one of %v", validCompressions)
+			if opt.snapshotOptions.Compression != "" && !slices.Contains(etcd.ValidCompressions, opt.snapshotOptions.Compression) {
+				return fmt.Errorf("invalid --compression algorithm, must be one of %v", etcd.ValidCompressions)
 			}
 
 			return nil
@@ -70,13 +61,13 @@ func SnapshotCommand(log *zap.SugaredLogger) *cobra.Command {
 		return err
 	})
 
-	cmd.PersistentFlags().StringVar(&opt.compression, "compress", "", fmt.Sprintf("compression to use (one of: %v)", validCompressions))
-	cmd.PersistentFlags().StringVar(&opt.file, "file", "/backup/snapshot.db", "file to save database snapshot to")
+	cmd.PersistentFlags().StringVar(&opt.snapshotOptions.Compression, "compress", "", fmt.Sprintf("compression to use (one of: %v)", etcd.ValidCompressions))
+	cmd.PersistentFlags().StringVar(&opt.snapshotOptions.File, "file", "/backup/snapshot.db", "file to save database snapshot to")
 
 	return cmd
 }
 
-func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
+func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotCmdOptions) cobraFuncE {
 	return handleErrors(log, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		log := log.With("cluster", opt.cluster)
@@ -115,13 +106,13 @@ func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
 				continue
 			}
 
-			err := createSnapshot(ctx, clog, config, opt)
+			err := etcd.CreateSnapshot(ctx, clog, config, &opt.snapshotOptions)
 
 			// if the snapshot was successful, we have what we want and do not
 			// need to loop over the remaining endpoints. We can exit the program
 			// successfully then.
 			if err == nil {
-				clog.Infow("saved snapshot from endpoint", "file", opt.file)
+				clog.Infow("saved snapshot from endpoint", "file", opt.snapshotOptions.File)
 				return nil
 			}
 
@@ -133,52 +124,4 @@ func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
 		// we failed to take any snapshot, so we need to exit the program with an error.
 		return fmt.Errorf("exhausted all endpoints, no snapshot was successful")
 	})
-}
-
-func createSnapshot(ctx context.Context, log *zap.SugaredLogger, etcdConfig client.Config, opt *snapshotOptions) error {
-	snapv3 := snapshot.NewV3(log.Desugar())
-
-	if opt.compression == "" {
-		return snapv3.Save(ctx, etcdConfig, opt.file)
-	}
-
-	tmpFile := opt.file + ".tmp"
-	defer os.Remove(tmpFile)
-
-	err := snapv3.Save(ctx, etcdConfig, tmpFile)
-	if err != nil {
-		return err
-	}
-
-	compressedFile, err := os.Create(opt.file)
-	if err != nil {
-		return err
-	}
-	defer compressedFile.Close()
-
-	rawFile, err := os.Open(tmpFile)
-	if err != nil {
-		return err
-	}
-	defer rawFile.Close()
-
-	var compressor io.WriteCloser
-
-	switch opt.compression {
-	case "gzip":
-		compressor, err = gzip.NewWriterLevel(compressedFile, gzip.BestCompression)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown compression algorithm %q", opt.compression)
-	}
-
-	defer compressor.Close()
-
-	if _, err = io.Copy(compressor, rawFile); err != nil {
-		return err
-	}
-
-	return nil
 }

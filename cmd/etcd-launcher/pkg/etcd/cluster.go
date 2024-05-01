@@ -657,6 +657,11 @@ func (e *Cluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, log *zap
 		return fmt.Errorf("failed to download backup (%s/%s): %w", bucketName, objectName, err)
 	}
 
+	rawBackupFile, err := DecompressSnapshot(downloadedSnapshotFile)
+	if err != nil {
+		return fmt.Errorf("failed to decompress snapshot file %s: %w", objectName, err)
+	}
+
 	if err := os.RemoveAll(e.DataDir); err != nil {
 		return fmt.Errorf("error deleting data directory before restore (%s): %w", e.DataDir, err)
 	}
@@ -664,7 +669,7 @@ func (e *Cluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, log *zap
 	sp := snapshot.NewV3(log.Desugar())
 
 	return sp.Restore(snapshot.RestoreConfig{
-		SnapshotPath:        downloadedSnapshotFile,
+		SnapshotPath:        rawBackupFile,
 		Name:                e.PodName,
 		OutputDataDir:       e.DataDir,
 		OutputWALDir:        filepath.Join(e.DataDir, "member", "wal"),
