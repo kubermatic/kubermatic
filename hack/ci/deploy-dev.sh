@@ -34,12 +34,12 @@ kubermatic)
 
 usercluster-mla)
   export VAULT_VALUES_FIELD=hamburg-mla-values.yaml
-  NO_IMAGES=true ./hack/ci/release-images.sh
+  NO_IMAGES=true BINARY_NAMES="kubermatic-installer" ./hack/ci/release-images.sh
   ;;
 
 seed-mla)
   export VAULT_VALUES_FIELD=hamburg-values.yaml
-  NO_IMAGES=true ./hack/ci/release-images.sh
+  NO_IMAGES=true BINARY_NAMES="kubermatic-installer" ./hack/ci/release-images.sh
   ;;
 
 esac

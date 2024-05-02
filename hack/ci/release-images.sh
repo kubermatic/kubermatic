@@ -88,8 +88,17 @@ fi
 
 TEST_NAME="Build binaries"
 echodate "Building binaries"
-# Retry is used to get the junit wrapping
-retry 1 make build
+# Check if specific binary names are provided
+if [ -z "${BINARY_NAMES:-}" ]; then
+  # No specific binaries specified, build all
+  retry 1 make build
+else
+  # Build each specified binary
+  for binary in $BINARY_NAMES; do
+    echodate "Building $binary"
+    retry 1 make build "$binary"
+  done
+fi
 echodate "Successfully finished building binaries"
 
 if [ -z "${NO_IMAGES:-}" ]; then
