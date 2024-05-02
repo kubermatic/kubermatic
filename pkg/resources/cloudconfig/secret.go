@@ -44,9 +44,9 @@ type creatorData interface {
 }
 
 // SecretReconciler returns a function to create the Secret containing the cloud-config.
-func SecretReconciler(data creatorData) reconciling.NamedSecretReconcilerFactory {
+func SecretReconciler(data creatorData, name string) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return resources.CloudConfigSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
+		return name, func(cm *corev1.Secret) (*corev1.Secret, error) {
 			if cm.Data == nil {
 				cm.Data = map[string][]byte{}
 			}
