@@ -95,7 +95,6 @@ var (
 		defaultNetworkingPatchesWithoutProxyMode,
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", "ipvs"),
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
-		jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 	)
 	defaultNetworkingPatchesIptablesProxyMode = append(
 		defaultNetworkingPatchesWithoutProxyMode,
@@ -257,6 +256,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			},
 		},
 		{
@@ -302,6 +302,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -337,6 +338,7 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -368,6 +370,7 @@ func TestMutator(t *testing.T) {
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -465,6 +468,7 @@ func TestMutator(t *testing.T) {
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 				}),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -543,6 +547,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -576,6 +581,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -607,6 +613,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -635,6 +642,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -671,6 +679,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
