@@ -92,31 +92,6 @@ set_crds_version_annotation
 
 echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
-monitoring)
-  echodate "fetching chart dependencies..."
-  hack/ci/fetch-chart-dependencies.sh
-  deploy "node-exporter" "monitoring" charts/monitoring/node-exporter/
-  deploy "kube-state-metrics" "monitoring" charts/monitoring/kube-state-metrics/
-  deploy "grafana" "monitoring" charts/monitoring/grafana/
-  deploy "helm-exporter" "monitoring" charts/monitoring/helm-exporter/
-  deploy "alertmanager" "monitoring" charts/monitoring/alertmanager/
-
-  if [[ "${1}" = "master" ]]; then
-    deploy "karma" "monitoring" charts/monitoring/karma/
-  fi
-
-  # Prometheus can take a long time to become ready, depending on the WAL size.
-  # We try to accommodate by waiting for 15 instead of 5 minutes.
-  deploy "prometheus" "monitoring" charts/monitoring/prometheus/ 15m
-  ;;
-
-logging)
-  echodate "fetching chart dependencies..."
-  hack/ci/fetch-chart-dependencies.sh
-  deploy "loki" "logging" charts/logging/loki/
-  deploy "promtail" "logging" charts/logging/promtail/
-  ;;
-
 usercluster-mla)
   echodate "Running Kubermatic Installer for UserCluster MLA..."
   # deploy iap only when it is set in values file
