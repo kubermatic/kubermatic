@@ -17,7 +17,7 @@
 # Changes:
 # - image source includes registry templating
 # - removal of scheduling hints
-# - mount cloud-config instead of using host path
+# - mount cloud-config-csi instead of using host path
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
@@ -183,7 +183,7 @@ spec:
             type: Directory
           name: device-dir
         - secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
           name: cloud-config
 {{ end }}
 {{ end }}
