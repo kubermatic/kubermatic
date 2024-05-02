@@ -20,7 +20,7 @@
 #  - added security context
 #  - make Topology feature gate dynamic
 #  - add KKP CABundle
-#  - load cloud-config
+#  - load cloud-config-csi
 #  - add NetworkPolicy
 #  - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 #
@@ -185,7 +185,7 @@ spec:
           emptyDir:
         - name: cloud-config
           secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
         - name: ca-bundle
           configMap:
             name: ca-bundle
