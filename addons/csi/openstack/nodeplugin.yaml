@@ -157,7 +157,7 @@ spec:
             type: Directory
         - name: secret-cinderplugin
           secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
         - name: ca-bundle
           configMap:
             name: ca-bundle

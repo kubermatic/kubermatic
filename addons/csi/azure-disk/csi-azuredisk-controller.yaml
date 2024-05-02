@@ -18,7 +18,7 @@
 # - image source includes registry templating
 # - removal of tolerations
 # - set spec.replicas=1 since leader elections are configured
-# - mount cloud-config instead of using host path
+# - mount cloud-config-csi instead of using host path
 # - add a securityContext
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -202,6 +202,6 @@ spec:
           emptyDir: {}
         - name: cloud-config
           secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
 {{ end }}
 {{ end }}

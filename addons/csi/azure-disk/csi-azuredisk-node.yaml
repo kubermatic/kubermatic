@@ -17,7 +17,7 @@
 # Changes:
 # - image source includes registry templating
 # - removal of scheduling hints
-# - mount cloud-config instead of using host path
+# - mount cloud-config-csi instead of using host path
 # - add seccomp profile
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -182,7 +182,7 @@ spec:
             type: Directory
           name: sys-class
         - secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
           name: cloud-config
 ---
 {{ end }}
