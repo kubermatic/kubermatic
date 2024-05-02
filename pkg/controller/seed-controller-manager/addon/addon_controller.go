@@ -858,10 +858,8 @@ func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLog
 	}
 
 	// Get CSI drivers created by the csi addon
-	if err := userClusterClient.List(ctx, csiDriverList, csiDriverListOption); apierrors.IsNotFound(err) {
-		return corev1.ConditionUnknown, ""
-	} else if err != nil {
-		return corev1.ConditionUnknown, fmt.Sprintf("failed to list csi drivers with %v label : %v", csiAddonStorageClassLabel, err)
+	if err := userClusterClient.List(ctx, csiDriverList, csiDriverListOption); err != nil {
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to list csi drivers with %v label: %v", csiAddonStorageClassLabel, err)
 	}
 	// map to hold csi drivers to storage classes list
 	csiToSC := make(map[string][]string)
@@ -874,12 +872,12 @@ func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLog
 		// get all the storage classes that are using the csi driver created by csi addon as provisioner
 		storageCLassList, err := r.storageClassesForProvisioner(ctx, cluster, csiDriverList.Items[i].Name)
 		if err != nil {
-			return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of storage classes using %v provisioner : %v", csiDriverList.Items[i].Name, err)
+			return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of storage classes using %v provisioner: %v", csiDriverList.Items[i].Name, err)
 		}
 		for j := 0; j < len(storageCLassList); j++ {
 			pvcList, err := r.pvcsForStorageClass(ctx, cluster, storageCLassList[j])
 			if err != nil {
-				return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of PVCs referring the %v storage class : %v", storageCLassList[j], err)
+				return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of PVCs referring the %v storage class: %v", storageCLassList[j], err)
 			}
 			if len(pvcList) > 0 {
 				csiToSC[csiDriverList.Items[i].Name] = append(csiToSC[csiDriverList.Items[i].Name], storageCLassList[j])
@@ -913,10 +911,8 @@ func (r *Reconciler) storageClassesForProvisioner(ctx context.Context, cluster *
 		return storageCLassesForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
 	}
 	storageCLassList := &storagev1.StorageClassList{}
-	if err := cl.List(ctx, storageCLassList); apierrors.IsNotFound(err) {
-		return storageCLassesForProvisioner, nil
-	} else if err != nil {
-		return storageCLassesForProvisioner, fmt.Errorf("failed to get storage classes using provisioner %v : %w", provisionerName, err)
+	if err := cl.List(ctx, storageCLassList); err != nil {
+		return storageCLassesForProvisioner, fmt.Errorf("failed to get storage classes using provisioner %v: %w", provisionerName, err)
 	}
 	for i := 0; i < len(storageCLassList.Items); i++ {
 		if storageCLassList.Items[i].Provisioner == provisionerName {
@@ -933,14 +929,13 @@ func (r *Reconciler) pvcsForStorageClass(ctx context.Context, cluster *kubermati
 		return pvcsForStorageClass, fmt.Errorf("failed to get client for usercluster: %w", err)
 	}
 	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := cl.List(ctx, pvcList); apierrors.IsNotFound(err) {
-		return pvcsForStorageClass, nil
-	} else if err != nil {
-		return pvcsForStorageClass, fmt.Errorf("failed to get the list of PVCs referring the %v storage class : %w", storageClassName, err)
+	if err := cl.List(ctx, pvcList); err != nil {
+		return pvcsForStorageClass, fmt.Errorf("failed to get the list of PVCs referring the %v storage class: %w", storageClassName, err)
 	}
-	for i := 0; i < len(pvcList.Items); i++ {
-		if *pvcList.Items[i].Spec.StorageClassName == storageClassName {
-			pvcsForStorageClass = append(pvcsForStorageClass, pvcList.Items[i].Name)
+
+	for _, item := range pvcList.Items {
+		if item.Spec.StorageClassName != nil && *item.Spec.StorageClassName == storageClassName {
+			pvcsForStorageClass = append(pvcsForStorageClass, item.Name)
 		}
 	}
 	return pvcsForStorageClass, nil
@@ -953,9 +948,7 @@ func (r *Reconciler) pvsForProvisioner(ctx context.Context, cluster *kubermaticv
 		return pvsForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
 	}
 	pvList := &corev1.PersistentVolumeList{}
-	if err := cl.List(ctx, pvList); apierrors.IsNotFound(err) {
-		return pvsForProvisioner, nil
-	} else if err != nil {
+	if err := cl.List(ctx, pvList); err != nil {
 		return pvsForProvisioner, fmt.Errorf("failed to get the list of PVs having %v as provisioner : %w", provisionerName, err)
 	}
 	for i := 0; i < len(pvList.Items); i++ {
