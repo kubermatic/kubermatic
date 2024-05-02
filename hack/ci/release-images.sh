@@ -90,14 +90,14 @@ TEST_NAME="Build binaries"
 echodate "Building binaries"
 # Check if specific binary names are provided
 if [ -z "${BINARY_NAMES:-}" ]; then
-    # No specific binaries specified, build all
-    retry 1 make build
+  # No specific binaries specified, build all
+  retry 1 make build
 else
-    # Build each specified binary
-    for binary in $BINARY_NAMES; do
-        echodate "Building $binary"
-        retry 1 make build "$binary"
-    done
+  # Build each specified binary
+  for binary in $BINARY_NAMES; do
+    echodate "Building $binary"
+    retry 1 make build "$binary"
+  done
 fi
 echodate "Successfully finished building binaries"
 
