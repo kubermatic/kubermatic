@@ -81,7 +81,7 @@ const (
 
 	PromtailChartName   = "promtail"
 	PromtailReleaseName = PromtailChartName
-	PromtailNamespace   = MonitoringNamespace
+	PromtailNamespace   = LoggingNamespace
 )
 
 type Monitoring struct{}
