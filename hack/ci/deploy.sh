@@ -134,6 +134,14 @@ usercluster-mla)
   fi
   ;;
 
+seed-mla)
+  echodate "Running Kubermatic Installer for Master/Seed MLA..."
+  ./_build/kubermatic-installer deploy seed-mla \
+    --config "$KUBERMATIC_CONFIG" \
+    --helm-values "$VALUES_FILE" \
+    --helm-timeout=30m
+  ;;
+
 kubermatic)
   if [ -n "${IMAGE_PULL_SECRET:-}" ]; then
     export IMAGE_PULL_SECRET_CONTENT="$(cat $IMAGE_PULL_SECRET)"

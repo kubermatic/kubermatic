@@ -37,6 +37,11 @@ usercluster-mla)
   NO_IMAGES=true ./hack/ci/release-images.sh
   ;;
 
+seed-mla)
+  export VAULT_VALUES_FIELD=hamburg-values.yaml
+  NO_IMAGES=true ./hack/ci/release-images.sh
+  ;;
+
 esac
 
 echodate "Getting secrets from Vault"
