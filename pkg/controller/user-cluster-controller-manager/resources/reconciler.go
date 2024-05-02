@@ -276,7 +276,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if !cluster.Spec.DisableCSIDriver {
+	if cluster.Spec.DisableCSIDriver {
 		if err := r.ensureCSIDriverResourcesAreRemoved(ctx); err != nil {
 			return err
 		}
