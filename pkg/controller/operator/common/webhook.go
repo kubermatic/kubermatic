@@ -605,6 +605,71 @@ func ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx context.Con
 	}
 }
 
+func PoliciesWebhookConfigurationReconciler(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationReconcilerFactory {
+	return func() (string, reconciling.ValidatingWebhookConfigurationReconciler) {
+		return PoliciesAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			allScopes := admissionregistrationv1.AllScopes
+			clusterScope := admissionregistrationv1.ClusterScope
+
+			ca, err := WebhookCABundle(ctx, cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find webhook CA bundle: %w", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
+				{
+					Name:                    appskubermaticv1.ApplicationDefinitionResourceName + "." + appskubermaticv1.GroupName, // this should be a FQDN,
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          ptr.To[int32](10),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      WebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      ptr.To("/validate-policies"),
+							Port:      ptr.To[int32](443),
+						},
+					},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{kubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"*"},
+								Scope:       &allScopes,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Delete,
+							},
+						},
+						// allow to put deletion prevention annotations on cluster namespaces
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{""},
+								APIVersions: []string{"v1"},
+								Resources:   []string{"namespaces"},
+								Scope:       &clusterScope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.Delete,
+							},
+						},
+					},
+					NamespaceSelector: &metav1.LabelSelector{},
+					ObjectSelector:    &metav1.LabelSelector{},
+				},
+			}
+			return hook, nil
+		}
+	}
+}
+
 // WebhookServiceReconciler creates the Service for all KKP webhooks.
 func WebhookServiceReconciler(cfg *kubermaticv1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {

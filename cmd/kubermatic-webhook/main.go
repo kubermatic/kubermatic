@@ -44,6 +44,7 @@ import (
 	ipampoolvalidation "k8c.io/kubermatic/v2/pkg/webhook/ipampool/validation"
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
+	policieswebhook "k8c.io/kubermatic/v2/pkg/webhook/policies"
 	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
@@ -237,6 +238,11 @@ func main() {
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
 	}
+
+	// /////////////////////////////////////////
+	// setup policies webhook
+
+	policieswebhook.NewAdmissionHandler(log, mgr.GetScheme()).SetupWebhookWithManager(mgr)
 
 	// /////////////////////////////////////////
 	// Here we go!

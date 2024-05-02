@@ -205,36 +205,31 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		return fmt.Errorf("failed to clean up ClusterRole: %w", err)
 	}
 
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.SeedAdmissionWebhookName(cfg)); err != nil {
-		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %w", err)
+	names := []string{
+		common.SeedAdmissionWebhookName(cfg),
+		common.KubermaticConfigurationAdmissionWebhookName(cfg),
+		common.ApplicationDefinitionAdmissionWebhookName,
+		common.PoliciesAdmissionWebhookName,
+		kubermaticseed.ClusterAdmissionWebhookName,
+		kubermaticseed.IPAMPoolAdmissionWebhookName,
 	}
 
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.KubermaticConfigurationAdmissionWebhookName(cfg)); err != nil {
-		return fmt.Errorf("failed to clean up KubermaticConfiguration ValidatingWebhookConfiguration: %w", err)
+	for _, name := range names {
+		if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, name); err != nil {
+			return fmt.Errorf("failed to clean up %s ValidatingWebhookConfiguration: %w", name, err)
+		}
 	}
 
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.ApplicationDefinitionAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up ApplicationDefinition ValidatingWebhookConfiguration: %w", err)
+	names = []string{
+		kubermaticseed.ClusterAdmissionWebhookName,
+		kubermaticseed.AddonAdmissionWebhookName,
+		kubermaticseed.MLAAdminSettingAdmissionWebhookName,
 	}
 
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster ValidatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.ClusterAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.AddonAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, kubermaticseed.MLAAdminSettingAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up Cluster MutatingWebhookConfiguration: %w", err)
-	}
-
-	if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, kubermaticseed.IPAMPoolAdmissionWebhookName); err != nil {
-		return fmt.Errorf("failed to clean up IPAMPool ValidatingWebhookConfiguration: %w", err)
+	for _, name := range names {
+		if err := common.CleanupClusterResource(ctx, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, name); err != nil {
+			return fmt.Errorf("failed to clean up %s MutatingWebhookConfiguration: %w", name, err)
+		}
 	}
 
 	// On shared master+seed clusters, the kubermatic-webhook currently has the -seed-name
@@ -689,6 +684,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		kubermaticseed.ClusterValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationReconciler(ctx, cfg, client),
+		common.PoliciesWebhookConfigurationReconciler(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookReconcilers, "", client); err != nil {
