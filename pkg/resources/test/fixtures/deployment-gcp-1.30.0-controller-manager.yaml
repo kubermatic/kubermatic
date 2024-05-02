@@ -29,7 +29,6 @@ spec:
         cluster: de-test-01
         controllermanager-kubeconfig-secret-revision: "123456"
         google-service-account-secret-revision: "123456"
-        openvpn-client-certificates-secret-revision: "123456"
         service-account-key-secret-revision: "123456"
     spec:
       affinity:
@@ -122,71 +121,7 @@ spec:
           readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
-      - args:
-        - --client
-        - --proto
-        - tcp
-        - --dev
-        - tun
-        - --auth-nocache
-        - --remote
-        - openvpn-server.cluster-de-test-01.svc.cluster.local.
-        - "1194"
-        - --nobind
-        - --connect-timeout
-        - "5"
-        - --connect-retry
-        - "1"
-        - --ca
-        - /etc/openvpn/pki/client/ca.crt
-        - --cert
-        - /etc/openvpn/pki/client/client.crt
-        - --key
-        - /etc/openvpn/pki/client/client.key
-        - --remote-cert-tls
-        - server
-        - --link-mtu
-        - "1432"
-        - --cipher
-        - AES-256-GCM
-        - --auth
-        - SHA1
-        - --keysize
-        - "256"
-        - --script-security
-        - "2"
-        - --status
-        - /run/openvpn-status
-        - --log
-        - /dev/stdout
-        command:
-        - /usr/sbin/openvpn
-        image: quay.io/kubermatic/openvpn:v2.5.2-r0
-        name: openvpn-client
-        resources:
-          limits:
-            cpu: "1"
-            memory: 32Mi
-          requests:
-            cpu: 5m
-            memory: 5Mi
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - mountPath: /etc/openvpn/pki/client
-          name: openvpn-client-certificates
-          readOnly: true
-      dnsConfig:
-        nameservers:
-        - 192.0.2.14
-        options:
-        - name: ndots
-          value: "5"
-        searches:
-        - kube-system.svc.cluster.local
-        - svc.cluster.local
-        - cluster.local
-      dnsPolicy: None
+      dnsPolicy: ClusterFirst
       imagePullSecrets:
       - name: dockercfg
       initContainers:
@@ -216,9 +151,6 @@ spec:
       - name: controllermanager-kubeconfig
         secret:
           secretName: controllermanager-kubeconfig
-      - name: openvpn-client-certificates
-        secret:
-          secretName: openvpn-client-certificates
       - name: google-service-account-volume
         secret:
           secretName: google-service-account
