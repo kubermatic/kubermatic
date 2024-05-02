@@ -19,7 +19,7 @@
 # - set replicas=1 (pod has a leader election)
 # - removal of tolerations
 # - add security context
-# - mount cloud-config for credentials
+# - mount cloud-config-csi for credentials
 # - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -215,6 +215,6 @@ spec:
           emptyDir: {}
         - name: cloud-config
           secret:
-            secretName: cloud-config
+            secretName: cloud-config-csi
 {{ end }}
 {{ end }}
