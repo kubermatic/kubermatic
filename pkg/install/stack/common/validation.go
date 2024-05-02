@@ -106,6 +106,11 @@ func ValidateAllUserClustersAreCompatible(ctx context.Context, seed *kubermaticv
 		if !validVersion {
 			errs = append(errs, fmt.Errorf("cluster %s (version %s) on Seed %s would not be supported anymore", cluster.Name, clusterVersion, seed.Name))
 		}
+
+		// TODO(embik): Remove in KKP 2.27.
+		if cluster.Spec.ClusterNetwork.KonnectivityEnabled == nil || !*cluster.Spec.ClusterNetwork.KonnectivityEnabled { //nolint:staticcheck
+			errs = append(errs, fmt.Errorf("cluster %s on Seed %s has not been migrated to Konnectivity yet, which is mandatory for this KKP version", cluster.Name, seed.Name))
+		}
 	}
 
 	return errs

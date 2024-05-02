@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-test/deep"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -31,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
@@ -256,6 +256,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 				jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			},
 		},
 		{
@@ -301,6 +302,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -336,6 +338,7 @@ func TestMutator(t *testing.T) {
 			wantPatches: append(
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -367,6 +370,7 @@ func TestMutator(t *testing.T) {
 				defaultPatches,
 				jsonpatch.NewOperation("add", "/spec/features/apiserverNetworkPolicy", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -464,6 +468,7 @@ func TestMutator(t *testing.T) {
 					"version": cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
 				}),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -542,6 +547,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -575,6 +581,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -606,6 +613,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -634,6 +642,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -670,6 +679,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.OpenstackCloudProvider)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/konnectivityEnabled", true),
 			),
 		},
 		{
@@ -851,16 +861,16 @@ func TestMutator(t *testing.T) {
 				t.Fatalf("Failed to create patches: %v", err)
 			}
 
-			a := map[string]jsonpatch.JsonPatchOperation{}
+			actual := map[string]jsonpatch.JsonPatchOperation{}
 			for _, p := range patches {
-				a[p.Path] = p
+				actual[p.Path] = p
 			}
-			w := map[string]jsonpatch.JsonPatchOperation{}
+			expected := map[string]jsonpatch.JsonPatchOperation{}
 			for _, p := range tt.wantPatches {
-				w[p.Path] = p
+				expected[p.Path] = p
 			}
-			if diff := deep.Equal(a, w); len(diff) > 0 {
-				t.Errorf("Diff found between wanted and actual patches: %+v", diff)
+			if !diff.DeepEqual(expected, actual) {
+				t.Errorf("Diff found between expected and actual patches:\n %+v", diff.ObjectDiff(expected, actual))
 			}
 		})
 	}

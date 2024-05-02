@@ -54,6 +54,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
@@ -688,10 +689,17 @@ func TestLoadFiles(t *testing.T) {
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
-							&corev1.ConfigMap{
+							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.OpenVPNClientConfigsConfigMapName,
+									Name:            resources.KonnectivityKubeconfigSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.KonnectivityProxyTLSSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
@@ -721,6 +729,13 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.AdmissionControlConfigMapName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.ConfigMap{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.KonnectivityKubeApiserverEgress,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
@@ -780,6 +795,21 @@ func TestLoadFiles(t *testing.T) {
 									ClusterIP: "192.0.2.15",
 								},
 							},
+							&corev1.Service{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      resources.KonnectivityProxyServiceName,
+									Namespace: cluster.Status.NamespaceName,
+								},
+								Spec: corev1.ServiceSpec{
+									Ports: []corev1.ServicePort{
+										{
+											Port:       443,
+											Protocol:   corev1.ProtocolTCP,
+											TargetPort: intstr.FromInt32(8132),
+										},
+									},
+								},
+							},
 						).
 						Build()
 
@@ -811,6 +841,7 @@ func TestLoadFiles(t *testing.T) {
 						WithNetworkIntfMgrImage("quay.io/kubermatic/network-interface-manager").
 						WithVersions(kubermaticVersions).
 						WithFailureDomainZoneAntiaffinity(true).
+						WithKonnectivityEnabled(true).
 						Build()
 
 					generateAndVerifyResources(t, data, tc, markFixtureUsed, kubermaticVersions)
@@ -834,7 +865,7 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		name, creator := create()
 		res, err := creator(&appsv1.Deployment{})
 		if err != nil {
-			t.Fatalf("failed to create Deployment: %v", err)
+			t.Fatalf("failed to create Deployment %s: %v", name, err)
 		}
 		res.Name = name
 		res.Namespace = cluster.Status.NamespaceName
