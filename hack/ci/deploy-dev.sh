@@ -42,7 +42,6 @@ seed-mla)
   NO_IMAGES=true ./hack/ci/release-images.sh
   ;;
 
-
 esac
 
 echodate "Getting secrets from Vault"
