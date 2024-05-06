@@ -272,54 +272,7 @@ var (
 				To:   "1.28.*",
 			},
 		},
-		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
-			// In-tree cloud provider for AWS is not supported starting with Kubernetes 1.27.
-			// This can be removed once we drop support for Kubernetes 1.27 (note: not for 1.26, because
-			// at that point we still might have clusters that needs to be upgraded from 1.26 to 1.27).
-			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
-				Version:   ">= 1.27.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
-				Version:   ">= 1.27.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-			// In-tree cloud provider for OpenStack is not supported starting with Kubernetes 1.26.
-			// This can be removed once we drop support for Kubernetes 1.26 (note: not for 1.25, because
-			// at that point we still might have clusters that needs to be upgraded from 1.25 to 1.26).
-			{
-				Provider:  string(kubermaticv1.OpenstackCloudProvider),
-				Version:   ">= 1.26.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  string(kubermaticv1.OpenstackCloudProvider),
-				Version:   ">= 1.26.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-			// In-tree cloud provider for vSphere is not supported by KKP 2.22.0 since CSI
-			// migration is on by default for Kubernetes 1.25. We want to make sure that
-			// migrations happen before upgrading to that version, so we are enforcing it.
-			// This can be removed once we drop support for Kubernetes 1.25.
-			{
-				Provider:  string(kubermaticv1.VSphereCloudProvider),
-				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  string(kubermaticv1.VSphereCloudProvider),
-				Version:   ">= 1.25.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-		},
+		ProviderIncompatibilities: []kubermaticv1.Incompatibility{},
 	}
 
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{

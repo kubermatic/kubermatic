@@ -58,6 +58,8 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 	supported := resources.ExternalCloudControllerFeatureSupported(datacenter, &newCluster.Spec.Cloud, newCluster.Spec.Version, version.NewFromConfiguration(config).GetIncompatibilities()...)
 	enabled, configured := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
+	supported = false
+
 	if supported && (enabled || !configured) {
 		newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 
