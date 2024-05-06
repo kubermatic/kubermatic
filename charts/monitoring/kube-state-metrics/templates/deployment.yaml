@@ -47,12 +47,14 @@ spec:
         - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance],persistentvolumeclaims=[excluded-from-alerts]
         {{- if .Values.kubeStateMetrics.customResourceState.enabled }}
         - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
+        {{- end }}
         volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        {{- if .Values.kubeStateMetrics.customResourceState.enabled }}
         - name: customresourcestate-config
           mountPath: /etc/customresourcestate
           readOnly: true
-        - name: tmp
-          mountPath: /tmp
         {{- end }}
         ports:
         - containerPort: 8080

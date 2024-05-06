@@ -417,11 +417,11 @@ spec:
         - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance],persistentvolumeclaims=[excluded-from-alerts]
         - --custom-resource-state-config-file=/etc/customresourcestate/config.yaml
         volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         - name: customresourcestate-config
           mountPath: /etc/customresourcestate
           readOnly: true
-        - name: tmp
-          mountPath: /tmp
         ports:
         - containerPort: 8080
           name: http-metrics
