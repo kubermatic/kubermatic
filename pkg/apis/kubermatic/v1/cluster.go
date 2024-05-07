@@ -214,7 +214,7 @@ type ClusterSpec struct {
 	// No SSH keys will be synced after node creation if this is disabled.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
-	// Deprecated: This field has been deprecated and is now no-op. OSM is always enabled for user clusters.
+	// Deprecated: EnableOperatingSystemManager has been deprecated starting with KKP 2.26 and will be removed in KKP 2.28+. This field is no-op and OSM is always enabled for user clusters.
 	// OSM is responsible for creating and managing worker node configuration.
 	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 

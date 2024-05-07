@@ -63,7 +63,6 @@ spec:
       leaderElection: {}
       replicas: 1
   containerRuntime: containerd
-  enableOperatingSystemManager: true
   enableUserSSHKeyAgent: false
   exposeStrategy: NodePort
   features:
