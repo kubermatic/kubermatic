@@ -188,13 +188,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
-	// Ensure that OSM is completely removed, when disabled
-	if !cluster.Spec.IsOperatingSystemManagerEnabled() {
-		if err := r.ensureOSMResourcesAreRemoved(ctx, data); err != nil {
-			return nil, err
-		}
-	}
-
 	// Ensure that kubernetes-dashboard is completely removed, when disabled
 	if !cluster.Spec.IsKubernetesDashboardEnabled() {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
@@ -348,6 +341,7 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 		apiserver.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName),
 		etcd.ServiceReconciler(data),
 		userclusterwebhook.ServiceReconciler(),
+		operatingsystemmanager.ServiceReconciler(),
 	}
 
 	if data.Cluster().Spec.Cloud.Edge == nil {
@@ -368,10 +362,6 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceReconciler(data))
 	}
 
-	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
-		creators = append(creators, operatingsystemmanager.ServiceReconciler())
-	}
-
 	return creators
 }
 
@@ -388,6 +378,8 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 		controllermanager.DeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
 		userclusterwebhook.DeploymentReconciler(data),
+		operatingsystemmanager.DeploymentReconciler(data),
+		operatingsystemmanager.WebhookDeploymentReconciler(data),
 	}
 
 	// BYO and Edge provider doesn't need machine controller.
@@ -419,11 +411,6 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 		(!metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) ||
 			data.KCMCloudControllersDeactivated()) {
 		deployments = append(deployments, cloudcontroller.DeploymentReconciler(data))
-	}
-
-	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
-		deployments = append(deployments, operatingsystemmanager.DeploymentReconciler(data))
-		deployments = append(deployments, operatingsystemmanager.WebhookDeploymentReconciler(data))
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -502,6 +489,10 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 		apiserver.TokenViewerReconciler(),
 		apiserver.TokenUsersReconciler(data),
 		resources.ViewerKubeconfigReconciler(data),
+
+		// OSM
+		resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log),
+		operatingsystemmanager.TLSServingCertificateReconciler(data),
 	}
 
 	if data.Cluster().Spec.Cloud.Edge == nil {
@@ -515,13 +506,6 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
 			resources.GetInternalKubeconfigReconciler(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
-		)
-	}
-
-	if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
-		creators = append(creators,
-			resources.GetInternalKubeconfigReconciler(namespace, resources.OperatingSystemManagerWebhookKubeconfigSecretName, resources.OperatingSystemManagerWebhookCertUsername, nil, data, r.log),
-			operatingsystemmanager.TLSServingCertificateReconciler(data),
 		)
 	}
 
@@ -587,6 +571,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
 		userclusterwebhook.ServiceAccountReconciler,
+		operatingsystemmanager.ServiceAccountReconciler,
 	}
 
 	if c.Spec.Cloud.Edge == nil {
@@ -596,10 +581,6 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 
 	if !c.Spec.DisableCSIDriver {
 		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
-	}
-
-	if c.Spec.IsOperatingSystemManagerEnabled() {
-		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, operatingsystemmanager.ServiceAccountReconciler)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
@@ -922,16 +903,6 @@ func (r *Reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context, dat
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure CSI driver resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *Reconciler) ensureOSMResourcesAreRemoved(ctx context.Context, data *resources.TemplateData) error {
-	for _, resource := range operatingsystemmanager.ResourcesForDeletion(data.Cluster().Status.NamespaceName) {
-		err := r.Client.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
 		}
 	}
 	return nil

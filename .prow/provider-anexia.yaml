@@ -40,8 +40,6 @@ presubmits:
               value: "anexia"
             - name: DISTRIBUTIONS
               value: flatcar
-            - name: KUBERMATIC_OSM_ENABLED
-              value: "false"
             - name: DEFAULT_TIMEOUT_MINUTES
               value: "20"
             - name: SERVICE_ACCOUNT_KEY

@@ -37,7 +37,6 @@ type Generator struct {
 	cloudProviders   sets.Set[string]
 	operatingSystems sets.Set[string]
 	versions         sets.Set[string]
-	enableOSM        bool
 	enableDualstack  bool
 }
 
@@ -67,11 +66,6 @@ func (g *Generator) WithVersions(versions ...*semver.Semver) *Generator {
 	for _, version := range versions {
 		g.versions.Insert(version.String())
 	}
-	return g
-}
-
-func (g *Generator) WithOSM(enable bool) *Generator {
-	g.enableOSM = enable
 	return g
 }
 

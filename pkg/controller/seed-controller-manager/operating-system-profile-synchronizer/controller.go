@@ -119,10 +119,10 @@ func Add(
 		return fmt.Errorf("failed to create watch for customOperatingSystemProfiles: %w", err)
 	}
 
-	// Watch changes for OSPs and then enqueue all the clusters where OSM is enabled.
+	// Watch changes for OSPs and then enqueue all the clusters.
 	if err := c.Watch(
 		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
-		enqueueOperatingSystemProfiles(reconciler.seedClient, reconciler.log, namespace),
+		enqueueOperatingSystemProfiles(reconciler.seedClient, namespace),
 		workerlabel.Predicates(workerName),
 		withEventFilter(),
 	); err != nil {
@@ -204,8 +204,8 @@ func (r *Reconciler) syncAllUserClusters(ctx context.Context, log *zap.SugaredLo
 	var errors []error
 	for _, cluster := range clusters.Items {
 		// Ensure that this is a reconcilable cluster
-		if cluster.Spec.IsOperatingSystemManagerEnabled() && cluster.DeletionTimestamp == nil && !cluster.Spec.Pause && cluster.Status.NamespaceName != "" {
-			err := r.syncOperatingSystemProfile(ctx, log, osp, &cluster)
+		if cluster.DeletionTimestamp == nil && !cluster.Spec.Pause && cluster.Status.NamespaceName != "" {
+			err := r.syncOperatingSystemProfile(ctx, osp, &cluster)
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -215,7 +215,7 @@ func (r *Reconciler) syncAllUserClusters(ctx context.Context, log *zap.SugaredLo
 	return kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, log *zap.SugaredLogger, osp *osmv1alpha1.OperatingSystemProfile, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, osp *osmv1alpha1.OperatingSystemProfile, cluster *kubermaticv1.Cluster) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -249,22 +249,9 @@ func withEventFilter() predicate.Predicate {
 			if !ok {
 				return false
 			}
-			return cluster.Spec.IsOperatingSystemManagerEnabled() && cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
+			return cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldCluster, ok := e.ObjectOld.(*kubermaticv1.Cluster)
-			if !ok {
-				return false
-			}
-			newCluster, ok := e.ObjectNew.(*kubermaticv1.Cluster)
-			if !ok {
-				return false
-			}
-			// We might need to install or delete custom OSPs from the user cluster namespace.
-			if oldCluster.Spec.EnableOperatingSystemManager != newCluster.Spec.EnableOperatingSystemManager && newCluster.DeletionTimestamp == nil && newCluster.Status.NamespaceName != "" {
-				return true
-			}
-
 			return false
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
@@ -273,7 +260,7 @@ func withEventFilter() predicate.Predicate {
 	}
 }
 
-func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, log *zap.SugaredLogger, namespace string) handler.EventHandler {
+func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, namespace string) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 

@@ -91,7 +91,6 @@ func main() {
 		"operatingsystems", sets.List(opts.Distributions),
 		"versions", opts.Versions,
 		"tests", sets.List(opts.Tests),
-		"osm", opts.OperatingSystemManagerEnabled,
 		"dualstack", opts.DualStackEnabled,
 		"konnectivity", opts.KonnectivityEnabled,
 		"updates", opts.TestClusterUpdate,
@@ -121,7 +120,6 @@ func main() {
 	scenarios, err := scenarios.NewGenerator().
 		WithCloudProviders(sets.List(opts.Providers)...).
 		WithOperatingSystems(sets.List(opts.Distributions)...).
-		WithOSM(opts.OperatingSystemManagerEnabled).
 		WithDualstack(opts.DualStackEnabled).
 		WithVersions(opts.Versions...).
 		Scenarios(rootCtx, opts, log)
@@ -346,7 +344,6 @@ func keepOnlyFailedScenarios(log *zap.SugaredLogger, allScenarios []scenarios.Sc
 
 func optionsChanged(previous runner.TestConfiguration, current types.Options) bool {
 	return false ||
-		previous.OSMEnabled != current.OperatingSystemManagerEnabled ||
 		previous.KonnectivityEnabled != current.KonnectivityEnabled ||
 		previous.DualstackEnabled != current.DualStackEnabled ||
 		previous.TestClusterUpdate != current.TestClusterUpdate ||

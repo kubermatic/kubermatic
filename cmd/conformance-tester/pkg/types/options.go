@@ -67,11 +67,10 @@ type Options struct {
 
 	// additional settings identical for all scenarios
 
-	OperatingSystemManagerEnabled bool
-	DualStackEnabled              bool
-	KonnectivityEnabled           bool
-	ScenarioOptions               sets.Set[string]
-	TestClusterUpdate             bool
+	DualStackEnabled    bool
+	KonnectivityEnabled bool
+	ScenarioOptions     sets.Set[string]
+	TestClusterUpdate   bool
 
 	// additional settings
 
@@ -157,7 +156,6 @@ func (o *Options) AddFlags() {
 	flag.BoolVar(&o.DeleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.BoolVar(&o.WaitForClusterDeletion, "wait-for-cluster-deletion", true, "wait for the cluster deletion to have finished")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubKeyPath, "path to a public key which gets deployed onto every node")
-	flag.BoolVar(&o.OperatingSystemManagerEnabled, "enable-osm", true, "When set, enables Operating System Manager in the user cluster")
 	flag.BoolVar(&o.DualStackEnabled, "enable-dualstack", false, "When set, enables dualstack (IPv4+IPv6 networking) in the user cluster")
 	flag.BoolVar(&o.KonnectivityEnabled, "enable-konnectivity", true, "When set, enables Konnectivity (proxy service for control plane communication) in the user cluster. When set to false, OpenVPN is used")
 	flag.BoolVar(&o.TestClusterUpdate, "update-cluster", false, "When set, will first run the selected tests, then update the cluster and nodes to their next minor release and then run the same tests again")

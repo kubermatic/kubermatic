@@ -100,13 +100,11 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 	extendedHealth.ApplicationController = kubermaticv1helper.GetHealthStatus(applicationControllerHealthStatus, cluster, r.versions)
 
-	if cluster.Spec.IsOperatingSystemManagerEnabled() {
-		status, err := r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get operating-system-manager health: %w", err)
-		}
-		extendedHealth.OperatingSystemManager = &status
+	status, err := r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operating-system-manager health: %w", err)
 	}
+	extendedHealth.OperatingSystemManager = &status
 
 	if cluster.Spec.IsKubernetesDashboardEnabled() {
 		status, err := r.kubernetesDashboardHealthCheck(ctx, cluster, ns)

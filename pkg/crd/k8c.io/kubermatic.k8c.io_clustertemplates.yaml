@@ -2533,8 +2533,8 @@ spec:
                   type: boolean
                 enableOperatingSystemManager:
                   description: |-
-                    Optional: Enables operating-system-manager (OSM), which is responsible for creating and managing worker node configuration.
-                    This field is enabled(true) by default.
+                    Deprecated: This field has been deprecated and is now no-op. OSM is always enabled for user clusters.
+                    OSM is responsible for creating and managing worker node configuration.
                   type: boolean
                 enableUserSSHKeyAgent:
                   description: |-
