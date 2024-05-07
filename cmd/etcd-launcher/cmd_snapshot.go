@@ -18,23 +18,23 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/etcd-launcher/pkg/etcd"
 )
 
-type snapshotOptions struct {
+type snapshotCmdOptions struct {
 	options
 
-	file string
+	snapshotOptions etcd.SnapshotOptions
 }
 
 func SnapshotCommand(log *zap.SugaredLogger) *cobra.Command {
-	opt := snapshotOptions{}
+	opt := snapshotCmdOptions{}
 
 	cmd := &cobra.Command{
 		Use:          "snapshot",
@@ -43,6 +43,10 @@ func SnapshotCommand(log *zap.SugaredLogger) *cobra.Command {
 		SilenceUsage: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			opts.CopyInto(&opt.options)
+
+			if opt.snapshotOptions.Compression != "" && !slices.Contains(etcd.ValidCompressions, opt.snapshotOptions.Compression) {
+				return fmt.Errorf("invalid --compression algorithm, must be one of %v", etcd.ValidCompressions)
+			}
 
 			return nil
 		},
@@ -57,12 +61,13 @@ func SnapshotCommand(log *zap.SugaredLogger) *cobra.Command {
 		return err
 	})
 
-	cmd.PersistentFlags().StringVar(&opt.file, "file", "/backup/snapshot.db", "file to save database snapshot to")
+	cmd.PersistentFlags().StringVar(&opt.snapshotOptions.Compression, "compress", "", fmt.Sprintf("compression to use (one of: %v)", etcd.ValidCompressions))
+	cmd.PersistentFlags().StringVar(&opt.snapshotOptions.File, "file", "/backup/snapshot.db", "file to save database snapshot to")
 
 	return cmd
 }
 
-func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
+func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotCmdOptions) cobraFuncE {
 	return handleErrors(log, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		log := log.With("cluster", opt.cluster)
@@ -94,25 +99,26 @@ func SnapshotFunc(log *zap.SugaredLogger, opt *snapshotOptions) cobraFuncE {
 		// or autoscaling-caused rescheduling event is happening). So we loop
 		// over all endpoints and try to take a snapshot.
 		for _, config := range configs {
+			clog := log.With("endpoints", strings.Join(config.Endpoints, ","))
+
 			if len(config.Endpoints) != 1 {
-				log.Warnw("unexpected number of endpoints, skipping this configuration", "endpoints", strings.Join(config.Endpoints, ","))
+				clog.Warn("unexpected number of endpoints, skipping this configuration")
 				continue
 			}
 
-			snapv3 := snapshot.NewV3(log.Desugar())
-			err := snapv3.Save(ctx, config, opt.file)
+			err := etcd.CreateSnapshot(ctx, clog, config, &opt.snapshotOptions)
 
 			// if the snapshot was successful, we have what we want and do not
 			// need to loop over the remaining endpoints. We can exit the program
 			// successfully then.
 			if err == nil {
-				log.Infow("saved snapshot from endpoint", "endpoint", strings.Join(config.Endpoints, ","), "file", opt.file)
+				clog.Infow("saved snapshot from endpoint", "file", opt.snapshotOptions.File)
 				return nil
 			}
 
 			// log an error if we were not able to take a snapshot, before the loop
 			// moves on to the next one.
-			log.Errorw("failed to save snapshot from endpoint, trying next endpoint", "endpoint", strings.Join(config.Endpoints, ","), zap.Error(err))
+			clog.Errorw("failed to save snapshot from endpoint, trying next endpoint", zap.Error(err))
 		}
 
 		// we failed to take any snapshot, so we need to exit the program with an error.

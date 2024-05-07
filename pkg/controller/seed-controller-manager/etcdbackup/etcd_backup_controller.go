@@ -381,7 +381,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{{}}
 		backupToSchedule = &backupConfig.Status.CurrentBackups[0]
 		backupToSchedule.ScheduledTime = metav1.NewTime(r.clock.Now())
-		backupToSchedule.BackupName = fmt.Sprintf("%s.db", backupConfig.Name)
+		backupToSchedule.BackupName = fmt.Sprintf("%s.db.gz", backupConfig.Name)
 		requeueAfter = 0
 	} else {
 		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
@@ -414,7 +414,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		backupConfig.Status.CurrentBackups = append(backupConfig.Status.CurrentBackups, kubermaticv1.BackupStatus{})
 		backupToSchedule = &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
 		backupToSchedule.ScheduledTime = metav1.NewTime(pendingBackupTime)
-		backupToSchedule.BackupName = fmt.Sprintf("%s-%s.db", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
+		backupToSchedule.BackupName = fmt.Sprintf("%s-%s.db.gz", backupConfig.Name, backupToSchedule.ScheduledTime.UTC().Format("2006-01-02t15-04-05"))
 		requeueAfter = nextBackupTime.Sub(now)
 	}
 
