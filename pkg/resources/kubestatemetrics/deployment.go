@@ -37,20 +37,21 @@ var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		name: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("12Mi"),
-				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceMemory: resource.MustParse("64Mi"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("1Gi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceCPU:    resource.MustParse("150m"),
 			},
 		},
 	}
 )
 
 const (
-	name    = "kube-state-metrics"
-	version = "v2.8.2"
+	name      = "kube-state-metrics"
+	version   = "v2.12.0"
+	tmpVolume = "tmp"
 )
 
 // DeploymentReconciler returns the function to create and update the kube-state-metrics deployment.
@@ -77,9 +78,14 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				// do not specify a port so that Prometheus automatically
 				// scrapes both the metrics and the telemetry endpoints
 				"prometheus.io/scrape": "true",
+				"cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes": tmpVolume,
 			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
+
+			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+				FSGroup: resources.Int64(65534),
+			}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
@@ -98,6 +104,10 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
+						{
+							Name:      tmpVolume,
+							MountPath: "/tmp",
+						},
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -111,7 +121,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
-					ReadinessProbe: &corev1.Probe{
+					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/healthz",
@@ -123,6 +133,34 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 						PeriodSeconds:    10,
 						SuccessThreshold: 1,
 						TimeoutSeconds:   15,
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/",
+								Port:   intstr.FromInt(8080),
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+						FailureThreshold: 3,
+						PeriodSeconds:    10,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   15,
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: resources.Bool(false),
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{
+								corev1.Capability("ALL"),
+							},
+						},
+						ReadOnlyRootFilesystem: resources.Bool(true),
+						RunAsGroup:             resources.Int64(65534),
+						RunAsUser:              resources.Int64(65534),
+						RunAsNonRoot:           resources.Bool(true),
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
 					},
 				},
 			}
@@ -149,6 +187,12 @@ func getVolumes() []corev1.Volume {
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.KubeStateMetricsKubeconfigSecretName,
 				},
+			},
+		},
+		{
+			Name: tmpVolume,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	}

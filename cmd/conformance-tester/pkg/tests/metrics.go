@@ -28,7 +28,6 @@ import (
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
@@ -90,22 +89,23 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 	}
 
 	expected := sets.New(
+		// etcd
 		"etcd_disk_backend_defrag_duration_seconds_sum",
-		"kube_daemonset_labels",
+		// kube-state-metrics
+		"kube_configmap_info",
+		// user cluster kubelets
 		"kubelet_runtime_operations_duration_seconds_count",
+		// machine-controller
 		"machine_controller_machines_total",
+		// kube controller-manager
 		"replicaset_controller_sorting_deletion_age_ratio_bucket",
+		// kube apiserver
 		"apiserver_request_total",
-		"workqueue_retries_total",
+		// kube scheduler
+		"scheduler_schedule_attempts_total",
+		// cadvisor
 		"machine_cpu_cores",
 	)
-
-	if cluster.Spec.Version.LessThan(semver.NewSemverOrDie("v1.23.0")) {
-		expected.Insert("scheduler_e2e_scheduling_duration_seconds_count")
-	} else {
-		// this metric is only available in 1.23 and replaces scheduler_e2e_scheduling_duration_seconds_counts
-		expected.Insert("scheduler_scheduling_attempt_duration_seconds_count")
-	}
 
 	fetched := sets.New(data.Data...)
 	missing := expected.Difference(fetched)

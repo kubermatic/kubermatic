@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       annotations:
-        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,tmp
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
@@ -38,7 +38,16 @@ spec:
         - '{"command":"/kube-state-metrics","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--port","8080","--telemetry-port","8081"]}'
         command:
         - /http-prober-bin/http-prober
-        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.8.2
+        image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.12.0
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8080
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
         name: kube-state-metrics
         ports:
         - containerPort: 8080
@@ -50,7 +59,7 @@ spec:
         readinessProbe:
           failureThreshold: 3
           httpGet:
-            path: /healthz
+            path: /
             port: 8080
             scheme: HTTP
           periodSeconds: 10
@@ -58,15 +67,28 @@ spec:
           timeoutSeconds: 15
         resources:
           limits:
-            cpu: 100m
+            cpu: 150m
             memory: 1Gi
           requests:
-            cpu: 10m
-            memory: 12Mi
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /etc/kubernetes/kubeconfig
           name: kube-state-metrics-kubeconfig
           readOnly: true
+        - mountPath: /tmp
+          name: tmp
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -82,10 +104,14 @@ spec:
         volumeMounts:
         - mountPath: /http-prober-bin
           name: http-prober-bin
+      securityContext:
+        fsGroup: 65534
       volumes:
       - name: kube-state-metrics-kubeconfig
         secret:
           secretName: kube-state-metrics-kubeconfig
+      - emptyDir: {}
+        name: tmp
       - emptyDir: {}
         name: http-prober-bin
 status: {}
