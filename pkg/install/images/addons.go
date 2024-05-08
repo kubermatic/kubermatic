@@ -22,7 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
-	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -38,7 +37,7 @@ var (
 func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}
 
-	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil, nil)
+	addonData, err := addon.NewTemplateData(cluster, credentials, "", "", "", nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create addon template data: %w", err)
 	}
@@ -55,7 +54,7 @@ func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon,
 	return images, nil
 }
 
-func getImagesFromAddon(log logrus.FieldLogger, addonObj *addon.Addon, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
+func getImagesFromAddon(log logrus.FieldLogger, addonObj *addon.Addon, decoder runtime.Decoder, data *addon.TemplateData) ([]string, error) {
 	log.Debug("Processing addon…")
 
 	manifests, err := addonObj.Render("", data)

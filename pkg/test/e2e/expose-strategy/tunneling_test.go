@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/utils/ptr"
@@ -57,7 +56,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		t.Fatalf("Failed to get credentials: %v", err)
 	}
 
-	seedClient, seedConfig, err := e2eutils.GetClients()
+	seedClient, seedConfig, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
@@ -92,7 +91,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		t.Fatalf("Failed to deploy agent: %v", err)
 	}
 
-	client := &clientJig{e2eutils.TestPodConfig{
+	client := &clientJig{utils.TestPodConfig{
 		Log:           logger,
 		Namespace:     cluster.Status.NamespaceName,
 		Client:        seedClient,

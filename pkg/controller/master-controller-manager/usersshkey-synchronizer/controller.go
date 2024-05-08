@@ -26,7 +26,6 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -61,7 +60,7 @@ type Reconciler struct {
 	masterClient ctrlruntimeclient.Client
 	log          *zap.SugaredLogger
 	workerName   string
-	seedClients  kuberneteshelper.SeedClientMap
+	seedClients  kubernetes.SeedClientMap
 }
 
 func Add(
@@ -80,7 +79,7 @@ func Add(
 		log:          log.Named(ControllerName),
 		workerName:   workerName,
 		masterClient: mgr.GetClient(),
-		seedClients:  kuberneteshelper.SeedClientMap{},
+		seedClients:  kubernetes.SeedClientMap{},
 	}
 
 	bldr := builder.ControllerManagedBy(mgr).
@@ -213,7 +212,7 @@ func buildUserSSHKeysForCluster(clusterName string, keys *kubermaticv1.UserSSHKe
 }
 
 // enqueueAllClusters enqueues all clusters.
-func enqueueAllClusters(clients kuberneteshelper.SeedClientMap, workerSelector labels.Selector) handler.EventHandler {
+func enqueueAllClusters(clients kubernetes.SeedClientMap, workerSelector labels.Selector) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 

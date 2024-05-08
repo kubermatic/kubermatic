@@ -25,7 +25,6 @@ import (
 
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vapi/tags"
-	vapitags "github.com/vmware/govmomi/vapi/tags"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -133,12 +132,12 @@ func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, u
 }
 
 func ensureFolderTags(ctx context.Context, session *Session, restSession *RESTSession, fullPath string,
-	tags *kubermaticv1.VSphereTag, folder *object.Folder) error {
-	if tags == nil {
+	desiredTags *kubermaticv1.VSphereTag, folder *object.Folder) error {
+	if desiredTags == nil {
 		return nil
 	}
 
-	tagManager := vapitags.NewManager(restSession.Client)
+	tagManager := tags.NewManager(restSession.Client)
 	// Fetch tags associated with the folder.
 	folderTags, err := tagManager.GetAttachedTags(ctx, folder.Reference())
 	if err != nil {
@@ -147,8 +146,8 @@ func ensureFolderTags(ctx context.Context, session *Session, restSession *RESTSe
 
 	var tagsToDelete, tagsToCreate []string
 	// Check if the folder has all tags that are specified in the cluster spec.
-	for _, tag := range tags.Tags {
-		tagID, err := determineTagID(ctx, tagManager, tag, tags.CategoryID)
+	for _, tag := range desiredTags.Tags {
+		tagID, err := determineTagID(ctx, tagManager, tag, desiredTags.CategoryID)
 		if err != nil {
 			return err
 		}
@@ -156,7 +155,7 @@ func ensureFolderTags(ctx context.Context, session *Session, restSession *RESTSe
 		// Check if the tag is already attached to the folder.
 		var found bool
 		for _, folderTag := range folderTags {
-			if folderTag.CategoryID == tags.CategoryID && folderTag.ID == tagID {
+			if folderTag.CategoryID == desiredTags.CategoryID && folderTag.ID == tagID {
 				found = true
 				break
 			}
@@ -170,9 +169,9 @@ func ensureFolderTags(ctx context.Context, session *Session, restSession *RESTSe
 	// Check if the folder has tags that are not specified in the cluster spec.
 	for _, folderTag := range folderTags {
 		// We only care about tags that are in the same category as the tags specified in the cluster spec. Tags from other categories are ignored.
-		if folderTag.CategoryID == tags.CategoryID {
+		if folderTag.CategoryID == desiredTags.CategoryID {
 			var found bool
-			for _, tag := range tags.Tags {
+			for _, tag := range desiredTags.Tags {
 				if tag == folderTag.Name {
 					found = true
 					break

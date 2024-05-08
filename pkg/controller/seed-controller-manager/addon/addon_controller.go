@@ -29,13 +29,11 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
-	addonutils "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
@@ -186,8 +184,8 @@ func shouldReconcileCluster(oldCluster, newCluster *kubermaticv1.Cluster) (bool,
 	// that point we're re-implementing the Applications feature.
 	// If kubeconfig/credentials change, we rely on the auto-resync behaviour of Kubernetes.
 
-	createData := func(cluster *kubermaticv1.Cluster) (*addonutils.TemplateData, error) {
-		return addonutils.NewTemplateData(
+	createData := func(cluster *kubermaticv1.Cluster) (*addon.TemplateData, error) {
+		return addon.NewTemplateData(
 			cluster,
 			resources.Credentials{},
 			"<kubeconfig>",
@@ -393,10 +391,10 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 }
 
 func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon) error {
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r, addon, cleanupFinalizerName)
+	return kubernetes.TryRemoveFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
-func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster, addonObj *addon.Addon) ([]runtime.RawExtension, error) {
+func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, kkpaddon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster, addonObj *addon.Addon) ([]runtime.RawExtension, error) {
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
 		return nil, err
@@ -420,12 +418,12 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 	// Add addon variables if available.
 	variables := make(map[string]interface{})
 
-	if sub := r.addonVariables[addon.Spec.Name]; sub != nil {
+	if sub := r.addonVariables[kkpaddon.Spec.Name]; sub != nil {
 		variables = sub.(map[string]interface{})
 	}
 
-	if addon.Spec.Variables != nil && len(addon.Spec.Variables.Raw) > 0 {
-		if err = json.Unmarshal(addon.Spec.Variables.Raw, &variables); err != nil {
+	if kkpaddon.Spec.Variables != nil && len(kkpaddon.Spec.Variables.Raw) > 0 {
+		if err = json.Unmarshal(kkpaddon.Spec.Variables.Raw, &variables); err != nil {
 			return nil, err
 		}
 	}
@@ -438,7 +436,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		}
 	}
 
-	data, err := addonutils.NewTemplateData(
+	data, err := addon.NewTemplateData(
 		cluster,
 		credentials,
 		string(kubeconfig),
@@ -771,7 +769,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 }
 
 func (r *Reconciler) ensureFinalizerIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
-	return kuberneteshelper.TryAddFinalizer(ctx, r, addon, cleanupFinalizerName)
+	return kubernetes.TryAddFinalizer(ctx, r, addon, cleanupFinalizerName)
 }
 
 func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
