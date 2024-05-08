@@ -60,6 +60,7 @@ linters:
     - nosprintfhostport
     - predeclared
     - promlinter
+    - revive
     - staticcheck
     - tenv
     - unconvert
@@ -89,6 +90,12 @@ issues:
   - singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
 
 linters-settings:
+  revive:
+    rules:
+      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant
+      - name: duplicated-imports
+        severity: warning
+
   depguard:
     rules:
       main:
