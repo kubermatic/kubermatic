@@ -25,8 +25,8 @@
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
 {{ $version = "v1.27.3" }}
 {{ end }}
-{{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.3"}}
+{{ if eq .Cluster.MajorMinorVersion "1.28" }}
+{{ $version = "v1.28.2" }}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
