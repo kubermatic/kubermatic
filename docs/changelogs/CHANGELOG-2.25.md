@@ -5,7 +5,9 @@
 - [v2.25.2](#v2252)
 - [v2.25.3](#v2253)
 
-## [v2.25.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.3)
+## v2.25.3
+
+**GitHub release: [v2.25.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.3)**
 
 ### Bugfixes
 
@@ -16,7 +18,9 @@
 * Update operating-system-manager to v1.5.1.
 
 
-## [v2.25.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.2)
+## v2.25.2
+
+**GitHub release: [v2.25.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.2)**
 
 ### New Feature
 
@@ -38,7 +42,9 @@
 
 
 
-## [v2.25.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.1)
+## v2.25.1
+
+**GitHub release: [v2.25.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.1)**
 
 ### API Changes
 
@@ -77,7 +83,9 @@
 
 
 
-## [v2.25.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.0)
+## v2.25.0
+
+**GitHub release: [v2.25.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.0)**
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.25/installation/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure user cluster reconciliations will not cause resource exhaustion on seed clusters. A [full upgrade guide is available from the official documentation](https://docs.kubermatic.com/kubermatic/v2.25/installation/upgrading/upgrade-from-2.24-to-2.25/).
 

@@ -18,13 +18,17 @@
 - [v2.20.15](#v22015)
 - [v2.20.16](#v22016)
 
-## [v2.20.16](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.16)
+## v2.20.16
+
+**GitHub release: [v2.20.16](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.16)**
 
 ### Updates
 
 - Patch cilium  v1.11 to latest patch release (v1.11.16) ([#12273](https://github.com/kubermatic/kubermatic/pull/12273))
 
-## [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)
+## v2.20.15
+
+**GitHub release: [v2.20.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.15)**
 
 ### Action Required
 
@@ -38,7 +42,9 @@
 
 - Pull `kas-network-proxy/proxy-server:v0.0.33` and `kas-network-proxy/proxy-agent:v0.0.33` image from `registry.k8s.io` instead of legacy GCR registry (`eu.gcr.io/k8s-artifacts-prod`) ([#12135](https://github.com/kubermatic/kubermatic/pull/12135))
 
-## [v2.20.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.14)
+## v2.20.14
+
+**GitHub release: [v2.20.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.14)**
 
 ### Bugfixes
 
@@ -46,7 +52,9 @@
 - Include tunneling agent IP in apiserver's TLS cert SANs ([#11956](https://github.com/kubermatic/kubermatic/pull/11956))
 - Set proper NodePort range in Cilium config if non-default range is used ([#11977](https://github.com/kubermatic/kubermatic/pull/11977))
 
-## [v2.20.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.13)
+## v2.20.13
+
+**GitHub release: [v2.20.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.13)**
 
 ### Bugfixes
 
@@ -56,7 +64,9 @@
 
 - Update Anexia CCM (cloud-controller-manager) to version 1.5.1 ([#11750](https://github.com/kubermatic/kubermatic/pull/11750))
 
-## [v2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.12)
+## v2.20.12
+
+**GitHub release: [v2.20.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.12)**
 
 ### Bugfixes
 
@@ -69,7 +79,9 @@
 
 - Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
-## [v2.20.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.11)
+## v2.20.11
+
+**GitHub release: [v2.20.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.11)**
 
 ### Action Required
 
@@ -92,7 +104,9 @@
 - Add support for Kubernetes v1.22.17 and v1.23.15 ([#11555](https://github.com/kubermatic/kubermatic/pull/11555))
 - Add etcd database size alerts `EtcdDatabaseQuotaLowSpace`, `EtcdExcessiveDatabaseGrowth`, `EtcdDatabaseHighFragmentationRatio`([#11559](https://github.com/kubermatic/kubermatic/pull/11559))
 
-## [v2.20.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.10)
+## v2.20.10
+
+**GitHub release: [v2.20.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.10)**
 
 This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE-2022-3294. For more information, see below. We strongly recommend upgrading to those Kubernetes patch releases as soon as possible.
 
@@ -111,7 +125,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - For the next series of KKP patch releases, image references will move from `k8s.gcr.io` to `registry.k8s.io`. This will be done to keep up with [latest upstream changes](https://github.com/kubernetes/enhancements/tree/master/keps/sig-release/3000-artifact-distribution). Please ensure that any mirrors you use are going to host `registry.k8s.io` and/or that firewall rules are going to allow access to `registry.k8s.io` to pull images before applying the next KKP patch releases. **This is not included in this patch release but just a notification of future changes.**
 
 
-## [v2.20.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.9)
+## v2.20.9
+
+**GitHub release: [v2.20.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.9)**
 
 ### Bugfixes
 
@@ -126,7 +142,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 
 - Update konnectivity to v0.0.33 ([#11080](https://github.com/kubermatic/kubermatic/issues/11080))
 
-## [v2.20.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.8)
+## v2.20.8
+
+**GitHub release: [v2.20.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.8)**
 
 ### Bugfixes
 
@@ -135,7 +153,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Fix API error in extended disk configuration for provider Anexia ([#11051](https://github.com/kubermatic/kubermatic/pull/11051))
 
 
-## [v2.20.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.7)
+## v2.20.7
+
+**GitHub release: [v2.20.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.7)**
 
 ### API Changes
 
@@ -159,7 +179,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Update machine-controller to v1.45.4 ([#10915](https://github.com/kubermatic/kubermatic/pull/10915))
 
 
-## [v2.20.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.6)
+## v2.20.6
+
+**GitHub release: [v2.20.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.6)**
 
 ### Bugfixes
 
@@ -176,7 +198,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Update machine-controller to v1.45.3 ([#10628](https://github.com/kubermatic/kubermatic/issues/10628))
 
 
-## [v2.20.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.5)
+## v2.20.5
+
+**GitHub release: [v2.20.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.5)**
 
 ### Updates
 
@@ -196,7 +220,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - etcd backup files are named differently (`foo-YYYY-MM-DDThh:mm:ss` to `foo-YYYY-MM-DDThhmmss.db`) to improve compatibility with different storage solutions ([#10143](https://github.com/kubermatic/kubermatic/issues/10143))
 
 
-## [v2.20.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.4)
+## v2.20.4
+
+**GitHub release: [v2.20.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.4)**
 
 ### Bugfixes
 
@@ -211,7 +237,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Update ingress-nginx to 1.2.1 ([#10036](https://github.com/kubermatic/kubermatic/issues/10036))
 
 
-## [v2.20.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.3)
+## v2.20.3
+
+**GitHub release: [v2.20.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.3)**
 
 ### Misc
 
@@ -225,7 +253,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - `image-loader` loads more images that were missing before (OpenStack CSI, user-ssh-keys-agent, operatingsystem-manager) ([#9871](https://github.com/kubermatic/kubermatic/issues/9871))
 
 
-## [v2.20.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.2)
+## v2.20.2
+
+**GitHub release: [v2.20.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.2)**
 
 With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Data consistency issues as reported in previous release notes are fixed. Warnings and recommendations related to that can be considered withdrawn for this release.
 
@@ -237,7 +267,9 @@ With this patch release, etcd for Kubernetes 1.22+ is upgraded to etcd 3.5.3. Da
 - The flag `--kubelet-certificate-authority` (introduced in KKP 2.19) is not set for "kubeadm" / "bringyourown" user clusters anymore ([#9674](https://github.com/kubermatic/kubermatic/issues/9674))
 
 
-## [v2.20.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.1)
+## v2.20.1
+
+**GitHub release: [v2.20.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.1)**
 
 This patch release enables etcd corruption checks on every etcd ring that is running etcd 3.5 (which applies to all user clusters with Kubernetes 1.22). This change is a [recommendation from the etcd maintainers](https://groups.google.com/a/kubernetes.io/g/dev/c/B7gJs88XtQc/m/rSgNOzV2BwAJ) due to issues in etcd 3.5 that can cause data consistency issues. The changes in this patch release will prevent corrupted etcd members from joining or staying in the etcd ring.
 
@@ -253,7 +285,9 @@ Please be aware we do not recommend enabling `etcd-launcher` on existing Kuberne
 - For user clusters that use etcd 3.5 (Kubernetes 1.22 clusters), etcd corruption checks are turned on to detect [etcd data consistency issues](https://github.com/etcd-io/etcd/issues/13766). Checks run at etcd startup and every 4 hours ([#9480](https://github.com/kubermatic/kubermatic/issues/9480))
 
 
-## [v2.20.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.0)
+## v2.20.0
+
+**GitHub release: [v2.20.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.20.0)**
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.20/tutorials_howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
 
