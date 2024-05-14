@@ -10,7 +10,9 @@
 - [v2.24.7](#v2247)
 - [v2.24.8](#v2248)
 
-## [v2.24.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.8)
+## v2.24.8
+
+**GitHub release: [v2.24.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.8)**
 
 ### Bugfixes
 
@@ -21,7 +23,9 @@
 * Update operating-system-manager to v1.4.2.
 
 
-## [v2.24.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.7)
+## v2.24.7
+
+**GitHub release: [v2.24.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.7)**
 
 ### New Feature
 
@@ -41,7 +45,9 @@
 - Update machine-controller to v1.58.4 ([#13348](https://github.com/kubermatic/kubermatic/pull/13348))
 
 
-## [v2.24.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.6)
+## v2.24.6
+
+**GitHub release: [v2.24.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.6)**
 
 ### API Changes
 
@@ -61,7 +67,9 @@
 
 - Addons reconciliation is triggered more consistently for changes to Cluster objects, reducing the overall number of unnecessary addon reconciliations ([#13252](https://github.com/kubermatic/kubermatic/pull/13252))
 
-## [v2.24.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.5)
+## v2.24.5
+
+**GitHub release: [v2.24.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.5)**
 
 ### Bugfixes
 
@@ -84,7 +92,9 @@
 - Improve compatibility with cluster-autoscaler 1.27.1+: Pods using temporary volumes are now marked as evictable ([#13197](https://github.com/kubermatic/kubermatic/pull/13197))
 
 
-## [v2.24.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.4)
+## v2.24.4
+
+**GitHub release: [v2.24.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.4)**
 
 ### Bugfixes
 
@@ -95,7 +105,9 @@
 - We maintain now a dedicated docker image for the conformance tester, mainly for internal use ([#13113](https://github.com/kubermatic/kubermatic/pull/13113))
 
 
-## [v2.24.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.3)
+## v2.24.3
+
+**GitHub release: [v2.24.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.3)**
 
 ### Bugfixes
 
@@ -112,7 +124,9 @@
 - Update go-git. This enables Applications to work with private Azure DevOps Git repositories ([#12995](https://github.com/kubermatic/kubermatic/pull/12995))
 
 
-## [v2.24.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.2)
+## v2.24.2
+
+**GitHub release: [v2.24.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.2)**
 
 ### Action Required
 
@@ -135,7 +149,9 @@
 
 - Remove 1.25 from list of supported versions on AKS (EOL on January 14th) ([#12962](https://github.com/kubermatic/kubermatic/pull/12962))
 
-## [v2.24.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.1)
+## v2.24.1
+
+**GitHub release: [v2.24.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.1)**
 
 ### Bugfixes
 
@@ -161,7 +177,9 @@
 - KKP is now built with Go 1.21.5 ([#12898](https://github.com/kubermatic/kubermatic/pull/12898))
 - Increase the default resources for VPA components to prevent OOMs ([#12887](https://github.com/kubermatic/kubermatic/pull/12887))
 
-## [v2.24.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.0)
+## v2.24.0
+
+**GitHub release: [v2.24.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.0)**
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.24/installation/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure user cluster reconciliations will not cause resource exhaustion on seed clusters. A [full upgrade guide is available from the official documentation](https://docs.kubermatic.com/kubermatic/v2.24/installation/upgrading/upgrade-from-2.23-to-2.24/).
 

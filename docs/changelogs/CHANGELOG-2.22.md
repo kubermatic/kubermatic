@@ -15,7 +15,9 @@
 - [v2.22.12](#v22212)
 - [v2.22.13](#v22213)
 
-## [v2.22.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.13)
+## v2.22.13
+
+**GitHub release: [v2.22.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.13)**
 
 ### Updates
 
@@ -23,7 +25,9 @@
 - Update operating-system-manager (OSM) to [v1.2.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.2.4) ([#13084](https://github.com/kubermatic/kubermatic/pull/13084))
     - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes.
 
-## [v2.22.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.12)
+## v2.22.12
+
+**GitHub release: [v2.22.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.12)**
 
 ### Bugfixes
 
@@ -34,7 +38,9 @@
 - Update EKS/AKS version matrix to only include Kubernetes versions supported by those managed offerings. For  AKS 1.26-1.28 are supported, for EKS 1.24 to 1.28. The default for newly created external clusters is now 1.28 ([#12965](https://github.com/kubermatic/kubermatic/pull/12965))
 - Add support for Kubernetes v1.24.17, v1.25.16 and v1.26.13 and set default version to v1.25.16 ([#12984](https://github.com/kubermatic/kubermatic/pull/12984))
 
-## [v2.22.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.11)
+## v2.22.11
+
+**GitHub release: [v2.22.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.11)**
 
 ### Bugfixes
 
@@ -44,7 +50,9 @@
 
 - Update machine-controller to [v1.56.5](https://github.com/kubermatic/machine-controller/releases/tag/v1.56.5) ([#12904](https://github.com/kubermatic/kubermatic/pull/12904))
 
-## [v2.22.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.10)
+## v2.22.10
+
+**GitHub release: [v2.22.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.10)**
 
 ### Action Required
 
@@ -57,7 +65,9 @@
 - Fix empty panels in Grafana dashboard "Resource Usage per Namespace" for Master/Seed MLA ([#12833](https://github.com/kubermatic/kubermatic/pull/12833))
 - Fix Helm 3.13 failing to install the MLA Minio chart due to "resource name may not be empty" error ([#12806](https://github.com/kubermatic/kubermatic/pull/12806))
 
-## [v2.22.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.9)
+## v2.22.9
+
+**GitHub release: [v2.22.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.9)**
 
 ### Bugfixes
 
@@ -68,7 +78,9 @@
 
 - Add Cilium 1.13.8 as supported CNI version, deprecate cilium version 1.13.0 as it's impacted by CVE-2023-34242 ([#12753](https://github.com/kubermatic/kubermatic/pull/12753))
 
-## [v2.22.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.8)
+## v2.22.8
+
+**GitHub release: [v2.22.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.8)**
 
 ### Bugfixes
 
@@ -83,7 +95,9 @@
 
 - Introduce `DisableAdminKubeconfig` flag in `KubermaticSettings` to disable the admin kubeconfig feature from dashboard ([#12682](https://github.com/kubermatic/kubermatic/pull/12682))
 
-## [v2.22.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.7)
+## v2.22.7
+
+**GitHub release: [v2.22.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.7)**
 
 ### Supported Kubernetes Versions
 
@@ -100,7 +114,9 @@
 - Update to Go 1.19.12 ([#12643](https://github.com/kubermatic/kubermatic/pull/12643))
 - Update Vertical Pod Autoscaler to 0.14 (compatible with Kubernetes 1.25+) ([#12612](https://github.com/kubermatic/kubermatic/pull/12612))
 
-## [v2.22.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.6)
+## v2.22.6
+
+**GitHub release: [v2.22.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.6)**
 
 ### Bugfixes
 
@@ -116,7 +132,9 @@
 - Update metering to v1.0.4 with increased namespace report generation performance and prometheus to v2.37.9 ([#12546](https://github.com/kubermatic/kubermatic/pull/12546))
 - Update telemetry-agent to v0.4.1 ([#12572](https://github.com/kubermatic/kubermatic/pull/12572))
 
-## [v2.22.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.5)
+## v2.22.5
+
+**GitHub release: [v2.22.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.5)**
 
 ### Bugfixes
 
@@ -133,7 +151,9 @@
 
 - Use buildx instead of Buildah to create multi-architecture KKP container images ([#12399](https://github.com/kubermatic/kubermatic/pull/12399))
 
-## [v2.22.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.4)
+## v2.22.4
+
+**GitHub release: [v2.22.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.4)**
 
 ### Bugfixes
 
@@ -163,7 +183,9 @@
 
 - Allow removing cluster label when PodNodeSelector admission plugin and clusterDefaultNodeSelector namespace are set ([#5984](https://github.com/kubermatic/dashboard/pull/5984))
 
-## [v2.22.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.3)
+## v2.22.3
+
+**GitHub release: [v2.22.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.3)**
 
 ### Security
 
@@ -197,7 +219,9 @@
 
 - Machine Deployments are initialized without waiting for all cluster details to finish loading ([#5922](https://github.com/kubermatic/dashboard/pull/5922))
 
-## [v2.22.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.2)
+## v2.22.2
+
+**GitHub release: [v2.22.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.2)**
 
 ### Bugfixes
 
@@ -241,7 +265,9 @@
 
 - Configure Ingress Hostname cluster settings of OpenStack provider ([#5861](https://github.com/kubermatic/dashboard/pull/5861))
 
-## [v2.22.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.1)
+## v2.22.1
+
+**GitHub release: [v2.22.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.1)**
 
 ### Bugfixes
 
@@ -263,7 +289,9 @@
 
 - Add support for ca-bundle to metering cronjobs ([#11979](https://github.com/kubermatic/kubermatic/pull/11979))
 
-## [v2.22.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.0)
+## v2.22.0
+
+**GitHub release: [v2.22.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.22.0)**
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.22/installation/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure user cluster reconciliations will not cause resource exhaustion on seed clusters. A [full upgrade guide is available from the official documentation](https://docs.kubermatic.com/kubermatic/v2.22/installation/upgrading/upgrade-from-2.21-to-2.22/).
 

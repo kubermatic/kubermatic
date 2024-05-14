@@ -17,7 +17,9 @@
 - [v2.21.14](#v22114)
 - [v2.21.15](#v22115)
 
-## [v2.21.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.15)
+## v2.21.15
+
+**GitHub release: [v2.21.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.15)**
 
 With this release, support for KKP v2.21.x ceases. Please upgrade to a supported version of KKP in the near future.
 
@@ -25,7 +27,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Extend project-synchronizer controller in `kubermatic-master-controller-manager` to propagate labels from Projects in the master cluster to Projects in the seed cluster. This fixes an issue where the metering report doesn't contain project-labels in separate master/seed setups ([#12794](https://github.com/kubermatic/kubermatic/pull/12794))
 
-## [v2.21.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.14)
+## v2.21.14
+
+**GitHub release: [v2.21.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.14)**
 
 ### Bugfixes
 
@@ -35,7 +39,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Add support for Cilium 1.12.15, mitigating a high-severity vulnerability, CVE-2023-44487 ([#12767](https://github.com/kubermatic/kubermatic/pull/12767))
 
-## [v2.21.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.13)
+## v2.21.13
+
+**GitHub release: [v2.21.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.13)**
 
 ### Bugfixes
 
@@ -45,14 +51,18 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Update OSM to [v1.1.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.1.4) ([#12707](https://github.com/kubermatic/kubermatic/pull/12707))
 
-## [v2.21.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.12)
+## v2.21.12
+
+**GitHub release: [v2.21.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.12)**
 
 ### Bugfixes
 
 - Add missing images from envoy-agent DaemonSet in Tunneling expose strategy when running `kubermatic-installer mirror-images` ([#12541](https://github.com/kubermatic/kubermatic/pull/12541))
 - Mark all canal CRDs with `preserveUnknownFields: false` ([#12547](https://github.com/kubermatic/kubermatic/pull/12547))
 
-## [v2.21.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.11)
+## v2.21.11
+
+**GitHub release: [v2.21.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.11)**
 
 ### Bugfixes
 
@@ -63,7 +73,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Update machine-controller to [v1.54.8](https://github.com/kubermatic/machine-controller/releases/tag/v1.54.8) ([#12391](https://github.com/kubermatic/kubermatic/pull/12498))
 
-## [v2.21.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.10)
+## v2.21.10
+
+**GitHub release: [v2.21.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.10)**
 
 ### Bugfixes
 
@@ -78,7 +90,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Change `etcd-defragger` CronJob `SuccessfulJobsHistoryLimit` from 0 to 1 to save logs of the most recent successful job ([#12319](https://github.com/kubermatic/kubermatic/pull/12319))
 
-## [v2.21.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.9)
+## v2.21.9
+
+**GitHub release: [v2.21.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.9)**
 
 ### Bugfixes
 
@@ -102,7 +116,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Machine Deployments are initialized without waiting for all cluster details to finish loading ([#5922](https://github.com/kubermatic/dashboard/pull/5922))
 
-## [v2.21.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.8)
+## v2.21.8
+
+**GitHub release: [v2.21.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.8)**
 
 ### Action Required
 
@@ -136,7 +152,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 - Configure Ingress Hostname cluster settings of OpenStack provider ([#5865](https://github.com/kubermatic/dashboard/pull/5865))
 
 
-## [v2.21.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.7)
+## v2.21.7
+
+**GitHub release: [v2.21.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.7)**
 
 ### Bugfixes
 
@@ -163,7 +181,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
     - Fixes a bug that leads to low CPU usage values.
     - Remove redundant label quotation.
 
-## [v2.21.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.6)
+## v2.21.6
+
+**GitHub release: [v2.21.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.6)**
 
 ### Bugfixes
 
@@ -180,7 +200,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Add keepalive-time Konnectivity setting + set keepalive to 1m by default ([#11786](https://github.com/kubermatic/kubermatic/pull/11786))
 
-## [v2.21.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.5)
+## v2.21.5
+
+**GitHub release: [v2.21.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.5)**
 
 ### API Changes
 
@@ -205,7 +227,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Stop overriding upstream chart tolerations for logging/promtail by default, adding `node-role.kubernetes.io/control-plane` toleration ([#11592](https://github.com/kubermatic/kubermatic/pull/11592))
 
-## [v2.21.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.4)
+## v2.21.4
+
+**GitHub release: [v2.21.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.4)**
 
 ### Action Required
 
@@ -244,7 +268,9 @@ With this release, support for KKP v2.21.x ceases. Please upgrade to a supported
 
 - Provide options for autoscaling nodes ([#5402](https://github.com/kubermatic/dashboard/pull/5402))
 
-## [v2.21.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.3)
+## v2.21.3
+
+**GitHub release: [v2.21.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.3)**
 
 This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE-2022-3294. For more information, see below. We strongly recommend upgrading to those Kubernetes patch releases as soon as possible.
 
@@ -275,7 +301,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 
 - For the next series of KKP patch releases, image references will move from `k8s.gcr.io` to `registry.k8s.io`. This will be done to keep up with [latest upstream changes](https://github.com/kubernetes/enhancements/tree/master/keps/sig-release/3000-artifact-distribution). Please ensure that any mirrors you use are going to host `registry.k8s.io` and/or that firewall rules are going to allow access to `registry.k8s.io` to pull images before applying the next KKP patch releases. **This is not included in this patch release but just a notification of future changes.**
 
-## [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)
+## v2.21.2
+
+**GitHub release: [v2.21.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.2)**
 
 ### Bugfixes
 
@@ -304,7 +332,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Upgrade to operating-system-manager v1.1.1 ([#11090](https://github.com/kubermatic/kubermatic/issues/11090))
 
 
-## [v2.21.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.1)
+## v2.21.1
+
+**GitHub release: [v2.21.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.1)**
 
 ### API Changes
 
@@ -334,7 +364,9 @@ This release includes updated Kubernetes versions that fix CVE-2022-3162 and CVE
 - Update Cilium 1.12 to v1.12.1 ([#10952](https://github.com/kubermatic/kubermatic/pull/10952))
 
 
-## [v2.21.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.0)
+## v2.21.0
+
+**GitHub release: [v2.21.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.21.0)**
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.21/tutorials-howtos/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure usercluster reconciliations will not cause resource exhaustion on seed clusters.
 

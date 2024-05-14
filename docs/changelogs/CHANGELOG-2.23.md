@@ -17,7 +17,9 @@
 - [v2.23.14](#v22314)
 - [v2.23.15](#v22315)
 
-## [v2.23.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.15)
+## v2.23.15
+
+**GitHub release: [v2.23.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.15)**
 
 ### Bugfixes
 
@@ -28,7 +30,9 @@
 * Update operating-system-manager to v1.3.5.
 
 
-## [v2.23.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.14)
+## v2.23.14
+
+**GitHub release: [v2.23.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.14)**
 
 ### New Feature
 
@@ -47,7 +51,9 @@
 - Update machine-controller to v1.57.7 ([#13347](https://github.com/kubermatic/kubermatic/pull/13347))
 
 
-## [v2.23.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.13)
+## v2.23.13
+
+**GitHub release: [v2.23.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.13)**
 
 ### API Changes
 
@@ -63,7 +69,9 @@
 - Add support for Kubernetes 1.27.13 (fixes CVE-2024-3177) ([#13300](https://github.com/kubermatic/kubermatic/pull/13300))
 
 
-## [v2.23.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.12)
+## v2.23.12
+
+**GitHub release: [v2.23.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.12)**
 
 ### Bugfixes
 
@@ -77,7 +85,9 @@
 - Update to Go 1.20.13 ([#13165](https://github.com/kubermatic/kubermatic/pull/13165)) and ([#6594](https://github.com/kubermatic/dashboard/pull/6594))
 
 
-## [v2.23.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.11)
+## v2.23.11
+
+**GitHub release: [v2.23.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.11)**
 
 ### Bugfixes
 
@@ -90,7 +100,9 @@
 - Update operating-system-manager (OSM) to [v1.3.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.3.4)  ([#13083](https://github.com/kubermatic/kubermatic/pull/13083))
   - This includes a fix for Flatcar stable channel (version 3815.2.0) failing to provision as new nodes.
 
-## [v2.23.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.10)
+## v2.23.10
+
+**GitHub release: [v2.23.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.10)**
 
 ### Bugfixes
 
@@ -101,7 +113,9 @@
 - Update EKS/AKS version matrix to only include Kubernetes versions supported by those managed offerings. For  AKS 1.26-1.28 are supported, for EKS 1.24 to 1.28. The default for newly created external clusters is now 1.28 ([#12964](https://github.com/kubermatic/kubermatic/pull/12964))
 - Add support for Kubernetes v1.24.17, v1.25.16, v1.26.13, v1.27.10 and set default version to v1.26.13 ([#12983](https://github.com/kubermatic/kubermatic/pull/12983))
 
-## [v2.23.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.9)
+## v2.23.9
+
+**GitHub release: [v2.23.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.9)**
 
 ### Bugfixes
 
@@ -122,13 +136,17 @@
 - KKP is now built with Go 1.20.12 ([#12900](https://github.com/kubermatic/kubermatic/pull/12900))
 - Increase the default resources for VPA components to prevent OOMs ([#12887](https://github.com/kubermatic/kubermatic/pull/12887))
 
-## [v2.23.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.8)
+## v2.23.8
+
+**GitHub release: [v2.23.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.8)**
 
 ### Dashboard
 
 - Fix a bug where the API call to list projects was failing due to slowness ([#6385](https://github.com/kubermatic/dashboard/pull/6385))
 
-## [v2.23.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.7)
+## v2.23.7
+
+**GitHub release: [v2.23.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.7)**
 
 ### Action Required
 
@@ -141,7 +159,9 @@
 - Fix empty panels in Grafana dashboard "Resource Usage per Namespace" for Master/Seed MLA ([#12816](https://github.com/kubermatic/kubermatic/pull/12816))
 - Fix Helm 3.13 failing to install the MLA Minio chart due to "resource name may not be empty" error ([#12806](https://github.com/kubermatic/kubermatic/pull/12806))
 
-## [v2.23.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.6)
+## v2.23.6
+
+**GitHub release: [v2.23.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.6)**
 
 ### Bugfixes
 
@@ -153,7 +173,9 @@
 
 - Add support for Cilium 1.13.8, mitigating a high-severity vulnerability, CVE-2023-44487 ([#12762](https://github.com/kubermatic/kubermatic/pull/12762))
 
-## [v2.23.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.5)
+## v2.23.5
+
+**GitHub release: [v2.23.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.5)**
 
 ### Bugfixes
 
@@ -171,14 +193,18 @@
 
 - Introduce `DisableAdminKubeconfig` flag in `KubermaticSettings` to disable the admin kubeconfig feature from dashboard ([#12679](https://github.com/kubermatic/kubermatic/pull/12679))
 
-## [v2.23.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.4)
+## v2.23.4
+
+**GitHub release: [v2.23.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.4)**
 
 ### Bugfixes
 
 - Fix vSphere cluster validation: If a Cluster uses a custom datastore, the Seed's default datastore should not be validated ([#12655](https://github.com/kubermatic/kubermatic/pull/12655))
 - Remove Cilium 1.14.1 from list of supported CNI versions visible in the dashboard as it is not supported in KKP 2.23 ([#12659](https://github.com/kubermatic/kubermatic/pull/12659))
 
-## [v2.23.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.3)
+## v2.23.3
+
+**GitHub release: [v2.23.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.3)**
 
 ### Supported Kubernetes Versions
 
@@ -199,7 +225,9 @@
 - Add Cilium 1.13.6 as supported CNI version and deprecate older versions 1.13.3 and 1.13.4 for security reasons (GHSA-pvgm-7jpg-pw5g, GHSA-69vr-g55c-v2v4, GHSA-mc6h-6j9x-v3gq, GHSA-7mhv-gr67-hq55) ([#12635](https://github.com/kubermatic/kubermatic/pull/12635))
 - Update Vertical Pod Autoscaler to 0.14 (compatible with Kubernetes 1.25+) ([#12611](https://github.com/kubermatic/kubermatic/pull/12611))
 
-## [v2.23.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.2)
+## v2.23.2
+
+**GitHub release: [v2.23.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.2)**
 
 ### Bugfixes
 
@@ -225,7 +253,9 @@
 
 - Support for configuring the dex theme via values file ([#12560](https://github.com/kubermatic/kubermatic/pull/12560))
 
-## [v2.23.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.1)
+## v2.23.1
+
+**GitHub release: [v2.23.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.1)**
 
 ### Features
 
@@ -249,7 +279,9 @@
 - Support for configuring multiple networks for vSphere ([#12458](https://github.com/kubermatic/kubermatic/pull/12458))
 - Support for configuring IPFamilies and IPFamilyPolicy for nodeport-proxy ([#12472](https://github.com/kubermatic/kubermatic/pull/12472))
 
-## [v2.23.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.0)
+## v2.23.0
+
+**GitHub release: [v2.23.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.0)**
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.23/installation/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure user cluster reconciliations will not cause resource exhaustion on seed clusters. A [full upgrade guide is available from the official documentation](https://docs.kubermatic.com/kubermatic/v2.23/installation/upgrading/upgrade-from-2.22-to-2.23/).
 
