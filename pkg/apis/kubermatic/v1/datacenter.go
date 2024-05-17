@@ -309,6 +309,9 @@ type SeedSpec struct {
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
 	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitcegenyaml"`
+	// DisabledCollectors contains a list of metrics collectors that should be disabled.
+	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
+	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.

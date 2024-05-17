@@ -42,6 +42,24 @@ const (
 // OperationType is the type defining the operations triggering the compatibility check (CREATE or UPDATE).
 type OperationType string
 
+// +kubebuilder:validation:Enum=Addon;Cluster;ClusterBackup;Project;None
+// MetricsCollector is the name of an available metrics collector.
+type MetricsCollector string
+
+const (
+	// AddonCollector is addon metrics collector.
+	AddonCollector MetricsCollector = "Addon"
+	// ClusterBackupCollector is cluster backup metrics collector.
+	ClusterBackupCollector MetricsCollector = "ClusterBackup"
+	// ClusterCollector is cluster metrics collector.
+	ClusterCollector MetricsCollector = "Cluster"
+	// ProjectCollector is project metrics collector.
+	ProjectCollector MetricsCollector = "Project"
+	// NoneCollector is a special name that points to no collector.
+	// It is used when a client wants to disable certain collectors in all seeds except for a few.
+	NoneCollector MetricsCollector = "None"
+)
+
 const (
 	// CreateOperation represents the creation of a new cluster.
 	CreateOperation OperationType = "CREATE"
@@ -205,6 +223,9 @@ type KubermaticSeedControllerConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the seed-controller-manager.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// DisabledCollectors contains a list of metrics collectors that should be disabled.
+	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
+	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
 }
 
 // KubermaticWebhookConfiguration configures the Kubermatic webhook.

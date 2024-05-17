@@ -62,6 +62,13 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
+			var disabledCollectors string
+			if len(seed.Spec.DisabledCollectors) > 0 {
+				disabledCollectors = join(seed.Spec.DisabledCollectors, ",")
+			} else {
+				disabledCollectors = join(cfg.Spec.SeedController.DisabledCollectors, ",")
+			}
+
 			args := []string{
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
@@ -79,6 +86,7 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
 				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
+				fmt.Sprintf("-disabled-collectors=%s", disabledCollectors),
 			}
 
 			if cfg.Spec.ImagePullSecret != "" {
@@ -257,4 +265,12 @@ func SeedControllerManagerPDBReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 			return pdb, nil
 		}
 	}
+}
+
+func join(collectors []kubermaticv1.MetricsCollector, sep string) string {
+	names := make([]string, 0, len(collectors))
+	for _, collector := range collectors {
+		names = append(names, string(collector))
+	}
+	return strings.Join(names, sep)
 }

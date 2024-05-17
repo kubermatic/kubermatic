@@ -228,6 +228,9 @@ spec:
         mountPath: /backup
     # DebugLog enables more verbose logging.
     debugLog: false
+    # DisabledCollectors contains a list of metrics collectors that should be disabled.
+    # Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
+    disabledCollectors: null
     # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
     dockerRepository: quay.io/kubermatic/kubermatic
     # MaximumParallelReconciles limits the number of cluster reconciliations

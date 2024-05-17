@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"slices"
+	"strings"
 
 	"github.com/go-logr/zapr"
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
@@ -219,20 +221,30 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Could not create all controllers", zap.Error(err))
 	}
 
-	// Use the API reader as the cache-backed reader will only contain data when we are leader
-	// and return errors otherwise.
-	// Ideally, the cache wouldn't require the leader lease:
-	// https://github.com/kubernetes-sigs/controller-runtime/issues/677
-	log.Debug("Starting cluster backup collector")
-	collectors.MustRegisterClusterBackupCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader(), log, options.caBundle, seedGetter)
-	log.Debug("Starting clusters collector")
-	collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
-	log.Debug("Starting addons collector")
-	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
-	// The canonical source of projects is the master cluster, but since they are replicated onto
-	// seeds, we start the project collctor on seed clusters as well, just for convenience for the admin.
-	log.Debug("Starting projects collector")
-	collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	disabledCollectors := strings.Split(options.disabledCollectors, ",")
+
+	if !slices.Contains(disabledCollectors, string(kubermaticv1.ClusterBackupCollector)) {
+		// Use the API reader as the cache-backed reader will only contain data when we are leader
+		// and return errors otherwise.
+		// Ideally, the cache wouldn't require the leader lease:
+		// https://github.com/kubernetes-sigs/controller-runtime/issues/677
+		log.Debug("Starting cluster backup collector")
+		collectors.MustRegisterClusterBackupCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader(), log, options.caBundle, seedGetter)
+	}
+	if !slices.Contains(disabledCollectors, string(kubermaticv1.ClusterCollector)) {
+		log.Debug("Starting clusters collector")
+		collectors.MustRegisterClusterCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	}
+	if !slices.Contains(disabledCollectors, string(kubermaticv1.AddonCollector)) {
+		log.Debug("Starting addons collector")
+		collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	}
+	if !slices.Contains(disabledCollectors, string(kubermaticv1.ProjectCollector)) {
+		// The canonical source of projects is the master cluster, but since they are replicated onto
+		// seeds, we start the project collctor on seed clusters as well, just for convenience for the admin.
+		log.Debug("Starting projects collector")
+		collectors.MustRegisterProjectCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
+	}
 
 	if err := mgr.Add(metricserver.New(options.internalAddr)); err != nil {
 		log.Fatalw("failed to add metrics server", zap.Error(err))

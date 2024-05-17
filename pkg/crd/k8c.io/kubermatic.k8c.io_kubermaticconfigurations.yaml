@@ -376,6 +376,20 @@ spec:
                     debugLog:
                       description: DebugLog enables more verbose logging.
                       type: boolean
+                    disabledCollectors:
+                      description: |-
+                        DisabledCollectors contains a list of metrics collectors that should be disabled.
+                        Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
+                      items:
+                        description: MetricsCollector is the name of an available metrics collector.
+                        enum:
+                          - Addon
+                          - Cluster
+                          - ClusterBackup
+                          - Project
+                          - None
+                        type: string
+                      type: array
                     dockerRepository:
                       description: DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
                       type: string
