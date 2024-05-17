@@ -31,6 +31,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -62,7 +63,7 @@ import (
 )
 
 const (
-	ControllerName = "cluster-backup-controller"
+	ControllerName = resources.ClusterBakcupControllerName
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -323,6 +324,7 @@ func (r *reconciler) undeployClusterBackupUserClusterCRDs(ctx context.Context, u
 		LabelSelector: labels.SelectorFromSet(
 			map[string]string{
 				"component": "velero",
+				appskubermaticv1.ApplicationManagedByLabel: resources.ClusterBakcupControllerName,
 			}),
 	}
 	if err := userClusterClient.List(ctx, crdList, listOpts); err != nil {
