@@ -46,7 +46,10 @@ func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return DeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			baseLabels := resources.BaseAppLabels(DeploymentName, nil)
-			kubernetes.EnsureLabels(dep, baseLabels)
+			kubernetes.EnsureLabels(
+				dep,
+				resources.ApplyManagedByLabelWithName(baseLabels, resources.ClusterBakcupControllerName),
+			)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
@@ -154,7 +157,6 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-
 		{
 			Name:         "plugins",
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
