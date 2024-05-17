@@ -32,6 +32,17 @@ set -o monitor
 # fi
 OS="$(echo $(uname) | tr '[:upper:]' '[:lower:]')"
 
+# Set the container runtime to docker or nerdctl.
+if [ -z "${CONTAINER_RUNTIME:-}" ]; then
+  if command -v docker &> /dev/null; then
+    CONTAINER_RUNTIME=docker
+  elif command -v nerdctl &> /dev/null; then
+    CONTAINER_RUNTIME=nerdctl
+  else
+    CONTAINER_RUNTIME=docker
+  fi
+fi
+
 worker_name() {
   echo "${KUBERMATIC_WORKERNAME:-$(uname -n)}" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]'
 }
@@ -122,7 +133,7 @@ containerize() {
     mkdir -p "$gocache"
     mkdir -p "$gomodcache"
 
-    exec docker run \
+    exec $CONTAINER_RUNTIME run \
       -v "$PWD":/go/src/k8c.io/kubermatic \
       -v "$gocache":"$gocache" \
       -v "$gomodcache":"$gomodcache" \
