@@ -80,7 +80,7 @@ func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error)
 func CRDReconciler(crd apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return crd.Name, func(target *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			target.Labels = resources.ApplyManagedByLabelWithName(crd.Labels, resources.ClusterBakcupControllerName)
+			target.Labels = resources.ApplyManagedByLabelWithName(crd.Labels, resources.ClusterBackupControllerName)
 			target.Annotations = crd.Annotations
 			target.Spec = crd.Spec
 

@@ -66,6 +66,7 @@ func NamespaceReconciler() reconciling.NamedNamespaceReconcilerFactory {
 				"pod-security.kubernetes.io/warn":            "privileged",
 				"pod-security.kubernetes.io/warn-version":    "latest",
 			}
+			ns.Labels = resources.ApplyManagedByLabelWithName(ns.Labels, resources.ClusterBackupControllerName)
 			return ns, nil
 		}
 	}
@@ -75,7 +76,7 @@ func NamespaceReconciler() reconciling.NamedNamespaceReconcilerFactory {
 func ServiceAccountReconciler() reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountReconciler) {
 		return resources.ClusterBackupServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = resources.ApplyManagedByLabelWithName(map[string]string{}, resources.ClusterBakcupControllerName)
+			sa.Labels = resources.ApplyManagedByLabelWithName(map[string]string{}, resources.ClusterBackupControllerName)
 			return sa, nil
 		}
 	}
@@ -87,7 +88,7 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 		return ClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			crb.Labels = resources.ApplyManagedByLabelWithName(
 				resources.BaseAppLabels(clusterBackupAppName, nil),
-				resources.ClusterBakcupControllerName,
+				resources.ClusterBackupControllerName,
 			)
 
 			crb.RoleRef = rbacv1.RoleRef{
@@ -118,7 +119,7 @@ func BSLReconciler(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kub
 			}
 			bsl.Labels = resources.ApplyManagedByLabelWithName(
 				resources.BaseAppLabels(clusterBackupAppName, nil),
-				resources.ClusterBakcupControllerName,
+				resources.ClusterBackupControllerName,
 			)
 			bsl.Spec = *cbsl.Spec.DeepCopy()
 			// we set this bsl as default and remove the secret reference to make it use the default velero secret.
