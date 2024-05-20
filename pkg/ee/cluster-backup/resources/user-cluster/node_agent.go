@@ -72,7 +72,7 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 			baseLabels := resources.BaseAppLabels(DaemonSetName, map[string]string{"component": "velero"})
 			kubernetes.EnsureLabels(
 				ds,
-				resources.ApplyManagedByLabelWithName(baseLabels, resources.ClusterBakcupControllerName),
+				resources.ApplyManagedByLabelWithName(baseLabels, resources.ClusterBackupControllerName),
 			)
 
 			podLabels := resources.BaseAppLabels(DaemonSetName, veleroAdditionalLabels)

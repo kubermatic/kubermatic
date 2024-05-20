@@ -1072,7 +1072,7 @@ const (
 	ClusterBackupUsername             = "velero"
 	ClusterBackupServiceAccountName   = "velero"
 	ClusterBackupNamespaceName        = "velero"
-	ClusterBakcupControllerName       = "cluster-backup-controller"
+	ClusterBackupControllerName       = "cluster-backup-controller"
 )
 
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
