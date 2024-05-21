@@ -31,6 +31,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -1071,6 +1072,7 @@ const (
 	ClusterBackupUsername             = "velero"
 	ClusterBackupServiceAccountName   = "velero"
 	ClusterBackupNamespaceName        = "velero"
+	ClusterBackupControllerName       = "cluster-backup-controller"
 )
 
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
@@ -1255,6 +1257,16 @@ func AppClusterLabels(appName, clusterName string, additionalLabels map[string]s
 	podLabels["cluster"] = clusterName
 
 	return podLabels
+}
+
+// ApplyManagedByLabelWithName Adds the `app.kubernetes.io/managed-by=operatorName` label to a set of labels.
+func ApplyManagedByLabelWithName(labels map[string]string, operatorName string) map[string]string {
+	if labels == nil {
+		labels = map[string]string{}
+	}
+	labels[appskubermaticv1.ApplicationManagedByLabel] = operatorName
+
+	return labels
 }
 
 // CertWillExpireSoon returns if the certificate will expire in the next 30 days.

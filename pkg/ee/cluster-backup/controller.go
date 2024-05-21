@@ -31,6 +31,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -62,7 +63,10 @@ import (
 )
 
 const (
-	ControllerName = "cluster-backup-controller"
+	ControllerName = resources.ClusterBackupControllerName
+
+	clusterBackupComponentLabelKey   = "component"
+	clusterBackupComponentLabelValue = "velero"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -307,12 +311,26 @@ func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Conte
 	}
 
 	for _, resource := range userClusterResources {
+		if err := doSafeDelete(ctx, userClusterClient, resource); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func doSafeDelete(ctx context.Context, client ctrlruntimeclient.Client, resource ctrlruntimeclient.Object) error {
+	if err := client.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, resource); err != nil {
+		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to list cluster backup user-cluster resources: %w", err)
+	}
+	if isManagedBackupResource(resource) {
 		// skip err if resource doesn't exist or if the API for it doesn't exist
-		if err := userClusterClient.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
+		if err := client.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
 			return fmt.Errorf("failed to delete cluster backup user-cluster resource: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -322,7 +340,8 @@ func (r *reconciler) undeployClusterBackupUserClusterCRDs(ctx context.Context, u
 	listOpts := &ctrlruntimeclient.ListOptions{
 		LabelSelector: labels.SelectorFromSet(
 			map[string]string{
-				"component": "velero",
+				clusterBackupComponentLabelKey:             clusterBackupComponentLabelValue,
+				appskubermaticv1.ApplicationManagedByLabel: resources.ClusterBackupControllerName,
 			}),
 	}
 	if err := userClusterClient.List(ctx, crdList, listOpts); err != nil {
@@ -338,4 +357,9 @@ func (r *reconciler) undeployClusterBackupUserClusterCRDs(ctx context.Context, u
 
 func inSameProject(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) bool {
 	return cluster.Labels[kubermaticv1.ProjectIDLabelKey] == cbsl.Labels[kubermaticv1.ProjectIDLabelKey]
+}
+
+func isManagedBackupResource(resource ctrlruntimeclient.Object) bool {
+	labels := resource.GetLabels()
+	return labels[appskubermaticv1.ApplicationManagedByLabel] == resources.ClusterBackupControllerName
 }

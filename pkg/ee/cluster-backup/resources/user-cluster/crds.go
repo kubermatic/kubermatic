@@ -28,6 +28,7 @@ import (
 	"embed"
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -79,7 +80,7 @@ func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error)
 func CRDReconciler(crd apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return crd.Name, func(target *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			target.Labels = crd.Labels
+			target.Labels = resources.ApplyManagedByLabelWithName(crd.Labels, resources.ClusterBackupControllerName)
 			target.Annotations = crd.Annotations
 			target.Spec = crd.Spec
 
