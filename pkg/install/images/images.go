@@ -687,7 +687,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	}
 
 	fakeCluster.Spec.EnableUserSSHKeyAgent = ptr.To(true)
-	fakeCluster.Spec.EnableOperatingSystemManager = ptr.To(true)
 	fakeCluster.Spec.KubernetesDashboard = &kubermaticv1.KubernetesDashboard{
 		Enabled: true,
 	}

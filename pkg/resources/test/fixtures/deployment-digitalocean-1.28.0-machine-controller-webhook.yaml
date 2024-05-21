@@ -36,7 +36,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-listen-address","0.0.0.0:9876","-namespace","cluster-de-test-01","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-tls-cert-path","/etc/kubernetes/pki/serving-cert/cert.pem","-tls-key-path","/etc/kubernetes/pki/serving-cert/key.pem","-use-osm"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-worker-cluster-kubeconfig","/etc/kubernetes/worker-kubeconfig/kubeconfig","-listen-address","0.0.0.0:9876","-namespace","cluster-de-test-01","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-tls-cert-path","/etc/kubernetes/pki/serving-cert/cert.pem","-tls-key-path","/etc/kubernetes/pki/serving-cert/key.pem"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
@@ -65,7 +65,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/worker-kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:eaccda7855b6cd493f082243e0a57027158d7bd0
+        image: quay.io/kubermatic/machine-controller:31463a80af435b2b670e9a816de56372db221592
         livenessProbe:
           failureThreshold: 8
           httpGet:

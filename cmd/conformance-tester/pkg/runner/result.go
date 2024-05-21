@@ -63,7 +63,6 @@ func (r *Results) PrintSummary() {
 	fmt.Println("Parameters:")
 	fmt.Printf("  KKP Version............: %s (%s)\n", r.Options.KubermaticConfiguration.Status.KubermaticVersion, r.Options.KubermaticConfiguration.Status.KubermaticEdition)
 	fmt.Printf("  Name Prefix............: %q\n", r.Options.NamePrefix)
-	fmt.Printf("  OSM Enabled............: %v\n", r.Options.OperatingSystemManagerEnabled)
 	fmt.Printf("  Dualstack Enabled......: %v\n", r.Options.DualStackEnabled)
 	fmt.Printf("  Konnectivity Enabled...: %v\n", r.Options.KonnectivityEnabled)
 	fmt.Printf("  Cluster Updates Enabled: %v\n", r.Options.TestClusterUpdate)
@@ -160,7 +159,6 @@ func (r *Results) WriteToFile(filename string) error {
 
 	output := ResultsFile{
 		Configuration: TestConfiguration{
-			OSMEnabled:          r.Options.OperatingSystemManagerEnabled,
 			DualstackEnabled:    r.Options.DualStackEnabled,
 			KonnectivityEnabled: r.Options.KonnectivityEnabled,
 			TestClusterUpdate:   r.Options.TestClusterUpdate,

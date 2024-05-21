@@ -68,7 +68,6 @@ _build/conformance-tester \
   -providers "aws" \
   -distributions "${DISTRIBUTIONS:-}" \
   -releases "${RELEASES:-}" \
-  -enable-osm=${OSM:-true} \
   -container-runtimes "${RUNTIMES:-}" \
   -client "kube" \
   -log-format "Console" \

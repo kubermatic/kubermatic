@@ -152,11 +152,6 @@ func (j *ClusterJig) WithKonnectivity(enabled bool) *ClusterJig {
 	return j
 }
 
-func (j *ClusterJig) WithOperatingSystemManager(enabled bool) *ClusterJig {
-	j.spec.EnableOperatingSystemManager = ptr.To(enabled)
-	return j
-}
-
 func (j *ClusterJig) WithExposeStrategy(strategy kubermaticv1.ExposeStrategy) *ClusterJig {
 	j.spec.ExposeStrategy = strategy
 	return j

@@ -214,8 +214,8 @@ type ClusterSpec struct {
 	// No SSH keys will be synced after node creation if this is disabled.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
-	// Optional: Enables operating-system-manager (OSM), which is responsible for creating and managing worker node configuration.
-	// This field is enabled(true) by default.
+	// Deprecated: EnableOperatingSystemManager has been deprecated starting with KKP 2.26 and will be removed in KKP 2.28+. This field is no-op and OSM is always enabled for user clusters.
+	// OSM is responsible for creating and managing worker node configuration.
 	EnableOperatingSystemManager *bool `json:"enableOperatingSystemManager,omitempty"`
 
 	// KubeLB holds the configuration for the kubeLB component.
@@ -263,10 +263,6 @@ type ClusterSpec struct {
 
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
-}
-
-func (c ClusterSpec) IsOperatingSystemManagerEnabled() bool {
-	return c.EnableOperatingSystemManager == nil || *c.EnableOperatingSystemManager
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.

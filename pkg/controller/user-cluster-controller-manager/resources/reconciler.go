@@ -150,7 +150,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 	data.cloudProviderName = cluster.Spec.Cloud.ProviderName
 	data.clusterVersion = clusterVersion
-	data.operatingSystemManagerEnabled = cluster.Spec.IsOperatingSystemManagerEnabled()
 	data.kubernetesDashboardEnabled = cluster.Spec.IsKubernetesDashboardEnabled()
 
 	// Must be first because of openshift
@@ -294,12 +293,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if !data.operatingSystemManagerEnabled {
-		if err := r.ensureOSMResourcesAreRemoved(ctx); err != nil {
-			return err
-		}
-	}
-
 	if !data.kubernetesDashboardEnabled {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx); err != nil {
 			return err
@@ -403,14 +396,11 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	creators := []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.KubeSystemRoleReconciler(),
 		clusterautoscaler.KubeSystemRoleReconciler(),
+		operatingsystemmanager.KubeSystemRoleReconciler(),
 	}
 
 	if r.userSSHKeyAgent {
 		creators = append(creators, usersshkeys.RoleReconciler())
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleReconciler())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -421,10 +411,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	creators = []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.ClusterInfoReaderRoleReconciler(),
 		machinecontroller.KubePublicRoleReconciler(),
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.KubePublicRoleReconciler())
+		operatingsystemmanager.KubePublicRoleReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
@@ -435,10 +422,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	creators = []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.EndpointReaderRoleReconciler(),
 		clusterautoscaler.DefaultRoleReconciler(),
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.DefaultRoleReconciler())
+		operatingsystemmanager.DefaultRoleReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
@@ -458,10 +442,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 	cloudInitRoleReconciler := []reconciling.NamedRoleReconcilerFactory{
 		cloudinitsettings.RoleReconciler(),
-	}
-
-	if data.operatingSystemManagerEnabled {
-		cloudInitRoleReconciler = append(cloudInitRoleReconciler, operatingsystemmanager.CloudInitSettingsRoleReconciler())
+		operatingsystemmanager.CloudInitSettingsRoleReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, cloudInitRoleReconciler, resources.CloudInitSettingsNamespace, r.Client); err != nil {
@@ -489,14 +470,11 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingReconciler(),
+		operatingsystemmanager.KubeSystemRoleBindingReconciler(),
 	}
 
 	if r.userSSHKeyAgent {
 		creators = append(creators, usersshkeys.RoleBindingReconciler())
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.KubeSystemRoleBindingReconciler())
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -507,9 +485,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	creators = []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.KubePublicRoleBindingReconciler(),
 		machinecontroller.ClusterInfoAnonymousRoleBindingReconciler(),
-	}
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.KubePublicRoleBindingReconciler())
+		operatingsystemmanager.KubePublicRoleBindingReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
@@ -520,9 +496,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	creators = []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.DefaultRoleBindingReconciler(),
 		clusterautoscaler.DefaultRoleBindingReconciler(),
-	}
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.DefaultRoleBindingReconciler())
+		operatingsystemmanager.DefaultRoleBindingReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
@@ -541,10 +515,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 
 	cloudInitRoleBindingReconciler := []reconciling.NamedRoleBindingReconcilerFactory{
 		cloudinitsettings.RoleBindingReconciler(),
-	}
-
-	if data.operatingSystemManagerEnabled {
-		cloudInitRoleBindingReconciler = append(cloudInitRoleBindingReconciler, operatingsystemmanager.CloudInitSettingsRoleBindingReconciler())
+		operatingsystemmanager.CloudInitSettingsRoleBindingReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, cloudInitRoleBindingReconciler, resources.CloudInitSettingsNamespace, r.Client); err != nil {
@@ -573,6 +544,8 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		metricsserver.ClusterRoleReconciler(),
 		clusterautoscaler.ClusterRoleReconciler(),
 		coredns.ClusterRoleReconciler(),
+		operatingsystemmanager.WebhookClusterRoleReconciler(),
+		operatingsystemmanager.ClusterRoleReconciler(),
 	}
 
 	if data.kubernetesDashboardEnabled {
@@ -588,11 +561,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 	}
 	if r.userClusterMLA.Monitoring {
 		creators = append(creators, mlamonitoringagent.ClusterRoleReconciler())
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.ClusterRoleReconciler())
-		creators = append(creators, operatingsystemmanager.WebhookClusterRoleReconciler())
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -618,6 +586,8 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		systembasicuser.ClusterRoleBinding,
 		cloudcontroller.ClusterRoleBindingReconciler(),
 		coredns.ClusterRoleBindingReconciler(),
+		operatingsystemmanager.ClusterRoleBindingReconciler(),
+		operatingsystemmanager.WebhookClusterRoleBindingReconciler(),
 	}
 
 	if data.kubernetesDashboardEnabled {
@@ -640,10 +610,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, konnectivity.ClusterRoleBindingReconciler())
 	}
 
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.ClusterRoleBindingReconciler())
-		creators = append(creators, operatingsystemmanager.WebhookClusterRoleBindingReconciler())
-	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
@@ -666,12 +632,8 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 		machinecontroller.MachineSetCRDReconciler(),
 		machinecontroller.MachineDeploymentCRDReconciler(),
 		applications.CRDReconciler(c),
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators,
-			operatingsystemmanager.OperatingSystemConfigCRDReconciler(),
-			operatingsystemmanager.OperatingSystemProfileCRDReconciler())
+		operatingsystemmanager.OperatingSystemConfigCRDReconciler(),
+		operatingsystemmanager.OperatingSystemProfileCRDReconciler(),
 	}
 
 	if r.opaIntegration {
@@ -695,6 +657,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
 		applications.ApplicationInstallationMutatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		operatingsystemmanager.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 	}
 
 	if data.cloudProviderName != string(kubermaticv1.EdgeCloudProvider) {
@@ -703,9 +666,6 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 
 	if r.opaIntegration && r.opaEnableMutation {
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
-	}
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.MutatingwebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -717,6 +677,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationReconcilerFactory{
 		applications.ApplicationInstallationValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
+		operatingsystemmanager.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace),
 	}
 
 	if data.cloudProviderName != string(kubermaticv1.EdgeCloudProvider) {
@@ -734,10 +695,6 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
 		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
 		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
-	}
-
-	if data.operatingSystemManagerEnabled {
-		creators = append(creators, operatingsystemmanager.ValidatingWebhookConfigurationReconciler(data.caCert.Cert, r.namespace))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -977,15 +934,12 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
-	// Operating System Manager
-	if data.operatingSystemManagerEnabled {
-		creators = []reconciling.NamedSecretReconcilerFactory{
-			cloudinitsettings.SecretReconciler(),
-		}
+	creators = []reconciling.NamedSecretReconcilerFactory{
+		cloudinitsettings.SecretReconciler(),
+	}
 
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.CloudInitSettingsNamespace, err)
-		}
+	if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
 	return nil
@@ -1174,21 +1128,20 @@ type reconcileData struct {
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director and Nutanix,
 	// who need it to properly configure the external CSI driver; however this can be nil if the
 	// CSI driver has been explicitly disabled
-	csiCloudConfig                []byte
-	ccmMigration                  bool
-	monitoringRequirements        *corev1.ResourceRequirements
-	loggingRequirements           *corev1.ResourceRequirements
-	gatekeeperCtrlRequirements    *corev1.ResourceRequirements
-	gatekeeperAuditRequirements   *corev1.ResourceRequirements
-	monitoringReplicas            *int32
-	ipFamily                      kubermaticv1.IPFamily
-	k8sServiceApiIP               *net.IP
-	k8sServiceEndpointAddress     string
-	k8sServiceEndpointPort        int32
-	reconcileK8sSvcEndpoints      bool
-	kubernetesDashboardEnabled    bool
-	operatingSystemManagerEnabled bool
-	coreDNSReplicas               *int32
+	csiCloudConfig              []byte
+	ccmMigration                bool
+	monitoringRequirements      *corev1.ResourceRequirements
+	loggingRequirements         *corev1.ResourceRequirements
+	gatekeeperCtrlRequirements  *corev1.ResourceRequirements
+	gatekeeperAuditRequirements *corev1.ResourceRequirements
+	monitoringReplicas          *int32
+	ipFamily                    kubermaticv1.IPFamily
+	k8sServiceApiIP             *net.IP
+	k8sServiceEndpointAddress   string
+	k8sServiceEndpointPort      int32
+	reconcileK8sSvcEndpoints    bool
+	kubernetesDashboardEnabled  bool
+	coreDNSReplicas             *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
@@ -1417,16 +1370,6 @@ func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error
 		err := r.Client.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
-		}
-	}
-	return nil
-}
-
-func (r *reconciler) ensureOSMResourcesAreRemoved(ctx context.Context) error {
-	for _, resource := range operatingsystemmanager.ResourcesForDeletion() {
-		err := r.Client.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure OSM resources are removed/not present: %w", err)
 		}
 	}
 	return nil

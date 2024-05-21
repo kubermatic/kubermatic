@@ -65,11 +65,6 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 				"-tls-key-path", "/etc/kubernetes/pki/serving-cert/key.pem",
 			}
 
-			// Enable validations corresponding to OSM
-			if data.Cluster().Spec.IsOperatingSystemManagerEnabled() {
-				args = append(args, "-use-osm")
-			}
-
 			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 			if externalCloudProvider {
 				args = append(args, "-node-external-cloud-provider")

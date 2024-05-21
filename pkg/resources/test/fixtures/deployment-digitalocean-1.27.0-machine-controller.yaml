@@ -38,7 +38,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver","-use-osm"]}'
+        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver"]}'
         - --crd-to-wait-for
         - cluster.k8s.io,v1alpha1,machines,kube-system
         command:
@@ -67,7 +67,7 @@ spec:
               fieldPath: metadata.namespace
         - name: PROBER_KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: quay.io/kubermatic/machine-controller:eaccda7855b6cd493f082243e0a57027158d7bd0
+        image: quay.io/kubermatic/machine-controller:31463a80af435b2b670e9a816de56372db221592
         livenessProbe:
           failureThreshold: 3
           httpGet:

@@ -78,7 +78,6 @@ spec:
       leaderElection: {}
       replicas: 1
   containerRuntime: containerd
-  enableOperatingSystemManager: true
   enableUserSSHKeyAgent: true
   exposeStrategy: Tunneling
   features:
