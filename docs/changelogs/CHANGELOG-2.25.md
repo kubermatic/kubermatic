@@ -13,7 +13,7 @@
 
 ### Bugfixes
 
-- Fix #13393 where externally deployed Velero CRDs are removed automatically from user user cluster ([#13396](https://github.com/kubermatic/kubermatic/pull/13396))
+- Fix [#13393](https://github.com/kubermatic/kubermatic/issues/13393) where externally deployed Velero CRDs are removed automatically from the user cluster ([#13396](https://github.com/kubermatic/kubermatic/pull/13396))
 - Fix a bug where unrequired  `cloud-config` secret was being propagated to the user clusters ([#13366](https://github.com/kubermatic/kubermatic/pull/13366))     
 - Fix null pointer exception that occurred while our controllers checked whether the CSI addon is in use or not ([#13369](https://github.com/kubermatic/kubermatic/pull/13369))
 
