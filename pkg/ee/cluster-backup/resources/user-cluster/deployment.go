@@ -48,6 +48,8 @@ func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 			baseLabels := resources.BaseAppLabels(DeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
 
+			dep.Labels = resources.ApplyManagedByLabelWithName(dep.Labels, resources.ClusterBackupControllerName)
+
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -154,7 +156,6 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-
 		{
 			Name:         "plugins",
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
