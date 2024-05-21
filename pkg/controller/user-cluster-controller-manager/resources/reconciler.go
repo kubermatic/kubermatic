@@ -83,20 +83,22 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %w", err)
 	}
-	cloudConfig, err := r.cloudConfig(ctx, resources.CloudConfigSeedSecretName)
-	if err != nil {
-		return fmt.Errorf("failed to get cloudConfig: %w", err)
-	}
 
 	data := reconcileData{
 		caCert:       caCert,
 		userSSHKeys:  userSSHKeys,
-		cloudConfig:  cloudConfig,
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
 	}
 
 	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.VMwareCloudDirectorCloudProvider || (r.cloudProvider == kubermaticv1.NutanixCloudProvider && r.nutanixCSIEnabled) {
 		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CSICloudConfigSecretName)
+		if err != nil {
+			return fmt.Errorf("failed to get csi config: %w", err)
+		}
+	} else if r.cloudProvider == kubermaticv1.AzureCloudProvider ||
+		r.cloudProvider == kubermaticv1.OpenstackCloudProvider {
+		// Azure and Openstack CSI drivers don't have dedicated CSI cloud config.
+		data.csiCloudConfig, err = r.cloudConfig(ctx, resources.CloudConfigSecretName)
 		if err != nil {
 			return fmt.Errorf("failed to get csi config: %w", err)
 		}
@@ -871,9 +873,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 }
 
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
-	creators := []reconciling.NamedSecretReconcilerFactory{
-		cloudcontroller.CloudConfig(data.cloudConfig, resources.CloudConfigSecretName),
-	}
+	creators := []reconciling.NamedSecretReconcilerFactory{}
 	if !r.isKonnectivityEnabled {
 		creators = append(creators, openvpn.ClientCertificate(data.openVPNCACert))
 	} else {
@@ -886,9 +886,12 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	}
 
 	if data.csiCloudConfig != nil {
+		if r.cloudProvider == kubermaticv1.AzureCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.VSphereCloudProvider {
+			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
+		}
+
 		if r.cloudProvider == kubermaticv1.VSphereCloudProvider {
-			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName),
-				csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
 			if data.ccmMigration {
 				creators = append(creators, csimigration.TLSServingCertificateReconciler(data.caCert))
 			}
@@ -1149,7 +1152,6 @@ type reconcileData struct {
 	openVPNCACert    *resources.ECDSAKeyPair
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
-	cloudConfig      []byte
 	clusterVersion   semver.Semver
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director, and Nutanix, whose needs it to properly configure the external CSI driver
 	csiCloudConfig                []byte
