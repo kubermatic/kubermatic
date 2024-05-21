@@ -4,6 +4,21 @@
 - [v2.25.1](#v2251)
 - [v2.25.2](#v2252)
 - [v2.25.3](#v2253)
+- [v2.25.4](#v2254)
+
+
+## [v2.25.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.4)
+
+### Bugfixes
+
+- Fix #13393 where externally deployed Velero CRDs are removed automatically from user user cluster ([#13396](https://github.com/kubermatic/kubermatic/pull/13396))
+- Fix a bug where unrequired  `cloud-config` secret was being propagated to the user clusters ([#13366](https://github.com/kubermatic/kubermatic/pull/13366))     
+- Fix null pointer exception that occurred while our controllers checked whether the CSI addon is in use or not ([#13369](https://github.com/kubermatic/kubermatic/pull/13369))
+
+### Updates
+
+- Update OSM to v1.5.2; fixing cloud-init bootstraping issues on Ubuntu 22.04 on Azure ([#13380](https://github.com/kubermatic/kubermatic/pull/13380))
+
 
 ## [v2.25.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.3)
 
