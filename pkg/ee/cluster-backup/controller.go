@@ -67,6 +67,13 @@ const (
 
 	clusterBackupComponentLabelKey   = "component"
 	clusterBackupComponentLabelValue = "velero"
+
+	// componentsInstalledLabel is a label that is put on Clusters where the cluster-backup
+	// components are installed. This is only used for cleanups to prevent this controller
+	// from endlessly cleaning up the same cluster over and over again.
+	// This should not be a finalizer because we do not want to block cluster deletion just
+	// because a Velero CRD is installed in the usercluster.
+	componentsInstalledLabel = "k8c.io/cluster-backup-installed"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -195,6 +202,16 @@ func addManagedByLabel(create reconciling.ObjectReconciler) reconciling.ObjectRe
 }
 
 func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
+	// mark the cluster so we can clean it up when necessary
+	if _, ok := cluster.Labels[componentsInstalledLabel]; !ok {
+		err := r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kubernetes.EnsureLabels(c, map[string]string{componentsInstalledLabel: "yes"})
+		})
+		if err != nil {
+			return fmt.Errorf("failed to mark cluster: %w", err)
+		}
+	}
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -270,6 +287,10 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 }
 
 func (r *reconciler) removeUserClusterComponents(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if _, ok := cluster.Labels[componentsInstalledLabel]; !ok {
+		return nil
+	}
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -281,6 +302,13 @@ func (r *reconciler) removeUserClusterComponents(ctx context.Context, cluster *k
 
 	if err := r.removeCRDs(ctx, userClusterClient); err != nil {
 		return fmt.Errorf("failed to remove CRDs: %w", err)
+	}
+
+	err = r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		delete(c.Labels, componentsInstalledLabel)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to unmark cluster: %w", err)
 	}
 
 	return nil
@@ -383,4 +411,13 @@ func inSameProject(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBack
 func isManagedBackupResource(resource ctrlruntimeclient.Object) bool {
 	labels := resource.GetLabels()
 	return labels[appskubermaticv1.ApplicationManagedByLabel] == ControllerName
+}
+
+func (r *reconciler) patchCluster(ctx context.Context, cluster *kubermaticv1.Cluster, patch kubermaticv1helper.ClusterPatchFunc) error {
+	// modify it
+	original := cluster.DeepCopy()
+	patch(cluster)
+
+	// update the status
+	return r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))
 }
