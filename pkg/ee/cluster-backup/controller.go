@@ -99,7 +99,8 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConn
 	clusterIsAlive := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
 		// Only watch clusters that are in a state where they can be reconciled.
-		return !cluster.Spec.Pause && cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
+		// Pause-flag is checked by the ReconcileWrapper.
+		return cluster.DeletionTimestamp == nil && cluster.Status.ExtendedHealth.ControlPlaneHealthy()
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
