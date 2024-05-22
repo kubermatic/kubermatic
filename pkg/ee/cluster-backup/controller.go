@@ -178,7 +178,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	if !inSameProject(cluster, cbsl) {
-		return nil, fmt.Errorf("unable to use Cluster Backup Storage Location [%s]: cluster and clusterbackupstoragelocation must belong to the same project", cbsl.Name)
+		return nil, fmt.Errorf("unable to use ClusterBackupStorageLocation %q: cluster and CBSL must belong to the same project", cbsl.Name)
 	}
 	if err := r.ensureUserClusterResources(ctx, cluster, cbsl); err != nil {
 		return nil, fmt.Errorf("failed to ensure user-cluster resources: %w", err)
