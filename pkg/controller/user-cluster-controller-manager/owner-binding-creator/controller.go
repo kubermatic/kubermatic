@@ -32,12 +32,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -63,23 +62,14 @@ func Add(log *zap.SugaredLogger, mgr manager.Manager, ownerEmail string, cluster
 		ownerEmail:      ownerEmail,
 		clusterIsPaused: clusterIsPaused,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
-	// Watch for changes to ClusterRoles
-	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}), &handler.EnqueueRequestForObject{}, predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterRoleComponentValue)); err != nil {
-		return fmt.Errorf("failed to establish watch for the ClusterRoles: %w", err)
-	}
-	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRoleBinding{}), enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterBindingComponentValue)); err != nil {
-		return fmt.Errorf("failed to establish watch for the ClusterRoleBindings: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(controllerName).
+		For(&rbacv1.ClusterRole{}, builder.WithPredicates(predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterRoleComponentValue))).
+		Watches(&rbacv1.ClusterRoleBinding{}, enqueueAPIBindings(mgr.GetClient()), builder.WithPredicates(predicateutil.ByLabel(userclustercontrollermanager.UserClusterComponentKey, userclustercontrollermanager.UserClusterBindingComponentValue))).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

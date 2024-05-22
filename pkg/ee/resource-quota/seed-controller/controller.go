@@ -43,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -50,7 +51,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var ControllerName = "kkp-resource-quota-seed-controller"
@@ -75,28 +75,16 @@ func Add(
 		seedClient: mgr.GetClient(),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.ResourceQuota{}).
+		Watches(&kubermaticv1.Cluster{}, enqueueResourceQuota(reconciler.seedClient, reconciler.log, workerName), builder.WithPredicates(workerlabel.Predicate(workerName), withClusterEventFilter())).
+		Build(reconciler)
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
-		enqueueResourceQuota(reconciler.seedClient, reconciler.log, workerName),
-		workerlabel.Predicates(workerName),
-		withClusterEventFilter(),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
-	}
-
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.ResourceQuota{}),
-		&handler.EnqueueRequestForObject{},
-	); err != nil {
-		return fmt.Errorf("failed to create watch for seed resource quotas: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile calculates the resource usage for a resource quota and sets the local usage.

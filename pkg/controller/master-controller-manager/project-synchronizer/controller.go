@@ -32,12 +32,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -71,26 +71,16 @@ func Add(
 		r.seedClients[seedName] = seedManager.GetClient()
 	}
 
-	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Project{}).
+		Watches(&kubermaticv1.Seed{}, enqueueAllProjects(r.masterClient, r.log)).
+		Build(r)
 
-	if err := c.Watch(
-		source.Kind(masterManager.GetCache(), &kubermaticv1.Project{}),
-		&handler.EnqueueRequestForObject{},
-	); err != nil {
-		return fmt.Errorf("failed to create watch for projects: %w", err)
-	}
-
-	if err := c.Watch(
-		source.Kind(masterManager.GetCache(), &kubermaticv1.Seed{}),
-		enqueueAllProjects(r.masterClient, r.log),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for seeds: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile reconciles Kubermatic Project objects on the master cluster to all seed clusters.

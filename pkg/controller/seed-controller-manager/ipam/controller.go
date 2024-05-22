@@ -36,12 +36,12 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -78,18 +78,6 @@ func Add(
 		versions:     versions,
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: 1, // this should be 1 to avoid race condition
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
-	}
-
 	enqueueClustersForIPAMPool := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		ipamPool := a.(*kubermaticv1.IPAMPool)
 
@@ -111,11 +99,17 @@ func Add(
 		}
 		return requests
 	})
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.IPAMPool{}), enqueueClustersForIPAMPool); err != nil {
-		return fmt.Errorf("failed to create watch for IPAM Pools: %w", err)
-	}
 
-	return nil
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 1, // this should be 1 to avoid race condition
+		}).
+		For(&kubermaticv1.Cluster{}).
+		Watches(&kubermaticv1.IPAMPool{}, enqueueClustersForIPAMPool).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

@@ -32,13 +32,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -72,33 +72,22 @@ func Add(
 		r.seedClients[seedName] = seedManager.GetClient()
 	}
 
-	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
-
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for UserProjectBinding of service account.
 		userProjectBinding := object.(*kubermaticv1.UserProjectBinding)
 		return !kubermaticv1helper.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
 	})
 
-	if err := c.Watch(
-		source.Kind(masterManager.GetCache(), &kubermaticv1.UserProjectBinding{}),
-		&handler.EnqueueRequestForObject{},
-		serviceAccountPredicate,
-	); err != nil {
-		return fmt.Errorf("failed to create watch for userprojectbindings: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.UserProjectBinding{}, builder.WithPredicates(serviceAccountPredicate)).
+		Watches(&kubermaticv1.Seed{}, enqueueUserProjectBindingsForSeed(r.masterClient, r.log)).
+		Build(r)
 
-	if err := c.Watch(
-		source.Kind(masterManager.GetCache(), &kubermaticv1.Seed{}),
-		enqueueUserProjectBindingsForSeed(r.masterClient, r.log),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for seeds: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile reconciles Kubermatic UserProjectBinding objects on the master cluster to all seed clusters.

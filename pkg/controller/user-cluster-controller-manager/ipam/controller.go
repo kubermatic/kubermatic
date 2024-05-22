@@ -35,12 +35,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -71,13 +69,13 @@ func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) erro
 		cidrRanges: cidrRanges,
 		log:        log,
 	}
-	c, err := controller.New(ControllerName, mgr,
-		controller.Options{Reconciler: reconciler})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &clusterv1alpha1.Machine{}), &handler.EnqueueRequestForObject{})
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		For(&clusterv1alpha1.Machine{}).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

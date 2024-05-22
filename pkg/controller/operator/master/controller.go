@@ -39,12 +39,12 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -68,14 +68,14 @@ func Add(
 		versions:   kubermatic.NewDefaultVersions(),
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		})
 
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
+	workerNamePredicate := workerlabel.Predicate(workerName)
 
 	// put the config's identifier on the queue
 	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -89,10 +89,7 @@ func Add(
 		}
 	})
 
-	cfg := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(source.Kind(mgr.GetCache(), cfg), kubermaticConfigHandler, namespacePredicate, workerNamePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", cfg, err)
-	}
+	bldr.Watches(&kubermaticv1.KubermaticConfiguration{}, kubermaticConfigHandler, builder.WithPredicates(namespacePredicate, workerNamePredicate))
 
 	// for each child put the parent configuration onto the queue
 	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -126,7 +123,7 @@ func Add(
 		}}
 	})
 
-	namespacedTypesToWatch := []ctrlruntimeclient.Object{
+	for _, t := range []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -134,41 +131,28 @@ func Add(
 		&corev1.ServiceAccount{},
 		&networkingv1.Ingress{},
 		&policyv1.PodDisruptionBudget{},
+	} {
+		bldr.Watches(t, childEventHandler, builder.WithPredicates(namespacePredicate, common.ManagedByOperatorPredicate))
 	}
 
-	for _, t := range namespacedTypesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
-		}
-	}
-
-	globalOwnedTypesToWatch := []ctrlruntimeclient.Object{
+	for _, t := range []ctrlruntimeclient.Object{
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		&rbacv1.ClusterRoleBinding{},
+	} {
+		bldr.Watches(t, childEventHandler, builder.WithPredicates(common.ManagedByOperatorPredicate))
 	}
 
-	for _, t := range globalOwnedTypesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler, common.ManagedByOperatorPredicate); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
-		}
-	}
-
-	globalTypesToWatch := []ctrlruntimeclient.Object{
+	for _, t := range []ctrlruntimeclient.Object{
 		&kubermaticv1.AddonConfig{},
-	}
-
-	for _, t := range globalTypesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), childEventHandler); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
-		}
+	} {
+		bldr.Watches(t, childEventHandler)
 	}
 
 	// namespaces are not managed by the operator and so can use neither namespacePredicate
 	// nor ManagedByPredicate, but still need to get their labels reconciled
-	ns := &corev1.Namespace{}
-	if err := c.Watch(source.Kind(mgr.GetCache(), ns), childEventHandler, predicateutil.ByName(namespace)); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", ns, err)
-	}
+	bldr.Watches(&corev1.Namespace{}, childEventHandler, builder.WithPredicates(predicateutil.ByName(namespace)))
 
-	return nil
+	_, err := bldr.Build(reconciler)
+
+	return err
 }

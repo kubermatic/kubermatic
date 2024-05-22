@@ -410,6 +410,7 @@ spec:
                                                       type: string
                                                   type: object
                                                 type: array
+                                                x-kubernetes-list-type: atomic
                                               to:
                                                 description: |-
                                                   to is a list of destinations for outgoing traffic of pods selected for this rule.
@@ -440,6 +441,7 @@ spec:
                                                           items:
                                                             type: string
                                                           type: array
+                                                          x-kubernetes-list-type: atomic
                                                       required:
                                                         - cidr
                                                       type: object
@@ -477,11 +479,13 @@ spec:
                                                                 items:
                                                                   type: string
                                                                 type: array
+                                                                x-kubernetes-list-type: atomic
                                                             required:
                                                               - key
                                                               - operator
                                                             type: object
                                                           type: array
+                                                          x-kubernetes-list-type: atomic
                                                         matchLabels:
                                                           additionalProperties:
                                                             type: string
@@ -526,11 +530,13 @@ spec:
                                                                 items:
                                                                   type: string
                                                                 type: array
+                                                                x-kubernetes-list-type: atomic
                                                             required:
                                                               - key
                                                               - operator
                                                             type: object
                                                           type: array
+                                                          x-kubernetes-list-type: atomic
                                                         matchLabels:
                                                           additionalProperties:
                                                             type: string
@@ -543,8 +549,10 @@ spec:
                                                       x-kubernetes-map-type: atomic
                                                   type: object
                                                 type: array
+                                                x-kubernetes-list-type: atomic
                                             type: object
                                           type: array
+                                          x-kubernetes-list-type: atomic
                                         ingress:
                                           description: |-
                                             ingress is a list of ingress rules to be applied to the selected pods.
@@ -589,6 +597,7 @@ spec:
                                                           items:
                                                             type: string
                                                           type: array
+                                                          x-kubernetes-list-type: atomic
                                                       required:
                                                         - cidr
                                                       type: object
@@ -626,11 +635,13 @@ spec:
                                                                 items:
                                                                   type: string
                                                                 type: array
+                                                                x-kubernetes-list-type: atomic
                                                             required:
                                                               - key
                                                               - operator
                                                             type: object
                                                           type: array
+                                                          x-kubernetes-list-type: atomic
                                                         matchLabels:
                                                           additionalProperties:
                                                             type: string
@@ -675,11 +686,13 @@ spec:
                                                                 items:
                                                                   type: string
                                                                 type: array
+                                                                x-kubernetes-list-type: atomic
                                                             required:
                                                               - key
                                                               - operator
                                                             type: object
                                                           type: array
+                                                          x-kubernetes-list-type: atomic
                                                         matchLabels:
                                                           additionalProperties:
                                                             type: string
@@ -692,6 +705,7 @@ spec:
                                                       x-kubernetes-map-type: atomic
                                                   type: object
                                                 type: array
+                                                x-kubernetes-list-type: atomic
                                               ports:
                                                 description: |-
                                                   ports is a list of ports which should be made accessible on the pods selected for
@@ -728,8 +742,10 @@ spec:
                                                       type: string
                                                   type: object
                                                 type: array
+                                                x-kubernetes-list-type: atomic
                                             type: object
                                           type: array
+                                          x-kubernetes-list-type: atomic
                                         podSelector:
                                           description: |-
                                             podSelector selects the pods to which this NetworkPolicy object applies.
@@ -763,11 +779,13 @@ spec:
                                                     items:
                                                       type: string
                                                     type: array
+                                                    x-kubernetes-list-type: atomic
                                                 required:
                                                   - key
                                                   - operator
                                                 type: object
                                               type: array
+                                              x-kubernetes-list-type: atomic
                                             matchLabels:
                                               additionalProperties:
                                                 type: string
@@ -796,6 +814,7 @@ spec:
                                               This type is beta-level in 1.8
                                             type: string
                                           type: array
+                                          x-kubernetes-list-type: atomic
                                       required:
                                         - podSelector
                                       type: object
@@ -817,6 +836,7 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                   options:
                                     description: |-
                                       A list of DNS resolver options.
@@ -833,6 +853,7 @@ spec:
                                           type: string
                                       type: object
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                   searches:
                                     description: |-
                                       A list of DNS search domains for host-name lookup.
@@ -841,6 +862,7 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 type: object
                               dnsPolicy:
                                 default: ClusterFirst

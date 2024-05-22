@@ -40,7 +40,7 @@ import (
 // AdmissionHandler for mutating Kubermatic MLAAdminSetting CRD.
 type AdmissionHandler struct {
 	log              *zap.SugaredLogger
-	decoder          *admission.Decoder
+	decoder          admission.Decoder
 	seedGetter       provider.SeedGetter
 	seedClientGetter provider.SeedClientGetter
 }

@@ -32,12 +32,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -77,15 +77,6 @@ func newDashboardGrafanaReconciler(
 		dashboardGrafanaController: dashboardGrafanaController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
 	enqueueGrafanaConfigMap := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		if !strings.HasPrefix(a.GetName(), grafanaDashboardsConfigmapNamePrefix) {
 			return []reconcile.Request{}
@@ -93,9 +84,13 @@ func newDashboardGrafanaReconciler(
 		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: a.GetNamespace()}}}
 	})
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.ConfigMap{}), enqueueGrafanaConfigMap, predicateutil.ByNamespace(dashboardGrafanaController.mlaNamespace)); err != nil {
-		return fmt.Errorf("failed to watch ConfigMap: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		Watches(&corev1.ConfigMap{}, enqueueGrafanaConfigMap, builder.WithPredicates(predicateutil.ByNamespace(dashboardGrafanaController.mlaNamespace))).
+		Build(reconciler)
 
 	return err
 }

@@ -32,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -124,21 +125,6 @@ func Add(
 		seedKubeconfigGetter: seedKubeconfigGetter,
 		controllerFactories:  controllerFactories,
 	}
-	c, err := controller.New(ControllerName, mgr,
-		controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: 1})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
-
-	for _, t := range []ctrlruntimeclient.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
-		if err := c.Watch(
-			source.Kind(cache, t),
-			controllerutil.EnqueueConst(queueKey),
-			predicateutil.ByNamespace(namespace),
-		); err != nil {
-			return fmt.Errorf("failed to create watch for type %T: %w", t, err)
-		}
-	}
 
 	sourceChannel := make(chan event.GenericEvent)
 	reconciler.enqueue = func() {
@@ -146,11 +132,24 @@ func Add(
 			Object: &kubermaticv1.Seed{},
 		}
 	}
-	if err := c.Watch(&source.Channel{Source: sourceChannel}, controllerutil.EnqueueConst(queueKey)); err != nil {
-		return fmt.Errorf("failed to create watch for channelSource: %w", err)
+
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: 1,
+		}).
+		WatchesRawSource(source.Channel(sourceChannel, controllerutil.EnqueueConst(queueKey)))
+
+	for _, t := range []ctrlruntimeclient.Object{
+		&kubermaticv1.Seed{},
+		&corev1.Secret{},
+	} {
+		bldr.Watches(t, controllerutil.EnqueueConst(queueKey), builder.WithPredicates(predicateutil.ByNamespace(namespace)))
 	}
 
-	return nil
+	_, err = bldr.Build(reconciler)
+
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {

@@ -42,6 +42,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -49,7 +50,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -75,22 +75,17 @@ func Add(
 		masterClient: mgr.GetClient(),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.KubermaticSetting{}, builder.WithPredicates(utilpredicate.ByName(kubermaticv1.GlobalSettingsName), withSettingsEventFilter())).
+		// Watch for creation of Project; we need to make sure that we create default project quotas, if required.
+		Watches(&kubermaticv1.Project{}, enqueueProjectQuotas(reconciler.masterClient), builder.WithPredicates(projectEventFilter())).
+		Build(reconciler)
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.KubermaticSetting{}), &handler.EnqueueRequestForObject{},
-		utilpredicate.ByName(kubermaticv1.GlobalSettingsName), withSettingsEventFilter()); err != nil {
-		return fmt.Errorf("failed to create watch for kubermatic global settings: %w", err)
-	}
-
-	// Watch for creation of Project; we need to make sure that we create default project quotas, if required.
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Project{}), enqueueProjectQuotas(reconciler.masterClient), projectEventFilter()); err != nil {
-		return fmt.Errorf("failed to create watch for projects: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // Reconcile creates/updates/deletes default project resource quota based on the default resource quota setting in Kubermatic settings.

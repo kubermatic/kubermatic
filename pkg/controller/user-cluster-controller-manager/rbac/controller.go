@@ -29,13 +29,12 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -72,18 +71,12 @@ func Add(mgr manager.Manager, logger *zap.SugaredLogger, registerReconciledCheck
 		clusterIsPaused: clusterIsPaused,
 	}
 
-	// Create a new controller
-	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(controllerName).
+		Watches(&rbacv1.ClusterRole{}, mapFn).
+		Watches(&rbacv1.ClusterRoleBinding{}, mapFn).
+		Build(reconcile)
 	if err != nil {
-		return err
-	}
-
-	// Watch for changes to ClusterRoles
-	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}), mapFn); err != nil {
-		return err
-	}
-	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.ClusterRoleBinding{}), mapFn); err != nil {
 		return err
 	}
 

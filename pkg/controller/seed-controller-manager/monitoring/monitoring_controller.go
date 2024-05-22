@@ -36,12 +36,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -122,13 +121,14 @@ func Add(
 		versions: versions,
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Cluster{})
 
-	typesToWatch := []ctrlruntimeclient.Object{
+	for _, t := range []ctrlruntimeclient.Object{
 		&corev1.ServiceAccount{},
 		&rbacv1.Role{},
 		&rbacv1.RoleBinding{},
@@ -138,15 +138,13 @@ func Add(
 		&appsv1.StatefulSet{},
 		&autoscalingv1.VerticalPodAutoscaler{},
 		&corev1.Service{},
+	} {
+		bldr.Watches(t, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()))
 	}
 
-	for _, t := range typesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
-		}
-	}
+	_, err := bldr.Build(reconciler)
 
-	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{})
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

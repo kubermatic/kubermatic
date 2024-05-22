@@ -38,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -45,7 +46,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -85,15 +85,6 @@ func newRuleGroupReconciler(
 		ruleGroupController: ruleGroupController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
 	ruleGroupPredicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		// We don't want to enqueue RuleGroup objects in mla namespace since those are regarded as rulegroup template,
 		// and will be rollout to cluster namespaces in rulegroup_sync_controller.
@@ -104,10 +95,6 @@ func newRuleGroupReconciler(
 		ruleGroup := o.(*kubermaticv1.RuleGroup)
 		return ruleGroup.Spec.Cluster.Name != ""
 	})
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.RuleGroup{}), &handler.EnqueueRequestForObject{}, ruleGroupPredicate); err != nil {
-		return fmt.Errorf("failed to watch RuleGroup: %w", err)
-	}
 
 	enqueueRuleGroupsForCluster := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlruntimeclient.Object) []reconcile.Request {
 		cluster := object.(*kubermaticv1.Cluster)
@@ -143,11 +130,17 @@ func newRuleGroupReconciler(
 			return (oldMonitoringEnabled != newMonitoringEnabled) || (oldLoggingEnabled != newLoggingEnabled)
 		},
 	}
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), enqueueRuleGroupsForCluster, clusterPredicate); err != nil {
-		return fmt.Errorf("failed to watch Cluster: %w", err)
-	}
 
-	return nil
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.RuleGroup{}, builder.WithPredicates(ruleGroupPredicate)).
+		Watches(&kubermaticv1.Cluster{}, enqueueRuleGroupsForCluster, builder.WithPredicates(clusterPredicate)).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

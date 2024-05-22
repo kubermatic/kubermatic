@@ -37,12 +37,12 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -64,36 +64,20 @@ func Add(
 		setOwnerRef: setOwnerRef,
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		// watch all GroupProjectBindings
+		For(&kubermaticv1.GroupProjectBinding{}).
+		// watch ClusterRoles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
+		Watches(&rbacv1.ClusterRole{}, enqueueGroupProjectBindingsForRole(mgr.GetClient()), builder.WithPredicates(predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel))).
+		// watch Roles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
+		Watches(&rbacv1.Role{}, enqueueGroupProjectBindingsForRole(mgr.GetClient()), builder.WithPredicates(predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel))).
+		Build(reconciler)
 
-	// watch all GroupProjectBindings
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create GroupProjectBinding watcher: %w", err)
-	}
-
-	// watch ClusterRoles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &rbacv1.ClusterRole{}),
-		enqueueGroupProjectBindingsForRole(mgr.GetClient()),
-		predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel),
-	); err != nil {
-		return fmt.Errorf("failed to create ClusterRole watcher: %w", err)
-	}
-
-	// watch Roles with the authz.k8c.io/role label as we might need to create new ClusterRoleBindings/RoleBindings
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &rbacv1.Role{}),
-		enqueueGroupProjectBindingsForRole(mgr.GetClient()),
-		predicateutil.ByLabelExists(kubermaticv1.AuthZRoleLabel),
-	); err != nil {
-		return fmt.Errorf("failed to create Role watcher: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // enqueueGroupProjectBindingsForRole returns a handler.EventHandler that enqueues all GroupProjectBindings

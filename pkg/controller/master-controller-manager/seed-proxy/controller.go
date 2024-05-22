@@ -18,7 +18,6 @@ package seedproxy
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/zap"
 
@@ -30,12 +29,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -122,20 +121,17 @@ func Add(
 		configGetter:         configGetter,
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		})
 
 	// watch seeds themselves
 	namespacePredicate := predicateutil.ByNamespace(namespace)
 	ownedPredicate := predicateutil.ByLabel(ManagedByLabel, ControllerName)
 
-	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(source.Kind(mgr.GetCache(), seed), &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
-	}
+	bldr.For(&kubermaticv1.Seed{}, builder.WithPredicates(namespacePredicate))
 
 	// watch related resources
 	eventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -163,10 +159,10 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), eventHandler, namespacePredicate, ownedPredicate); err != nil {
-			return fmt.Errorf("failed to create watcher for %T: %w", t, err)
-		}
+		bldr.Watches(t, eventHandler, builder.WithPredicates(namespacePredicate, ownedPredicate))
 	}
 
-	return nil
+	_, err := bldr.Build(reconciler)
+
+	return err
 }

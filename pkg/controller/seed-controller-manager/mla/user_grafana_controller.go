@@ -40,13 +40,13 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings/slices"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type userGrafanaReconciler struct {
@@ -80,34 +80,22 @@ func newUserGrafanaReconciler(
 		userGrafanaController: userGrafanaController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
 		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
 	})
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.User{}), &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
-		return fmt.Errorf("failed to watch Users: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.User{}, builder.WithPredicates(serviceAccountPredicate)).
+		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler.Client))).
+		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler.Client))).
+		Build(reconciler)
 
-	// watch UserProjectBindings
-	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.UserProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler.Client))); err != nil {
-		return fmt.Errorf("failed to watch userprojectbindings: %w", err)
-	}
-
-	// watch GroupProjectBindings
-	if err = c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.GroupProjectBinding{}), handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler.Client))); err != nil {
-		return fmt.Errorf("failed to watch groupprojectbindings: %w", err)
-	}
 	return err
 }
 

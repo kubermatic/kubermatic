@@ -36,9 +36,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -47,7 +47,7 @@ import (
 )
 
 const (
-	operatorName = "kkp-usersshkeys-controller"
+	controllerName = "kkp-usersshkeys-controller"
 )
 
 type Reconciler struct {
@@ -69,17 +69,6 @@ func Add(
 		events:             make(chan event.GenericEvent),
 	}
 
-	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
-	if err != nil {
-		return fmt.Errorf("failed creating a new runtime controller: %w", err)
-	}
-
-	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
-	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
-	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for secrets: %w", err)
-	}
-
 	if err := reconciler.watchAuthorizedKeys(authorizedKeysPaths); err != nil {
 		return fmt.Errorf("failed to watch authorized_keys files: %w", err)
 	}
@@ -95,11 +84,16 @@ func Add(
 		}
 	})
 
-	if err := c.Watch(&source.Channel{Source: reconciler.events}, userSSHKeySecret); err != nil {
-		return fmt.Errorf("failed to create watch for channelSource: %w", err)
-	}
+	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
+	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
 
-	return nil
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(controllerName).
+		For(&corev1.Secret{}, builder.WithPredicates(namePredicate, namespacePredicate)).
+		WatchesRawSource(source.Channel(reconciler.events, userSSHKeySecret)).
+		Build(reconciler)
+
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

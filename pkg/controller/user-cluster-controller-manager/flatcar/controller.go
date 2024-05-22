@@ -31,11 +31,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -59,17 +58,12 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		clusterIsPaused:   clusterIsPaused,
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		Watches(&corev1.Node{}, controllerutil.EnqueueConst(""), builder.WithPredicates(predicateutil.ByLabel(nodelabelerapi.DistributionLabelKey, nodelabelerapi.FlatcarLabelValue))).
+		Build(reconciler)
 
-	predicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
-	})
-
-	return c.Watch(source.Kind(mgr.GetCache(), &corev1.Node{}), controllerutil.EnqueueConst(""), predicate)
+	return err
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {

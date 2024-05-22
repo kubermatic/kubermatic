@@ -33,12 +33,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -65,12 +64,6 @@ func Add(log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused usercluste
 		recorder:        mgr.GetEventRecorderFor(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
-	c, err := controller.New(controllerName, mgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
 	// enqueues the roles from kube-system namespace and special label component=userClusterRole.
 	eventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -88,15 +81,13 @@ func Add(log *zap.SugaredLogger, mgr manager.Manager, clusterIsPaused usercluste
 		return request
 	})
 
-	// Watch for changes to Roles and Namespaces
-	if err = c.Watch(source.Kind(mgr.GetCache(), &rbacv1.Role{}), eventHandler); err != nil {
-		return fmt.Errorf("failed to establish watch for Roles: %w", err)
-	}
-	if err = c.Watch(source.Kind(mgr.GetCache(), &corev1.Namespace{}), eventHandler); err != nil {
-		return fmt.Errorf("failed to establish watch for Namespaces: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(controllerName).
+		Watches(&rbacv1.Role{}, eventHandler).
+		Watches(&corev1.Namespace{}, eventHandler).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

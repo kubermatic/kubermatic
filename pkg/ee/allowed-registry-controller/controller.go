@@ -25,16 +25,13 @@
 package allowedregistrycontroller
 
 import (
-	"fmt"
-
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -57,14 +54,13 @@ func Add(mgr manager.Manager,
 		namespace,
 	)
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.AllowedRegistry{}).
+		Build(reconciler)
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.AllowedRegistry{}), &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to create watch for allowedRegistries: %w", err)
-	}
-
-	return nil
+	return err
 }

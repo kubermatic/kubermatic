@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -65,7 +66,7 @@ func Add(
 	workerName string,
 ) error {
 	namespacePredicate := predicateutil.ByNamespace(namespace)
-	workerNamePredicate := workerlabel.Predicates(workerName)
+	workerNamePredicate := workerlabel.Predicate(workerName)
 	versionChangedPredicate := predicate.ResourceVersionChangedPredicate{}
 
 	// As the seedlifecyclecontroller skips uninitialized seeds, we do
@@ -87,14 +88,11 @@ func Add(
 		versions:               kubermatic.NewDefaultVersions(),
 	}
 
-	ctrlOpts := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, masterManager, ctrlOpts)
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	bldr := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		})
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
 	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -118,10 +116,7 @@ func Add(
 		return requests
 	})
 
-	config := &kubermaticv1.KubermaticConfiguration{}
-	if err := c.Watch(source.Kind(masterManager.GetCache(), config), configEventHandler, namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", config, err)
-	}
+	bldr.Watches(&kubermaticv1.KubermaticConfiguration{}, configEventHandler, builder.WithPredicates(namespacePredicate, workerNamePredicate, predicate.ResourceVersionChangedPredicate{}))
 
 	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
 	configMapEventHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
@@ -167,16 +162,10 @@ func Add(
 		return requests
 	})
 
-	configMap := &corev1.ConfigMap{}
-	if err := c.Watch(source.Kind(masterManager.GetCache(), configMap), configMapEventHandler, namespacePredicate, versionChangedPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", configMap, err)
-	}
+	bldr.Watches(&corev1.ConfigMap{}, configMapEventHandler, builder.WithPredicates(namespacePredicate, workerNamePredicate))
 
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
-	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(source.Kind(masterManager.GetCache(), seed), &handler.EnqueueRequestForObject{}, namespacePredicate, workerNamePredicate, versionChangedPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
-	}
+	bldr.For(&kubermaticv1.Seed{}, builder.WithPredicates(namespacePredicate, workerNamePredicate, versionChangedPredicate))
 
 	// watch all resources we manage inside all configured seeds (note that the seedManagers
 	// map does not necessarily contain a manager for every seed, as uninitialized seeds
@@ -185,15 +174,17 @@ func Add(
 		reconciler.seedClients[key] = manager.GetClient()
 		reconciler.seedRecorders[key] = manager.GetEventRecorderFor(ControllerName)
 
-		if err := createSeedWatches(c, key, manager, namespace, workerName); err != nil {
+		if err := createSeedWatches(bldr, key, manager, namespace, workerName); err != nil {
 			return fmt.Errorf("failed to setup watches for seed %s: %w", key, err)
 		}
 	}
 
-	return nil
+	_, err := bldr.Build(reconciler)
+
+	return err
 }
 
-func createSeedWatches(controller controller.Controller, seedName string, seedManager manager.Manager, namespace string, workerName string) error {
+func createSeedWatches(bldr *builder.Builder, seedName string, seedManager manager.Manager, namespace string, workerName string) error {
 	cache := seedManager.GetCache()
 	eventHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{{
@@ -204,12 +195,8 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		}}
 	})
 
-	watch := func(t ctrlruntimeclient.Object, preds ...predicate.Predicate) error {
-		if err := controller.Watch(source.Kind(cache, t), eventHandler, preds...); err != nil {
-			return fmt.Errorf("failed to watch %T: %w", t, err)
-		}
-
-		return nil
+	watch := func(t ctrlruntimeclient.Object, preds ...predicate.Predicate) {
+		bldr.WatchesRawSource(source.Kind(cache, t, eventHandler, preds...))
 	}
 
 	namespacedTypesToWatch := []ctrlruntimeclient.Object{
@@ -223,9 +210,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	for _, t := range namespacedTypesToWatch {
-		if err := watch(t, predicateutil.ByNamespace(namespace), common.ManagedByOperatorPredicate); err != nil {
-			return err
-		}
+		watch(t, predicateutil.ByNamespace(namespace), common.ManagedByOperatorPredicate)
 	}
 
 	globalTypesToWatch := []ctrlruntimeclient.Object{
@@ -234,27 +219,19 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	for _, t := range globalTypesToWatch {
-		if err := watch(t, common.ManagedByOperatorPredicate); err != nil {
-			return err
-		}
+		watch(t, common.ManagedByOperatorPredicate)
 	}
 
 	// Seeds are not managed by the operator, but we still need to be notified when
 	// they are marked for deletion inside seed clusters
-	if err := watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace), workerlabel.Predicates(workerName)); err != nil {
-		return err
-	}
+	watch(&kubermaticv1.Seed{}, predicateutil.ByNamespace(namespace), workerlabel.Predicate(workerName))
 
 	// namespaces are not managed by the operator and so can use neither namespacePredicate
 	// nor ManagedByPredicate, but still need to get their labels reconciled
-	if err := watch(&corev1.Namespace{}, predicateutil.ByName(namespace)); err != nil {
-		return err
-	}
+	watch(&corev1.Namespace{}, predicateutil.ByName(namespace))
 
 	// CRDs are not owned by KKP, but still need to be updated accordingly
-	if err := watch(&apiextensionsv1.CustomResourceDefinition{}); err != nil {
-		return err
-	}
+	watch(&apiextensionsv1.CustomResourceDefinition{})
 
 	// The VPA gets resources deployed into the kube-system namespace.
 	namespacedVPATypes := []ctrlruntimeclient.Object{
@@ -265,9 +242,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	for _, t := range namespacedVPATypes {
-		if err := watch(t, predicateutil.ByNamespace(metav1.NamespaceSystem), common.ManagedByOperatorPredicate); err != nil {
-			return err
-		}
+		watch(t, predicateutil.ByNamespace(metav1.NamespaceSystem), common.ManagedByOperatorPredicate)
 	}
 
 	globalVPATypes := []ctrlruntimeclient.Object{
@@ -276,9 +251,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	for _, t := range globalVPATypes {
-		if err := watch(t, common.ManagedByOperatorPredicate); err != nil {
-			return err
-		}
+		watch(t, common.ManagedByOperatorPredicate)
 	}
 
 	return nil

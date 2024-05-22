@@ -18,7 +18,6 @@ package seedsync
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/zap"
 
@@ -28,12 +27,12 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -65,20 +64,7 @@ func Add(
 		seedClientGetter: kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
 	nsPredicate := predicate.ByNamespace(namespace)
-
-	// watch all seeds in the given namespace
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Seed{}), &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher: %w", err)
-	}
-
-	// watch all KubermaticConfigurations in the given namespace
 	configHandler := func(_ context.Context, o ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
@@ -99,9 +85,16 @@ func Add(
 		return requests
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.KubermaticConfiguration{}), handler.EnqueueRequestsFromMapFunc(configHandler), nsPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		// watch all seeds in the given namespace
+		For(&kubermaticv1.Seed{}, builder.WithPredicates(nsPredicate)).
+		// watch all KubermaticConfigurations in the given namespace
+		Watches(&kubermaticv1.KubermaticConfiguration{}, handler.EnqueueRequestsFromMapFunc(configHandler), builder.WithPredicates(nsPredicate)).
+		Build(reconciler)
 
-	return nil
+	return err
 }

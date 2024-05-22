@@ -18,7 +18,6 @@ package seedstatuscontroller
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/zap"
 
@@ -28,10 +27,9 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -58,18 +56,13 @@ func Add(
 		versions:             versions,
 	}
 
-	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Seed{}, builder.WithPredicates(predicate.ByNamespace(namespace))).
+		Build(reconciler)
 
-	nsPredicate := predicate.ByNamespace(namespace)
-
-	// watch all seeds in the given namespace
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Seed{}), &handler.EnqueueRequestForObject{}, nsPredicate); err != nil {
-		return fmt.Errorf("failed to create watcher: %w", err)
-	}
-
-	return nil
+	return err
 }

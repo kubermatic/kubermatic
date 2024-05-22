@@ -38,7 +38,7 @@ import (
 // AdmissionHandler for mutating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
 	log     *zap.SugaredLogger
-	decoder *admission.Decoder
+	decoder admission.Decoder
 	client  ctrlruntimeclient.Client
 }
 

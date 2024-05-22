@@ -30,11 +30,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -57,18 +56,13 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		userClusterClient: userMgr.GetClient(),
 		clusterName:       clusterName,
 	}
-	c, err := controller.New(controllerName, userMgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
-	if err := c.Watch(source.Kind(userMgr.GetCache(), &corev1.Node{}), controllerutil.EnqueueConst("")); err != nil {
-		return fmt.Errorf("failed to establish watch for nodes: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(userMgr).
+		Named(controllerName).
+		Watches(&corev1.Node{}, controllerutil.EnqueueConst("")).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

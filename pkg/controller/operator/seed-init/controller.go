@@ -18,7 +18,6 @@ package seedinit
 
 import (
 	"context"
-	"fmt"
 
 	"go.uber.org/zap"
 
@@ -27,11 +26,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -57,19 +55,13 @@ func Add(
 		versions:         kubermatic.NewDefaultVersions(),
 	}
 
-	ctrlOpts := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, masterManager, ctrlOpts)
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Seed{}, builder.WithPredicates(predicateutil.ByNamespace(namespace), predicate.ResourceVersionChangedPredicate{})).
+		Build(reconciler)
 
-	seed := &kubermaticv1.Seed{}
-	if err := c.Watch(source.Kind(masterManager.GetCache(), seed), &handler.EnqueueRequestForObject{}, predicateutil.ByNamespace(namespace), predicate.ResourceVersionChangedPredicate{}); err != nil {
-		return fmt.Errorf("failed to create watcher for %T: %w", seed, err)
-	}
-
-	return nil
+	return err
 }

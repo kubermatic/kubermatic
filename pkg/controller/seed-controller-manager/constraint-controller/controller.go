@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -42,7 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -116,40 +116,22 @@ func Add(
 		seedClient:              mgr.GetClient(),
 	}
 
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	constraintHandler := handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+		return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: namespace}}}
+	})
+	clusterHandler := enqueueConstraints(reconciler.seedClient, reconciler.log, namespace)
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}),
-		enqueueConstraints(reconciler.seedClient, reconciler.log, namespace),
-		workerlabel.Predicates(workerName),
-		opaPredicate(),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for clusters: %w", err)
-	}
+	_, err = builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Constraint{}, builder.WithPredicates(kubermaticpred.ByNamespace(namespace))).
+		Watches(&kubermaticv1.Constraint{}, constraintHandler, builder.WithPredicates(ByLabel(Key), withEventFilter())).
+		Watches(&kubermaticv1.Cluster{}, clusterHandler, builder.WithPredicates(workerlabel.Predicate(workerName), opaPredicate())).
+		Build(reconciler)
 
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.Constraint{}),
-		&handler.EnqueueRequestForObject{},
-		kubermaticpred.ByNamespace(namespace),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for seed constraints: %w", err)
-	}
-
-	if err := c.Watch(
-		source.Kind(mgr.GetCache(), &kubermaticv1.Constraint{}),
-		handler.EnqueueRequestsFromMapFunc(func(_ context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
-			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: a.GetName(), Namespace: namespace}}}
-		}),
-		ByLabel(Key),
-		withEventFilter(),
-	); err != nil {
-		return fmt.Errorf("failed to create watch for user cluster namespace constraints: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // ByLabel returns a predicate func that only includes objects with the given label.

@@ -30,12 +30,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -70,16 +69,21 @@ func Add(
 		r.seedClients[seedName] = seedManager.GetClient()
 	}
 
-	c, err := controller.New(ControllerName, masterManager, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return fmt.Errorf("failed to construct controller: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(masterManager).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(
+			&corev1.Secret{},
+			builder.WithPredicates(
+				predicate.ByAnnotation(SecretTypeAnnotation, "", false),
+				predicate.ByNamespace(r.namespace),
+			),
+		).
+		Build(r)
 
-	if err := c.Watch(source.Kind(masterManager.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, predicate.ByAnnotation(SecretTypeAnnotation, "", false), predicate.ByNamespace(r.namespace)); err != nil {
-		return fmt.Errorf("failed to create watch for secrets: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

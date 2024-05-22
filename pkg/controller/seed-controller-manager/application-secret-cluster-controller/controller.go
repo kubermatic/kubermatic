@@ -37,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -44,7 +45,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -69,39 +69,10 @@ func Add(
 	ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-
 	numWorkers int,
 	workerName string,
 	namespace string,
-
 ) error {
-	workerlabelSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return err
-	}
-
-	r := &reconciler{
-		log:                 log.Named(ControllerName),
-		client:              mgr.GetClient(),
-		workerName:          workerName,
-		recorder:            mgr.GetEventRecorderFor(ControllerName),
-		namespace:           namespace,
-		workerlabelSelector: workerlabelSelector,
-	}
-
-	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: r, MaxConcurrentReconciles: numWorkers})
-	if err != nil {
-		return err
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &corev1.Secret{}), &handler.EnqueueRequestForObject{}, predicateutil.ByAnnotation(applicationsecretsynchronizer.SecretTypeAnnotation, "", false), predicateutil.ByNamespace(r.namespace)); err != nil {
-		return fmt.Errorf("failed to create watch for secrets: %w", err)
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), handler.EnqueueRequestsFromMapFunc(enqueueSecret(r.client, r.namespace)), workerlabel.Predicates(workerName), noDeleteEventPredicate()); err != nil {
-		return fmt.Errorf("failed to create watch for secrets: %w", err)
-	}
-
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &kubermaticv1.Cluster{}, clusterPauseKey, func(rawObj ctrlruntimeclient.Object) []string {
 		cluster := rawObj.(*kubermaticv1.Cluster)
 		return []string{strconv.FormatBool(cluster.Spec.Pause)}
@@ -120,7 +91,30 @@ func Add(
 		return fmt.Errorf("failed to add index on Secret.metadata.annotation: %w", err)
 	}
 
-	return nil
+	workerlabelSelector, err := workerlabel.LabelSelector(workerName)
+	if err != nil {
+		return err
+	}
+
+	r := &reconciler{
+		log:                 log.Named(ControllerName),
+		client:              mgr.GetClient(),
+		workerName:          workerName,
+		recorder:            mgr.GetEventRecorderFor(ControllerName),
+		namespace:           namespace,
+		workerlabelSelector: workerlabelSelector,
+	}
+
+	_, err = builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&corev1.Secret{}, builder.WithPredicates(predicateutil.ByAnnotation(applicationsecretsynchronizer.SecretTypeAnnotation, "", false), predicateutil.ByNamespace(r.namespace))).
+		Watches(&kubermaticv1.Cluster{}, handler.EnqueueRequestsFromMapFunc(enqueueSecret(r.client, r.namespace)), builder.WithPredicates(workerlabel.Predicate(workerName), noDeleteEventPredicate())).
+		Build(r)
+
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

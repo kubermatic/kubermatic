@@ -31,12 +31,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const ControllerName = "kkp-seed-up-to-date-synchronizer"
@@ -65,26 +64,23 @@ func Add(
 		versions:   versions,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              r,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
+	bldr := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.Cluster{})
 
-	typesToWatch := []ctrlruntimeclient.Object{
+	for _, t := range []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&appsv1.StatefulSet{},
-	}
-	for _, t := range typesToWatch {
-		if err := c.Watch(source.Kind(mgr.GetCache(), t), controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
-			return fmt.Errorf("failed to create watch for %T: %w", t, err)
-		}
+	} {
+		bldr.Watches(t, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient()))
 	}
 
-	return c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{})
+	_, err := bldr.Build(r)
+
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

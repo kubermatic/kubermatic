@@ -45,12 +45,16 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 	return labels.Parse(req.String())
 }
 
-// Predicates returns a predicate func to only process objects with a matching worker-name label
+// Predicate returns a predicate func to only process objects with a matching worker-name label
 // This works regardless of the underlying type
 // Once https://github.com/kubernetes-sigs/controller-runtime/issues/244 is fixed we won't
 // need this anymore.
-func Predicates(workerName string) predicate.Funcs {
-	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
-		return o.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName
+func Predicate(workerName string) predicate.Funcs {
+	return TypedPredicate[ctrlruntimeclient.Object](workerName)
+}
+
+func TypedPredicate[T ctrlruntimeclient.Object](workerName string) predicate.TypedFuncs[T] {
+	return kubermaticpred.TypedFactory(func(object T) bool {
+		return object.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName
 	})
 }

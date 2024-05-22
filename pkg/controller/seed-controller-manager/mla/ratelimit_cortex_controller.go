@@ -34,12 +34,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -93,18 +92,13 @@ func newRatelimitCortexReconciler(
 		ratelimitCortexController: ratelimitCortexController,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler:              reconciler,
-		MaxConcurrentReconciles: numWorkers,
-	}
-	c, err := controller.New(ControllerName, mgr, ctrlOptions)
-	if err != nil {
-		return err
-	}
-
-	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.MLAAdminSetting{}), &handler.EnqueueRequestForObject{}, predicateutil.ByName(resources.MLAAdminSettingsName)); err != nil {
-		return fmt.Errorf("failed to watch MLAAdminSetting: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(mgr).
+		Named(ControllerName).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: numWorkers,
+		}).
+		For(&kubermaticv1.MLAAdminSetting{}, builder.WithPredicates(predicateutil.ByName(resources.MLAAdminSettingsName))).
+		Build(reconciler)
 
 	return err
 }

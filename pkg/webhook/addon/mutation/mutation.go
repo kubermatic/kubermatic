@@ -41,7 +41,7 @@ import (
 // AdmissionHandler for mutating Kubermatic Addon CRD.
 type AdmissionHandler struct {
 	log              *zap.SugaredLogger
-	decoder          *admission.Decoder
+	decoder          admission.Decoder
 	seedGetter       provider.SeedGetter
 	seedClientGetter provider.SeedClientGetter
 }

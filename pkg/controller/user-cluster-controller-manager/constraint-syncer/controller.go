@@ -33,12 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -69,19 +67,13 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		recorder:        userMgr.GetEventRecorderFor(controllerName),
 		clusterIsPaused: clusterIsPaused,
 	}
-	c, err := controller.New(controllerName, seedMgr, controller.Options{
-		Reconciler: r,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create controller: %w", err)
-	}
 
-	// Watch for changes to Constraints
-	if err = c.Watch(source.Kind(seedMgr.GetCache(), &kubermaticv1.Constraint{}), &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to establish watch for the Constraints: %w", err)
-	}
+	_, err := builder.ControllerManagedBy(seedMgr).
+		Named(controllerName).
+		For(&kubermaticv1.Constraint{}, builder.WithPredicates(predicate.ByNamespace(namespace))).
+		Build(r)
 
-	return nil
+	return err
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -113,7 +105,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
+func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermaticv1.Constraint) error {
 	constraintReconcilerFactories := []reconciling.NamedUnstructuredReconcilerFactory{
 		constraintReconcilerFactory(constraint),
 	}
