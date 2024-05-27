@@ -329,13 +329,21 @@ func (h HelmClient) Uninstall(releaseName string) (*release.UninstallReleaseResp
 }
 
 // GetMetadata wraps helms GetMetadata command to be used with our ActionConfig.
-func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
-	client := action.NewGetMetadata(h.actionConfig)
-	res, err := client.Run(releaseName)
-	if err != nil {
-		return nil, fmt.Errorf("Could not retrieve metadata for release %q: %w", releaseName, err)
+func (h HelmClient) GetMetadata(releaseName string) (*release.Release, error) {
+	if err := h.actionConfig.KubeClient.IsReachable(); err != nil {
+		return nil, err
 	}
-	return res, nil
+
+	rel, err := h.actionConfig.Releases.Get(releaseName, 0)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve metadata for release %q: %w", releaseName, err)
+	}
+
+	if rel.Info == nil {
+		return nil, fmt.Errorf("release metadata for %q does not contain release info", releaseName)
+	}
+
+	return rel, nil
 }
 
 // Rollback wraps helms Rollback command to be used with our ActionConfig.
