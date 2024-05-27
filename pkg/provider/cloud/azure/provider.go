@@ -142,9 +142,9 @@ func getRegionFaultDomainCount(location string) (int32, error) {
 		"westus2":            3,
 		"WestUS3":            3,
 	}
-	for region := range faultDomainsPerRegion {
+	for region, count := range faultDomainsPerRegion {
 		if strings.EqualFold(location, region) {
-			return faultDomainsPerRegion[region], nil
+			return count, nil
 		}
 	}
 	return 0, fmt.Errorf("unknown region %q", location)
