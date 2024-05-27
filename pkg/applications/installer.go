@@ -44,6 +44,12 @@ type ApplicationInstaller interface {
 
 	// Delete function uninstalls the application on the user-cluster and returns an error if the uninstallation has failed. StatusUpdater is guaranteed to be non nil. This is idempotent.
 	Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
+
+	// IsStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries
+	IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
+
+	// Rollback rolls an Application back to the previous release
+	Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error
 }
 
 // ApplicationManager handles the installation / uninstallation of an Application on the user-cluster.
@@ -137,4 +143,24 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 		}
 	}
 	return nil
+}
+
+// IsStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries.
+func (a *ApplicationManager) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	if err != nil {
+		return false, fmt.Errorf("failed to initialize template provider: %w", err)
+	}
+
+	return templateProvider.IsStuck(applicationInstallation)
+}
+
+// Rollback rolls an Application back to the previous release.
+func (a *ApplicationManager) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	if err != nil {
+		return fmt.Errorf("failed to initialize template provider: %w", err)
+	}
+
+	return templateProvider.Rollback(applicationInstallation)
 }

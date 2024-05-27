@@ -59,6 +59,15 @@ func (a *ApplicationInstallerRecorder) Delete(ctx context.Context, log *zap.Suga
 	return util.NoStatusUpdate, nil
 }
 
+func (a *ApplicationInstallerRecorder) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	// NOOP
+	return false, nil
+}
+
+func (a *ApplicationInstallerRecorder) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	return nil
+}
+
 // ApplicationInstallerLogger is a fake ApplicationInstaller that just logs actions. it's used for the development of the controller.
 type ApplicationInstallerLogger struct {
 }
@@ -79,6 +88,16 @@ func (a ApplicationInstallerLogger) Apply(ctx context.Context, log *zap.SugaredL
 func (a ApplicationInstallerLogger) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
 	log.Debugf("Uninstall application %s. applicationVersion=%v", applicationInstallation.Name, applicationInstallation.Status.ApplicationVersion)
 	return util.NoStatusUpdate, nil
+}
+
+func (a ApplicationInstallerLogger) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	// NOOP
+	return false, nil
+}
+
+func (a ApplicationInstallerLogger) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	// NOOP
+	return nil
 }
 
 // CustomApplicationInstaller is an applicationInstaller in which every function can be independently mocked.
@@ -116,4 +135,14 @@ func (c CustomApplicationInstaller) Delete(ctx context.Context, log *zap.Sugared
 		return c.DeleteFunc(ctx, log, seedClient, userClient, applicationInstallation)
 	}
 	return util.NoStatusUpdate, nil
+}
+
+func (c CustomApplicationInstaller) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	// NOOP
+	return false, nil
+}
+
+func (c CustomApplicationInstaller) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	// NOOP
+	return nil
 }

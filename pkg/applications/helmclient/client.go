@@ -328,6 +328,34 @@ func (h HelmClient) Uninstall(releaseName string) (*release.UninstallReleaseResp
 	return uninstallReleaseResponse, err
 }
 
+// GetMetadata wraps helms GetMetadata command to be used with our ActionConfig.
+func (h HelmClient) GetMetadata(releaseName string) (*release.Release, error) {
+	if err := h.actionConfig.KubeClient.IsReachable(); err != nil {
+		return nil, err
+	}
+
+	rel, err := h.actionConfig.Releases.Get(releaseName, 0)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve metadata for release %q: %w", releaseName, err)
+	}
+
+	if rel.Info == nil {
+		return nil, fmt.Errorf("release metadata for %q does not contain release info", releaseName)
+	}
+
+	return rel, nil
+}
+
+// Rollback wraps helms Rollback command to be used with our ActionConfig.
+func (h HelmClient) Rollback(releaseName string) error {
+	client := action.NewRollback(h.actionConfig)
+	err := client.Run(releaseName)
+	if err != nil {
+		return fmt.Errorf("Could not rollback release %q: %w", releaseName, err)
+	}
+	return nil
+}
+
 // buildDependencies adds missing repositories and then does a Helm dependency build (i.e. download the chart dependencies
 // from repositories into "charts" folder).
 func (h HelmClient) buildDependencies(chartLoc string, auth AuthSettings) (*chart.Chart, error) {

@@ -242,6 +242,20 @@ func (r *reconciler) handleInstallation(ctx context.Context, log *zap.SugaredLog
 		return nil
 	}
 
+	// Because some upstream tools are not completely idempotent, we need a check to make sure a release is not stuck.
+	// This should be run before we make any changes to the status field, so we can use it in our analysis
+	stuck, err := r.appInstaller.IsStuck(ctx, log, r.seedClient, r.userClient, appInstallation)
+	if err != nil {
+		return fmt.Errorf("failed to check if the previous release is stuck: %w", err)
+	}
+	if stuck {
+		log.Infof("Release for ApplicationInstallation seems to be stuck, attempting rollback now")
+		if err := r.appInstaller.Rollback(ctx, log, r.seedClient, r.userClient, appInstallation); err != nil {
+			return fmt.Errorf("failed to rollback release: %w", err)
+		}
+		log.Infof("Release for ApplicationInstallation has been rolled back successfully")
+	}
+
 	downloadDest, err := os.MkdirTemp(r.appInstaller.GetAppCache(), appInstallation.Namespace+"-"+appInstallation.Name)
 	if err != nil {
 		return fmt.Errorf("failed to create temporary directory where application source will be downloaded: %w", err)

@@ -211,3 +211,76 @@ func getDeployOpts(appDefinition *appskubermaticv1.ApplicationDefinition, appIns
 	// Fallback to default options.
 	return helmclient.NewDeployOpts(false, 0, false, false)
 }
+
+// IsStuck aims to identify if a helm release is stuck. This targets an upstream issue in helm, which has not been resolved. For further details see:
+// - https://github.com/helm/helm/issues/7476
+// - https://github.com/helm/helm/issues/4558
+func (h HelmTemplate) IsStuck(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
+	// if the release was successful, exit early
+	if applicationInstallation.Status.Conditions[appskubermaticv1.Ready].Status == "True" {
+		return false, nil
+	}
+	// currently we observe the stuck error exclusively with this message. If it does not exist, exit early
+	if applicationInstallation.Status.Conditions[appskubermaticv1.Ready].Message != "another operation (install/upgrade/rollback) is in progress" {
+		return false, nil
+	}
+
+	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
+	if err != nil {
+		return false, fmt.Errorf("failed to create helmCacheDir: %w", err)
+	}
+
+	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
+	restClientGetter := &genericclioptions.ConfigFlags{
+		KubeConfig: &h.Kubeconfig,
+		Namespace:  &applicationInstallation.Spec.Namespace.Name,
+	}
+	helmClient, err := helmclient.NewClient(
+		h.Ctx,
+		restClientGetter,
+		helmclient.NewSettings(helmCacheDir),
+		applicationInstallation.Spec.Namespace.Name,
+		h.Log)
+	if err != nil {
+		return false, fmt.Errorf("failed to create helmClient: %w", err)
+	}
+
+	// retrieve metadata of the latest release
+	releaseName := getReleaseName(applicationInstallation)
+	metadata, err := helmClient.GetMetadata(releaseName)
+	if err != nil {
+		return false, fmt.Errorf("failed to retrieve metadata for checking if release %q is stuck: %w", releaseName, err)
+	}
+
+	// if the status of the release is not still pending, exit early
+	if metadata.Info.Status != "pending-upgrade" {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// Rollback rolls an Application back to the previous release.
+func (h HelmTemplate) Rollback(applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	helmCacheDir, err := util.CreateHelmTempDir(h.CacheDir)
+	if err != nil {
+		return fmt.Errorf("failed to create helmCacheDir: %w", err)
+	}
+
+	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
+	restClientGetter := &genericclioptions.ConfigFlags{
+		KubeConfig: &h.Kubeconfig,
+		Namespace:  &applicationInstallation.Spec.Namespace.Name,
+	}
+	helmClient, err := helmclient.NewClient(
+		h.Ctx,
+		restClientGetter,
+		helmclient.NewSettings(helmCacheDir),
+		applicationInstallation.Spec.Namespace.Name,
+		h.Log)
+	if err != nil {
+		return fmt.Errorf("failed to create helmClient: %w", err)
+	}
+
+	return helmClient.Rollback(getReleaseName(applicationInstallation))
+}
