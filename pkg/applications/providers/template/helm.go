@@ -250,7 +250,7 @@ func (h HelmTemplate) IsStuck(applicationInstallation *appskubermaticv1.Applicat
 	}
 
 	// if the status of the release is not still pending, exit early
-	if metadata.Status != "pending-upgrade" {
+	if metadata.Info.Status != "pending-upgrade" {
 		return false, nil
 	}
 
