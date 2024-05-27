@@ -94,6 +94,9 @@ type controllerRunOptions struct {
 	// Machine Controller configuration
 	machineControllerImageTag        string
 	machineControllerImageRepository string
+
+	// disabledCollectors is a list of comma-separated collectors that should be disabled
+	disabledCollectors string
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -146,6 +149,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
+	flag.StringVar(&c.disabledCollectors, "disabled-collectors", "", "Disables metrics collectors in the seed. The value should be a comma-separated list of collector names.")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 

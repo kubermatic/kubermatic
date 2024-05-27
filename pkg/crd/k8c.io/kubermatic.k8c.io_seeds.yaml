@@ -2137,6 +2137,20 @@ spec:
                     - prometheus
                     - scheduler
                   type: object
+                disabledCollectors:
+                  description: |-
+                    DisabledCollectors contains a list of metrics collectors that should be disabled.
+                    Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
+                  items:
+                    description: MetricsCollector is the name of an available metrics collector.
+                    enum:
+                      - Addon
+                      - Cluster
+                      - ClusterBackup
+                      - Project
+                      - None
+                    type: string
+                  type: array
                 etcdBackupRestore:
                   description: |-
                     EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
