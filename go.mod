@@ -38,7 +38,7 @@ require (
 	github.com/gobuffalo/flect v1.0.2
 	github.com/google/go-containerregistry v0.16.1
 	github.com/google/uuid v1.6.0
-	github.com/gophercloud/gophercloud v1.8.0
+	github.com/gophercloud/gophercloud v1.11.0
 	github.com/hetznercloud/hcloud-go v1.52.0
 	github.com/imdario/mergo v0.3.16
 	github.com/jackpal/gateway v1.0.10
