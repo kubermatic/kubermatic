@@ -965,6 +965,8 @@ type CloudSpec struct {
 	Fake *FakeCloudSpec `json:"fake,omitempty"`
 	// Digitalocean defines the configuration data of the DigitalOcean cloud provider.
 	Digitalocean *DigitaloceanCloudSpec `json:"digitalocean,omitempty"`
+	// Baremetal defines the configuration data for a Baremetal cluster.
+	Baremetal *BaremetalCloudSpec `json:"baremetal,omitempty"`
 	// BringYourOwn defines the configuration data for a Bring Your Own cluster.
 	BringYourOwn *BringYourOwnCloudSpec `json:"bringyourown,omitempty"`
 	// Edge defines the configuration data for an edge cluster.
@@ -1204,6 +1206,9 @@ type VMwareCloudDirectorCSIConfig struct {
 	// +optional
 	Filesystem string `json:"filesystem,omitempty"`
 }
+
+// BaremetalCloudSpec specifies access data for a baremetal cluster.
+type BaremetalCloudSpec struct{}
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct{}

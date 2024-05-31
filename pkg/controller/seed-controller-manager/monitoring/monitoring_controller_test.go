@@ -31,7 +31,7 @@ const (
 	TestDC = "regular-do1"
 )
 
-func newTestReconciler(t *testing.T, objects []ctrlruntimeclient.Object) *Reconciler {
+func newTestReconciler(_ *testing.T, objects []ctrlruntimeclient.Object) *Reconciler {
 	dynamicClient := fake.
 		NewClientBuilder().
 		WithObjects(objects...).
@@ -62,6 +62,13 @@ func seed() (*kubermaticv1.Seed, error) {
 					Country:  "US",
 					Spec: kubermaticv1.DatacenterSpec{
 						BringYourOwn: &kubermaticv1.DatacenterSpecBringYourOwn{},
+					},
+				},
+				"us-central1-baremetal": {
+					Location: "us-central",
+					Country:  "US",
+					Spec: kubermaticv1.DatacenterSpec{
+						Baremetal: &kubermaticv1.DatacenterSpecBaremetal{},
 					},
 				},
 				"us-central1-edge": {
