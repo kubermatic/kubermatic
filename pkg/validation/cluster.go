@@ -169,6 +169,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
 	}
 
+	if err := validateCoreDNSReplicas(spec, parentFieldPath); err != nil {
+		allErrs = append(allErrs, err)
+	}
+
 	return allErrs
 }
 
@@ -1336,6 +1340,17 @@ func validatePodSecurityPolicyAdmissionPluginForVersion(spec *kubermaticv1.Clust
 		if admissionPlugin == podSecurityPolicyAdmissionPluginName {
 			return errPodSecurityPolicyAdmissionPluginWithVersionGte125
 		}
+	}
+
+	return nil
+}
+
+func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) *field.Error {
+	newSettings := spec.ComponentsOverride.CoreDNS
+	oldSettings := spec.ClusterNetwork
+
+	if newSettings != nil && newSettings.Replicas != nil && oldSettings.CoreDNSReplicas != nil && *oldSettings.CoreDNSReplicas != *newSettings.Replicas {
+		return field.Invalid(fldPath.Child("componentsOverride", "coreDNS", "replicas"), *newSettings.Replicas, "both the new spec.componentsOverride.coreDNS.replicas and deprecated spec.clusterNetwork.coreDNSReplicas fields are set")
 	}
 
 	return nil
