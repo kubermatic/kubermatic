@@ -1300,3 +1300,70 @@ func TestValidateVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCoreDNSReplicas(t *testing.T) {
+	tests := []struct {
+		name  string
+		spec  *kubermaticv1.ClusterSpec
+		valid bool
+	}{
+		{
+			name:  "two identical CoreDNS replica counts",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					CoreDNSReplicas: ptr.To[int32](2),
+				},
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					CoreDNS: &kubermaticv1.DeploymentSettings{
+						Replicas: ptr.To[int32](2),
+					},
+				},
+			},
+		},
+		{
+			name:  "two different CoreDNS replica counts",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					CoreDNSReplicas: ptr.To[int32](1),
+				},
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					CoreDNS: &kubermaticv1.DeploymentSettings{
+						Replicas: ptr.To[int32](2),
+					},
+				},
+			},
+		},
+		{
+			name:  "only using the old mechanism to set CoreDNS replicas",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+					CoreDNSReplicas: ptr.To[int32](1),
+				},
+			},
+		},
+		{
+			name:  "using the new mechanism to set CoreDNS replicas",
+			valid: true,
+			spec: &kubermaticv1.ClusterSpec{
+				ComponentsOverride: kubermaticv1.ComponentSettings{
+					CoreDNS: &kubermaticv1.DeploymentSettings{
+						Replicas: ptr.To[int32](2),
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateCoreDNSReplicas(test.spec, &field.Path{})
+
+			if (err == nil) != test.valid {
+				t.Errorf("Extected err to be %v, got %v", test.valid, err)
+			}
+		})
+	}
+}
