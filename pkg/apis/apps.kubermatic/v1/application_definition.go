@@ -35,26 +35,38 @@ const (
 type HelmCredentials struct {
 	// Username holds the ref and key in the secret for the username credential.
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
 	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
-	// Password holds the ref and key in the secret for the Password credential.
+	// Password holds the ref and key in the secret for the password credential.
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
 	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 
-	// RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
-	// file that follows the same format rules as ~/.docker/config.json
-	// The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// RegistryConfigFile holds the ref and key in the secret for the registry credential file.
+	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json.
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
 	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
 }
 
 type HelmSource struct {
-	// URl of the helm repository.
-	// It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
 	// +kubebuilder:validation:Pattern="^(http|https|oci)://.+"
+
+	// URL of the Helm repository the following schemes are supported:
+	//
+	// * http://localhost/myrepo (HTTP)
+	// * https://localhost/myrepo (HTTPS)
+	// * oci://localhost:5000/myrepo (OCI, HTTPS or HTTP depending on the useHTTP flag)
 	URL string `json:"url"`
+
+	// Insecure disables certificate validation when using an HTTPS registry. This setting has no
+	// effect when using a plaintext connection.
+	Insecure *bool `json:"insecure,omitempty"`
+
+	// PlainHTTP will enable HTTP-only (i.e. unencrypted) traffic for oci:// URLs. By default HTTPS
+	// is used when communicating with an oci:// URL.
+	PlainHTTP *bool `json:"plainHTTP,omitempty"`
 
 	// Name of the Chart.
 	// +kubebuilder:validation:MinLength=1
@@ -64,8 +76,8 @@ type HelmSource struct {
 	// +kubebuilder:validation:MinLength=1
 	ChartVersion string `json:"chartVersion"`
 
-	// Credentials are optional and hold the ref to the secret with helm credentials.
-	// Either username / Password or registryConfigFile can be defined.
+	// Credentials are optional and hold the ref to the secret with Helm credentials.
+	// Either username / password or registryConfigFile can be defined.
 	Credentials *HelmCredentials `json:"credentials,omitempty"`
 }
 
@@ -80,29 +92,29 @@ type GitAuthMethod string
 
 type GitCredentials struct {
 	// Authentication method. Either password or token or ssh-key.
-	// if method is password then username and password must be defined.
-	// if method is token then token must be defined.
-	// if method is ssh-key then ssh-key must be defined.
+	// If method is password then username and password must be defined.
+	// If method is token then token must be defined.
+	// If method is ssh-key then ssh-key must be defined.
 	Method GitAuthMethod `json:"method"`
 
 	// Username holds the ref and key in the secret for the username credential.
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
 	Username *corev1.SecretKeySelector `json:"username,omitempty"`
 
 	// Password holds the ref and key in the secret for the Password credential.
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
 	Password *corev1.SecretKeySelector `json:"password,omitempty"`
 
 	// Token holds the ref and key in the secret for the token credential.
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
 	Token *corev1.SecretKeySelector `json:"token,omitempty"`
 
 	// SSHKey holds the ref and key in the secret for the SshKey credential.
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
 	SSHKey *corev1.SecretKeySelector `json:"sshKey,omitempty"`
 }
 
@@ -127,12 +139,14 @@ type GitReference struct {
 }
 
 type GitSource struct {
-	// URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
+	// URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or
+	// SSH (e.g. git://example.com[:port]/path/to/repo.git/).
 	// +kubebuilder:validation:MinLength=1
 	Remote string `json:"remote"`
 
 	// Git reference to checkout.
-	// For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
+	// For large repositories, we recommend to either use Tag, Branch or Branch+Commit.
+	// This allows a shallow clone, which dramatically speeds up performance
 	Ref GitReference `json:"ref"`
 
 	// Path of the "source" in the repository. default is repository root

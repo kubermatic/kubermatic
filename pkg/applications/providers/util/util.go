@@ -76,8 +76,15 @@ func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Clien
 // registryConfigFilePath is the path of the file that stores credentials for OCI registry.
 // If credentials is nil then an empty helmclient.AuthSettings (i.e. no auth) is returned.
 // If credentials can not be extracted from the secret an error is returned.
-func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Client, registryConfigFilePath string, secretNamespace string, credentials *appskubermaticv1.HelmCredentials) (helmclient.AuthSettings, error) {
-	auth := helmclient.AuthSettings{}
+func HelmAuthFromCredentials(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	registryConfigFilePath string,
+	secretNamespace string,
+	source *appskubermaticv1.HelmSource,
+	credentials *appskubermaticv1.HelmCredentials,
+) (helmclient.AuthSettings, error) {
+	auth := NewAuthSettingsFromHelmSource(source)
 	if credentials != nil {
 		if credentials.Username != nil {
 			username, err := GetCredentialFromSecret(ctx, client, secretNamespace, credentials.Username.Name, credentials.Username.Key)
@@ -105,4 +112,18 @@ func HelmAuthFromCredentials(ctx context.Context, client ctrlruntimeclient.Clien
 		}
 	}
 	return auth, nil
+}
+
+func NewAuthSettingsFromHelmSource(source *appskubermaticv1.HelmSource) helmclient.AuthSettings {
+	auth := helmclient.AuthSettings{}
+
+	if i := source.Insecure; i != nil {
+		auth.Insecure = *i
+	}
+
+	if p := source.PlainHTTP; p != nil {
+		auth.PlainHTTP = *p
+	}
+
+	return auth
 }

@@ -94,6 +94,9 @@ type AuthSettings struct {
 	// cannot be inferred directly (for example because OCI can be accessed
 	// both via HTTP and HTTPS).
 	PlainHTTP bool
+
+	// Insecure disables certificate verification.
+	Insecure bool
 }
 
 // newRegistryClient returns a new registry client with authentication is RegistryConfigFile is defined.
@@ -116,11 +119,17 @@ func (a *AuthSettings) registryClientAndGetterOptions() (*registry.Client, []get
 	if err != nil {
 		return nil, nil, err
 	}
-	options := []getter.Option{getter.WithRegistryClient(regClient)}
+
+	options := []getter.Option{
+		getter.WithRegistryClient(regClient),
+		getter.WithInsecureSkipVerifyTLS(a.Insecure),
+		getter.WithPlainHTTP(a.PlainHTTP),
+	}
 
 	if a.Username != "" && a.Password != "" {
 		options = append(options, getter.WithBasicAuth(a.Username, a.Password))
 	}
+
 	return regClient, options, nil
 }
 
@@ -216,6 +225,10 @@ func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClien
 func (h HelmClient) DownloadChart(url string, chartName string, version string, dest string, auth AuthSettings) (string, error) {
 	var repoName string
 	var err error
+
+	// For oci/oci+* schemes, the repo does not need to be downloaded beforehand,
+	// but the scheme modifiers need to be removed from the repo name to not confuse
+	// Helm.
 	if strings.HasPrefix(url, "oci://") {
 		repoName = url
 	} else {
@@ -510,6 +523,8 @@ func (h HelmClient) buildDependencies(chartLoc string, auth AuthSettings) (*char
 
 // ensureRepository adds the repository url if it doesn't exist and downloads the latest index file.
 // The repository is added with the name helm-manager-$(sha256 url).
+// This function must only be called for HTTP/HTTPS repositories, OCI repositories do not require
+// this step.
 func (h HelmClient) ensureRepository(url string, auth AuthSettings) (string, error) {
 	repoFile, err := repo.LoadFile(h.settings.RepositoryConfig)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {

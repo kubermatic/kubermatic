@@ -357,7 +357,7 @@ func createExampleApplicationDefinition() *appskubermaticv1.ApplicationDefinitio
 								},
 								Path: "charts/apache",
 								Credentials: &appskubermaticv1.GitCredentials{
-									Method: "password ||token || ssh-key",
+									Method: "password || token || ssh-key",
 									Username: &corev1.SecretKeySelector{
 										LocalObjectReference: corev1.LocalObjectReference{Name: "<<secret-name>>"},
 										Key:                  "user",
