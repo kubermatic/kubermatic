@@ -1647,6 +1647,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.OperatingSystemManager != nil && componentSettings.OperatingSystemManager.Resources != nil {
 		r[OperatingSystemManagerContainerName] = componentSettings.OperatingSystemManager.Resources.DeepCopy()
 	}
+	if componentSettings.CoreDNS != nil && componentSettings.CoreDNS.Resources != nil {
+		r[CoreDNSDeploymentName] = componentSettings.CoreDNS.Resources.DeepCopy()
+	}
 
 	return r
 }

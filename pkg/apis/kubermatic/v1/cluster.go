@@ -754,6 +754,8 @@ type ComponentSettings struct {
 	UserClusterController *ControllerSettings `json:"userClusterController,omitempty"`
 	// OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
 	OperatingSystemManager *ControllerSettings `json:"operatingSystemManager,omitempty"`
+	// CoreDNS configures CoreDNS deployed as part of the cluster control plane.
+	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -893,6 +895,8 @@ type ClusterNetworkingConfig struct {
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
 	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+	// Deprecated: This field should not be used anymore, use cluster.componentsOverride.coreDNS.replicas
+	// instead. Only one of the two fields can be set at any time.
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
 
 	// Deprecated: KonnectivityEnabled enables konnectivity for controlplane to node network communication.
