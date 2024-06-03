@@ -18,6 +18,7 @@ package validation
 
 import (
 	"fmt"
+	"strings"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
@@ -55,7 +56,7 @@ func ValidateApplicationDefinitionUpdate(newAd appskubermaticv1.ApplicationDefin
 	return allErrs
 }
 
-func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, parentFieldPath *field.Path) []*field.Error {
+func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	lookup := make(map[string]struct{}, len(vs))
@@ -74,21 +75,61 @@ func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, paren
 	return allErrs
 }
 
-func validateSource(source appskubermaticv1.ApplicationSource, f *field.Path) []*field.Error {
+func validateSource(source appskubermaticv1.ApplicationSource, f *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	switch {
 	case source.Helm != nil && source.Git != nil:
-		allErrs = append(allErrs, field.Forbidden(f, "only source type can be provided"))
+		allErrs = append(allErrs, field.Forbidden(f, "only one source type can be provided"))
 	case source.Git != nil:
 		allErrs = append(allErrs, validateGitSource(source.Git, f.Child("git"))...)
 	case source.Helm != nil:
-		if e := validateHelmCredentials(source.Helm.Credentials, f.Child("helm.credentials")); e != nil {
-			allErrs = append(allErrs, e)
+		if errs := validateHelmSource(source.Helm, f.Child("helm")); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
 		}
 
 	default:
 		allErrs = append(allErrs, field.Required(f, "no source provided"))
+	}
+
+	return allErrs
+}
+
+func validateHelmSource(helmSource *appskubermaticv1.HelmSource, f *field.Path) field.ErrorList {
+	allErrs := validateHelmSourceURL(helmSource, f)
+
+	if e := validateHelmCredentials(helmSource.Credentials, f.Child("credentials")); e != nil {
+		allErrs = append(allErrs, e)
+	}
+
+	return allErrs
+}
+
+func validateHelmSourceURL(helmSource *appskubermaticv1.HelmSource, f *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+	parts := strings.Split(helmSource.URL, "://")
+
+	switch parts[0] {
+	case "http":
+		if helmSource.Insecure != nil {
+			allErrs = append(allErrs, field.Forbidden(f.Child("insecure"), "insecure flag can not be used with http URLs"))
+		}
+
+		if u := helmSource.PlainHTTP; u != nil && !*u {
+			allErrs = append(allErrs, field.Forbidden(f.Child("plainHTTP"), "plainHTTP flag can not be disabled with http URLs"))
+		}
+
+	case "https":
+		if u := helmSource.PlainHTTP; u != nil && *u {
+			allErrs = append(allErrs, field.Forbidden(f.Child("plainHTTP"), "plainHTTP flag can not be enabled with http URLs"))
+		}
+
+	case "oci":
+		if u := helmSource.PlainHTTP; u != nil && *u {
+			if helmSource.Insecure != nil {
+				allErrs = append(allErrs, field.Forbidden(f.Child("insecure"), "insecure flag can not be used with OCI URLs using HTTP"))
+			}
+		}
 	}
 
 	return allErrs
@@ -110,7 +151,7 @@ func validateHelmCredentials(credential *appskubermaticv1.HelmCredentials, f *fi
 	return nil
 }
 
-func validateGitSource(gitSource *appskubermaticv1.GitSource, f *field.Path) []*field.Error {
+func validateGitSource(gitSource *appskubermaticv1.GitSource, f *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if e := validateGitRef(gitSource.Ref, f.Child("ref")); e != nil {
@@ -138,7 +179,7 @@ func validateGitRef(ref appskubermaticv1.GitReference, f *field.Path) *field.Err
 	return nil
 }
 
-func validateGitCredentials(credentials *appskubermaticv1.GitCredentials, f *field.Path) []*field.Error {
+func validateGitCredentials(credentials *appskubermaticv1.GitCredentials, f *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	if credentials != nil {
 		switch credentials.Method {
@@ -180,7 +221,7 @@ func ValidateApplicationDefinitionWithOpenAPI(ad appskubermaticv1.ApplicationDef
 	return allErrs
 }
 
-func ValidateApplicationValues(spec appskubermaticv1.ApplicationDefinitionSpec, parentFieldPath *field.Path) []*field.Error {
+func ValidateApplicationValues(spec appskubermaticv1.ApplicationDefinitionSpec, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.DefaultValues != nil && len(spec.DefaultValues.Raw) > 0 && spec.DefaultValuesBlock != "" {

@@ -24,6 +24,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 )
 
 var (
@@ -769,6 +770,169 @@ func TestValidateHelmCredentials(t *testing.T) {
 
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
+			}
+		})
+	}
+}
+
+func TestValidateHelmSourceURL(t *testing.T) {
+	testcases := []struct {
+		name    string
+		source  appskubermaticv1.HelmSource
+		invalid bool
+	}{
+		// HTTP URLs
+
+		{
+			name: "HTTP URL",
+			source: appskubermaticv1.HelmSource{
+				URL: "http://example.com",
+			},
+		},
+		{
+			name: "HTTP URL with redundant plainHTTP=true",
+			source: appskubermaticv1.HelmSource{
+				URL:       "http://example.com",
+				PlainHTTP: ptr.To(true),
+			},
+		},
+		{
+			name: "HTTP URL with invalid plainHTTP=false",
+			source: appskubermaticv1.HelmSource{
+				URL:       "http://example.com",
+				PlainHTTP: ptr.To(false),
+			},
+			invalid: true,
+		},
+		{
+			name: "HTTP URL with invalid insecure=true flag",
+			source: appskubermaticv1.HelmSource{
+				URL:      "http://example.com",
+				Insecure: ptr.To(true),
+			},
+			invalid: true,
+		},
+		{
+			name: "HTTP URL with invalid insecure=false flag",
+			source: appskubermaticv1.HelmSource{
+				URL:      "http://example.com",
+				Insecure: ptr.To(false),
+			},
+			invalid: true,
+		},
+		{
+			name: "HTTP URL with both invalid flags",
+			source: appskubermaticv1.HelmSource{
+				URL:       "http://example.com",
+				Insecure:  ptr.To(false),
+				PlainHTTP: ptr.To(false),
+			},
+			invalid: true,
+		},
+
+		// HTTPS URLs
+
+		{
+			name: "HTTPS URL",
+			source: appskubermaticv1.HelmSource{
+				URL: "https://example.com",
+			},
+		},
+		{
+			name: "HTTPS URL with invalid plainHTTP=true",
+			source: appskubermaticv1.HelmSource{
+				URL:       "https://example.com",
+				PlainHTTP: ptr.To(true),
+			},
+			invalid: true,
+		},
+		{
+			name: "HTTPS URL with redundant plainHTTP=false",
+			source: appskubermaticv1.HelmSource{
+				URL:       "https://example.com",
+				PlainHTTP: ptr.To(false),
+			},
+		},
+		{
+			name: "HTTPS URL with insecure=true flag",
+			source: appskubermaticv1.HelmSource{
+				URL:      "https://example.com",
+				Insecure: ptr.To(true),
+			},
+		},
+		{
+			name: "HTTPS URL with insecure=false flag",
+			source: appskubermaticv1.HelmSource{
+				URL:      "https://example.com",
+				Insecure: ptr.To(false),
+			},
+		},
+
+		// OCI URLs
+
+		{
+			name: "OCI URL",
+			source: appskubermaticv1.HelmSource{
+				URL: "oci://example.com",
+			},
+		},
+		{
+			name: "OCI URL with plainHTTP=true",
+			source: appskubermaticv1.HelmSource{
+				URL:       "oci://example.com",
+				PlainHTTP: ptr.To(true),
+			},
+		},
+		{
+			name: "OCI URL with plainHTTP=false",
+			source: appskubermaticv1.HelmSource{
+				URL:       "oci://example.com",
+				PlainHTTP: ptr.To(false),
+			},
+		},
+		{
+			name: "OCI URL with insecure=true flag",
+			source: appskubermaticv1.HelmSource{
+				URL:      "oci://example.com",
+				Insecure: ptr.To(true),
+			},
+		},
+		{
+			name: "OCI URL with insecure=false flag",
+			source: appskubermaticv1.HelmSource{
+				URL:      "oci://example.com",
+				Insecure: ptr.To(false),
+			},
+		},
+		{
+			name: "OCI URL with plainHTTP=true and insecure=true",
+			source: appskubermaticv1.HelmSource{
+				URL:       "oci://example.com",
+				Insecure:  ptr.To(true),
+				PlainHTTP: ptr.To(true),
+			},
+			invalid: true,
+		},
+		{
+			name: "OCI URL with plainHTTP=true and insecure=false",
+			source: appskubermaticv1.HelmSource{
+				URL:       "oci://example.com",
+				Insecure:  ptr.To(false),
+				PlainHTTP: ptr.To(true),
+			},
+			invalid: true,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			errs := validateHelmSourceURL(&tc.source, nil)
+			if tc.invalid {
+				if len(errs) == 0 {
+					t.Fatal("Expected source to be invalid, but validation succeeded.")
+				}
+			} else if len(errs) > 0 {
+				t.Fatalf("Expected source to be valid, but got errors: %v", errs.ToAggregate())
 			}
 		})
 	}
