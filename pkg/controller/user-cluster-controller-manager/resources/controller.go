@@ -373,14 +373,7 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 	return cluster.Spec.MLA.MonitoringResources, cluster.Spec.MLA.LoggingResources, cluster.Spec.MLA.MonitoringReplicas, nil
 }
 
-func (r *reconciler) fetchNetworkingData(ctx context.Context, data *reconcileData) (err error) {
-	cluster := &kubermaticv1.Cluster{}
-	if err = r.seedClient.Get(ctx, types.NamespacedName{
-		Name: r.clusterName,
-	}, cluster); err != nil {
-		return fmt.Errorf("failed to get cluster: %w", err)
-	}
-
+func (r *reconciler) setupNetworkingData(cluster *kubermaticv1.Cluster, data *reconcileData) (err error) {
 	data.k8sServiceApiIP, err = resources.InClusterApiserverIP(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
@@ -402,7 +395,6 @@ func (r *reconciler) fetchNetworkingData(ctx context.Context, data *reconcileDat
 		data.k8sServiceEndpointPort = cluster.Status.Address.Port
 	}
 	data.ipFamily = cluster.Spec.ClusterNetwork.IPFamily
-	data.coreDNSReplicas = cluster.Spec.ClusterNetwork.CoreDNSReplicas
 	return nil
 }
 
