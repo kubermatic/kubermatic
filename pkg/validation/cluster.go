@@ -80,6 +80,8 @@ const (
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
+//
+//nolint:gocyclo // there just needs to be a place that validates the spec and the spec is simply large; splitting this function into smaller ones would not help readability
 func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, currentVersion *semver.Semver, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
@@ -167,6 +169,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	// KubeLB can only be enabled on the cluster if it's either enforced or enabled at the datacenter level.
 	if spec.IsKubeLBEnabled() && (dc.Spec.KubeLB == nil || !(dc.Spec.KubeLB.Enabled || dc.Spec.KubeLB.Enforced)) {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
+	}
+
+	if err := validateCoreDNSReplicas(spec, parentFieldPath); err != nil {
+		allErrs = append(allErrs, err)
 	}
 
 	return allErrs
@@ -1336,6 +1342,17 @@ func validatePodSecurityPolicyAdmissionPluginForVersion(spec *kubermaticv1.Clust
 		if admissionPlugin == podSecurityPolicyAdmissionPluginName {
 			return errPodSecurityPolicyAdmissionPluginWithVersionGte125
 		}
+	}
+
+	return nil
+}
+
+func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) *field.Error {
+	newSettings := spec.ComponentsOverride.CoreDNS
+	oldSettings := spec.ClusterNetwork
+
+	if newSettings != nil && newSettings.Replicas != nil && oldSettings.CoreDNSReplicas != nil && *oldSettings.CoreDNSReplicas != *newSettings.Replicas {
+		return field.Invalid(fldPath.Child("componentsOverride", "coreDNS", "replicas"), *newSettings.Replicas, "both the new spec.componentsOverride.coreDNS.replicas and deprecated spec.clusterNetwork.coreDNSReplicas fields are set")
 	}
 
 	return nil

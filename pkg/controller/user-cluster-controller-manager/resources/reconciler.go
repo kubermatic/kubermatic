@@ -79,20 +79,22 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get caCert: %w", err)
 	}
+
 	userSSHKeys, err := r.userSSHKeys(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %w", err)
+	}
+
+	cluster, err := r.getCluster(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve cluster: %w", err)
 	}
 
 	data := reconcileData{
 		caCert:       caCert,
 		userSSHKeys:  userSSHKeys,
 		ccmMigration: r.ccmMigration || r.ccmMigrationCompleted,
-	}
-
-	cluster, err := r.getCluster(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve cluster: %w", err)
+		cluster:      cluster,
 	}
 
 	if !cluster.Spec.DisableCSIDriver {
@@ -113,9 +115,9 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	err = r.fetchNetworkingData(ctx, &data)
+	err = r.setupNetworkingData(cluster, &data)
 	if err != nil {
-		return fmt.Errorf("failed to fetch cluster networking data: %w", err)
+		return fmt.Errorf("failed to setup cluster networking data: %w", err)
 	}
 
 	if !r.isKonnectivityEnabled {
@@ -1030,7 +1032,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 	}
 
 	kubeSystemReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		coredns.DeploymentReconciler(r.clusterSemVer, data.coreDNSReplicas, r.imageRewriter),
+		coredns.DeploymentReconciler(r.clusterSemVer, data.cluster, r.imageRewriter),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemReconcilers, metav1.NamespaceSystem, r.Client); err != nil {
@@ -1125,6 +1127,7 @@ type reconcileData struct {
 	userSSHKeys       map[string][]byte
 	cloudProviderName string
 	clusterVersion    semver.Semver
+	cluster           *kubermaticv1.Cluster
 	// csiCloudConfig is currently used only by vSphere, VMware Cloud Director and Nutanix,
 	// who need it to properly configure the external CSI driver; however this can be nil if the
 	// CSI driver has been explicitly disabled
@@ -1141,7 +1144,6 @@ type reconcileData struct {
 	k8sServiceEndpointPort      int32
 	reconcileK8sSvcEndpoints    bool
 	kubernetesDashboardEnabled  bool
-	coreDNSReplicas             *int32
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
