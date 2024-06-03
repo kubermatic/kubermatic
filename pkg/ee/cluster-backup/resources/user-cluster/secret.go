@@ -44,12 +44,10 @@ import (
 func SecretReconciler(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return CloudCredentialsSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			cm.Labels = resources.ApplyManagedByLabelWithName(cm.Labels, resources.ClusterBackupControllerName)
-			refName := cbsl.Spec.Credential.Name
-			refNamespace := resources.KubermaticNamespace
+			key := types.NamespacedName{Name: cbsl.Spec.Credential.Name, Namespace: resources.KubermaticNamespace}
 
 			secret := &corev1.Secret{}
-			if err := client.Get(ctx, types.NamespacedName{Name: refName, Namespace: refNamespace}, secret); err != nil {
+			if err := client.Get(ctx, key, secret); err != nil {
 				return nil, fmt.Errorf("failed to get backup destination credentials secret: %w", err)
 			}
 
