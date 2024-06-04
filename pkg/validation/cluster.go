@@ -730,6 +730,8 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validateAnexiaCloudSpec(spec.Anexia)
 	case spec.Azure != nil:
 		providerErr = validateAzureCloudSpec(spec.Azure)
+	case spec.Baremetal != nil:
+		providerErr = nil
 	case spec.BringYourOwn != nil:
 		providerErr = nil
 	case spec.Edge != nil:

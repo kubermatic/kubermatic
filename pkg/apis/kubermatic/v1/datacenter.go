@@ -41,6 +41,7 @@ const (
 	AnexiaCloudProvider              ProviderType = "anexia"
 	AWSCloudProvider                 ProviderType = "aws"
 	AzureCloudProvider               ProviderType = "azure"
+	BaremetalCloudProvider           ProviderType = "baremetal"
 	BringYourOwnCloudProvider        ProviderType = "bringyourown"
 	EdgeCloudProvider                ProviderType = "edge"
 	DigitaloceanCloudProvider        ProviderType = "digitalocean"
@@ -68,6 +69,7 @@ var (
 		AnexiaCloudProvider,
 		AWSCloudProvider,
 		AzureCloudProvider,
+		BaremetalCloudProvider,
 		BringYourOwnCloudProvider,
 		DigitaloceanCloudProvider,
 		EdgeCloudProvider,
@@ -407,6 +409,8 @@ type DatacenterSpec struct {
 	// BringYourOwn contains settings for clusters using manually created
 	// nodes via kubeadm.
 	BringYourOwn *DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
+	// Baremetal contains settings for baremetal clusters in datacenters.
+	Baremetal *DatacenterSpecBaremetal `json:"baremetal,omitempty"`
 	// Edge contains settings for clusters using manually created
 	// nodes in edge envs.
 	Edge *DatacenterSpecEdge `json:"edge,omitempty"`
@@ -493,6 +497,9 @@ var (
 			ipv6EnabledForAllDatacenters: true,
 		},
 		AzureCloudProvider: {
+			ipv6EnabledForAllDatacenters: true,
+		},
+		BaremetalCloudProvider: {
 			ipv6EnabledForAllDatacenters: true,
 		},
 		BringYourOwnCloudProvider: {
@@ -699,6 +706,10 @@ type DatacenterSpecAWS struct {
 	// when machines are created, so under normal circumstances it is not necessary
 	// to define the AMIs statically.
 	Images ImageList `json:"images,omitempty"`
+}
+
+// DatacenterSpecBaremetal describes a datacenter of baremetal nodes.
+type DatacenterSpecBaremetal struct {
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.

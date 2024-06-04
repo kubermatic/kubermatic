@@ -621,6 +621,9 @@ spec:
                         - vnet
                         - vnetResourceGroup
                       type: object
+                    baremetal:
+                      description: Baremetal defines the configuration data for a Baremetal cluster.
+                      type: object
                     bringyourown:
                       description: BringYourOwn defines the configuration data for a Bring Your Own cluster.
                       type: object

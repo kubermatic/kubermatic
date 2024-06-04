@@ -75,6 +75,8 @@ spec:
           # Region to use, for example "westeurope". A list of available regions can be
           # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
           location: ""
+        # Baremetal contains settings for baremetal clusters in datacenters.
+        baremetal: {}
         # BringYourOwn contains settings for clusters using manually created
         # nodes via kubeadm.
         bringyourown: {}

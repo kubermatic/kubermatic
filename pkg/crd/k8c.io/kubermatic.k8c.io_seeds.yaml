@@ -188,6 +188,9 @@ spec:
                             required:
                               - location
                             type: object
+                          baremetal:
+                            description: Baremetal contains settings for baremetal clusters in datacenters.
+                            type: object
                           bringyourown:
                             description: |-
                               BringYourOwn contains settings for clusters using manually created

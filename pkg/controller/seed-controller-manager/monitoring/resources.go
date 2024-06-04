@@ -192,7 +192,7 @@ func GetServiceAccountReconcilers() []reconciling.NamedServiceAccountReconcilerF
 	}
 }
 
-func (r *Reconciler) ensureServiceAccounts(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureServiceAccounts(ctx context.Context, cluster *kubermaticv1.Cluster, _ *resources.TemplateData) error {
 	creators := GetServiceAccountReconcilers()
 
 	return reconciling.ReconcileServiceAccounts(ctx, creators, cluster.Status.NamespaceName, r.Client)
