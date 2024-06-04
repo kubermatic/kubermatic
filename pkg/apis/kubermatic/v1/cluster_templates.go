@@ -47,7 +47,8 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
-// +kubebuilder:printcolumn:JSONPath=".spec.humanReadableName",name="HumanReadableName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.labels.name",name="DisplayName",type="string"
+// +kubebuilder:printcolumn:JSONPath=".metadata.labels.scope",name="Scope",type="string"
 // +kubebuilder:printcolumn:JSONPath=".spec.version",name="Version",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
