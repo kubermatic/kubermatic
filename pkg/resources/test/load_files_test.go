@@ -153,6 +153,10 @@ var (
 			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
+		"baremetal": {
+			ProviderName: string(kubermaticv1.BaremetalCloudProvider),
+			Baremetal:    &kubermaticv1.BaremetalCloudSpec{},
+		},
 		"edge": {
 			ProviderName: string(kubermaticv1.EdgeCloudProvider),
 			Edge:         &kubermaticv1.EdgeCloudSpec{},

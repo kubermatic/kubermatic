@@ -395,7 +395,7 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	return images, nil
 }
 
-func getImagesFromReconcilers(log logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
 	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %w", err)
@@ -798,6 +798,10 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 		{
 			ProviderName: string(kubermaticv1.BringYourOwnCloudProvider),
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
+		},
+		{
+			ProviderName: string(kubermaticv1.BaremetalCloudProvider),
+			Baremetal:    &kubermaticv1.BaremetalCloudSpec{},
 		},
 		{
 			ProviderName: string(kubermaticv1.EdgeCloudProvider),

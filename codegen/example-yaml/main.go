@@ -152,6 +152,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 					Spec: kubermaticv1.DatacenterSpec{
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
+						Baremetal:                      &kubermaticv1.DatacenterSpecBaremetal{},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						Edge:                           &kubermaticv1.DatacenterSpecEdge{},
 						RequiredEmails:                 []string{},

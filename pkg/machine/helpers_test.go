@@ -34,6 +34,7 @@ func TestCompleteCloudProviderSpecWithNoInputsAtAll(t *testing.T) {
 		// dummies
 		string(kubermaticv1.FakeCloudProvider),
 		string(kubermaticv1.BringYourOwnCloudProvider),
+		string(kubermaticv1.BaremetalCloudProvider),
 		string(kubermaticv1.EdgeCloudProvider),
 	)
 
