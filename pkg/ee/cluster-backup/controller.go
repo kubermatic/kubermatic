@@ -37,6 +37,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -63,10 +64,17 @@ import (
 )
 
 const (
-	ControllerName = resources.ClusterBackupControllerName
+	ControllerName = "cluster-backup-controller"
 
 	clusterBackupComponentLabelKey   = "component"
 	clusterBackupComponentLabelValue = "velero"
+
+	// componentsInstalledLabel is a label that is put on Clusters where the cluster-backup
+	// components are installed. This is only used for cleanups to prevent this controller
+	// from endlessly cleaning up the same cluster over and over again.
+	// This should not be a finalizer because we do not want to block cluster deletion just
+	// because a Velero CRD is installed in the usercluster.
+	componentsInstalledLabel = "k8c.io/cluster-backup-installed"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -107,7 +115,8 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConn
 	if err := c.Watch(source.Kind(mgr.GetCache(), &kubermaticv1.Cluster{}), &handler.EnqueueRequestForObject{}, workerlabel.Predicates(workerName), predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
 		// Only watch clusters that are in a state where they can be reconciled.
-		return !cluster.Spec.Pause && cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
+		// Pause-flag is checked by the ReconcileWrapper.
+		return cluster.DeletionTimestamp == nil && cluster.Status.ExtendedHealth.ControlPlaneHealthy()
 	})); err != nil {
 		return fmt.Errorf("failed to create watch: %w", err)
 	}
@@ -158,8 +167,8 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	log.Debug("Reconciling")
 
 	if !cluster.Spec.IsClusterBackupEnabled() {
-		if err := r.undeployClusterBackupUserClusterComponents(ctx, cluster); err != nil {
-			return nil, fmt.Errorf("failed to undeploy cluster backup user-cluster components: %w", err)
+		if err := r.removeUserClusterComponents(ctx, cluster); err != nil {
+			return nil, fmt.Errorf("failed to remove backup components: %w", err)
 		}
 		return nil, nil
 	}
@@ -171,15 +180,40 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	if !inSameProject(cluster, cbsl) {
-		return nil, fmt.Errorf("unable to use Cluster Backup Storage Location [%s]: cluster and clusterbackupstoragelocation must belong to the same project", cbsl.Name)
+		return nil, fmt.Errorf("unable to use ClusterBackupStorageLocation %q: cluster and CBSL must belong to the same project", cbsl.Name)
 	}
-	if err := r.ensureClusterBackupUserClusterResources(ctx, cluster, cbsl); err != nil {
-		return nil, fmt.Errorf("failed to ensure cluster backup user-cluster resources: %w", err)
+	if err := r.ensureUserClusterResources(ctx, cluster, cbsl); err != nil {
+		return nil, fmt.Errorf("failed to ensure user-cluster resources: %w", err)
 	}
 	return nil, nil
 }
 
-func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
+func addManagedByLabel(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		created, err := create(existing)
+		if err != nil {
+			return nil, err
+		}
+
+		kubernetes.EnsureLabels(created, map[string]string{
+			appskubermaticv1.ApplicationManagedByLabel: ControllerName,
+		})
+
+		return created, nil
+	}
+}
+
+func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
+	// mark the cluster so we can clean it up when necessary
+	if _, ok := cluster.Labels[componentsInstalledLabel]; !ok {
+		err := r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kubernetes.EnsureLabels(c, map[string]string{componentsInstalledLabel: "yes"})
+		})
+		if err != nil {
+			return fmt.Errorf("failed to mark cluster: %w", err)
+		}
+	}
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -187,23 +221,23 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 	nsReconcilers := []reconciling.NamedNamespaceReconcilerFactory{
 		userclusterresources.NamespaceReconciler(),
 	}
-	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", userClusterClient); err != nil {
+	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero Namespace: %w", err)
 	}
 
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		userclusterresources.ServiceAccountReconciler(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile Velero Service Account: %w", err)
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+		return fmt.Errorf("failed to reconcile Velero ServiceAccount: %w", err)
 	}
 
 	clusterRoleBindingReconciler := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		userclusterresources.ClusterRoleBindingReconciler(),
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile Velero Cluster Role Binding: %w", err)
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient, addManagedByLabel); err != nil {
+		return fmt.Errorf("failed to reconcile Velero ClusterRoleBinding: %w", err)
 	}
 
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
@@ -211,22 +245,22 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 	}
 
 	// Create kubeconfig secret in the user cluster namespace.
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile cluster backup kubeconfig secret: %w", err)
+	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+		return fmt.Errorf("failed to reconcile cluster backup kubeconfig Secret: %w", err)
 	}
 
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		userclusterresources.DeploymentReconciler(),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile the cluster backup deployment: %w", err)
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+		return fmt.Errorf("failed to reconcile the cluster backup Deployment: %w", err)
 	}
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		userclusterresources.DaemonSetReconciler(),
 	}
 
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile Velero node-agent Daemonset: %w", err)
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+		return fmt.Errorf("failed to reconcile Velero node-agent DaemonSet: %w", err)
 	}
 
 	clusterBackupCRDs, err := userclusterresources.CRDs()
@@ -239,7 +273,7 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 		creators = append(creators, userclusterresources.CRDReconciler(clusterBackupCRDs[i]))
 	}
 
-	if err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient); err != nil {
+	if err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero CRDs: %w", err)
 	}
 
@@ -247,25 +281,42 @@ func (r *reconciler) ensureClusterBackupUserClusterResources(ctx context.Context
 		userclusterresources.BSLReconciler(ctx, cluster, cbsl),
 	}
 
-	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, userClusterClient); err != nil {
+	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero BSL: %w", err)
 	}
 
 	return nil
 }
 
-func (r *reconciler) undeployClusterBackupUserClusterComponents(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *reconciler) removeUserClusterComponents(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if _, ok := cluster.Labels[componentsInstalledLabel]; !ok {
+		return nil
+	}
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
 	}
-	if err := r.undeployClusterBackupUserClusterResources(ctx, userClusterClient); err != nil {
-		return fmt.Errorf("failed to undeploy cluster backup user-cluster resources: %w", err)
+
+	if err := r.removeUserClusterResources(ctx, userClusterClient); err != nil {
+		return fmt.Errorf("failed to remove user-cluster resources: %w", err)
 	}
-	return r.undeployClusterBackupUserClusterCRDs(ctx, userClusterClient)
+
+	if err := r.removeCRDs(ctx, userClusterClient); err != nil {
+		return fmt.Errorf("failed to remove CRDs: %w", err)
+	}
+
+	err = r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		delete(c.Labels, componentsInstalledLabel)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to unmark cluster: %w", err)
+	}
+
+	return nil
 }
 
-func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+func (r *reconciler) removeUserClusterResources(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
 	// remove resources created in ./pkg/ee/cluster-backup/resources/user-cluster
 	userClusterResources := []ctrlruntimeclient.Object{
 		&appsv1.DaemonSet{
@@ -311,45 +362,45 @@ func (r *reconciler) undeployClusterBackupUserClusterResources(ctx context.Conte
 	}
 
 	for _, resource := range userClusterResources {
-		if err := doSafeDelete(ctx, userClusterClient, resource); err != nil {
+		if err := removeManagedObject(ctx, userClusterClient, resource); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func doSafeDelete(ctx context.Context, client ctrlruntimeclient.Client, resource ctrlruntimeclient.Object) error {
-	if err := client.Get(ctx, types.NamespacedName{Name: resource.GetName(), Namespace: resource.GetNamespace()}, resource); err != nil {
+func removeManagedObject(ctx context.Context, client ctrlruntimeclient.Client, resource ctrlruntimeclient.Object) error {
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(resource), resource); err != nil {
 		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
 			return nil
 		}
-		return fmt.Errorf("failed to list cluster backup user-cluster resources: %w", err)
+		return fmt.Errorf("failed to list user-cluster resources: %w", err)
 	}
+
 	if isManagedBackupResource(resource) {
-		// skip err if resource doesn't exist or if the API for it doesn't exist
 		if err := client.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
-			return fmt.Errorf("failed to delete cluster backup user-cluster resource: %w", err)
+			return fmt.Errorf("failed to delete user-cluster resource: %w", err)
 		}
 	}
+
 	return nil
 }
 
-func (r *reconciler) undeployClusterBackupUserClusterCRDs(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+func (r *reconciler) removeCRDs(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
 	crdList := &apiextensionsv1.CustomResourceDefinitionList{}
 
 	listOpts := &ctrlruntimeclient.ListOptions{
-		LabelSelector: labels.SelectorFromSet(
-			map[string]string{
-				clusterBackupComponentLabelKey:             clusterBackupComponentLabelValue,
-				appskubermaticv1.ApplicationManagedByLabel: resources.ClusterBackupControllerName,
-			}),
+		LabelSelector: labels.SelectorFromSet(map[string]string{
+			clusterBackupComponentLabelKey:             clusterBackupComponentLabelValue,
+			appskubermaticv1.ApplicationManagedByLabel: ControllerName,
+		}),
 	}
 	if err := userClusterClient.List(ctx, crdList, listOpts); err != nil {
-		return fmt.Errorf("failed to list cluster backup user-cluster CRDs: %w", err)
+		return fmt.Errorf("failed to list CRDs: %w", err)
 	}
 	for _, crd := range crdList.Items {
 		if err := userClusterClient.Delete(ctx, &crd); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete cluster backup user-cluster CRD: %w", err)
+			return fmt.Errorf("failed to delete CRD: %w", err)
 		}
 	}
 	return nil
@@ -361,5 +412,14 @@ func inSameProject(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBack
 
 func isManagedBackupResource(resource ctrlruntimeclient.Object) bool {
 	labels := resource.GetLabels()
-	return labels[appskubermaticv1.ApplicationManagedByLabel] == resources.ClusterBackupControllerName
+	return labels[appskubermaticv1.ApplicationManagedByLabel] == ControllerName
+}
+
+func (r *reconciler) patchCluster(ctx context.Context, cluster *kubermaticv1.Cluster, patch kubermaticv1helper.ClusterPatchFunc) error {
+	// modify it
+	original := cluster.DeepCopy()
+	patch(cluster)
+
+	// update the status
+	return r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))
 }
