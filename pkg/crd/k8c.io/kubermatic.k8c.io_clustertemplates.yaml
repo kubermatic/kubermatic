@@ -17,8 +17,11 @@ spec:
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .spec.humanReadableName
-          name: HumanReadableName
+        - jsonPath: .metadata.labels.name
+          name: DisplayName
+          type: string
+        - jsonPath: .metadata.labels.scope
+          name: Scope
           type: string
         - jsonPath: .spec.version
           name: Version
