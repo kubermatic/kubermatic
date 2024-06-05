@@ -496,4 +496,4 @@ The automatic update rules can, if needed, be overwritten using the `spec.versio
 
 ### Known issues
 - CNI: service LoadBalancer not working on Azure RHEL ([8768](https://github.com/kubermatic/kubermatic/issues/8768))
-- Incompatibilty between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
+- Incompatibility between Kubevirt csi driver and Kubevirt ccm (namespace)([8772](https://github.com/kubermatic/kubermatic/issues/8772))
