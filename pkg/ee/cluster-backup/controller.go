@@ -90,9 +90,19 @@ type reconciler struct {
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
+	overwriteRegistry             string
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, seedGetter provider.SeedGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
+	userClusterConnectionProvider UserClusterClientProvider,
+	seedGetter provider.SeedGetter,
+	log *zap.SugaredLogger,
+	versions kubermatic.Versions,
+	overwriteRegistry string,
+) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		seedGetter:                    seedGetter,
@@ -101,6 +111,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConn
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
+		overwriteRegistry:             overwriteRegistry,
 	}
 
 	clusterIsAlive := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
@@ -212,6 +223,10 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		}
 	}
 
+	data := resources.NewTemplateDataBuilder().
+		WithOverwriteRegistry(r.overwriteRegistry).
+		Build()
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -248,13 +263,13 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	}
 
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		userclusterresources.DeploymentReconciler(),
+		userclusterresources.DeploymentReconciler(data),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile the cluster backup Deployment: %w", err)
 	}
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
-		userclusterresources.DaemonSetReconciler(),
+		userclusterresources.DaemonSetReconciler(data),
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
