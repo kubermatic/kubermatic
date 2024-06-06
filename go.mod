@@ -44,7 +44,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.53.0
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.13
-	github.com/kubermatic/machine-controller v1.59.0
+	github.com/kubermatic/machine-controller v1.59.2
 	github.com/minio/minio-go/v7 v7.0.69
 	github.com/nutanix-cloud-native/prism-go-client v0.3.4
 	github.com/olekukonko/tablewriter v0.0.5
@@ -105,7 +105,7 @@ require (
 	k8s.io/utils v0.0.0-20240310230437-4693a0247e57
 	kubevirt.io/api v1.2.0
 	kubevirt.io/containerized-data-importer-api v1.58.1
-	sigs.k8s.io/controller-runtime v0.18.1
+	sigs.k8s.io/controller-runtime v0.18.2
 	sigs.k8s.io/controller-tools v0.14.0
 	sigs.k8s.io/yaml v1.4.0
 )
@@ -118,7 +118,7 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
 
 require (
-	cloud.google.com/go/compute v1.23.4 // indirect
+	cloud.google.com/go/compute v1.24.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
@@ -378,8 +378,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto v0.0.0-20240205150955-31a09d347014 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240205150955-31a09d347014 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240311132316-a219d84964c2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

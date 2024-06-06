@@ -18,7 +18,6 @@ package machinecontroller
 
 import (
 	"fmt"
-	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
@@ -55,7 +54,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "24477483799684149f0b2633a967f0ef85278a6a"
+	Tag  = "1f263db7e53fd6b1487f094bf7935a1f3d9516e5"
 )
 
 type machinecontrollerData interface {
@@ -132,14 +131,6 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "temp",
 			})
 
-			clusterDNSIP := resources.NodeLocalDNSCacheAddress
-			if !data.NodeLocalDNSCacheEnabled() {
-				clusterDNSIP, err = resources.UserClusterDNSResolverIP(data.Cluster())
-				if err != nil {
-					return nil, err
-				}
-			}
-
 			envVars, err := data.GetEnvVars()
 			if err != nil {
 				return nil, err
@@ -171,7 +162,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, data.Cluster().Spec.ImagePullSecret, data.Cluster().Spec.Features),
+					Args:    getFlags(data.Cluster().Spec.Features),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -230,45 +221,18 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 	}
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, imagePullSecret *corev1.SecretReference, features map[string]bool) []string {
+func getFlags(features map[string]bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"-cluster-dns", clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
 		"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 		"-node-csr-approver",
 	}
 
-	if nodeSettings != nil {
-		if len(nodeSettings.InsecureRegistries) > 0 {
-			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
-		}
-		if len(nodeSettings.RegistryMirrors) > 0 {
-			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
-		}
-		if !nodeSettings.HTTPProxy.Empty() {
-			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
-		}
-		if !nodeSettings.NoProxy.Empty() {
-			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
-		}
-		if nodeSettings.PauseImage != "" {
-			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
-		}
-	}
-
 	externalCloudProvider := features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 	if externalCloudProvider {
 		flags = append(flags, "-node-external-cloud-provider")
-	}
-
-	if cri != "" {
-		flags = append(flags, "-node-container-runtime", cri)
-	}
-
-	if imagePullSecret != nil {
-		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
 	}
 
 	return flags
