@@ -632,7 +632,7 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 			name: "Should be rejected when annotation value is wrong",
 			obj: &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{nodeportproxy.DefaultExposeAnnotationKey: "tru"},
+					Annotations: map[string]string{nodeportproxy.DefaultExposeAnnotationKey: "truh"},
 				},
 			},
 			expectAccept: false,

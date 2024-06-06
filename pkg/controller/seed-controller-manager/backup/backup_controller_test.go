@@ -157,7 +157,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		t.Fatalf("Failed to update cronjob")
 	}
 	if _, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}); err != nil {
-		t.Fatalf("Error syncin cluster: %v", err)
+		t.Fatalf("Error syncing cluster: %v", err)
 	}
 
 	if err := reconciler.List(ctx, cronJobs); err != nil {

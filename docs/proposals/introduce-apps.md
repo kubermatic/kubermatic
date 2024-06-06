@@ -212,7 +212,7 @@ The functionality of the `ApplicationInstallationController` depends on the sele
   - url → url of the helm repository (HTTP and OCI registry are supported)
   - chartName → name of the helm chart
   - chartVersion → version of the helm chart
-  - crendentials →authentication to the helm registry (user-pw and registryConfigFile are supported)
+  - credentials → authentication to the helm registry (user-pw and registryConfigFile are supported)
 
 **Methods**
 
