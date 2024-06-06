@@ -64,6 +64,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
+				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
 			}
 
 			if cfg.Spec.MasterController.DebugLog {
