@@ -23,8 +23,35 @@ CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.21-node-18-13 containerize ./ha
 
 echodate "Running codespell..."
 
+function join_by {
+  local IFS="$1"
+  shift
+  echo "$*"
+}
+
+SKIP=(
+  go.mod
+  go.sum
+  *.jpg
+  *.jpeg
+  *.png
+  *.woff
+  *.woff2
+  *.pem
+  ./.git
+  ./_build
+  ./_dist
+  ./vendor
+  ./charts/cert-manager/crd
+  ./charts/backup/velero/crd
+  ./charts/oauth/test
+  ./addons/multus/crds.yaml
+  ./addons/canal/canal_*.yaml
+  ./charts/local-kubevirt/crds
+)
+
 codespell \
-  --skip .git,_build,_dist,vendor,go.mod,go.sum,*.jpg,*.jpeg,*.png,*.woff,*.woff2,*.pem,./charts/cert-manager/crd,./charts/backup/velero/crd,./charts/oauth/test,./addons/multus/crds.yaml,./charts/local-kubevirt/crds \
+  --skip $(join_by "," "${SKIP[@]}") \
   --ignore-words .codespell.exclude \
   --check-filenames \
   --check-hidden
