@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	reconcilerlog "k8c.io/reconciler/pkg/log"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -100,13 +101,18 @@ const (
 	KubeOneMigrateConfigMap = "kubeone-migrate"
 )
 
+type templateData interface {
+	RewriteImage(image string) (string, error)
+}
+
 type reconciler struct {
 	ctrlruntimeclient.Client
 	log               *zap.SugaredLogger
 	secretKeySelector provider.SecretKeySelectorValueFunc
+	overwriteRegistry string
 }
 
-func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error {
+func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, overwriteRegistry string) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Pod{}, podPhaseKey, func(rawObj ctrlruntimeclient.Object) []string {
 		pod := rawObj.(*corev1.Pod)
 		return []string{string(pod.Status.Phase)}
@@ -118,6 +124,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 		Client:            mgr.GetClient(),
 		log:               log.Named(ControllerName),
 		secretKeySelector: provider.SecretKeySelectorValueFuncFactory(ctx, mgr.GetClient()),
+		overwriteRegistry: overwriteRegistry,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -218,7 +225,11 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		return nil
 	}
 
-	kubeOneSecrests, err := r.ensureKubeOneSecrets(ctx, log, externalCluster)
+	data := resources.NewTemplateDataBuilder().
+		WithOverwriteRegistry(r.overwriteRegistry).
+		Build()
+
+	kubeOneSecrests, err := r.ensureKubeOneSecrets(ctx, log, data, externalCluster)
 	if err != nil {
 		return err
 	}
@@ -239,15 +250,15 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 		}
 	}
 
-	if err := r.importAction(ctx, log, externalCluster); err != nil {
+	if err := r.importAction(ctx, log, data, externalCluster); err != nil {
 		return err
 	}
 
-	if err = r.upgradeAction(ctx, log, externalCluster); err != nil {
+	if err = r.upgradeAction(ctx, log, data, externalCluster); err != nil {
 		return err
 	}
 
-	if err = r.migrateAction(ctx, log, externalCluster); err != nil {
+	if err = r.migrateAction(ctx, log, data, externalCluster); err != nil {
 		return err
 	}
 
@@ -264,7 +275,12 @@ func (r *reconciler) syncSecrets(ctx context.Context, externalCluster *kubermati
 	return nil
 }
 
-func (r *reconciler) ensureKubeOneSecrets(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster) ([]corev1.Secret, error) {
+func (r *reconciler) ensureKubeOneSecrets(
+	ctx context.Context,
+	log *zap.SugaredLogger,
+	data templateData,
+	externalCluster *kubermaticv1.ExternalCluster,
+) ([]corev1.Secret, error) {
 	kubeOneSecrets := []corev1.Secret{}
 
 	credRef := externalCluster.Spec.CloudSpec.KubeOne.CredentialsReference
@@ -351,7 +367,7 @@ func (r *reconciler) ensureKubeOneSecrets(ctx context.Context, log *zap.SugaredL
 			if apierrors.IsNotFound(err) {
 				// trying to refetch cluster kubeconfig to recreate kubeconfig secret in case kubeconfig secret was deleted for some reason.
 				log.Info("trying to refetch cluster kubeconfig to recreate kubeconfig secret in case kubeconfig secret was deleted for some reason.")
-				err := r.initiateImportCluster(ctx, log, externalCluster)
+				err := r.initiateImportCluster(ctx, log, data, externalCluster)
 				if err != nil {
 					log.Errorw("failed to import kubeone cluster", zap.Error(err))
 					return nil, err
@@ -421,9 +437,11 @@ func (r *reconciler) deleteSecrets(ctx context.Context, secrets []corev1.Secret)
 func (r *reconciler) importAction(
 	ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster) error {
+	data templateData,
+	externalCluster *kubermaticv1.ExternalCluster,
+) error {
 	if externalCluster.Spec.KubeconfigReference == nil {
-		err := r.initiateImportCluster(ctx, log, externalCluster)
+		err := r.initiateImportCluster(ctx, log, data, externalCluster)
 		if err != nil {
 			log.Errorw("failed to import kubeone cluster", zap.Error(err))
 			return err
@@ -449,9 +467,12 @@ func (r *reconciler) importAction(
 	return nil
 }
 
-func (r *reconciler) initiateImportCluster(ctx context.Context,
+func (r *reconciler) initiateImportCluster(
+	ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster) error {
+	data templateData,
+	externalCluster *kubermaticv1.ExternalCluster,
+) error {
 	log.Info("Importing kubeone cluster...")
 
 	kubeoneNamespace := externalCluster.GetKubeOneNamespaceName()
@@ -464,7 +485,7 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 	}
 
 	log.Info("Generating kubeone job to fetch kubeconfig...")
-	job, err := r.generateKubeOneActionJob(ctx, log, externalCluster, ImportAction)
+	job, err := r.generateKubeOneActionJob(ctx, log, data, externalCluster, ImportAction)
 	if err != nil {
 		return fmt.Errorf("could not generate kubeone job: %w", err)
 	}
@@ -576,9 +597,12 @@ func (r *reconciler) initiateImportCluster(ctx context.Context,
 	return ctrlruntimeclient.IgnoreNotFound(err)
 }
 
-func (r *reconciler) upgradeAction(ctx context.Context,
+func (r *reconciler) upgradeAction(
+	ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster) error {
+	data templateData,
+	externalCluster *kubermaticv1.ExternalCluster,
+) error {
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 	kubeOneNamespaceName := externalCluster.GetKubeOneNamespaceName()
 
@@ -679,7 +703,7 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 		return err
 	}
 
-	err = r.initiateClusterUpgrade(ctx, log, *currentVersion, desiredVersion, externalCluster)
+	err = r.initiateClusterUpgrade(ctx, log, data, *currentVersion, desiredVersion, externalCluster)
 	if err != nil {
 		log.Errorw("failed to upgrade kubeone cluster", zap.Error(err))
 		return err
@@ -688,13 +712,17 @@ func (r *reconciler) upgradeAction(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) initiateClusterUpgrade(ctx context.Context,
+func (r *reconciler) initiateClusterUpgrade(
+	ctx context.Context,
 	log *zap.SugaredLogger,
-	currentVersion, desiredVersion semver.Semver,
-	cluster *kubermaticv1.ExternalCluster) error {
+	data templateData,
+	currentVersion semver.Semver,
+	desiredVersion semver.Semver,
+	cluster *kubermaticv1.ExternalCluster,
+) error {
 	log.Info("Upgrading kubeone cluster...")
 
-	job, err := r.generateKubeOneActionJob(ctx, log, cluster, UpgradeControlPlaneAction)
+	job, err := r.generateKubeOneActionJob(ctx, log, data, cluster, UpgradeControlPlaneAction)
 	if err != nil {
 		return err
 	}
@@ -746,9 +774,12 @@ func objectLogger(obj ctrlruntimeclient.Object) *zap.SugaredLogger {
 	return logger.With("name", obj.GetName())
 }
 
-func (r *reconciler) migrateAction(ctx context.Context,
+func (r *reconciler) migrateAction(
+	ctx context.Context,
 	log *zap.SugaredLogger,
-	externalCluster *kubermaticv1.ExternalCluster) error {
+	data templateData,
+	externalCluster *kubermaticv1.ExternalCluster,
+) error {
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 
 	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
@@ -826,7 +857,7 @@ func (r *reconciler) migrateAction(ctx context.Context,
 		return err
 	}
 
-	err = r.initiateClusterMigration(ctx, log, currentContainerRuntime, desiredContainerRuntime, externalCluster)
+	err = r.initiateClusterMigration(ctx, log, data, currentContainerRuntime, desiredContainerRuntime, externalCluster)
 	if err != nil {
 		log.Errorw("failed to migrate kubeone cluster", zap.Error(err))
 		return err
@@ -835,10 +866,14 @@ func (r *reconciler) migrateAction(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) initiateClusterMigration(ctx context.Context,
+func (r *reconciler) initiateClusterMigration(
+	ctx context.Context,
 	log *zap.SugaredLogger,
-	currentContainerRuntime, desiredContainerRuntime string,
-	cluster *kubermaticv1.ExternalCluster) error {
+	data templateData,
+	currentContainerRuntime string,
+	desiredContainerRuntime string,
+	cluster *kubermaticv1.ExternalCluster,
+) error {
 	log.Info("Migrating kubeone cluster...")
 	if err := r.updateClusterStatus(ctx, cluster, kubermaticv1.ExternalClusterCondition{
 		Phase:   kubermaticv1.KubeOnePhaseReconcilingMigrate,
@@ -847,7 +882,7 @@ func (r *reconciler) initiateClusterMigration(ctx context.Context,
 		return err
 	}
 
-	job, err := r.generateKubeOneActionJob(ctx, log, cluster, MigrateContainerRuntimeAction)
+	job, err := r.generateKubeOneActionJob(ctx, log, data, cluster, MigrateContainerRuntimeAction)
 	if err != nil {
 		return fmt.Errorf("could not generate kubeone pod %s/%s to migrate container runtime: %w", job.Name, job.Namespace, err)
 	}
@@ -890,7 +925,7 @@ func (r *reconciler) initiateClusterMigration(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.SugaredLogger, externalCluster *kubermaticv1.ExternalCluster, action string) (*batchv1.Job, error) {
+func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.SugaredLogger, data templateData, externalCluster *kubermaticv1.ExternalCluster, action string) (*batchv1.Job, error) {
 	var kubeoneJobName, kubeoneCMName string
 	var sshSecret, manifestSecret *corev1.Secret
 	var err error
@@ -1021,7 +1056,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					InitContainers: []corev1.Container{
 						{
 							Name:    "copy-ro-manifest",
-							Image:   "busybox",
+							Image:   registry.Must(data.RewriteImage("registry.k8s.io/busybox:1.27.2")),
 							Command: []string{"/bin/sh"},
 							Args: []string{
 								"-c",
@@ -1033,7 +1068,7 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 					Containers: []corev1.Container{
 						{
 							Name:    "kubeone",
-							Image:   fmt.Sprintf("%s:%s", resources.KubeOneImage, resources.KubeOneImageTag),
+							Image:   registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", resources.KubeOneImage, resources.KubeOneImageTag))),
 							Command: []string{"/bin/sh"},
 							Args: []string{
 								"-c",

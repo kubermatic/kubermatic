@@ -81,6 +81,7 @@ type controllerContext struct {
 	labelSelectorFunc       func(*metav1.ListOptions)
 	namespace               string
 	versions                kubermatic.Versions
+	overwriteRegistry       string
 
 	configGetter provider.KubermaticConfigurationGetter
 }
@@ -101,6 +102,7 @@ func main() {
 	flag.StringVar(&runOpts.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
 	flag.BoolVar(&runOpts.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&ctrlCtx.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&runOpts.configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")

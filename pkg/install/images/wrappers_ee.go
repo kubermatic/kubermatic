@@ -31,7 +31,7 @@ import (
 func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (images []string, err error) {
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelb.DeploymentReconciler(templateData),
-		velero.DeploymentReconciler(),
+		velero.DeploymentReconciler(templateData),
 	}
 
 	for _, createFunc := range deploymentReconcilers {
@@ -43,7 +43,7 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
 	}
 
-	_, creator := velero.DaemonSetReconciler()()
+	_, creator := velero.DaemonSetReconciler(templateData)()
 	daemonset, err := creator(&appsv1.DaemonSet{})
 	if err != nil {
 		return nil, err
