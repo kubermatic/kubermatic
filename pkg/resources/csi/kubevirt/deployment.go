@@ -21,6 +21,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -102,7 +103,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-driver",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           "quay.io/kubermatic/kubevirt-csi-driver:" + csiVersion,
+					Image:           registry.Must(data.RewriteImage("quay.io/kubermatic/kubevirt-csi-driver:" + csiVersion)),
 					Args: []string{
 						"--endpoint=$(CSI_ENDPOINT)",
 						fmt.Sprintf("--infra-cluster-namespace=%s", data.Cluster().Status.NamespaceName),
@@ -180,7 +181,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-provisioner",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           "quay.io/openshift/origin-csi-external-provisioner:4.13.0",
+					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-external-provisioner:4.13.0")),
 					Args: []string{
 						"--csi-address=$(ADDRESS)",
 						"--default-fstype=ext4",
@@ -213,7 +214,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-attacher",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           "quay.io/openshift/origin-csi-external-attacher:4.13.0",
+					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-external-attacher:4.13.0")),
 					Args: []string{
 						"--csi-address=$(ADDRESS)",
 						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
@@ -245,7 +246,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-liveness-probe",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           "quay.io/openshift/origin-csi-livenessprobe:4.13.0",
+					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-livenessprobe:4.13.0")),
 					Args: []string{
 						"--csi-address=/csi/csi.sock",
 						"--probe-timeout=3s",

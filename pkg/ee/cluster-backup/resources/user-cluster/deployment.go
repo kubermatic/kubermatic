@@ -29,6 +29,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,8 +42,12 @@ const (
 	clusterbackupKubeConfigSecretName = "velero-kubeconfig"
 )
 
+type templateData interface {
+	RewriteImage(image string) (string, error)
+}
+
 // DeploymentReconciler creates the velero deployment in the user cluster namespace.
-func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data templateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return DeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			baseLabels := resources.BaseAppLabels(DeploymentName, nil)
@@ -70,7 +75,7 @@ func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "velero-velero-plugin-for-aws",
-					Image: fmt.Sprintf("velero/velero-plugin-for-aws:%s", pluginVersion),
+					Image: registry.Must(data.RewriteImage(fmt.Sprintf("velero/velero-plugin-for-aws:%s", pluginVersion))),
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "plugins",
@@ -84,7 +89,7 @@ func DeploymentReconciler() reconciling.NamedDeploymentReconcilerFactory {
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "velero",
-					Image:   fmt.Sprintf("velero/velero:%s", version),
+					Image:   registry.Must(data.RewriteImage(fmt.Sprintf("velero/velero:%s", version))),
 					Command: []string{"/velero"},
 					Args: []string{
 						"server",

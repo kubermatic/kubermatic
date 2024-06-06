@@ -29,6 +29,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -66,7 +67,7 @@ var (
 )
 
 // DaemonSetReconciler returns the function to create and update the Velero node-agent DaemonSet.
-func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
+func DaemonSetReconciler(data templateData) reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetReconciler) {
 		return DaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			baseLabels := resources.BaseAppLabels(DaemonSetName, map[string]string{"component": "velero"})
@@ -83,7 +84,7 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 			})
 
 			ds.Spec.Template.Spec = corev1.PodSpec{
-				Containers: getContainers(),
+				Containers: getContainers(data),
 				DNSPolicy:  corev1.DNSClusterFirst,
 				Volumes: []corev1.Volume{
 					{
@@ -122,11 +123,12 @@ func DaemonSetReconciler() reconciling.NamedDaemonSetReconcilerFactory {
 	}
 }
 
-func getContainers() []corev1.Container {
+func getContainers(data templateData) []corev1.Container {
 	return []corev1.Container{
 		{
-			Name:  DaemonSetName,
-			Image: fmt.Sprintf("velero/velero:%s", version), ImagePullPolicy: corev1.PullIfNotPresent,
+			Name:            DaemonSetName,
+			Image:           registry.Must(data.RewriteImage(fmt.Sprintf("velero/velero:%s", version))),
+			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/velero",
 			},
