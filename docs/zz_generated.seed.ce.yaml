@@ -92,6 +92,16 @@ spec:
         # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
         # ignoring cluster-specific settings.
         enforceAuditLogging: false
+        # Optional: EnforceAuditWebhook allows admins control webhook backend for every cluster within the DC,
+        # ignoring cluster-specific settings.
+        enforceAuditWebhook:
+          # Optional: AuditWebhook contains reference to secret holding the audit webhook backend config
+          auditWebhook: null
+          auditWebhookInitialBackoff: ""
+          # Enabled will enable or disable audit webhook backend.
+          enabled: false
+          # Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.
+          policyPreset: ""
         # Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings.
         enforcePodSecurityPolicy: false
@@ -119,6 +129,9 @@ spec:
           # While machines can be in multiple networks, a single one must be chosen for the
           # HCloud CCM to work.
           network: ""
+        # Optional: KubeLB holds the configuration for the kubeLB at the data center level.
+        # Only available in Enterprise Edition.
+        kubelb: null
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
           # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed

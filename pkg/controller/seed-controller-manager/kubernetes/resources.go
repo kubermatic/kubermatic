@@ -109,6 +109,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
+	// Ensure audit webhook backend secret is created & referenced in cluster spec.
+	if cluster.Spec.AuditLogging != nil && cluster.Spec.AuditLogging.WebhookBackend != nil && cluster.Spec.AuditLogging.WebhookBackend.Enabled {
+		if err := r.ensureAuditWebhook(ctx, cluster, data); err != nil {
+			return nil, err
+		}
+	}
 	if err := r.ensureRBAC(ctx, cluster, namespace); err != nil {
 		return nil, err
 	}
@@ -1052,4 +1058,37 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 	})
 
 	return ipList, nil
+}
+
+func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	webhookBackendSecret := &corev1.Secret{}
+	err := r.Get(ctx, types.NamespacedName{Name: resources.AuditWebhookSecretName, Namespace: c.Status.NamespaceName}, webhookBackendSecret)
+	// create the secret with a sample audit webhook backend config, which KKP admin can later update if not enforced in the datacenter.
+	if apierrors.IsNotFound(err) {
+		creators := []reconciling.NamedSecretReconcilerFactory{apiserver.AuditWebhookSecretReconciler(data)}
+		if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+			return nil
+		}
+	}
+	// Reconcile audit webhook secret from dc if audit webhook backend is enforced and secret is specified.
+	if data.DC().Spec.EnforceAuditWebhook.Enabled {
+		secret := &corev1.Secret{}
+		err := r.Get(ctx, types.NamespacedName{Name: data.DC().Spec.EnforceAuditWebhook.AuditWebhook.Name, Namespace: data.DC().Spec.EnforceAuditWebhook.AuditWebhook.Namespace}, secret)
+		if err != nil {
+			return err
+		} else {
+			tempSecret := secret.DeepCopy()
+			webhookBackendSecret.Data = tempSecret.Data
+			err := r.Update(ctx, webhookBackendSecret)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return r.updateCluster(ctx, c, func(c *kubermaticv1.Cluster) {
+		c.Spec.AuditLogging.WebhookBackend.AuditWebhook = &corev1.SecretReference{
+			Name:      resources.AuditWebhookSecretName,
+			Namespace: c.Status.NamespaceName,
+		}
+	})
 }

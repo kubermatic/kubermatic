@@ -449,6 +449,10 @@ type DatacenterSpec struct {
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
+	// Optional: EnforceAuditWebhook allows admins control webhook backend for every cluster within the DC,
+	// ignoring cluster-specific settings.
+	EnforceAuditWebhook AuditWebhookBackendSettings `json:"enforceAuditWebhook,omitempty"`
+
 	// Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings.
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`

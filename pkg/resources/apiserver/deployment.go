@@ -21,8 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	semverlib "github.com/Masterminds/semver/v3"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -83,9 +81,10 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(true)
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
+			auditWebhookBackendEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil && data.Cluster().Spec.AuditLogging.WebhookBackend.Enabled
 
-			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditLogEnabled)
-			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration)
+			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditLogEnabled, auditWebhookBackendEnabled)
+			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditWebhookBackendEnabled)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
 
@@ -146,9 +145,13 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				}
 			}
 
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, version)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, auditWebhookBackendEnabled)
 			if err != nil {
 				return nil, err
+			}
+
+			if auditWebhookBackendEnabled && data.Cluster().Spec.AuditLogging.WebhookBackend.AuditWebhookInitialBackoff != "" {
+				flags = append(flags, "--audit-webhook-initial-backoff", data.Cluster().Spec.AuditLogging.WebhookBackend.AuditWebhookInitialBackoff)
 			}
 
 			envVars, err := GetEnvVars(data)
@@ -274,7 +277,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, enableEncryption bool, version *semverlib.Version) ([]string, error) {
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -369,10 +372,13 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--secure-port", fmt.Sprint(address.Port),
 	}, flags...)
 
-	if auditLogEnabled {
+	if auditLogEnabled || auditWebhookEnabled {
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
+	if auditWebhookEnabled {
+		flags = append(flags, "--audit-webhook-config-file", "/etc/kubernetes/audit/webhook/webhook.yaml")
+	}
 	// enable service account signing key and issuer in Kubernetes 1.20 or when
 	// explicitly enabled in the cluster object
 	var audiences []string
@@ -478,7 +484,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -569,10 +575,18 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool) []corev1.V
 		})
 	}
 
+	if isAuditWebhookEnabled {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.AuditWebhookSecretName,
+			MountPath: "/etc/kubernetes/audit/webhook",
+			ReadOnly:  true,
+		})
+	}
+
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool) []corev1.Volume {
+func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool, isAuditWebhookEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -767,6 +781,17 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool)
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.FluentBitSecretName,
+				},
+			},
+		})
+	}
+
+	if isAuditWebhookEnabled {
+		vs = append(vs, corev1.Volume{
+			Name: resources.AuditWebhookSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.AuditWebhookSecretName,
 				},
 			},
 		})

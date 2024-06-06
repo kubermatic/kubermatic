@@ -197,6 +197,35 @@ spec:
                               type: object
                           type: object
                       type: object
+                    webhookBackend:
+                      description: 'Optional: Configures the fluent-bit sidecar deployed alongside kube-apiserver.'
+                      properties:
+                        auditWebhook:
+                          description: 'Optional: AuditWebhook contains reference to secret holding the audit webhook backend config'
+                          properties:
+                            name:
+                              description: name is unique within a namespace to reference a secret resource.
+                              type: string
+                            namespace:
+                              description: namespace defines the space within which the secret name must be unique.
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        auditWebhookInitialBackoff:
+                          default: 10s
+                          type: string
+                        enabled:
+                          description: Enabled will enable or disable audit webhook backend.
+                          type: boolean
+                        policyPreset:
+                          description: 'Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.'
+                          enum:
+                            - ""
+                            - metadata
+                            - recommended
+                            - minimal
+                          type: string
+                      type: object
                   type: object
                 backupConfig:
                   description: 'Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.'
