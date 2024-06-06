@@ -101,6 +101,15 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		}
 	}
 
+	// Enforce audit webhook backend
+	if datacenter.Spec.EnforceAuditWebhook.Enabled {
+		spec.AuditLogging.WebhookBackend = &kubermaticv1.AuditWebhookBackendSettings{
+			Enabled:                    true,
+			PolicyPreset:               datacenter.Spec.EnforceAuditWebhook.PolicyPreset,
+			AuditWebhookInitialBackoff: datacenter.Spec.EnforceAuditWebhook.AuditWebhookInitialBackoff,
+		}
+	}
+
 	// Enforce PodSecurityPolicy
 	if datacenter.Spec.EnforcePodSecurityPolicy {
 		spec.UsePodSecurityPolicyAdmissionPlugin = true

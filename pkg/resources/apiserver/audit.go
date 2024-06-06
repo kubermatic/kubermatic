@@ -25,7 +25,28 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
+
+var sampleWebhook = `apiVersion: v1
+kind: Config
+preferences: {}
+clusters:
+- name: example-cluster
+  cluster:
+    server: http://example-server:6443
+users:
+- name: example-user
+  user:
+    username: some-user
+    password: some-password
+contexts:
+- name: example-context
+  context:
+    cluster: example-cluster
+    user: example-user
+current-context: example-context
+`
 
 var auditPolicies = map[kubermaticv1.AuditPolicyPreset]string{
 	kubermaticv1.AuditPolicyMetadata: `# policyPreset: metadata
@@ -157,6 +178,13 @@ func AuditConfigMapReconciler(data *resources.TemplateData) reconciling.NamedCon
 				preset = data.Cluster().Spec.AuditLogging.PolicyPreset
 			}
 
+			// If policy preset is set for log backend as well as webhook backend then webhook backend takes precedence
+			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil {
+				if data.Cluster().Spec.AuditLogging.WebhookBackend.Enabled && data.Cluster().Spec.AuditLogging.WebhookBackend.PolicyPreset != "" {
+					preset = data.Cluster().Spec.AuditLogging.WebhookBackend.PolicyPreset
+				}
+			}
+
 			// if the policyPreset field is empty, only update the ConfigMap on creation
 			if preset != "" || cm.Data == nil {
 				// if the preset is empty, set it to 'metadata' to generate a valid audit policy
@@ -199,6 +227,29 @@ func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSe
 
 			secret.Data["fluent-bit.conf"] = configBuf.Bytes()
 
+			return secret, nil
+		}
+	}
+}
+
+// AuditWebhookSecretReconciler returns a reconciling.NamedSecretReconcilerFactory for a secret that contains
+// webhook backend configuration for api server audit logs.
+func AuditWebhookSecretReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return resources.AuditWebhookSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
+			if secret.Data == nil {
+				secret.Data = map[string][]byte{}
+			}
+			var config api.Config
+			t, err := template.New("webhook.yaml").Parse(sampleWebhook)
+			if err != nil {
+				return nil, err
+			}
+			configBuf := bytes.Buffer{}
+			if err := t.Execute(&configBuf, config); err != nil {
+				return nil, err
+			}
+			secret.Data["webhook.yaml"] = configBuf.Bytes()
 			return secret, nil
 		}
 	}
