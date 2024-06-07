@@ -131,9 +131,6 @@ spec:
           # While machines can be in multiple networks, a single one must be chosen for the
           # HCloud CCM to work.
           network: ""
-        # Optional: KubeLB holds the configuration for the kubeLB at the data center level.
-        # Only available in Enterprise Edition.
-        kubelb: null
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
           # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
