@@ -17,10 +17,12 @@ limitations under the License.
 package coredns
 
 import (
+	"errors"
 	"fmt"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
@@ -51,16 +53,34 @@ var (
 	}
 )
 
+func getReplicas(cluster *kubermaticv1.Cluster) (*int32, error) {
+	if coredns := cluster.Spec.ComponentsOverride.CoreDNS; coredns != nil && coredns.Replicas != nil {
+		if network := cluster.Spec.ClusterNetwork; network.CoreDNSReplicas != nil && *network.CoreDNSReplicas != *coredns.Replicas {
+			return nil, errors.New("both the new spec.componentsOverride.coreDNS.replicas and deprecated spec.clusterNetwork.coreDNSReplicas fields are set")
+		}
+
+		return coredns.Replicas, nil
+	}
+
+	if network := cluster.Spec.ClusterNetwork; network.CoreDNSReplicas != nil {
+		return network.CoreDNSReplicas, nil
+	}
+
+	return ptr.To[int32](2), nil
+}
+
 // DeploymentReconciler returns the function to create and update the CoreDNS deployment.
-func DeploymentReconciler(kubernetesVersion *semverlib.Version, replicas *int32, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(kubernetesVersion *semverlib.Version, cluster *kubermaticv1.Cluster, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Labels = resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil)
 
-			dep.Spec.Replicas = resources.Int32(2)
-			if replicas != nil {
-				dep.Spec.Replicas = replicas
+			replicas, err := getReplicas(cluster)
+			if err != nil {
+				return nil, fmt.Errorf("failed to determine CoreDNS replicas: %w", err)
 			}
+
+			dep.Spec.Replicas = replicas
 
 			// The Selector is immutable, so we don't change it if it's set. This happens in upgrade cases
 			// where coredns is switched from a manifest based addon to a user-cluster-controller-manager resource
@@ -102,10 +122,16 @@ func DeploymentReconciler(kubernetesVersion *semverlib.Version, replicas *int32,
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			overrides := resources.GetOverrides(cluster.Spec.ComponentsOverride)
+
 			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion, imageRewriter)
-			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, overrides, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+			}
+
+			if coredns := cluster.Spec.ComponentsOverride.CoreDNS; coredns != nil {
+				dep.Spec.Template.Spec.Tolerations = coredns.Tolerations
 			}
 
 			dep.Spec.Template.Spec.ServiceAccountName = resources.CoreDNSServiceAccountName
