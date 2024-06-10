@@ -53,6 +53,11 @@ spec:
             spec:
               description: Spec describes the configuration of the project.
               properties:
+                allowedOperatingSystems:
+                  additionalProperties:
+                    type: boolean
+                  description: AllowedOperatingSystems defines a map of operating systems that can be used for the machines inside this project.
+                  type: object
                 name:
                   description: Name is the human-readable name given to the project.
                   type: string
