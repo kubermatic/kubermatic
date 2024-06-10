@@ -18,6 +18,7 @@ spec:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
+        kubermatic.k8c.io/last-restart: ""
       creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
