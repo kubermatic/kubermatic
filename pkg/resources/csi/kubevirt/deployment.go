@@ -90,6 +90,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 
 			kubernetes.EnsureLabels(&d.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "socket-dir",
 			})

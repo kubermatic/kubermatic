@@ -77,7 +77,8 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				// do not specify a port so that Prometheus automatically
 				// scrapes both the metrics and the telemetry endpoints
-				"prometheus.io/scrape": "true",
+				"prometheus.io/scrape":                                         "true",
+				resources.ClusterLastRestartAnnotation:                         data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				"cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes": tmpVolume,
 			})
 

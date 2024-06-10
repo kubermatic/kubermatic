@@ -84,6 +84,7 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 
 			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: volumeDataName,
 			})

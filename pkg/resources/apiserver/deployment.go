@@ -106,6 +106,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				"prometheus.io/scrape_with_kube_cert":                   "true",
 				"prometheus.io/path":                                    "/metrics",
 				"prometheus.io/port":                                    fmt.Sprint(address.Port),
+				resources.ClusterLastRestartAnnotation:                  data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join(safeToEvictVolumes, ","),
 			})
 

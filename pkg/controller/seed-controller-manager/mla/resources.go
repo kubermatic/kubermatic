@@ -332,7 +332,8 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 
 			kubernetes.EnsureLabels(&d.Spec.Template, d.Spec.Selector.MatchLabels)
 			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
-				configHashAnnotation: fmt.Sprintf("%x", configHash.Sum(nil)),
+				configHashAnnotation:                   fmt.Sprintf("%x", configHash.Sum(nil)),
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "tmp,docker-entrypoint-d-override",
 			})

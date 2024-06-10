@@ -80,6 +80,9 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 			}
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
+			})
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
