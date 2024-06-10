@@ -326,7 +326,18 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	}
 
 	if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+		now := time.Now().UTC().Format(time.RFC3339)
+
 		delete(cluster.Annotations, ActiveRestoreAnnotationName)
+
+		// update/bump the last-restart annotation; all controllers that reconcile cluster
+		// control plane components (apiserver, ctrl-manager, scheduler, prometheus, OSM, ...)
+		// will copy this value into the respective Deployments/DaemonSets to trigger a complete
+		// rollout of the entire control plane.
+		// This is critical to purge the caches in each component.
+		kuberneteshelper.EnsureAnnotations(cluster, map[string]string{
+			resources.ClusterLastRestartAnnotation: now,
+		})
 	}); err != nil {
 		return nil, fmt.Errorf("failed to clear cluster active restore annotation: %w", err)
 	}

@@ -530,6 +530,11 @@ const (
 	VMwareCloudDirectorCSIKubeconfigSecretName = "vcloud-csi-kubeconfig"
 	// DefaultNodePortRange is a Kubernetes cluster's default nodeport range.
 	DefaultNodePortRange = "30000-32767"
+
+	// ClusterLastRestartAnnotation is an optional annotation on Cluster objects that is meant to contain
+	// a UNIX timestamp (or similar) value to trigger cluster control plane restarts. The value of this
+	// annotation is copied into control plane components.
+	ClusterLastRestartAnnotation = "kubermatic.k8c.io/last-restart"
 )
 
 const (
