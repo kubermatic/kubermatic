@@ -52,10 +52,9 @@ const (
 	ControllerName  = "kkp-addoninstaller-controller"
 	addonDefaultKey = ".spec.isDefault"
 
-	kubeProxyAddonName           = "kube-proxy"
-	openVPNAddonName             = "openvpn"
-	CSIAddonName                 = "csi"
-	defaultStorageClassAddonName = "default-storage-class"
+	kubeProxyAddonName = "kube-proxy"
+	openVPNAddonName   = "openvpn"
+	CSIAddonName       = "csi"
 )
 
 type Reconciler struct {
@@ -319,17 +318,6 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 	}
 	if addon.Name == CSIAddonName && cluster.Spec.DisableCSIDriver {
 		return true // skip csi driver installation if DisableCSIDriver is true
-	}
-
-	// skip default storageclass addon if csi addon is disabled.
-	if addon.Name == defaultStorageClassAddonName && cluster.Spec.DisableCSIDriver {
-		csiAddonCondition, ok := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse]
-		if ok {
-			if csiAddonCondition.Status == corev1.ConditionFalse {
-				return true
-			}
-		}
-		return true
 	}
 
 	return false
