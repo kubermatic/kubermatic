@@ -43,7 +43,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -214,7 +213,7 @@ func crdCheckerFromFlag(flag string, cfg *rest.Config) (func() error, error) {
 	return nil, fmt.Errorf("comma-separating the flag value did not yield exactly two or four results, but %d", len(splitVal))
 }
 
-func staticCrdChecker(group, version, resource, namespace string, cfg *restclient.Config) func() error {
+func staticCrdChecker(group, version, resource, namespace string, cfg *rest.Config) func() error {
 	return func() error {
 		client, err := dynamic.NewForConfig(cfg)
 		if err != nil {
@@ -237,7 +236,7 @@ func staticCrdChecker(group, version, resource, namespace string, cfg *restclien
 	}
 }
 
-func dynamicCrdChecker(kind, apiVersion string, cfg *restclient.Config) func() error {
+func dynamicCrdChecker(kind, apiVersion string, cfg *rest.Config) func() error {
 	list := &unstructured.UnstructuredList{}
 	list.SetKind(kind)
 	list.SetAPIVersion(apiVersion)

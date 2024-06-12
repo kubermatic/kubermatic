@@ -18,7 +18,6 @@ package gatekeeper
 
 import (
 	"embed"
-	_ "embed"
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
