@@ -319,6 +319,5 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 	if addon.Name == CSIAddonName && cluster.Spec.DisableCSIDriver {
 		return true // skip csi driver installation if DisableCSIDriver is true
 	}
-
 	return false
 }
