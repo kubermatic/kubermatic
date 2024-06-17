@@ -29,7 +29,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.4
 	github.com/aws/smithy-go v1.20.1
 	github.com/cert-manager/cert-manager v1.14.4
-	github.com/cilium/cilium v1.15.3
+	github.com/cilium/cilium v1.15.6
 	github.com/digitalocean/godo v1.110.0
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/distribution/reference v0.5.0
@@ -62,7 +62,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stretchr/testify v1.9.0
-	github.com/vishvananda/netlink v1.2.1-beta.2.0.20231127184239-0ced8385386a
+	github.com/vishvananda/netlink v1.2.1-beta.2.0.20240524165444-4d4ba1473f21
 	github.com/vmware-tanzu/velero v1.13.1
 	github.com/vmware/go-vcloud-director/v2 v2.22.0
 	github.com/vmware/govmomi v0.36.1
