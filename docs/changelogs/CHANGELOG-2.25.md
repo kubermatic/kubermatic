@@ -5,6 +5,29 @@
 - [v2.25.2](#v2252)
 - [v2.25.3](#v2253)
 - [v2.25.4](#v2254)
+- [v2.25.5](#v2255)
+
+## 2.25.5
+
+**GitHub release: [2.25.5](https://github.com/kubermatic/kubermatic/releases/tag/2.25.5)**
+
+### New Features
+
+- Add `spec.componentsOverride.coreDNS` to Cluster objects, deprecate `spec.clusterNetwork.coreDNSReplicas` in favor of the new `spec.componentsOverride.coreDNS.replicas` field ([#13417](https://github.com/kubermatic/kubermatic/pull/13417))
+
+### Bugfixes
+
+- Add `displayName` and `scope` columns for printing the cluster templates; `kubectl get clustertemplates` will now show the actual display name and scope for the cluster templates ([#13419](https://github.com/kubermatic/kubermatic/pull/13419))
+- Address inconsistencies in Helm that lead to an Application being stuck in "pending-install" ([#13332](https://github.com/kubermatic/kubermatic/pull/13332))
+- Fix a bug where CNI was always being defaulted to cilium irrespective of what was configured in the cluster template or default cluster template ([#6708](https://github.com/kubermatic/dashboard/pull/6708))
+- Fix misleading errors about undeploying the cluster-backup components from newly created user clusters ([#13416](https://github.com/kubermatic/kubermatic/pull/13416))
+- Fix: use correct networkpolicy port for metrics-server ([#13438](https://github.com/kubermatic/kubermatic/pull/13438))
+
+### Updates
+
+- Update Go version to 1.22.4 ([#13428](https://github.com/kubermatic/kubermatic/pull/13428), [#6712](https://github.com/kubermatic/dashboard/pull/6712))
+- Update github.com/gophercloud/gophercloud to 1.11.0 ([#13412](https://github.com/kubermatic/kubermatic/pull/13412), [#6704](https://github.com/kubermatic/dashboard/pull/6704))
+- Update machine-controller to v1.59.2, fixing support for Rockylinux 8 on AWS ([#13433](https://github.com/kubermatic/kubermatic/pull/13433))
 
 
 ## v2.25.4
@@ -14,7 +37,7 @@
 ### Bugfixes
 
 - Fix [#13393](https://github.com/kubermatic/kubermatic/issues/13393) where externally deployed Velero CRDs are removed automatically from the user cluster ([#13396](https://github.com/kubermatic/kubermatic/pull/13396))
-- Fix a bug where unrequired  `cloud-config` secret was being propagated to the user clusters ([#13366](https://github.com/kubermatic/kubermatic/pull/13366))     
+- Fix a bug where unrequired  `cloud-config` secret was being propagated to the user clusters ([#13366](https://github.com/kubermatic/kubermatic/pull/13366))
 - Fix null pointer exception that occurred while our controllers checked whether the CSI addon is in use or not ([#13369](https://github.com/kubermatic/kubermatic/pull/13369))
 
 ### Updates

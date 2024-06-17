@@ -9,6 +9,31 @@
 - [v2.24.6](#v2246)
 - [v2.24.7](#v2247)
 - [v2.24.8](#v2248)
+- [v2.24.9](#v2249)
+
+## 2.24.9
+
+**GitHub release: [2.24.9](https://github.com/kubermatic/kubermatic/releases/tag/2.24.9)**
+
+### New Features
+
+- Add `spec.componentsOverride.coreDNS` to Cluster objects, deprecate `spec.clusterNetwork.coreDNSReplicas` in favor of the new `spec.componentsOverride.coreDNS.replicas` field ([#13418](https://github.com/kubermatic/kubermatic/pull/13418))
+
+### Bugfixes
+
+- Add `displayName` and `scope` columns for printing the cluster templates; `kubectl get clustertemplates` will now show the actual display name and scope for the cluster templates ([#13419](https://github.com/kubermatic/kubermatic/pull/13419))
+- Add Kubernetes 1.28.x support for cluster-autoscaler addon ([#13386](https://github.com/kubermatic/kubermatic/pull/13386))
+- Address inconsistencies in Helm that lead to an Application being stuck in "pending-install" ([#13301](https://github.com/kubermatic/kubermatic/pull/13301))
+- Fix a bug where unrequired `cloud-config` secret was being propagated to the user clusters ([#13372](https://github.com/kubermatic/kubermatic/pull/13372))
+- Fix null pointer exception that occurred while our controllers checked whether the CSI addon is in use or not ([#13369](https://github.com/kubermatic/kubermatic/pull/13369))
+- Fix: use correct networkpolicy port for metrics-server ([#13446](https://github.com/kubermatic/kubermatic/pull/13446))
+
+### Updates
+
+- Update Go version to 1.21.11 ([#13429](https://github.com/kubermatic/kubermatic/pull/13429), [#6711](https://github.com/kubermatic/dashboard/pull/6711))
+- Update OSM to v1.4.3; fixing cloud-init bootstrapping issues on Ubuntu 22.04 on Azure ([#13378](https://github.com/kubermatic/kubermatic/pull/13378))
+- Update machine-controller to v1.58.5, fixing support for Rockylinux 8 on AWS ([#13432](https://github.com/kubermatic/kubermatic/pull/13432))
+
 
 ## [v2.24.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.8)
 
