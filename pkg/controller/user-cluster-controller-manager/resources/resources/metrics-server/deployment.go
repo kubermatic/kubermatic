@@ -53,6 +53,8 @@ const (
 
 	imageName = "metrics-server/metrics-server"
 	imageTag  = "v0.6.3"
+
+	servingPort = 10250
 )
 
 // TLSServingCertSecretReconciler returns a function to manage the TLS serving cert for the metrics server.
@@ -96,7 +98,7 @@ func DeploymentReconciler(imageRewriter registry.ImageRewriter) reconciling.Name
 					Args: []string{
 						"--kubelet-insecure-tls",
 						"--kubelet-use-node-status-port",
-						"--secure-port", "4443",
+						"--secure-port", fmt.Sprintf("%d", servingPort),
 						"--metric-resolution", "15s",
 						"--kubelet-preferred-address-types", "InternalIP,ExternalIP,Hostname",
 						"--v", "1",
@@ -105,7 +107,7 @@ func DeploymentReconciler(imageRewriter registry.ImageRewriter) reconciling.Name
 					},
 					Ports: []corev1.ContainerPort{
 						{
-							ContainerPort: 4443,
+							ContainerPort: servingPort,
 							Name:          "https",
 							Protocol:      corev1.ProtocolTCP,
 						},
