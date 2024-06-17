@@ -32,7 +32,7 @@ func NetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return "metrics-server", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			metricsPort := intstr.FromInt(9153)
-			httpsPort := intstr.FromInt(443)
+			httpsPort := intstr.FromInt(servingPort)
 			protoTcp := corev1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
