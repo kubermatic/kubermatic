@@ -16,6 +16,24 @@
 - [v2.23.13](#v22313)
 - [v2.23.14](#v22314)
 - [v2.23.15](#v22315)
+- [v2.23.16](#v22316)
+
+## 2.23.16
+
+**GitHub release: [2.23.16](https://github.com/kubermatic/kubermatic/releases/tag/2.23.16)**
+
+### Bugfixes
+
+- Add `displayName` and `scope` columns for printing the cluster templates; `kubectl get clustertemplates` will now show the actual display name and scope for the cluster templates ([#13419](https://github.com/kubermatic/kubermatic/pull/13419))
+- Fix a bug where unrequired `cloud-config` secret was being propagated to the user clusters ([#13373](https://github.com/kubermatic/kubermatic/pull/13373))
+- Fix: use correct networkpolicy port for metrics-server ([#13447](https://github.com/kubermatic/kubermatic/pull/13447))
+
+### Updates
+
+- Update machine-controller to v1.57.8, fixing support for Rockylinux 8 on AWS ([#13431](https://github.com/kubermatic/kubermatic/pull/13431))
+- Update OSM to v1.3.6; fixing cloud-init bootstrapping issues on Ubuntu 22.04 on Azure ([#13379](https://github.com/kubermatic/kubermatic/pull/13379))
+
+
 
 ## [v2.23.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.15)
 
