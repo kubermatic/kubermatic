@@ -11,9 +11,9 @@
 - [v2.24.8](#v2248)
 - [v2.24.9](#v2249)
 
-## 2.24.9
+## v2.24.9
 
-**GitHub release: [2.24.9](https://github.com/kubermatic/kubermatic/releases/tag/2.24.9)**
+**GitHub release: [v2.24.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.9)**
 
 ### New Features
 
