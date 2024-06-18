@@ -18,9 +18,9 @@
 - [v2.23.15](#v22315)
 - [v2.23.16](#v22316)
 
-## 2.23.16
+## v2.23.16
 
-**GitHub release: [2.23.16](https://github.com/kubermatic/kubermatic/releases/tag/2.23.16)**
+**GitHub release: [v2.23.16](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.16)**
 
 ### Bugfixes
 
