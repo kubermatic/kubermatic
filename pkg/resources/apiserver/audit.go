@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"html/template"
 
+	"gopkg.in/yaml.v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -27,26 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
-
-var sampleWebhook = `apiVersion: v1
-kind: Config
-preferences: {}
-clusters:
-- name: example-cluster
-  cluster:
-    server: http://example-server:6443
-users:
-- name: example-user
-  user:
-    username: some-user
-    password: some-password
-contexts:
-- name: example-context
-  context:
-    cluster: example-cluster
-    user: example-user
-current-context: example-context
-`
 
 var auditPolicies = map[kubermaticv1.AuditPolicyPreset]string{
 	kubermaticv1.AuditPolicyMetadata: `# policyPreset: metadata
@@ -237,19 +219,20 @@ func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSe
 func AuditWebhookSecretReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return resources.AuditWebhookSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
+			// add an empty webhook config when the secret is created, admin can update it with desired configuration afterwards,
+			// if the webhook configuration is not enabled and enforced in the data center.
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}
+				webhookConfig := api.Config{
+					APIVersion: "v1",
+					Kind:       "Config",
+				}
+				webhookConfigYaml, err := yaml.Marshal(&webhookConfig)
+				if err != nil {
+					return nil, err
+				}
+				secret.Data["webhook.yaml"] = webhookConfigYaml
 			}
-			var config api.Config
-			t, err := template.New("webhook.yaml").Parse(sampleWebhook)
-			if err != nil {
-				return nil, err
-			}
-			configBuf := bytes.Buffer{}
-			if err := t.Execute(&configBuf, config); err != nil {
-				return nil, err
-			}
-			secret.Data["webhook.yaml"] = configBuf.Bytes()
 			return secret, nil
 		}
 	}

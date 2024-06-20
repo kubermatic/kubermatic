@@ -1061,14 +1061,11 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 }
 
 func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	webhookBackendSecret := &corev1.Secret{}
-	err := r.Get(ctx, types.NamespacedName{Name: resources.AuditWebhookSecretName, Namespace: c.Status.NamespaceName}, webhookBackendSecret)
-	// create the secret with a sample audit webhook backend config, which KKP admin can later update if not enforced in the datacenter.
-	if apierrors.IsNotFound(err) {
-		creators := []reconciling.NamedSecretReconcilerFactory{apiserver.AuditWebhookSecretReconciler(data)}
-		if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
-			return nil
-		}
+	webhookBackendSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.AuditWebhookSecretName,
+			Namespace: c.Status.NamespaceName,
+		},
 	}
 	// Reconcile audit webhook secret from dc if audit webhook backend is enforced and secret is specified.
 	if data.DC().Spec.EnforceAuditWebhook.Enabled {
@@ -1077,13 +1074,17 @@ func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Clu
 		if err != nil {
 			return err
 		} else {
-			tempSecret := secret.DeepCopy()
-			webhookBackendSecret.Data = tempSecret.Data
+			webhookBackendSecret.Data = secret.Data
 			err := r.Update(ctx, webhookBackendSecret)
 			if err != nil {
 				return err
 			}
 		}
+	}
+
+	creators := []reconciling.NamedSecretReconcilerFactory{apiserver.AuditWebhookSecretReconciler(data)}
+	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+		return nil
 	}
 	return r.updateCluster(ctx, c, func(c *kubermaticv1.Cluster) {
 		c.Spec.AuditLogging.WebhookBackend.AuditWebhook = &corev1.SecretReference{
