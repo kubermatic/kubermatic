@@ -36,7 +36,7 @@ var (
 
 func validHelmSource() *appskubermaticv1.HelmSource {
 	return &appskubermaticv1.HelmSource{
-		URL:          "http://localhost/charts",
+		URL:          "http://example.com/charts",
 		ChartName:    "apache",
 		ChartVersion: "9.1.3",
 		Credentials:  nil,
@@ -45,7 +45,7 @@ func validHelmSource() *appskubermaticv1.HelmSource {
 
 func validGitSource() *appskubermaticv1.GitSource {
 	return &appskubermaticv1.GitSource{
-		Remote: "https://localhost/repo.git",
+		Remote: "https://example.com/repo.git",
 		Ref: appskubermaticv1.GitReference{
 			Branch: "main",
 		},
@@ -228,14 +228,14 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 					return *s
 				}(),
 			},
-			1,
+			2,
 		},
 		"invalid helm source: chartName is empty": {
 			appskubermaticv1.ApplicationDefinition{
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
-						URL:          "https://localhost/myrepo",
+						URL:          "https://example.com/myrepo",
 						ChartName:    "",
 						ChartVersion: "1.2.3",
 						Credentials:  nil,
@@ -250,7 +250,7 @@ func TestValidateApplicationDefinitionSpec(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
-						URL:          "https://localhost/myrepo",
+						URL:          "https://example.com/myrepo",
 						ChartName:    "chartname",
 						ChartVersion: "",
 						Credentials:  nil,
@@ -333,7 +333,7 @@ func TestValidateHelmUrl(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Helm: &appskubermaticv1.HelmSource{
-						URL:          "https://localhost/myrepo",
+						URL:          "https://example.com/myrepo",
 						ChartName:    "chartname",
 						ChartVersion: "1.0.0",
 						Credentials:  nil,
@@ -371,7 +371,7 @@ func TestValidateHelmUrl(t *testing.T) {
 					return *s
 				}(),
 			},
-			1,
+			2,
 		},
 		"invalid url with unsupported protocol": {
 			appskubermaticv1.ApplicationDefinition{
@@ -401,7 +401,7 @@ func TestValidateHelmUrl(t *testing.T) {
 					return *s
 				}(),
 			},
-			1,
+			2,
 		},
 		"invalid url with only https scheme": {
 			appskubermaticv1.ApplicationDefinition{
@@ -416,7 +416,7 @@ func TestValidateHelmUrl(t *testing.T) {
 					return *s
 				}(),
 			},
-			1,
+			2,
 		},
 		"invalid url with only oci scheme": {
 			appskubermaticv1.ApplicationDefinition{
@@ -431,7 +431,7 @@ func TestValidateHelmUrl(t *testing.T) {
 					return *s
 				}(),
 			},
-			1,
+			2,
 		},
 	}
 
@@ -457,7 +457,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Branch: "main"},
 						Path:        "",
 						Credentials: nil,
@@ -472,7 +472,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0"},
 						Path:        "",
 						Credentials: nil,
@@ -487,7 +487,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
@@ -502,7 +502,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Branch: "main", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
 						Path:        "",
 						Credentials: nil,
@@ -517,7 +517,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{},
 						Path:        "",
 						Credentials: nil,
@@ -532,7 +532,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
 						Path:        "",
 						Credentials: nil,
@@ -547,7 +547,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: "v1.0", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
@@ -562,7 +562,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Branch: ""},
 						Path:        "",
 						Credentials: nil,
@@ -577,7 +577,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Tag: ""},
 						Path:        "",
 						Credentials: nil,
@@ -592,7 +592,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: ""},
 						Path:        "",
 						Credentials: nil,
@@ -607,7 +607,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "abc", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
@@ -622,7 +622,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794"},
 						Path:        "",
 						Credentials: nil,
@@ -637,7 +637,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce24997c5d3d2503794toolong", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
@@ -652,7 +652,7 @@ func TestValidateGitRef(t *testing.T) {
 				Spec: func() appskubermaticv1.ApplicationDefinitionSpec {
 					s := spec.DeepCopy()
 					s.Versions[0].Template.Source = appskubermaticv1.ApplicationSource{Git: &appskubermaticv1.GitSource{
-						Remote:      "https://localhost/repo.git",
+						Remote:      "https://example.com/repo.git",
 						Ref:         appskubermaticv1.GitReference{Commit: "bad9725e1b225d152074fce249###5d3d2503794", Branch: "main"},
 						Path:        "",
 						Credentials: nil,
@@ -839,6 +839,13 @@ func TestValidateHelmSourceURL(t *testing.T) {
 			},
 		},
 		{
+			name: "HTTPS localhost URL",
+			source: appskubermaticv1.HelmSource{
+				URL: "https://localhost",
+			},
+			invalid: true,
+		},
+		{
 			name: "HTTPS URL with invalid plainHTTP=true",
 			source: appskubermaticv1.HelmSource{
 				URL:       "https://example.com",
@@ -875,6 +882,20 @@ func TestValidateHelmSourceURL(t *testing.T) {
 			source: appskubermaticv1.HelmSource{
 				URL: "oci://example.com",
 			},
+		},
+		{
+			name: "OCI localhost URL",
+			source: appskubermaticv1.HelmSource{
+				URL: "oci://localhost",
+			},
+		},
+		{
+			name: "OCI localhost URL with plainHTTP=false",
+			source: appskubermaticv1.HelmSource{
+				URL:       "oci://localhost",
+				PlainHTTP: ptr.To(false),
+			},
+			invalid: true,
 		},
 		{
 			name: "OCI URL with plainHTTP=true",

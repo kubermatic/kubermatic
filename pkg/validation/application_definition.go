@@ -18,7 +18,9 @@ package validation
 
 import (
 	"fmt"
-	"strings"
+	"net/url"
+
+	"github.com/containerd/containerd/remotes/docker"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
@@ -107,9 +109,27 @@ func validateHelmSource(helmSource *appskubermaticv1.HelmSource, f *field.Path) 
 
 func validateHelmSourceURL(helmSource *appskubermaticv1.HelmSource, f *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	parts := strings.Split(helmSource.URL, "://")
 
-	switch parts[0] {
+	// url.Parse is _extremely_ forgiving and happily accepts nonsense like "[" or "123" or even "'"
+	// as valid URLs.
+	parsed, err := url.Parse(helmSource.URL)
+	if err != nil {
+		allErrs = append(allErrs, field.Invalid(f.Child("url"), helmSource.URL, err.Error()))
+		return allErrs
+	}
+
+	if parsed.Host == "" || parsed.Scheme == "" {
+		allErrs = append(allErrs, field.Invalid(f.Child("url"), helmSource.URL, "value must be a valid URL"))
+		return allErrs
+	}
+
+	isLocalhost, err := docker.MatchLocalhost(parsed.Host)
+	if err != nil {
+		allErrs = append(allErrs, field.Invalid(f.Child("url"), helmSource.URL, fmt.Sprintf("value uses an invalid host section: %v", err)))
+		return allErrs
+	}
+
+	switch parsed.Scheme {
 	case "http":
 		if helmSource.Insecure != nil {
 			allErrs = append(allErrs, field.Forbidden(f.Child("insecure"), "insecure flag can not be used with http URLs"))
@@ -124,10 +144,18 @@ func validateHelmSourceURL(helmSource *appskubermaticv1.HelmSource, f *field.Pat
 			allErrs = append(allErrs, field.Forbidden(f.Child("plainHTTP"), "plainHTTP flag can not be enabled with http URLs"))
 		}
 
+		if isLocalhost {
+			allErrs = append(allErrs, field.Invalid(f, helmSource.URL, "localhost/loopback URLs cannot use HTTPS"))
+		}
+
 	case "oci":
-		if u := helmSource.PlainHTTP; u != nil && *u {
-			if helmSource.Insecure != nil {
-				allErrs = append(allErrs, field.Forbidden(f.Child("insecure"), "insecure flag can not be used with OCI URLs using HTTP"))
+		if plainHTTP := helmSource.PlainHTTP; plainHTTP != nil {
+			if *plainHTTP {
+				if helmSource.Insecure != nil {
+					allErrs = append(allErrs, field.Forbidden(f.Child("insecure"), "insecure flag can not be used with OCI URLs using HTTP"))
+				}
+			} else if isLocalhost {
+				allErrs = append(allErrs, field.Invalid(f, helmSource.URL, "localhost/loopback URLs always use plain HTTP"))
 			}
 		}
 	}
