@@ -55,9 +55,9 @@ type HelmSource struct {
 
 	// URL of the Helm repository the following schemes are supported:
 	//
-	// * http://localhost/myrepo (HTTP)
-	// * https://localhost/myrepo (HTTPS)
-	// * oci://localhost:5000/myrepo (OCI, HTTPS or HTTP depending on the useHTTP flag)
+	// * http://example.com/myrepo (HTTP)
+	// * https://example.com/myrepo (HTTPS)
+	// * oci://example.com:5000/myrepo (OCI, HTTPS by default, use plainHTTP to enable unencrypted HTTP)
 	URL string `json:"url"`
 
 	// Insecure disables certificate validation when using an HTTPS registry. This setting has no
