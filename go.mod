@@ -30,6 +30,7 @@ require (
 	github.com/aws/smithy-go v1.20.2
 	github.com/cert-manager/cert-manager v1.14.4
 	github.com/cilium/cilium v1.15.6
+	github.com/containerd/containerd v1.7.12
 	github.com/digitalocean/godo v1.118.0
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1
 	github.com/distribution/reference v0.5.0
@@ -163,7 +164,6 @@ require (
 	github.com/clarketm/json v1.13.4 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cncf/xds/go v0.0.0-20240318125728-8a4994d93e50 // indirect
-	github.com/containerd/containerd v1.7.12 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
