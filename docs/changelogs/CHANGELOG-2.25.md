@@ -6,6 +6,16 @@
 - [v2.25.3](#v2253)
 - [v2.25.4](#v2254)
 - [v2.25.5](#v2255)
+- [v2.25.6](#v2256)
+
+## v2.25.6
+
+**GitHub release: [v2.25.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.6)**
+
+### Bugfixes
+
+- Fix a critical regression in Applications with Helm sources, which resulted in "release: not found" errors ([#13462](https://github.com/kubermatic/kubermatic/pull/13462))
+
 
 ## v2.25.5
 
