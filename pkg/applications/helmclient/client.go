@@ -334,7 +334,7 @@ func (h HelmClient) GetMetadata(releaseName string) (*release.Release, error) {
 		return nil, err
 	}
 
-	rel, err := h.actionConfig.Releases.Get(releaseName, 0)
+	rel, err := h.actionConfig.Releases.Last(releaseName)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve metadata for release %q: %w", releaseName, err)
 	}
