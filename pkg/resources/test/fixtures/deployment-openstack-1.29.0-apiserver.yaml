@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: audit-log,konnectivity-uds
+        kubermatic.k8c.io/last-restart: ""
         prometheus.io/path: /metrics
         prometheus.io/port: "30000"
         prometheus.io/scrape_with_kube_cert: "true"

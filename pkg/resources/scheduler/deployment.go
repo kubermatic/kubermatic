@@ -103,9 +103,10 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
-				"prometheus.io/path":                  "/metrics",
-				"prometheus.io/scrape_with_kube_cert": "true",
-				"prometheus.io/port":                  "10259",
+				"prometheus.io/path":                   "/metrics",
+				"prometheus.io/scrape_with_kube_cert":  "true",
+				"prometheus.io/port":                   "10259",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}

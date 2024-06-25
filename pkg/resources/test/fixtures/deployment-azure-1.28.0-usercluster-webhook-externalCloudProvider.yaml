@@ -17,6 +17,7 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         fluentbit.io/parser: json_iso
+        kubermatic.k8c.io/last-restart: ""
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
       creationTimestamp: null

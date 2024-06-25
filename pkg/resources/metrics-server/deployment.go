@@ -105,6 +105,9 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 			}
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
+			})
 
 			dep.Spec.Template.Spec.Volumes = volumes
 

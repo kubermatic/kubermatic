@@ -214,6 +214,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 
 			kubernetes.EnsureLabels(&d.Spec.Template, baseLabels)
 			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: volumeMountNameEnvoyConfig,
 			})

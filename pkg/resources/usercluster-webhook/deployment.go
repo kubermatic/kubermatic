@@ -79,9 +79,10 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 
 			kubernetes.EnsureLabels(&d.Spec.Template, baseLabels)
 			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "8080",
-				"fluentbit.io/parser":  "json_iso",
+				"prometheus.io/scrape":                 "true",
+				"prometheus.io/port":                   "8080",
+				"fluentbit.io/parser":                  "json_iso",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
 
 			projectID, ok := data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]

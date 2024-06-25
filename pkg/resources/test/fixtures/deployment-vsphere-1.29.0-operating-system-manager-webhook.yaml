@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
+        kubermatic.k8c.io/last-restart: ""
       creationTimestamp: null
       labels:
         app: operating-system-manager-webhook

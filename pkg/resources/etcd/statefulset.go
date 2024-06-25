@@ -116,6 +116,10 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 
 			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
+				// NB: We purposefully do not want to use the cluster-last-restart annotation here to
+				// restart etcd, as that would lead to multiple complete restarts during an etcd restore.
+				// resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
+
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "launcher",
 			})

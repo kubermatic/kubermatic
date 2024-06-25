@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -121,14 +122,13 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 				return nil, fmt.Errorf("failed to create pod labels: %w", err)
 			}
 
-			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
-				Annotations: map[string]string{
-					"prometheus.io/scrape": "true",
-					"prometheus.io/path":   "/metrics",
-					"prometheus.io/port":   "8082",
-				},
-			}
+			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
+				"prometheus.io/scrape":                 "true",
+				"prometheus.io/path":                   "/metrics",
+				"prometheus.io/port":                   "8082",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
+			})
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}

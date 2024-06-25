@@ -120,9 +120,10 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/path":   "/metrics",
-				"prometheus.io/port":   "8085",
+				"prometheus.io/scrape":                 "true",
+				"prometheus.io/path":                   "/metrics",
+				"prometheus.io/port":                   "8085",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: strings.Join([]string{resources.ApplicationCacheVolumeName, "temp"}, ","),
 			})

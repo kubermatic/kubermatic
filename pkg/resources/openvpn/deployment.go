@@ -109,9 +109,10 @@ func DeploymentReconciler(data openVPNDeploymentReconcilerData) reconciling.Name
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
-				"prometheus.io/path":   "/metrics",
-				"prometheus.io/port":   fmt.Sprintf("%d", exporterPort),
-				"prometheus.io/scrape": "true",
+				"prometheus.io/path":                   "/metrics",
+				"prometheus.io/port":                   fmt.Sprintf("%d", exporterPort),
+				"prometheus.io/scrape":                 "true",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "openvpn-status",
 			})

@@ -20,6 +20,7 @@ spec:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: applications-cache,http-prober-bin,temp
+        kubermatic.k8c.io/last-restart: ""
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
         prometheus.io/scrape: "true"

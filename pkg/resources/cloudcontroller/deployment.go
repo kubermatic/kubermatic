@@ -99,6 +99,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 				baseLabels := resources.BaseAppLabels(name, nil)
 				kubernetes.EnsureLabels(modified, baseLabels)
+				kubernetes.EnsureAnnotations(&modified.Spec.Template, map[string]string{
+					resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
+				})
 
 				modified.Spec.Selector = &metav1.LabelSelector{
 					MatchLabels: baseLabels,

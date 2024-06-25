@@ -27,6 +27,7 @@ package userclusterresources
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -43,6 +44,7 @@ const (
 )
 
 type templateData interface {
+	Cluster() *kubermaticv1.Cluster
 	RewriteImage(image string) (string, error)
 }
 
@@ -65,9 +67,10 @@ func DeploymentReconciler(data templateData) reconciling.NamedDeploymentReconcil
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, baseLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
-				"prometheus.io/path":   "/metrics",
-				"prometheus.io/port":   "8085",
-				"prometheus.io/scrape": "true",
+				"prometheus.io/path":                                    "/metrics",
+				"prometheus.io/port":                                    "8085",
+				"prometheus.io/scrape":                                  "true",
+				resources.ClusterLastRestartAnnotation:                  data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "plugins,scratch",
 			})
 

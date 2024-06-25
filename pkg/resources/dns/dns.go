@@ -114,9 +114,10 @@ func DeploymentReconciler(data deploymentReconcilerData) reconciling.NamedDeploy
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
-				"prometheus.io/path":   "/metrics",
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "9253",
+				"prometheus.io/path":                   "/metrics",
+				"prometheus.io/scrape":                 "true",
+				"prometheus.io/port":                   "9253",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{

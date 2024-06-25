@@ -119,9 +119,10 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/path":   "/metrics",
-				"prometheus.io/port":   "8080",
+				"prometheus.io/scrape":                 "true",
+				"prometheus.io/path":                   "/metrics",
+				"prometheus.io/port":                   "8080",
+				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
 
 			clusterDNSIP := resources.NodeLocalDNSCacheAddress
