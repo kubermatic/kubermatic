@@ -123,6 +123,11 @@ func validateHelmSourceURL(helmSource *appskubermaticv1.HelmSource, f *field.Pat
 		return allErrs
 	}
 
+	// containerd, if not explicitly configured with a set of host rules, will always use HTTP to
+	// communicate with an oci://localhost registry, regardless of any setting in the Helm client.
+	// Since installing applications from localhost (i.e. the usercluster-ctrl-mgr Pod) is nonsense,
+	// KKP simply forbids HTTPS on localhost; it's easier and less maintenance burden than
+	// configuring a custom Helm resolver that has a custom Helm fetcher that configures containerd.
 	isLocalhost, err := docker.MatchLocalhost(parsed.Host)
 	if err != nil {
 		allErrs = append(allErrs, field.Invalid(f.Child("url"), helmSource.URL, fmt.Sprintf("value uses an invalid host section: %v", err)))
