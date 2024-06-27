@@ -252,7 +252,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 
 	log.Info("Testing Hubble relay observe...")
 	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
-		conn, err := grpc.Dial(net.JoinHostPort(nodeIP, "30077"), grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(net.JoinHostPort(nodeIP, "30077"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			return fmt.Errorf("failed to dial to Hubble relay: %w", err), nil
 		}
