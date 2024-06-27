@@ -64,7 +64,7 @@ require (
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stretchr/testify v1.9.0
 	github.com/vishvananda/netlink v1.2.1-beta.2.0.20240524165444-4d4ba1473f21
-	github.com/vmware-tanzu/velero v1.13.1
+	github.com/vmware-tanzu/velero v1.14.0
 	github.com/vmware/go-vcloud-director/v2 v2.22.0
 	github.com/vmware/govmomi v0.38.0
 	go.anx.io/go-anxcloud v0.7.2

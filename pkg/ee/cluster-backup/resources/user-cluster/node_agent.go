@@ -34,7 +34,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
@@ -44,19 +43,6 @@ const (
 )
 
 var (
-	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		DaemonSetName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse("500m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("1Gi"),
-				corev1.ResourceCPU:    resource.MustParse("1"),
-			},
-		},
-	}
-
 	// The "name" label is required here: it's used by Velero to detect the daemonset pods on the nodes,
 	// if it's not there Velero will partially fail to do the backup:
 	// https://github.com/vmware-tanzu/velero/blob/b30a679e5b1c2cbd9021e1301580f2359ef981bf/pkg/nodeagent/node_agent.go#L84
@@ -114,9 +100,6 @@ func DaemonSetReconciler(data templateData) reconciling.NamedDaemonSetReconciler
 
 			ds.Spec.Template.Spec.ServiceAccountName = resources.ClusterBackupServiceAccountName
 			ds.Spec.Template.Spec.DeprecatedServiceAccount = resources.ClusterBackupServiceAccountName
-			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
-				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
-			}
 
 			return ds, nil
 		}
@@ -174,6 +157,9 @@ func getContainers(data templateData) []corev1.Container {
 					MountPath: "/credentials",
 				},
 			},
+			// The node-agent purposefully does not have resource constraints since Velero 1.14, see
+			// https://github.com/vmware-tanzu/velero/issues/7391
+			// Resources: corev1.ResourceRequirements{},
 		},
 	}
 }
