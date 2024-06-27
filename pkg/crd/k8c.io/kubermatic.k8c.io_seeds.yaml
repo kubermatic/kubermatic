@@ -217,18 +217,13 @@ spec:
                               Edge contains settings for clusters using manually created
                               nodes in edge envs.
                             type: object
-                          enforceAuditLogging:
+                          enableAuditWebhook:
                             description: |-
-                              Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
-                              ignoring cluster-specific settings.
-                            type: boolean
-                          enforceAuditWebhook:
-                            description: |-
-                              Optional: EnforceAuditWebhook allows admins control webhook backend for every cluster within the DC,
+                              Optional: EnableAuditWebhook allows admins to control webhook backend for audit logs of all the clusters within the DC,
                               ignoring cluster-specific settings.
                             properties:
-                              auditWebhook:
-                                description: 'Optional: AuditWebhook contains reference to secret holding the audit webhook backend config'
+                              auditWebhookConfig:
+                                description: 'Required : AuditWebhookConfig contains reference to secret holding the audit webhook config file'
                                 properties:
                                   name:
                                     description: name is unique within a namespace to reference a secret resource.
@@ -241,18 +236,14 @@ spec:
                               auditWebhookInitialBackoff:
                                 default: 10s
                                 type: string
-                              enabled:
-                                description: Enabled will enable or disable audit webhook backend.
-                                type: boolean
-                              policyPreset:
-                                description: 'Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.'
-                                enum:
-                                  - ""
-                                  - metadata
-                                  - recommended
-                                  - minimal
-                                type: string
+                            required:
+                              - auditWebhookConfig
                             type: object
+                          enforceAuditLogging:
+                            description: |-
+                              Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
+                              ignoring cluster-specific settings.
+                            type: boolean
                           enforcePodSecurityPolicy:
                             description: |-
                               Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,

@@ -20,14 +20,11 @@ import (
 	"bytes"
 	"html/template"
 
-	"gopkg.in/yaml.v3"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 var auditPolicies = map[kubermaticv1.AuditPolicyPreset]string{
@@ -154,17 +151,14 @@ func AuditConfigMapReconciler(data *resources.TemplateData) reconciling.NamedCon
 	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			// set the audit policy preset so we generate a ConfigMap in any case.
-			// It won't be used if audit logging is not enabled
+			// It won't be used if audit logging and audit webhook are not enabled
 			preset := kubermaticv1.AuditPolicyPreset("")
 			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled && data.Cluster().Spec.AuditLogging.PolicyPreset != "" {
 				preset = data.Cluster().Spec.AuditLogging.PolicyPreset
 			}
 
-			// If policy preset is set for log backend as well as webhook backend then webhook backend takes precedence
-			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil {
-				if data.Cluster().Spec.AuditLogging.WebhookBackend.Enabled && data.Cluster().Spec.AuditLogging.WebhookBackend.PolicyPreset != "" {
-					preset = data.Cluster().Spec.AuditLogging.WebhookBackend.PolicyPreset
-				}
+			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil && data.Cluster().Spec.AuditLogging.PolicyPreset != "" {
+				preset = data.Cluster().Spec.AuditLogging.PolicyPreset
 			}
 
 			// if the policyPreset field is empty, only update the ConfigMap on creation
@@ -209,30 +203,6 @@ func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSe
 
 			secret.Data["fluent-bit.conf"] = configBuf.Bytes()
 
-			return secret, nil
-		}
-	}
-}
-
-// AuditWebhookSecretReconciler returns a reconciling.NamedSecretReconcilerFactory for a secret that contains
-// webhook backend configuration for api server audit logs.
-func AuditWebhookSecretReconciler(data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretReconciler) {
-		return resources.AuditWebhookSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
-			// add an empty webhook config when the secret is created, admin can update it with desired configuration afterwards,
-			// if the webhook configuration is not enabled and enforced in the data center.
-			if secret.Data == nil {
-				secret.Data = map[string][]byte{}
-				webhookConfig := api.Config{
-					APIVersion: "v1",
-					Kind:       "Config",
-				}
-				webhookConfigYaml, err := yaml.Marshal(&webhookConfig)
-				if err != nil {
-					return nil, err
-				}
-				secret.Data["webhook.yaml"] = webhookConfigYaml
-			}
 			return secret, nil
 		}
 	}

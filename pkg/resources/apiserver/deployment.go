@@ -81,9 +81,9 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(true)
 
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			auditWebhookBackendEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil && data.Cluster().Spec.AuditLogging.WebhookBackend.Enabled
+			auditWebhookBackendEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil
 
-			volumes := getVolumes(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditLogEnabled, auditWebhookBackendEnabled)
+			volumes := getVolumes(data, enableEncryptionConfiguration, auditLogEnabled, auditWebhookBackendEnabled)
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditWebhookBackendEnabled)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
@@ -577,7 +577,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWeb
 
 	if isAuditWebhookEnabled {
 		vms = append(vms, corev1.VolumeMount{
-			Name:      resources.AuditWebhookSecretName,
+			Name:      resources.AuditWebhookVolumeName,
 			MountPath: "/etc/kubernetes/audit/webhook",
 			ReadOnly:  true,
 		})
@@ -586,7 +586,7 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWeb
 	return vms
 }
 
-func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool, isAuditWebhookEnabled bool) []corev1.Volume {
+func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnabled bool, isAuditWebhookEnabled bool) []corev1.Volume {
 	vs := []corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
@@ -705,7 +705,7 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool,
 		},
 	}
 
-	if isKonnectivityEnabled {
+	if data.IsKonnectivityEnabled() {
 		vs = append(vs, []corev1.Volume{
 			{
 				Name: resources.KonnectivityKubeconfigSecretName,
@@ -788,10 +788,10 @@ func getVolumes(isKonnectivityEnabled, isEncryptionEnabled, isAuditEnabled bool,
 
 	if isAuditWebhookEnabled {
 		vs = append(vs, corev1.Volume{
-			Name: resources.AuditWebhookSecretName,
+			Name: resources.AuditWebhookVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.AuditWebhookSecretName,
+					SecretName: data.Cluster().Spec.AuditLogging.WebhookBackend.AuditWebhookConfig.Name,
 				},
 			},
 		})

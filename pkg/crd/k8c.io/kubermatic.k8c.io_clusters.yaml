@@ -200,8 +200,8 @@ spec:
                     webhookBackend:
                       description: 'Optional: Configures the webhook backend for audit logs.'
                       properties:
-                        auditWebhook:
-                          description: 'Optional: AuditWebhook contains reference to secret holding the audit webhook backend config'
+                        auditWebhookConfig:
+                          description: 'Required : AuditWebhookConfig contains reference to secret holding the audit webhook config file'
                           properties:
                             name:
                               description: name is unique within a namespace to reference a secret resource.
@@ -214,17 +214,8 @@ spec:
                         auditWebhookInitialBackoff:
                           default: 10s
                           type: string
-                        enabled:
-                          description: Enabled will enable or disable audit webhook backend.
-                          type: boolean
-                        policyPreset:
-                          description: 'Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.'
-                          enum:
-                            - ""
-                            - metadata
-                            - recommended
-                            - minimal
-                          type: string
+                      required:
+                        - auditWebhookConfig
                       type: object
                   type: object
                 backupConfig:
