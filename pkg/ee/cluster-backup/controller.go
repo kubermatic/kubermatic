@@ -224,6 +224,7 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	}
 
 	data := resources.NewTemplateDataBuilder().
+		WithCluster(cluster).
 		WithOverwriteRegistry(r.overwriteRegistry).
 		Build()
 
