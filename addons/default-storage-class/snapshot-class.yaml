@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{ if not .Cluster.DisableCSIDriver }}
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 apiVersion: snapshot.storage.k8s.io/v1
@@ -64,4 +65,5 @@ metadata:
     snapshot.storage.kubernetes.io/is-default-class: "true"
 driver: dobs.csi.digitalocean.com
 deletionPolicy: Delete
+{{ end }}
 {{ end }}
