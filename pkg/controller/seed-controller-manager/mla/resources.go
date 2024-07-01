@@ -303,6 +303,28 @@ func GatewayExternalServiceReconciler(c *kubermaticv1.Cluster) reconciling.Named
 const (
 	image   = "nginxinc/nginx-unprivileged"
 	version = "1.20.1-alpine"
+
+	nginxScript = `
+set -e
+
+calc_state() {
+  find /etc/ssl -type f -exec cat {} + | sha1sum -
+}
+
+state=$(calc_state)
+
+nginx &
+
+# watch for changes (i.e. renewed certificates), then reload nginx
+while true; do
+  newState=$(calc_state)
+  if [ "$newState" != "$state" ]; then
+    nginx -s reload
+  fi
+  state=$newState
+  sleep 60
+done
+`
 )
 
 func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kubermaticv1.MLAAdminSetting) reconciling.NamedDeploymentReconcilerFactory {
@@ -335,13 +357,18 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 				configHashAnnotation:                   fmt.Sprintf("%x", configHash.Sum(nil)),
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
-				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "tmp,docker-entrypoint-d-override",
+				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "tmp",
 			})
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            "nginx",
-					Image:           registry.Must(data.RewriteImage(resources.RegistryDocker + "/" + image + ":" + version)),
+					Name:  "nginx",
+					Image: registry.Must(data.RewriteImage(resources.RegistryDocker + "/" + image + ":" + version)),
+					Command: []string{
+						"/bin/sh",
+						"-c",
+						strings.TrimSpace(nginxScript),
+					},
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Ports: []corev1.ContainerPort{
 						{
@@ -393,10 +420,6 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 							Name:      "tmp",
 							MountPath: "/tmp",
 						},
-						{
-							Name:      "docker-entrypoint-d-override",
-							MountPath: "/docker-entrypoint.d",
-						},
 					},
 				},
 			}
@@ -437,12 +460,10 @@ func GatewayDeploymentReconciler(data *resources.TemplateData, settings *kuberma
 				},
 				{
 					Name:         "tmp",
-					VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
-				{
-					Name:         "docker-entrypoint-d-override",
 					VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
 				},
 			}
+
 			return d, nil
 		}
 	}
