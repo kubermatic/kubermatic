@@ -151,9 +151,13 @@ func AuditConfigMapReconciler(data *resources.TemplateData) reconciling.NamedCon
 	return func() (string, reconciling.ConfigMapReconciler) {
 		return resources.AuditConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			// set the audit policy preset so we generate a ConfigMap in any case.
-			// It won't be used if audit logging is not enabled
+			// It won't be used if audit logging and audit webhook are not enabled
 			preset := kubermaticv1.AuditPolicyPreset("")
 			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled && data.Cluster().Spec.AuditLogging.PolicyPreset != "" {
+				preset = data.Cluster().Spec.AuditLogging.PolicyPreset
+			}
+
+			if data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil && data.Cluster().Spec.AuditLogging.PolicyPreset != "" {
 				preset = data.Cluster().Spec.AuditLogging.PolicyPreset
 			}
 

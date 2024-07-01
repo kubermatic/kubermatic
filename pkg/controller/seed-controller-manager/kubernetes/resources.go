@@ -109,6 +109,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return nil, err
 	}
 
+	// Ensure audit webhook backend secret is created & referenced in cluster spec.
+	if cluster.Spec.AuditLogging != nil && cluster.Spec.AuditLogging.WebhookBackend != nil {
+		if err := r.ensureAuditWebhook(ctx, cluster, data); err != nil {
+			return nil, err
+		}
+	}
 	if err := r.ensureRBAC(ctx, cluster, namespace); err != nil {
 		return nil, err
 	}
@@ -1052,4 +1058,42 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 	})
 
 	return ipList, nil
+}
+
+func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	auditWebhookSettings := c.Spec.AuditLogging.WebhookBackend
+	if data.DC().Spec.EnableAuditWebhook != nil {
+		auditWebhookSettings = data.DC().Spec.EnableAuditWebhook
+		// if webhook backend is enabled on the DC then create the auditwebhookconfig secret in the user cluster ns.
+		creators := []reconciling.NamedSecretReconcilerFactory{r.auditWebhookSecretReconciler(ctx, data)}
+		if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+			return nil
+		}
+	}
+
+	return r.updateCluster(ctx, c, func(c *kubermaticv1.Cluster) {
+		c.Spec.AuditLogging.WebhookBackend = auditWebhookSettings
+	})
+}
+
+// auditWebhookSecretReconciler returns a reconciling.NamedSecretReconcilerFactory for a secret that contains
+// audit webhook configuration for api server audit logs.
+func (r *Reconciler) auditWebhookSecretReconciler(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
+	return func() (string, reconciling.SecretReconciler) {
+		return data.DC().Spec.EnableAuditWebhook.AuditWebhookConfig.Name, func(secret *corev1.Secret) (*corev1.Secret, error) {
+			if secret.Data == nil {
+				secret.Data = map[string][]byte{}
+			}
+			if data.DC().Spec.EnableAuditWebhook != nil {
+				webhookBackendSecret := &corev1.Secret{}
+				err := r.Get(ctx, types.NamespacedName{Name: data.DC().Spec.EnableAuditWebhook.AuditWebhookConfig.Name, Namespace: data.DC().Spec.EnableAuditWebhook.AuditWebhookConfig.Namespace}, webhookBackendSecret)
+				if err != nil {
+					return secret, err
+				} else {
+					secret.Data = webhookBackendSecret.Data
+				}
+			}
+			return secret, nil
+		}
+	}
 }

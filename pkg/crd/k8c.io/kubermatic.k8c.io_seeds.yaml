@@ -217,6 +217,28 @@ spec:
                               Edge contains settings for clusters using manually created
                               nodes in edge envs.
                             type: object
+                          enableAuditWebhook:
+                            description: |-
+                              Optional: EnableAuditWebhook allows admins to control webhook backend for audit logs of all the clusters within the DC,
+                              ignoring cluster-specific settings.
+                            properties:
+                              auditWebhookConfig:
+                                description: 'Required : AuditWebhookConfig contains reference to secret holding the audit webhook config file'
+                                properties:
+                                  name:
+                                    description: name is unique within a namespace to reference a secret resource.
+                                    type: string
+                                  namespace:
+                                    description: namespace defines the space within which the secret name must be unique.
+                                    type: string
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              auditWebhookInitialBackoff:
+                                default: 10s
+                                type: string
+                            required:
+                              - auditWebhookConfig
+                            type: object
                           enforceAuditLogging:
                             description: |-
                               Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,

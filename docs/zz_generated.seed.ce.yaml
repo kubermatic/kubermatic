@@ -91,6 +91,9 @@ spec:
         # Edge contains settings for clusters using manually created
         # nodes in edge envs.
         edge: {}
+        # Optional: EnableAuditWebhook allows admins to control webhook backend for audit logs of all the clusters within the DC,
+        # ignoring cluster-specific settings.
+        enableAuditWebhook: null
         # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
         # ignoring cluster-specific settings.
         enforceAuditLogging: false

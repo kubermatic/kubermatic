@@ -191,6 +191,26 @@ spec:
                               type: object
                           type: object
                       type: object
+                    webhookBackend:
+                      description: 'Optional: Configures the webhook backend for audit logs.'
+                      properties:
+                        auditWebhookConfig:
+                          description: 'Required : AuditWebhookConfig contains reference to secret holding the audit webhook config file'
+                          properties:
+                            name:
+                              description: name is unique within a namespace to reference a secret resource.
+                              type: string
+                            namespace:
+                              description: namespace defines the space within which the secret name must be unique.
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        auditWebhookInitialBackoff:
+                          default: 10s
+                          type: string
+                      required:
+                        - auditWebhookConfig
+                      type: object
                   type: object
                 backupConfig:
                   description: 'Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.'
