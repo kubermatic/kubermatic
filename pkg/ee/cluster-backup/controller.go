@@ -91,9 +91,19 @@ type reconciler struct {
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
+	overwriteRegistry             string
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, seedGetter provider.SeedGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
+	userClusterConnectionProvider UserClusterClientProvider,
+	seedGetter provider.SeedGetter,
+	log *zap.SugaredLogger,
+	versions kubermatic.Versions,
+	overwriteRegistry string,
+) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		seedGetter:                    seedGetter,
@@ -102,6 +112,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConn
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
+		overwriteRegistry:             overwriteRegistry,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -225,6 +236,18 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		return fmt.Errorf("failed to reconcile Velero Namespace: %w", err)
 	}
 
+	data := resources.NewTemplateDataBuilder().
+		WithCluster(cluster).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		Build()
+
+	cmReconcilers := []reconciling.NamedConfigMapReconcilerFactory{
+		userclusterresources.CustomizationConfigMapReconciler(data.RewriteImage),
+	}
+	if err := reconciling.ReconcileConfigMaps(ctx, cmReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+		return fmt.Errorf("failed to reconcile Velero ConfigMaps: %w", err)
+	}
+
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		userclusterresources.ServiceAccountReconciler(),
 	}
@@ -235,16 +258,14 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	clusterRoleBindingReconciler := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		userclusterresources.ClusterRoleBindingReconciler(),
 	}
-
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero ClusterRoleBinding: %w", err)
 	}
 
+	// Create kubeconfig secret in the user cluster namespace.
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
 		userclusterresources.SecretReconciler(ctx, r.Client, cluster, cbsl),
 	}
-
-	// Create kubeconfig secret in the user cluster namespace.
 	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile cluster backup kubeconfig Secret: %w", err)
 	}
@@ -255,10 +276,10 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile the cluster backup Deployment: %w", err)
 	}
+
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		userclusterresources.DaemonSetReconciler(),
 	}
-
 	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero node-agent DaemonSet: %w", err)
 	}
@@ -272,15 +293,13 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	for i := range clusterBackupCRDs {
 		creators = append(creators, userclusterresources.CRDReconciler(clusterBackupCRDs[i]))
 	}
-
 	if err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero CRDs: %w", err)
 	}
 
 	bslReconcilers := []kkpreconciling.NamedBackupStorageLocationReconcilerFactory{
-		userclusterresources.BSLReconciler(ctx, cluster, cbsl),
+		userclusterresources.BSLReconciler(cluster, cbsl),
 	}
-
 	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero BSL: %w", err)
 	}
