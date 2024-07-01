@@ -46,6 +46,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/yaml"
@@ -362,6 +363,7 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, r
 							URL:          "localhost",
 							ChartName:    "example",
 							ChartVersion: "0.1.0",
+							PlainHTTP:    ptr.To(true),
 						},
 					},
 				},

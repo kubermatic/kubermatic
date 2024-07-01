@@ -127,7 +127,7 @@ func getApplicationDefinition(defaultDeployOps *appskubermaticv1.DeployOptions) 
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
-								URL:          "https://localhost/some-repo",
+								URL:          "https://example.com/some-repo",
 								ChartName:    "chartName",
 								ChartVersion: "1.0.0",
 							},

@@ -19,13 +19,13 @@ spec:
             # Credentials are optional and holds the git credentials
             credentials:
               # Authentication method. Either password or token or ssh-key.
-              # if method is password then username and password must be defined.
-              # if method is token then token must be defined.
-              # if method is ssh-key then ssh-key must be defined.
-              method: password ||token || ssh-key
+              # If method is password then username and password must be defined.
+              # If method is token then token must be defined.
+              # If method is ssh-key then ssh-key must be defined.
+              method: password || token || ssh-key
               # Password holds the ref and key in the secret for the Password credential.
               # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
               password:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: pass
@@ -36,7 +36,7 @@ spec:
                 optional: false
               # SSHKey holds the ref and key in the secret for the SshKey credential.
               # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
               sshKey:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: private-key
@@ -47,7 +47,7 @@ spec:
                 optional: false
               # Token holds the ref and key in the secret for the token credential.
               # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
               token:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: token
@@ -58,7 +58,7 @@ spec:
                 optional: false
               # Username holds the ref and key in the secret for the username credential.
               # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
               username:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: user
@@ -70,7 +70,8 @@ spec:
             # Path of the "source" in the repository. default is repository root
             path: charts/apache
             # Git reference to checkout.
-            # For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
+            # For large repositories, we recommend to either use Tag, Branch or Branch+Commit.
+            # This allows a shallow clone, which dramatically speeds up performance
             ref:
               # Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
               branch: main
@@ -81,7 +82,8 @@ spec:
               # Tag to check out.
               # It can not be used in conjunction with commit or branch.
               tag: v1.2.3
-            # URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
+            # URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or
+            # SSH (e.g. git://example.com[:port]/path/to/repo.git/).
             remote: https://git.example.com/repo || git@example.com/repo
           # Install Application from a Helm repository
           helm:
@@ -89,12 +91,12 @@ spec:
             chartName: my-app
             # Version of the Chart.
             chartVersion: v13.9.0
-            # Credentials are optional and hold the ref to the secret with helm credentials.
-            # Either username / Password or registryConfigFile can be defined.
+            # Credentials are optional and hold the ref to the secret with Helm credentials.
+            # Either username / password or registryConfigFile can be defined.
             credentials:
-              # Password holds the ref and key in the secret for the Password credential.
+              # Password holds the ref and key in the secret for the password credential.
               # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
               password:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: pass
@@ -103,10 +105,10 @@ spec:
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
-              # RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
-              # file that follows the same format rules as ~/.docker/config.json
-              # The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # RegistryConfigFile holds the ref and key in the secret for the registry credential file.
+              # The value is dockercfg file that follows the same format rules as ~/.docker/config.json.
+              # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
               registryConfigFile:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: .dockerconfigjson
@@ -117,7 +119,7 @@ spec:
                 optional: false
               # Username holds the ref and key in the secret for the username credential.
               # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+              # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
               username:
                 # The key of the secret to select from. Must be a valid secret key.
                 key: user
@@ -126,8 +128,11 @@ spec:
                 name: <<secret-name>>
                 # Specify whether the Secret or its key must be defined
                 optional: false
-            # URl of the helm repository.
-            # It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
+            # URL of the Helm repository the following schemes are supported:
+
+            # * http://example.com/myrepo (HTTP)
+            # * https://example.com/myrepo (HTTPS)
+            # * oci://example.com:5000/myrepo (OCI, HTTPS by default, use plainHTTP to enable unencrypted HTTP)
             url: https://charts.example.com || oci://localhost:5000/myrepo
       # Version of the application (e.g. v1.2.3)
       version: v1.2.3

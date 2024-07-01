@@ -36,14 +36,14 @@ import (
 const (
 	ciliumHelmChartName = "cilium"
 	ciliumImageRegistry = "quay.io/cilium/"
-	ociPrefix           = "oci://"
 )
 
 func toOciUrl(s string) string {
-	if strings.HasPrefix(s, ociPrefix) {
+	if strings.Contains(s, "://") {
 		return s
 	}
-	return ociPrefix + s
+
+	return "oci://" + s
 }
 
 // ApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used

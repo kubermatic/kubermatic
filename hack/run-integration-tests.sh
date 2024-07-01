@@ -102,5 +102,10 @@ for file in $(grep --files-with-matches --recursive --extended-regexp '//go:buil
     continue
   fi
 
-  go_test $(echo $file | sed 's/\//_/g') -tags "integration,${KUBERMATIC_EDITION:-ce}" -race ./${file} -v
+  extraArgs=()
+  if [[ "$file" =~ .*helmclient.* ]] || [[ "$file" =~ .*providers/template.* ]]; then
+    extraArgs+=(-registry-hostname "$HOSTNAME")
+  fi
+
+  go_test $(echo $file | sed 's/\//_/g') -tags "integration,${KUBERMATIC_EDITION:-ce}" -race ./${file} -v "${extraArgs[@]}"
 done
