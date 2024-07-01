@@ -91,9 +91,19 @@ type reconciler struct {
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
+	overwriteRegistry             string
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, seedGetter provider.SeedGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(
+	mgr manager.Manager,
+	numWorkers int,
+	workerName string,
+	userClusterConnectionProvider UserClusterClientProvider,
+	seedGetter provider.SeedGetter,
+	log *zap.SugaredLogger,
+	versions kubermatic.Versions,
+	overwriteRegistry string,
+) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		seedGetter:                    seedGetter,
@@ -102,6 +112,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConn
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
+		overwriteRegistry:             overwriteRegistry,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -224,6 +235,11 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero Namespace: %w", err)
 	}
+
+	data := resources.NewTemplateDataBuilder().
+		WithCluster(cluster).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		Build()
 
 	cmReconcilers := []reconciling.NamedConfigMapReconcilerFactory{
 		userclusterresources.CustomizationConfigMapReconciler(data.RewriteImage),
