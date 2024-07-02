@@ -167,9 +167,9 @@ spec:
                                     method:
                                       description: |-
                                         Authentication method. Either password or token or ssh-key.
-                                        if method is password then username and password must be defined.
-                                        if method is token then token must be defined.
-                                        if method is ssh-key then ssh-key must be defined.
+                                        If method is password then username and password must be defined.
+                                        If method is token then token must be defined.
+                                        If method is ssh-key then ssh-key must be defined.
                                       enum:
                                         - password
                                         - token
@@ -179,7 +179,7 @@ spec:
                                       description: |-
                                         Password holds the ref and key in the secret for the Password credential.
                                         The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -201,7 +201,7 @@ spec:
                                       description: |-
                                         SSHKey holds the ref and key in the secret for the SshKey credential.
                                         The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -223,7 +223,7 @@ spec:
                                       description: |-
                                         Token holds the ref and key in the secret for the token credential.
                                         The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -245,7 +245,7 @@ spec:
                                       description: |-
                                         Username holds the ref and key in the secret for the username credential.
                                         The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git".
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -272,7 +272,8 @@ spec:
                                 ref:
                                   description: |-
                                     Git reference to checkout.
-                                    For large repositories, we recommend to either use Tag, Branch or Branch+Commit. This allows a shallow clone, which dramatically speeds up performance
+                                    For large repositories, we recommend to either use Tag, Branch or Branch+Commit.
+                                    This allows a shallow clone, which dramatically speeds up performance
                                   properties:
                                     branch:
                                       description: Branch to checkout. Only the last commit of the branch will be checkout in order to reduce the amount of data to download.
@@ -292,7 +293,9 @@ spec:
                                       type: string
                                   type: object
                                 remote:
-                                  description: URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or SSH (e.g. git://example.com[:port]/path/to/repo.git/)
+                                  description: |-
+                                    URL to the repository. Can be HTTP(s) (e.g. https://example.com/myrepo) or
+                                    SSH (e.g. git://example.com[:port]/path/to/repo.git/).
                                   minLength: 1
                                   type: string
                               required:
@@ -312,14 +315,14 @@ spec:
                                   type: string
                                 credentials:
                                   description: |-
-                                    Credentials are optional and hold the ref to the secret with helm credentials.
-                                    Either username / Password or registryConfigFile can be defined.
+                                    Credentials are optional and hold the ref to the secret with Helm credentials.
+                                    Either username / password or registryConfigFile can be defined.
                                   properties:
                                     password:
                                       description: |-
-                                        Password holds the ref and key in the secret for the Password credential.
+                                        Password holds the ref and key in the secret for the password credential.
                                         The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -339,10 +342,10 @@ spec:
                                       x-kubernetes-map-type: atomic
                                     registryConfigFile:
                                       description: |-
-                                        RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
-                                        file that follows the same format rules as ~/.docker/config.json
-                                        The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        RegistryConfigFile holds the ref and key in the secret for the registry credential file.
+                                        The value is dockercfg file that follows the same format rules as ~/.docker/config.json.
+                                        The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -364,7 +367,7 @@ spec:
                                       description: |-
                                         Username holds the ref and key in the secret for the username credential.
                                         The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                        The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
                                       properties:
                                         key:
                                           description: The key of the secret to select from.  Must be a valid secret key.
@@ -383,10 +386,24 @@ spec:
                                       type: object
                                       x-kubernetes-map-type: atomic
                                   type: object
+                                insecure:
+                                  description: |-
+                                    Insecure disables certificate validation when using an HTTPS registry. This setting has no
+                                    effect when using a plaintext connection.
+                                  type: boolean
+                                plainHTTP:
+                                  description: |-
+                                    PlainHTTP will enable HTTP-only (i.e. unencrypted) traffic for oci:// URLs. By default HTTPS
+                                    is used when communicating with an oci:// URL.
+                                  type: boolean
                                 url:
                                   description: |-
-                                    URl of the helm repository.
-                                    It can be an HTTP(s) repository (e.g. https://localhost/myrepo) or on OCI repository (e.g. oci://localhost:5000/myrepo).
+                                    URL of the Helm repository the following schemes are supported:
+
+
+                                    * http://example.com/myrepo (HTTP)
+                                    * https://example.com/myrepo (HTTPS)
+                                    * oci://example.com:5000/myrepo (OCI, HTTPS by default, use plainHTTP to enable unencrypted HTTP)
                                   pattern: ^(http|https|oci)://.+
                                   type: string
                               required:
@@ -406,9 +423,9 @@ spec:
                               properties:
                                 password:
                                   description: |-
-                                    Password holds the ref and key in the secret for the Password credential.
+                                    Password holds the ref and key in the secret for the password credential.
                                     The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                    The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                    The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
                                   properties:
                                     key:
                                       description: The key of the secret to select from.  Must be a valid secret key.
@@ -428,10 +445,10 @@ spec:
                                   x-kubernetes-map-type: atomic
                                 registryConfigFile:
                                   description: |-
-                                    RegistryConfigFile holds the ref and key in the secret for the registry credential file. The value is dockercfg
-                                    file that follows the same format rules as ~/.docker/config.json
-                                    The The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                    The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                    RegistryConfigFile holds the ref and key in the secret for the registry credential file.
+                                    The value is dockercfg file that follows the same format rules as ~/.docker/config.json.
+                                    The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+                                    The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
                                   properties:
                                     key:
                                       description: The key of the secret to select from.  Must be a valid secret key.
@@ -453,7 +470,7 @@ spec:
                                   description: |-
                                     Username holds the ref and key in the secret for the username credential.
                                     The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
-                                    The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to helm or git
+                                    The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm" or "git"
                                   properties:
                                     key:
                                       description: The key of the secret to select from.  Must be a valid secret key.

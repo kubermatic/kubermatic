@@ -54,7 +54,7 @@ func (h HelmSource) DownloadSource(destination string) (string, error) {
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
-	auth, err := util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.Source.Credentials)
+	auth, err := util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, h.Source, h.Source.Credentials)
 	if err != nil {
 		return "", err
 	}

@@ -19,11 +19,13 @@ package helmclient
 import (
 	"context"
 	"crypto"
+	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,6 +46,7 @@ import (
 	"helm.sh/helm/v3/pkg/storage/driver"
 
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -94,6 +97,12 @@ type AuthSettings struct {
 	// cannot be inferred directly (for example because OCI can be accessed
 	// both via HTTP and HTTPS).
 	PlainHTTP bool
+
+	// Insecure disables certificate verification.
+	Insecure bool
+
+	// CAFile is an optional path to a custom CA certificate file, PEM-encoded.
+	CAFile string
 }
 
 // newRegistryClient returns a new registry client with authentication is RegistryConfigFile is defined.
@@ -107,6 +116,27 @@ func (a *AuthSettings) newRegistryClient() (*registry.Client, error) {
 		opts = append(opts, registry.ClientOptPlainHTTP())
 	}
 
+	if a.CAFile != "" || a.Insecure {
+		tlsConf := &tls.Config{
+			InsecureSkipVerify: a.Insecure,
+		}
+
+		if a.CAFile != "" {
+			caBundle, err := certificates.NewCABundleFromFile(a.CAFile)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load CAFile %q: %w", a.CAFile, err)
+			}
+
+			tlsConf.RootCAs = caBundle.CertPool()
+		}
+
+		opts = append(opts, registry.ClientOptHTTPClient(&http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: tlsConf,
+			},
+		}))
+	}
+
 	return registry.NewClient(opts...)
 }
 
@@ -116,11 +146,21 @@ func (a *AuthSettings) registryClientAndGetterOptions() (*registry.Client, []get
 	if err != nil {
 		return nil, nil, err
 	}
-	options := []getter.Option{getter.WithRegistryClient(regClient)}
+
+	options := []getter.Option{
+		getter.WithRegistryClient(regClient),
+		getter.WithInsecureSkipVerifyTLS(a.Insecure),
+		getter.WithPlainHTTP(a.PlainHTTP),
+	}
 
 	if a.Username != "" && a.Password != "" {
 		options = append(options, getter.WithBasicAuth(a.Username, a.Password))
 	}
+
+	if a.CAFile != "" {
+		options = append(options, getter.WithTLSClientConfig("", "", a.CAFile))
+	}
+
 	return regClient, options, nil
 }
 
@@ -216,6 +256,10 @@ func NewClient(ctx context.Context, restClientGetter genericclioptions.RESTClien
 func (h HelmClient) DownloadChart(url string, chartName string, version string, dest string, auth AuthSettings) (string, error) {
 	var repoName string
 	var err error
+
+	// For oci/oci+* schemes, the repo does not need to be downloaded beforehand,
+	// but the scheme modifiers need to be removed from the repo name to not confuse
+	// Helm.
 	if strings.HasPrefix(url, "oci://") {
 		repoName = url
 	} else {
@@ -510,6 +554,8 @@ func (h HelmClient) buildDependencies(chartLoc string, auth AuthSettings) (*char
 
 // ensureRepository adds the repository url if it doesn't exist and downloads the latest index file.
 // The repository is added with the name helm-manager-$(sha256 url).
+// This function must only be called for HTTP/HTTPS repositories, OCI repositories do not require
+// this step.
 func (h HelmClient) ensureRepository(url string, auth AuthSettings) (string, error) {
 	repoFile, err := repo.LoadFile(h.settings.RepositoryConfig)
 	if err != nil && !errors.Is(err, fs.ErrNotExist) {
@@ -525,6 +571,9 @@ func (h HelmClient) ensureRepository(url string, auth AuthSettings) (string, err
 		URL:      url,
 		Username: auth.Username,
 		Password: auth.Password,
+
+		CAFile:                auth.CAFile,
+		InsecureSkipTLSverify: auth.Insecure,
 	}
 
 	// Ensure we have the last version of the index file.
