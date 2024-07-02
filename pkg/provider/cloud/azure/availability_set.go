@@ -80,9 +80,9 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 }
 
 func targetAvailabilitySet(cloud kubermaticv1.CloudSpec, location string, clusterName string) (*armcompute.AvailabilitySet, error) {
-	faultDomainCount, ok := faultDomainsPerRegion[location]
-	if !ok {
-		return nil, fmt.Errorf("could not determine the number of fault domains: unknown region %q", location)
+	faultDomainCount, err := getRegionFaultDomainCount(location)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get region fault domain count: %w", err)
 	}
 
 	return &armcompute.AvailabilitySet{
