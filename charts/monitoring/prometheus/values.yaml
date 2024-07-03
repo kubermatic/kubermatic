@@ -154,7 +154,14 @@ prometheus:
   #   sidecarContainers:
   #     - thanos:
   #         image: quay.io/thanos/thanos:v0.31.0
-  sidecarContainers: {}
+  sidecarContainers: []
+
+  ## expose additional ports for sidecar containers e.g. when using thanos-sidecar
+  # extraPorts:
+  # - name: grpc
+  #   port: 10901
+  #   targetPort: grpc
+  extraPorts: []
 
   containers:
     prometheus:
