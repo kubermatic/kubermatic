@@ -67,15 +67,16 @@ import (
 const (
 	ControllerName = "kkp-addon-controller"
 
-	addonLabelKey             = "kubermatic-addon"
-	cleanupFinalizerName      = "cleanup-manifests"
-	addonEnsureLabelKey       = "addons.kubermatic.io/ensure"
-	migratedHetznerCSIAddon   = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
-	migratedVsphereCSIAddon   = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
-	migratedAzureCSIAddon     = "kubermatic.k8c.io/migrated-azure-csi-addon"
-	csiAddonStorageClassLabel = "kubermatic-addon=csi"
-	CSIAddonName              = "csi"
-	pvMigrationAnnotation     = "pv.kubernetes.io/migrated-to"
+	addonLabelKey                = "kubermatic-addon"
+	cleanupFinalizerName         = "cleanup-manifests"
+	addonEnsureLabelKey          = "addons.kubermatic.io/ensure"
+	migratedHetznerCSIAddon      = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
+	migratedVsphereCSIAddon      = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
+	migratedAzureCSIAddon        = "kubermatic.k8c.io/migrated-azure-csi-addon"
+	csiAddonStorageClassLabel    = "kubermatic-addon=csi"
+	CSIAddonName                 = "csi"
+	pvMigrationAnnotation        = "pv.kubernetes.io/migrated-to"
+	defaultStorageClassAddonName = "default-storage-class"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -700,6 +701,14 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	sd := strings.TrimSpace(string(d))
 	if len(sd) == 0 {
 		log.Debug("Skipping addon installation as the manifest is empty after parsing")
+		// default-storage-class addon's manifests becomes empty once csi drivers are disabled for a cluster.
+		// we remove the resources created by the addon
+		if addon.Name == defaultStorageClassAddonName {
+			err := r.cleanupDefaultStorageClassAddon(ctx, cluster, addon)
+			if err != nil {
+				return fmt.Errorf("failed to cleanup default storageclass addon: %w", err)
+			}
+		}
 		return nil
 	}
 
@@ -1014,4 +1023,20 @@ func (r *Reconciler) pvsForProvisioner(ctx context.Context, cluster *kubermaticv
 		}
 	}
 	return pvsForProvisioner, nil
+}
+
+func (r *Reconciler) cleanupDefaultStorageClassAddon(ctx context.Context, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) error {
+	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+	// delete storageclass created by "default-storage-class" addon
+	sc := &storagev1.StorageClass{}
+	err = cl.DeleteAllOf(ctx, sc, ctrlruntimeclient.MatchingLabels{
+		addonLabelKey: addon.Spec.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to cleanup resources of default-storage-class addon: %w", err)
+	}
+	return nil
 }
