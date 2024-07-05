@@ -23,8 +23,8 @@ spec:
   - name: web
     port: 9090
     targetPort: web
-  {{- if .Values.prometheus.extraPorts }}
-    {{- toYaml .Values.prometheus.extraPorts | nindent 2 }}
+  {{- with .Values.prometheus.extraPorts }}
+  {{- toYaml . | nindent 2 }}
   {{- end }}
   selector:
     app: '{{ template "name" . }}'
