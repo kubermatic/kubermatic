@@ -30,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-9
+        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -74,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-9
+        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -118,7 +118,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-9
+        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -162,7 +162,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-9
+        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -200,7 +200,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-9
+        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
           command:
             - "./hack/ci/run-offline-test.sh"
           # docker-in-docker needs privileged mode
