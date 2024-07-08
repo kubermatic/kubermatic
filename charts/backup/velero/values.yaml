@@ -13,49 +13,23 @@
 # limitations under the License.
 
 velero:
-  # the Docker image for Velero;
-  # if you are using nodeAgent, make sure to use an official image
-  # that also contains the nodeAgent binary
-  image:
-    repository: docker.io/velero/velero
-    tag: v1.14.0
-    pullPolicy: IfNotPresent
+  schedules:
+    hourly-cluster:
+      schedule: 0 * * * *
+      template:
+        includeClusterResources: true
+        includedNamespaces:
+          - '*'
+        snapshotVolumes: false
+        ttl: 168h # 7 days
 
-  # CLI flags to pass to velero server; note that the flags `uploader-type`,
-  # `default-backup-storage-location` and `default-volume-snapshot-locations`
-  # are automatically set via the configuration below
-  serverFlags: []
-
-  # For backwards-compatibility reasons this is kept on Restic, but Kopia is
-  # the default since Velero 1.12.
-  uploaderType: restic
-
-  # Init containers to add to the Velero deployment's pod spec.
-  # At least one plugin provider image is required.
-  initContainers:
-  # - name: velero-plugin-for-aws
-  #   image: docker.io/velero/velero-plugin-for-aws:v1.10.0
-  #   imagePullPolicy: IfNotPresent
-  #   volumeMounts:
-  #     - mountPath: /target
-  #       name: plugins
-
-  # - name: velero-plugin-for-gcp
-  #   image: docker.io/velero/velero-plugin-for-gcp:v1.10.0
-  #   imagePullPolicy: IfNotPresent
-  #   volumeMounts:
-  #     - mountPath: /target
-  #       name: plugins
-
-  # - name: velero-plugin-for-microsoft-azure
-  #   image: docker.io/velero/velero-plugin-for-microsoft-azure:v1.10.0
-  #   imagePullPolicy: IfNotPresent
-  #   volumeMounts:
-  #     - mountPath: /target
-  #       name: plugins
-
-  # Whether to deploy the node-agent daemonset.
-  deployNodeAgent: false
+  resources:
+    requests:
+      cpu: 500m
+      memory: 128Mi
+    limits:
+      cpu: 1
+      memory: 512Mi
 
   nodeAgent:
     # Resource requests/limits to specify for the node-agent daemonset deployment. Optional.
@@ -68,73 +42,11 @@ velero:
         cpu: 1000m
         memory: 1Gi
 
-    affinity: {}
-    nodeSelector: {}
     tolerations:
-    - effect: NoExecute
-      operator: Exists
-    - effect: NoSchedule
-      operator: Exists
-
-  # configure the credentials used to make snapshots (when using
-  # persistentVolumeProvider) and to store backups; you can enable
-  # multiple credentials, if for some reason you run on GCP and
-  # still want to make nodeAgent snapshots to be stored in AWS S3.
-  credentials: {}
-    #aws:
-    #  accessKey: ...
-    #  secretKey: ...
-    #gcp:
-    #  serviceKey: '{...}'
-    #azure:
-    #  AZURE_SUBSCRIPTION_ID: ...
-    #  AZURE_TENANT_ID: ...
-    #  AZURE_RESOURCE_GROUP: ...
-    #  AZURE_CLIENT_ID: ...
-    #  AZURE_CLIENT_SECRET: ...
-    #  AZURE_STORAGE_ACCOUNT_ID: ...
-    #  AZURE_STORAGE_KEY: ...
-    #nodeAgent:
-    #  password: averysecurepassword
-
-  # see https://velero.io/docs/v1.10/api-types/backupstoragelocation/;
-  # one of the backup storage location should be marked with "default: true"
-  # or named "default" (previously this was the --default-backup-storage-location
-  # flag)
-  #backupStorageLocations:
-  #  aws:
-  #    provider: aws
-  #    objectStorage:
-  #      bucket: myclusterbackups
-  #    config:
-  #      region: eu-west-1
-
-  # optionally define some of your volumeSnapshotLocations as the default;
-  # each element in the list must be a string of the form "provider:location"
-  #defaultVolumeSnapshotLocations:
-  #  - aws:aws
-
-  # see https://velero.io/docs/v1.10/api-types/volumesnapshotlocation/
-  #volumeSnapshotLocations:
-  #  aws:
-  #    provider: aws
-  #    config:
-  #      region: eu-west-1
-
-  # glob expressions to find schedule definitions
-  schedulesPath: schedules/*
-
-  # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME
-  podAnnotations: {}
-  # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
-
-  resources:
-    requests:
-      cpu: 500m
-      memory: 128Mi
-    limits:
-      cpu: 1
-      memory: 512Mi
+      - effect: NoExecute
+        operator: Exists
+      - effect: NoSchedule
+        operator: Exists
 
   affinity:
     # Backups are potentially long-running tasks and rescheduling Velero
@@ -142,12 +54,15 @@ velero:
     # Make sure to schedule Velero on long-living, stable nodes.
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-          - key: kubermatic.io/type
-            operator: In
-            values:
-            - stable
-  nodeSelector: {}
-  tolerations: []
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: kubermatic.io/type
+                operator: In
+                values:
+                  - stable
+
+  # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME
+  annotations: {}
+  # iam.amazonaws.com/role: arn:aws:iam::<AWS_ACCOUNT_ID>:role/<HEPTIO_VELERO_ROLE_NAME>
+
