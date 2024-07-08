@@ -1,127 +1,321 @@
 ---
-# Source: velero/templates/serviceaccount.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: velero/charts/velero/templates/serviceaccount-server.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: velero
+  name: release-name-velero-server
+  namespace: default
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
 ---
-# Source: velero/templates/rbac.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: velero/charts/velero/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: release-name-velero
+  namespace: default
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+type: Opaque
+data:
+---
+# Source: velero/charts/velero/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: velero
+  name: release-name-velero-server
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+subjects:
+  - kind: ServiceAccount
+    namespace: default
+    name: release-name-velero-server
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: velero
-  namespace: default
+  apiGroup: rbac.authorization.k8s.io
 ---
-# Source: velero/templates/deployment.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: velero/charts/velero/templates/role.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: release-name-velero-server
+  namespace: default
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+rules:
+- apiGroups:
+    - "*"
+  resources:
+    - "*"
+  verbs:
+    - "*"
+---
+# Source: velero/charts/velero/templates/rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: release-name-velero-server
+  namespace: default
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+subjects:
+  - kind: ServiceAccount
+    namespace: default
+    name: release-name-velero-server
+roleRef:
+  kind: Role
+  name: release-name-velero-server
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: velero/charts/velero/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-velero
+  namespace: default
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+spec:
+  type: ClusterIP
+  ports:
+    - name: http-monitoring
+      port: 8085
+      targetPort: http-monitoring
+  selector:
+    name: velero
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+---
+# Source: velero/charts/velero/templates/node-agent-daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-agent
+  namespace: default
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+spec:
+  selector:
+    matchLabels:
+      name: node-agent
+  template:
+    metadata:
+      labels:
+        name: node-agent
+        app.kubernetes.io/name: velero
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: velero-7.1.0
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8085"
+        prometheus.io/scrape: "true"
+        checksum/secret: b9754ca4d83dab2f2e3ce5d2f763c69ed92c2298dc2737084680716557250af3
+    spec:
+      serviceAccountName: release-name-velero-server
+      securityContext:
+        runAsUser: 0
+      terminationGracePeriodSeconds: 3600
+      volumes:
+        - name: cloud-credentials
+          secret:
+            secretName: release-name-velero
+        - name: host-pods
+          hostPath:
+            path: /var/lib/kubelet/pods
+        - name: scratch
+          emptyDir: {}
+      dnsPolicy: ClusterFirst
+      containers:
+        - name: node-agent
+          image: "velero/velero:v1.14.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-monitoring
+              containerPort: 8085
+          command:
+            - /velero
+          args:
+            - node-agent
+            - server
+          volumeMounts:
+            - name: cloud-credentials
+              mountPath: /credentials
+            - name: host-pods
+              mountPath: /host_pods
+              mountPropagation: HostToContainer
+            - name: scratch
+              mountPath: /scratch
+          env:
+            - name: VELERO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: VELERO_SCRATCH_DIR
+              value: /scratch
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /credentials/cloud
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /credentials/cloud
+            - name: AZURE_CREDENTIALS_FILE
+              value: /credentials/cloud
+            - name: ALIBABA_CLOUD_CREDENTIALS_FILE
+              value: /credentials/cloud
+          securityContext:
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+            requests:
+              cpu: 500m
+              memory: 512Mi
+      tolerations:
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+---
+# Source: velero/charts/velero/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: velero
+  name: release-name-velero
+  namespace: default
   labels:
     app.kubernetes.io/name: velero
-    app.kubernetes.io/version: 'v1.14.0'
-    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+    component: velero
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
+      app.kubernetes.io/instance: release-name
       app.kubernetes.io/name: velero
   template:
     metadata:
       labels:
+        name: velero
         app.kubernetes.io/name: velero
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/managed-by: Helm
+        helm.sh/chart: velero-7.1.0
       annotations:
-        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
         prometheus.io/port: "8085"
-        kubermatic.io/chart: velero
-        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: plugins,scratch
+        prometheus.io/scrape: "true"
+        checksum/secret: b9754ca4d83dab2f2e3ce5d2f763c69ed92c2298dc2737084680716557250af3
     spec:
       restartPolicy: Always
+      serviceAccountName: release-name-velero-server
+      terminationGracePeriodSeconds: 3600
       containers:
-      - name: velero
-        image: 'docker.io/velero/velero:v1.14.0'
-        imagePullPolicy: IfNotPresent
-        command:
-        - /velero
-        args:
-        - server
-        - '--uploader-type=restic'
-        env:
-        - name: VELERO_SCRATCH_DIR
-          value: /scratch
-        volumeMounts:
-        - name: plugins
-          mountPath: /plugins
-        - name: scratch
-          mountPath: /scratch
-        ports:
-        - name: metrics
-          containerPort: 8085
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 1
-            memory: 512Mi
-          requests:
-            cpu: 500m
-            memory: 128Mi
+        - name: velero
+          image: "velero/velero:v1.14.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http-monitoring
+              containerPort: 8085
+          command:
+            - /velero
+          args:
+            - server
+            ### Flags
+            - --uploader-type=kopia
+            ### Global Flags
+          resources:
+            limits:
+              cpu: 1
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 128Mi
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /metrics
+              port: http-monitoring
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /metrics
+              port: http-monitoring
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: plugins
+              mountPath: /plugins
+            - name: cloud-credentials
+              mountPath: /credentials
+            - name: scratch
+              mountPath: /scratch
+          env:
+            - name: VELERO_SCRATCH_DIR
+              value: /scratch
+            - name: VELERO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: LD_LIBRARY_PATH
+              value: /plugins
+            - name: AWS_SHARED_CREDENTIALS_FILE
+              value: /credentials/cloud
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /credentials/cloud
+            - name: AZURE_CREDENTIALS_FILE
+              value: /credentials/cloud
+            - name: ALIBABA_CLOUD_CREDENTIALS_FILE
+              value: /credentials/cloud
+      dnsPolicy: ClusterFirst
       volumes:
-      - name: plugins
-        emptyDir: {}
-      - name: scratch
-        emptyDir: {}
-      serviceAccountName: velero
-      nodeSelector:
-        {}
+        - name: cloud-credentials
+          secret:
+            secretName: release-name-velero
+        - name: plugins
+          emptyDir: {}
+        - name: scratch
+          emptyDir: {}
       affinity:
         nodeAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -132,71 +326,185 @@ spec:
                 values:
                 - stable
             weight: 100
-      tolerations:
-        []
 ---
-# Source: velero/templates/config.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Source: velero/charts/velero/templates/backupstoragelocation.yaml
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: default
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+spec:
+  credential:
+  provider: 
+  accessMode: ReadWrite
+  objectStorage:
+    bucket:
 ---
-# Source: velero/templates/daemonset.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Source: velero/charts/velero/templates/schedule.yaml
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: release-name-velero-hourly-cluster
+  namespace: default
+  annotations:
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+spec:
+  schedule: "0 * * * *"
+  template:
+    includeClusterResources: true
+    includedNamespaces:
+    - '*'
+    snapshotVolumes: false
+    ttl: 168h
 ---
-# Source: velero/templates/secrets.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Source: velero/charts/velero/templates/volumesnapshotlocation.yaml
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: default
+  namespace: default
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+spec:
+  credential:
+  provider:
 ---
-# Source: velero/templates/schedules.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
+# Source: velero/charts/velero/templates/upgrade-crds/serviceaccount-upgrade.yaml
 apiVersion: v1
-kind: List
-items:
-- {"apiVersion":"velero.io/v1","kind":"Schedule","metadata":{"name":"hourly-cluster"},"spec":{"schedule":"0 * * * *","template":{"includeClusterResources":true,"includedNamespaces":["*"],"snapshotVolumes":false,"ttl":"168h"}}}
+kind: ServiceAccount
+metadata:
+  name: release-name-velero-server-upgrade-crds
+  namespace: default
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-4"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+---
+# Source: velero/charts/velero/templates/upgrade-crds/clusterrole-upgrade.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: release-name-velero-upgrade-crds
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/component: upgrade-crds
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+rules:
+- apiGroups: 
+    - "apiextensions.k8s.io"
+  resources: 
+    - "customresourcedefinitions"
+  verbs: 
+    - create
+    - patch
+    - update
+    - get
+    - list
+---
+# Source: velero/charts/velero/templates/upgrade-crds/clusterrolebinding-upgrade.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: release-name-velero-upgrade-crds
+  labels:
+    app.kubernetes.io/component: upgrade-crds
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "-3"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+subjects:
+  - kind: ServiceAccount
+    namespace: default
+    name: release-name-velero-server-upgrade-crds
+roleRef:
+  kind: ClusterRole
+  name: release-name-velero-upgrade-crds
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: velero/charts/velero/templates/upgrade-crds/upgrade-crds.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-velero-upgrade-crds
+  namespace: default
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade,pre-rollback
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/name: velero
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: Helm
+    helm.sh/chart: velero-7.1.0
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      name: velero-upgrade-crds
+    spec:
+      serviceAccountName: release-name-velero-server-upgrade-crds
+      initContainers:
+        - name: kubectl
+          image: "docker.io/bitnami/kubectl:1.30"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+          args:
+            - -c
+            - cp `which sh` /tmp && cp `which kubectl` /tmp
+          volumeMounts:
+            - mountPath: /tmp
+              name: crds
+      containers:
+        - name: velero
+          image: "velero/velero:v1.14.0"
+          imagePullPolicy: IfNotPresent
+          command:
+            - /tmp/sh
+          args:
+            - -c
+            - /velero install --crds-only --dry-run -o yaml | /tmp/kubectl apply -f -
+          volumeMounts:
+            - mountPath: /tmp
+              name: crds
+      volumes:
+        - name: crds
+          emptyDir: {}
+      restartPolicy: OnFailure
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: kubermatic.io/type
+                operator: In
+                values:
+                - stable
+            weight: 100
