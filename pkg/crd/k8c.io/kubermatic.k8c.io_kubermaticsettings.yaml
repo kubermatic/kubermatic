@@ -263,6 +263,28 @@ spec:
                   type: boolean
                 restrictProjectDeletion:
                   type: boolean
+                staticLabels:
+                  description: StaticLabels are a list of labels that can be used for the clusters.
+                  items:
+                    description: StaticLabel is a label that can be used for the clusters.
+                    properties:
+                      default:
+                        type: boolean
+                      key:
+                        type: string
+                      protected:
+                        type: boolean
+                      values:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                      - default
+                      - key
+                      - protected
+                      - values
+                    type: object
+                  type: array
                 userProjectsLimit:
                   description: UserProjectsLimit is the maximum number of projects a user can create.
                   format: int64

@@ -126,6 +126,9 @@ type SettingSpec struct {
 	// DisableChangelogPopup disables the changelog popup in KKP dashboard.
 	DisableChangelogPopup bool `json:"disableChangelogPopup,omitempty"`
 
+	// StaticLabels are a list of labels that can be used for the clusters.
+	StaticLabels []StaticLabel `json:"staticLabels,omitempty"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
@@ -218,6 +221,14 @@ type MachineDeploymentOptions struct {
 type DefaultProjectResourceQuota struct {
 	// Quota specifies the default CPU, Memory and Storage quantities for all the projects.
 	Quota ResourceDetails `json:"quota,omitempty"`
+}
+
+// StaticLabel is a label that can be used for the clusters.
+type StaticLabel struct {
+	Key       string   `json:"key"`
+	Values    []string `json:"values"`
+	Default   bool     `json:"default"`
+	Protected bool     `json:"protected"`
 }
 
 // +kubebuilder:object:generate=true
