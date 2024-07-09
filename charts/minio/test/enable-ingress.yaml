@@ -14,8 +14,4 @@
 
 minio:
   ingress:
-    class: "nginx"
-
-  certIssuer:
-    name: letsencrypt-prod
-    kind: ClusterIssuer
+    enabled: true
