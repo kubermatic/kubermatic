@@ -13,97 +13,58 @@
 # limitations under the License.
 
 minio:
-  # list of image pull secret references, e.g.
-  # imagePullSecrets:
-  #   - name: docker-io-pull-secret
-  #   - name: quay-io-pull-secret
-  imagePullSecrets: []
+  mode: standalone
 
-  image:
-    repository: quay.io/minio/minio
-    tag: RELEASE.2023-05-04T21-44-30Z
-  storeSize: 100Gi
+  persistence:
+    size: 100Gi
+    # If your cluster does not have a default storage class,
+    # you can specify the class to use for Minio. Note that
+    # you cannot change this later on without purging the
+    # chart and losing data.
+    # storageClass: hdd
 
-  # The is required to enable the BackupRestore controller so it can backup
-  # and restore from the local minio deployment. The TLS certificates should be
-  # signed by the global KKP CA.
-  # If you are enabling it, make sure to enable prometheus scraping for minio as well.
-  certificateSecret: "" # tls secret used by minio.
+  minioConsolePort: 80
 
-  # Management Console for Minio Access
-  console:
-    # configure a port enables the console
-    port: 80
+  # optional: enable an ingress to expose Minio publicly
+  ingress:
+    enabled: false
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - minio.kkp.example.com
+    tls:
+      - secretName: minio-tls
+        hosts:
+          - minio.kkp.example.com
 
-  # These settings are required. Keys must be alphanumeric.
-  credentials:
-    accessKey: "" # 32 byte long
-    secretKey: "" # 64 byte long
-
-    # When set to true, a Secret will be created in the given namespace.
-    # Kubermatic requires an "kubermatic-s3-credentials" Secret in the kube-system
-    # namespace to perform usercluster etcd snapshots, _if_ the default
-    # backup containers are used (see KubermaticConfiguration).
-    # Otherwise, this can be disabled for example by setting
-    # `--set "minio.credentials.secret=null"` when running Helm.
-    secret:
-      name: kubermatic-s3-credentials
-      namespace: kube-system
-
-  flags:
+  extraArgs:
     # Set to true to enable Minio's strict S3 compatibility mode.
     # See https://github.com/minio/minio/pull/7609 for more information.
-    compat: false
-
+    - '--compat'
     # hide sensitive information from logging
-    anonymous: false
+    - '--anonymous'
 
-  # Optional: Expose Minio external
-  ingress:
-    # configure a host name enables the ingress deployment
-    server:
-      host: "minio.kkp.example.com"
-    console:
-      host: "minio-console.kkp.example.com"
-    # if set to "non-existent", no Ingress resource will be created
-    class: "non-existent"
+  requests:
+    cpu: 100m
+    memory: 32Mi
+  limits:
+    cpu: 1
+    memory: 512Mi
 
-  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
-  certIssuer: null
-  # If you want to deploy a certificate using cert-manager
-  # uncomment the next lines and remove certIssuer configuration above.
-  # certIssuer:
-  #   name: letsencrypt-prod
-  #   kind: ClusterIssuer
+  tolerations:
+    - operator: Exists
+      key: kubermatic.io/stable
+  nodeSelector:
+    kubermatic.io/stable: "true"
 
-  backup:
-    enabled: true
-    image:
-      repository: quay.io/kubermatic/util
-      tag: 2.5.0
-
-  # If your cluster does not have a default storage class,
-  # you can specify the class to use for Minio. Note that
-  # you cannot change this later on without purging the
-  # chart and losing data.
-  #storageClass: hdd
-
-  resources:
-    minio:
-      requests:
-        cpu: 100m
-        memory: 32Mi
-      limits:
-        cpu: 1
-        memory: 512Mi
-    backup:
-      requests:
-        cpu: 50m
-        memory: 32Mi
-      limits:
-        cpu: 1
-        memory: 1500Mi
-
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
+exportRootCredentials:
+  # When set to true, a Secret will be created in the given namespace.
+  # Kubermatic requires an "kubermatic-s3-credentials" Secret in the kube-system
+  # namespace to perform usercluster etcd snapshots, _if_ the default
+  # backup containers are used (see KubermaticConfiguration).
+  # Otherwise, this can be disabled for example by setting
+  # `--set "minio.credentials.secret=null"` when running Helm.
+  enabled: true
+  name: kubermatic-s3-credentials
+  namespace: kube-system
