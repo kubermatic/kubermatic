@@ -15,6 +15,10 @@
 minio:
   mode: standalone
 
+  # Root credentials must be provided. These are equivalent to access key + secret key.
+  rootUser: ""
+  rootPassword: ""
+
   persistence:
     size: 100Gi
     # If your cluster does not have a default storage class,
@@ -22,8 +26,6 @@ minio:
     # you cannot change this later on without purging the
     # chart and losing data.
     # storageClass: hdd
-
-  minioConsolePort: 80
 
   # optional: enable an ingress to expose Minio publicly
   ingress:
@@ -52,19 +54,13 @@ minio:
     cpu: 1
     memory: 512Mi
 
-  tolerations:
-    - operator: Exists
-      key: kubermatic.io/stable
-  nodeSelector:
-    kubermatic.io/stable: "true"
-
-exportRootCredentials:
-  # When set to true, a Secret will be created in the given namespace.
-  # Kubermatic requires an "kubermatic-s3-credentials" Secret in the kube-system
-  # namespace to perform usercluster etcd snapshots, _if_ the default
-  # backup containers are used (see KubermaticConfiguration).
-  # Otherwise, this can be disabled for example by setting
-  # `--set "minio.credentials.secret=null"` when running Helm.
-  enabled: true
-  name: kubermatic-s3-credentials
-  namespace: kube-system
+  exportRootCredentials:
+    # When set to true, a Secret will be created in the given namespace.
+    # Kubermatic requires an "kubermatic-s3-credentials" Secret in the kube-system
+    # namespace to perform usercluster etcd snapshots, _if_ the default
+    # backup containers are used (see KubermaticConfiguration).
+    # Otherwise, this can be disabled for example by setting
+    # `--set "minio.credentials.secret=null"` when running Helm.
+    enabled: true
+    name: kubermatic-s3-credentials
+    namespace: kube-system
