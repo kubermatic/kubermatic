@@ -2139,8 +2139,8 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.EnableAuditWebhook != nil {
-		in, out := &in.EnableAuditWebhook, &out.EnableAuditWebhook
+	if in.EnforcedAuditWebhookSettings != nil {
+		in, out := &in.EnforcedAuditWebhookSettings, &out.EnforcedAuditWebhookSettings
 		*out = new(AuditWebhookBackendSettings)
 		(*in).DeepCopyInto(*out)
 	}
