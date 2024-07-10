@@ -136,16 +136,16 @@ func AWSCCMVersion(version semver.Semver) string {
 
 	switch version.MajorMinor() {
 	case v126:
-		return "v1.26.10"
+		return "v1.26.13"
 	case v127:
-		return "v1.27.6"
+		return "v1.27.9"
 	case v128:
-		return "v1.28.5"
+		return "v1.28.9"
 	case v129:
-		fallthrough
+		return "v1.29.6"
 	case v130:
 		fallthrough
 	default:
-		return "v1.29.2"
+		return "v1.30.3"
 	}
 }
