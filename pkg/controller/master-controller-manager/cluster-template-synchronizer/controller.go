@@ -181,6 +181,7 @@ func clusterTemplateReconcilerFactory(template *kubermaticv1.ClusterTemplate) re
 			c.Spec = template.Spec
 			c.Labels = template.Labels
 			c.Annotations = template.Annotations
+			c.ClusterAnnotations = template.ClusterAnnotations
 			c.InheritedClusterLabels = template.InheritedClusterLabels
 			c.Credential = template.Credential
 			return c, nil
