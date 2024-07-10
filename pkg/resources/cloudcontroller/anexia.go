@@ -35,7 +35,7 @@ import (
 
 const (
 	AnexiaCCMDeploymentName = "anx-cloud-controller-manager"
-	anexiaCCMVersion        = "1.5.5"
+	anexiaCCMVersion        = "1.5.6"
 )
 
 func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
