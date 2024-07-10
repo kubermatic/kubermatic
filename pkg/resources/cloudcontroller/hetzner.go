@@ -32,7 +32,7 @@ import (
 
 const (
 	HetznerCCMDeploymentName = "hcloud-cloud-controller-manager"
-	hetznerCCMVersion        = "v1.19.0" // https://github.com/hetznercloud/hcloud-cloud-controller-manager#versioning-policy
+	hetznerCCMVersion        = "v1.20.0" // https://github.com/hetznercloud/hcloud-cloud-controller-manager#versioning-policy
 )
 
 var (
@@ -73,8 +73,7 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 				{
 					Name:  ccmContainerName,
 					Image: registry.Must(data.RewriteImage(resources.RegistryDocker + "/hetznercloud/hcloud-cloud-controller-manager:" + hetznerCCMVersion)),
-					Command: []string{
-						"/bin/hcloud-cloud-controller-manager",
+					Args: []string{
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-provider=hcloud",
 						"--allow-untagged-cloud",
