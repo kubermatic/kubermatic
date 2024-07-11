@@ -61,7 +61,7 @@ var (
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
 	// by the validation webhook for backward compatibility.
 	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.8", "v3.19", "v3.20", "v3.21", "v3.22", "v3.23", "v3.24", "v3.25"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.19", "v3.20", "v3.21", "v3.22", "v3.23", "v3.24", "v3.25"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"v1.11",
 			"v1.12",
@@ -90,12 +90,6 @@ type AllowedCNIVersionTransition struct {
 // Apart from these, one minor version change is allowed for each CNI.
 var allowedCNIVersionTransitions = map[kubermaticv1.CNIPluginType][]AllowedCNIVersionTransition{
 	kubermaticv1.CNIPluginTypeCanal: {
-		// allow upgrade from Canal v3.8 to any newer Canal version
-		{
-			K8sVersion:    "", // any
-			OldCNIVersion: "= 3.8",
-			NewCNIVersion: "> 3.8",
-		},
 		// allow upgrade to Canal v3.22 necessary for k8s >= v1.23
 		{
 			K8sVersion:    ">= 1.23",
