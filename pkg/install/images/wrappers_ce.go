@@ -19,11 +19,12 @@ limitations under the License.
 package images
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 // getAdditionalImagesFromReconcilers returns the images used by the reconcilers for Enterprise Edition addons/components.
 // Since this is the Community Edition, this function is no-op and would always return nil,nil.
-func getAdditionalImagesFromReconcilers(_ *resources.TemplateData) ([]string, error) {
+func getAdditionalImagesFromReconcilers(_ *resources.TemplateData, _ *kubermaticv1.Seed) ([]string, error) {
 	return nil, nil
 }

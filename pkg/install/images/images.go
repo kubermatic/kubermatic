@@ -403,9 +403,6 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 
 	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
-	if mp := metering.MeteringPrometheusReconciler(templateData.RewriteImage, seed); mp != nil {
-		statefulsetReconcilers = append(statefulsetReconcilers, mp)
-	}
 
 	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false, kubermaticVersions)
 	deploymentReconcilers = append(deploymentReconcilers, monitoring.GetDeploymentReconcilers(templateData)...)
@@ -482,7 +479,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	}
 
 	// Add images for Enterprise Edition addons/components.
-	additionalImages, err := getAdditionalImagesFromReconcilers(templateData)
+	additionalImages, err := getAdditionalImagesFromReconcilers(templateData, seed)
 	if err != nil {
 		return nil, err
 	}
