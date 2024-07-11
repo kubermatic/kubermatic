@@ -52,7 +52,7 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData, se
 	}
 	images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
 
-	_, stsCreator := metering.MeteringPrometheusReconciler(templateData.RewriteImage, seed)()
+	_, stsCreator := metering.MeteringPrometheusReconciler(templateData.RewriteImage, templateData.Seed())()
 	statefulset, err := stsCreator(&appsv1.StatefulSet{})
 	if err != nil {
 		return nil, err

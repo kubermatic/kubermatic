@@ -362,12 +362,17 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
-	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle)
+	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
+	if err != nil {
+		return nil, fmt.Errorf("failed to default Seed: %w", err)
+	}
+
+	templateData, err := getTemplateData(config, clusterVersion, cloudSpec, cniPlugin, konnectivityEnabled, kubermaticVersions, caBundle, seed)
 	if err != nil {
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromReconcilers(log, templateData, config, kubermaticVersions)
+	creatorImages, err := getImagesFromReconcilers(log, templateData, config, kubermaticVersions, seed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %w", err)
 	}
@@ -395,12 +400,7 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	return images, nil
 }
 
-func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	seed, err := defaulting.DefaultSeed(&kubermaticv1.Seed{}, config, zap.NewNop().Sugar())
-	if err != nil {
-		return nil, fmt.Errorf("failed to default Seed: %w", err)
-	}
-
+func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions, seed *kubermaticv1.Seed) (images []string, err error) {
 	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
@@ -500,7 +500,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, seed *kubermaticv1.Seed) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	caBundleConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -699,13 +699,20 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 
+	meteringConfig := &kubermaticv1.MeteringConfiguration{
+		RetentionDays:    defaulting.DefaultMeteringRetentionDays,
+		StorageSize:      defaulting.DefaultMeteringStorageSize,
+		StorageClassName: "mock-storage-class",
+	}
+	seed.Spec.Metering = meteringConfig
+
 	return resources.NewTemplateDataBuilder().
 		WithKubermaticConfiguration(config).
 		WithContext(context.Background()).
 		WithClient(fakeDynamicClient).
 		WithCluster(fakeCluster).
 		WithDatacenter(datacenter).
-		WithSeed(&kubermaticv1.Seed{}).
+		WithSeed(seed).
 		WithNodeAccessNetwork("192.0.2.0/24").
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithKubermaticImage(defaulting.DefaultKubermaticImage).
