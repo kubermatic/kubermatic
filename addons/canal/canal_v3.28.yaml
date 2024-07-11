@@ -4844,7 +4844,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: d'{{ Image "quay.io/calico/cni:v3.28.0" }}'
+          image: '{{ Image "quay.io/calico/cni:v3.28.0" }}'
           imagePullPolicy: IfNotPresent
           command: ["/opt/cni/bin/install"]
           envFrom:
