@@ -22,7 +22,6 @@ import (
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -50,13 +49,5 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 		return nil, err
 	}
 	images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
-
-	_, stsCreator := prometheus.StatefulSetReconciler(templateData)()
-	sts, err := stsCreator(&appsv1.StatefulSet{})
-	if err != nil {
-		return nil, err
-	}
-	images = append(images, getImagesFromPodSpec(sts.Spec.Template.Spec)...)
-
 	return images, err
 }

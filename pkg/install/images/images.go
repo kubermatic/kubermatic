@@ -37,7 +37,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
-
 	"k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
@@ -56,6 +55,7 @@ import (
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	meteringprometheus "k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
@@ -403,6 +403,9 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 
 	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
+	if mp := meteringprometheus.PrometheusStatefulSet(templateData.RewriteImage, seed); mp != nil {
+		statefulsetReconcilers = append(statefulsetReconcilers, mp)
+	}
 
 	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false, kubermaticVersions)
 	deploymentReconcilers = append(deploymentReconcilers, monitoring.GetDeploymentReconcilers(templateData)...)
