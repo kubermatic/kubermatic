@@ -22,6 +22,7 @@ import (
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -35,20 +36,27 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 	}
 
 	for _, createFunc := range deploymentReconcilers {
-		_, creator := createFunc()
-		deployment, err := creator(&appsv1.Deployment{})
+		_, dpCreator := createFunc()
+		deployment, err := dpCreator(&appsv1.Deployment{})
 		if err != nil {
 			return nil, err
 		}
 		images = append(images, getImagesFromPodSpec(deployment.Spec.Template.Spec)...)
 	}
 
-	_, creator := velero.DaemonSetReconciler(templateData)()
-	daemonset, err := creator(&appsv1.DaemonSet{})
+	_, dsCreator := velero.DaemonSetReconciler(templateData)()
+	daemonset, err := dsCreator(&appsv1.DaemonSet{})
 	if err != nil {
 		return nil, err
 	}
 	images = append(images, getImagesFromPodSpec(daemonset.Spec.Template.Spec)...)
+
+	_, stsCreator := prometheus.StatefulSetReconciler(templateData)()
+	sts, err := stsCreator(&appsv1.StatefulSet{})
+	if err != nil {
+		return nil, err
+	}
+	images = append(images, getImagesFromPodSpec(sts.Spec.Template.Spec)...)
 
 	return images, err
 }
