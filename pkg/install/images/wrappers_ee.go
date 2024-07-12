@@ -19,7 +19,6 @@ limitations under the License.
 package images
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
@@ -30,7 +29,7 @@ import (
 )
 
 // getAdditionalImagesFromReconcilers returns the images used by the reconcilers for Enterprise Edition addons/components.
-func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData, seed *kubermaticv1.Seed) (images []string, err error) {
+func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (images []string, err error) {
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelb.DeploymentReconciler(templateData),
 		velero.DeploymentReconciler(templateData),

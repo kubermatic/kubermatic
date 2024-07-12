@@ -479,7 +479,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	}
 
 	// Add images for Enterprise Edition addons/components.
-	additionalImages, err := getAdditionalImagesFromReconcilers(templateData, seed)
+	additionalImages, err := getAdditionalImagesFromReconcilers(templateData)
 	if err != nil {
 		return nil, err
 	}
