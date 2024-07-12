@@ -59,7 +59,7 @@ cluster-autoscaler:
 	mkdir -p cluster-autoscaler
 	cat cluster-autoscaler/_header.txt > $(OUTPUT_FILE)
 	helm --namespace kube-system template cluster-autoscaler autoscaler/cluster-autoscaler \
-	  --version 9.36.0 \
+	  --version 9.37.0 \
 	  --set 'cloudProvider=clusterapi' \
 	  --set 'autoDiscovery.labels[0].namespace=kube-system' \
 	  --set 'extraEnv.CAPI_GROUP=cluster.k8s.io' \

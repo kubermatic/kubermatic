@@ -17,19 +17,19 @@
 
 {{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.6" }}
+{{ $version = "v1.26.8" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.5" }}
+{{ $version = "v1.27.8" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.2" }}
+{{ $version = "v1.28.5" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.29" }}
-{{ $version = "v1.29.0" }}
+{{ $version = "v1.29.3" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.30" }}
-{{ $version = "v1.29.0" }}
+{{ $version = "v1.30.1" }}
 {{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
@@ -73,8 +73,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -93,8 +92,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 automountServiceAccountToken: true
@@ -107,8 +105,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
 rules:
   - apiGroups:
@@ -273,8 +270,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -293,8 +289,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 rules:
@@ -323,8 +318,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 roleRef:
@@ -344,8 +338,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -369,8 +362,7 @@ metadata:
     app.kubernetes.io/instance: "cluster-autoscaler"
     app.kubernetes.io/name: "clusterapi-cluster-autoscaler"
     app.kubernetes.io/managed-by: "Helm"
-    app.kubernetes.io/version: "1.29.0"
-    helm.sh/chart: "cluster-autoscaler-9.36.0"
+    helm.sh/chart: "cluster-autoscaler-9.37.0"
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
