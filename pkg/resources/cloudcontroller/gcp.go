@@ -226,12 +226,12 @@ func GCPCCMVersion(version semver.Semver) string {
 	case v127:
 		return "v27.1.6"
 	case v128:
-		fallthrough
+		return "v28.2.1"
 	case v129:
-		fallthrough
+		return "v29.0.0"
 	case v130:
 		fallthrough
 	default:
-		return "v28.2.1"
+		return "v30.0.0"
 	}
 }
