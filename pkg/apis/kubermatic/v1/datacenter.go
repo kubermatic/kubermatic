@@ -368,6 +368,9 @@ type EnvoyLoadBalancerService struct {
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider.
 	Annotations map[string]string `json:"annotations,omitempty"`
+	// Labels are used to further tweak the LoadBalancer integration with the
+	// cloud provider.
+	Labels map[string]string `json:"labels,omitempty"`
 	// SourceRanges will restrict loadbalancer service to IP ranges specified using CIDR notation like 172.25.0.0/16.
 	// This field will be ignored if the cloud-provider does not support the feature.
 	// More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/

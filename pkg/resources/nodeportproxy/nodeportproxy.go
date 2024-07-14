@@ -432,6 +432,13 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 				}
 			}
 
+			// Copy custom labels specified for the loadBalancer Service.
+			if seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Labels != nil {
+				for k, v := range seed.Spec.NodeportProxy.Envoy.LoadBalancerService.Labels {
+					s.Labels[k] = v
+				}
+			}
+
 			// set of Source IP ranges
 			sourceIPList := sets.Set[string]{}
 
