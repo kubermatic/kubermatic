@@ -98,7 +98,6 @@ func testAddonsCanBeApplied(t *testing.T, addons map[string]*addon.Addon) {
 }
 
 func testAddonCanBeApplied(t *testing.T, addonName string, provider kubermaticv1.ProviderType, allAddons map[string]*addon.Addon) {
-	t.Parallel()
 	_, client := createTestEnv(t)
 	ctx := context.Background()
 
@@ -139,8 +138,6 @@ func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[str
 }
 
 func testAddonCanBeUpgraded(t *testing.T, addonName string, provider kubermaticv1.ProviderType, previousAddons, currentAddons map[string]*addon.Addon) {
-	t.Parallel()
-
 	_, client := createTestEnv(t)
 	ctx := context.Background()
 

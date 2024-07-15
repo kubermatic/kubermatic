@@ -1,4 +1,4 @@
-# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,50 +11,27 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Source: https://github.com/kubernetes-sigs/azurefile-csi-driver/blob/v1.29.2/deploy/v1.29.2/csi-azurefile-driver.yaml
 
-{{ if .Cluster.Features.Has "externalCloudProvider" }}
+# This file was generated, DO NOT EDIT.
+# Run `make` instead.
+
 {{ if eq .Cluster.CloudProviderName "azure" }}
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
 
 {{ $version := "UNSUPPORTED" }}
-{{ $snapshot := "UNSUPPORTED" }}
 
 {{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.6" }}
-{{ $snapshot = "v5.0.1" }}
+{{ $version = "v1.26.9" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
-{{ $version = "v1.27.3" }}
-{{ $snapshot = "v5.0.1" }}
+{{ $version = "v1.27.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.3" }}
-{{ $snapshot = "v6.2.1" }}
+{{ $version = "v1.28.8" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.29" }}
-{{ $version = "v1.29.4" }}
-{{ $snapshot = "v6.2.1" }}
+{{ $version = "v1.29.6" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.30" }}
 {{ $version = "v1.30.1" }}
-{{ $snapshot = "v6.2.1" }}
-{{ end }}
-
----
-apiVersion: storage.k8s.io/v1
-kind: CSIDriver
-metadata:
-  name: file.csi.azure.com
-  annotations:
-    csiDriver: {{ $version | quote }}
-    snapshot: {{ $snapshot | quote }}
-spec:
-  attachRequired: false
-  podInfoOnMount: true
-  volumeLifecycleModes:
-    - Persistent
-    - Ephemeral
-  fsGroupPolicy: ReadWriteOnceWithFSType
-{{ end }}
 {{ end }}
