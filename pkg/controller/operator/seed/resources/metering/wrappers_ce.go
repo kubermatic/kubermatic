@@ -38,3 +38,8 @@ func ReconcileMeteringResources(_ context.Context, _ ctrlruntimeclient.Client, _
 func CronJobReconciler(_ string, _ *kubermaticv1.MeteringReportConfiguration, _ string, _ registry.ImageRewriter, _ *kubermaticv1.Seed) reconciling.NamedCronJobReconcilerFactory {
 	return nil
 }
+
+// MeteringPrometheusReconciler returns the func to create/update the metering prometheus statefulset. Available only for ee.
+func MeteringPrometheusReconciler(_ registry.ImageRewriter, _ *kubermaticv1.Seed) reconciling.NamedStatefulSetReconcilerFactory {
+	return nil
+}
