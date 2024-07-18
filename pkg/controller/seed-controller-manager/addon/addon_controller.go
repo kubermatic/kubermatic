@@ -70,11 +70,8 @@ const (
 	addonLabelKey                = "kubermatic-addon"
 	cleanupFinalizerName         = "cleanup-manifests"
 	addonEnsureLabelKey          = "addons.kubermatic.io/ensure"
-	migratedHetznerCSIAddon      = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
-	migratedVsphereCSIAddon      = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
-	migratedAzureCSIAddon        = "kubermatic.k8c.io/migrated-azure-csi-addon"
 	csiAddonStorageClassLabel    = "kubermatic-addon=csi"
-	CSIAddonName                 = "csi"
+	csiAddonName                 = "csi"
 	pvMigrationAnnotation        = "pv.kubernetes.io/migrated-to"
 	defaultStorageClassAddonName = "default-storage-class"
 )
@@ -717,43 +714,26 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to create command: %w", err)
 	}
 
-	if addon.Name == "csi" {
-		ver := r.versions.Kubermatic
+	ver := r.versions.KubermaticCommit
+	lastSuccess := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
 
-		var annotation string
-
-		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+	if lastSuccess.KubermaticVersion != ver {
+		if addon.Name == csiAddonName && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 			switch {
-			case cluster.Spec.Cloud.Hetzner != nil && cluster.Annotations[migratedHetznerCSIAddon] != ver:
+			case cluster.Spec.Cloud.Hetzner != nil:
 				if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 				}
 
-				annotation = migratedHetznerCSIAddon
-
-			case cluster.Spec.Cloud.VSphere != nil && cluster.Annotations[migratedVsphereCSIAddon] != ver:
+			case cluster.Spec.Cloud.VSphere != nil:
 				if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 				}
 
-				annotation = migratedVsphereCSIAddon
-
-			case cluster.Spec.Cloud.Azure != nil && cluster.Annotations[migratedAzureCSIAddon] != ver:
+			case cluster.Spec.Cloud.Azure != nil:
 				if err := r.migrateAzureCSIRBAC(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate Azure CSI RBAC: %w", err)
 				}
-
-				annotation = migratedAzureCSIAddon
-			}
-		}
-
-		if annotation != "" {
-			kubernetes.EnsureAnnotations(cluster, map[string]string{
-				annotation: ver,
-			})
-
-			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("Failed to set cluster annotation", zap.Error(err), "annotation", annotation)
 			}
 		}
 	}
@@ -766,12 +746,13 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 
-	if addon.Name == CSIAddonName {
+	if addon.Name == csiAddonName {
 		err := r.csiAddonInUseStatus(ctx, log, cluster)
 		if err != nil {
-			return fmt.Errorf("failed to update csi addon status %w", err)
+			return fmt.Errorf("failed to update %s addon status: %w", csiAddonName, err)
 		}
 	}
+
 	return nil
 }
 
@@ -818,7 +799,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
-	if addon.Name == CSIAddonName {
+	if addon.Name == csiAddonName {
 		oldCluster := cluster.DeepCopy()
 		_, ok := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse]
 		if ok {
