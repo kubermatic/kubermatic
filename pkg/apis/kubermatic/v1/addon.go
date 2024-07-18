@@ -98,7 +98,7 @@ type AddonList struct {
 // +kubebuilder:validation:Enum=New;Healthy;Unhealthy
 type AddonPhase string
 
-// These are the valid phases of a project.
+// These are the valid phases of an addon.
 const (
 	AddonNew       AddonPhase = "New"
 	AddonHealthy   AddonPhase = "Healthy"
@@ -127,6 +127,7 @@ type AddonCondition struct {
 	// Last time the condition transitioned from one status to another.
 	// +optional
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
-	// KubermaticVersion current KKP version.
+	// KubermaticVersion is the version of KKP that last _successfully_ reconciled this
+	// addon.
 	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
 }
