@@ -127,4 +127,6 @@ type AddonCondition struct {
 	// Last time the condition transitioned from one status to another.
 	// +optional
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// KubermaticVersion current KKP version.
+	KubermaticVersion string `json:"kubermaticVersion,omitempty"`
 }

@@ -138,6 +138,9 @@ spec:
                 conditions:
                   additionalProperties:
                     properties:
+                      kubermaticVersion:
+                        description: KubermaticVersion current KKP version.
+                        type: string
                       lastHeartbeatTime:
                         description: Last time we got an update on a given condition.
                         format: date-time
