@@ -146,10 +146,11 @@ func AdmissionControllerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfigu
 }
 
 func AdmissionControllerPDBReconciler() reconciling.NamedPodDisruptionBudgetReconcilerFactory {
-	minAvailable := intstr.FromInt(1)
+	maxUnavailable := intstr.FromInt(1)
 	return func() (string, reconciling.PodDisruptionBudgetReconciler) {
 		return AdmissionControllerName, func(pdb *policyv1.PodDisruptionBudget) (*policyv1.PodDisruptionBudget, error) {
-			pdb.Spec.MinAvailable = &minAvailable
+			pdb.Spec.MinAvailable = nil // reset a value previously set by KKP <2.25.7
+			pdb.Spec.MaxUnavailable = &maxUnavailable
 			pdb.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: appPodLabels(AdmissionControllerName),
 			}
