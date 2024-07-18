@@ -249,9 +249,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := addonReconcileWrapper(
+	result, err := r.addonReconcileWrapper(
 		ctx,
-		r.Client,
 		addon,
 		kubermaticv1.AddonReconciledSuccessfully,
 		func(ctx context.Context) (*reconcile.Result, error) {
@@ -293,9 +292,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, nil
 }
 
-func addonReconcileWrapper(
+func (r *Reconciler) addonReconcileWrapper(
 	ctx context.Context,
-	client ctrlruntimeclient.Client,
 	addon *kubermaticv1.Addon,
 	conditionType kubermaticv1.AddonConditionType,
 	reconcile func(ctx context.Context) (*reconcile.Result, error),
@@ -309,8 +307,8 @@ func addonReconcileWrapper(
 	}
 
 	errs := []error{err}
-	err = kubermaticv1helper.UpdateAddonStatus(ctx, client, addon, func(a *kubermaticv1.Addon) {
-		setAddonCondition(a, conditionType, reconcilingStatus)
+	err = kubermaticv1helper.UpdateAddonStatus(ctx, r.Client, addon, func(a *kubermaticv1.Addon) {
+		r.setAddonCondition(a, conditionType, reconcilingStatus)
 		a.Status.Phase = getAddonPhase(a)
 	})
 	if ctrlruntimeclient.IgnoreNotFound(err) != nil {
@@ -788,7 +786,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 
 	oldAddon := addon.DeepCopy()
 
-	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	r.setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	addon.Status.Phase = getAddonPhase(addon)
 
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
@@ -866,7 +864,7 @@ func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
 	return fmt.Sprintf("%s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
 }
 
-func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
+func (r *Reconciler) setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
 	now := metav1.Now()
 
 	condition, exists := a.Status.Conditions[condType]
@@ -876,6 +874,10 @@ func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditi
 
 	condition.Status = status
 	condition.LastHeartbeatTime = now
+
+	if status == corev1.ConditionTrue {
+		condition.KubermaticVersion = r.versions.KubermaticCommit
+	}
 
 	if a.Status.Conditions == nil {
 		a.Status.Conditions = map[kubermaticv1.AddonConditionType]kubermaticv1.AddonCondition{}
