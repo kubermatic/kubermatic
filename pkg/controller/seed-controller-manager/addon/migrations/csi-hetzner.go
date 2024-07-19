@@ -33,15 +33,15 @@ import (
 // Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
 // as a result, the CSDriver resource has to be redeployed
 // https://github.com/kubermatic/kubermatic/issues/12429
-type hetznerCsiMigration struct {
+type csiHetznerMigration struct {
 	nopMigration
 }
 
-func (m *hetznerCsiMigration) Targets(cluster *kubermaticv1.Cluster, addonName string) bool {
+func (m *csiHetznerMigration) Targets(cluster *kubermaticv1.Cluster, addonName string) bool {
 	return addonName == "csi" && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] && cluster.Spec.Cloud.Hetzner != nil
 }
 
-func (m *hetznerCsiMigration) PreApply(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client, userclusterClient ctrlruntimeclient.Client) error {
+func (m *csiHetznerMigration) PreApply(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client, userclusterClient ctrlruntimeclient.Client) error {
 	driver := &storagev1.CSIDriver{}
 	if err := userclusterClient.Get(ctx, types.NamespacedName{Name: "csi.hetzner.cloud"}, driver); apierrors.IsNotFound(err) {
 		return nil

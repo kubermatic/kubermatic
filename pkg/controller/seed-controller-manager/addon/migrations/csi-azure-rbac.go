@@ -31,15 +31,15 @@ import (
 )
 
 // Between v2.24 and v2.25, the roleRef in a ClusterRoleBinding for the Azure CSI changed.
-type azureCsiMigration struct {
+type csiAzureRBACMigration struct {
 	nopMigration
 }
 
-func (m *azureCsiMigration) Targets(cluster *kubermaticv1.Cluster, addonName string) bool {
+func (m *csiAzureRBACMigration) Targets(cluster *kubermaticv1.Cluster, addonName string) bool {
 	return addonName == "csi" && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] && cluster.Spec.Cloud.Azure != nil
 }
 
-func (m *azureCsiMigration) PreApply(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client, userclusterClient ctrlruntimeclient.Client) error {
+func (m *csiAzureRBACMigration) PreApply(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client, userclusterClient ctrlruntimeclient.Client) error {
 	crb := &rbacv1.ClusterRoleBinding{}
 	if err := userclusterClient.Get(ctx, types.NamespacedName{Name: "csi-azuredisk-node-secret-binding"}, crb); apierrors.IsNotFound(err) {
 		return nil

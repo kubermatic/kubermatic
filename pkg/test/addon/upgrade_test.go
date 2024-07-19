@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
+	appsv1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -252,6 +253,9 @@ func createTestEnv(t *testing.T) (*rest.Config, ctrlruntimeclient.Client) {
 		t.Fatalf("Failed to setup scheme: %v", err)
 	}
 	if err := storagev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("Failed to setup scheme: %v", err)
+	}
+	if err := appsv1.AddToScheme(scheme); err != nil {
 		t.Fatalf("Failed to setup scheme: %v", err)
 	}
 

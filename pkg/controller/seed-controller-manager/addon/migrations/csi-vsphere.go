@@ -35,15 +35,15 @@ import (
 // also requires a recreation of the CSIDriver.
 // https://github.com/kubermatic/kubermatic/issues/12801
 // https://github.com/kubermatic/kubermatic/pull/12936
-type vsphereCsiMigration struct {
+type csiVsphereMigration struct {
 	nopMigration
 }
 
-func (m *vsphereCsiMigration) Targets(cluster *kubermaticv1.Cluster, addonName string) bool {
+func (m *csiVsphereMigration) Targets(cluster *kubermaticv1.Cluster, addonName string) bool {
 	return addonName == "csi" && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] && cluster.Spec.Cloud.VSphere != nil
 }
 
-func (m *vsphereCsiMigration) PreApply(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client, userclusterClient ctrlruntimeclient.Client) error {
+func (m *csiVsphereMigration) PreApply(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client, userclusterClient ctrlruntimeclient.Client) error {
 	driver := &storagev1.CSIDriver{}
 	if err := userclusterClient.Get(ctx, types.NamespacedName{Name: "csi.vsphere.vmware.com"}, driver); apierrors.IsNotFound(err) {
 		return nil
