@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -1340,61 +1339,6 @@ func TestHandle(t *testing.T) {
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    kubermaticv1.CNIPluginTypeCilium,
 					Version: "v1.11",
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32000",
-					},
-				},
-			}.BuildPtr(),
-			wantAllowed: true,
-		},
-		{
-			name: "Allow CNIPlugin upgrade from deprecated version (v3.8)",
-			op:   admissionv1.Update,
-			cluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
-				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
-				ExternalCloudProvider: true,
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: ptr.To(true),
-				},
-				CNIPlugin: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCanal),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32000",
-					},
-				},
-			}.Build(),
-			oldCluster: rawClusterGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-				},
-				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
-				ExternalCloudProvider: true,
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: ptr.To(true),
-				},
-				CNIPlugin: &kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCanal,
-					Version: cni.CanalCNILastUnspecifiedVersion,
 				},
 				ComponentSettings: kubermaticv1.ComponentSettings{
 					Apiserver: kubermaticv1.APIServerSettings{
