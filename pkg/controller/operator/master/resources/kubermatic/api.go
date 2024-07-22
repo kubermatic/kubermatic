@@ -200,6 +200,8 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				},
 			}
 
+			volumes = append(volumes, cfg.Spec.API.Volumes...)
+
 			volumeMounts := []corev1.VolumeMount{
 				{
 					Name:      "ca-bundle",
@@ -207,6 +209,8 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 					ReadOnly:  true,
 				},
 			}
+
+			volumeMounts = append(volumeMounts, cfg.Spec.API.VolumeMounts...)
 
 			args := []string{
 				"-logtostderr",
@@ -252,6 +256,9 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.API.DockerTagSuffix)
 			}
 
+			env := common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy)
+			env = append(env, cfg.Spec.API.ExtraEnv...)
+
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
 			d.Spec.Template.Spec.Containers = []corev1.Container{
@@ -260,7 +267,7 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 					Image:   cfg.Spec.API.DockerRepository + ":" + tag,
 					Command: []string{"kubermatic-api"},
 					Args:    args,
-					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),
+					Env:     env,
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "metrics",

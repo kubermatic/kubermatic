@@ -196,7 +196,7 @@ type Seed struct {
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
 	// Status holds the runtime information of the Seed cluster.
-	Status SeedStatus `json:"status,omitempty,omitgenyaml"`
+	Status SeedStatus `json:"status,omitempty,omitempty"`
 }
 
 func (s *Seed) SetDefaults() {
@@ -310,7 +310,7 @@ type SeedSpec struct {
 	//
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
-	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitcegenyaml"`
+	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitempty,ce"`
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
@@ -441,7 +441,7 @@ type DatacenterSpec struct {
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Fake *DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
+	Fake *DatacenterSpecFake `json:"fake,omitempty,omitempty"`
 
 	// Optional: When defined, only users with an e-mail address on the
 	// given domains can make use of this datacenter. You can define multiple
@@ -481,7 +481,7 @@ type DatacenterSpec struct {
 	//
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
-	KubeLB *KubeLBDatacenterSettings `json:"kubelb,omitempty,omitcegenyaml"`
+	KubeLB *KubeLBDatacenterSettings `json:"kubelb,omitempty,omitempty,ce"`
 }
 
 var (

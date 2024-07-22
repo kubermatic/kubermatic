@@ -154,7 +154,7 @@ type KubermaticAPIConfiguration struct {
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
+	DockerTag string `json:"dockerTag,omitempty,omitempty"`
 	// DockerTagSuffix is appended to the KKP version used for referring to the custom Kubermatic API image.
 	// If left empty, either the `DockerTag` if specified or the original Kubermatic API Docker image tag will be used.
 	// With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
@@ -170,6 +170,12 @@ type KubermaticAPIConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the API deployment.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// Volumes sets additional volumes for the API deployment.
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+	// VolumeMounts sets additional volume mounts for the API deployment.
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+	// ExtraEnv allows to set additional environment variables for the API container.
+	ExtraEnv []corev1.EnvVar `json:"extraEnv,omitempty"`
 }
 
 // KubermaticUIConfiguration configures the dashboard.
@@ -182,7 +188,7 @@ type KubermaticUIConfiguration struct {
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	DockerTag string `json:"dockerTag,omitempty,omitgenyaml"`
+	DockerTag string `json:"dockerTag,omitempty,omitempty"`
 	// DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image.
 	// If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used.
 	// With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
@@ -460,13 +466,13 @@ type Update struct {
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Automatic *bool `json:"automatic,omitempty,omitgenyaml"`
+	Automatic *bool `json:"automatic,omitempty,omitempty"`
 	// Automatic controls whether this update is executed automatically
 	// for the worker nodes of all matching user clusters.
 	// ---
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitgenyaml"`
+	AutomaticNodeUpdate *bool `json:"automaticNodeUpdate,omitempty,omitempty"`
 }
 
 // Incompatibility represents a version incompatibility for a user cluster.

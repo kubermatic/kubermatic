@@ -97,6 +97,7 @@ spec:
         # Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings.
         enforcePodSecurityPolicy: false
+        fake: null
         # GCP configures a Google Cloud Platform (GCP) datacenter.
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
@@ -660,3 +661,22 @@ spec:
   # Optional: This can be used to override the DNS name used for this seed.
   # By default the seed name is used.
   seedDNSOverwrite: ""
+# Status holds the runtime information of the Seed cluster.
+status:
+  # Clusters is the total number of user clusters that exist on this seed.
+  clusters: 0
+  # Conditions contains conditions the seed is in, its primary use case is status signaling
+  # between controllers or between controllers and the API.
+  conditions: null
+  # Phase contains a human readable text to indicate the seed cluster status. No logic should be tied
+  # to this field, as its content can change in between KKP releases.
+  phase: ""
+  # Versions contains information regarding versions of components in the cluster and the cluster
+  # itself.
+  versions:
+    # Cluster is the Kubernetes version of the cluster's control plane.
+    cluster: ""
+    # Kubermatic is the version of the currently deployed KKP components. Note that a permanent
+    # version skew between master and seed is not supported and KKP setups should never run for
+    # longer times with a skew between the clusters.
+    kubermatic: ""
