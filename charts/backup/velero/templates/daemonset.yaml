@@ -31,7 +31,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: node-agent
-        # This is label is required for successfull volume backup. Velero uses it to check if the nodeAgent pod is running on the specifc node where the volume is attached or not.
+        # This is label is required for successful volume backup.
+        # Velero uses it to check if the nodeAgent pod is running on the specific node where the volume is attached or not.
         # https://github.com/vmware-tanzu/velero/blob/21beda3c2a87af0b967fea487c735140c765de7d/pkg/nodeagent/node_agent.go#L92
         name: node-agent
       annotations:
