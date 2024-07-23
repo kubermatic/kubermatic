@@ -17,6 +17,16 @@
 - [v2.23.14](#v22314)
 - [v2.23.15](#v22315)
 - [v2.23.16](#v22316)
+- [v2.23.17](#v22317)
+
+## v2.23.17
+
+**GitHub release: [v2.23.17](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.17)**
+
+### Bugfixes
+
+- Fix the pagination in project members table ([#6744](https://github.com/kubermatic/dashboard/pull/6744))
+
 
 ## v2.23.16
 
