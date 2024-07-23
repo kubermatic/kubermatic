@@ -7,6 +7,29 @@
 - [v2.25.4](#v2254)
 - [v2.25.5](#v2255)
 - [v2.25.6](#v2256)
+- [v2.25.7](#v2257)
+
+## v2.25.7
+
+**GitHub release: [v2.25.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.7)**
+
+### Bugfixes
+
+- Add images for metering Prometheus to mirror-images ([#13509](https://github.com/kubermatic/kubermatic/pull/13509))
+- Fix VPA admission-controller PDB blocking evictions ([#13515](https://github.com/kubermatic/kubermatic/pull/13515))
+- Fix an issue with Azure support that prevented successful provisioning of user clusters on some Azure locations ([#13405](https://github.com/kubermatic/kubermatic/pull/13405))
+- Fix mla-gateway Pods not reacting to renewed certificates ([#13472](https://github.com/kubermatic/kubermatic/pull/13472))
+- Fix the pagination in project members table ([#6742](https://github.com/kubermatic/dashboard/pull/6742))
+- When the cluster-backup feature is enabled, KKP will now reconcile a ConfigMap in the `velero` namespace in user clusters. This ConfigMap is used to configure the restore helper image in order to apply KKP's image rewriting mechanism ([#13471](https://github.com/kubermatic/kubermatic/pull/13471))
+
+### Miscellaneous
+
+- Remove prometheus_exporter dashboard from Seed MLA Grafana; it's no longer required ([#13467](https://github.com/kubermatic/kubermatic/pull/13467))
+
+### Updates
+
+- Update Go version to 1.22.5 ([#13485](https://github.com/kubermatic/kubermatic/pull/13485), [#6730](https://github.com/kubermatic/dashboard/pull/6730))
+
 
 ## v2.25.6
 

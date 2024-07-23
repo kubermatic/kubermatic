@@ -11,6 +11,21 @@
 - [v2.24.8](#v2248)
 - [v2.24.9](#v2249)
 - [v2.24.10](#v22410)
+- [v2.24.11](#v22411)
+
+## v2.24.11
+
+**GitHub release: [v2.24.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.11)**
+
+### Bugfixes
+
+- Fix an issue with Azure support that prevented successful provisioning of user clusters on some Azure locations ([#13405](https://github.com/kubermatic/kubermatic/pull/13405))
+- Fix the pagination in project members table ([#6743](https://github.com/kubermatic/dashboard/pull/6743))
+
+### Updates
+
+- Update Go version to 1.21.12 ([#13487](https://github.com/kubermatic/kubermatic/pull/13487), [#6731](https://github.com/kubermatic/dashboard/pull/6731))
+
 
 ## v2.24.10
 
