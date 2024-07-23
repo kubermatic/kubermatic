@@ -207,7 +207,8 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 
 	// If initial values were not loaded from the annotation, use the default values from the ApplicationDefinition
 	if len(initialValues) == 0 {
-		if err := r.parseAppDefDefaultValues(ctx, cluster, initialValues); err != nil {
+		initialValues, err = r.parseAppDefDefaultValues(ctx, cluster)
+		if err != nil {
 			return &reconcile.Result{}, err
 		}
 	}
@@ -287,17 +288,17 @@ func (r *Reconciler) removeCNIValuesAnnotation(ctx context.Context, cluster *kub
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster, values map[string]any) error {
+func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster) (map[string]any, error) {
 	appDef := &appskubermaticv1.ApplicationDefinition{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
+		return nil, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	values, err := appDef.Spec.GetParsedDefaultValues()
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
 	}
-	return nil
+	return values, nil
 }
 
 func (r *Reconciler) ensureCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
