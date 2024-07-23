@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"golang.org/x/exp/maps"
-	"sigs.k8s.io/yaml"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -30,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/yaml"
 )
 
 const (
