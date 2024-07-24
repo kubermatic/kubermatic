@@ -282,10 +282,10 @@ func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
 // Will return an error if both fields are set.
 func (ai *ApplicationDefinitionSpec) GetParsedDefaultValues() (map[string]interface{}, error) {
 	values := make(map[string]interface{})
-	if len(ai.DefaultValues.Raw) > 0 && string(ai.DefaultValues.Raw) != "{}" && ai.DefaultValuesBlock != "" {
+	if !isEmptyRawExtension(ai.DefaultValues) && ai.DefaultValuesBlock != "" {
 		return nil, fmt.Errorf("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
 	}
-	if len(ai.DefaultValues.Raw) > 0 && string(ai.DefaultValues.Raw) != "{}" {
+	if !isEmptyRawExtension(ai.DefaultValues) {
 		err := json.Unmarshal(ai.DefaultValues.Raw, &values)
 		return values, err
 	}
