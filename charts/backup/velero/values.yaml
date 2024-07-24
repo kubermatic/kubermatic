@@ -13,6 +13,9 @@
 # limitations under the License.
 
 velero:
+  # Whether to deploy the node-agent daemonset.
+  deployNodeAgent: true
+
   schedules:
     hourly-cluster:
       schedule: 0 * * * *
