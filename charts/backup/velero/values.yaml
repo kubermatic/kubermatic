@@ -16,6 +16,30 @@ velero:
   # Whether to deploy the node-agent daemonset.
   deployNodeAgent: true
 
+  # Init containers to add to the Velero deployment's pod spec. At least one plugin provider image is required.
+  # If the value is a string then it is evaluated as a template.
+  initContainers:
+  # - name: velero-plugin-for-aws
+  #   image: docker.io/velero/velero-plugin-for-aws:v1.10.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
+  # - name: velero-plugin-for-gcp
+  #   image: docker.io/velero/velero-plugin-for-gcp:v1.10.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
+  # - name: velero-plugin-for-microsoft-azure
+  #   image: docker.io/velero/velero-plugin-for-microsoft-azure:v1.10.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
   schedules:
     hourly-cluster:
       schedule: 0 * * * *
