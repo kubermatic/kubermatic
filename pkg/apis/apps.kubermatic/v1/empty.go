@@ -19,7 +19,7 @@ package v1
 import "k8s.io/apimachinery/pkg/runtime"
 
 // isEmptyRawExtension checks if a RawExtension is empty.
-// In the coniiijkkjjjkkhhhtext of Applications, we consider a RawExtension to
+// In the context of Applications, we consider a RawExtension to be
 // empty, if it is nil, zero characters, or "{}", which is the
 // default empty value from kube-api.
 func isEmptyRawExtension(re *runtime.RawExtension) bool {
