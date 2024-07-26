@@ -39,7 +39,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -213,7 +213,8 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 
 	// If initial values were not loaded from the annotation, use the default values from the ApplicationDefinition
 	if len(initialValues) == 0 {
-		if err := r.parseAppDefDefaultValues(ctx, cluster, initialValues); err != nil {
+		initialValues, err = r.parseAppDefDefaultValues(ctx, cluster)
+		if err != nil {
 			return &reconcile.Result{}, err
 		}
 	}
@@ -293,19 +294,17 @@ func (r *Reconciler) removeCNIValuesAnnotation(ctx context.Context, cluster *kub
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster, values map[string]any) error {
+func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster) (map[string]any, error) {
 	appDef := &appskubermaticv1.ApplicationDefinition{}
 	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
+		return nil, ctrlruntimeclient.IgnoreNotFound(err)
 	}
-	if appDef.Spec.DefaultValues != nil {
-		if len(appDef.Spec.DefaultValues.Raw) > 0 {
-			if err := json.Unmarshal(appDef.Spec.DefaultValues.Raw, &values); err != nil {
-				return fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
-			}
-		}
+
+	values, err := appDef.Spec.GetParsedDefaultValues()
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
 	}
-	return nil
+	return values, nil
 }
 
 func (r *Reconciler) ensureCNIApplicationInstallation(ctx context.Context, cluster *kubermaticv1.Cluster, initialValues map[string]any) error {
@@ -350,11 +349,9 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 
 			// Unmarshal existing values
-			values := make(map[string]any)
-			if len(app.Spec.Values.Raw) > 0 {
-				if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
-					return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
-				}
+			values, err := app.Spec.GetParsedValues()
+			if err != nil {
+				return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
 			}
 
 			// If (and only if) existing values is empty, use the initial values
@@ -376,11 +373,11 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 
 			// Set new values
-			rawValues, err := json.Marshal(values)
+			rawValues, err := yaml.Marshal(values)
 			if err != nil {
 				return app, fmt.Errorf("failed to marshall CNI values: %w", err)
 			}
-			app.Spec.Values = runtime.RawExtension{Raw: rawValues}
+			app.Spec.ValuesBlock = string(rawValues)
 
 			return app, nil
 		}

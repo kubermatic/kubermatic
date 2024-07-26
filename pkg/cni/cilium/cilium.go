@@ -17,7 +17,6 @@ limitations under the License.
 package cilium
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,8 +28,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -215,8 +214,13 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				},
 			}
 
+			// to make it compatible with older cilium controller versions, convert any DefaultValues into DefaultValuesBlock
+			if err := convertDefaultValuesToDefaultValuesBlock(app); err != nil {
+				return app, fmt.Errorf("failed to convert DefaultValues into DefaultValuesBlock: %w", err)
+			}
+
 			// we want to allow overriding the default values, so reconcile them only if nil
-			if app.Spec.DefaultValues == nil {
+			if app.Spec.DefaultValuesBlock == "" || app.Spec.DefaultValuesBlock == "{}" {
 				defaultValues := map[string]any{
 					"operator": map[string]any{
 						"replicas": 1,
@@ -236,11 +240,11 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 						},
 					},
 				}
-				rawValues, err := json.Marshal(defaultValues)
+				rawValues, err := yaml.Marshal(defaultValues)
 				if err != nil {
 					return app, fmt.Errorf("failed to marshall default CNI values: %w", err)
 				}
-				app.Spec.DefaultValues = &runtime.RawExtension{Raw: rawValues}
+				app.Spec.DefaultValuesBlock = string(rawValues)
 			}
 			return app, nil
 		}
@@ -446,4 +450,16 @@ func excludedKeyExists(values map[string]any, keys ...string) bool {
 	}
 
 	return false
+}
+
+func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationDefinition) error {
+	if app.Spec.DefaultValues != nil {
+		oldDefVals, err := yaml.JSONToYAML(app.Spec.DefaultValues.Raw)
+		if err != nil {
+			return err
+		}
+		app.Spec.DefaultValuesBlock = string(oldDefVals)
+		app.Spec.DefaultValues = nil
+	}
+	return nil
 }
