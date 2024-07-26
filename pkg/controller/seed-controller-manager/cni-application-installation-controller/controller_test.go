@@ -18,7 +18,6 @@ package cniapplicationinstallationcontroller
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -36,13 +35,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -266,11 +265,11 @@ func TestReconcile(t *testing.T) {
 				},
 			}
 			if test.appDefinitionDefaultValues != nil {
-				rawValues, err := json.Marshal(test.appDefinitionDefaultValues)
+				rawValues, err := yaml.Marshal(test.appDefinitionDefaultValues)
 				if err != nil {
-					t.Fatalf("Test's appDefinitionDefaultValues marshalling failed: %v", err)
+					t.Fatalf("Test's appDefinitionDefaultValuesBlock marshalling failed: %v", err)
 				}
-				appDef.Spec.DefaultValues = &runtime.RawExtension{Raw: rawValues}
+				appDef.Spec.DefaultValuesBlock = string(rawValues)
 			}
 
 			seedClient := fake.
@@ -287,11 +286,11 @@ func TestReconcile(t *testing.T) {
 						Namespace: cniPluginNamespace,
 					},
 				}
-				rawValues, err := json.Marshal(test.existingAppInstallationValues)
+				rawValues, err := yaml.Marshal(test.existingAppInstallationValues)
 				if err != nil {
 					t.Fatalf("Test's existingAppInstallationValues marshalling failed: %v", err)
 				}
-				appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
+				appInst.Spec.ValuesBlock = string(rawValues)
 				userClusterObjects = append(userClusterObjects, appInst)
 			}
 			userClusterClient := fake.
@@ -347,9 +346,5 @@ func getApplicationInstallationValues(userClusterClient ctrlruntimeclient.Client
 	if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: cniPluginNamespace, Name: kubermaticv1.CNIPluginTypeCilium.String()}, &app); err != nil {
 		return nil, fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err)
 	}
-	values := make(map[string]any)
-	if err := json.Unmarshal(app.Spec.Values.Raw, &values); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal CNI values: %w", err)
-	}
-	return values, nil
+	return app.Spec.GetParsedValues()
 }

@@ -17,11 +17,13 @@ limitations under the License.
 package v1
 
 import (
+	"encoding/json"
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -274,4 +276,19 @@ func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
 		return []byte(ad.DefaultValuesBlock), nil
 	}
 	return nil, nil
+}
+
+// GetParsedDefaultValues parses the values either from the DefaultValues or DefaultValuesBlock field.
+// Will return an error if both fields are set.
+func (ai *ApplicationDefinitionSpec) GetParsedDefaultValues() (map[string]interface{}, error) {
+	values := make(map[string]interface{})
+	if !isEmptyRawExtension(ai.DefaultValues) && ai.DefaultValuesBlock != "" {
+		return nil, fmt.Errorf("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
+	}
+	if !isEmptyRawExtension(ai.DefaultValues) {
+		err := json.Unmarshal(ai.DefaultValues.Raw, &values)
+		return values, err
+	}
+	err := yaml.Unmarshal([]byte(ai.DefaultValuesBlock), &values)
+	return values, err
 }
