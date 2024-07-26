@@ -219,6 +219,11 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				return app, fmt.Errorf("failed to convert DefaultValues into DefaultValuesBlock: %w", err)
 			}
 
+			// to make it compatible with older cilium controller versions, convert any DefaultValues into DefaultValuesBlock
+			if err := convertDefaultValuesToDefaultValuesBlock(app); err != nil {
+				return app, fmt.Errorf("failed to convert DefaultValues into DefaultValuesBlock: %w", err)
+			}
+
 			// we want to allow overriding the default values, so reconcile them only if nil
 			if app.Spec.DefaultValuesBlock == "" || app.Spec.DefaultValuesBlock == "{}" {
 				defaultValues := map[string]any{
