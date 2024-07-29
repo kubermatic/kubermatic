@@ -230,7 +230,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	ctx := context.Background()
 
 	controller := &Reconciler{
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(ctx, log, testAddon, cluster, addonObj)
 	if err != nil {
@@ -290,7 +290,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 
 	controller := &Reconciler{
 		overwriteRegistry:  "bar.io",
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
 	if err != nil {
@@ -333,7 +333,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
 	if err != nil {
@@ -382,7 +382,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	}
 
 	controller := &Reconciler{
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
 	if err != nil {
@@ -408,7 +408,7 @@ func TestController_getAddonManifests(t *testing.T) {
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 	controller := &Reconciler{
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 
 	manifest := runtime.RawExtension{}
@@ -470,7 +470,7 @@ func TestHugeManifest(t *testing.T) {
 	}
 
 	r := &Reconciler{
-		KubeconfigProvider: &fakeKubeconfigProvider{},
+		kubeconfigProvider: &fakeKubeconfigProvider{},
 		addons:             allAddons,
 	}
 	if _, _, _, err := r.setupManifestInteraction(context.Background(), log, testAddon, cluster); err != nil {

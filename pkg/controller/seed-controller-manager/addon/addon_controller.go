@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -70,11 +71,8 @@ const (
 	addonLabelKey                = "kubermatic-addon"
 	cleanupFinalizerName         = "cleanup-manifests"
 	addonEnsureLabelKey          = "addons.kubermatic.io/ensure"
-	migratedHetznerCSIAddon      = "kubermatic.k8c.io/migrated-hetzner-csi-addon"
-	migratedVsphereCSIAddon      = "kubermatic.k8c.io/migrated-vsphere-csi-addon"
-	migratedAzureCSIAddon        = "kubermatic.k8c.io/migrated-azure-csi-addon"
 	csiAddonStorageClassLabel    = "kubermatic-addon=csi"
-	CSIAddonName                 = "csi"
+	csiAddonName                 = "csi"
 	pvMigrationAnnotation        = "pv.kubernetes.io/migrated-to"
 	defaultStorageClassAddonName = "default-storage-class"
 )
@@ -95,7 +93,7 @@ type Reconciler struct {
 	addonVariables       map[string]interface{}
 	overwriteRegistry    string
 	recorder             record.EventRecorder
-	KubeconfigProvider   KubeconfigProvider
+	kubeconfigProvider   KubeconfigProvider
 	versions             kubermatic.Versions
 	addons               map[string]*addon.Addon
 }
@@ -123,7 +121,7 @@ func Add(
 		log:                  log,
 		addonVariables:       addonCtxVariables,
 		addonEnforceInterval: addonEnforceInterval,
-		KubeconfigProvider:   kubeconfigProvider,
+		kubeconfigProvider:   kubeconfigProvider,
 		workerName:           workerName,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		overwriteRegistry:    overwriteRegistry,
@@ -249,9 +247,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := addonReconcileWrapper(
+	result, err := r.addonReconcileWrapper(
 		ctx,
-		r.Client,
 		addon,
 		kubermaticv1.AddonReconciledSuccessfully,
 		func(ctx context.Context) (*reconcile.Result, error) {
@@ -293,9 +290,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, nil
 }
 
-func addonReconcileWrapper(
+func (r *Reconciler) addonReconcileWrapper(
 	ctx context.Context,
-	client ctrlruntimeclient.Client,
 	addon *kubermaticv1.Addon,
 	conditionType kubermaticv1.AddonConditionType,
 	reconcile func(ctx context.Context) (*reconcile.Result, error),
@@ -309,8 +305,8 @@ func addonReconcileWrapper(
 	}
 
 	errs := []error{err}
-	err = kubermaticv1helper.UpdateAddonStatus(ctx, client, addon, func(a *kubermaticv1.Addon) {
-		setAddonCondition(a, conditionType, reconcilingStatus)
+	err = kubermaticv1helper.UpdateAddonStatus(ctx, r.Client, addon, func(a *kubermaticv1.Addon) {
+		r.setAddonCondition(a, conditionType, reconcilingStatus)
 		a.Status.Phase = getAddonPhase(a)
 	})
 	if ctrlruntimeclient.IgnoreNotFound(err) != nil {
@@ -406,7 +402,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		dnsResolverIP = resources.NodeLocalDNSCacheAddress
 	}
 
-	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
+	kubeconfig, err := r.kubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -536,7 +532,7 @@ func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *byt
 
 func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write kubeconfig to disk
-	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
+	kubeconfig, err := r.kubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %w", cluster.Name, err)
 	}
@@ -605,7 +601,7 @@ func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, ma
 // as a result, the CSDriver resource has to be redeployed
 // https://github.com/kubermatic/kubermatic/issues/12429
 func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get kube client: %w", err)
 	}
@@ -632,7 +628,7 @@ func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.Sugar
 // https://github.com/kubermatic/kubermatic/issues/12801
 // https://github.com/kubermatic/kubermatic/pull/12936
 func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get kube client: %w", err)
 	}
@@ -665,7 +661,7 @@ func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.Sugar
 
 // Between v2.24 and v2.25, the roleRef in a ClusterRoleBinding for the Azure CSI changed.
 func (r *Reconciler) migrateAzureCSIRBAC(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get kube client: %w", err)
 	}
@@ -719,43 +715,26 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to create command: %w", err)
 	}
 
-	if addon.Name == "csi" {
-		ver := r.versions.Kubermatic
+	ver := r.versions.KubermaticCommit
+	lastSuccess := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
 
-		var annotation string
-
-		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+	if lastSuccess.KubermaticVersion != ver {
+		if addon.Name == csiAddonName && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 			switch {
-			case cluster.Spec.Cloud.Hetzner != nil && cluster.Annotations[migratedHetznerCSIAddon] != ver:
+			case cluster.Spec.Cloud.Hetzner != nil:
 				if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 				}
 
-				annotation = migratedHetznerCSIAddon
-
-			case cluster.Spec.Cloud.VSphere != nil && cluster.Annotations[migratedVsphereCSIAddon] != ver:
+			case cluster.Spec.Cloud.VSphere != nil:
 				if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
 				}
 
-				annotation = migratedVsphereCSIAddon
-
-			case cluster.Spec.Cloud.Azure != nil && cluster.Annotations[migratedAzureCSIAddon] != ver:
+			case cluster.Spec.Cloud.Azure != nil:
 				if err := r.migrateAzureCSIRBAC(ctx, log, cluster); err != nil {
 					return fmt.Errorf("failed to migrate Azure CSI RBAC: %w", err)
 				}
-
-				annotation = migratedAzureCSIAddon
-			}
-		}
-
-		if annotation != "" {
-			kubernetes.EnsureAnnotations(cluster, map[string]string{
-				annotation: ver,
-			})
-
-			if err := r.Update(ctx, cluster); err != nil {
-				log.Errorw("Failed to set cluster annotation", zap.Error(err), "annotation", annotation)
 			}
 		}
 	}
@@ -768,12 +747,13 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
 
-	if addon.Name == CSIAddonName {
-		err := r.csiAddonInUseStatus(ctx, log, cluster)
+	if addon.Name == csiAddonName {
+		err := r.csiAddonInUseStatus(ctx, cluster)
 		if err != nil {
-			return fmt.Errorf("failed to update csi addon status %w", err)
+			return fmt.Errorf("failed to update %s addon status: %w", csiAddonName, err)
 		}
 	}
+
 	return nil
 }
 
@@ -788,7 +768,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 
 	oldAddon := addon.DeepCopy()
 
-	setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	r.setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	addon.Status.Phase = getAddonPhase(addon)
 
 	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
@@ -820,7 +800,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
 	}
-	if addon.Name == CSIAddonName {
+	if addon.Name == csiAddonName {
 		oldCluster := cluster.DeepCopy()
 		_, ok := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse]
 		if ok {
@@ -836,7 +816,7 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 		// Avoid constructing a client we don't need and just return early
 		return nil, nil
 	}
-	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client for usercluster: %w", err)
 	}
@@ -866,7 +846,7 @@ func formatGVK(gvk kubermaticv1.GroupVersionKind) string {
 	return fmt.Sprintf("%s/%s %s", gvk.Group, gvk.Version, gvk.Kind)
 }
 
-func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
+func (r *Reconciler) setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
 	now := metav1.Now()
 
 	condition, exists := a.Status.Conditions[condType]
@@ -876,6 +856,10 @@ func setAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditi
 
 	condition.Status = status
 	condition.LastHeartbeatTime = now
+
+	if status == corev1.ConditionTrue {
+		condition.KubermaticVersion = r.versions.KubermaticCommit
+	}
 
 	if a.Status.Conditions == nil {
 		a.Status.Conditions = map[kubermaticv1.AddonConditionType]kubermaticv1.AddonCondition{}
@@ -891,8 +875,8 @@ func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
 	return addon.Labels[addonEnsureLabelKey] == "true"
 }
 
-func (r *Reconciler) csiAddonInUseStatus(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	status, reason := r.checkCSIAddonInUse(ctx, log, cluster)
+func (r *Reconciler) csiAddonInUseStatus(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	status, reason := r.checkCSIAddonInUse(ctx, cluster)
 	csiAddonInUse := kubermaticv1.ClusterCondition{
 		Status:            status,
 		KubermaticVersion: r.versions.Kubermatic,
@@ -905,11 +889,12 @@ func (r *Reconciler) csiAddonInUseStatus(ctx context.Context, log *zap.SugaredLo
 	return err
 }
 
-func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (corev1.ConditionStatus, string) {
-	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, cluster *kubermaticv1.Cluster) (corev1.ConditionStatus, string) {
+	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return corev1.ConditionUnknown, fmt.Sprintf("failed to get client for usercluster: %v", err)
 	}
+
 	csiDriverList := &storagev1.CSIDriverList{}
 	csiDriverListOption := &ctrlruntimeclient.ListOptions{
 		Raw: &metav1.ListOptions{
@@ -919,114 +904,91 @@ func (r *Reconciler) checkCSIAddonInUse(ctx context.Context, log *zap.SugaredLog
 
 	// Get CSI drivers created by the csi addon
 	if err := userClusterClient.List(ctx, csiDriverList, csiDriverListOption); err != nil {
-		return corev1.ConditionUnknown, fmt.Sprintf("failed to list csi drivers with %v label: %v", csiAddonStorageClassLabel, err)
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to list CSI drivers with %v label: %v", csiAddonStorageClassLabel, err)
 	}
-	// map to hold csi drivers to storage classes list
-	csiToSC := make(map[string][]string)
-	csiToPV := make(map[string][]string)
-	errMsg := []string{}
-	for i := 0; i < len(csiDriverList.Items); i++ {
-		if !strings.Contains(csiDriverList.Items[i].Name, "csi") {
-			continue
-		}
-		// get all the storage classes that are using the csi driver created by csi addon as provisioner
-		storageCLassList, err := r.storageClassesForProvisioner(ctx, cluster, csiDriverList.Items[i].Name)
-		if err != nil {
-			return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of storage classes using %v provisioner: %v", csiDriverList.Items[i].Name, err)
-		}
-		for j := 0; j < len(storageCLassList); j++ {
-			pvcList, err := r.pvcsForStorageClass(ctx, cluster, storageCLassList[j])
-			if err != nil {
-				return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of PVCs referring the %v storage class: %v", storageCLassList[j], err)
+
+	// list all PVCs (cannot filter them by field selectors anyway)
+	pvcList := &corev1.PersistentVolumeClaimList{}
+	if err := userClusterClient.List(ctx, pvcList); err != nil {
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to list PVCs: %v", err)
+	}
+
+	// same for the PVs
+	pvList := &corev1.PersistentVolumeList{}
+	if err := userClusterClient.List(ctx, pvList); err != nil {
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to list PVs: %v", err)
+	}
+
+	// and the same for storage classes
+	storageClassList := &storagev1.StorageClassList{}
+	if err := userClusterClient.List(ctx, storageClassList); err != nil {
+		return corev1.ConditionUnknown, fmt.Sprintf("failed to get storage classes: %v", err)
+	}
+
+	errorMessages := []string{}
+
+	for _, csiDriver := range csiDriverList.Items {
+		// get all the storage classes that are using this driver as provisioner
+		storageClasses := filterStorageClassesByProvisioner(storageClassList.Items, csiDriver.Name)
+
+		// remove all unused storage classes
+		storageClasses = slices.DeleteFunc(storageClasses, func(scName string) bool {
+			for _, pvc := range pvcList.Items {
+				if pvc.Spec.StorageClassName != nil && *pvc.Spec.StorageClassName == scName {
+					return false
+				}
 			}
-			if len(pvcList) > 0 {
-				csiToSC[csiDriverList.Items[i].Name] = append(csiToSC[csiDriverList.Items[i].Name], storageCLassList[j])
-			}
-		}
-		if len(csiToSC[csiDriverList.Items[i].Name]) != 0 {
-			errMsg = append(errMsg, fmt.Sprintf("csidriver %s is being used by storage classes %s", csiDriverList.Items[i].Name, csiToSC[csiDriverList.Items[i].Name]))
+
+			return true
+		})
+
+		if len(storageClasses) > 0 {
+			errorMessages = append(errorMessages, fmt.Sprintf("CSI driver %s is being used by storage classes %s", csiDriver.Name, storageClasses))
 		} else {
 			// Check for the corner case where admin removes the SC without removing the PVs & tries to disable CSI drivers used by them.
-			pvList, err := r.pvsForProvisioner(ctx, cluster, csiDriverList.Items[i].Name)
-			if err != nil {
-				return corev1.ConditionUnknown, fmt.Sprintf("failed to get the list of PVs having %v as provisioner : %v", csiDriverList.Items[i].Name, err)
-			}
-			if len(pvList) > 0 {
-				csiToPV[csiDriverList.Items[i].Name] = append(csiToPV[csiDriverList.Items[i].Name], pvList[0])
-				errMsg = append(errMsg, fmt.Sprintf("csidriver %s is being used by PV %s & %d other PVs", csiDriverList.Items[i].Name, pvList[0], (len(pvList)-1)))
+			if orphanedPVs := filterPVsByProvisioner(pvList.Items, csiDriver.Name); len(orphanedPVs) > 0 {
+				errorMessages = append(errorMessages, fmt.Sprintf("CSI driver %s is being used by PV %s & %d other PVs", csiDriver.Name, orphanedPVs[0], len(orphanedPVs)-1))
 			}
 		}
 	}
-	if len(csiToSC) == 0 && len(csiToPV) == 0 {
+
+	if len(errorMessages) == 0 {
 		return corev1.ConditionFalse, ""
 	}
 
-	return corev1.ConditionTrue, fmt.Sprintf("%v", errMsg)
+	return corev1.ConditionTrue, fmt.Sprintf("%v", errorMessages)
 }
 
-func (r *Reconciler) storageClassesForProvisioner(ctx context.Context, cluster *kubermaticv1.Cluster, provisionerName string) ([]string, error) {
-	storageCLassesForProvisioner := []string{}
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return storageCLassesForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
-	}
-	storageCLassList := &storagev1.StorageClassList{}
-	if err := cl.List(ctx, storageCLassList); err != nil {
-		return storageCLassesForProvisioner, fmt.Errorf("failed to get storage classes using provisioner %v: %w", provisionerName, err)
-	}
-	for i := 0; i < len(storageCLassList.Items); i++ {
-		if storageCLassList.Items[i].Provisioner == provisionerName {
-			storageCLassesForProvisioner = append(storageCLassesForProvisioner, storageCLassList.Items[i].Name)
+func filterStorageClassesByProvisioner(classes []storagev1.StorageClass, provisionerName string) []string {
+	classNames := []string{}
+	for _, sc := range classes {
+		if sc.Provisioner == provisionerName {
+			classNames = append(classNames, sc.Name)
 		}
 	}
-	return storageCLassesForProvisioner, nil
+
+	return classNames
 }
 
-func (r *Reconciler) pvcsForStorageClass(ctx context.Context, cluster *kubermaticv1.Cluster, storageClassName string) ([]string, error) {
-	pvcsForStorageClass := []string{}
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return pvcsForStorageClass, fmt.Errorf("failed to get client for usercluster: %w", err)
-	}
-	pvcList := &corev1.PersistentVolumeClaimList{}
-	if err := cl.List(ctx, pvcList); err != nil {
-		return pvcsForStorageClass, fmt.Errorf("failed to get the list of PVCs referring the %v storage class: %w", storageClassName, err)
-	}
-
-	for _, item := range pvcList.Items {
-		if item.Spec.StorageClassName != nil && *item.Spec.StorageClassName == storageClassName {
-			pvcsForStorageClass = append(pvcsForStorageClass, item.Name)
-		}
-	}
-	return pvcsForStorageClass, nil
-}
-
-func (r *Reconciler) pvsForProvisioner(ctx context.Context, cluster *kubermaticv1.Cluster, provisionerName string) ([]string, error) {
-	pvsForProvisioner := []string{}
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return pvsForProvisioner, fmt.Errorf("failed to get client for usercluster: %w", err)
-	}
-	pvList := &corev1.PersistentVolumeList{}
-	if err := cl.List(ctx, pvList); err != nil {
-		return pvsForProvisioner, fmt.Errorf("failed to get the list of PVs having %v as provisioner : %w", provisionerName, err)
-	}
-	for i := 0; i < len(pvList.Items); i++ {
-		if pvList.Items[i].Spec.CSI != nil {
-			if pvList.Items[i].Spec.CSI.Driver == provisionerName {
-				pvsForProvisioner = append(pvsForProvisioner, pvList.Items[i].Name)
+func filterPVsByProvisioner(pvs []corev1.PersistentVolume, provisionerName string) []string {
+	pvNames := []string{}
+	for _, pv := range pvs {
+		if pv.Spec.CSI != nil {
+			if pv.Spec.CSI.Driver == provisionerName {
+				pvNames = append(pvNames, pv.Name)
 			}
 		} else {
-			if pvList.Items[i].ObjectMeta.Annotations[pvMigrationAnnotation] == provisionerName {
-				pvsForProvisioner = append(pvsForProvisioner, pvList.Items[i].Name)
+			if pv.ObjectMeta.Annotations[pvMigrationAnnotation] == provisionerName {
+				pvNames = append(pvNames, pv.Name)
 			}
 		}
 	}
-	return pvsForProvisioner, nil
+
+	return pvNames
 }
 
 func (r *Reconciler) cleanupDefaultStorageClassAddon(ctx context.Context, cluster *kubermaticv1.Cluster, addon *kubermaticv1.Addon) error {
-	cl, err := r.KubeconfigProvider.GetClient(ctx, cluster)
+	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get client for usercluster: %w", err)
 	}

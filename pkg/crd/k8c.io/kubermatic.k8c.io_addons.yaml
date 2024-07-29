@@ -138,6 +138,11 @@ spec:
                 conditions:
                   additionalProperties:
                     properties:
+                      kubermaticVersion:
+                        description: |-
+                          KubermaticVersion is the version of KKP that last _successfully_ reconciled this
+                          addon.
+                        type: string
                       lastHeartbeatTime:
                         description: Last time we got an update on a given condition.
                         format: date-time
