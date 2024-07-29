@@ -73,8 +73,9 @@ dex:
     kind: ClusterIssuer
 
 minio:
-  storeSize: '500Gi'
-  storageClass: minio-hdd
+  persistence:
+    size: '500Gi'
+    storageClass: minio-hdd
 
 telemetry:
   # uuid is the unique identifier of the client where the agent is running.

@@ -1,4 +1,25 @@
 ---
+# Source: minio/charts/minio/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: "minio-sa"
+---
+# Source: minio/charts/minio/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: release-name-minio
+  labels:
+    app: minio
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
+type: Opaque
+data:
+  rootUser: "M3ZRQ2xnZWh6YWFBOWlwYzQ0d1k="
+  rootPassword: "TkQ3WHJDM0U2YVRWUGJSVWNoa0NESFhQRWU5YVJlSzJKSFp2RmVtbw=="
+---
 # Source: minio/templates/secret-external.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -15,6 +36,7 @@
 # limitations under the License.
 
 
+
 apiVersion: v1
 kind: Secret
 metadata:
@@ -25,221 +47,597 @@ data:
   ACCESS_KEY_ID: ""
   SECRET_ACCESS_KEY: ""
 ---
-# Source: minio/templates/secret.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: minio/charts/minio/templates/configmap.yaml
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: minio
-type: Opaque
+  name: release-name-minio
+  labels:
+    app: minio
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
 data:
-  accessKey: ""
-  secretKey: ""
+  initialize: |-
+    #!/bin/sh
+    set -e # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+    
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+    	SCHEME=$1
+    	ATTEMPTS=0
+    	LIMIT=29 # Allow 30 attempts
+    	set -e   # fail if we can't read the keys.
+    	ACCESS=$(cat /config/rootUser)
+    	SECRET=$(cat /config/rootPassword)
+    	set +e # The connections to minio are allowed to fail.
+    	echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT"
+    	MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET"
+    	$MC_COMMAND
+    	STATUS=$?
+    	until [ $STATUS = 0 ]; do
+    		ATTEMPTS=$(expr $ATTEMPTS + 1)
+    		echo \"Failed attempts: $ATTEMPTS\"
+    		if [ $ATTEMPTS -gt $LIMIT ]; then
+    			exit 1
+    		fi
+    		sleep 2 # 1 second intervals between attempts
+    		$MC_COMMAND
+    		STATUS=$?
+    	done
+    	set -e # reset `e` as active
+    	return 0
+    }
+    
+    # checkBucketExists ($bucket)
+    # Check if the bucket exists, by using the exit code of `mc ls`
+    checkBucketExists() {
+    	BUCKET=$1
+    	CMD=$(${MC} stat myminio/$BUCKET >/dev/null 2>&1)
+    	return $?
+    }
+    
+    # createBucket ($bucket, $policy, $purge)
+    # Ensure bucket exists, purging if asked to
+    createBucket() {
+    	BUCKET=$1
+    	POLICY=$2
+    	PURGE=$3
+    	VERSIONING=$4
+    	OBJECTLOCKING=$5
+    
+    	# Purge the bucket, if set & exists
+    	# Since PURGE is user input, check explicitly for `true`
+    	if [ $PURGE = true ]; then
+    		if checkBucketExists $BUCKET; then
+    			echo "Purging bucket '$BUCKET'."
+    			set +e # don't exit if this fails
+    			${MC} rm -r --force myminio/$BUCKET
+    			set -e # reset `e` as active
+    		else
+    			echo "Bucket '$BUCKET' does not exist, skipping purge."
+    		fi
+    	fi
+    
+    	# Create the bucket if it does not exist and set objectlocking if enabled (NOTE: versioning will be not changed if OBJECTLOCKING is set because it enables versioning to the Buckets created)
+    	if ! checkBucketExists $BUCKET; then
+    		if [ ! -z $OBJECTLOCKING ]; then
+    			if [ $OBJECTLOCKING = true ]; then
+    				echo "Creating bucket with OBJECTLOCKING '$BUCKET'"
+    				${MC} mb --with-lock myminio/$BUCKET
+    			elif [ $OBJECTLOCKING = false ]; then
+    				echo "Creating bucket '$BUCKET'"
+    				${MC} mb myminio/$BUCKET
+    			fi
+    		elif [ -z $OBJECTLOCKING ]; then
+    			echo "Creating bucket '$BUCKET'"
+    			${MC} mb myminio/$BUCKET
+    		else
+    			echo "Bucket '$BUCKET' already exists."
+    		fi
+    	fi
+    
+    	# set versioning for bucket if objectlocking is disabled or not set
+    	if [ $OBJECTLOCKING = false ]; then
+    		if [ ! -z $VERSIONING ]; then
+    			if [ $VERSIONING = true ]; then
+    				echo "Enabling versioning for '$BUCKET'"
+    				${MC} version enable myminio/$BUCKET
+    			elif [ $VERSIONING = false ]; then
+    				echo "Suspending versioning for '$BUCKET'"
+    				${MC} version suspend myminio/$BUCKET
+    			fi
+    		fi
+    	else
+    		echo "Bucket '$BUCKET' versioning unchanged."
+    	fi
+    
+    	# At this point, the bucket should exist, skip checking for existence
+    	# Set policy on the bucket
+    	echo "Setting policy of bucket '$BUCKET' to '$POLICY'."
+    	${MC} anonymous set $POLICY myminio/$BUCKET
+    }
+    
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+    
+    
+    
+  add-user: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+    
+    # AccessKey and secretkey credentials file are added to prevent shell execution errors caused by special characters.
+    # Special characters for example : ',",<,>,{,}
+    MINIO_ACCESSKEY_SECRETKEY_TMP="/tmp/accessKey_and_secretKey_tmp"
+    
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+    
+    # checkUserExists ()
+    # Check if the user exists, by using the exit code of `mc admin user info`
+    checkUserExists() {
+      CMD=$(${MC} admin user info myminio $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) > /dev/null 2>&1)
+      return $?
+    }
+    
+    # createUser ($policy)
+    createUser() {
+      POLICY=$1
+      #check accessKey_and_secretKey_tmp file
+      if [[ ! -f $MINIO_ACCESSKEY_SECRETKEY_TMP ]];then
+        echo "credentials file does not exist"
+        return 1
+      fi
+      if [[ $(cat $MINIO_ACCESSKEY_SECRETKEY_TMP|wc -l) -ne 2 ]];then
+        echo "credentials file is invalid"
+        rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+        return 1
+      fi
+      USER=$(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP)
+      # Create the user if it does not exist
+      if ! checkUserExists ; then
+        echo "Creating user '$USER'"
+        cat $MINIO_ACCESSKEY_SECRETKEY_TMP | ${MC} admin user add myminio
+      else
+        echo "User '$USER' already exists."
+      fi
+      #clean up credentials files.
+      rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+    
+      # set policy for user
+      if [ ! -z $POLICY -a $POLICY != " " ] ; then
+          echo "Adding policy '$POLICY' for '$USER'"
+          set +e ; # policy already attach errors out, allow it.
+          ${MC} admin policy attach myminio $POLICY --user=$USER
+          set -e
+      else
+          echo "User '$USER' has no policy attached."
+      fi
+    }
+    
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+    
+    
+    
+    # Create the users
+    echo console > $MINIO_ACCESSKEY_SECRETKEY_TMP
+    echo console123 >> $MINIO_ACCESSKEY_SECRETKEY_TMP
+    createUser consoleAdmin
+    
+  add-policy: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+    
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+    
+    # checkPolicyExists ($policy)
+    # Check if the policy exists, by using the exit code of `mc admin policy info`
+    checkPolicyExists() {
+      POLICY=$1
+      CMD=$(${MC} admin policy info myminio $POLICY > /dev/null 2>&1)
+      return $?
+    }
+    
+    # createPolicy($name, $filename)
+    createPolicy () {
+      NAME=$1
+      FILENAME=$2
+    
+      # Create the name if it does not exist
+      echo "Checking policy: $NAME (in /config/$FILENAME.json)"
+      if ! checkPolicyExists $NAME ; then
+        echo "Creating policy '$NAME'"
+      else
+        echo "Policy '$NAME' already exists."
+      fi
+      ${MC} admin policy create myminio $NAME /config/$FILENAME.json
+    
+    }
+    
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+    
+    
+    
+  add-svcacct: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+    
+    # AccessKey and secretkey credentials file are added to prevent shell execution errors caused by special characters.
+    # Special characters for example : ',",<,>,{,}
+    MINIO_ACCESSKEY_SECRETKEY_TMP="/tmp/accessKey_and_secretKey_svcacct_tmp"
+    
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 2 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+    
+    # checkSvcacctExists ()
+    # Check if the svcacct exists, by using the exit code of `mc admin user svcacct info`
+    checkSvcacctExists() {
+      CMD=$(${MC} admin user svcacct info myminio $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) > /dev/null 2>&1)
+      return $?
+    }
+    
+    # createSvcacct ($user)
+    createSvcacct () {
+      USER=$1
+      FILENAME=$2
+      #check accessKey_and_secretKey_tmp file
+      if [[ ! -f $MINIO_ACCESSKEY_SECRETKEY_TMP ]];then
+        echo "credentials file does not exist"
+        return 1
+      fi
+      if [[ $(cat $MINIO_ACCESSKEY_SECRETKEY_TMP|wc -l) -ne 2 ]];then
+        echo "credentials file is invalid"
+        rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+        return 1
+      fi
+      SVCACCT=$(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP)
+      # Create the svcacct if it does not exist
+      if ! checkSvcacctExists ; then
+        echo "Creating svcacct '$SVCACCT'"
+        # Check if policy file is define
+        if [ -z $FILENAME ]; then
+          ${MC} admin user svcacct add --access-key $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) --secret-key $(tail -n1 $MINIO_ACCESSKEY_SECRETKEY_TMP) myminio $USER
+        else
+          ${MC} admin user svcacct add --access-key $(head -1 $MINIO_ACCESSKEY_SECRETKEY_TMP) --secret-key $(tail -n1 $MINIO_ACCESSKEY_SECRETKEY_TMP) --policy /config/$FILENAME.json myminio $USER
+        fi
+      else
+        echo "Svcacct '$SVCACCT' already exists."
+      fi
+      #clean up credentials files.
+      rm -f $MINIO_ACCESSKEY_SECRETKEY_TMP
+    }
+    
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
+    
+    
+    
+  custom-command: |-
+    #!/bin/sh
+    set -e ; # Have script exit in the event of a failed command.
+    MC_CONFIG_DIR="/etc/minio/mc/"
+    MC="/usr/bin/mc --insecure --config-dir ${MC_CONFIG_DIR}"
+    
+    # connectToMinio
+    # Use a check-sleep-check loop to wait for MinIO service to be available
+    connectToMinio() {
+      SCHEME=$1
+      ATTEMPTS=0 ; LIMIT=29 ; # Allow 30 attempts
+      set -e ; # fail if we can't read the keys.
+      ACCESS=$(cat /config/rootUser) ; SECRET=$(cat /config/rootPassword) ;
+      set +e ; # The connections to minio are allowed to fail.
+      echo "Connecting to MinIO server: $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT" ;
+      MC_COMMAND="${MC} alias set myminio $SCHEME://$MINIO_ENDPOINT:$MINIO_PORT $ACCESS $SECRET" ;
+      $MC_COMMAND ;
+      STATUS=$? ;
+      until [ $STATUS = 0 ]
+      do
+        ATTEMPTS=`expr $ATTEMPTS + 1` ;
+        echo \"Failed attempts: $ATTEMPTS\" ;
+        if [ $ATTEMPTS -gt $LIMIT ]; then
+          exit 1 ;
+        fi ;
+        sleep 2 ; # 1 second intervals between attempts
+        $MC_COMMAND ;
+        STATUS=$? ;
+      done ;
+      set -e ; # reset `e` as active
+      return 0
+    }
+    
+    # runCommand ($@)
+    # Run custom mc command
+    runCommand() {
+      ${MC} "$@"
+      return $?
+    }
+    
+    # Try connecting to MinIO instance
+    scheme=http
+    connectToMinio $scheme
 ---
-# Source: minio/templates/pvc.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: minio/charts/minio/templates/pvc.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: minio-data
+  name: release-name-minio
   labels:
     app: minio
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
 spec:
-  storageClassName: "minio-hdd"
   accessModes:
-    - ReadWriteOnce
+    - "ReadWriteOnce"
   resources:
     requests:
-      storage: 500Gi
+      storage: "500Gi"
+  storageClassName: "minio-hdd"
 ---
-# Source: minio/templates/service.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: minio/charts/minio/templates/console-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: minio
+  name: release-name-minio-console
+  labels:
+    app: minio
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
 spec:
   type: ClusterIP
   ports:
-    - name: server
-      port: 9000
-      targetPort: 9000
+    - name: http
+      port: 9001
       protocol: TCP
-    - name: console
-      port: 80
-      targetPort: 80
-      protocol: TCP
+      targetPort: 9001
   selector:
     app: minio
+    release: release-name
 ---
-# Source: minio/templates/deployment.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: minio/charts/minio/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-minio
+  labels:
+    app: minio
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
+    monitoring: "true"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9000
+      protocol: TCP
+      targetPort: 9000
+  selector:
+    app: minio
+    release: release-name
+---
+# Source: minio/charts/minio/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: minio
+  name: release-name-minio
+  labels:
+    app: minio
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
 spec:
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 0
+  replicas: 1
   selector:
     matchLabels:
       app: minio
+      release: release-name
+  template:
+    metadata:
+      name: release-name-minio
+      labels:
+        app: minio
+        release: release-name
+      annotations:
+        checksum/secrets: adb61b06ba97d71fa07879c4d83016bfffab22db561ae2b38f388176d9d1f66e
+        checksum/config: 58cad6f4fce926857247dd55ea3710cf348981bd8448f37c3024c8abdd8a9b08
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+      
+      serviceAccountName: minio-sa
+      containers:
+        - name: minio
+          image: "quay.io/minio/minio:RELEASE.2024-04-18T19-09-19Z"
+          imagePullPolicy: IfNotPresent
+          command:
+            - "/bin/sh"
+            - "-ce"
+            - "/usr/bin/docker-entrypoint.sh minio server /export -S /etc/minio/certs/ --address :9000 --console-address :9001 --compat --anonymous"
+          volumeMounts:
+            - name: minio-user
+              mountPath: "/tmp/credentials"
+              readOnly: true
+            - name: export
+              mountPath: /export            
+          ports:
+            - name: http
+              containerPort: 9000
+            - name: http-console
+              containerPort: 9001
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: release-name-minio
+                  key: rootUser
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: release-name-minio
+                  key: rootPassword
+            - name: MINIO_PROMETHEUS_AUTH_TYPE
+              value: "public"
+          resources:
+            requests:
+              memory: 16Gi      
+      volumes:
+        - name: export
+          persistentVolumeClaim:
+            claimName: release-name-minio
+        - name: minio-user
+          secret:
+            secretName: release-name-minio
+---
+# Source: minio/charts/minio/templates/post-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: release-name-minio-post-job
+  labels:
+    app: minio-post-job
+    chart: minio-5.2.0
+    release: release-name
+    heritage: Helm
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
   template:
     metadata:
       labels:
-        app: minio
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9000"
-        prometheus.io/metrics_path: /minio/prometheus/metrics
-        kubermatic.io/chart: minio
-        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: minio-backup
-        backup.velero.io/backup-volumes: minio-backup
-        pre.hook.backup.velero.io/container: backup
-        pre.hook.backup.velero.io/timeout: 60m
-        pre.hook.backup.velero.io/command: '["mc", "mirror", "--remove", "--quiet", "src", "/backup"]'
+        app: minio-job
+        release: release-name
     spec:
-      containers:
-      - name: minio
-        image: 'quay.io/minio/minio:RELEASE.2023-05-04T21-44-30Z'
-        args:
-        - server
-        - /storage
-        - --console-address
-        - :80
-        env:
-        - name: MINIO_ROOT_USER
-          valueFrom:
-            secretKeyRef:
-              name: minio
-              key: accessKey
-        - name: MINIO_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: minio
-              key: secretKey
-        # disable authentication for /metrics endpoints
-        - name: MINIO_PROMETHEUS_AUTH_TYPE
-          value: public
-        ports:
-        - containerPort: 9000
-        volumeMounts:
-        - name: storage
-          mountPath: "/storage"
-        resources:
-          limits:
-            cpu: 1
-            memory: 512Mi
-          requests:
-            cpu: 100m
-            memory: 32Mi
-      - name: backup
-        image: 'quay.io/kubermatic/util:2.5.0'
-        args:
-        - /bin/sh
-        - -c
-        - mc config host add src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
-        env:
-        - name: MINIO_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: minio
-              key: accessKey
-        - name: MINIO_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: minio
-              key: secretKey
-        volumeMounts:
-        - mountPath: /backup
-          name: minio-backup
-          readOnly: false
-        securityContext:
-          runAsNonRoot: false
-          runAsUser: 0
-        resources:
-          limits:
-            cpu: 1
-            memory: 1500Mi
-          requests:
-            cpu: 50m
-            memory: 32Mi
+      restartPolicy: OnFailure      
       volumes:
-      - name: storage
-        persistentVolumeClaim:
-          claimName: minio-data
-      - name: minio-backup
-        emptyDir: {}
-      nodeSelector:
-        {}
-      affinity:
-        {}
-      tolerations:
-        []
----
-# Source: minio/templates/ingress.yaml
-# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+        - name: etc-path
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+        - name: minio-configuration
+          projected:
+            sources:
+              - configMap:
+                  name: release-name-minio
+              - secret:
+                  name: release-name-minio
+      serviceAccountName: minio-sa
+      containers:
+        - name: minio-make-user
+          image: "quay.io/minio/mc:RELEASE.2024-04-18T16-45-29Z"
+          imagePullPolicy: IfNotPresent
+          command: [ "/bin/sh", "/config/add-user" ]
+          env:
+            - name: MINIO_ENDPOINT
+              value: release-name-minio
+            - name: MINIO_PORT
+              value: "9000"
+          volumeMounts:
+            - name: etc-path
+              mountPath: /etc/minio/mc
+            - name: tmp
+              mountPath: /tmp
+            - name: minio-configuration
+              mountPath: /config
+          resources:
+            requests:
+              memory: 128Mi

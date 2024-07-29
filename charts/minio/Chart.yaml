@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
+apiVersion: v2
 name: minio
 version: 9.9.9-dev
 appVersion: RELEASE.2023-05-04T21-44-30Z
@@ -28,3 +28,7 @@ sources:
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+  - repository: https://charts.min.io/
+    name: minio
+    version: 5.2.0
