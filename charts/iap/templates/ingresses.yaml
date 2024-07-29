@@ -22,7 +22,6 @@ metadata:
     app: iap
     target: {{ .name }}
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     {{- if not (.ingress.tlsSecretName) }}
     {{- with $.Values.iap.certIssuer }}
     {{- if eq .kind "ClusterIssuer" }}
@@ -36,6 +35,7 @@ metadata:
 {{ toYaml .ingress.annotations | indent 4 }}
 {{- end }}
 spec:
+  ingressClassName: nginx
   tls:
   {{- if .ingress.tlsSecretName }}
   - secretName: {{ .ingress.tlsSecretName }}

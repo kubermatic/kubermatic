@@ -249,9 +249,9 @@ kind: Ingress
 metadata:
   name: minio
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: "nginx"
   tls:
     - secretName: minio-tls
       hosts:
@@ -274,9 +274,9 @@ kind: Ingress
 metadata:
   name: minio-console
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: "nginx"
   tls:
     - secretName: minio-console-tls
       hosts:

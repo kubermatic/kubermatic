@@ -94,10 +94,11 @@ func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration) rec
 func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.NamedIngressReconcilerFactory {
 	return func() (string, reconciling.IngressReconciler) {
 		return ingressName, func(i *networkingv1.Ingress) (*networkingv1.Ingress, error) {
+			i.Spec.IngressClassName = &cfg.Spec.Ingress.ClassName
+
 			if i.Annotations == nil {
 				i.Annotations = make(map[string]string)
 			}
-			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassName
 
 			// NGINX ingress annotations to avoid timeout of websocket connections after 1 minute.
 			// Needed for Web Terminal feature, for example.

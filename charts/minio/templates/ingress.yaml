@@ -19,7 +19,6 @@ kind: Ingress
 metadata:
   name: minio
   annotations:
-    kubernetes.io/ingress.class: "{{ .Values.minio.ingress.class }}"
     {{- with .Values.minio.certIssuer }}
     {{- if eq .kind "ClusterIssuer" }}
     cert-manager.io/cluster-issuer: {{ .name | quote }}
@@ -28,6 +27,7 @@ metadata:
     {{- end }}
     {{- end }}
 spec:
+  ingressClassName: "{{ .Values.minio.ingress.class }}"
   tls:
     - secretName: minio-tls
       hosts:
@@ -52,7 +52,6 @@ kind: Ingress
 metadata:
   name: minio-console
   annotations:
-    kubernetes.io/ingress.class: "{{ .Values.minio.ingress.class }}"
     {{- with .Values.minio.certIssuer }}
     {{- if eq .kind "ClusterIssuer" }}
     cert-manager.io/cluster-issuer: {{ .name | quote }}
@@ -61,6 +60,7 @@ metadata:
     {{- end }}
     {{- end }}
 spec:
+  ingressClassName: "{{ .Values.minio.ingress.class }}"
   tls:
     - secretName: minio-console-tls
       hosts:

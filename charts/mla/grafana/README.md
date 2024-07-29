@@ -443,8 +443,8 @@ In order to serve Grafana with a prefix (e.g., <http://example.com/grafana>), ad
 ```yaml
 ingress:
   enabled: true
+  ingressClassName: nginx
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/use-regex: "true"
 
