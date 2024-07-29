@@ -140,7 +140,7 @@ fi
 # there are no cloud providers in that preloaded image.
 # As a solution, we remove the preloaded image after starting the kind
 # cluster, which will force KKP to pull the correct image.
-docker exec "kubermatic-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi registry.k8s.io/kube-controller-manager:{}" || true
+docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi registry.k8s.io/kube-controller-manager:{}" || true
 
 helm repo add cilium https://helm.cilium.io/
 helm install cilium cilium/cilium \
@@ -155,8 +155,8 @@ if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # a NodePort service on the host
   echodate "Starting cluster exposer"
 
-  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
-  /tmp/clusterexposer \
+  # this is already built and added to the build image, no need to compile it again
+  clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
     --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
     --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
