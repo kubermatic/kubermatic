@@ -40,7 +40,7 @@ const (
 	// FinalizerClonerRoleBinding will ensure the deletion of the DataVolume cloner role-binding.
 	FinalizerClonerRoleBinding = "kubermatic.k8c.io/cleanup-kubevirt-cloner-rbac"
 	// DefaultNamespaceName is the default namespace name for the KubeVirt cluster.
-	DefaultNamespaceName = "kubevirt"
+	DefaultNamespaceName = "kubevirt-workload"
 )
 
 type kubevirt struct {
@@ -158,13 +158,13 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		enableDefaultNetworkPolices = *k.dc.EnableDefaultNetworkPolicies
 	}
 	if enableDefaultNetworkPolices {
-		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, k.dc, client)
+		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, k.dc, client, kubevirtNamespace)
 		if err != nil {
 			return cluster, err
 		}
 	}
 
-	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)
+	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client, kubevirtNamespace)
 	if err != nil {
 		return cluster, err
 	}
@@ -173,7 +173,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) {
+	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) || k.dc.SingleNamespaceMode {
 		return cluster, nil
 	}
 
