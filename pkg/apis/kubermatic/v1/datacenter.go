@@ -751,6 +751,9 @@ type DatacenterSpecKubevirt struct {
 	// +kubebuilder:validation:Enum=ClusterFirstWithHostNet;ClusterFirst;Default;None
 	// +kubebuilder:default=ClusterFirst
 
+	// SingleNamespaceMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
+	SingleNamespaceMode bool `json:"singleNamespaceMode,omitempty"`
+
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
 	// policy selected with DNSPolicy.

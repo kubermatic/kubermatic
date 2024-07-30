@@ -39,6 +39,8 @@ const (
 	FinalizerNamespace = "kubermatic.k8c.io/cleanup-kubevirt-namespace"
 	// FinalizerClonerRoleBinding will ensure the deletion of the DataVolume cloner role-binding.
 	FinalizerClonerRoleBinding = "kubermatic.k8c.io/cleanup-kubevirt-cloner-rbac"
+	// DefaultNamespaceName is the default namespace name for the KubeVirt cluster.
+	DefaultNamespaceName = "kubevirt"
 )
 
 type kubevirt struct {
@@ -121,28 +123,32 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if cluster.Status.NamespaceName == "" {
 		return cluster, apierrors.NewConflict(kubermaticv1.Resource("cluster"), cluster.Name, fmt.Errorf("cluster.Status.NamespaceName for cluster %s", cluster.Name))
 	}
+	kubevirtNamespace := cluster.Status.NamespaceName
+	if !k.dc.SingleNamespaceMode {
+		kubevirtNamespace = DefaultNamespaceName
+	}
 
-	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
+	cluster, err = reconcileNamespace(ctx, kubevirtNamespace, cluster, update, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client)
+	err = reconcileCSIRoleRoleBinding(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = ReconcileInfraTokenAccess(ctx, cluster.Status.NamespaceName, client)
+	err = ReconcileInfraTokenAccess(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = reconcileInstancetypes(ctx, cluster.Status.NamespaceName, client)
+	err = reconcileInstancetypes(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = reconcilePreferences(ctx, cluster.Status.NamespaceName, client)
+	err = reconcilePreferences(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
