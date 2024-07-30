@@ -17,10 +17,16 @@ spec:
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
     dockerRepository: quay.io/kubermatic/dashboard-ee
+    # DockerTag is used to overwrite the Kubermatic API Docker image tag and is only for development
+    # purposes. This field must not be set in production environments. If DockerTag is specified then
+    # DockerTagSuffix will be ignored.
+    dockerTag: ""
     # DockerTagSuffix is appended to the KKP version used for referring to the custom Kubermatic API image.
     # If left empty, either the `DockerTag` if specified or the original Kubermatic API Docker image tag will be used.
     # With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
     dockerTagSuffix: ""
+    # ExtraEnv allows to set additional environment variables for the API container.
+    extraEnv: null
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -48,6 +54,10 @@ spec:
       requests:
         cpu: 200m
         memory: 150Mi
+    # VolumeMounts sets additional volume mounts for the API deployment.
+    volumeMounts: null
+    # Volumes sets additional volumes for the API deployment.
+    volumes: null
   # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
   # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
   auth:
@@ -269,6 +279,10 @@ spec:
     config: ""
     # DockerRepository is the repository containing the Kubermatic dashboard image.
     dockerRepository: quay.io/kubermatic/dashboard-ee
+    # DockerTag is used to overwrite the dashboard Docker image tag and is only for development
+    # purposes. This field must not be set in production environments. If DockerTag is specified then
+    # DockerTagSuffix will be ignored.
+    dockerTag: ""
     # DockerTagSuffix is appended to the KKP version used for referring to the custom dashboard image.
     # If left empty, either the `DockerTag` if specified or the original dashboard Docker image tag will be used.
     # With DockerTagSuffix the tag becomes <KKP_VERSION-SUFFIX> i.e. "v2.15.0-SUFFIX".
@@ -538,17 +552,29 @@ spec:
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
         to: 1.27.*
-      - from: 1.27.*
+      - automatic: null
+        automaticNodeUpdate: null
+        from: 1.27.*
         to: 1.28.*
-      - from: 1.28.*
+      - automatic: null
+        automaticNodeUpdate: null
+        from: 1.28.*
         to: 1.28.*
-      - from: 1.28.*
+      - automatic: null
+        automaticNodeUpdate: null
+        from: 1.28.*
         to: 1.29.*
-      - from: 1.29.*
+      - automatic: null
+        automaticNodeUpdate: null
+        from: 1.29.*
         to: 1.29.*
-      - from: 1.29.*
+      - automatic: null
+        automaticNodeUpdate: null
+        from: 1.29.*
         to: 1.30.*
-      - from: 1.30.*
+      - automatic: null
+        automaticNodeUpdate: null
+        from: 1.30.*
         to: 1.30.*
     # Versions lists the available versions.
     versions:
