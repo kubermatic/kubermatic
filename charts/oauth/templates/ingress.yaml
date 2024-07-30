@@ -21,7 +21,6 @@ metadata:
     {{- range $key, $value := .Values.dex.ingress.annotations }}
     {{ $key }}: {{ tpl ($value | toString) $ | quote }}
     {{- end }}
-    kubernetes.io/ingress.class: "{{ .Values.dex.ingress.class }}"
     {{- with .Values.dex.certIssuer }}
     {{- if eq .kind "ClusterIssuer" }}
     cert-manager.io/cluster-issuer: {{ .name | quote }}
@@ -30,6 +29,7 @@ metadata:
     {{- end }}
     {{- end }}
 spec:
+  ingressClassName: "{{ .Values.dex.ingress.class }}"
 {{- if eq .Values.dex.ingress.scheme "https" }}
   tls:
   - secretName: dex-tls

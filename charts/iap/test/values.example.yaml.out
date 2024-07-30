@@ -323,9 +323,9 @@ metadata:
     app: iap
     target: alertmanager
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: nginx
   tls:
   - secretName: alertmanager-tls
     hosts:
@@ -356,9 +356,9 @@ metadata:
     app: iap
     target: grafana
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  ingressClassName: nginx
   tls:
   - secretName: grafana-tls
     hosts:
