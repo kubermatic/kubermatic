@@ -923,6 +923,9 @@ spec:
                                     - name
                                   type: object
                                 type: array
+                              singleNamespaceMode:
+                                description: SingleNamespaceMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
+                                type: boolean
                             type: object
                           machineFlavorFilter:
                             description: 'Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.'
