@@ -18,7 +18,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws-e2e-kkp: "true"
+      preset-aws-e2e-kubeone: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -60,7 +60,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws-e2e-kkp: "true"
+      preset-aws-e2e-kubeone: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -102,7 +102,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws-e2e-kkp: "true"
+      preset-aws-e2e-kubeone: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -146,7 +146,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws-e2e-kkp: "true"
+      preset-aws-e2e-kubeone: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
@@ -188,7 +188,7 @@ presubmits:
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-aws-e2e-kkp: "true"
+      preset-aws-e2e-kubeone: "true"
       preset-docker-mirror: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
