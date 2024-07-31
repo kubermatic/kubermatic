@@ -1061,19 +1061,14 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 }
 
 func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	auditWebhookSettings := c.Spec.AuditLogging.WebhookBackend
 	if data.DC().Spec.EnforcedAuditWebhookSettings != nil {
-		auditWebhookSettings = data.DC().Spec.EnforcedAuditWebhookSettings
 		// if webhook backend is enabled on the DC then create the auditwebhookconfig secret in the user cluster ns.
 		creators := []reconciling.NamedSecretReconcilerFactory{r.auditWebhookSecretReconciler(ctx, data)}
 		if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
-			return nil
+			return err
 		}
 	}
-
-	return r.updateCluster(ctx, c, func(c *kubermaticv1.Cluster) {
-		c.Spec.AuditLogging.WebhookBackend = auditWebhookSettings
-	})
+	return nil
 }
 
 // auditWebhookSecretReconciler returns a reconciling.NamedSecretReconcilerFactory for a secret that contains
