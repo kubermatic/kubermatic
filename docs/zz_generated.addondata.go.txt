@@ -85,6 +85,11 @@ type ClusterAddress struct {
 	// IP is the external IP under which the apiserver is available
 	// +optional
 	IP string `json:"ip"`
+	// APIServerExternalAddress is the external address of the API server (IP or DNS name)
+	// This field is populated only when the API server service is of type LoadBalancer. If set, this address will be used in the
+	// kubeconfig for the user cluster that can be downloaded from the KKP UI.
+	// +optional
+	APIServerExternalAddress string `json:"apiServerExternalAddress,omitempty"`
 }
 
 type ClusterNetwork struct {

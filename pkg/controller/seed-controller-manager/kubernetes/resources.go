@@ -336,9 +336,10 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, log *zap.Sugared
 // GetServiceReconcilers returns all service creators that are currently in use.
 func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServiceReconcilerFactory {
 	extName := data.Cluster().Status.Address.ExternalName
+	apiServerServiceType := data.DC().Spec.APIServerServiceType
 
 	creators := []reconciling.NamedServiceReconcilerFactory{
-		apiserver.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName),
+		apiserver.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName, apiServerServiceType),
 		etcd.ServiceReconciler(data),
 		userclusterwebhook.ServiceReconciler(),
 		operatingsystemmanager.ServiceReconciler(),

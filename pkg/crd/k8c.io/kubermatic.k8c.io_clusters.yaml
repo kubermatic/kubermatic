@@ -3221,6 +3221,12 @@ spec:
                     adminToken:
                       description: AdminToken is the token for the kubeconfig, the user can download
                       type: string
+                    apiServerExternalAddress:
+                      description: |-
+                        APIServerExternalAddress is the external address of the API server (IP or DNS name)
+                        This field is populated only when the API server service is of type LoadBalancer. If set, this address will be used in the
+                        kubeconfig for the user cluster that can be downloaded from the KKP UI.
+                      type: string
                     externalName:
                       description: ExternalName is the DNS name for this cluster
                       type: string

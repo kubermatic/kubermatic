@@ -482,6 +482,13 @@ type DatacenterSpec struct {
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
 	KubeLB *KubeLBDatacenterSettings `json:"kubelb,omitempty,omitcegenyaml"`
+
+	// +kubebuilder:validation:Enum=ClusterIP;NodePort;LoadBalancer
+
+	// APIServerServiceType is the service type used for API Server service `apiserver-external` for the user clusters.
+	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
+	// +optional
+	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
 }
 
 var (

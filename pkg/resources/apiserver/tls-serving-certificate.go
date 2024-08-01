@@ -35,6 +35,7 @@ type tlsServingCertReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
 	GetTunnelingAgentIP() string
+	GetAPIServerAlternateNames() (*certutil.AltNames, error)
 }
 
 // TLSServingCertificateReconciler returns a function to create/update the secret with the apiserver tls certificate used to serve https.
@@ -90,6 +91,37 @@ func TLSServingCertificateReconciler(data tlsServingCertReconcilerData) reconcil
 				altNames.IPs = append(altNames.IPs, externalIPParsed)
 			} else {
 				altNames.IPs = append(altNames.IPs, net.ParseIP(data.GetTunnelingAgentIP()))
+			}
+
+			additionalAltNames, err := data.GetAPIServerAlternateNames()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get apiserver alternate names: %w", err)
+			}
+
+			// Add the alternate names to the list of DNS names and IPs while ensuring no duplicates.
+			for _, dnsName := range additionalAltNames.DNSNames {
+				found := false
+				for _, existingDNSName := range altNames.DNSNames {
+					if existingDNSName == dnsName {
+						found = true
+						break
+					}
+				}
+				if !found {
+					altNames.DNSNames = append(altNames.DNSNames, dnsName)
+				}
+			}
+			for _, ip := range additionalAltNames.IPs {
+				found := false
+				for _, existingIP := range altNames.IPs {
+					if existingIP.Equal(ip) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					altNames.IPs = append(altNames.IPs, ip)
+				}
 			}
 
 			if b, exists := se.Data[resources.ApiserverTLSCertSecretKey]; exists {
