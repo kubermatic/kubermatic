@@ -65,6 +65,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -253,6 +254,11 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
 
+	apiserverAltNames, err := r.listAPIServerAlternateNames(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine additional API server altnames: %w", err)
+	}
+
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithClient(r).
@@ -261,6 +267,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithSeed(seed.DeepCopy()).
 		WithKubermaticConfiguration(config.DeepCopy()).
 		WithOverwriteRegistry(r.overwriteRegistry).
+		WithAPIServerAlternateNames(apiserverAltNames).
 		WithNodePortRange(config.Spec.UserCluster.NodePortRange).
 		WithNodeAccessNetwork(r.nodeAccessNetwork).
 		WithEtcdDiskSize(r.etcdDiskSize).
@@ -1067,6 +1074,57 @@ func (r *Reconciler) fetchKubernetesServiceIPList(ctx context.Context, resolverC
 	}
 
 	return ips, nil
+}
+
+// listAPIServerAlternateNames returns the alternate names for the apiserver certificate from the
+// corresponding services. This ensures that if multiple hostnames or IPs have been assigned to the
+// API server service or front-loadbalancer service, then all of them are included in the certificate.
+func (r *Reconciler) listAPIServerAlternateNames(ctx context.Context, cluster *kubermaticv1.Cluster) (*certutil.AltNames, error) {
+	dnsNames := []string{}
+	ips := []net.IP{}
+
+	// Get all the loadbalancer Ingresses from the API server service.
+	// These services are managed by this controller and might not exist on the first reconciliation.
+	// That's okay because even if they did, the CCM might not have assigned a LoadBalancer yet.
+
+	service := &corev1.Service{}
+	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverServiceName}, service); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+		return nil, fmt.Errorf("failed to get API server service: %w", err)
+	}
+
+	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+		for _, ingress := range service.Status.LoadBalancer.Ingress {
+			if ingress.IP != "" {
+				ips = append(ips, net.ParseIP(ingress.IP))
+			}
+			if ingress.Hostname != "" {
+				dnsNames = append(dnsNames, ingress.Hostname)
+			}
+		}
+	}
+
+	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		service := &corev1.Service{}
+		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}, service); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return nil, fmt.Errorf("failed to get front-loadbalancer service: %w", err)
+		}
+
+		if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+			for _, ingress := range service.Status.LoadBalancer.Ingress {
+				if ingress.IP != "" {
+					ips = append(ips, net.ParseIP(ingress.IP))
+				}
+				if ingress.Hostname != "" {
+					dnsNames = append(dnsNames, ingress.Hostname)
+				}
+			}
+		}
+	}
+
+	return &certutil.AltNames{
+		DNSNames: dnsNames,
+		IPs:      ips,
+	}, nil
 }
 
 // hostnameToIPList returns a list of IP addresses used to reach the provided hostname.
