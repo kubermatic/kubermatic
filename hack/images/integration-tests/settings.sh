@@ -1,1 +1,1 @@
-TAG=k8s-1.30.0-rev0
+TAG=k8s-1.30.0-rev1
