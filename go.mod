@@ -45,7 +45,7 @@ require (
 	github.com/hetznercloud/hcloud-go v1.57.0
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.13
-	github.com/kubermatic/machine-controller v1.59.2
+	github.com/kubermatic/machine-controller v1.59.3
 	github.com/minio/minio-go/v7 v7.0.69
 	github.com/nutanix-cloud-native/prism-go-client v0.4.0
 	github.com/olekukonko/tablewriter v0.0.5
