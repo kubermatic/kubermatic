@@ -48,7 +48,7 @@ func TestServiceReconcilerRequiresExposeStrategy(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceReconciler(tc.exposeStrategy, tc.internalService)()
+			_, creator := ServiceReconciler(tc.exposeStrategy, tc.internalService, nil)()
 			_, err := creator(&corev1.Service{})
 			if (err != nil) != tc.errExpected {
 				t.Errorf("Expected err: %t, but got err %v", tc.errExpected, err)
@@ -58,13 +58,16 @@ func TestServiceReconcilerRequiresExposeStrategy(t *testing.T) {
 }
 
 func TestServiceReconcilerSetsPort(t *testing.T) {
+	lbServiceType := corev1.ServiceTypeLoadBalancer
+
 	testCases := []struct {
-		name               string
-		exposeStrategy     kubermaticv1.ExposeStrategy
-		internalService    string
-		inService          *corev1.Service
-		expectedPort       int32
-		expectedTargetPort intstr.IntOrString
+		name                string
+		exposeStrategy      kubermaticv1.ExposeStrategy
+		internalService     string
+		inService           *corev1.Service
+		expectedPort        int32
+		expectedTargetPort  intstr.IntOrString
+		expectedServiceType *corev1.ServiceType
 	}{
 		{
 			name:           "Empty LoadBalancer service, port 443",
@@ -76,6 +79,18 @@ func TestServiceReconcilerSetsPort(t *testing.T) {
 			},
 			expectedPort:       int32(443),
 			expectedTargetPort: intstr.FromInt(6443),
+		},
+		{
+			name:           "Expose strategy LoadBalancer with service type LoadBalancer",
+			exposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
+			inService: &corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Type: corev1.ServiceTypeLoadBalancer,
+				},
+			},
+			expectedPort:        int32(443),
+			expectedTargetPort:  intstr.FromInt(6443),
+			expectedServiceType: &lbServiceType,
 		},
 		{
 			name:           "Empty NodePort service, port 443",
@@ -132,7 +147,7 @@ func TestServiceReconcilerSetsPort(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceReconciler(tc.exposeStrategy, tc.internalService)()
+			_, creator := ServiceReconciler(tc.exposeStrategy, tc.internalService, tc.expectedServiceType)()
 			svc, err := creator(tc.inService)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)
@@ -151,6 +166,12 @@ func TestServiceReconcilerSetsPort(t *testing.T) {
 			}
 			if svc.Spec.Ports[0].TargetPort.String() != tc.expectedTargetPort.String() {
 				t.Errorf("Expected targetPort to be %q but was %q", tc.expectedTargetPort.String(), svc.Spec.Ports[0].TargetPort.String())
+			}
+
+			if tc.expectedServiceType != nil {
+				if svc.Spec.Type != *tc.expectedServiceType {
+					t.Errorf("Expected service type to be %q but was %q", *tc.expectedServiceType, svc.Spec.Type)
+				}
 			}
 		})
 	}

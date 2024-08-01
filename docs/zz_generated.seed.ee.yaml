@@ -54,6 +54,9 @@ spec:
         anexia:
           # LocationID the location of the region
           locationID: ""
+        # APIServerServiceType is the service type used for API Server service `apiserver-external` for the user clusters.
+        # By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
+        apiServerServiceType: null
         # AWS configures an Amazon Web Services (AWS) datacenter.
         aws:
           # List of AMIs to use for a given operating system.

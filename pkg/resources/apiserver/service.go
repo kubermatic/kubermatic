@@ -30,7 +30,7 @@ import (
 )
 
 // ServiceReconciler returns the function to reconcile the external API server service.
-func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceReconcilerFactory {
+func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string, apiServerServiceType *corev1.ServiceType) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			if se.Annotations == nil {
@@ -61,6 +61,10 @@ func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL s
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
+			}
+
+			if apiServerServiceType != nil {
+				se.Spec.Type = *apiServerServiceType
 			}
 
 			se.Spec.Selector = resources.BaseAppLabels(name, nil)

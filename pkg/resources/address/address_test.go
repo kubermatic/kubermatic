@@ -87,6 +87,7 @@ func TestSyncClusterAddress(t *testing.T) {
 		expectedIP           string
 		expectedPort         int32
 		expectedURL          string
+		expectedAPIServerURL *string
 		errExpected          bool
 	}{
 		{
@@ -341,6 +342,93 @@ func TestSyncClusterAddress(t *testing.T) {
 				}},
 			errExpected: true,
 		},
+		{
+			name: "Verify properties API Server service of type LoadBalancer with hostname",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{NodePort: int32(443)},
+					},
+					Type: corev1.ServiceTypeLoadBalancer,
+				},
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName}},
+					},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: loadbBalancerHostName,
+			expectedIP:           externalIP,
+			expectedPort:         int32(443),
+			expectedURL:          fmt.Sprintf("https://%s", net.JoinHostPort(loadbBalancerHostName, "443")),
+			expectedAPIServerURL: ptr.To(fmt.Sprintf("https://%s", loadbBalancerHostName)),
+		},
+		{
+			name: "Verify properties API Server service of type LoadBalancer with hostname and IP, hostname is preferred",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{NodePort: int32(443)},
+					},
+					Type: corev1.ServiceTypeLoadBalancer,
+				},
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName, IP: externalIP}},
+					},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: loadbBalancerHostName,
+			expectedIP:           externalIP,
+			expectedPort:         int32(443),
+			expectedURL:          fmt.Sprintf("https://%s", net.JoinHostPort(loadbBalancerHostName, "443")),
+			expectedAPIServerURL: ptr.To(fmt.Sprintf("https://%s", loadbBalancerHostName)),
+		},
+		{
+			name: "Verify properties API Server service of type LoadBalancer with IP",
+			apiserverService: corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{
+						{NodePort: int32(443)},
+					},
+					Type: corev1.ServiceTypeLoadBalancer,
+				},
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{IP: externalIP}},
+					},
+				},
+			},
+			frontproxyService: corev1.Service{
+				Status: corev1.ServiceStatus{
+					LoadBalancer: corev1.LoadBalancerStatus{
+						Ingress: []corev1.LoadBalancerIngress{{Hostname: loadbBalancerHostName}},
+					},
+				},
+			},
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
+			expectedExternalName: loadbBalancerHostName,
+			expectedIP:           externalIP,
+			expectedPort:         int32(443),
+			expectedURL:          fmt.Sprintf("https://%s", net.JoinHostPort(loadbBalancerHostName, "443")),
+			expectedAPIServerURL: ptr.To(fmt.Sprintf("https://%s", externalIP)),
+		},
 	}
 
 	for _, tc := range testCases {
@@ -418,6 +506,12 @@ func TestSyncClusterAddress(t *testing.T) {
 
 			if cluster.Status.Address.URL != tc.expectedURL {
 				t.Errorf("Expected URL to be %q but was %q", tc.expectedURL, cluster.Status.Address.URL)
+			}
+
+			if tc.expectedAPIServerURL != nil {
+				if cluster.Status.Address.APIServerExternalAddress != *tc.expectedAPIServerURL {
+					t.Errorf("Expected APIServerExternalAddress to be %q but was %q", *tc.expectedAPIServerURL, cluster.Status.Address.APIServerExternalAddress)
+				}
 			}
 		})
 	}

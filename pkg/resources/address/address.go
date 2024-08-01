@@ -177,6 +177,39 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		return nil, fmt.Errorf("service %q has no port configured", serviceKey.String())
 	}
 
+	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+		apiServerHostName := ""
+		apiServerIP := ""
+		for _, ingress := range service.Status.LoadBalancer.Ingress {
+			if ingress.Hostname != "" {
+				apiServerHostName = ingress.Hostname
+				break
+			}
+
+			// Picks the first available IP address.
+			if len(ingress.IP) > 0 && apiServerIP == "" {
+				apiServerIP = ingress.IP
+			}
+		}
+
+		// Hostname has precedence over IP.
+		if apiServerHostName != "" {
+			if m.cluster.Status.Address.APIServerExternalAddress != fmt.Sprintf("https://%s", apiServerHostName) {
+				modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
+					c.Status.Address.APIServerExternalAddress = fmt.Sprintf("https://%s", apiServerHostName)
+				})
+				m.log.Debugw("Set APIServer hostname for cluster", "hostname", apiServerHostName)
+			}
+		} else if apiServerIP != "" {
+			if m.cluster.Status.Address.APIServerExternalAddress != fmt.Sprintf("https://%s", apiServerIP) {
+				modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
+					c.Status.Address.APIServerExternalAddress = fmt.Sprintf("https://%s", apiServerIP)
+				})
+				m.log.Debugw("Set APIServer IP for cluster", "ip", apiServerIP)
+			}
+		}
+	}
+
 	// Port
 	var port int32 = service.Spec.Ports[0].TargetPort.IntVal
 	if m.cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {

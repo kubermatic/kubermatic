@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
+	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -467,6 +468,53 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	}
 
 	return service.Spec.Ports[0].NodePort, nil
+}
+
+// GetAPIServerAlternateNames returns the alternate names for the apiserver certificate from the corresponding services.
+// This method ensures that if multiple hostnames or IPs have been assigned to the API server service or front-loadbalancer service, then all
+// of them are included in the certificate.
+func (d *TemplateData) GetAPIServerAlternateNames() (*certutil.AltNames, error) {
+	// Get all the loadbalancer Ingresses from the API server service.
+	DNSNames := []string{}
+	IPs := []net.IP{}
+	service := &corev1.Service{}
+	if err := d.client.Get(d.ctx, types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: ApiserverServiceName}, service); err != nil {
+		return nil, fmt.Errorf("failed to get API server service: %w", err)
+	}
+
+	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+		for _, ingress := range service.Status.LoadBalancer.Ingress {
+			if ingress.IP != "" {
+				IPs = append(IPs, net.ParseIP(ingress.IP))
+			}
+			if ingress.Hostname != "" {
+				DNSNames = append(DNSNames, ingress.Hostname)
+			}
+		}
+	}
+
+	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
+		service := &corev1.Service{}
+		if err := d.client.Get(d.ctx, types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: FrontLoadBalancerServiceName}, service); err != nil {
+			return nil, fmt.Errorf("failed to get front-loadbalancer service: %w", err)
+		}
+
+		if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
+			for _, ingress := range service.Status.LoadBalancer.Ingress {
+				if ingress.IP != "" {
+					IPs = append(IPs, net.ParseIP(ingress.IP))
+				}
+				if ingress.Hostname != "" {
+					DNSNames = append(DNSNames, ingress.Hostname)
+				}
+			}
+		}
+	}
+
+	return &certutil.AltNames{
+		DNSNames: DNSNames,
+		IPs:      IPs,
+	}, nil
 }
 
 // GetKonnectivityServerPort returns the nodeport of the external Konnectivity Server service.
