@@ -83,6 +83,11 @@ prometheus:
 
   # Similarly to the scraping config, you can configure the
   # target alertmanagers here.
+  alerting:
+    alert_relabel_configs:
+    - action: labeldrop
+      regex: replica
+    
   alertmanagers:
     files:
     - config/alertmanagers/*.yaml
