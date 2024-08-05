@@ -136,7 +136,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		datacenters := sets.KeySet(existing.Spec.Datacenters)
 
 		if duplicates := subjectDatacenters.Intersection(datacenters); duplicates.Len() > 0 {
-			return fmt.Errorf("Seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", sets.List(duplicates), existing.Name)
+			return fmt.Errorf("seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", sets.List(duplicates), existing.Name)
 		}
 
 		existingDatacenters = existingDatacenters.Union(datacenters)
@@ -155,6 +155,12 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 
 		if dc.Spec.Kubevirt != nil {
 			if err := validateKubeVirtSupportedOS(dc.Spec.Kubevirt); err != nil {
+				return err
+			}
+		}
+
+		if dc.Spec.Baremetal != nil && dc.Spec.Baremetal.Tinkerbell != nil {
+			if err := validateTinkerbellSupportedOS(dc.Spec.Baremetal.Tinkerbell); err != nil {
 				return err
 			}
 		}
@@ -189,7 +195,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 	return nil
 }
 
-func validateNoClustersRemaining(ctx context.Context, seedClient ctrlruntimeclient.Client, subject *kubermaticv1.Seed, subjectDatacenters, existingDatacenters sets.Set[string]) error {
+func validateNoClustersRemaining(ctx context.Context, seedClient ctrlruntimeclient.Client, _ *kubermaticv1.Seed, subjectDatacenters, existingDatacenters sets.Set[string]) error {
 	// new seed clusters might not yet have the CRDs installed into them,
 	// which for the purpose of this validation is not a problem and simply
 	// means there can be no Clusters on that seed
@@ -258,6 +264,17 @@ func validateKubeVirtSupportedOS(datacenterSpec *kubermaticv1.DatacenterSpecKube
 	if datacenterSpec != nil && datacenterSpec.Images.HTTP != nil {
 		for os := range datacenterSpec.Images.HTTP.OperatingSystems {
 			if _, exist := kubermaticv1.SupportedKubeVirtOS[os]; !exist {
+				return fmt.Errorf("invalid/not supported operating system specified: %s", os)
+			}
+		}
+	}
+	return nil
+}
+
+func validateTinkerbellSupportedOS(datacenterSpec *kubermaticv1.DatacenterSpecTinkerbell) error {
+	if datacenterSpec != nil && datacenterSpec.Images.HTTP != nil {
+		for os := range datacenterSpec.Images.HTTP.OperatingSystems {
+			if _, exist := kubermaticv1.SupportedTinkerbellOS[os]; !exist {
 				return fmt.Errorf("invalid/not supported operating system specified: %s", os)
 			}
 		}

@@ -199,6 +199,29 @@ spec:
                             type: object
                           baremetal:
                             description: Baremetal contains settings for baremetal clusters in datacenters.
+                            properties:
+                              tinkerbell:
+                                description: DatacenterSepcTinkerbell
+                                properties:
+                                  images:
+                                    description: Images represents standard VM Image sources.
+                                    properties:
+                                      http:
+                                        description: HTTP represents a http source.
+                                        properties:
+                                          operatingSystems:
+                                            additionalProperties:
+                                              additionalProperties:
+                                                type: string
+                                              description: OSVersions defines a map of OS version and the source to download the image.
+                                              type: object
+                                            description: OperatingSystems represents list of supported operating-systems with their URLs.
+                                            type: object
+                                        required:
+                                          - operatingSystems
+                                        type: object
+                                    type: object
+                                type: object
                             type: object
                           bringyourown:
                             description: |-

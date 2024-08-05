@@ -79,7 +79,8 @@ spec:
           # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
           location: ""
         # Baremetal contains settings for baremetal clusters in datacenters.
-        baremetal: {}
+        baremetal:
+          tinkerbell: null
         # BringYourOwn contains settings for clusters using manually created
         # nodes via kubeadm.
         bringyourown: {}

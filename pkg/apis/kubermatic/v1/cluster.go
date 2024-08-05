@@ -1215,7 +1215,7 @@ type VMwareCloudDirectorCSIConfig struct {
 // BaremetalCloudSpec specifies access data for a baremetal cluster.
 type BaremetalCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
-	Tinkerbell           TinkerbellCloudSpec                     `json:"tinkerbell,omitempty"`
+	Tinkerbell           *TinkerbellCloudSpec                    `json:"tinkerbell,omitempty"`
 }
 
 type TinkerbellCloudSpec struct {

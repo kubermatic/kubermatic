@@ -453,6 +453,10 @@ type DatacenterSpec struct {
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
+	// Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
+	// ignoring cluster-specific settings.
+	EnforcedAuditWebhookSettings *AuditWebhookBackendSettings `json:"enforcedAuditWebhookSettings,omitempty"`
+
 	// Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings.
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
@@ -713,7 +717,7 @@ type DatacenterSpecAWS struct {
 
 // DatacenterSpecBaremetal describes a datacenter of baremetal nodes.
 type DatacenterSpecBaremetal struct {
-	Tinkerbell TinkerbellImageSources `json:"tinkerbell,omitempty"`
+	Tinkerbell *DatacenterSpecTinkerbell `json:"tinkerbell,omitempty"`
 }
 
 var (
@@ -726,7 +730,7 @@ var (
 	}
 )
 
-// DatacenterSepcTinkerbell
+// DatacenterSepcTinkerbell contains specs for tinkerbell provider.
 type DatacenterSpecTinkerbell struct {
 	// Images represents standard VM Image sources.
 	Images TinkerbellImageSources `json:"images,omitempty"`

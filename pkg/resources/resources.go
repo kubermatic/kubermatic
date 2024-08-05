@@ -746,6 +746,8 @@ const (
 	ServiceAccountTokenAnnotation = "kubernetes.io/service-account.name"
 
 	UserSSHKeys = "usersshkeys"
+
+	TinkerbellKubeconfig = "kubeConfig"
 )
 
 const (

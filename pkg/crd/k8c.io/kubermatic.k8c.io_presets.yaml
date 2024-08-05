@@ -235,6 +235,26 @@ spec:
                     - subscriptionID
                     - tenantID
                   type: object
+                baremetal:
+                  description: Access data for Baremetal (Tinkerbell only for now).
+                  properties:
+                    datacenter:
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    tinkerbell:
+                      properties:
+                        kubeconfig:
+                          description: Kubeconfig is the cluster's kubeconfig file, encoded with base64.
+                          type: string
+                      required:
+                        - kubeconfig
+                      type: object
+                  type: object
                 digitalocean:
                   description: Access data for DigitalOcean.
                   properties:
