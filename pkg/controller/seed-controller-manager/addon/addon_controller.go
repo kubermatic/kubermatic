@@ -34,6 +34,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon/migrations"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -41,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -357,9 +357,22 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return reqeueAfter, nil
 	}
 
+	migration := migrations.RelevantMigrations(cluster, addon.Name)
+
+	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+
 	if addon.DeletionTimestamp != nil {
+		if err := migration.PreRemove(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+			return nil, fmt.Errorf("failed to perform preRemove migrations: %w", err)
+		}
 		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete manifests from cluster: %w", err)
+		}
+		if err := migration.PostRemove(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+			return nil, fmt.Errorf("failed to perform postRemove migrations: %w", err)
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
 			return nil, fmt.Errorf("failed to remove cleanup finalizer from addon: %w", err)
@@ -378,7 +391,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer exists on the addon: %w", err)
 	}
-	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
+	if err := r.ensureIsInstalled(ctx, log, addon, cluster, migration); err != nil {
 		return nil, fmt.Errorf("failed to deploy the addon manifests into the cluster: %w", err)
 	}
 	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
@@ -597,93 +610,7 @@ func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, ma
 	return cmd, nil
 }
 
-// Between v2.22 and v2.23, there was a change to hetzner CSI driver immutable field fsGroupPolicy
-// as a result, the CSDriver resource has to be redeployed
-// https://github.com/kubermatic/kubermatic/issues/12429
-func (r *Reconciler) migrateHetznerCSIDriver(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get kube client: %w", err)
-	}
-
-	driver := &storagev1.CSIDriver{}
-	if err := cl.Get(ctx, types.NamespacedName{Name: "csi.hetzner.cloud"}, driver); apierrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to get CSIDriver: %w", err)
-	}
-
-	if driver.Spec.FSGroupPolicy == nil || *driver.Spec.FSGroupPolicy != storagev1.FileFSGroupPolicy {
-		log.Info("Deleting Hetzner CSIDriver to allow upgrade")
-		if err := cl.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete old CSIDriver: %w", err)
-		}
-	}
-	return nil
-}
-
-// Between v2.23 and v2.24, there was a change to the vSphere CSI driver immutable field volumeLifecycleModes
-// as a result, the CSDriver resource has to be redeployed; there was another change between 2.24 and 2.25 that
-// also requires a recreation of the CSIDriver.
-// https://github.com/kubermatic/kubermatic/issues/12801
-// https://github.com/kubermatic/kubermatic/pull/12936
-func (r *Reconciler) migrateVsphereCSIDriver(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get kube client: %w", err)
-	}
-
-	driver := &storagev1.CSIDriver{}
-	if err := cl.Get(ctx, types.NamespacedName{Name: "csi.vsphere.vmware.com"}, driver); apierrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to get CSIDriver: %w", err)
-	}
-
-	recreate := false
-	if len(driver.Spec.VolumeLifecycleModes) > 1 || (len(driver.Spec.VolumeLifecycleModes) == 1 && driver.Spec.VolumeLifecycleModes[0] != storagev1.VolumeLifecyclePersistent) {
-		recreate = true
-	}
-
-	if driver.Spec.PodInfoOnMount == nil || *driver.Spec.PodInfoOnMount {
-		recreate = true
-	}
-
-	if recreate {
-		log.Info("Deleting vSphere CSIDriver to allow upgrade")
-		if err := cl.Delete(ctx, driver); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete old CSIDriver: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// Between v2.24 and v2.25, the roleRef in a ClusterRoleBinding for the Azure CSI changed.
-func (r *Reconciler) migrateAzureCSIRBAC(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	cl, err := r.kubeconfigProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get kube client: %w", err)
-	}
-
-	crb := &rbacv1.ClusterRoleBinding{}
-	if err := cl.Get(ctx, types.NamespacedName{Name: "csi-azuredisk-node-secret-binding"}, crb); apierrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("failed to get ClusterRoleBinding: %w", err)
-	}
-
-	if crb.RoleRef.Name != "csi-azuredisk-node-role" {
-		log.Infof("Deleting Azure ClusterRoleBinding %s to allow upgrade", crb.Name)
-		if err := cl.Delete(ctx, crb); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete ClusterRoleBinding: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster, migration migrations.AddonMigration) error {
 	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
 		return err
@@ -718,24 +645,14 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	ver := r.versions.KubermaticCommit
 	lastSuccess := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
 
+	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get client for usercluster: %w", err)
+	}
+
 	if lastSuccess.KubermaticVersion != ver {
-		if addon.Name == csiAddonName && cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			switch {
-			case cluster.Spec.Cloud.Hetzner != nil:
-				if err := r.migrateHetznerCSIDriver(ctx, log, cluster); err != nil {
-					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
-				}
-
-			case cluster.Spec.Cloud.VSphere != nil:
-				if err := r.migrateVsphereCSIDriver(ctx, log, cluster); err != nil {
-					return fmt.Errorf("failed to migrate CSI Driver: %w", err)
-				}
-
-			case cluster.Spec.Cloud.Azure != nil:
-				if err := r.migrateAzureCSIRBAC(ctx, log, cluster); err != nil {
-					return fmt.Errorf("failed to migrate Azure CSI RBAC: %w", err)
-				}
-			}
+		if err := migration.PreApply(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+			return fmt.Errorf("failed to perform preApply migrations: %w", err)
 		}
 	}
 
@@ -745,6 +662,12 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	cmdLog.Debugw("Finished executing command", "output", string(out))
 	if err != nil {
 		return fmt.Errorf("failed to execute '%s' for addon %s of cluster %s: %w\n%s", strings.Join(cmd.Args, " "), addon.Name, cluster.Name, err, string(out))
+	}
+
+	if lastSuccess.KubermaticVersion != ver {
+		if err := migration.PostApply(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+			return fmt.Errorf("failed to perform postApply migrations: %w", err)
+		}
 	}
 
 	if addon.Name == csiAddonName {
