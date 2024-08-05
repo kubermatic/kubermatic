@@ -49,8 +49,8 @@ const (
 	CloudCredentialsSecretName           = "velero-cloud-credentials"
 	defaultCloudCredentialsSecretKeyName = "cloud"
 
-	version       = "v1.12.0"
-	pluginVersion = "v1.2.1"
+	version       = "v1.14.0"
+	pluginVersion = "v1.10.0"
 )
 
 // NamespaceReconciler creates the namespace for velero related resources on the user cluster.

@@ -68,7 +68,7 @@ metadata:
   name: velero
   labels:
     app.kubernetes.io/name: velero
-    app.kubernetes.io/version: 'v1.13.1'
+    app.kubernetes.io/version: 'v1.14.0'
     app.kubernetes.io/managed-by: helm
 spec:
   replicas: 1
@@ -88,7 +88,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: velero
-        image: 'docker.io/velero/velero:v1.13.1'
+        image: 'docker.io/velero/velero:v1.14.0'
         imagePullPolicy: IfNotPresent
         command:
         - /velero
