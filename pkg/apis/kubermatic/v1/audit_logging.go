@@ -53,4 +53,14 @@ type AuditLoggingSettings struct {
 	PolicyPreset AuditPolicyPreset `json:"policyPreset,omitempty"`
 	// Optional: Configures the fluent-bit sidecar deployed alongside kube-apiserver.
 	SidecarSettings *AuditSidecarSettings `json:"sidecar,omitempty"`
+	// Optional: Configures the webhook backend for audit logs.
+	WebhookBackend *AuditWebhookBackendSettings `json:"webhookBackend,omitempty"`
+}
+
+// AuditWebhookBackendSettings configures webhook backend for audit logging functionality.
+type AuditWebhookBackendSettings struct {
+	// Required : AuditWebhookConfig contains reference to secret holding the audit webhook config file
+	AuditWebhookConfig *corev1.SecretReference `json:"auditWebhookConfig"`
+	// +kubebuilder:default="10s"
+	AuditWebhookInitialBackoff string `json:"auditWebhookInitialBackoff,omitempty"`
 }
