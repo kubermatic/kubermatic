@@ -453,10 +453,6 @@ type DatacenterSpec struct {
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
-	// Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
-	// ignoring cluster-specific settings.
-	EnforcedAuditWebhookSettings *AuditWebhookBackendSettings `json:"enforcedAuditWebhookSettings,omitempty"`
-
 	// Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings.
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
@@ -717,6 +713,35 @@ type DatacenterSpecAWS struct {
 
 // DatacenterSpecBaremetal describes a datacenter of baremetal nodes.
 type DatacenterSpecBaremetal struct {
+	Tinkerbell TinkerbellImageSources `json:"tinkerbell,omitempty"`
+}
+
+var (
+	SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
+		providerconfig.OperatingSystemCentOS:     nil,
+		providerconfig.OperatingSystemUbuntu:     nil,
+		providerconfig.OperatingSystemRHEL:       nil,
+		providerconfig.OperatingSystemFlatcar:    nil,
+		providerconfig.OperatingSystemRockyLinux: nil,
+	}
+)
+
+// DatacenterSepcTinkerbell
+type DatacenterSpecTinkerbell struct {
+	// Images represents standard VM Image sources.
+	Images TinkerbellImageSources `json:"images,omitempty"`
+}
+
+// TinkerbellImageSources represents Operating System image sources for Tinkerbell.
+type TinkerbellImageSources struct {
+	// HTTP represents a http source.
+	HTTP *TinkerbellHTTPSource `json:"http,omitempty"`
+}
+
+// TinkerbellHTTPSource represents list of images and their versions that can be downloaded over HTTP.
+type TinkerbellHTTPSource struct {
+	// OperatingSystems represents list of supported operating-systems with their URLs.
+	OperatingSystems map[providerconfig.OperatingSystem]OSVersions `json:"operatingSystems"`
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.

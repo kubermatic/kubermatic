@@ -731,7 +731,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	case spec.Azure != nil:
 		providerErr = validateAzureCloudSpec(spec.Azure)
 	case spec.Baremetal != nil:
-		providerErr = nil
+		providerErr = validateBaremetalCloudSpec(spec.Baremetal)
 	case spec.BringYourOwn != nil:
 		providerErr = nil
 	case spec.Edge != nil:
@@ -1010,6 +1010,16 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 	}
 	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func validateBaremetalCloudSpec(spec *kubermaticv1.BaremetalCloudSpec) error {
+	if spec.Tinkerbell != nil && spec.Tinkerbell.Kubeconfig == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.TinkerbellKubeconfig); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -57,6 +57,8 @@ type PresetSpec struct {
 	Azure *Azure `json:"azure,omitempty"`
 	// Access data for vSphere.
 	VSphere *VSphere `json:"vsphere,omitempty"`
+	// Access data for Baremetal (Tinkerbell only for now).
+	Baremetal *Baremetal `json:"baremetal,omitempty"`
 	// Access data for Amazon Web Services(AWS) Cloud.
 	AWS *AWS `json:"aws,omitempty"`
 	// Access data for OpenStack.
@@ -256,6 +258,25 @@ func (s VMwareCloudDirector) IsValid() bool {
 		len(s.Organization) > 0 &&
 		(len(s.OVDCNetwork) > 0 || len(s.OVDCNetworks) > 0) &&
 		!(len(s.OVDCNetwork) > 0 && len(s.OVDCNetworks) > 0)
+}
+
+type Baremetal struct {
+	ProviderPreset `json:",inline"`
+
+	Tinkerbell Tinkerbell `json:"tinkerbell,omitempty"`
+}
+
+type Tinkerbell struct {
+	// Kubeconfig is the cluster's kubeconfig file, encoded with base64.
+	Kubeconfig string `json:"kubeconfig"`
+}
+
+func (s Tinkerbell) IsValid() bool {
+	return len(s.Kubeconfig) > 0
+}
+
+func (s Baremetal) IsValid() bool {
+	return s.Tinkerbell.IsValid()
 }
 
 type AWS struct {
