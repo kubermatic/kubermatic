@@ -35,6 +35,10 @@ rule_files:
 
 {{- if or .Values.prometheus.alertmanagers.files .Values.prometheus.alertmanagers.configs }}
 alerting:
+{{- if .Values.prometheus.alerting.alert_relabel_configs }}
+  alert_relabel_configs:
+{{- toYaml .Values.prometheus.alerting.alert_relabel_configs | nindent 4 }}
+{{- end }}
   alertmanagers:
   {{- range .Values.prometheus.alertmanagers.files }}
   {{- range $filename, $content := $.Files.Glob . }}
