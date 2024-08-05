@@ -1268,8 +1268,11 @@ type OpenstackCloudSpec struct {
 	// project id, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 
-	Domain                      string `json:"domain,omitempty"`
-	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
+	// Domain holds the name of the identity service (keystone) domain.
+	Domain string `json:"domain,omitempty"`
+	// Application credential ID to authenticate in combination with an application credential secret (which is not the user's password).
+	ApplicationCredentialID string `json:"applicationCredentialID,omitempty"`
+	// Application credential secret (which is not the user's password) to authenticate in combination with an application credential ID.
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 	UseToken                    bool   `json:"useToken,omitempty"`
 	// Used internally during cluster creation
