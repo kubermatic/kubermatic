@@ -23,6 +23,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -52,7 +53,7 @@ func (b *baremetal) ValidateCloudSpec(_ context.Context, spec kubermaticv1.Cloud
 		if kubeconfig == "" {
 			return errors.New("tinkerbell kubeconfig is empty")
 		}
-		// Tinkerbell kubeconfig is enconded in base64
+		// Tinkerbell kubeconfig is encoded in base64
 		config, err := base64.StdEncoding.DecodeString(kubeconfig)
 		if err != nil {
 			return err
