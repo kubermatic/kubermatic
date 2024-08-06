@@ -453,9 +453,9 @@ func validateProxyMode(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv
 			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode}))
 	}
 
-	if n.ProxyMode == resources.EBPFProxyMode && (cni == nil || cni.Type != kubermaticv1.CNIPluginTypeCilium) {
+	if n.ProxyMode == resources.EBPFProxyMode && (cni == nil || cni.Type == kubermaticv1.CNIPluginTypeCanal) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
-			fmt.Sprintf("%s proxy mode is valid only for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCilium)))
+			fmt.Sprintf("%s proxy mode is not valid for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCanal)))
 	}
 
 	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) { //nolint:staticcheck
