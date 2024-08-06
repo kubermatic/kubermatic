@@ -40,7 +40,7 @@ func (b *baremetal) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.Clust
 		return errors.New("baremetal cloud provider spec is empty")
 	}
 
-	if spec.Cloud.Baremetal != nil && spec.Cloud.Baremetal.Tinkerbell == nil {
+	if spec.Cloud.Baremetal.Tinkerbell == nil {
 		return errors.New("tinkerbell spec is empty! we must have a provisioner")
 	}
 	return nil
@@ -50,13 +50,12 @@ func (b *baremetal) ValidateCloudSpec(_ context.Context, spec kubermaticv1.Cloud
 	if spec.Baremetal.Tinkerbell != nil {
 		kubeconfig := spec.Baremetal.Tinkerbell.Kubeconfig
 		if kubeconfig == "" {
-			return errors.New("tinkerbell kubeconfig is not found")
+			return errors.New("tinkerbell kubeconfig is empty")
 		}
+		// Tinkerbell kubeconfig is enconded in base64
 		config, err := base64.StdEncoding.DecodeString(kubeconfig)
 		if err != nil {
-			// if the decoding failed, the kubeconfig is sent already decoded without the need of decoding it,
-			// for example the value has been read from Vault during the ci tests, which is saved as json format.
-			config = []byte(kubeconfig)
+			return err
 		}
 
 		_, err = clientcmd.RESTConfigFromKubeConfig(config)

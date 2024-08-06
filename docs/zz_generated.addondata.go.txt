@@ -177,7 +177,7 @@ type BaremetalCredentials struct {
 
 type TinkerbellCredentials struct {
 	// Admin kubeconfig for Tinkerbell cluster
-	KubeConfig string
+	Kubeconfig string
 }
 
 type DigitaloceanCredentials struct {

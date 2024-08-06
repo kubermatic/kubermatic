@@ -119,12 +119,20 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
 		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
 	}
+
+	tinkerbellHTTPsource := kubermaticv1.TinkerbellHTTPSource{
+		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
+	}
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
 		operatingSystemProfileList[operatingSystem] = ""
 	}
 	for supportedOS := range kubermaticv1.SupportedKubeVirtOS {
 		kubevirtHTTPSource.OperatingSystems[supportedOS] = map[string]string{"<<version>>": "<<url>>"}
+	}
+
+	for supportedOS := range kubermaticv1.SupportedTinkerbellOS {
+		tinkerbellHTTPsource.OperatingSystems[supportedOS] = map[string]string{"<<version>>": "<<url>>"}
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
@@ -152,7 +160,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 					Spec: kubermaticv1.DatacenterSpec{
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
-						Baremetal:                      &kubermaticv1.DatacenterSpecBaremetal{},
+						Baremetal: &kubermaticv1.DatacenterSpecBaremetal{
+							Tinkerbell: &kubermaticv1.DatacenterSpecTinkerbell{
+								Images: kubermaticv1.TinkerbellImageSources{HTTP: &tinkerbellHTTPsource},
+							},
+						},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						Edge:                           &kubermaticv1.DatacenterSpecEdge{},
 						RequiredEmails:                 []string{},

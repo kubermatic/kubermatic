@@ -730,7 +730,7 @@ var (
 	}
 )
 
-// DatacenterSepcTinkerbell contains specs for tinkerbell provider.
+// DatacenterSepcTinkerbell contains spec for tinkerbell provider.
 type DatacenterSpecTinkerbell struct {
 	// Images represents standard VM Image sources.
 	Images TinkerbellImageSources `json:"images,omitempty"`

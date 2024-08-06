@@ -80,7 +80,23 @@ spec:
           location: ""
         # Baremetal contains settings for baremetal clusters in datacenters.
         baremetal:
-          tinkerbell: null
+          tinkerbell:
+            # Images represents standard VM Image sources.
+            images:
+              # HTTP represents a http source.
+              http:
+                # OperatingSystems represents list of supported operating-systems with their URLs.
+                operatingSystems:
+                  centos:
+                    <<version>>: <<url>>
+                  flatcar:
+                    <<version>>: <<url>>
+                  rhel:
+                    <<version>>: <<url>>
+                  rockylinux:
+                    <<version>>: <<url>>
+                  ubuntu:
+                    <<version>>: <<url>>
         # BringYourOwn contains settings for clusters using manually created
         # nodes via kubeadm.
         bringyourown: {}

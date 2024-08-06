@@ -63,7 +63,7 @@ type BaremetalCredentials struct {
 }
 type TinkerbellCredentials struct {
 	// Admin kubeconfig for Tinkerbell cluster
-	KubeConfig string
+	Kubeconfig string
 }
 
 type EKSCredentials struct {
@@ -345,7 +345,7 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 			return err
 		}
 		if cluster.Spec.Cloud.Baremetal.Tinkerbell != nil {
-			cluster.Spec.Cloud.Baremetal.Tinkerbell.Kubeconfig = credentials.Baremetal.Tinkerbell.KubeConfig
+			cluster.Spec.Cloud.Baremetal.Tinkerbell.Kubeconfig = credentials.Baremetal.Tinkerbell.Kubeconfig
 		}
 	}
 
@@ -548,8 +548,8 @@ func GetBaremetalCredentials(data CredentialsData) (BaremetalCredentials, error)
 	var err error
 
 	if spec.Tinkerbell != nil && spec.Tinkerbell.Kubeconfig != "" {
-		baremetalCredentials.Tinkerbell.KubeConfig = spec.Tinkerbell.Kubeconfig
-	} else if baremetalCredentials.Tinkerbell.KubeConfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, TinkerbellKubeconfig); err != nil {
+		baremetalCredentials.Tinkerbell.Kubeconfig = spec.Tinkerbell.Kubeconfig
+	} else if baremetalCredentials.Tinkerbell.Kubeconfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, TinkerbellKubeconfig); err != nil {
 		return BaremetalCredentials{}, err
 	}
 

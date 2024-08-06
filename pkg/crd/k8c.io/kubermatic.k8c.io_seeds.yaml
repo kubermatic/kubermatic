@@ -201,7 +201,7 @@ spec:
                             description: Baremetal contains settings for baremetal clusters in datacenters.
                             properties:
                               tinkerbell:
-                                description: DatacenterSepcTinkerbell
+                                description: DatacenterSepcTinkerbell contains spec for tinkerbell provider.
                                 properties:
                                   images:
                                     description: Images represents standard VM Image sources.

@@ -136,7 +136,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		datacenters := sets.KeySet(existing.Spec.Datacenters)
 
 		if duplicates := subjectDatacenters.Intersection(datacenters); duplicates.Len() > 0 {
-			return fmt.Errorf("seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", sets.List(duplicates), existing.Name)
+			return fmt.Errorf("Seed redefines existing datacenters %v from Seed %q; datacenter names must be globally unique", sets.List(duplicates), existing.Name)
 		}
 
 		existingDatacenters = existingDatacenters.Union(datacenters)
