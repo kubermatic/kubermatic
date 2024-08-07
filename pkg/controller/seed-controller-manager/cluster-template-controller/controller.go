@@ -242,11 +242,19 @@ func (r *reconciler) assignSSHKeyToCluster(ctx context.Context, clusterID string
 func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv1.ClusterTemplateInstance, workerName string) *kubermaticv1.Cluster {
 	name := utilcluster.MakeClusterName()
 
+	annotations := make(map[string]string)
+	for key, val := range template.ClusterAnnotations {
+		annotations[key] = val
+	}
+	for key, val := range template.Annotations {
+		annotations[key] = val
+	}
+
 	newCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Labels:      template.ClusterLabels,
-			Annotations: template.Annotations,
+			Annotations: annotations,
 		},
 	}
 
