@@ -1028,6 +1028,16 @@ spec:
                               ipv6Enabled:
                                 description: 'Optional: defines if the IPv6 is enabled for the datacenter'
                                 type: boolean
+                              loadBalancerMethod:
+                                description: |-
+                                  Optional: Gets mapped to the "lb-method" setting in the cloud config.
+                                  defaults to "ROUND_ROBIN".
+                                type: string
+                              loadBalancerProvider:
+                                description: |-
+                                  Optional: Gets mapped to the "lb-provider" setting in the cloud config.
+                                  defaults to ""
+                                type: string
                               manageSecurityGroups:
                                 description: |-
                                   Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
