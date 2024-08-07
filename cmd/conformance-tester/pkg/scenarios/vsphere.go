@@ -52,7 +52,7 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	}
 
 	if s.datastoreCluster {
-		spec.Cloud.VSphere.DatastoreCluster = "dsc-1"
+		spec.Cloud.VSphere.DatastoreCluster = "Datastore0-truenas"
 		spec.Cloud.VSphere.Datastore = ""
 	}
 
