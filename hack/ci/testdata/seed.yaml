@@ -103,11 +103,11 @@ spec:
         vsphere:
           cluster: vcenter.dc.k8c.io
           datacenter: Hamburg
-          datastore: vsan
+          datastore: Datastore0-truenas
           endpoint: https://10.10.0.100
           allowInsecure: true
           ipv6Enabled: true
-          rootPath: /Hamburg/vm/Kubermatic-ci
+          rootPath: /Hamburg/vm/Kubermatic-dev
           templates:
             centos: kkp-centos-7
             flatcar: kkp-flatcar-3033.2.2
