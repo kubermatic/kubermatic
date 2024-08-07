@@ -156,6 +156,7 @@ rules:
       - list
       - watch
       - create
+      - patch
       - delete
   - apiGroups:
       - ""
@@ -722,6 +723,9 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: csi-azurefile-controller-sa
       tolerations:
         - effect: NoSchedule
