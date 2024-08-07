@@ -166,6 +166,7 @@ func NewTemplateData(
 			},
 			CSIMigration:                csiMigration,
 			KubeVirtInfraStorageClasses: kubeVirtStorageClasses,
+			DisableCSIDriver:            cluster.Spec.DisableCSIDriver,
 		},
 	}, nil
 }
@@ -224,6 +225,8 @@ type ClusterData struct {
 	// KubeVirtInfraStorageClasses is a list of storage classes from KubeVirt infra cluster that are used for
 	// initialization of user cluster storage classes by the CSI driver kubevirt (hot pluggable disks)
 	KubeVirtInfraStorageClasses []kubermaticv1.KubeVirtInfraStorageClass
+	// DisableCSIDriver indicates if csi drivers (csi addon) is disabled for the user cluster or not.
+	DisableCSIDriver bool
 }
 
 type ClusterNetwork struct {
