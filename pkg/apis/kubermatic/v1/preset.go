@@ -300,7 +300,9 @@ type Openstack struct {
 
 	UseToken bool `json:"useToken,omitempty"`
 
-	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
+	// Application credential ID to authenticate in combination with an application credential secret (which is not the user's password).
+	ApplicationCredentialID string `json:"applicationCredentialID,omitempty"`
+	// Application credential secret (which is not the user's password) to authenticate in combination with an application credential ID.
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 
 	Username string `json:"username,omitempty"`
@@ -309,7 +311,8 @@ type Openstack struct {
 	Project string `json:"project,omitempty"`
 	// ProjectID, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
-	Domain    string `json:"domain"`
+	// Domain holds the name of the identity service (keystone) domain.
+	Domain string `json:"domain"`
 
 	// Network holds the name of the internal network When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created.
 	Network        string `json:"network,omitempty"`

@@ -1036,8 +1036,10 @@ spec:
                       description: Openstack defines the configuration data of an OpenStack cloud.
                       properties:
                         applicationCredentialID:
+                          description: Application credential ID to authenticate in combination with an application credential secret (which is not the user's password).
                           type: string
                         applicationCredentialSecret:
+                          description: Application credential secret (which is not the user's password) to authenticate in combination with an application credential ID.
                           type: string
                         cinderTopologyEnabled:
                           description: |-
@@ -1093,6 +1095,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         domain:
+                          description: Domain holds the name of the identity service (keystone) domain.
                           type: string
                         enableIngressHostname:
                           description: |-
