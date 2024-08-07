@@ -152,7 +152,9 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.30-datastore-cluster
     decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
+    # This job is disabled currently because we have a datastore cluster 
+    # but it will not work as it is connected to vSAN and vSAN is messed up.
+    # run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)" 
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
