@@ -53,3 +53,19 @@ patches:
                   items:
                     - key: config
                       path: azure.json
+
+  # patch-in the missing securityContext until upstream fix
+  # https://github.com/kubernetes-sigs/azurefile-csi-driver/pull/2048
+  # is merged
+  - patch: |-
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: csi-azurefile-controller
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
