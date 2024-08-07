@@ -133,7 +133,7 @@ func processImage(image string) (string, error) {
 }
 
 const (
-	// 5 MB, same as chunk size in decoder
+	// 5 MB, same as chunk size in decoder.
 	bufSize = 5 * 1024 * 1024
 )
 
@@ -156,7 +156,7 @@ func decodeReader(source io.ReadCloser) ([]*yamled.Document, error) {
 
 		doc, err := yamled.Load(bytes.NewReader(buf[:read]))
 		if err != nil {
-			return nil, fmt.Errorf("document %d is invalid: %v", i, err)
+			return nil, fmt.Errorf("document %d is invalid: %w", i, err)
 		}
 
 		result = append(result, doc)
