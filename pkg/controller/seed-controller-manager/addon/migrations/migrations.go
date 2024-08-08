@@ -47,9 +47,10 @@ type AddonMigration interface {
 }
 
 var allMigrations = []AddonMigration{
-	&hetznerCsiMigration{},
-	&vsphereCsiMigration{},
-	&azureCsiMigration{},
+	&csiHetznerMigration{},
+	&csiVsphereMigration{},
+	&csiAzureRBACMigration{},
+	&csiAzureHelmMigration{},
 }
 
 func RelevantMigrations(cluster *kubermaticv1.Cluster, addonName string) AddonMigration {
