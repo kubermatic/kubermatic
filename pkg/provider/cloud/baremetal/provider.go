@@ -42,7 +42,7 @@ func (b *baremetal) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.Clust
 	}
 
 	if spec.Cloud.Baremetal.Tinkerbell == nil {
-		return errors.New("tinkerbell spec is empty! we must have a provisioner")
+		return errors.New("tinkerbell spec is empty! tinkerbell spec is required")
 	}
 	return nil
 }

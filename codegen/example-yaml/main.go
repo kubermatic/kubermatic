@@ -128,11 +128,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 		operatingSystemProfileList[operatingSystem] = ""
 	}
 	for supportedOS := range kubermaticv1.SupportedKubeVirtOS {
-		kubevirtHTTPSource.OperatingSystems[supportedOS] = map[string]string{"<<version>>": "<<url>>"}
+		kubevirtHTTPSource.OperatingSystems[supportedOS] = map[string]string{"vX.Y": "http://example.com/images/os.iso"}
 	}
 
 	for supportedOS := range kubermaticv1.SupportedTinkerbellOS {
-		tinkerbellHTTPsource.OperatingSystems[supportedOS] = map[string]string{"<<version>>": "<<url>>"}
+		tinkerbellHTTPsource.OperatingSystems[supportedOS] = map[string]string{"vX.Y": "http://example.com/images/os.iso"}
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{

@@ -61,6 +61,7 @@ type AzureCredentials struct {
 type BaremetalCredentials struct {
 	Tinkerbell TinkerbellCredentials
 }
+
 type TinkerbellCredentials struct {
 	// Admin kubeconfig for Tinkerbell cluster
 	Kubeconfig string

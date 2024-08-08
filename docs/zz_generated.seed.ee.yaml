@@ -88,15 +88,15 @@ spec:
                 # OperatingSystems represents list of supported operating-systems with their URLs.
                 operatingSystems:
                   centos:
-                    <<version>>: <<url>>
+                    vX.Y: http://example.com/images/os.iso
                   flatcar:
-                    <<version>>: <<url>>
+                    vX.Y: http://example.com/images/os.iso
                   rhel:
-                    <<version>>: <<url>>
+                    vX.Y: http://example.com/images/os.iso
                   rockylinux:
-                    <<version>>: <<url>>
+                    vX.Y: http://example.com/images/os.iso
                   ubuntu:
-                    <<version>>: <<url>>
+                    vX.Y: http://example.com/images/os.iso
         # BringYourOwn contains settings for clusters using manually created
         # nodes via kubeadm.
         bringyourown: {}
@@ -189,15 +189,15 @@ spec:
               # OperatingSystems represents list of supported operating-systems with their URLs.
               operatingSystems:
                 centos:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 flatcar:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 rhel:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 rockylinux:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 ubuntu:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
           # Optional: InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
           # that will be used to initialise StorageClasses in the tenant cluster.
           # In the tenant cluster, the created StorageClass name will have as name:
