@@ -1,0 +1,88 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - driver.yaml
+patches:
+  # patch the controller plugin
+  - patch: |-
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: openstack-cinder-csi-controllerplugin
+        namespace: kube-system
+      spec:
+        template:
+          metadata:
+            # add annotation to allow eviction by cluster-autoscaler
+            annotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
+
+          spec:
+            containers:
+              - name: cinder-csi-plugin
+                env:
+                  # use a dynamic cluster name
+                  - name: CLUSTER_NAME
+                    value: '{{ .Cluster.Name }}'
+
+                  # use KKP's CA bundle
+                  - name: SSL_CERT_FILE
+                    value: /etc/kubermatic/certs/ca-bundle.pem
+
+                volumeMounts:
+                  - mountPath: /etc/kubermatic/certs
+                    name: ca-bundle
+                    readOnly: true
+
+            volumes:
+              # load cloud-config from Secret instead of from the host's filesystem
+              - name: cloud-config
+                hostPath: ~
+                secret:
+                  secretName: cloud-config-csi
+                  items:
+                    - key: config
+                      path: cloud.conf
+
+              # mount KKP's CA bundle
+              - name: ca-bundle
+                configMap:
+                  name: ca-bundle
+
+  # and do most of the same work for the node plugin, too
+  - patch: |-
+      kind: DaemonSet
+      apiVersion: apps/v1
+      metadata:
+        name: openstack-cinder-csi-nodeplugin
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: cinder-csi-plugin
+                env:
+                  # use KKP's CA bundle
+                  - name: SSL_CERT_FILE
+                    value: /etc/kubermatic/certs/ca-bundle.pem
+
+                volumeMounts:
+                  - mountPath: /etc/kubermatic/certs
+                    name: ca-bundle
+                    readOnly: true
+
+            volumes:
+              # load cloud-config from Secret instead of from the host's filesystem
+              - name: cloud-config
+                hostPath: ~
+                secret:
+                  secretName: cloud-config-csi
+                  items:
+                    - key: config
+                      path: cloud.conf
+
+              # mount KKP's CA bundle
+              - name: ca-bundle
+                configMap:
+                  name: ca-bundle
