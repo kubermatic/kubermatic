@@ -35,6 +35,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
 )
 
+const defaultOpenStackLBMethod = "ROUND_ROBIN"
+
 // CloudConfig returns the cloud-config for the supplied data.
 func CloudConfig(
 	cluster *kubermaticv1.Cluster,
@@ -100,6 +102,14 @@ func CloudConfig(
 
 	case cloud.Openstack != nil:
 		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
+		loadBalancerProvider := ""
+		loadBalancerMethod := defaultOpenStackLBMethod
+		if dc.Spec.Openstack.LoadBalancerProvider != nil {
+			loadBalancerProvider = *dc.Spec.Openstack.LoadBalancerProvider
+		}
+		if dc.Spec.Openstack.LoadBalancerMethod != nil {
+			loadBalancerMethod = *dc.Spec.Openstack.LoadBalancerMethod
+		}
 		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		useOctavia := dc.Spec.Openstack.UseOctavia
 		if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
@@ -125,6 +135,8 @@ func CloudConfig(
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
+				LBMethod:             loadBalancerMethod,
+				LBProvider:           loadBalancerProvider,
 				UseOctavia:           useOctavia,
 			},
 			Version: cluster.Status.Versions.ControlPlane.String(),

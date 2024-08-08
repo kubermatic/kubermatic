@@ -49,7 +49,7 @@ region      = {{ .Global.Region | iniEscape }}
 lb-version = {{ default "v2" .LoadBalancer.LBVersion | iniEscape }}
 subnet-id = {{ .LoadBalancer.SubnetID | iniEscape }}
 floating-network-id = {{ .LoadBalancer.FloatingNetworkID | iniEscape }}
-lb-method = {{ default "ROUND_ROBIN" .LoadBalancer.LBMethod | iniEscape }}
+lb-method = {{ .LoadBalancer.LBMethod | iniEscape }}
 lb-provider = {{ .LoadBalancer.LBProvider | iniEscape }}
 {{- if .LoadBalancer.UseOctavia }}
 use-octavia = {{ .LoadBalancer.UseOctavia | Bool }}
