@@ -17,6 +17,7 @@ name: oauth
 version: 9.9.9-dev
 appVersion: v2.39.1
 description: Dex
+deprecated: true
 keywords:
   - kubermatic
   - oauth
