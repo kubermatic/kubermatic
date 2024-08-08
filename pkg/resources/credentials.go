@@ -30,6 +30,7 @@ import (
 type Credentials struct {
 	AWS                 AWSCredentials
 	Azure               AzureCredentials
+	Baremetal           BaremetalCredentials
 	Digitalocean        DigitaloceanCredentials
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
@@ -55,6 +56,15 @@ type AzureCredentials struct {
 	SubscriptionID string
 	ClientID       string
 	ClientSecret   string
+}
+
+type BaremetalCredentials struct {
+	Tinkerbell TinkerbellCredentials
+}
+
+type TinkerbellCredentials struct {
+	// Admin kubeconfig for Tinkerbell cluster
+	Kubeconfig string
 }
 
 type EKSCredentials struct {
@@ -180,6 +190,9 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.Azure != nil {
 		return cluster.Spec.Cloud.Azure.CredentialsReference, nil
 	}
+	if cluster.Spec.Cloud.Baremetal != nil {
+		return cluster.Spec.Cloud.Baremetal.CredentialsReference, nil
+	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
 		return cluster.Spec.Cloud.Digitalocean.CredentialsReference, nil
 	}
@@ -216,9 +229,6 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.BringYourOwn != nil {
 		return nil, nil
 	}
-	if cluster.Spec.Cloud.Baremetal != nil {
-		return nil, nil
-	}
 	if cluster.Spec.Cloud.Edge != nil {
 		return nil, nil
 	}
@@ -240,6 +250,13 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 			return Credentials{}, err
 		}
 	}
+
+	if data.Cluster().Spec.Cloud.Baremetal != nil {
+		if credentials.Baremetal, err = GetBaremetalCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+
 	if data.Cluster().Spec.Cloud.Digitalocean != nil {
 		if credentials.Digitalocean, err = GetDigitaloceanCredentials(data); err != nil {
 			return Credentials{}, err
@@ -323,6 +340,16 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		cluster.Spec.Cloud.Azure.ClientSecret = credentials.Azure.ClientSecret
 		cluster.Spec.Cloud.Azure.SubscriptionID = credentials.Azure.SubscriptionID
 	}
+
+	if data.Cluster().Spec.Cloud.Baremetal != nil {
+		if credentials.Baremetal, err = GetBaremetalCredentials(data); err != nil {
+			return err
+		}
+		if cluster.Spec.Cloud.Baremetal.Tinkerbell != nil {
+			cluster.Spec.Cloud.Baremetal.Tinkerbell.Kubeconfig = credentials.Baremetal.Tinkerbell.Kubeconfig
+		}
+	}
+
 	if data.Cluster().Spec.Cloud.Digitalocean != nil {
 		if credentials.Digitalocean, err = GetDigitaloceanCredentials(data); err != nil {
 			return err
@@ -514,6 +541,20 @@ func GetAzureCredentials(data CredentialsData) (AzureCredentials, error) {
 	}
 
 	return azureCredentials, nil
+}
+
+func GetBaremetalCredentials(data CredentialsData) (BaremetalCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Baremetal
+	baremetalCredentials := BaremetalCredentials{}
+	var err error
+
+	if spec.Tinkerbell != nil && spec.Tinkerbell.Kubeconfig != "" {
+		baremetalCredentials.Tinkerbell.Kubeconfig = spec.Tinkerbell.Kubeconfig
+	} else if baremetalCredentials.Tinkerbell.Kubeconfig, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, TinkerbellKubeconfig); err != nil {
+		return BaremetalCredentials{}, err
+	}
+
+	return baremetalCredentials, nil
 }
 
 func GetDigitaloceanCredentials(data CredentialsData) (DigitaloceanCredentials, error) {

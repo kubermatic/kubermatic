@@ -746,6 +746,9 @@ const (
 	ServiceAccountTokenAnnotation = "kubernetes.io/service-account.name"
 
 	UserSSHKeys = "usersshkeys"
+
+	// This Constant is used in GetBaremetalCredentials() to get the Tinkerbell kubeconfig.
+	TinkerbellKubeconfig = "kubeConfig"
 )
 
 const (

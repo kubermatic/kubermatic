@@ -1213,7 +1213,16 @@ type VMwareCloudDirectorCSIConfig struct {
 }
 
 // BaremetalCloudSpec specifies access data for a baremetal cluster.
-type BaremetalCloudSpec struct{}
+type BaremetalCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	Tinkerbell           *TinkerbellCloudSpec                    `json:"tinkerbell,omitempty"`
+}
+
+type TinkerbellCloudSpec struct {
+
+	// The cluster's kubeconfig file, encoded with base64.
+	Kubeconfig string `json:"kubeconfig,omitempty"`
+}
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct{}
@@ -1580,6 +1589,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Azure != nil {
 		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, clusterName)
+	}
+	if cluster.Spec.Cloud.Baremetal != nil {
+		return fmt.Sprintf("%s-baremetal-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
 		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, clusterName)
