@@ -162,7 +162,7 @@ func customNetworkPolicyReconciler(existing kubermaticv1.CustomNetworkPolicy) re
 	}
 }
 
-func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client, namespace string) error {
 	var nameservers []string
 	if dc.DNSConfig != nil {
 		nameservers = dc.DNSConfig.Nameservers
@@ -172,18 +172,18 @@ func reconcileClusterIsolationNetworkPolicy(ctx context.Context, cluster *kuberm
 		clusterIsolationNetworkPolicyReconciler(cluster.Status.Address.IP, nameservers),
 		clusterImporterNetworkPolicyReconciler(),
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, cluster.Status.NamespaceName, client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, namespace, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 	return nil
 }
 
-func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client) error {
+func reconcileCustomNetworkPolicies(ctx context.Context, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt, client ctrlruntimeclient.Client, namespace string) error {
 	namedNetworkPolicyReconcilerFactories := make([]reconciling.NamedNetworkPolicyReconcilerFactory, 0)
 	for _, netpol := range dc.CustomNetworkPolicies {
 		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, customNetworkPolicyReconciler(netpol))
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, cluster.Status.NamespaceName, client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, namespace, client); err != nil {
 		return fmt.Errorf("failed to ensure Custom Network Policies: %w", err)
 	}
 	return nil
