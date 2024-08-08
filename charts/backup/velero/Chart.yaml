@@ -27,3 +27,7 @@ sources:
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+  - repository: https://vmware-tanzu.github.io/helm-charts
+    name: velero
+    version: 7.1.0
