@@ -40,7 +40,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -53,9 +52,13 @@ const (
 	CertManagerReleaseName = CertManagerChartName
 	CertManagerNamespace   = CertManagerChartName
 
-	DexChartName   = "oauth"
+	DexChartName   = "dex"
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
+
+	LegacyDexChartName   = "oauth"
+	LegacyDexReleaseName = LegacyDexChartName
+	LegacyDexNamespace   = LegacyDexChartName
 
 	KubermaticOperatorChartName      = "kubermatic-operator"
 	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
@@ -222,43 +225,6 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 	if err := kubeClient.Create(ctx, &storageClass); err != nil {
 		return fmt.Errorf("failed to create StorageClass: %w", err)
-	}
-
-	logger.Info("✅ Success.")
-
-	return nil
-}
-
-func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, "dex") {
-		logger.Info("⭕ Skipping dex deployment.")
-		return nil
-	}
-
-	logger.Info("📦 Deploying Dex…")
-	sublogger := log.Prefix(logger, "   ")
-
-	if opt.KubermaticConfiguration.Spec.FeatureGates[features.HeadlessInstallation] {
-		sublogger.Info("Headless installation requested, skipping.")
-		return nil
-	}
-
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "oauth"))
-	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %w", err)
-	}
-
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, DexNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %w", err)
-	}
-
-	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, DexNamespace, DexReleaseName)
-	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %w", err)
-	}
-
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, DexNamespace, DexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
 	logger.Info("✅ Success.")
