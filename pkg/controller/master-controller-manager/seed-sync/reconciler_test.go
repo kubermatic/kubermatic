@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestReconcilingSeed(t *testing.T) {
@@ -254,5 +255,112 @@ func TestReconcilingSeed(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestConfigRemainsOnSharedSeedCleanup(t *testing.T) {
+	kubeconfigSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-seed-kubeconfig",
+			Namespace: "kubermatic",
+		},
+		Data: map[string][]byte{
+			provider.DefaultKubeconfigFieldPath: []byte("this-is-not-a-kubeconfig-but-that-doesnt-matter-here"),
+		},
+	}
+
+	rawLog := zap.NewNop()
+	log := rawLog.Sugar()
+
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
+
+	config := &kubermaticv1.KubermaticConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: "kubermatic",
+			UID:       "config-uid",
+		},
+	}
+
+	seed := &kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-seed",
+			Namespace: "kubermatic",
+			UID:       "seed-uid",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Country: "Val Verde",
+			Kubeconfig: corev1.ObjectReference{
+				Name: kubeconfigSecret.Name,
+			},
+		},
+		Status: kubermaticv1.SeedStatus{
+			Conditions: map[kubermaticv1.SeedConditionType]kubermaticv1.SeedCondition{
+				kubermaticv1.SeedConditionClusterInitialized: {
+					Status: corev1.ConditionTrue,
+				},
+			},
+		},
+	}
+
+	masterSeedClient := fake.NewClientBuilder().WithObjects(config, seed, kubeconfigSecret).Build()
+
+	ctx := context.Background()
+
+	// create the reconciler
+	reconciler := Reconciler{
+		Client:   masterSeedClient,
+		recorder: record.NewFakeRecorder(10),
+		log:      log,
+		seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+			return masterSeedClient, nil
+		},
+	}
+
+	reconcile := func(ctx context.Context) {
+		if _, err := reconciler.Reconcile(ctx, reconcile.Request{
+			NamespacedName: ctrlruntimeclient.ObjectKeyFromObject(seed),
+		}); err != nil {
+			t.Fatalf("reconciling failed: %v", err)
+		}
+	}
+
+	// reconcile once to add the finalizers
+	reconcile(ctx)
+
+	// ensure finalizer was added
+	currentSeed := &kubermaticv1.Seed{}
+	if err := masterSeedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), currentSeed); err != nil {
+		t.Fatalf("failed to get current seed on master cluster: %v", err)
+	}
+
+	// delete the seed object on the master cluster
+	toDelete := seed.DeepCopy()
+	if err := masterSeedClient.Delete(ctx, toDelete); err != nil {
+		t.Fatalf("failed to delete seed on master cluster: %v", err)
+	}
+
+	// if all finalizers are correct, the seed should still exist
+	currentSeed = &kubermaticv1.Seed{}
+	if err := masterSeedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), currentSeed); err != nil {
+		t.Fatalf("failed to get seed on master cluster: %v", err)
+	}
+
+	// reconcile again, this should *not* cleanup the config
+	reconcile(ctx)
+
+	// cleanup takes 2 rounds of reconciling
+	reconcile(ctx)
+
+	// in general: seed should be gone in both clusters, config should remain on the master;
+	// for shared master/seed this means the seed is gone and the config remains
+	currentSeed = &kubermaticv1.Seed{}
+	if err := masterSeedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(seed), currentSeed); err == nil {
+		t.Errorf("expected seed to be deleted, but found it: %+v", currentSeed)
+	}
+
+	currentConfig := &kubermaticv1.KubermaticConfiguration{}
+	if err := masterSeedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(config), currentConfig); err != nil {
+		t.Errorf("config should exist, but failed to get it: %v", err)
 	}
 }
