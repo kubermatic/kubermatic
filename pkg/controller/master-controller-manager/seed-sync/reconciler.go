@@ -216,16 +216,16 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, configInMaster *kub
 		}, nil
 	}
 
+	// when master==seed cluster, this is the same as configInMaster
 	configInSeed := &kubermaticv1.KubermaticConfiguration{}
 	err = seedClient.Get(ctx, configKey, configInSeed)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for %s: %w", configKey, err)
 	}
 
-	// older KKP setups do not yet sync the config into each seed, so it's fine
-	// and expected if the config doesn't yet exist; but if it does, we now can
-	// get rid of it
-	if err == nil {
+	// if the config on the seed is not identical to the one on the master,
+	// delete it now
+	if err == nil && configInMaster.UID != configInSeed.UID {
 		if configInSeed.DeletionTimestamp == nil {
 			logger.Debug("Issuing DELETE call for KubermaticConfiguration copy now")
 			if err := seedClient.Delete(ctx, configInSeed); err != nil {
