@@ -263,7 +263,7 @@ func (s VMwareCloudDirector) IsValid() bool {
 type Baremetal struct {
 	ProviderPreset `json:",inline"`
 
-	Tinkerbell Tinkerbell `json:"tinkerbell,omitempty"`
+	Tinkerbell *Tinkerbell `json:"tinkerbell,omitempty"`
 }
 
 type Tinkerbell struct {
@@ -276,7 +276,10 @@ func (s Tinkerbell) IsValid() bool {
 }
 
 func (s Baremetal) IsValid() bool {
-	return s.Tinkerbell.IsValid()
+	if s.Tinkerbell != nil {
+		return s.Tinkerbell.IsValid()
+	}
+	return false
 }
 
 type AWS struct {
