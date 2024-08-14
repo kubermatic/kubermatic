@@ -120,10 +120,10 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 		if err != nil {
 			t.Logf("Failed to get events from usercluster: %+v", err)
 		}
-		t.Logf("Events for debugging logged below.")
+		t.Log("Events for debugging logged below.")
 		for _, event := range events.Items {
 			e, _ := json.Marshal(event)
-			t.Logf(string(e))
+			t.Log(string(e))
 		}
 	}()
 

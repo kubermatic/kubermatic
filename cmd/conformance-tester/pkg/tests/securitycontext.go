@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -48,7 +49,7 @@ func TestUserClusterControlPlaneSecurityContext(ctx context.Context, log *zap.Su
 		return fmt.Errorf("no control plane pods found")
 	}
 
-	errors := []string{}
+	errorMsgs := []string{}
 
 	for _, pod := range pods.Items {
 		var privilegedContainers int
@@ -65,8 +66,8 @@ func TestUserClusterControlPlaneSecurityContext(ctx context.Context, log *zap.Su
 
 		// no security context means no seccomp profile
 		if pod.Spec.SecurityContext == nil {
-			errors = append(
-				errors,
+			errorMsgs = append(
+				errorMsgs,
 				fmt.Sprintf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name),
 			)
 			continue
@@ -74,8 +75,8 @@ func TestUserClusterControlPlaneSecurityContext(ctx context.Context, log *zap.Su
 
 		// no seccomp profile means no profile is applied to the containers
 		if pod.Spec.SecurityContext.SeccompProfile == nil {
-			errors = append(
-				errors,
+			errorMsgs = append(
+				errorMsgs,
 				fmt.Sprintf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name),
 			)
 			continue
@@ -83,8 +84,8 @@ func TestUserClusterControlPlaneSecurityContext(ctx context.Context, log *zap.Su
 
 		// the 'unconfined' profile disables any seccomp filtering
 		if pod.Spec.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeUnconfined {
-			errors = append(
-				errors,
+			errorMsgs = append(
+				errorMsgs,
 				fmt.Sprintf(
 					"seccomp profile of Pod %s/%s is '%s', should be '%s' or '%s'", pod.Namespace, pod.Name,
 					corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
@@ -94,9 +95,9 @@ func TestUserClusterControlPlaneSecurityContext(ctx context.Context, log *zap.Su
 		}
 	}
 
-	if len(errors) == 0 {
+	if len(errorMsgs) == 0 {
 		return nil
 	}
 
-	return fmt.Errorf(strings.Join(errors, "\n"))
+	return errors.New(strings.Join(errorMsgs, "\n"))
 }
