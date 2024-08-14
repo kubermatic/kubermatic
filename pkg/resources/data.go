@@ -36,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -835,7 +834,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 
 	vars = SanitizeEnvVars(vars)
 	if cluster.Spec.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode {
-		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", Value: kubevirt.DefaultNamespaceName})
+		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", Value: KubeVirtDefaultSingleNamespace})
 	} else {
 		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})
 	}
