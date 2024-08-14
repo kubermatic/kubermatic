@@ -133,6 +133,7 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 
 func AWSCCMVersion(version semver.Semver) string {
 	// https://github.com/kubernetes/cloud-provider-aws/tags (releases are not consistently created)
+	// gcrane ls --json registry.k8s.io/provider-aws/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
 	case v126:
@@ -144,8 +145,10 @@ func AWSCCMVersion(version semver.Semver) string {
 	case v129:
 		return "v1.29.6"
 	case v130:
+		return "v1.30.3"
+	case v131:
 		fallthrough
 	default:
-		return "v1.30.3"
+		return "v1.31.0"
 	}
 }

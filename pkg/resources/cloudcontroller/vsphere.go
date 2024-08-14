@@ -116,6 +116,8 @@ func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1
 
 func VSphereCCMVersion(version semver.Semver) string {
 	// https://github.com/kubernetes/cloud-provider-vsphere/releases
+	// gcrane ls --json gcr.io/cloud-provider-vsphere/cpi/release/manager | jq -r '.tags[]'
+
 	switch version.MajorMinor() {
 	case v126:
 		return "1.26.2"
@@ -125,6 +127,8 @@ func VSphereCCMVersion(version semver.Semver) string {
 		return "1.28.0"
 	case v129:
 		return "1.29.0"
+	case v131:
+		fallthrough
 	case v130:
 		fallthrough
 	default:
