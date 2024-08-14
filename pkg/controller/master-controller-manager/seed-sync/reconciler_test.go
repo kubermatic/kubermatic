@@ -310,7 +310,7 @@ func TestConfigRemainsOnSharedSeedCleanup(t *testing.T) {
 		},
 	}
 
-	masterSeedClient := fake.NewClientBuilder().WithObjects(config, seed, kubeconfigSecret).Build()
+	masterSeedClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(config, seed, kubeconfigSecret).Build()
 
 	ctx := context.Background()
 
