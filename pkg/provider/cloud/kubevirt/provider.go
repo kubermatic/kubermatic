@@ -118,14 +118,14 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
+	kubevirtNamespace := cluster.Status.NamespaceName
+	if k.dc.NamespacedMode {
+		kubevirtNamespace = DefaultNamespaceName
+	}
 	// If the cluster NamespaceName is not filled yet, return a conflict error:
 	// will requeue but not send an error event
 	if cluster.Status.NamespaceName == "" {
 		return cluster, apierrors.NewConflict(kubermaticv1.Resource("cluster"), cluster.Name, fmt.Errorf("cluster.Status.NamespaceName for cluster %s", cluster.Name))
-	}
-	kubevirtNamespace := cluster.Status.NamespaceName
-	if !k.dc.SingleNamespaceMode {
-		kubevirtNamespace = DefaultNamespaceName
 	}
 
 	cluster, err = reconcileNamespace(ctx, kubevirtNamespace, cluster, update, client)
@@ -173,7 +173,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) || k.dc.SingleNamespaceMode {
+	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) || k.dc.NamespacedMode {
 		return cluster, nil
 	}
 

@@ -748,8 +748,8 @@ type DatacenterSpecFake struct {
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
 type DatacenterSpecKubevirt struct {
-	// SingleNamespaceMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
-	SingleNamespaceMode bool `json:"singleNamespaceMode,omitempty"`
+	// NamespacedMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
+	NamespacedMode bool `json:"namespacedMode,omitempty"`
 
 	// +kubebuilder:validation:Enum=ClusterFirstWithHostNet;ClusterFirst;Default;None
 	// +kubebuilder:default=ClusterFirst

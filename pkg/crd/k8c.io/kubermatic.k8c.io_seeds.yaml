@@ -923,8 +923,8 @@ spec:
                                     - name
                                   type: object
                                 type: array
-                              singleNamespaceMode:
-                                description: SingleNamespaceMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
+                              namespacedMode:
+                                description: NamespacedMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
                                 type: boolean
                             type: object
                           machineFlavorFilter:

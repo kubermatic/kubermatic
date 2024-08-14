@@ -19,6 +19,7 @@ package kubevirt
 import (
 	"fmt"
 
+	kubevirt "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -41,7 +42,11 @@ func ControllerConfigMapReconciler(data *resources.TemplateData) reconciling.Nam
 				cm.Data = map[string]string{}
 			}
 			cm.Labels = resources.BaseAppLabels(resources.KubeVirtCSIConfigMapName, nil)
-			cm.Data[resources.KubeVirtCSINamespaceKey] = data.Cluster().Status.NamespaceName
+			kubevirtInfraNamespace := data.Cluster().Status.NamespaceName
+			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode {
+				kubevirtInfraNamespace = kubevirt.DefaultNamespaceName
+			}
+			cm.Data[resources.KubeVirtCSINamespaceKey] = kubevirtInfraNamespace
 			cm.Data[resources.KubeVirtCSIClusterLabelKey] = fmt.Sprintf("cluster-name=%s", data.Cluster().Name)
 			return cm, nil
 		}
