@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
+FROM quay.io/kubermatic/build:go-1.23-node-20-kind-0.23-0
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/integration-tests/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
 # envtest binaries are not available for all k8s patch releases, so beware when updating
-ENV KUBE_VERSION=1.30.0
+ENV KUBE_VERSION=1.31.0
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \
