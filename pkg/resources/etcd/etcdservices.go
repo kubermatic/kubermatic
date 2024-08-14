@@ -73,7 +73,7 @@ func ServiceReconciler(data serviceReconcilerData) reconciling.NamedServiceRecon
 // GetClientEndpoints returns the slice with the etcd endpoints for client communication.
 func GetClientEndpoints(namespace string) []string {
 	var endpoints []string
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		// Pod DNS name
 		serviceDNSName := resources.GetAbsoluteServiceDNSName(resources.EtcdServiceName, namespace)
 		absolutePodDNSName := fmt.Sprintf("https://etcd-%d.%s:2379", i, serviceDNSName)

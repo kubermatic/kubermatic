@@ -509,7 +509,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			fakeMasterClient := kubermaticface.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
-			for i := 0; i < test.seedClusters; i++ {
+			for i := range test.seedClusters {
 				objs := []ctrlruntimeclient.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
@@ -788,7 +788,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			fakeMasterClusterClient := kubermaticface.NewClientBuilder().WithObjects(allObjs...).Build()
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
-			for i := 0; i < test.seedClusters; i++ {
+			for i := range test.seedClusters {
 				objs := []ctrlruntimeclient.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
@@ -1090,7 +1090,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			fakeMasterClient := kubermaticface.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClients := make(map[string]ctrlruntimeclient.Client)
-			for i := 0; i < test.seedClusters; i++ {
+			for i := range test.seedClusters {
 				seedClients[strconv.Itoa(i)] = kubermaticface.NewClientBuilder().Build()
 			}
 
@@ -1419,7 +1419,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			fakeMasterClient := kubermaticface.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
-			for i := 0; i < test.seedClusters; i++ {
+			for i := range test.seedClusters {
 				seedClientMap[strconv.Itoa(i)] = kubermaticface.NewClientBuilder().Build()
 			}
 
@@ -1847,7 +1847,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			fakeMasterClient := kubermaticface.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
-			for i := 0; i < test.seedClusters; i++ {
+			for i := range test.seedClusters {
 				objs := []ctrlruntimeclient.Object{}
 				for _, existingRoleBinding := range test.existingRoleBindingsForSeeds {
 					objs = append(objs, existingRoleBinding)
@@ -2129,7 +2129,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			// manually set lister as we don't want to start informers in the tests
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
-			for i := 0; i < test.seedClusters; i++ {
+			for i := range test.seedClusters {
 				objs := []ctrlruntimeclient.Object{}
 				for _, existingRoleBinding := range test.existingRoleBindingsForSeeds {
 					objs = append(objs, existingRoleBinding)

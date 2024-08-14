@@ -50,6 +50,7 @@ linters:
     - govet
     - importas
     - ineffassign
+    - intrange
     - misspell
     - noctx
     - nolintlint

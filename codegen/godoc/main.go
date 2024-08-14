@@ -76,7 +76,7 @@ func generateDocumentation(docs []string, v reflect.Value) []string {
 
 		docs = append(docs, doc)
 
-		for n := 0; n < v.NumField(); n++ {
+		for n := range v.NumField() {
 			docs = generateDocumentation(docs, v.Field(n))
 		}
 	}

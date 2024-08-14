@@ -224,7 +224,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 			} else {
 				endpoints := []string{}
 
-				for i := 0; i < 3; i++ {
+				for i := range 3 {
 					endpoints = append(endpoints, fmt.Sprintf(memberListPattern, i, i, resources.EtcdServiceName, data.Cluster().Status.NamespaceName))
 				}
 
