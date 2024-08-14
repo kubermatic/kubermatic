@@ -15,8 +15,6 @@
 run:
   timeout: 3m
   modules-download-mode: readonly
-  exclude-files:
-    - zz_generated.*.go
 
 linters:
   enable:
@@ -29,3 +27,7 @@ linters-settings:
       rules:
         json: goCamel
         yaml: goCamel
+
+issues:
+  exclude-files:
+    - zz_generated.*.go
