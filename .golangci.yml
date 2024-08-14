@@ -28,17 +28,13 @@ run:
     - ipam
     - kubevirt
     - logout
-  skip-files:
-    - zz_generated.*.go
-    # This package was forked from upstream (in #9826)
-    # and we want to keep it as close to upstream as possible.
-    - pkg/provider/cloud/eks/authenticator
 
 linters:
   enable:
     - asciicheck
     - bidichk
     - bodyclose
+    - copyloopvar
     - depguard
     - durationcheck
     - errcheck
@@ -72,6 +68,13 @@ linters:
 # NOTE: Do not use commas in the exclude patterns, or else the regex will be
 # split and you will be sad: https://github.com/golangci/golangci-lint/issues/665
 issues:
+  exclude-files:
+    - zz_generated.*.go
+  exclude-dirs:
+    # This package was forked from upstream (in #9826)
+    # and we want to keep it as close to upstream as possible.
+    - pkg/provider/cloud/eks/authenticator
+
   # defaults to 3, which often needlessly hides issues and forces
   # to re-run the linter across the entire repo many times
   max-same-issues: 50
