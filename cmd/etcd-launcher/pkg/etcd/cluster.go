@@ -356,7 +356,7 @@ func (e *Cluster) IsClusterHealthy(ctx context.Context, log *zap.SugaredLogger) 
 
 func initialMemberList(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, n int, namespace string, useTLSPeer bool) []string {
 	members := []string{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		var pod corev1.Pod
 
 		if err := client.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("etcd-%d", i), Namespace: namespace}, &pod); err != nil {
@@ -388,7 +388,7 @@ func initialMemberList(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 
 func peerHostsList(n int, namespace string) []string {
 	hosts := []string{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		hosts = append(hosts, fmt.Sprintf("etcd-%d.etcd.%s.svc.cluster.local", i, namespace))
 	}
 	return hosts
@@ -397,7 +397,7 @@ func peerHostsList(n int, namespace string) []string {
 func clientEndpoints(n int, namespace string) []string {
 	endpoints := []string{}
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		endpoints = append(endpoints, fmt.Sprintf("https://etcd-%d.etcd.%s.svc.cluster.local:2379", i, namespace))
 	}
 
@@ -515,7 +515,7 @@ func (e *Cluster) getUnwantedMembers(ctx context.Context, log *zap.SugaredLogger
 		}
 
 		// check all found peer URLs for being valid
-		for i := 0; i < len(member.PeerURLs); i++ {
+		for i := range len(member.PeerURLs) {
 			peerURL, err := url.Parse(member.PeerURLs[i])
 			if err != nil {
 				return []*etcdserverpb.Member{}, err
@@ -557,7 +557,7 @@ func (e *Cluster) isLeader(ctx context.Context, log *zap.SugaredLogger) (bool, e
 	}
 	defer closeClient(localClient, log)
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		resp, err := localClient.Status(ctx, e.endpoint())
 		if err != nil || resp.Leader == 0 {
 			time.Sleep(2 * time.Second)

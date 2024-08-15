@@ -200,7 +200,7 @@ func shuffle(vals []Scenario) []Scenario {
 	r := rand.New(rand.NewSource(time.Now().Unix()))
 	ret := make([]Scenario, len(vals))
 	n := len(vals)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		randIndex := r.Intn(len(vals))
 		ret[i] = vals[randIndex]
 		vals = append(vals[:randIndex], vals[randIndex+1:]...)

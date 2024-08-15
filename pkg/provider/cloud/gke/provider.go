@@ -345,7 +345,7 @@ func GetMDStatusMessage(np *container.NodePool) string {
 	}
 	statusMessage = np.StatusMessage
 	if statusMessage == "" {
-		if np.Conditions != nil && len(np.Conditions) > 1 {
+		if len(np.Conditions) > 1 {
 			statusMessage = np.Conditions[1].Message
 		}
 	}
@@ -392,7 +392,7 @@ func GetStatusMessage(gkeCluster *container.Cluster) string {
 	}
 	statusMessage = gkeCluster.StatusMessage
 	if statusMessage == "" {
-		if gkeCluster.Conditions != nil && len(gkeCluster.Conditions) > 1 {
+		if len(gkeCluster.Conditions) > 1 {
 			statusMessage = gkeCluster.Conditions[1].Message
 		}
 	}

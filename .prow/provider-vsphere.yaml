@@ -30,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.23-0
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -74,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.23-0
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -120,7 +120,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.23-0
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -152,9 +152,9 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.30-datastore-cluster
     decorate: true
-    # This job is disabled currently because we have a datastore cluster 
+    # This job is disabled currently because we have a datastore cluster
     # but it will not work as it is connected to vSAN and vSAN is messed up.
-    # run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)" 
+    # run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -169,7 +169,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.22-node-20-kind-0.23-11
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.23-0
           env:
             - name: KUBERMATIC_EDITION
               value: ee

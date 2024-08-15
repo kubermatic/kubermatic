@@ -456,7 +456,7 @@ func validateReflect(value reflect.Value, path []string) error {
 
 	switch typ.Kind() {
 	case reflect.Struct:
-		for i := 0; i < typ.NumField(); i++ {
+		for i := range typ.NumField() {
 			fieldName := typ.Field(i).Name
 
 			p = append(p, fieldName)
@@ -498,7 +498,7 @@ func validateReflect(value reflect.Value, path []string) error {
 			return fmt.Errorf("%s is invalid: slices of complex types must contain at least one item", strings.Join(path, "."))
 		}
 
-		for i := 0; i < value.Len(); i++ {
+		for i := range value.Len() {
 			p = append(p, fmt.Sprintf("[%d]", i))
 
 			if err := validateReflect(value.Index(i), p); err != nil {

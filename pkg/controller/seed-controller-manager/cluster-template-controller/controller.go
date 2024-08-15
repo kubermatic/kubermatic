@@ -150,9 +150,9 @@ func (r *reconciler) createClusters(ctx context.Context, instance *kubermaticv1.
 			return fmt.Errorf("failed to get template %s: %w", instance.Spec.ClusterTemplateID, err)
 		}
 
-		for i := 0; i < int(instance.Spec.Replicas); i++ {
+		for i := range instance.Spec.Replicas {
 			if err := r.createCluster(ctx, log, template, instance); err != nil {
-				created := int64(i)
+				created := i
 				totalReplicas := instance.Spec.Replicas
 
 				if patchErr := r.patchInstance(ctx, instance, func(i *kubermaticv1.ClusterTemplateInstance) {

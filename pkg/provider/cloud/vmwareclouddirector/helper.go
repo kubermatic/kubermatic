@@ -48,7 +48,7 @@ func deleteVApp(vdc *govcd.Vdc, vapp *govcd.VApp) error {
 func getOrgVDCNetworks(vdc *govcd.Vdc, spec kubermaticv1.VMwareCloudDirectorCloudSpec) ([]*govcd.OrgVDCNetwork, error) {
 	var networks []string
 
-	if spec.OVDCNetworks != nil && len(spec.OVDCNetworks) > 0 {
+	if len(spec.OVDCNetworks) > 0 {
 		networks = spec.OVDCNetworks
 	} else {
 		networks = []string{spec.OVDCNetwork}

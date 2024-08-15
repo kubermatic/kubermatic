@@ -265,7 +265,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 			return fmt.Errorf("failed to get flow client: %w", err), nil
 		}
 
-		for c := 0; c < nFlows; c++ {
+		for range nFlows {
 			_, err := flowsClient.Recv()
 			if err != nil {
 				return fmt.Errorf("failed to get flow: %w", err), nil
