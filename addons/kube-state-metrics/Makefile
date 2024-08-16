@@ -28,6 +28,7 @@ build:
 	  --values helm-values \
 	  > $(OUTPUT_FILE)
 	../templatify.sh $(OUTPUT_FILE)
+	git apply --no-unsafe-paths --no-recount customizations.patch
 
 .PHONY: setup-helm
 setup-helm:
