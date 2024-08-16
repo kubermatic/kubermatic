@@ -1,0 +1,42 @@
+podDisruptionBudget:
+  minAvailable: 1
+
+kubeRBACProxy:
+  enabled: true
+  resources:
+    limits:
+      cpu: 40m
+      memory: 40Mi
+    requests:
+      cpu: 20m
+      memory: 20Mi
+
+networkPolicy:
+  enabled: true
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              component: mla
+          podSelector:
+            matchLabels:
+              component: mla
+      ports:
+        - port: 8443
+          protocol: TCP
+
+  egress:
+    - to:
+        - ipBlock:
+            cidr: '{{ .Cluster.Address.IP }}/32'
+      ports:
+        - port: '{{ .Cluster.Address.Port }}'
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 600Mi
+  requests:
+    cpu: 10m
+    memory: 190Mi
