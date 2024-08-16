@@ -157,7 +157,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if k.dc.EnableDefaultNetworkPolicies != nil {
 		enableDefaultNetworkPolices = *k.dc.EnableDefaultNetworkPolicies
 	}
-	if enableDefaultNetworkPolices {
+	if enableDefaultNetworkPolices && !k.dc.NamespacedMode {
 		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, k.dc, client, kubevirtNamespace)
 		if err != nil {
 			return cluster, err
