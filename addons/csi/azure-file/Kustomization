@@ -1,0 +1,71 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - driver.yaml
+patches:
+  # load cloud-config from Secret instead of from the host's filesystem
+  - patch: |-
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: csi-azurefile-controller
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: azurefile
+                env:
+                  - name: AZURE_CREDENTIAL_FILE
+                    value: /etc/kubernetes/azure.json
+                    valueFrom: ~
+            volumes:
+              - name: azure-cred
+                hostPath: ~
+                secret:
+                  secretName: cloud-config-csi
+                  items:
+                    - key: config
+                      path: azure.json
+
+  # same, but for the DaemonSet
+  - patch: |-
+      kind: DaemonSet
+      apiVersion: apps/v1
+      metadata:
+        name: csi-azurefile-node
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            containers:
+              - name: azurefile
+                env:
+                  - name: AZURE_CREDENTIAL_FILE
+                    value: /etc/kubernetes/azure.json
+                    valueFrom: ~
+            volumes:
+              - name: azure-cred
+                hostPath: ~
+                secret:
+                  secretName: cloud-config-csi
+                  items:
+                    - key: config
+                      path: azure.json
+
+  # patch-in the missing securityContext until upstream fix
+  # https://github.com/kubernetes-sigs/azurefile-csi-driver/pull/2048
+  # is merged
+  - patch: |-
+      kind: Deployment
+      apiVersion: apps/v1
+      metadata:
+        name: csi-azurefile-controller
+        namespace: kube-system
+      spec:
+        template:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
