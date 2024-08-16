@@ -8,8 +8,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: kube-system
 spec:
@@ -48,8 +48,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: kube-system
 spec:
@@ -59,7 +59,7 @@ spec:
       app.kubernetes.io/name: kube-state-metrics
 ---
 apiVersion: v1
-imagePullSecrets: null
+automountServiceAccountToken: true
 kind: ServiceAccount
 metadata:
   labels:
@@ -68,8 +68,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: kube-system
 ---
@@ -85,7 +85,16 @@ data:
         name: kube-state-metrics
 kind: ConfigMap
 metadata:
+  labels:
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/instance: kube-state-metrics
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/part-of: kube-state-metrics
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics-rbac-config
+  namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -96,8 +105,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
 rules:
   - apiGroups:
@@ -322,8 +331,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -345,8 +354,8 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: kube-system
 spec:
@@ -369,16 +378,19 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: kube-state-metrics
     app.kubernetes.io/part-of: kube-state-metrics
-    app.kubernetes.io/version: 2.8.2
-    helm.sh/chart: kube-state-metrics-5.6.4
+    app.kubernetes.io/version: 2.13.0
+    helm.sh/chart: kube-state-metrics-5.25.1
   name: kube-state-metrics
   namespace: kube-system
 spec:
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app.kubernetes.io/instance: kube-state-metrics
       app.kubernetes.io/name: kube-state-metrics
+  strategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -387,29 +399,40 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/name: kube-state-metrics
         app.kubernetes.io/part-of: kube-state-metrics
-        app.kubernetes.io/version: 2.8.2
-        helm.sh/chart: kube-state-metrics-5.6.4
+        app.kubernetes.io/version: 2.13.0
+        helm.sh/chart: kube-state-metrics-5.25.1
     spec:
+      automountServiceAccountToken: true
       containers:
         - args:
             - --port=9090
             - --resources=certificatesigningrequests,configmaps,cronjobs,daemonsets,deployments,endpoints,horizontalpodautoscalers,ingresses,jobs,leases,limitranges,mutatingwebhookconfigurations,namespaces,networkpolicies,nodes,persistentvolumeclaims,persistentvolumes,poddisruptionbudgets,pods,replicasets,replicationcontrollers,resourcequotas,secrets,services,statefulsets,storageclasses,validatingwebhookconfigurations,volumeattachments
             - --telemetry-host=127.0.0.1
             - --telemetry-port=9091
-          image: '{{ Image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.8.2" }}'
+          image: '{{ Image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0" }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
+            failureThreshold: 3
             httpGet:
-              path: /healthz
+              httpHeaders: null
+              path: /livez
               port: 9090
+              scheme: HTTP
             initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
             timeoutSeconds: 5
           name: kube-state-metrics
           readinessProbe:
+            failureThreshold: 3
             httpGet:
-              path: /
+              httpHeaders: null
+              path: /readyz
               port: 9090
+              scheme: HTTP
             initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
             timeoutSeconds: 5
           resources:
             limits:
@@ -423,12 +446,13 @@ spec:
             capabilities:
               drop:
                 - ALL
+            readOnlyRootFilesystem: true
         - args:
             - --secure-listen-address=:8080
             - --upstream=http://127.0.0.1:9090/
             - --proxy-endpoints-port=8888
             - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
-          image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.14.0" }}'
+          image: '{{ Image "quay.io/brancz/kube-rbac-proxy:v0.18.0" }}'
           imagePullPolicy: IfNotPresent
           name: kube-rbac-proxy-http
           ports:
@@ -450,6 +474,12 @@ spec:
             requests:
               cpu: 20m
               memory: 20Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
           volumeMounts:
             - mountPath: /etc/kube-rbac-proxy-config
               name: kube-rbac-proxy-config

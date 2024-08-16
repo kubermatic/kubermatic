@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# https://github.com/kubernetes-sigs/azurefile-csi-driver/tree/master/charts
-
 OUTPUT_FILE = kube-state-metrics.yaml
 REPO_NAME = kkp-addons-kube-state-metrics
-CHART_VERSION = 5.6.4
+CHART_VERSION = 5.25.1
 
 .PHONY: default
 default: setup-helm build clean-helm
