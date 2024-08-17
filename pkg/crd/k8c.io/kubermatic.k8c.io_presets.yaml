@@ -235,6 +235,26 @@ spec:
                     - subscriptionID
                     - tenantID
                   type: object
+                baremetal:
+                  description: Access data for Baremetal (Tinkerbell only for now).
+                  properties:
+                    datacenter:
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    tinkerbell:
+                      properties:
+                        kubeconfig:
+                          description: Kubeconfig is the cluster's kubeconfig file, encoded with base64.
+                          type: string
+                      required:
+                        - kubeconfig
+                      type: object
+                  type: object
                 digitalocean:
                   description: Access data for DigitalOcean.
                   properties:
@@ -431,8 +451,10 @@ spec:
                   description: Access data for OpenStack.
                   properties:
                     applicationCredentialID:
+                      description: Application credential ID to authenticate in combination with an application credential secret (which is not the user's password).
                       type: string
                     applicationCredentialSecret:
+                      description: Application credential secret (which is not the user's password) to authenticate in combination with an application credential ID.
                       type: string
                     datacenter:
                       description: |-
@@ -440,6 +462,7 @@ spec:
                         configured datacenter.
                       type: string
                     domain:
+                      description: Domain holds the name of the identity service (keystone) domain.
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.

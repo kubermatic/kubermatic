@@ -332,6 +332,9 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_TENANT_ID", ValueFrom: refTo(resources.AzureTenantID)})
 		vars = append(vars, corev1.EnvVar{Name: "AZURE_SUBSCRIPTION_ID", ValueFrom: refTo(resources.AzureSubscriptionID)})
 	}
+	if data.Cluster().Spec.Cloud.Baremetal != nil && data.Cluster().Spec.Cloud.Baremetal.Tinkerbell != nil {
+		vars = append(vars, corev1.EnvVar{Name: "TINK_KUBECONFIG", ValueFrom: refTo(resources.TinkerbellKubeconfig)})
+	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.Openstack.AuthURL})
 		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", ValueFrom: refTo(resources.OpenstackUsername)})

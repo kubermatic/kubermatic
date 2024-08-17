@@ -101,7 +101,7 @@ func findFirstFreeRangesOfPool(poolName, poolCIDR string, allocationRange int, d
 	if len(rangeFreeIPs) > 0 {
 		rangeFreeIPsIterator := 0
 		firstAddressRangeIP := rangeFreeIPs[rangeFreeIPsIterator]
-		for j := 0; j < allocationRange; j++ {
+		for j := range allocationRange {
 			ipToAllocate := rangeFreeIPs[rangeFreeIPsIterator]
 
 			dcIPAMPoolUsageMap.Insert(ipToAllocate)

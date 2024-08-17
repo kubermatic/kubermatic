@@ -76,7 +76,6 @@ func getVPAReconcilerForPodTemplate(name string, pod corev1.PodSpec, controllerR
 func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntimeclient.Client, names []string, namespace string, obj ctrlruntimeclient.Object, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerReconcilerFactory, error) {
 	var creators []reconciling.NamedVerticalPodAutoscalerReconcilerFactory
 	for _, name := range names {
-		name := name
 		key := types.NamespacedName{Namespace: namespace, Name: name}
 
 		err := client.Get(ctx, key, obj)

@@ -1213,7 +1213,16 @@ type VMwareCloudDirectorCSIConfig struct {
 }
 
 // BaremetalCloudSpec specifies access data for a baremetal cluster.
-type BaremetalCloudSpec struct{}
+type BaremetalCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+	Tinkerbell           *TinkerbellCloudSpec                    `json:"tinkerbell,omitempty"`
+}
+
+type TinkerbellCloudSpec struct {
+
+	// The cluster's kubeconfig file, encoded with base64.
+	Kubeconfig string `json:"kubeconfig,omitempty"`
+}
 
 // BringYourOwnCloudSpec specifies access data for a bring your own cluster.
 type BringYourOwnCloudSpec struct{}
@@ -1268,8 +1277,11 @@ type OpenstackCloudSpec struct {
 	// project id, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 
-	Domain                      string `json:"domain,omitempty"`
-	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
+	// Domain holds the name of the identity service (keystone) domain.
+	Domain string `json:"domain,omitempty"`
+	// Application credential ID to authenticate in combination with an application credential secret (which is not the user's password).
+	ApplicationCredentialID string `json:"applicationCredentialID,omitempty"`
+	// Application credential secret (which is not the user's password) to authenticate in combination with an application credential ID.
 	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 	UseToken                    bool   `json:"useToken,omitempty"`
 	// Used internally during cluster creation
@@ -1577,6 +1589,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Azure != nil {
 		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, clusterName)
+	}
+	if cluster.Spec.Cloud.Baremetal != nil {
+		return fmt.Sprintf("%s-baremetal-%s", CredentialPrefix, clusterName)
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
 		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, clusterName)

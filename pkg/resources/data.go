@@ -881,7 +881,25 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
-	vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})
+	if cluster.Spec.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode {
+		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", Value: KubeVirtDefaultSingleNamespace})
+	} else {
+		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})
+	}
 
 	return vars, nil
+}
+
+// GetPodCIDR returns the PodCIDR configured for the nodes in the cluster.
+func (d *TemplateData) GetPodCIDR() (string, error) {
+	nodeList := &corev1.NodeList{}
+	err := d.client.List(d.ctx, nodeList)
+	if err != nil {
+		return "", fmt.Errorf("could not get node list: %w", err)
+	}
+
+	if len(nodeList.Items) > 0 {
+		return nodeList.Items[0].Spec.PodCIDR, nil
+	}
+	return "", nil
 }

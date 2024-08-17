@@ -143,6 +143,7 @@ type MLASettings struct {
 type Credentials struct {
 	AWS                 AWSCredentials
 	Azure               AzureCredentials
+	Baremetal           BaremetalCredentials
 	Digitalocean        DigitaloceanCredentials
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
@@ -168,6 +169,15 @@ type AzureCredentials struct {
 	SubscriptionID string
 	ClientID       string
 	ClientSecret   string
+}
+
+type BaremetalCredentials struct {
+	Tinkerbell TinkerbellCredentials
+}
+
+type TinkerbellCredentials struct {
+	// Admin kubeconfig for Tinkerbell cluster
+	Kubeconfig string
 }
 
 type DigitaloceanCredentials struct {

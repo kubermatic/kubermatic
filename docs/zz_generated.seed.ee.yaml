@@ -79,7 +79,24 @@ spec:
           # found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
           location: ""
         # Baremetal contains settings for baremetal clusters in datacenters.
-        baremetal: {}
+        baremetal:
+          tinkerbell:
+            # Images represents standard VM Image sources.
+            images:
+              # HTTP represents a http source.
+              http:
+                # OperatingSystems represents list of supported operating-systems with their URLs.
+                operatingSystems:
+                  centos:
+                    vX.Y: http://example.com/images/os.iso
+                  flatcar:
+                    vX.Y: http://example.com/images/os.iso
+                  rhel:
+                    vX.Y: http://example.com/images/os.iso
+                  rockylinux:
+                    vX.Y: http://example.com/images/os.iso
+                  ubuntu:
+                    vX.Y: http://example.com/images/os.iso
         # BringYourOwn contains settings for clusters using manually created
         # nodes via kubeadm.
         bringyourown: {}
@@ -100,6 +117,9 @@ spec:
         # Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings.
         enforcePodSecurityPolicy: false
+        # Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
+        # ignoring cluster-specific settings.
+        enforcedAuditWebhookSettings: null
         # GCP configures a Google Cloud Platform (GCP) datacenter.
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
@@ -169,15 +189,15 @@ spec:
               # OperatingSystems represents list of supported operating-systems with their URLs.
               operatingSystems:
                 centos:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 flatcar:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 rhel:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 rockylinux:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
                 ubuntu:
-                  <<version>>: <<url>>
+                  vX.Y: http://example.com/images/os.iso
           # Optional: InfraStorageClasses contains a list of KubeVirt infra cluster StorageClasses names
           # that will be used to initialise StorageClasses in the tenant cluster.
           # In the tenant cluster, the created StorageClass name will have as name:
@@ -189,6 +209,8 @@ spec:
               # storageclass.kubernetes.io/is-default-class : false
               isDefaultClass: true
               name: rook-ceph-block
+          # NamespacedMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
+          namespacedMode: false
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU

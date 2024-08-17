@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
+	appsv1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -98,9 +99,10 @@ func testAddonsCanBeApplied(t *testing.T, addons map[string]*addon.Addon) {
 }
 
 func testAddonCanBeApplied(t *testing.T, addonName string, provider kubermaticv1.ProviderType, allAddons map[string]*addon.Addon) {
-	t.Parallel()
 	_, client := createTestEnv(t)
-	installAddon(t, client, provider, addonName, allAddons)
+	ctx := context.Background()
+
+	installAddon(ctx, t, client, provider, addonName, allAddons)
 }
 
 func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[string]*addon.Addon) {
@@ -137,17 +139,15 @@ func testAddonsCanBeUpgraded(t *testing.T, previousAddons, currentAddons map[str
 }
 
 func testAddonCanBeUpgraded(t *testing.T, addonName string, provider kubermaticv1.ProviderType, previousAddons, currentAddons map[string]*addon.Addon) {
-	t.Parallel()
-
 	_, client := createTestEnv(t)
+	ctx := context.Background()
 
 	t.Log("Applying previous manifests…")
-	cluster := installAddon(t, client, provider, addonName, previousAddons)
+	installAddon(ctx, t, client, provider, addonName, previousAddons)
 
 	if _, ok := currentAddons[addonName]; ok {
 		t.Log("Applying current manifests…")
-		setupEnvForUpgrade(t, client, provider, cluster, addonName)
-		installAddon(t, client, provider, addonName, currentAddons)
+		installAddon(ctx, t, client, provider, addonName, currentAddons)
 	} else {
 		t.Log("Addon was deleted, no upgrade possible.")
 	}
@@ -253,6 +253,9 @@ func createTestEnv(t *testing.T) (*rest.Config, ctrlruntimeclient.Client) {
 		t.Fatalf("Failed to setup scheme: %v", err)
 	}
 	if err := storagev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("Failed to setup scheme: %v", err)
+	}
+	if err := appsv1.AddToScheme(scheme); err != nil {
 		t.Fatalf("Failed to setup scheme: %v", err)
 	}
 

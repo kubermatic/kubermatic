@@ -34,7 +34,10 @@ exceptions:
   - github.com/hashicorp/go-multierror # MPL-2.0
   - github.com/hashicorp/go-retryablehttp # MPL-2.0
   - github.com/hashicorp/go-plugin # MPL-2.0
+  - github.com/hashicorp/go-plugin/internal/cmdrunner # MPL-2.0
+  - github.com/hashicorp/go-plugin/internal/grpcmux # MPL-2.0
   - github.com/hashicorp/go-plugin/internal/plugin # MPL-2.0
+  - github.com/hashicorp/go-plugin/runner # MPL-2.0
   - github.com/hashicorp/go-version # MPL-2.0
   - github.com/hashicorp/golang-lru/v2/internal # MPL-2.0
   - github.com/hashicorp/golang-lru/arc/v2 # MPL-2.0

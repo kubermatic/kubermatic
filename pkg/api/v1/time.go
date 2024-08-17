@@ -40,8 +40,8 @@ func NewTime(t time.Time) Time {
 
 // Date returns the Time corresponding to the supplied parameters
 // by wrapping time.Date.
-func Date(year int, month time.Month, day, hour, min, sec, nsec int, loc *time.Location) Time {
-	return Time{time.Date(year, month, day, hour, min, sec, nsec, loc)}
+func Date(year int, month time.Month, day, hour, minute, sec, nsec int, loc *time.Location) Time {
+	return Time{time.Date(year, month, day, hour, minute, sec, nsec, loc)}
 }
 
 // Now returns the current local time.

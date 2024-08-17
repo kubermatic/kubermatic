@@ -15,7 +15,7 @@
 apiVersion: v2
 name: velero
 version: 9.9.9-dev
-appVersion: v1.13.1
+appVersion: v1.14.0
 description: A Helm chart for Velero
 keywords:
   - kubermatic
@@ -27,3 +27,7 @@ sources:
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+  - repository: https://vmware-tanzu.github.io/helm-charts
+    name: velero
+    version: 7.1.0

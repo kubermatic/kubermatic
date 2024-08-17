@@ -217,7 +217,7 @@ func TestMatchOSLabels(t *testing.T) {
 	for n, test := range tests {
 		// go map iterations are randomized, so we just hammer out the entropy
 		// by running the same test a gazillion times
-		for i := 0; i < 1000; i++ {
+		for range 1000 {
 			result := findDistributionLabel(test.osImage)
 
 			if result != test.expected {

@@ -188,7 +188,7 @@ func genClusterRootCaSecret() *corev1.Secret {
 
 func genBackupStatusList(n int, gen func(i int) kubermaticv1.BackupStatus) []kubermaticv1.BackupStatus {
 	var result []kubermaticv1.BackupStatus
-	for i := 0; i < n; i++ {
+	for i := range n {
 		result = append(result, gen(i))
 	}
 	return result
@@ -196,7 +196,7 @@ func genBackupStatusList(n int, gen func(i int) kubermaticv1.BackupStatus) []kub
 
 func genJobList(n int, gen func(i int) batchv1.Job) []batchv1.Job {
 	var result []batchv1.Job
-	for i := 0; i < n; i++ {
+	for i := range n {
 		result = append(result, gen(i))
 	}
 	return result
@@ -378,7 +378,6 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			cluster := genTestCluster()
@@ -587,7 +586,6 @@ func TestStartPendingBackupJobs(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -933,7 +931,6 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -1223,7 +1220,6 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -1546,7 +1542,6 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()

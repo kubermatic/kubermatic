@@ -259,6 +259,10 @@ const (
 	// FluentBitSecretName is the name of the secret that contains the fluent-bit configuration mounted
 	// into kube-apisever and used by the "audit-logs" sidecar to ship audit logs.
 	FluentBitSecretName = "audit-logs-fluentbit"
+
+	// AuditWebhookVolumeName is the name of the volume that contains the audit webhook configuration mounted into kube-apisever.
+	AuditWebhookVolumeName = "audit-webhook-backend"
+
 	// AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file.
 	AdmissionControlConfigMapName = "adm-control"
 
@@ -704,7 +708,8 @@ const (
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 
-	KubeVirtKubeconfig = "kubeConfig"
+	KubeVirtKubeconfig             = "kubeConfig"
+	KubeVirtDefaultSingleNamespace = "kubevirt-workload"
 
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"
@@ -742,6 +747,9 @@ const (
 	ServiceAccountTokenAnnotation = "kubernetes.io/service-account.name"
 
 	UserSSHKeys = "usersshkeys"
+
+	// This Constant is used in GetBaremetalCredentials() to get the Tinkerbell kubeconfig.
+	TinkerbellKubeconfig = "kubeConfig"
 )
 
 const (

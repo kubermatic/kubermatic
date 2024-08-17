@@ -293,12 +293,12 @@ func APIPDBReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Nam
 			// To prevent the PDB from blocking node rotations, we accept
 			// 0 minAvailable if the replica count is only 1.
 			// NB: The cfg is defaulted, so Replicas==nil cannot happen.
-			min := intstr.FromInt(1)
+			minReplicas := intstr.FromInt(1)
 			if cfg.Spec.API.Replicas != nil && *cfg.Spec.API.Replicas < 2 {
-				min = intstr.FromInt(0)
+				minReplicas = intstr.FromInt(0)
 			}
 
-			pdb.Spec.MinAvailable = &min
+			pdb.Spec.MinAvailable = &minReplicas
 			pdb.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: apiPodLabels(),
 			}

@@ -76,6 +76,9 @@ data:
     - /etc/prometheus/rules/kubermatic-master-*.yaml
     - /etc/prometheus/rules/managed-*.yaml
     alerting:
+      alert_relabel_configs:
+      - action: labeldrop
+        regex: replica
       alertmanagers:
       - {"kubernetes_sd_configs":[{"api_server":null,"namespaces":{"names":["default"]},"role":"endpoints"}],"path_prefix":"/","relabel_configs":[{"action":"keep","regex":"alertmanager","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_name"]},{"action":"keep","regex":"web","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_endpoint_port_name"]}],"scheme":"http","timeout":"10s"}
     scrape_configs:

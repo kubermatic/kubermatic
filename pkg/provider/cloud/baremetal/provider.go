@@ -18,9 +18,13 @@ package baremetal
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 type baremetal struct{}
@@ -32,11 +36,35 @@ func NewCloudProvider() provider.CloudProvider {
 
 var _ provider.CloudProvider = &baremetal{}
 
-func (b *baremetal) DefaultCloudSpec(_ context.Context, _ *kubermaticv1.ClusterSpec) error {
+func (b *baremetal) DefaultCloudSpec(_ context.Context, spec *kubermaticv1.ClusterSpec) error {
+	if spec.Cloud.Baremetal == nil {
+		return errors.New("baremetal cloud provider spec is empty")
+	}
+
+	if spec.Cloud.Baremetal.Tinkerbell == nil {
+		return errors.New("tinkerbell spec is empty! tinkerbell spec is required")
+	}
 	return nil
 }
 
-func (b *baremetal) ValidateCloudSpec(_ context.Context, _ kubermaticv1.CloudSpec) error {
+func (b *baremetal) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpec) error {
+	if spec.Baremetal.Tinkerbell != nil {
+		kubeconfig := spec.Baremetal.Tinkerbell.Kubeconfig
+		if kubeconfig == "" {
+			return errors.New("tinkerbell kubeconfig is empty")
+		}
+		// Tinkerbell kubeconfig is encoded in base64
+		config, err := base64.StdEncoding.DecodeString(kubeconfig)
+		if err != nil {
+			return err
+		}
+
+		_, err = clientcmd.RESTConfigFromKubeConfig(config)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

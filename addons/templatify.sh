@@ -1,4 +1,6 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#!/usr/bin/env bash
+
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ range $name, $config := .Values.velero.backupStorageLocations }}
-apiVersion: velero.io/v1
-kind: BackupStorageLocation
-metadata:
-  name: {{ $name }}
-spec:
-{{ $config | toYaml | indent 2 }}
-{{ end }}
+set -euo pipefail
+
+(
+  cd $(dirname $0)/../codegen/addon-templatifier
+  go build -v
+)
+
+filename="$1"
+shift
+
+tmpFile="$filename.tmp"
+
+# pipe input file through the templatifier to templatify it
+cat $filename | $(dirname $0)/../codegen/addon-templatifier/addon-templatifier "$@" > "$tmpFile"
+mv "$tmpFile" "$filename"
+
+# pipe it through yq to undo yaml.v3's linebreaks, which could confuse Go templates
+yq --inplace '.' "$filename"

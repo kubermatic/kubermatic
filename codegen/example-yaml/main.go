@@ -119,12 +119,20 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
 		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
 	}
+
+	tinkerbellHTTPsource := kubermaticv1.TinkerbellHTTPSource{
+		OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{},
+	}
 	for _, operatingSystem := range providerconfig.AllOperatingSystems {
 		imageList[operatingSystem] = ""
 		operatingSystemProfileList[operatingSystem] = ""
 	}
 	for supportedOS := range kubermaticv1.SupportedKubeVirtOS {
-		kubevirtHTTPSource.OperatingSystems[supportedOS] = map[string]string{"<<version>>": "<<url>>"}
+		kubevirtHTTPSource.OperatingSystems[supportedOS] = map[string]string{"vX.Y": "http://example.com/images/os.iso"}
+	}
+
+	for supportedOS := range kubermaticv1.SupportedTinkerbellOS {
+		tinkerbellHTTPsource.OperatingSystems[supportedOS] = map[string]string{"vX.Y": "http://example.com/images/os.iso"}
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
@@ -152,7 +160,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 					Spec: kubermaticv1.DatacenterSpec{
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
 						Digitalocean:                   &kubermaticv1.DatacenterSpecDigitalocean{},
-						Baremetal:                      &kubermaticv1.DatacenterSpecBaremetal{},
+						Baremetal: &kubermaticv1.DatacenterSpecBaremetal{
+							Tinkerbell: &kubermaticv1.DatacenterSpecTinkerbell{
+								Images: kubermaticv1.TinkerbellImageSources{HTTP: &tinkerbellHTTPsource},
+							},
+						},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						Edge:                           &kubermaticv1.DatacenterSpecEdge{},
 						RequiredEmails:                 []string{},
@@ -444,7 +456,7 @@ func validateReflect(value reflect.Value, path []string) error {
 
 	switch typ.Kind() {
 	case reflect.Struct:
-		for i := 0; i < typ.NumField(); i++ {
+		for i := range typ.NumField() {
 			fieldName := typ.Field(i).Name
 
 			p = append(p, fieldName)
@@ -486,7 +498,7 @@ func validateReflect(value reflect.Value, path []string) error {
 			return fmt.Errorf("%s is invalid: slices of complex types must contain at least one item", strings.Join(path, "."))
 		}
 
-		for i := 0; i < value.Len(); i++ {
+		for i := range value.Len() {
 			p = append(p, fmt.Sprintf("[%d]", i))
 
 			if err := validateReflect(value.Index(i), p); err != nil {

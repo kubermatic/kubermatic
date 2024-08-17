@@ -453,9 +453,9 @@ func validateProxyMode(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv
 			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode}))
 	}
 
-	if n.ProxyMode == resources.EBPFProxyMode && (cni == nil || cni.Type != kubermaticv1.CNIPluginTypeCilium) {
+	if n.ProxyMode == resources.EBPFProxyMode && (cni == nil || cni.Type == kubermaticv1.CNIPluginTypeCanal) {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("proxyMode"), n.ProxyMode,
-			fmt.Sprintf("%s proxy mode is valid only for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCilium)))
+			fmt.Sprintf("%s proxy mode is not valid for %s CNI", resources.EBPFProxyMode, kubermaticv1.CNIPluginTypeCanal)))
 	}
 
 	if n.ProxyMode == resources.EBPFProxyMode && (n.KonnectivityEnabled == nil || !*n.KonnectivityEnabled) { //nolint:staticcheck
@@ -731,7 +731,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 	case spec.Azure != nil:
 		providerErr = validateAzureCloudSpec(spec.Azure)
 	case spec.Baremetal != nil:
-		providerErr = nil
+		providerErr = validateBaremetalCloudSpec(spec.Baremetal)
 	case spec.BringYourOwn != nil:
 		providerErr = nil
 	case spec.Edge != nil:
@@ -1010,6 +1010,16 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 	}
 	if err := spec.NodePortsAllowedIPRanges.Validate(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func validateBaremetalCloudSpec(spec *kubermaticv1.BaremetalCloudSpec) error {
+	if spec.Tinkerbell != nil && spec.Tinkerbell.Kubeconfig == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.TinkerbellKubeconfig); err != nil {
+			return err
+		}
 	}
 
 	return nil

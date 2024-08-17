@@ -39,6 +39,8 @@ const (
 	FinalizerNamespace = "kubermatic.k8c.io/cleanup-kubevirt-namespace"
 	// FinalizerClonerRoleBinding will ensure the deletion of the DataVolume cloner role-binding.
 	FinalizerClonerRoleBinding = "kubermatic.k8c.io/cleanup-kubevirt-cloner-rbac"
+	// DefaultNamespaceName is the default namespace name for the KubeVirt cluster.
+	DefaultNamespaceName = "kubevirt-workload"
 )
 
 type kubevirt struct {
@@ -116,33 +118,37 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
+	kubevirtNamespace := cluster.Status.NamespaceName
+	if k.dc.NamespacedMode {
+		kubevirtNamespace = DefaultNamespaceName
+	}
 	// If the cluster NamespaceName is not filled yet, return a conflict error:
 	// will requeue but not send an error event
 	if cluster.Status.NamespaceName == "" {
 		return cluster, apierrors.NewConflict(kubermaticv1.Resource("cluster"), cluster.Name, fmt.Errorf("cluster.Status.NamespaceName for cluster %s", cluster.Name))
 	}
 
-	cluster, err = reconcileNamespace(ctx, cluster.Status.NamespaceName, cluster, update, client)
+	cluster, err = reconcileNamespace(ctx, kubevirtNamespace, cluster, update, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = reconcileCSIRoleRoleBinding(ctx, cluster.Status.NamespaceName, client)
+	err = reconcileCSIRoleRoleBinding(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = ReconcileInfraTokenAccess(ctx, cluster.Status.NamespaceName, client)
+	err = ReconcileInfraTokenAccess(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = reconcileInstancetypes(ctx, cluster.Status.NamespaceName, client)
+	err = reconcileInstancetypes(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
 
-	err = reconcilePreferences(ctx, cluster.Status.NamespaceName, client)
+	err = reconcilePreferences(ctx, kubevirtNamespace, client)
 	if err != nil {
 		return cluster, err
 	}
@@ -151,14 +157,14 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if k.dc.EnableDefaultNetworkPolicies != nil {
 		enableDefaultNetworkPolices = *k.dc.EnableDefaultNetworkPolicies
 	}
-	if enableDefaultNetworkPolices {
-		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, k.dc, client)
+	if enableDefaultNetworkPolices && !k.dc.NamespacedMode {
+		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, k.dc, client, kubevirtNamespace)
 		if err != nil {
 			return cluster, err
 		}
 	}
 
-	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client)
+	err = reconcileCustomNetworkPolicies(ctx, cluster, k.dc, client, kubevirtNamespace)
 	if err != nil {
 		return cluster, err
 	}
@@ -167,7 +173,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) {
+	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) || k.dc.NamespacedMode {
 		return cluster, nil
 	}
 

@@ -31,7 +31,7 @@ spec:
       credentialsReference:
         name: credential-vsphere-efm8xdc57n
         namespace: kubermatic
-      datastore: vsan
+      datastore: Datastore0-truenas
       folder: /path/to/efm8xdc57n
       infraManagementUser: {}
       password: ""
