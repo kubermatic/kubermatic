@@ -102,14 +102,7 @@ func CloudConfig(
 
 	case cloud.Openstack != nil:
 		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
-		loadBalancerProvider := ""
-		loadBalancerMethod := defaultOpenStackLBMethod
-		if dc.Spec.Openstack.LoadBalancerProvider != nil {
-			loadBalancerProvider = *dc.Spec.Openstack.LoadBalancerProvider
-		}
-		if dc.Spec.Openstack.LoadBalancerMethod != nil {
-			loadBalancerMethod = *dc.Spec.Openstack.LoadBalancerMethod
-		}
+		loadBalancerProvider, loadBalancerMethod := openStackLoadBalancerConfig(dc.Spec.Openstack)
 		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		useOctavia := dc.Spec.Openstack.UseOctavia
 		if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
@@ -321,4 +314,16 @@ func GetVSphereCloudConfig(
 		cc.Global.IPFamily = "ipv4,ipv6"
 	}
 	return cc, nil
+}
+
+func openStackLoadBalancerConfig(dcSpec *kubermaticv1.DatacenterSpecOpenstack) (string, string) {
+	loadBalancerProvider := ""
+	loadBalancerMethod := defaultOpenStackLBMethod
+	if dcSpec.LoadBalancerProvider != nil {
+		loadBalancerProvider = *dcSpec.LoadBalancerProvider
+	}
+	if dcSpec.LoadBalancerMethod != nil {
+		loadBalancerMethod = *dcSpec.LoadBalancerMethod
+	}
+	return loadBalancerProvider, loadBalancerMethod
 }
