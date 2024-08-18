@@ -34,6 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
 )
 
+const defaultOpenStackLBMethod = "ROUND_ROBIN"
+
 // CloudConfig returns the cloud-config for the supplied data.
 func CloudConfig(
 	cluster *kubermaticv1.Cluster,
@@ -99,6 +101,7 @@ func CloudConfig(
 
 	case cloud.Openstack != nil:
 		manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
+		loadBalancerProvider, loadBalancerMethod := openStackLoadBalancerConfig(dc.Spec.Openstack)
 		trustDevicePath := dc.Spec.Openstack.TrustDevicePath
 		useOctavia := dc.Spec.Openstack.UseOctavia
 		if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
@@ -123,6 +126,8 @@ func CloudConfig(
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
+				LBMethod:             loadBalancerMethod,
+				LBProvider:           loadBalancerProvider,
 				UseOctavia:           useOctavia,
 			},
 			Version: cluster.Status.Versions.ControlPlane.String(),
@@ -301,4 +306,16 @@ func GetVSphereCloudConfig(
 		cc.Global.IPFamily = "ipv4,ipv6"
 	}
 	return cc, nil
+}
+
+func openStackLoadBalancerConfig(dcSpec *kubermaticv1.DatacenterSpecOpenstack) (string, string) {
+	loadBalancerProvider := ""
+	loadBalancerMethod := defaultOpenStackLBMethod
+	if dcSpec.LoadBalancerProvider != nil {
+		loadBalancerProvider = *dcSpec.LoadBalancerProvider
+	}
+	if dcSpec.LoadBalancerMethod != nil {
+		loadBalancerMethod = *dcSpec.LoadBalancerMethod
+	}
+	return loadBalancerProvider, loadBalancerMethod
 }

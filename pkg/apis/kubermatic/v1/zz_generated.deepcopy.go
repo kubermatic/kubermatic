@@ -2372,6 +2372,16 @@ func (in *DatacenterSpecOpenstack) DeepCopyInto(out *DatacenterSpecOpenstack) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.LoadBalancerProvider != nil {
+		in, out := &in.LoadBalancerProvider, &out.LoadBalancerProvider
+		*out = new(string)
+		**out = **in
+	}
+	if in.LoadBalancerMethod != nil {
+		in, out := &in.LoadBalancerMethod, &out.LoadBalancerMethod
+		*out = new(string)
+		**out = **in
+	}
 	if in.UseOctavia != nil {
 		in, out := &in.UseOctavia, &out.UseOctavia
 		*out = new(bool)
