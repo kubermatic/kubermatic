@@ -12,6 +12,26 @@
 - [v2.24.9](#v2249)
 - [v2.24.10](#v22410)
 - [v2.24.11](#v22411)
+- [v2.24.12](#v22412)
+
+## v2.24.12
+
+**GitHub release: [v2.24.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.12)**
+
+### Bugfixes
+
+- Deduplicate alerts in alertmanager ([#13605](https://github.com/kubermatic/kubermatic/pull/13605))
+- Fix KubermaticConfiguration getting deleted when a Seed on a shared master/seed cluster is deleted ([#13585](https://github.com/kubermatic/kubermatic/pull/13585))
+- Fix usercluster-ctrl-mgr spamming oldest node version in its logs ([#13440](https://github.com/kubermatic/kubermatic/pull/13440))
+- Restore missing bgpconfigurations CRD in Canal 3.27 ([#13505](https://github.com/kubermatic/kubermatic/pull/13505))
+- Add the label `name: nodeAgent` to the Velero daemon set pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+- The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+
+### Updates
+
+- Update Go version to 1.21.12 ([#13557](https://github.com/kubermatic/kubermatic/pull/13557))
+- Update machine-controller to v1.58.6 ([#13560](https://github.com/kubermatic/kubermatic/pull/13560))
+
 
 ## v2.24.11
 
