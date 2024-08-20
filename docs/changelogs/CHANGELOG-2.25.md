@@ -23,6 +23,7 @@
 - Restore missing bgpconfigurations CRD in Canal 3.27 ([#13505](https://github.com/kubermatic/kubermatic/pull/13505))
 - Add the label `name: nodeAgent` to the Velero DaemonSet pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
 - The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+- Fix TLS errors in the admin page when using a custom CA for the metering object store ([#6752](https://github.com/kubermatic/dashboard/pull/6752))
 
 ### Chores
 
