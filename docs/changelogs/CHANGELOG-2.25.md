@@ -8,6 +8,32 @@
 - [v2.25.5](#v2255)
 - [v2.25.6](#v2256)
 - [v2.25.7](#v2257)
+- [v2.25.8](#v2258)
+
+## v2.25.8
+
+**GitHub release: [v2.25.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.8)**
+
+### Bugfixes
+
+- Deduplicate alerts in alertmanager ([#13604](https://github.com/kubermatic/kubermatic/pull/13604))
+- Fix KubermaticConfiguration getting deleted when a Seed on a shared master/seed cluster is deleted ([#13585](https://github.com/kubermatic/kubermatic/pull/13585))
+- Default storage class addon will be removed if the CSI driver (csi addon) is disabled for user cluster ([#13445](https://github.com/kubermatic/kubermatic/pull/13445))
+- Fix usercluster-ctrl-mgr spamming oldest node version in its logs ([#13440](https://github.com/kubermatic/kubermatic/pull/13440))
+- Restore missing bgpconfigurations CRD in Canal 3.27 ([#13505](https://github.com/kubermatic/kubermatic/pull/13505))
+- Add the label `name: nodeAgent` to the Velero daemon set pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+- The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+
+### Chores
+
+- Security: Update nginx-ingress to 1.10.4 (fixing CVE-2024-7646) ([#13601](https://github.com/kubermatic/kubermatic/pull/13601))
+- Allows KKP administrator to interface thanos query with thanos-sidecar to get full benefit of using thanos ([#13482](https://github.com/kubermatic/kubermatic/pull/13482))
+
+### Updates
+
+- Update Go version to 1.22.5 ([#13556](https://github.com/kubermatic/kubermatic/pull/13556))
+- Update machine-controller to v1.59.3 ([#13559](https://github.com/kubermatic/kubermatic/pull/13559))
+
 
 ## v2.25.7
 
