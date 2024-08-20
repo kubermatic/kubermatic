@@ -18,6 +18,27 @@
 - [v2.23.15](#v22315)
 - [v2.23.16](#v22316)
 - [v2.23.17](#v22317)
+- [v2.23.18](#v22318)
+
+## v2.23.18
+
+**GitHub release: [v2.23.18](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.18)**
+
+### Bugfixes
+
+- Deduplicate alerts in alertmanager ([#13606](https://github.com/kubermatic/kubermatic/pull/13606))
+- Fix KubermaticConfiguration getting deleted when a Seed on a shared master/seed cluster is deleted ([#13585](https://github.com/kubermatic/kubermatic/pull/13585))
+- Fix usercluster-ctrl-mgr spamming oldest node version in its logs ([#13440](https://github.com/kubermatic/kubermatic/pull/13440))
+- Restore missing bgpconfigurations CRD in Canal 3.27 ([#13505](https://github.com/kubermatic/kubermatic/pull/13505))
+
+### Miscellaneous
+
+- Add the label `name: nodeAgent` to the Velero daemon set pods ([#13538](https://github.com/kubermatic/kubermatic/pull/13538))
+- The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13538](https://github.com/kubermatic/kubermatic/pull/13538))
+
+### Updates
+
+- Update machine-controller to v1.57.9 ([#13561](https://github.com/kubermatic/kubermatic/pull/13561))
 
 ## v2.23.17
 
