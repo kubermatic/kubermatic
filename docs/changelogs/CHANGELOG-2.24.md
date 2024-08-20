@@ -24,7 +24,7 @@
 - Fix KubermaticConfiguration getting deleted when a Seed on a shared master/seed cluster is deleted ([#13585](https://github.com/kubermatic/kubermatic/pull/13585))
 - Fix usercluster-ctrl-mgr spamming oldest node version in its logs ([#13440](https://github.com/kubermatic/kubermatic/pull/13440))
 - Restore missing bgpconfigurations CRD in Canal 3.27 ([#13505](https://github.com/kubermatic/kubermatic/pull/13505))
-- Add the label `name: nodeAgent` to the Velero daemon set pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+- Add the label `name: nodeAgent` to the Velero DaemonSet pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
 - The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
 
 ### Updates

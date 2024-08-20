@@ -33,7 +33,7 @@
 
 ### Miscellaneous
 
-- Add the label `name: nodeAgent` to the Velero daemon set pods ([#13538](https://github.com/kubermatic/kubermatic/pull/13538))
+- Add the label `name: nodeAgent` to the Velero DaemonSet pods ([#13538](https://github.com/kubermatic/kubermatic/pull/13538))
 - The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13538](https://github.com/kubermatic/kubermatic/pull/13538))
 
 ### Updates
