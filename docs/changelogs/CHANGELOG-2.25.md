@@ -21,13 +21,13 @@
 - Default storage class addon will be removed if the CSI driver (csi addon) is disabled for user cluster ([#13445](https://github.com/kubermatic/kubermatic/pull/13445))
 - Fix usercluster-ctrl-mgr spamming oldest node version in its logs ([#13440](https://github.com/kubermatic/kubermatic/pull/13440))
 - Restore missing bgpconfigurations CRD in Canal 3.27 ([#13505](https://github.com/kubermatic/kubermatic/pull/13505))
-- Add the label `name: nodeAgent` to the Velero daemon set pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
+- Add the label `name: nodeAgent` to the Velero DaemonSet pods ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
 - The secret `velero-restic-credentials` is renamed to `velero-repo-credentials` ([#13516](https://github.com/kubermatic/kubermatic/pull/13516))
 
 ### Chores
 
 - Security: Update nginx-ingress to 1.10.4 (fixing CVE-2024-7646) ([#13601](https://github.com/kubermatic/kubermatic/pull/13601))
-- Allows KKP administrator to interface thanos query with thanos-sidecar to get full benefit of using thanos ([#13482](https://github.com/kubermatic/kubermatic/pull/13482))
+- Add `extraPorts` option to Prometheus Helm chart to extend the Thanos Sidecar (if the deprecated Thanos integration is used) ([#13482](https://github.com/kubermatic/kubermatic/pull/13482))
 
 ### Updates
 
