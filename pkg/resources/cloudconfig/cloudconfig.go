@@ -232,13 +232,10 @@ func CloudConfig(
 		}
 
 	case cloud.Kubevirt != nil:
-		kubevirtInfraNamespace := cluster.Status.NamespaceName
-		if dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode {
-			kubevirtInfraNamespace = kkpkubevirt.DefaultNamespaceName
-		}
+		kubeVirtInfraNamespace := kkpkubevirt.GetKubeVirtInfraNamespace(cluster, dc.Spec.Kubevirt)
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",
-			Namespace:  kubevirtInfraNamespace,
+			Namespace:  kubeVirtInfraNamespace,
 		}
 		return cc.String()
 	}

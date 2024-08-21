@@ -60,6 +60,24 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}, nil
 }
 
+func GetKubeVirtInfraNamespace(cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) string {
+	if dc.NamespacedMode != nil && dc.NamespacedMode.Enabled {
+		if dc.NamespacedMode.Name != "" {
+			return dc.NamespacedMode.Name
+		}
+		return DefaultNamespaceName
+	}
+
+	return cluster.Status.NamespaceName
+}
+
+func isNamespaceModeEnabled(dc *kubermaticv1.DatacenterSpecKubevirt) bool {
+	if dc.NamespacedMode != nil {
+		return dc.NamespacedMode.Enabled
+	}
+	return false
+}
+
 var _ provider.ReconcilingCloudProvider = &kubevirt{}
 
 func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec) error {
@@ -118,10 +136,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	kubevirtNamespace := cluster.Status.NamespaceName
-	if k.dc.NamespacedMode {
-		kubevirtNamespace = DefaultNamespaceName
-	}
+	kubevirtNamespace := GetKubeVirtInfraNamespace(cluster, k.dc)
 	// If the cluster NamespaceName is not filled yet, return a conflict error:
 	// will requeue but not send an error event
 	if cluster.Status.NamespaceName == "" {
@@ -157,7 +172,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if k.dc.EnableDefaultNetworkPolicies != nil {
 		enableDefaultNetworkPolices = *k.dc.EnableDefaultNetworkPolicies
 	}
-	if enableDefaultNetworkPolices && !k.dc.NamespacedMode {
+	if enableDefaultNetworkPolices && !isNamespaceModeEnabled(k.dc) {
 		err = reconcileClusterIsolationNetworkPolicy(ctx, cluster, k.dc, client, kubevirtNamespace)
 		if err != nil {
 			return cluster, err
@@ -173,7 +188,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 }
 
 func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) || k.dc.NamespacedMode {
+	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) || isNamespaceModeEnabled(k.dc) {
 		return cluster, nil
 	}
 

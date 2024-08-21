@@ -95,12 +95,9 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 	}
 
 	if cluster != nil {
-		kubevirtInfraNamespace := cluster.Status.NamespaceName
-		if datacenter.NamespacedMode {
-			kubevirtInfraNamespace = kkpkubevirt.DefaultNamespaceName
-		}
+		kubeVirtInfraNamespace := kkpkubevirt.GetKubeVirtInfraNamespace(cluster, datacenter)
 		config.ClusterName = types.ConfigVarString{Value: cluster.Name}
-		config.VirtualMachine.Template.PrimaryDisk.OsImage.Value = extractKubeVirtOsImageURLOrDataVolumeNsName(kubevirtInfraNamespace, config.VirtualMachine.Template.PrimaryDisk.OsImage.Value)
+		config.VirtualMachine.Template.PrimaryDisk.OsImage.Value = extractKubeVirtOsImageURLOrDataVolumeNsName(kubeVirtInfraNamespace, config.VirtualMachine.Template.PrimaryDisk.OsImage.Value)
 	}
 
 	return config, nil

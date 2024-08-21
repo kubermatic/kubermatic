@@ -40,10 +40,7 @@ func SecretsReconcilers(ctx context.Context, data *resources.TemplateData) []rec
 func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretReconciler) {
 		return resources.KubeVirtCSISecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
-			kubevirtInfraNamespace := data.Cluster().Status.NamespaceName
-			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode {
-				kubevirtInfraNamespace = kubevirt.DefaultNamespaceName
-			}
+			kubeVirtInfraNamespace := kubevirt.GetKubeVirtInfraNamespace(data.Cluster(), data.DC().Spec.Kubevirt)
 			se.Labels = resources.BaseAppLabels(resources.KubeVirtCSISecretName, nil)
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
@@ -59,14 +56,14 @@ func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateDa
 			}
 
 			// Ensure reconciliation of csi SA and secret token
-			err = kubevirt.ReconcileInfraTokenAccess(ctx, kubevirtInfraNamespace, infraClient)
+			err = kubevirt.ReconcileInfraTokenAccess(ctx, kubeVirtInfraNamespace, infraClient)
 			if err != nil {
 				return nil, err
 			}
 
 			// Get the infra csi SA and compute csiKubeConfig from it
 			csiSA := corev1.ServiceAccount{}
-			err = infraClient.Get(ctx, types.NamespacedName{Name: resources.KubeVirtCSIServiceAccountName, Namespace: kubevirtInfraNamespace}, &csiSA)
+			err = infraClient.Get(ctx, types.NamespacedName{Name: resources.KubeVirtCSIServiceAccountName, Namespace: kubeVirtInfraNamespace}, &csiSA)
 			if err != nil {
 				return nil, err
 			}
@@ -80,7 +77,7 @@ func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateDa
 			}
 
 			csiInfraTokenSecret := corev1.Secret{}
-			err = infraClient.Get(ctx, types.NamespacedName{Name: tokenName, Namespace: kubevirtInfraNamespace}, &csiInfraTokenSecret)
+			err = infraClient.Get(ctx, types.NamespacedName{Name: tokenName, Namespace: kubeVirtInfraNamespace}, &csiInfraTokenSecret)
 			if err != nil {
 				return nil, err
 			}

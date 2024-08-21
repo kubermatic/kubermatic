@@ -48,10 +48,7 @@ func DeploymentsReconcilers(data *resources.TemplateData) []reconciling.NamedDep
 func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (name string, create reconciling.DeploymentReconciler) {
 		return resources.KubeVirtCSIControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			kubevirtInfraNamespace := data.Cluster().Status.NamespaceName
-			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode {
-				kubevirtInfraNamespace = kubevirt.DefaultNamespaceName
-			}
+			kubeVirtInfraNamespace := kubevirt.GetKubeVirtInfraNamespace(data.Cluster(), data.DC().Spec.Kubevirt)
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()
 			volumes := []corev1.Volume{
 				{
@@ -112,7 +109,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					Image:           registry.Must(data.RewriteImage("quay.io/kubermatic/kubevirt-csi-driver:" + csiVersion)),
 					Args: []string{
 						"--endpoint=$(CSI_ENDPOINT)",
-						fmt.Sprintf("--infra-cluster-namespace=%s", kubevirtInfraNamespace),
+						fmt.Sprintf("--infra-cluster-namespace=%s", kubeVirtInfraNamespace),
 						fmt.Sprintf("--infra-cluster-labels=%s", fmt.Sprintf("cluster-name=%s", data.Cluster().Name)),
 						"--infra-cluster-kubeconfig=/var/run/secrets/infracluster/kubeconfig",
 						"--tenant-cluster-kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
