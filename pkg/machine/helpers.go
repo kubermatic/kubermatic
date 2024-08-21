@@ -24,6 +24,7 @@ import (
 	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
+	baremetal "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/baremetal/types"
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
 	equinixmetal "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	gce "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/gce/types"
@@ -192,6 +193,8 @@ func ProviderTypeFromSpec(cloudProviderSpec interface{}) (kubermaticv1.ProviderT
 		return kubermaticv1.VMwareCloudDirectorCloudProvider, nil
 	case vsphere.RawConfig:
 		return kubermaticv1.VSphereCloudProvider, nil
+	case baremetal.RawConfig:
+		return kubermaticv1.BaremetalCloudProvider, nil
 	default:
 		return "", fmt.Errorf("cannot handle unknown cloud provider %T", cloudProviderSpec)
 	}
@@ -225,6 +228,8 @@ func DecodeCloudProviderSpec(cloudProvider kubermaticv1.ProviderType, pconfig pr
 		return vmwareclouddirector.GetConfig(pconfig)
 	case kubermaticv1.VSphereCloudProvider:
 		return vsphere.GetConfig(pconfig)
+	case kubermaticv1.BaremetalCloudProvider:
+		return baremetal.GetConfig(pconfig)
 	default:
 		return nil, fmt.Errorf("cannot handle unknown cloud provider %q", cloudProvider)
 	}
@@ -288,6 +293,8 @@ func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kube
 		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VMwareCloudDirector, os)
 	case kubermaticv1.VSphereCloudProvider:
 		return provider.CompleteVSphereProviderSpec(assert[vsphere.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VSphere, os)
+	case kubermaticv1.BaremetalCloudProvider:
+		return provider.CompleteBaremetalProviderSpec(assert[baremetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Baremetal)
 	default:
 		return nil, fmt.Errorf("cannot handle unknown cloud provider %q", cloudProvider)
 	}
