@@ -881,12 +881,8 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
-	if cluster.Spec.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {
-		kubeVirtInfraNamespace := KubeVirtDefaultSingleNamespace
-		if dc.Spec.Kubevirt.NamespacedMode.Name != "" {
-			kubeVirtInfraNamespace = dc.Spec.Kubevirt.NamespacedMode.Name
-		}
-		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", Value: kubeVirtInfraNamespace})
+	if cluster.Spec.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {
+		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", Value: dc.Spec.Kubevirt.NamespacedMode.Name})
 	} else {
 		vars = append(vars, corev1.EnvVar{Name: "POD_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}})
 	}

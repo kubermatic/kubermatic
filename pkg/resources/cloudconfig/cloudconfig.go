@@ -30,7 +30,6 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
-	kkpkubevirt "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	openstackprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
@@ -232,7 +231,10 @@ func CloudConfig(
 		}
 
 	case cloud.Kubevirt != nil:
-		kubeVirtInfraNamespace := kkpkubevirt.GetKubeVirtInfraNamespace(cluster, dc.Spec.Kubevirt)
+		kubeVirtInfraNamespace := cluster.Status.NamespaceName
+		if dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {
+			kubeVirtInfraNamespace = dc.Spec.Kubevirt.NamespacedMode.Name
+		}
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",
 			Namespace:  kubeVirtInfraNamespace,

@@ -40,7 +40,10 @@ func SecretsReconcilers(ctx context.Context, data *resources.TemplateData) []rec
 func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretReconciler) {
 		return resources.KubeVirtCSISecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
-			kubeVirtInfraNamespace := kubevirt.GetKubeVirtInfraNamespace(data.Cluster(), data.DC().Spec.Kubevirt)
+			kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
+			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
+				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Name
+			}
 			se.Labels = resources.BaseAppLabels(resources.KubeVirtCSISecretName, nil)
 			if se.Data == nil {
 				se.Data = map[string][]byte{}

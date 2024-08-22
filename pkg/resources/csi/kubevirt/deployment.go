@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	kubevirt "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -48,7 +47,10 @@ func DeploymentsReconcilers(data *resources.TemplateData) []reconciling.NamedDep
 func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (name string, create reconciling.DeploymentReconciler) {
 		return resources.KubeVirtCSIControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			kubeVirtInfraNamespace := kubevirt.GetKubeVirtInfraNamespace(data.Cluster(), data.DC().Spec.Kubevirt)
+			kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
+			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
+				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Name
+			}
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()
 			volumes := []corev1.Volume{
 				{

@@ -39,8 +39,6 @@ const (
 	FinalizerNamespace = "kubermatic.k8c.io/cleanup-kubevirt-namespace"
 	// FinalizerClonerRoleBinding will ensure the deletion of the DataVolume cloner role-binding.
 	FinalizerClonerRoleBinding = "kubermatic.k8c.io/cleanup-kubevirt-cloner-rbac"
-	// DefaultNamespaceName is the default namespace name for the KubeVirt cluster.
-	DefaultNamespaceName = "kubevirt-workload"
 )
 
 type kubevirt struct {
@@ -58,17 +56,6 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		dc:                dc.Spec.Kubevirt,
 		log:               log.Logger,
 	}, nil
-}
-
-func GetKubeVirtInfraNamespace(cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) string {
-	if dc.NamespacedMode != nil && dc.NamespacedMode.Enabled {
-		if dc.NamespacedMode.Name != "" {
-			return dc.NamespacedMode.Name
-		}
-		return DefaultNamespaceName
-	}
-
-	return cluster.Status.NamespaceName
 }
 
 func isNamespaceModeEnabled(dc *kubermaticv1.DatacenterSpecKubevirt) bool {
@@ -136,7 +123,10 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	kubevirtNamespace := GetKubeVirtInfraNamespace(cluster, k.dc)
+	kubevirtNamespace := cluster.Status.NamespaceName
+	if k.dc.NamespacedMode != nil && k.dc.NamespacedMode.Enabled {
+		kubevirtNamespace = k.dc.NamespacedMode.Name
+	}
 	// If the cluster NamespaceName is not filled yet, return a conflict error:
 	// will requeue but not send an error event
 	if cluster.Status.NamespaceName == "" {
