@@ -42,7 +42,7 @@ func InfraAccessSecretReconciler(ctx context.Context, data *resources.TemplateDa
 		return resources.KubeVirtCSISecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
 			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
-				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Name
+				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Namespace
 			}
 			se.Labels = resources.BaseAppLabels(resources.KubeVirtCSISecretName, nil)
 			if se.Data == nil {

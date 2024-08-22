@@ -233,7 +233,7 @@ func CloudConfig(
 	case cloud.Kubevirt != nil:
 		kubeVirtInfraNamespace := cluster.Status.NamespaceName
 		if dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {
-			kubeVirtInfraNamespace = dc.Spec.Kubevirt.NamespacedMode.Name
+			kubeVirtInfraNamespace = dc.Spec.Kubevirt.NamespacedMode.Namespace
 		}
 		cc := kubevirt.CloudConfig{
 			Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",

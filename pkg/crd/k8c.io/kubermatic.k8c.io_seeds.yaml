@@ -985,7 +985,7 @@ spec:
                                     type: boolean
                                   name:
                                     default: kubevirt-workload
-                                    description: Name is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
+                                    description: Namespace is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
                                     type: string
                                 type: object
                             type: object

@@ -49,7 +49,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 		return resources.KubeVirtCSIControllerName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
 			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
-				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Name
+				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Namespace
 			}
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()
 			volumes := []corev1.Volume{

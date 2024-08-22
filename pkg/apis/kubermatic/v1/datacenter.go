@@ -828,9 +828,9 @@ type DatacenterSpecKubevirt struct {
 type NamespacedMode struct {
 	// Enabled indicates whether the single namespace mode is enabled or not.
 	Enabled bool `json:"enabled,omitempty"`
-	// Name is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
+	// Namespace is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
 	// +kubebuilder:default=kubevirt-workload
-	Name string `json:"name,omitempty"`
+	Namespace string `json:"name,omitempty"`
 }
 
 type KubeVirtInfraStorageClass struct {

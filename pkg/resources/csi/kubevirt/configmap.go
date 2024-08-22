@@ -43,7 +43,7 @@ func ControllerConfigMapReconciler(data *resources.TemplateData) reconciling.Nam
 			cm.Labels = resources.BaseAppLabels(resources.KubeVirtCSIConfigMapName, nil)
 			kubeVirtInfraNamespace := data.Cluster().Status.NamespaceName
 			if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
-				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Name
+				kubeVirtInfraNamespace = data.DC().Spec.Kubevirt.NamespacedMode.Namespace
 			}
 			cm.Data[resources.KubeVirtCSINamespaceKey] = kubeVirtInfraNamespace
 			cm.Data[resources.KubeVirtCSIClusterLabelKey] = fmt.Sprintf("cluster-name=%s", data.Cluster().Name)
