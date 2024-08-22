@@ -206,8 +206,8 @@ spec:
               # storageclass.kubernetes.io/is-default-class : false
               isDefaultClass: true
               name: rook-ceph-block
-          # NamespacedMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
-          namespacedMode: false
+          # NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
+          namespacedMode: null
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU
