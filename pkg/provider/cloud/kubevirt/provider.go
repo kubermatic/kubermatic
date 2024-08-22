@@ -125,7 +125,7 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 
 	kubevirtNamespace := cluster.Status.NamespaceName
 	if k.dc.NamespacedMode != nil && k.dc.NamespacedMode.Enabled {
-		kubevirtNamespace = k.dc.NamespacedMode.Name
+		kubevirtNamespace = k.dc.NamespacedMode.Namespace
 	}
 	// If the cluster NamespaceName is not filled yet, return a conflict error:
 	// will requeue but not send an error event
