@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,41 +17,47 @@ limitations under the License.
 package vmwareclouddirector
 
 import (
+	"strings"
 	"testing"
 )
 
 func TestCloudConfigToString(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *cloudConfig
+		config   *CloudConfig
 		expected string
 	}{
 		{
 			name: "conversion-test",
-			config: &cloudConfig{
-				Host:         "https://example.com",
-				VDC:          "TEST_VDC",
-				VApp:         "TEST_VAPP",
-				Organization: "TEST_ORG",
-				ClusterID:    "test",
+			config: &CloudConfig{
+				VCD: VCDConfig{
+					Host:         "https://example.com",
+					VDC:          "TEST_VDC",
+					VApp:         "TEST_VAPP",
+					Organization: "TEST_ORG",
+				},
+				ClusterID: "test",
 			},
-			expected: `vcd:
-  host: https://example.com
-  org: TEST_ORG
-  vdc: TEST_VDC
-  vAppName: TEST_VAPP
-clusterid: test`},
+			expected: strings.TrimSpace(`
+vcd:
+    host: https://example.com
+    org: TEST_ORG
+    vdc: TEST_VDC
+    vAppName: TEST_VAPP
+clusterid: test
+`),
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s, err := test.config.toString()
+			s, err := test.config.String()
 			if err != nil {
 				t.Fatalf("failed to convert to string: %v", err)
 			}
-
+			s = strings.TrimSpace(s)
 			if s != test.expected {
-				t.Fatalf("output is not as expected")
+				t.Fatalf("output is not as expected: %s", s)
 			}
 		})
 	}

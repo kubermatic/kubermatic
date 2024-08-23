@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,137 +18,207 @@ package openstack
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
-	"text/template"
+	"time"
 
-	"github.com/Masterminds/sprig/v3"
-
-	"github.com/kubermatic/machine-controller/pkg/ini"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/ini"
 )
 
-// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
-// default with the in-tree cloud provider.
-// https://v1-18.docs.kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 const (
-	cloudConfigTpl = `[Global]
-auth-url    = {{ .Global.AuthURL | iniEscape }}
-{{- if .Global.ApplicationCredentialID }}
-application-credential-id     = {{ .Global.ApplicationCredentialID | iniEscape }}
-application-credential-secret = {{ .Global.ApplicationCredentialSecret | iniEscape }}
-{{- else }}
-username    = {{ .Global.Username | iniEscape }}
-password    = {{ .Global.Password | iniEscape }}
-tenant-name = {{ .Global.ProjectName | iniEscape }}
-tenant-id   = {{ .Global.ProjectID | iniEscape }}
-domain-name = {{ .Global.DomainName | iniEscape }}
-{{- end }}
-region      = {{ .Global.Region | iniEscape }}
-
-[LoadBalancer]
-lb-version = {{ default "v2" .LoadBalancer.LBVersion | iniEscape }}
-subnet-id = {{ .LoadBalancer.SubnetID | iniEscape }}
-floating-network-id = {{ .LoadBalancer.FloatingNetworkID | iniEscape }}
-lb-method = {{ .LoadBalancer.LBMethod | iniEscape }}
-lb-provider = {{ .LoadBalancer.LBProvider | iniEscape }}
-{{- if .LoadBalancer.UseOctavia }}
-use-octavia = {{ .LoadBalancer.UseOctavia | Bool }}
-{{- end }}
-{{- if .LoadBalancer.EnableIngressHostname }}
-enable-ingress-hostname = {{ .LoadBalancer.EnableIngressHostname | Bool }}
-{{- if .LoadBalancer.IngressHostnameSuffix }}
-ingress-hostname-suffix = {{ .LoadBalancer.IngressHostnameSuffix | strPtr | iniEscape }}
-{{- end }}
-{{- end }}
-
-{{- if .LoadBalancer.CreateMonitor }}
-create-monitor = {{ .LoadBalancer.CreateMonitor }}
-monitor-delay = {{ .LoadBalancer.MonitorDelay }}
-monitor-timeout = {{ .LoadBalancer.MonitorTimeout }}
-monitor-max-retries = {{ .LoadBalancer.MonitorMaxRetries }}
-{{- end}}
-{{- if semverCompare "~1.9.10 || ~1.10.6 || ~1.11.1 || >=1.12.*" .Version }}
-manage-security-groups = {{ .LoadBalancer.ManageSecurityGroups }}
-{{- end }}
-
-[BlockStorage]
-{{- if semverCompare ">=1.9" .Version }}
-ignore-volume-az  = {{ .BlockStorage.IgnoreVolumeAZ }}
-{{- end }}
-trust-device-path = {{ .BlockStorage.TrustDevicePath }}
-bs-version        = {{ default "auto" .BlockStorage.BSVersion | iniEscape }}
-{{- if .BlockStorage.NodeVolumeAttachLimit }}
-node-volume-attach-limit = {{ .BlockStorage.NodeVolumeAttachLimit }}
-{{- end }}
-`
+	defaultLBMethod  = "ROUND_ROBIN"
+	defaultBSVersion = "auto"
 )
 
-type LoadBalancerOpts struct {
-	LBVersion            string       `gcfg:"lb-version"`
-	SubnetID             string       `gcfg:"subnet-id"`
-	FloatingNetworkID    string       `gcfg:"floating-network-id"`
-	LBMethod             string       `gcfg:"lb-method"`
-	LBProvider           string       `gcfg:"lb-provider"`
-	CreateMonitor        bool         `gcfg:"create-monitor"`
-	MonitorDelay         ini.Duration `gcfg:"monitor-delay"`
-	MonitorTimeout       ini.Duration `gcfg:"monitor-timeout"`
-	MonitorMaxRetries    uint         `gcfg:"monitor-max-retries"`
-	ManageSecurityGroups bool         `gcfg:"manage-security-groups"`
-	UseOctavia           *bool        `gcfg:"use-octavia"`
+// The structs in this file mimic the original types for the
+// CCM @ https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/pkg/openstack/openstack.go
+// CSI @ https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/pkg/csi/cinder/openstack/openstack.go
+// but were trimmed down to what KKP needs and to avoid a heavy dependency
+// on the Openstack CCM Go module.
 
-	EnableIngressHostname *bool   `gcfg:"enable-ingress-hostname"`
-	IngressHostnameSuffix *string `gcfg:"ingress-hostname-suffix"`
-}
-
-type BlockStorageOpts struct {
-	BSVersion             string `gcfg:"bs-version"`
-	TrustDevicePath       bool   `gcfg:"trust-device-path"`
-	IgnoreVolumeAZ        bool   `gcfg:"ignore-volume-az"`
-	NodeVolumeAttachLimit uint   `gcfg:"node-volume-attach-limit"`
-}
-
-type GlobalOpts struct {
-	AuthURL                     string `gcfg:"auth-url"`
-	Username                    string
-	Password                    string
-	ApplicationCredentialID     string `gcfg:"application-credential-id"`
-	ApplicationCredentialSecret string `gcfg:"application-credential-secret"`
-
-	// project name formerly known as tenant name.
-	// it serialized as tenant-name because openstack CCM reads only tenant-name. In CCM, internally project and tenant
-	// are stored into tenant-name.
-	ProjectName string `gcfg:"tenant-name"`
-
-	// project id formerly known as tenant id.
-	// serialized as tenant-id for same reason as ProjectName
-	ProjectID  string `gcfg:"tenant-id"`
-	DomainName string `gcfg:"domain-name"`
-	Region     string
-}
-
-// CloudConfig is used to read and store information from the cloud configuration file.
 type CloudConfig struct {
 	Global       GlobalOpts
 	LoadBalancer LoadBalancerOpts
 	BlockStorage BlockStorageOpts
-	Version      string
 }
 
-func CloudConfigToString(c *CloudConfig) (string, error) {
-	funcMap := sprig.TxtFuncMap()
-	funcMap["iniEscape"] = ini.Escape
-	funcMap["Bool"] = func(b *bool) string { return strconv.FormatBool(*b) }
-	funcMap["strPtr"] = func(s *string) string { return *s }
+func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) CloudConfig {
+	manageSecurityGroups := dc.Spec.Openstack.ManageSecurityGroups
 
-	tpl, err := template.New("cloud-config").Funcs(funcMap).Parse(cloudConfigTpl)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse the cloud config template: %w", err)
+	lbProvider := ""
+	if dc.Spec.Openstack.LoadBalancerProvider != nil {
+		lbProvider = *dc.Spec.Openstack.LoadBalancerProvider
 	}
 
+	lbMethod := ""
+	if dc.Spec.Openstack.LoadBalancerMethod != nil {
+		lbMethod = *dc.Spec.Openstack.LoadBalancerMethod
+	}
+
+	trustDevicePath := dc.Spec.Openstack.TrustDevicePath
+	useOctavia := dc.Spec.Openstack.UseOctavia
+	if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
+		useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
+	}
+
+	cc := CloudConfig{
+		Global: GlobalOpts{
+			AuthURL:                     dc.Spec.Openstack.AuthURL,
+			Username:                    credentials.Openstack.Username,
+			Password:                    credentials.Openstack.Password,
+			DomainName:                  credentials.Openstack.Domain,
+			TenantName:                  credentials.Openstack.Project,
+			TenantID:                    credentials.Openstack.ProjectID,
+			Region:                      dc.Spec.Openstack.Region,
+			ApplicationCredentialSecret: credentials.Openstack.ApplicationCredentialSecret,
+			ApplicationCredentialID:     credentials.Openstack.ApplicationCredentialID,
+		},
+		BlockStorage: BlockStorageOpts{
+			TrustDevicePath: trustDevicePath != nil && *trustDevicePath,
+			IgnoreVolumeAZ:  dc.Spec.Openstack.IgnoreVolumeAZ,
+		},
+		LoadBalancer: LoadBalancerOpts{
+			ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
+			LBMethod:             lbMethod,
+			LBProvider:           lbProvider,
+			UseOctavia:           useOctavia,
+		},
+	}
+
+	if cluster.Spec.Cloud.Openstack.EnableIngressHostname != nil {
+		cc.LoadBalancer.EnableIngressHostname = cluster.Spec.Cloud.Openstack.EnableIngressHostname
+	}
+
+	if cluster.Spec.Cloud.Openstack.IngressHostnameSuffix != nil {
+		cc.LoadBalancer.IngressHostnameSuffix = cluster.Spec.Cloud.Openstack.IngressHostnameSuffix
+	}
+
+	// we won't throw an error here for backwards compatibility and instead simply not set
+	// the floating-ip-pool-id field if the annotation is not there.
+	if cluster.Annotations[openstack.FloatingIPPoolIDAnnotation] != "" {
+		cc.LoadBalancer.FloatingNetworkID = cluster.Annotations[openstack.FloatingIPPoolIDAnnotation]
+	}
+
+	return cc
+}
+
+func (c *CloudConfig) String() (string, error) {
+	out := ini.New()
+
+	global := out.Section("Global", "")
+	c.Global.toINI(global)
+
+	lb := out.Section("LoadBalancer", "")
+	c.LoadBalancer.toINI(lb)
+
+	bs := out.Section("BlockStorage", "")
+	c.BlockStorage.toINI(bs)
+
 	buf := &bytes.Buffer{}
-	if err := tpl.Execute(buf, c); err != nil {
-		return "", fmt.Errorf("failed to execute cloud config template: %w", err)
+	if err := out.Render(buf); err != nil {
+		return "", err
 	}
 
 	return buf.String(), nil
+}
+
+type LoadBalancerOpts struct {
+	UseOctavia           *bool
+	SubnetID             string
+	FloatingNetworkID    string
+	LBMethod             string
+	LBProvider           string
+	CreateMonitor        bool
+	MonitorDelay         time.Duration
+	MonitorTimeout       time.Duration
+	MonitorMaxRetries    uint
+	ManageSecurityGroups bool
+
+	EnableIngressHostname *bool
+	IngressHostnameSuffix *string
+}
+
+func (o *LoadBalancerOpts) toINI(section ini.Section) {
+	section.AddBoolKey("manage-security-groups", o.ManageSecurityGroups)
+	section.AddStringKey("lb-version", "v2")
+	section.AddStringKey("lb-provider", o.LBProvider)
+	section.AddStringKey("subnet-id", o.SubnetID)
+	section.AddStringKey("floating-network-id", o.FloatingNetworkID)
+
+	method := o.LBMethod
+	if method == "" {
+		method = defaultLBMethod
+	}
+	section.AddStringKey("lb-method", method)
+
+	if val := o.UseOctavia; val != nil {
+		section.AddBoolKey("use-octavia", *val)
+	}
+
+	if enable := o.EnableIngressHostname; enable != nil {
+		section.AddBoolKey("enable-ingress-hostname", *enable)
+
+		if suffix := o.IngressHostnameSuffix; suffix != nil {
+			section.AddStringKey("ingress-hostname-suffix", *suffix)
+		}
+	}
+
+	if o.CreateMonitor {
+		section.AddBoolKey("create-monitor", true)
+		section.AddStringKey("monitor-delay", o.MonitorDelay.String())
+		section.AddStringKey("monitor-timeout", o.MonitorTimeout.String())
+		section.AddStringKey("monitor-max-retries", strconv.FormatUint(uint64(o.MonitorMaxRetries), 10))
+	}
+}
+
+type BlockStorageOpts struct {
+	BSVersion             string
+	TrustDevicePath       bool
+	IgnoreVolumeAZ        bool
+	NodeVolumeAttachLimit uint
+}
+
+func (o *BlockStorageOpts) toINI(section ini.Section) {
+	section.AddBoolKey("ignore-volume-az", o.IgnoreVolumeAZ)
+	section.AddBoolKey("trust-device-path", o.TrustDevicePath)
+
+	version := o.BSVersion
+	if version == "" {
+		version = defaultBSVersion
+	}
+	section.AddStringKey("bs-version", version)
+
+	if limit := o.NodeVolumeAttachLimit; limit != 0 {
+		section.AddStringKey("node-volume-attach-limit", strconv.FormatUint(uint64(limit), 10))
+	}
+}
+
+type GlobalOpts struct {
+	AuthURL                     string
+	Username                    string
+	Password                    string
+	ApplicationCredentialID     string
+	ApplicationCredentialSecret string
+	TenantName                  string
+	TenantID                    string
+	DomainName                  string
+	Region                      string
+}
+
+func (o *GlobalOpts) toINI(section ini.Section) {
+	section.AddStringKey("auth-url", o.AuthURL)
+	section.AddStringKey("region", o.Region)
+
+	if o.ApplicationCredentialID != "" {
+		section.AddStringKey("application-credential-id", o.ApplicationCredentialID)
+		section.AddStringKey("application-credential-secret", o.ApplicationCredentialSecret)
+	} else {
+		section.AddStringKey("username", o.Username)
+		section.AddStringKey("password", o.Password)
+		section.AddStringKey("tenant-name", o.TenantName)
+		section.AddStringKey("tenant-id", o.TenantID)
+		section.AddStringKey("domain-name", o.DomainName)
+	}
 }
