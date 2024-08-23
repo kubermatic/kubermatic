@@ -198,7 +198,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
 		case "kubermatic-master", "":
-			kubermaticStack = kubermaticmaster.NewStack()
+			kubermaticStack = kubermaticmaster.NewStack(true)
 		default:
 			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
