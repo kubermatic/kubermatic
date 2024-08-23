@@ -32,9 +32,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -213,6 +215,13 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		NewClient: func(_ *rest.Config, _ ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
 			return r.masterClient, nil
 		},
+		Controller: ctrlruntimeconfig.Controller{
+			// As part of its operation, this controller-manager starts and stops individual controllers
+			// during runtime (cf. seedlifecycle controller). Since controller-runtime's unique-name
+			// check uses a global singleton with no regard for stopped controllers, we disable the
+			// name validation.
+			SkipNameValidation: ptr.To(true),
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create master controller manager: %w", err)
@@ -278,6 +287,9 @@ func (r *Reconciler) createSeedManagers(masterMgr manager.Manager, seeds map[str
 
 		seedMgr, err := manager.New(&kubeconfig, manager.Options{
 			Metrics: metricsserver.Options{BindAddress: "0"},
+			Controller: ctrlruntimeconfig.Controller{
+				SkipNameValidation: ptr.To(true),
+			},
 		})
 		if err != nil {
 			log.Errorw("Failed to construct manager for seed", zap.Error(err))

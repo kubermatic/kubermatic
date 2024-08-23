@@ -171,9 +171,9 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 }
 
 func userSSHKeySynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return usersshkeysynchronizer.ControllerName, usersshkeysynchronizer.Add(
-			mgr,
+			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
 			ctrlCtx.workerName,
@@ -183,9 +183,9 @@ func userSSHKeySynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontro
 }
 
 func masterConstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return masterconstraintsynchronizer.ControllerName, masterconstraintsynchronizer.Add(
-			mgr,
+			masterMgr,
 			ctrlCtx.namespace,
 			seedManagerMap,
 			ctrlCtx.log,
@@ -194,9 +194,9 @@ func masterConstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seed
 }
 
 func masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return masterconstrainttemplatecontroller.ControllerName, masterconstrainttemplatecontroller.Add(
-			ctrlCtx.mgr,
+			masterMgr,
 			ctrlCtx.log,
 			1,
 			ctrlCtx.namespace,
