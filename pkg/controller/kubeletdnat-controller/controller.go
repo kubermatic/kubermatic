@@ -90,16 +90,16 @@ func Add(
 			MaxConcurrentReconciles: 1,
 		}).
 		Watches(&corev1.Node{}, &handler.Funcs{
-			CreateFunc: func(_ context.Context, e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+			CreateFunc: func(_ context.Context, _ event.TypedCreateEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				queue.Add(reconcile.Request{})
 			},
-			DeleteFunc: func(_ context.Context, e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+			DeleteFunc: func(_ context.Context, _ event.TypedDeleteEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				queue.Add(reconcile.Request{})
 			},
-			GenericFunc: func(_ context.Context, e event.GenericEvent, queue workqueue.RateLimitingInterface) {
+			GenericFunc: func(_ context.Context, _ event.TypedGenericEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				queue.Add(reconcile.Request{})
 			},
-			UpdateFunc: func(_ context.Context, e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+			UpdateFunc: func(_ context.Context, e event.TypedUpdateEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 				newNode, ok := e.ObjectNew.(*corev1.Node)
 				if !ok {
 					log.Warnf("Object from event was not a *corev1.Node. Instead got %T. Triggering a sync anyway", e.ObjectNew)

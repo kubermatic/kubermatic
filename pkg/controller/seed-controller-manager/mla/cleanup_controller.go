@@ -61,7 +61,7 @@ func newCleanupReconciler(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		// trigger the controller once on startup
-		WatchesRawSource(source.Func(func(ctx context.Context, rli workqueue.RateLimitingInterface) error {
+		WatchesRawSource(source.Func(func(ctx context.Context, rli workqueue.TypedRateLimitingInterface[reconcile.Request]) error {
 			rli.Add(reconcile.Request{NamespacedName: types.NamespacedName{Name: "identifier", Namespace: ""}})
 			return nil
 		})).
