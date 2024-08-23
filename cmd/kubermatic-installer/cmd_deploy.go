@@ -384,7 +384,7 @@ func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptio
 	case "kubermatic-seed":
 		kubermaticStack = kubermaticseed.NewStack()
 	case "kubermatic-master", "":
-		kubermaticStack = kubermaticmaster.NewStack()
+		kubermaticStack = kubermaticmaster.NewStack(true)
 	default:
 		return nil, fmt.Errorf("unknown stack %q specified", stackName)
 	}

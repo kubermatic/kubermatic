@@ -324,7 +324,7 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	ensureResource(kubeClient, logger, &kindIngressControllerService)
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
-	ms := kubermaticmaster.MasterStack{}
+	ms := kubermaticmaster.NewStack(false)
 	k, uk, err := loadKubermaticConfiguration(kubermaticPath)
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
