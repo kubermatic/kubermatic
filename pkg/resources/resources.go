@@ -708,8 +708,7 @@ const (
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 
-	KubeVirtKubeconfig             = "kubeConfig"
-	KubeVirtDefaultSingleNamespace = "kubevirt-workload"
+	KubeVirtKubeconfig = "kubeConfig"
 
 	VsphereUsername                    = "username"
 	VspherePassword                    = "password"

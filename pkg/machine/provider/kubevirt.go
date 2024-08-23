@@ -25,7 +25,6 @@ import (
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kkpkubevirt "k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 )
 
 type kubevirtConfig struct {
@@ -95,12 +94,12 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 	}
 
 	if cluster != nil {
-		kubevirtInfraNamespace := cluster.Status.NamespaceName
-		if datacenter.NamespacedMode {
-			kubevirtInfraNamespace = kkpkubevirt.DefaultNamespaceName
+		kubeVirtInfraNamespace := cluster.Status.NamespaceName
+		if datacenter.NamespacedMode != nil && datacenter.NamespacedMode.Enabled {
+			kubeVirtInfraNamespace = datacenter.NamespacedMode.Namespace
 		}
 		config.ClusterName = types.ConfigVarString{Value: cluster.Name}
-		config.VirtualMachine.Template.PrimaryDisk.OsImage.Value = extractKubeVirtOsImageURLOrDataVolumeNsName(kubevirtInfraNamespace, config.VirtualMachine.Template.PrimaryDisk.OsImage.Value)
+		config.VirtualMachine.Template.PrimaryDisk.OsImage.Value = extractKubeVirtOsImageURLOrDataVolumeNsName(kubeVirtInfraNamespace, config.VirtualMachine.Template.PrimaryDisk.OsImage.Value)
 	}
 
 	return config, nil
