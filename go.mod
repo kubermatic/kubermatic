@@ -50,7 +50,7 @@ require (
 	github.com/nutanix-cloud-native/prism-go-client v0.4.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.33.1
+	github.com/onsi/gomega v1.34.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20240110234408-18fa1fc7dc06 // Gatekeeper's desired version
 	github.com/open-policy-agent/gatekeeper/v3 v3.15.1
 	github.com/packethost/packngo v0.31.0
@@ -73,11 +73,11 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.14
 	go.etcd.io/etcd/etcdutl/v3 v3.5.9
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.25.0
-	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
+	golang.org/x/crypto v0.26.0
+	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/oauth2 v0.21.0
-	golang.org/x/sys v0.22.0
-	golang.org/x/tools v0.23.0
+	golang.org/x/sys v0.23.0
+	golang.org/x/tools v0.24.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/api v0.187.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094
@@ -107,7 +107,7 @@ require (
 	kubevirt.io/api v1.2.2
 	kubevirt.io/containerized-data-importer-api v1.59.0
 	sigs.k8s.io/controller-runtime v0.19.0
-	sigs.k8s.io/controller-tools v0.14.0
+	sigs.k8s.io/controller-tools v0.16.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -182,7 +182,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
@@ -363,11 +363,11 @@ require (
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/net v0.27.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/term v0.22.0 // indirect
-	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/mod v0.20.0 // indirect
+	golang.org/x/net v0.28.0 // indirect
+	golang.org/x/sync v0.8.0 // indirect
+	golang.org/x/term v0.23.0 // indirect
+	golang.org/x/text v0.17.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
