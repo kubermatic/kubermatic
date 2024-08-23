@@ -51,6 +51,7 @@ var allMigrations = []AddonMigration{
 	&csiVsphereMigration{},
 	&csiAzureRBACMigration{},
 	&csiAzureHelmMigration{},
+	&kubeStateMetricsMigration{},
 }
 
 func RelevantMigrations(cluster *kubermaticv1.Cluster, addonName string) AddonMigration {
