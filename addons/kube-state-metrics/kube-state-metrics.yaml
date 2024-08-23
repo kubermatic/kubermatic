@@ -53,7 +53,7 @@ metadata:
   name: kube-state-metrics
   namespace: kube-system
 spec:
-  minAvailable: 1
+  maxUnvailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: kube-state-metrics

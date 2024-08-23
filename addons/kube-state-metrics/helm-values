@@ -1,5 +1,9 @@
 podDisruptionBudget:
-  minAvailable: 1
+  # This isn't really meaningful as we run with a single replica, but if we
+  # defined a minAvailable=1 PDB, Kubernetes would block that Pod from being
+  # evicted, see https://github.com/kubernetes/kubernetes/issues/93476;
+  # We still need a PDB to make the Pod evictable by the cluster-autoscaler.
+  maxUnvailable: 1
 
 kubeRBACProxy:
   enabled: true
