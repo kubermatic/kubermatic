@@ -24,6 +24,7 @@ build:
 	helm --namespace kube-system template kube-state-metrics $(REPO_NAME)/kube-state-metrics \
 	  --version $(CHART_VERSION) \
 	  --values helm-values \
+	  --api-versions 'policy/v1/PodDisruptionBudget' \
 	  > $(OUTPUT_FILE).tmp
 	../templatify.sh $(OUTPUT_FILE).tmp
 	cat _header.txt $(OUTPUT_FILE).tmp > $(OUTPUT_FILE)
