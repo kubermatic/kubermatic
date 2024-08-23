@@ -24,8 +24,10 @@ build:
 	helm --namespace kube-system template kube-state-metrics $(REPO_NAME)/kube-state-metrics \
 	  --version $(CHART_VERSION) \
 	  --values helm-values \
-	  > $(OUTPUT_FILE)
-	../templatify.sh $(OUTPUT_FILE)
+	  > $(OUTPUT_FILE).tmp
+	../templatify.sh $(OUTPUT_FILE).tmp
+	cat _header.txt $(OUTPUT_FILE).tmp > $(OUTPUT_FILE)
+	rm $(OUTPUT_FILE).tmp
 	git apply --no-unsafe-paths --no-recount customizations.patch
 
 .PHONY: setup-helm
