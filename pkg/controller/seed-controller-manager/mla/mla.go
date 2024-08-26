@@ -48,6 +48,10 @@ const (
 	GrafanaPasswordKey = "admin-password"
 )
 
+func controllerName(subname string) string {
+	return fmt.Sprintf("kkp-mla-%s-controller", subname)
+}
+
 var (
 	// groupToRole map kubermatic groups to grafana roles.
 	groupToRole = map[string]grafanasdk.RoleType{

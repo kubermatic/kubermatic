@@ -75,12 +75,13 @@ func newRuleGroupReconciler(
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
+	subname := "rulegroup"
 
 	reconciler := &ruleGroupReconciler{
 		Client:              client,
-		log:                 log.Named("rulegroup"),
+		log:                 log.Named(subname),
 		workerName:          workerName,
-		recorder:            mgr.GetEventRecorderFor(ControllerName),
+		recorder:            mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:            versions,
 		ruleGroupController: ruleGroupController,
 	}
@@ -132,7 +133,7 @@ func newRuleGroupReconciler(
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).

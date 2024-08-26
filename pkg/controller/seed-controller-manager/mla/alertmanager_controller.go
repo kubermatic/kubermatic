@@ -78,13 +78,14 @@ func newAlertmanagerReconciler(
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
+	subname := "alertmanager"
 
 	reconciler := &alertmanagerReconciler{
 		Client: client,
 
-		log:                    log.Named("alertmanager"),
+		log:                    log.Named(subname),
 		workerName:             workerName,
-		recorder:               mgr.GetEventRecorderFor(ControllerName),
+		recorder:               mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:               versions,
 		alertmanagerController: alertmanagerController,
 	}
@@ -116,7 +117,7 @@ func newAlertmanagerReconciler(
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).

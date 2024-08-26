@@ -81,19 +81,20 @@ func newRatelimitCortexReconciler(
 	ratelimitCortexController *ratelimitCortexController,
 ) error {
 	client := mgr.GetClient()
+	subname := "cortex-ratelimit"
 
 	reconciler := &ratelimitCortexReconciler{
 		Client: client,
 
-		log:                       log.Named("cortex-ratelimit"),
+		log:                       log.Named(subname),
 		workerName:                workerName,
-		recorder:                  mgr.GetEventRecorderFor(ControllerName),
+		recorder:                  mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:                  versions,
 		ratelimitCortexController: ratelimitCortexController,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).

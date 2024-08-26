@@ -45,18 +45,19 @@ func newCleanupReconciler(
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
+	subname := "cleanup"
 
 	reconciler := &cleanupReconciler{
 		Client:            client,
-		log:               log.Named("cleanup"),
+		log:               log.Named(subname),
 		workerName:        workerName,
-		recorder:          mgr.GetEventRecorderFor(ControllerName),
+		recorder:          mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:          versions,
 		cleanupController: cleanupController,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
