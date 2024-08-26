@@ -18,8 +18,7 @@ package vsphere
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	ccresources "k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
-	cloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
+	cloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,19 +45,19 @@ func CloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			cloudConfig, err := cloudconfig.ForCluster(data.Cluster(), data.DC(), credentials)
+			vsphereCloudConfig, err := cloudconfig.GetVSphereCloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, err
 			}
 
-			marshalled, err := cloudConfig.String()
+			cloudConfig, err := CloudConfigCSIToString(vsphereCloudConfig)
 			if err != nil {
 				return nil, err
 			}
 
 			cm.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
-			cm.Data[resources.CloudConfigKey] = []byte(marshalled)
-			cm.Data[ccresources.FakeVMWareUUIDKeyName] = []byte(ccresources.FakeVMWareUUID)
+			cm.Data[resources.CloudConfigKey] = []byte(cloudConfig)
+			cm.Data[cloudconfig.FakeVMWareUUIDKeyName] = []byte(cloudconfig.FakeVMWareUUID)
 
 			return cm, nil
 		}

@@ -22,13 +22,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/aws"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/azure"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/gcp"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vmwareclouddirector"
-	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -63,7 +56,7 @@ func SecretReconciler(data creatorData, name string) reconciling.NamedSecretReco
 				return nil, err
 			}
 
-			cloudConfig, err := createCloudConfig(data.Cluster(), data.DC(), credentials)
+			cloudConfig, err := CloudConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create cloud-config: %w", err)
 			}
@@ -91,49 +84,4 @@ func KubeVirtInfraSecretReconciler(data *resources.TemplateData) reconciling.Nam
 			return se, nil
 		}
 	}
-}
-
-// createCloudConfig returns the cloud-config for the supplied data.
-func createCloudConfig(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) (cloudConfig string, err error) {
-	cloud := cluster.Spec.Cloud
-
-	switch {
-	case cloud.AWS != nil:
-		cc := aws.ForCluster(cluster, dc)
-		return cc.String()
-
-	case cloud.Azure != nil:
-		cc := azure.ForCluster(cluster, dc, credentials)
-		return cc.String()
-
-	case cloud.GCP != nil:
-		cc, err := gcp.ForCluster(cluster, dc, credentials)
-		if err != nil {
-			return cloudConfig, err
-		}
-
-		return cc.String()
-
-	case cloud.Kubevirt != nil:
-		cc := kubevirt.ForCluster(cluster, dc)
-		return cc.String()
-
-	case cloud.Openstack != nil:
-		cc := openstack.ForCluster(cluster, dc, credentials)
-		return cc.String()
-
-	case cloud.VMwareCloudDirector != nil:
-		cc := vmwareclouddirector.ForCluster(cluster, dc, credentials)
-		return cc.String()
-
-	case cloud.VSphere != nil:
-		cc, err := vsphere.ForCluster(cluster, dc, credentials)
-		if err != nil {
-			return cloudConfig, err
-		}
-
-		return cc.String()
-	}
-
-	return "", nil
 }

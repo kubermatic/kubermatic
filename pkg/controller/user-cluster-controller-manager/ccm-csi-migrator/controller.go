@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"go.uber.org/zap"
 
@@ -114,7 +113,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// check all the machines have been migrated
 	var migrated = true
 	for _, machine := range machines.Items {
-		flag := getKubeletFlags(machine.Annotations)[common.ExternalCloudProviderKubeletFlag]
+		flag := common.GetKubeletFlags(machine.Annotations)[common.ExternalCloudProviderKubeletFlag]
 		if boolFlag, err := strconv.ParseBool(flag); !boolFlag || err != nil {
 			migrated = false
 			break
@@ -140,20 +139,4 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	return nil
-}
-
-// getKubeletFlags was removed too early from machine-controller in
-// https://github.com/kubermatic/machine-controller/pull/1789, but is still needed here.
-func getKubeletFlags(annotations map[string]string) map[common.KubeletFlags]string {
-	result := map[common.KubeletFlags]string{}
-	for name, value := range annotations {
-		if strings.HasPrefix(name, common.KubeletFlagsGroupAnnotationPrefixV1) {
-			nameFlagValue := strings.SplitN(name, "/", 2)
-			if len(nameFlagValue) != 2 {
-				continue
-			}
-			result[common.KubeletFlags(nameFlagValue[1])] = value
-		}
-	}
-	return result
 }

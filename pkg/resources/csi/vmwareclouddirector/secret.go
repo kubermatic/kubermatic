@@ -18,7 +18,6 @@ package vmwareclouddirector
 
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
-	cloudconfig "k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vmwareclouddirector"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,15 +45,13 @@ func cloudConfigSecretNameReconciler(data *resources.TemplateData) reconciling.N
 				return nil, err
 			}
 
-			cloudConfig := cloudconfig.ForCluster(data.Cluster(), data.DC(), credentials)
-
-			marshalled, err := cloudConfig.String()
+			vcdCloudConfig, err := GetVMwareCloudDirectorCSIConfig(data.Cluster(), data.DC(), credentials)
 			if err != nil {
 				return nil, err
 			}
 
 			s.Labels = resources.BaseAppLabels(resources.CSICloudConfigSecretName, nil)
-			s.Data[resources.CloudConfigKey] = []byte(marshalled)
+			s.Data[resources.CloudConfigKey] = []byte(vcdCloudConfig)
 
 			return s, nil
 		}
