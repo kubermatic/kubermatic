@@ -26,7 +26,6 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -34,14 +33,13 @@ import (
 )
 
 type resourcesController struct {
-	projectResourcesQueue workqueue.RateLimitingInterface
-	log                   *zap.SugaredLogger
-	metrics               *Metrics
-	projectResources      []projectResource
-	client                ctrlruntimeclient.Client
-	restMapper            meta.RESTMapper
-	providerName          string
-	objectType            ctrlruntimeclient.Object
+	log              *zap.SugaredLogger
+	metrics          *Metrics
+	projectResources []projectResource
+	client           ctrlruntimeclient.Client
+	restMapper       meta.RESTMapper
+	providerName     string
+	objectType       ctrlruntimeclient.Object
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project.
@@ -58,14 +56,13 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		clonedObject := resource.object.DeepCopyObject().(ctrlruntimeclient.Object)
 
 		mc := &resourcesController{
-			projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
-			log:                   rlog,
-			metrics:               metrics,
-			projectResources:      resources,
-			client:                mgr.GetClient(),
-			restMapper:            mgr.GetRESTMapper(),
-			providerName:          "master",
-			objectType:            clonedObject,
+			log:              rlog,
+			metrics:          metrics,
+			projectResources: resources,
+			client:           mgr.GetClient(),
+			restMapper:       mgr.GetRESTMapper(),
+			providerName:     "master",
+			objectType:       clonedObject,
 		}
 
 		// Create a new controller
@@ -93,14 +90,13 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 			clonedObject := resource.object.DeepCopyObject().(ctrlruntimeclient.Object)
 
 			c := &resourcesController{
-				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", seedName)),
-				log:                   rlog,
-				metrics:               metrics,
-				projectResources:      resources,
-				client:                seedManager.GetClient(),
-				restMapper:            seedManager.GetRESTMapper(),
-				providerName:          seedName,
-				objectType:            clonedObject,
+				log:              rlog,
+				metrics:          metrics,
+				projectResources: resources,
+				client:           seedManager.GetClient(),
+				restMapper:       seedManager.GetRESTMapper(),
+				providerName:     seedName,
+				objectType:       clonedObject,
 			}
 
 			// Create a new controller

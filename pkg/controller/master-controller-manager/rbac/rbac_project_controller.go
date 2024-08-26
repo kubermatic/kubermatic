@@ -24,7 +24,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -38,8 +37,7 @@ const (
 )
 
 type projectController struct {
-	projectQueue workqueue.RateLimitingInterface
-	metrics      *Metrics
+	metrics *Metrics
 
 	log              *zap.SugaredLogger
 	projectResources []projectResource
@@ -60,7 +58,6 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	}
 
 	c := &projectController{
-		projectQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
 		log:              log,
 		metrics:          metrics,
 		projectResources: resources,
