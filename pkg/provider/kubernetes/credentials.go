@@ -65,6 +65,9 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.VSphere != nil {
 		return createVSphereSecret(ctx, seedClient, cluster)
 	}
+	if cluster.Spec.Cloud.Baremetal != nil {
+		return createOrUpdateBaremetalSecret(ctx, seedClient, cluster)
+	}
 	if cluster.Spec.Cloud.Alibaba != nil {
 		return createAlibabaSecret(ctx, seedClient, cluster)
 	}
@@ -433,6 +436,37 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = ""
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Password = ""
 
+	return true, nil
+}
+
+// createOrUpdateBaremetalSecret checks and migrates Tinkerbell credentials from inline storage to a dedicated Kubernetes secret.
+// Returns true if migration occurs, false otherwise along with any error encountered.
+func createOrUpdateBaremetalSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
+	spec := cluster.Spec.Cloud.Baremetal
+
+	// Ensure Tinkerbell provisioner is configured, as it is mandatory.
+	if spec.Tinkerbell == nil {
+		return false, fmt.Errorf("tinkerbell provisioner configuration is required but missing")
+	}
+
+	// Check if migration is necessary; return early if not.
+	if spec.Tinkerbell.Kubeconfig == "" {
+		return false, nil // Not an error, just no action needed.
+	}
+
+	// Move credentials into a dedicated Secret and retrieve reference.
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.TinkerbellKubeconfig: []byte(spec.Tinkerbell.Kubeconfig),
+	})
+	if err != nil {
+		return false, fmt.Errorf("failed to ensure credential secret: %w", err)
+	}
+
+	// Update the cluster object with the new credentials reference.
+	cluster.Spec.Cloud.Baremetal.CredentialsReference = credentialRef
+	cluster.Spec.Cloud.Baremetal.Tinkerbell.Kubeconfig = "" // Clean old inline credentials.
+
+	// Indicate successful migration.
 	return true, nil
 }
 
