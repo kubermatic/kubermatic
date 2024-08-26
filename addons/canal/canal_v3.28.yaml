@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Source: https://github.com/projectcalico/calico/blob/v3.28.0/manifests/canal.yaml
+# Source: https://github.com/projectcalico/calico/blob/v3.28.1/manifests/canal.yaml
 # Modifications:
 #   - templated cni_network_config ipam for dual-stack
 #   - templated net-conf.json Network & CALICO_IPV4POOL_CIDR + CALICO_IPV6POOL_CIDR
@@ -4844,7 +4844,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: '{{ Image "quay.io/calico/cni:v3.28.0" }}'
+          image: '{{ Image "quay.io/calico/cni:v3.28.1" }}'
           imagePullPolicy: IfNotPresent
           command: ["/opt/cni/bin/install"]
           envFrom:
@@ -4893,7 +4893,7 @@ spec:
         # i.e. bpf at /sys/fs/bpf and cgroup2 at /run/calico/cgroup. Calico-node initialisation is executed
         # in best effort fashion, i.e. no failure for errors, to not disrupt pod creation in iptable mode.
         - name: "mount-bpffs"
-          image: '{{ Image "quay.io/calico/node:v3.28.0" }}'
+          image: '{{ Image "quay.io/calico/node:v3.28.1" }}'
           imagePullPolicy: IfNotPresent
           command: ["calico-node", "-init", "-best-effort"]
           volumeMounts:
@@ -4919,7 +4919,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: '{{ Image "quay.io/calico/node:v3.28.0" }}'
+          image: '{{ Image "quay.io/calico/node:v3.28.1" }}'
           imagePullPolicy: IfNotPresent
           envFrom:
           - configMapRef:
@@ -5086,9 +5086,11 @@ spec:
         - name: var-run-calico
           hostPath:
             path: /var/run/calico
+            type: DirectoryOrCreate
         - name: var-lib-calico
           hostPath:
             path: /var/lib/calico
+            type: DirectoryOrCreate
         - name: xtables-lock
           hostPath:
             path: /run/xtables.lock
@@ -5113,6 +5115,7 @@ spec:
         - name: cni-bin-dir
           hostPath:
             path: /opt/cni/bin
+            type: DirectoryOrCreate
         - name: cni-net-dir
           hostPath:
             path: /etc/cni/net.d
@@ -5167,7 +5170,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: calico-kube-controllers
-          image: '{{ Image "quay.io/calico/kube-controllers:v3.28.0" }}'
+          image: '{{ Image "quay.io/calico/kube-controllers:v3.28.1" }}'
           imagePullPolicy: IfNotPresent
           env:
             # Choose which controllers to run.
