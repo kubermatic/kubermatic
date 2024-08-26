@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -446,7 +447,7 @@ func createOrUpdateBaremetalSecret(ctx context.Context, seedClient ctrlruntimecl
 
 	// Ensure Tinkerbell provisioner is configured, as it is mandatory.
 	if spec.Tinkerbell == nil {
-		return false, fmt.Errorf("tinkerbell provisioner configuration is required but missing")
+		return false, errors.New("tinkerbell provisioner configuration is required but missing")
 	}
 
 	// Check if migration is necessary; return early if not.
