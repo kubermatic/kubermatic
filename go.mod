@@ -114,10 +114,6 @@ require (
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
 
-// make `go list` work
-// see https://github.com/cilium/cilium/blob/v1.13.4/go.mod#L249
-replace github.com/optiopay/kafka => github.com/cilium/kafka v0.0.0-20180809090225-01ce283b732b
-
 require (
 	cel.dev/expr v0.15.0 // indirect
 	cloud.google.com/go/auth v0.6.1 // indirect
