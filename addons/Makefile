@@ -51,23 +51,6 @@ aws-ebs-csi-driver:
 	cat csi/aws-ebs/_footer.txt >> $(OUTPUT_FILE)
 	./templatify-images.sh $(OUTPUT_FILE)
 
-.PHONY: cluster-autoscaler
-cluster-autoscaler: OUTPUT_FILE=cluster-autoscaler/cluster-autoscaler.yaml
-cluster-autoscaler:
-	helm repo add autoscaler https://kubernetes.github.io/autoscaler || true
-	helm repo update
-	mkdir -p cluster-autoscaler
-	cat cluster-autoscaler/_header.txt > $(OUTPUT_FILE)
-	helm --namespace kube-system template cluster-autoscaler autoscaler/cluster-autoscaler \
-	  --version 9.37.0 \
-	  --set 'cloudProvider=clusterapi' \
-	  --set 'autoDiscovery.labels[0].namespace=kube-system' \
-	  --set 'extraEnv.CAPI_GROUP=cluster.k8s.io' \
-	  --set 'securityContext.seccompProfile.type=RuntimeDefault' \
-	  >> $(OUTPUT_FILE)
-	cat cluster-autoscaler/_footer.txt >> $(OUTPUT_FILE)
-	./templatify-images.sh $(OUTPUT_FILE)
-
 .PHONY: gcp-csi-driver
 gcp-csi-driver: OUTPUT_FILE=csi/gcp/driver.yaml
 gcp-csi-driver:

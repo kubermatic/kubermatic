@@ -69,10 +69,15 @@ const (
 	NodePortProxyService = "nodeport-proxy"
 )
 
-type MasterStack struct{}
+type MasterStack struct {
+	// showDNSHelp is used by the local command to skip a useless DNS probe.
+	showDNSHelp bool
+}
 
-func NewStack() stack.Stack {
-	return &MasterStack{}
+func NewStack(enableDNSCheck bool) stack.Stack {
+	return &MasterStack{
+		showDNSHelp: enableDNSCheck,
+	}
 }
 
 var _ stack.Stack = &MasterStack{}
@@ -114,7 +119,9 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		return fmt.Errorf("failed to deploy default Application catalog: %w", err)
 	}
 
-	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
+	if s.showDNSHelp {
+		showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
+	}
 
 	return nil
 }

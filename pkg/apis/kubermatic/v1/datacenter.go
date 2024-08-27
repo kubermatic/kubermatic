@@ -794,11 +794,12 @@ type DatacenterSpecFake struct {
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
 type DatacenterSpecKubevirt struct {
-	// NamespacedMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
-	NamespacedMode bool `json:"namespacedMode,omitempty"`
+	// NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
+	NamespacedMode *NamespacedMode `json:"namespacedMode,omitempty"`
 
 	// +kubebuilder:validation:Enum=ClusterFirstWithHostNet;ClusterFirst;Default;None
 	// +kubebuilder:default=ClusterFirst
+
 	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
 	// 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
 	// policy selected with DNSPolicy.
@@ -824,6 +825,14 @@ type DatacenterSpecKubevirt struct {
 	// In the tenant cluster, the created StorageClass name will have as name:
 	// kubevirt-<infra-storageClass-name>
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
+}
+
+type NamespacedMode struct {
+	// Enabled indicates whether the single namespace mode is enabled or not.
+	Enabled bool `json:"enabled,omitempty"`
+	// Namespace is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
+	// +kubebuilder:default=kubevirt-workload
+	Namespace string `json:"name,omitempty"`
 }
 
 type KubeVirtInfraStorageClass struct {

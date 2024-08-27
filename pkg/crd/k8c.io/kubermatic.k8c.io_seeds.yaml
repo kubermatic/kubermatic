@@ -978,8 +978,16 @@ spec:
                                   type: object
                                 type: array
                               namespacedMode:
-                                description: NamespacedMode enables the single namespace mode for all user-clusters in the KubeVirt datacenter.
-                                type: boolean
+                                description: NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
+                                properties:
+                                  enabled:
+                                    description: Enabled indicates whether the single namespace mode is enabled or not.
+                                    type: boolean
+                                  name:
+                                    default: kubevirt-workload
+                                    description: Namespace is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
+                                    type: string
+                                type: object
                             type: object
                           machineFlavorFilter:
                             description: 'Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.'
