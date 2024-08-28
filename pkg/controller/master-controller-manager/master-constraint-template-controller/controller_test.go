@@ -22,6 +22,8 @@ import (
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	regoschema "github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/rego/schema"
+	"github.com/open-policy-agent/frameworks/constraint/pkg/core/templates"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -161,16 +163,24 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
-				Rego: `
-		package k8srequiredlabels
+				Code: []constrainttemplatev1.Code{
+					{
+						Engine: regoschema.Name,
+						Source: &templates.Anything{
+							Value: (&regoschema.Source{
+								Rego: `package k8srequiredlabels
 
-        deny[{"msg": msg, "details": {"missing_labels": missing}}] {
-          provided := {label | input.review.object.metadata.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
-          count(missing) > 0
-          msg := sprintf("you must provide labels: %v", [missing])
-        }`,
+deny[{"msg": msg, "details": {"missing_labels": missing}}] {
+  provided := {label | input.review.object.metadata.labels[label]}
+  required := {label | label := input.parameters.labels[_]}
+  missing := required - provided
+  count(missing) > 0
+  msg := sprintf("you must provide labels: %v", [missing])
+}`,
+							}).ToUnstructured(),
+						},
+					},
+				},
 			},
 		},
 	}
