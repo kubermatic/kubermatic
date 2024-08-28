@@ -37,4 +37,14 @@ const (
 	// ApplicationTypeCNIValue can be used as a value for the ApplicationTypeLabel to indicate that the
 	// application definition / application installation type if CNI (Container Network Interface).
 	ApplicationTypeCNIValue = "cni"
+
+	// ApplicationEnforcedAnnotation can be used to mark an ApplicationDefinition as enforced.
+	ApplicationEnforcedAnnotation = "apps.kubermatic.k8c.io/enforced"
+
+	// ApplicationDefaultAnnotation can be used to mark an ApplicationDefinition as default.
+	ApplicationDefaultAnnotation = "apps.kubermatic.k8c.io/default"
+
+	// ApplicationTargetDatacenterAnnotation can be used to target known set of datacenters for default/enforced applications
+	// Value is comma separated list of datacenter names.
+	ApplicationTargetDatacenterAnnotation = "apps.kubermatic.k8c.io/target-datacenter"
 )

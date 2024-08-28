@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	// ApplicationInstallationResourceName represents "Resource" defined in Kubernetes.
+	// ApplicationDefinitionResourceName represents "Resource" defined in Kubernetes.
 	ApplicationDefinitionResourceName = "applicationdefinitions"
 
 	// ApplicationDefinitionKindName represents "Kind" defined in Kubernetes.
@@ -223,6 +223,13 @@ type ApplicationDefinitionSpec struct {
 	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
 	// These settings can be overridden in applicationInstallation.
 	DefaultDeployOptions *DeployOptions `json:"defaultDeployOptions,omitempty"`
+
+	// +kubebuilder:validation:Pattern:=v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
+	// +kubebuilder:validation:Type=string
+
+	// DefaultVersion of the application to use, if not specified the latest available version will be used.
+	// +optional
+	DefaultVersion string `json:"defaultVersion,omitempty"`
 
 	// DocumentationURL holds a link to official documentation of the Application
 	// Alternatively this can be a link to the Readme of a chart in a git repository
