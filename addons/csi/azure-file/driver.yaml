@@ -802,7 +802,9 @@ spec:
             - --custom-user-agent=
             - --user-agent-suffix=OSS-helm
             - --allow-empty-cloud-config=true
+            {{- if semverCompare .Cluster.Version ">= 1.28" }}
             - --enable-volume-mount-group=true
+            {{- end }}
             - --enable-get-volume-stats=true
             - --mount-permissions=511
             - --allow-inline-volume-key-access-with-identity=false

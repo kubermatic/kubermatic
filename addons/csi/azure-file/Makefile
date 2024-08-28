@@ -33,6 +33,7 @@ build:
 	kubectl kustomize . > $(OUTPUT_FILE).tmp
 	../../templatify.sh $(OUTPUT_FILE).tmp --dynamic "mcr.microsoft.com/oss/kubernetes-csi/azurefile-csi:version"
 	cat _header.txt $(OUTPUT_FILE).tmp _footer.txt > $(OUTPUT_FILE)
+	git apply --no-unsafe-paths --no-recount customizations.patch
 	rm $(OUTPUT_FILE).tmp
 
 .PHONY: setup-helm
