@@ -99,7 +99,14 @@ func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.Application
 	return func() (string, kkpreconciling.ApplicationDefinitionReconciler) {
 		return appDef.Name, func(a *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			a.Labels = appDef.Labels
-			a.Annotations = appDef.Annotations
+			// Merge the annotations from the file with the ones from the cluster.
+			if a.Annotations == nil {
+				a.Annotations = make(map[string]string)
+			}
+			// Annotations from the file take precedence over the ones from the cluster.
+			for k, v := range appDef.Annotations {
+				a.Annotations[k] = v
+			}
 			a.Spec = appDef.Spec
 			return a, nil
 		}

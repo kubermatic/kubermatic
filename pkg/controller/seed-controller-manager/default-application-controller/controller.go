@@ -189,6 +189,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	// We don't want to fail the reconciliation if one application fails so we collect all the errors and return them as a single error.
 	var errors []error
 	for _, application := range applications {
+		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
 		err := r.ensureApplicationInstallation(ctx, application, cluster)
 		if err != nil {
 			errors = append(errors, err)
