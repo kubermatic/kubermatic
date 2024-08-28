@@ -26,7 +26,7 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -60,7 +60,7 @@ func addonFunctions(overwriteRegistry string) template.FuncMap {
 // will silently return false to aid in using it in Go templates.
 func semverCompare(version any, constraint any) bool {
 	if sver, ok := version.(string); ok {
-		parsed, err := semver.NewVersion(sver)
+		parsed, err := semverlib.NewVersion(sver)
 		if err != nil {
 			return false
 		}
@@ -69,7 +69,7 @@ func semverCompare(version any, constraint any) bool {
 	}
 
 	if scon, ok := constraint.(string); ok {
-		parsed, err := semver.NewConstraint(scon)
+		parsed, err := semverlib.NewConstraint(scon)
 		if err != nil {
 			return false
 		}
@@ -77,12 +77,12 @@ func semverCompare(version any, constraint any) bool {
 		return semverCompare(version, parsed)
 	}
 
-	ver, ok := version.(*semver.Version)
+	ver, ok := version.(*semverlib.Version)
 	if !ok {
 		return false
 	}
 
-	con, ok := constraint.(*semver.Constraints)
+	con, ok := constraint.(*semverlib.Constraints)
 	if !ok {
 		return false
 	}
