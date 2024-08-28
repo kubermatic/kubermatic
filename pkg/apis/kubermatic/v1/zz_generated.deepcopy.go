@@ -1511,6 +1511,13 @@ func (in *ClusterTemplate) DeepCopyInto(out *ClusterTemplate) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	if in.ClusterAnnotations != nil {
+		in, out := &in.ClusterAnnotations, &out.ClusterAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.ClusterLabels != nil {
 		in, out := &in.ClusterLabels, &out.ClusterLabels
 		*out = make(map[string]string, len(*in))

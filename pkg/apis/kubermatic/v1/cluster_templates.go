@@ -57,6 +57,7 @@ type ClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	ClusterAnnotations     map[string]string `json:"clusterAnnotations,omitempty"`
 	ClusterLabels          map[string]string `json:"clusterLabels,omitempty"`
 	InheritedClusterLabels map[string]string `json:"inheritedClusterLabels,omitempty"`
 	Credential             string            `json:"credential"`
