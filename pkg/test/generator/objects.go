@@ -616,7 +616,6 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ProjectIDLabelKey: projectID, kubermaticv1.ClusterTemplateHumanReadableNameLabelKey: name},
 			Annotations: map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
 		},
-		ClusterAnnotations:     nil,
 		ClusterLabels:          nil,
 		InheritedClusterLabels: nil,
 		Credential:             "",
