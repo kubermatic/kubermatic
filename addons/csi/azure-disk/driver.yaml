@@ -535,7 +535,9 @@ spec:
             {{- if semverCompare .Cluster.Version ">= 1.29" }}
             - --enable-otel-tracing=false
             {{- end }}
+            {{- if semverCompare .Cluster.Version ">= 1.30" }}
             - --check-disk-lun-collision=true
+            {{- end }}
           env:
             - name: AZURE_CREDENTIAL_FILE
               value: /etc/kubernetes/azure.json
