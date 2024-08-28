@@ -31,6 +31,8 @@ import (
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	regoschema "github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/rego/schema"
+	"github.com/open-policy-agent/frameworks/constraint/pkg/core/templates"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -215,7 +217,16 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
-				Rego:   "package allowedregistry\n\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.containers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.initContainers[_]\n  satisfied := [good | repo = input.parameters.allowed_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.allowed_registry])\n}",
+				Code: []constrainttemplatev1.Code{
+					{
+						Engine: regoschema.Name,
+						Source: &templates.Anything{
+							Value: (&regoschema.Source{
+								Rego: regoSource,
+							}).ToUnstructured(),
+						},
+					},
+				},
 			},
 		},
 	}
