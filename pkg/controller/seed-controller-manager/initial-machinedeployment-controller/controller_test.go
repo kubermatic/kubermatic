@@ -106,7 +106,7 @@ func TestReconcile(t *testing.T) {
 
 	providerSpec, err := machine.NewBuilder().
 		WithOperatingSystemSpec(operatingsystem.NewUbuntuSpecBuilder(kubermaticv1.HetznerCloudProvider).Build()).
-		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build()).
+		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx22").Build()).
 		BuildProviderSpec()
 	if err != nil {
 		t.Fatalf("Failed to create provider spec: %v", err)
