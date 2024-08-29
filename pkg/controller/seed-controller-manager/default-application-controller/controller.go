@@ -91,7 +91,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		}).
 		// Watch for clusters
 		For(&kubermaticv1.Cluster{}, builder.WithPredicates()).
-		// Watch changes for OSPs and then enqueue all the clusters where OSM is enabled.
+		// Watch changes for ApplicationDefinitions that have been enforced.
 		Watches(&appskubermaticv1.ApplicationDefinition{}, enqueueClusters(reconciler.Client, log), builder.WithPredicates(withEventFilter())).
 		Build(reconciler)
 
@@ -247,7 +247,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 func (r *Reconciler) generateApplicationInstallation(application appskubermaticv1.ApplicationDefinition) appskubermaticv1.ApplicationInstallation {
 	appVersion := application.Spec.DefaultVersion
 	if appVersion == "" {
-		// Iterate through all the verions and find the latest one by semver comparison
+		// Iterate through all the versions and find the latest one by semver comparison
 		for _, version := range application.Spec.Versions {
 			if appVersion == "" {
 				appVersion = version.Version
@@ -387,7 +387,7 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 	return nil
 }
 
-// Add this helper function at the end of the file
+// Add this helper function at the end of the file.
 func ensureVersionPrefix(version string) string {
 	if !strings.HasPrefix(version, "v") {
 		return "v" + version

@@ -32,14 +32,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/record"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var (
@@ -60,6 +60,7 @@ func init() {
 	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
 }
 
+//nolint:gocyclo
 func TestReconcile(t *testing.T) {
 	log := zap.NewNop().Sugar()
 
@@ -106,7 +107,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -131,7 +132,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -178,7 +179,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -203,7 +204,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -228,7 +229,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -253,7 +254,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -299,7 +300,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				if len(apps.Items) != len(applications) {
-					return errors.New(fmt.Sprintf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications)))
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
 				return compareApplications(apps.Items, applications)
@@ -551,7 +552,8 @@ func getSeedObjects(cluster *kubermaticv1.Cluster, applications []appskubermatic
 	objects := []ctrlruntimeclient.Object{}
 	objects = append(objects, cluster)
 	for _, application := range applications {
-		objects = append(objects, &application)
+		applicationCopy := application
+		objects = append(objects, &applicationCopy)
 	}
 	return objects
 }
