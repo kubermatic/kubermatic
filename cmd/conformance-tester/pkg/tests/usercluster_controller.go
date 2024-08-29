@@ -121,46 +121,9 @@ func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger,
 			continue
 		}
 
-		var privilegedContainers int
-		for _, container := range pod.Spec.Containers {
-			if container.SecurityContext != nil && container.SecurityContext.Privileged != nil && *container.SecurityContext.Privileged {
-				privilegedContainers++
-			}
-		}
-
-		// all containers in the Pod are running as privileged, we can skip the Pod; privileged mode disables any seccomp profile
-		if len(pod.Spec.Containers) == privilegedContainers {
-			continue
-		}
-
-		// no security context means no seccomp profile
-		if pod.Spec.SecurityContext == nil {
-			errorMsgs = append(
-				errorMsgs,
-				fmt.Sprintf("expected security context on Pod %s/%s, got none", pod.Namespace, pod.Name),
-			)
-			continue
-		}
-
-		// no seccomp profile means no profile is applied to the containers
-		if pod.Spec.SecurityContext.SeccompProfile == nil {
-			errorMsgs = append(
-				errorMsgs,
-				fmt.Sprintf("expected seccomp profile on Pod %s/%s, got none", pod.Namespace, pod.Name),
-			)
-			continue
-		}
-
-		// the 'unconfined' profile disables any seccomp filtering
-		if pod.Spec.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeUnconfined {
-			errorMsgs = append(
-				errorMsgs,
-				fmt.Sprintf(
-					"seccomp profile of Pod %s/%s is '%s', should be '%s' or '%s'", pod.Namespace, pod.Name,
-					corev1.SeccompProfileTypeUnconfined, corev1.SeccompProfileTypeRuntimeDefault, corev1.SeccompProfileTypeLocalhost,
-				),
-			)
-			continue
+		err := validatePodSecurityContext(&pod)
+		if err != nil {
+			errorMsgs = append(errorMsgs, fmt.Sprintf("Pod %s/%s invalid: %v", pod.Namespace, pod.Name, err))
 		}
 	}
 
