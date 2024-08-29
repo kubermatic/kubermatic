@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# https://github.com/kubernetes-sigs/azurefile-csi-driver/tree/master/charts
+# https://github.com/kubernetes/autoscaler/tree/master/charts/cluster-autoscaler
 
 OUTPUT_FILE = cluster-autoscaler.yaml
 REPO_NAME = kkp-addons-cluster-autoscaler
