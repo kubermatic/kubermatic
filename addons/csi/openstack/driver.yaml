@@ -412,9 +412,11 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.30.0
+    chart: openstack-cinder-csi-2.30.1-alpha.1
     component: controllerplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -438,57 +440,13 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.30.0
+        chart: openstack-cinder-csi-2.30.1-alpha.1
         component: controllerplugin
         heritage: Helm
         release: openstack-cinder-csi
     spec:
       affinity: {}
       containers:
-        - args:
-            - /bin/cinder-csi-plugin
-            - -v=2
-            - --endpoint=$(CSI_ENDPOINT)
-            - --cloud-config=$(CLOUD_CONFIG)
-            - --cluster=$(CLUSTER_NAME)
-          env:
-            - name: CLUSTER_NAME
-              value: '{{ .Cluster.Name }}'
-            - name: SSL_CERT_FILE
-              value: /etc/kubermatic/certs/ca-bundle.pem
-            - name: CSI_ENDPOINT
-              value: unix://csi/csi.sock
-            - name: CLOUD_CONFIG
-              value: /etc/kubernetes/cloud.conf
-          image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'
-          imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 5
-            httpGet:
-              path: /healthz
-              port: healthz
-            initialDelaySeconds: 10
-            periodSeconds: 60
-            timeoutSeconds: 10
-          name: cinder-csi-plugin
-          ports:
-            - containerPort: 9808
-              name: healthz
-              protocol: TCP
-          resources: {}
-          securityContext: {}
-          volumeMounts:
-            - mountPath: /etc/kubermatic/certs
-              name: ca-bundle
-              readOnly: true
-            - mountPath: /csi
-              name: socket-dir
-            - mountPath: /etc/cacert
-              name: cacert
-              readOnly: true
-            - mountPath: /etc/kubernetes
-              name: cloud-config
-              readOnly: true
         - args:
             - -v=2
             - --csi-address=$(ADDRESS)
@@ -572,6 +530,47 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
+        - args:
+            - /bin/cinder-csi-plugin
+            - -v=2
+            - --endpoint=$(CSI_ENDPOINT)
+            - --cloud-config=$(CLOUD_CONFIG)
+            - --cluster=$(CLUSTER_NAME)
+          env:
+            - name: CSI_ENDPOINT
+              value: unix://csi/csi.sock
+            - name: CLOUD_CONFIG
+              value: /etc/kubernetes/config
+            - name: CLUSTER_NAME
+              value: '{{ .Cluster.Name }}'
+            - name: SSL_CERT_FILE
+              value: /etc/kubermatic/certs/ca-bundle.pem
+          image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            periodSeconds: 60
+            timeoutSeconds: 10
+          name: cinder-csi-plugin
+          ports:
+            - containerPort: 9808
+              name: healthz
+              protocol: TCP
+          resources: {}
+          securityContext: {}
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
+              readOnly: true
+            - mountPath: /etc/kubernetes
+              name: cloud-config
+              readOnly: true
       nodeSelector: {}
       securityContext:
         seccompProfile:
@@ -579,23 +578,23 @@ spec:
       serviceAccount: csi-cinder-controller-sa
       tolerations: []
       volumes:
+        - emptyDir: null
+          name: socket-dir
         - name: cloud-config
           secret:
-            items:
-              - key: config
-                path: cloud.conf
             secretName: cloud-config-csi
         - configMap:
             name: ca-bundle
           name: ca-bundle
-        - name: socket-dir
 ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  annotations:
+    cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.30.0
+    chart: openstack-cinder-csi-2.30.1-alpha.1
     component: nodeplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -609,9 +608,11 @@ spec:
       release: openstack-cinder-csi
   template:
     metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.30.0
+        chart: openstack-cinder-csi-2.30.1-alpha.1
         component: nodeplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -619,17 +620,55 @@ spec:
       affinity: {}
       containers:
         - args:
+            - -v=2
+            - --csi-address=$(ADDRESS)
+            - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/cinder.csi.openstack.org/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.2" }}'
+          imagePullPolicy: IfNotPresent
+          name: node-driver-registrar
+          resources: {}
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /registration
+              name: registration-dir
+        - args:
+            - -v=2
+            - --csi-address=/csi/csi.sock
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.11.0" }}'
+          imagePullPolicy: IfNotPresent
+          name: liveness-probe
+          resources: {}
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - args:
             - /bin/cinder-csi-plugin
             - -v=2
             - --endpoint=$(CSI_ENDPOINT)
             - --cloud-config=$(CLOUD_CONFIG)
           env:
-            - name: SSL_CERT_FILE
-              value: /etc/kubermatic/certs/ca-bundle.pem
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/cloud.conf
+              value: /etc/kubernetes/config
+            - name: SSL_CERT_FILE
+              value: /etc/kubermatic/certs/ca-bundle.pem
           image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -653,9 +692,6 @@ spec:
                 - SYS_ADMIN
             privileged: true
           volumeMounts:
-            - mountPath: /etc/kubermatic/certs
-              name: ca-bundle
-              readOnly: true
             - mountPath: /csi
               name: socket-dir
             - mountPath: /var/lib/kubelet
@@ -664,62 +700,22 @@ spec:
             - mountPath: /dev
               mountPropagation: HostToContainer
               name: pods-probe-dir
-            - mountPath: /etc/cacert
-              name: cacert
+            - mountPath: /etc/kubermatic/certs
+              name: ca-bundle
               readOnly: true
             - mountPath: /etc/kubernetes
               name: cloud-config
               readOnly: true
-        - args:
-            - -v=2
-            - --csi-address=$(ADDRESS)
-            - --kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-            - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/cinder.csi.openstack.org/csi.sock
-            - name: KUBE_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.2" }}'
-          imagePullPolicy: IfNotPresent
-          name: node-driver-registrar
-          resources: {}
-          securityContext: {}
-          volumeMounts:
-            - mountPath: /csi
-              name: socket-dir
-            - mountPath: /registration
-              name: registration-dir
-        - args:
-            - -v=2
-            - --csi-address=/csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.11.0" }}'
-          imagePullPolicy: IfNotPresent
-          name: liveness-probe
-          resources: {}
-          securityContext: {}
-          volumeMounts:
-            - mountPath: /csi
-              name: socket-dir
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       nodeSelector: {}
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccount: csi-cinder-node-sa
       tolerations:
         - operator: Exists
       volumes:
-        - name: cloud-config
-          secret:
-            items:
-              - key: config
-                path: cloud.conf
-            secretName: cloud-config-csi
-        - configMap:
-            name: ca-bundle
-          name: ca-bundle
         - hostPath:
             path: /var/lib/kubelet/plugins/cinder.csi.openstack.org
             type: DirectoryOrCreate
@@ -736,6 +732,12 @@ spec:
             path: /dev
             type: Directory
           name: pods-probe-dir
+        - name: cloud-config
+          secret:
+            secretName: cloud-config-csi
+        - configMap:
+            name: ca-bundle
+          name: ca-bundle
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver

@@ -1,0 +1,40 @@
+# use a dynamic cluster name
+clusterID: '{{ .Cluster.Name }}'
+
+# these are put on the Pods _and_ the Deployments
+commonAnnotations:
+  # add annotation to allow eviction by cluster-autoscaler
+  cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
+
+secret:
+  enabled: true
+  name: cloud-config-csi
+  filename: config # key inside the cloud-config-csi Secret
+
+csi:
+  plugin:
+    volumes:
+      - name: ca-bundle
+        configMap:
+          name: ca-bundle
+    volumeMounts:
+      - mountPath: /etc/kubermatic/certs
+        name: ca-bundle
+        readOnly: true
+      - name: cloud-config
+        mountPath: /etc/kubernetes
+        readOnly: true
+    extraEnv:
+      # use KKP's CA bundle
+      - name: SSL_CERT_FILE
+        value: /etc/kubermatic/certs/ca-bundle.pem
+
+    controllerPlugin:
+      podSecurityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+    nodePlugin:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault

@@ -16,7 +16,9 @@
 
 OUTPUT_FILE = driver.yaml
 REPO_NAME = kkp-addons-csi-openstack
-CHART_VERSION = 2.30.0
+
+# alpha.1 allows to specify extraEnv in Helm values
+CHART_VERSION = 2.30.1-alpha.1
 
 .PHONY: default
 default: setup-helm build clean-helm
@@ -25,12 +27,10 @@ default: setup-helm build clean-helm
 build:
 	helm --namespace kube-system template openstack-cinder-csi $(REPO_NAME)/openstack-cinder-csi \
 	  --version $(CHART_VERSION) \
-	  --set 'csi.plugin.controllerPlugin.podSecurityContext.seccompProfile.type=RuntimeDefault' \
-	  --set 'csi.plugin.nodePlugin.podSecurityContext.seccompProfile.type=RuntimeDefault' \
+	  --values helm-values \
 	  --skip-tests \
 	  > $(OUTPUT_FILE)
 	kubectl kustomize . > $(OUTPUT_FILE).tmp
-	yq -i 'del(.spec.template.spec.volumes[]|select(.name == "cacert"))' $(OUTPUT_FILE).tmp
 	sed -i 's/feature-gates=Topology=true/feature-gates=Topology={{ .Cluster.CSI.CinderTopologyEnabled }}/g' $(OUTPUT_FILE).tmp
 	../../templatify.sh $(OUTPUT_FILE).tmp --dynamic "registry.k8s.io/provider-os/cinder-csi-plugin:version"
 	cat _header.txt $(OUTPUT_FILE).tmp _footer.txt > $(OUTPUT_FILE)
