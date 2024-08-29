@@ -216,7 +216,7 @@ func NewHetznerCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, 
 		WithClusterJig(clusterJig).
 		WithReplicas(replicas).
 		AddSSHPublicKey(SSHPublicKey()).
-		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx21").Build())
+		WithCloudProviderSpec(provider.NewHetznerConfig().WithServerType("cx22").Build())
 
 	return &TestJig{
 		ProjectJig: projectJig,

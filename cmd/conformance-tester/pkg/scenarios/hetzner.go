@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	hetznerServerType = "cx31"
+	hetznerServerType = "cx32"
 )
 
 type hetznerScenario struct {
@@ -38,7 +38,7 @@ type hetznerScenario struct {
 }
 
 func (s *hetznerScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](
+	return sets.New(
 		providerconfig.OperatingSystemCentOS,
 		providerconfig.OperatingSystemRockyLinux,
 		providerconfig.OperatingSystemUbuntu,
