@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -55,7 +55,7 @@ var (
 		},
 	}
 
-	gte131, _ = semver.NewConstraint(">= 1.31")
+	gte131, _ = semverlib.NewConstraint(">= 1.31")
 )
 
 const (
