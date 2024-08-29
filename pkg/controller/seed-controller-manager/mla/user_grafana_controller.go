@@ -69,13 +69,14 @@ func newUserGrafanaReconciler(
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
+	subname := "grafana-user"
 
 	reconciler := &userGrafanaReconciler{
 		Client: client,
 
-		log:                   log.Named("grafana-user"),
+		log:                   log.Named(subname),
 		workerName:            workerName,
-		recorder:              mgr.GetEventRecorderFor(ControllerName),
+		recorder:              mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:              versions,
 		userGrafanaController: userGrafanaController,
 	}
@@ -87,7 +88,7 @@ func newUserGrafanaReconciler(
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).

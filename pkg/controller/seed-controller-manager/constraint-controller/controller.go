@@ -154,8 +154,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Reconciling")
 
 	constraint := &kubermaticv1.Constraint{}
-	if err := r.seedClient.Get(ctx, request.NamespacedName, constraint); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get constraint %s: %w", constraint.Name, ctrlruntimeclient.IgnoreNotFound(err))
+	if err := r.seedClient.Get(ctx, request.NamespacedName, constraint); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get constraint %s: %w", request.Name, err)
+	} else if err != nil { // NotFound
+		return reconcile.Result{}, nil
 	}
 
 	err := r.reconcile(ctx, constraint, log)

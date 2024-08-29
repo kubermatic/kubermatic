@@ -25,6 +25,8 @@ import (
 	"time"
 
 	constrainttemplatev1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	regoschema "github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/rego/schema"
+	"github.com/open-policy-agent/frameworks/constraint/pkg/core/templates"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/v3/apis/config/v1alpha1"
 	"go.uber.org/zap"
 
@@ -458,6 +460,16 @@ func GenAdminUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	return user
 }
 
+const requiredLabelsRegoScript = `package k8srequiredlabels
+
+deny[{"msg": msg, "details": {"missing_labels": missing}}] {
+  provided := {label | input.review.object.metadata.labels[label]}
+  required := {label | label := input.parameters.labels[_]}
+  missing := required - provided
+  count(missing) > 0
+  msg := sprintf("you must provide labels: %v", [missing])
+}`
+
 func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
@@ -488,16 +500,16 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 		Targets: []constrainttemplatev1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
-				Rego: `
-		package k8srequiredlabels
-
-        deny[{"msg": msg, "details": {"missing_labels": missing}}] {
-          provided := {label | input.review.object.metadata.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
-          count(missing) > 0
-          msg := sprintf("you must provide labels: %v", [missing])
-        }`,
+				Code: []constrainttemplatev1.Code{
+					{
+						Engine: regoschema.Name,
+						Source: &templates.Anything{
+							Value: (&regoschema.Source{
+								Rego: requiredLabelsRegoScript,
+							}).ToUnstructured(),
+						},
+					},
+				},
 			},
 		},
 		Selector: kubermaticv1.ConstraintTemplateSelector{

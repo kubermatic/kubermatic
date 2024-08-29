@@ -52,7 +52,7 @@ type reconciler struct {
 
 // requestFromCluster returns a reconcile.Request for the project the given
 // cluster belongs to, if any.
-func requestFromCluster(log *zap.SugaredLogger) handler.TypedEventHandler[*kubermaticv1.Cluster] {
+func requestFromCluster(log *zap.SugaredLogger) handler.TypedEventHandler[*kubermaticv1.Cluster, reconcile.Request] {
 	return handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, cluster *kubermaticv1.Cluster) []reconcile.Request {
 		labelValue, hasLabel := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 		if !hasLabel {

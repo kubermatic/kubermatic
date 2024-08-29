@@ -6,7 +6,7 @@
 
 ## Motivation and Background
 
-The goal is to allow admins to decide to which OPA-integration enabled clusters they want the Constraint Templates to be synced to. This would allow them greater flexibility when managing cluster constraints, and will help with default constraints as well. 
+The goal is to allow admins to decide to which OPA-integration enabled clusters they want the Constraint Templates to be synced to. This would allow them greater flexibility when managing cluster constraints, and will help with default constraints as well.
 
 ## How it currently works
 
@@ -50,19 +50,22 @@ spec:
           properties:
             labels:
               type: array
-              items: 
+              items:
                 type: string
   targets:
     - target: admission.k8s.gatekeeper.sh
-      rego: |
-        package k8srequiredlabels
-        violation[{"msg": msg, "details": {"missing_labels": missing}}] {
-          provided := {label | input.review.object.metadata.labels[label]}
-          required := {label | label := input.parameters.labels[_]}
-          missing := required - provided
-          count(missing) > 0
-          msg := sprintf("you must provide labels: %v", [missing])
-        }
+      code:
+        - engine: Rego
+          source:
+            rego: |
+              package k8srequiredlabels
+              violation[{"msg": msg, "details": {"missing_labels": missing}}] {
+                provided := {label | input.review.object.metadata.labels[label]}
+                required := {label | label := input.parameters.labels[_]}
+                missing := required - provided
+                count(missing) > 0
+                msg := sprintf("you must provide labels: %v", [missing])
+              }
 ```
 
 Also changes will be needed in the Cluster management to allow the management of Cluster object labels.

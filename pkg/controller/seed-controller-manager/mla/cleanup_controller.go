@@ -45,23 +45,24 @@ func newCleanupReconciler(
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
+	subname := "cleanup"
 
 	reconciler := &cleanupReconciler{
 		Client:            client,
-		log:               log.Named("cleanup"),
+		log:               log.Named(subname),
 		workerName:        workerName,
-		recorder:          mgr.GetEventRecorderFor(ControllerName),
+		recorder:          mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:          versions,
 		cleanupController: cleanupController,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		// trigger the controller once on startup
-		WatchesRawSource(source.Func(func(ctx context.Context, rli workqueue.RateLimitingInterface) error {
+		WatchesRawSource(source.Func(func(ctx context.Context, rli workqueue.TypedRateLimitingInterface[reconcile.Request]) error {
 			rli.Add(reconcile.Request{NamespacedName: types.NamespacedName{Name: "identifier", Namespace: ""}})
 			return nil
 		})).

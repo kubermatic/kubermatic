@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.1
     kubermatic.k8c.io/location: master,seed
   name: clusters.kubermatic.k8c.io
 spec:
@@ -149,10 +149,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -163,6 +161,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -233,9 +237,7 @@ spec:
                             This field is effectively required, but due to backwards compatibility is
                             allowed to be empty. Instances of this type with an empty value here are
                             almost certainly wrong.
-                            TODO: Add other useful fields. apiVersion, kind, uid?
                             More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                            TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
@@ -271,7 +273,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -323,7 +324,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -391,7 +391,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -506,7 +505,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -637,7 +635,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -703,7 +700,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -769,7 +765,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -848,7 +843,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -910,7 +904,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -1024,7 +1017,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -1129,7 +1121,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -1175,9 +1166,7 @@ spec:
                             The public network is reachable from the outside world
                             and should provide the pool of IP addresses to choose from.
 
-
                             When specified, all worker nodes will receive a public ip from this floating ip pool
-
 
                             Note that the network is external if the "External" field is set to true
                           type: string
@@ -1201,7 +1190,6 @@ spec:
                           description: |-
                             Network holds the name of the internal network
                             When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created.
-
 
                             Note that the network is internal if the "External" field is set to false
                           type: string
@@ -1248,7 +1236,6 @@ spec:
                             Attention:Openstack CCM use Octavia as default load balancer
                             implementation since v1.17.0
 
-
                             Takes precedence over the 'use_octavia' flag provided at datacenter
                             level if both are specified.
                           type: boolean
@@ -1287,7 +1274,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -1352,7 +1338,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -1450,7 +1435,6 @@ spec:
                                 the event) or if no container name is specified "spec.containers[2]" (container with
                                 index 2 in this pod). This syntax is chosen only to have some well-defined way of
                                 referencing a part of an object.
-                                TODO: this design is not final and this field is subject to change in the future.
                               type: string
                             key:
                               type: string
@@ -1698,10 +1682,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -1712,6 +1694,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -1820,10 +1808,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -1834,6 +1820,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -1920,10 +1912,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -1934,6 +1924,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2048,10 +2044,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2062,6 +2056,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2168,10 +2168,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2182,6 +2180,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2233,10 +2237,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2247,6 +2249,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2317,10 +2325,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2331,6 +2337,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2414,10 +2426,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2428,6 +2438,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2498,10 +2514,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2512,6 +2526,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2620,10 +2640,8 @@ spec:
                                 Claims lists the names of resources, defined in spec.resourceClaims,
                                 that are used by this container.
 
-
                                 This is an alpha field and requires enabling the
                                 DynamicResourceAllocation feature gate.
-
 
                                 This field is immutable. It can only be set for containers.
                               items:
@@ -2634,6 +2652,12 @@ spec:
                                       Name must match the name of one entry in pod.spec.resourceClaims of
                                       the Pod where this field is used. It makes that resource available
                                       inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
                                     type: string
                                 required:
                                   - name
@@ -2784,9 +2808,7 @@ spec:
                                       This field is effectively required, but due to backwards compatibility is
                                       allowed to be empty. Instances of this type with an empty value here are
                                       almost certainly wrong.
-                                      TODO: Add other useful fields. apiVersion, kind, uid?
                                       More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                      TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                                     type: string
                                   optional:
                                     description: Specify whether the Secret or its key must be defined
@@ -2962,10 +2984,8 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-
                             This is an alpha field and requires enabling the
                             DynamicResourceAllocation feature gate.
-
 
                             This field is immutable. It can only be set for containers.
                           items:
@@ -2976,6 +2996,12 @@ spec:
                                   Name must match the name of one entry in pod.spec.resourceClaims of
                                   the Pod where this field is used. It makes that resource available
                                   inside a container.
+                                type: string
+                              request:
+                                description: |-
+                                  Request is the name chosen for a request in the referenced claim.
+                                  If empty, everything from the claim is made available, otherwise
+                                  only the result of this request.
                                 type: string
                             required:
                               - name
@@ -3024,10 +3050,8 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-
                             This is an alpha field and requires enabling the
                             DynamicResourceAllocation feature gate.
-
 
                             This field is immutable. It can only be set for containers.
                           items:
@@ -3038,6 +3062,12 @@ spec:
                                   Name must match the name of one entry in pod.spec.resourceClaims of
                                   the Pod where this field is used. It makes that resource available
                                   inside a container.
+                                type: string
+                              request:
+                                description: |-
+                                  Request is the name chosen for a request in the referenced claim.
+                                  If empty, everything from the claim is made available, otherwise
+                                  only the result of this request.
                                 type: string
                             required:
                               - name
@@ -3108,10 +3138,8 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-
                             This is an alpha field and requires enabling the
                             DynamicResourceAllocation feature gate.
-
 
                             This field is immutable. It can only be set for containers.
                           items:
@@ -3122,6 +3150,12 @@ spec:
                                   Name must match the name of one entry in pod.spec.resourceClaims of
                                   the Pod where this field is used. It makes that resource available
                                   inside a container.
+                                type: string
+                              request:
+                                description: |-
+                                  Request is the name chosen for a request in the referenced claim.
+                                  If empty, everything from the claim is made available, otherwise
+                                  only the result of this request.
                                 type: string
                             required:
                               - name
@@ -3163,10 +3197,8 @@ spec:
                             Claims lists the names of resources, defined in spec.resourceClaims,
                             that are used by this container.
 
-
                             This is an alpha field and requires enabling the
                             DynamicResourceAllocation feature gate.
-
 
                             This field is immutable. It can only be set for containers.
                           items:
@@ -3177,6 +3209,12 @@ spec:
                                   Name must match the name of one entry in pod.spec.resourceClaims of
                                   the Pod where this field is used. It makes that resource available
                                   inside a container.
+                                type: string
+                              request:
+                                description: |-
+                                  Request is the name chosen for a request in the referenced claim.
+                                  If empty, everything from the claim is made available, otherwise
+                                  only the result of this request.
                                 type: string
                             required:
                               - name

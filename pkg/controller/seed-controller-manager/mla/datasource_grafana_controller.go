@@ -74,19 +74,20 @@ func newDatasourceGrafanaReconciler(
 	datasourceGrafanaController *datasourceGrafanaController,
 ) error {
 	client := mgr.GetClient()
+	subname := "grafana-datasource"
 
 	reconciler := &datasourceGrafanaReconciler{
 		Client: client,
 
-		log:                         log.Named("grafana-datasource"),
+		log:                         log.Named(subname),
 		workerName:                  workerName,
-		recorder:                    mgr.GetEventRecorderFor(ControllerName),
+		recorder:                    mgr.GetEventRecorderFor(controllerName(subname)),
 		versions:                    versions,
 		datasourceGrafanaController: datasourceGrafanaController,
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
+		Named(controllerName(subname)).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).

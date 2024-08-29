@@ -59,7 +59,7 @@ func EnqueueClusterForNamespacedObjectWithSeedName(client ctrlruntimeclient.Clie
 	return TypedEnqueueClusterForNamespacedObjectWithSeedName[ctrlruntimeclient.Object](client, seedName, clusterSelector)
 }
 
-func TypedEnqueueClusterForNamespacedObjectWithSeedName[T ctrlruntimeclient.Object](client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.TypedEventHandler[T] {
+func TypedEnqueueClusterForNamespacedObjectWithSeedName[T ctrlruntimeclient.Object](client ctrlruntimeclient.Client, seedName string, clusterSelector labels.Selector) handler.TypedEventHandler[T, reconcile.Request] {
 	return handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, a T) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		listOpts := &ctrlruntimeclient.ListOptions{
@@ -90,7 +90,7 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) handler.EventHandle
 	return TypedEnqueueClusterScopedObjectWithSeedName[ctrlruntimeclient.Object](seedName)
 }
 
-func TypedEnqueueClusterScopedObjectWithSeedName[T ctrlruntimeclient.Object](seedName string) handler.TypedEventHandler[T] {
+func TypedEnqueueClusterScopedObjectWithSeedName[T ctrlruntimeclient.Object](seedName string) handler.TypedEventHandler[T, reconcile.Request] {
 	return handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, a T) []reconcile.Request {
 		if a.GetNamespace() != "" {
 			utilruntime.HandleError(fmt.Errorf("EnqueueClusterScopedObjectWithSeedName was used with namespace scoped object %s/%s of type %T", a.GetNamespace(), a.GetName(), a))
@@ -134,7 +134,7 @@ const (
 // of the object into the name of the reconcile request.
 func EnqueueObjectWithOperation() handler.EventHandler {
 	return handler.Funcs{
-		CreateFunc: func(_ context.Context, e event.CreateEvent, queue workqueue.RateLimitingInterface) {
+		CreateFunc: func(_ context.Context, e event.TypedCreateEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 			queue.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: CreateOperation,
@@ -143,7 +143,7 @@ func EnqueueObjectWithOperation() handler.EventHandler {
 			})
 		},
 
-		UpdateFunc: func(_ context.Context, e event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+		UpdateFunc: func(_ context.Context, e event.TypedUpdateEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 			queue.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: UpdateOperation,
@@ -152,7 +152,7 @@ func EnqueueObjectWithOperation() handler.EventHandler {
 			})
 		},
 
-		DeleteFunc: func(_ context.Context, e event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+		DeleteFunc: func(_ context.Context, e event.TypedDeleteEvent[ctrlruntimeclient.Object], queue workqueue.TypedRateLimitingInterface[reconcile.Request]) {
 			queue.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Namespace: DeleteOperation,
