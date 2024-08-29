@@ -352,6 +352,7 @@ func TestReconcile(t *testing.T) {
 		})
 	}
 }
+
 func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]any) []ctrlruntimeclient.Object {
 	userClusterObjects := []ctrlruntimeclient.Object{}
 	if systemAppInstallationValues != nil {

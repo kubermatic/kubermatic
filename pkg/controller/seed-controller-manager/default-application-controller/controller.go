@@ -209,11 +209,12 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get application installation: %w", err)
 		}
-		// Create the application installation
+		// Create the application
 		err := userClusterClient.Create(ctx, &application)
 		if err != nil {
 			return fmt.Errorf("failed to create application installation: %w", err)
 		}
+		return nil
 	}
 
 	// If the application is not enforced then we can't update it.
@@ -248,12 +249,18 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 	if appVersion == "" {
 		// Iterate through all the verions and find the latest one by semver comparison
 		for _, version := range application.Spec.Versions {
-			if semver.Compare(version.Version, appVersion) > 0 {
+			if appVersion == "" {
+				appVersion = version.Version
+			}
+			// Ensure both versions have the "v" prefix. This should never happen because our webhooks should prevent versions with `v` prefix from being created.
+			v1 := ensureVersionPrefix(version.Version)
+			v2 := ensureVersionPrefix(appVersion)
+
+			if semver.Compare(v1, v2) > 0 {
 				appVersion = version.Version
 			}
 		}
 	}
-
 	err := convertDefaultValuesToDefaultValuesBlock(&application)
 	if err != nil {
 		// This is a non-critical error and we can still continue by using the `values` field instead of the `valuesBlock` field.
@@ -378,4 +385,12 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 		app.Spec.DefaultValues = nil
 	}
 	return nil
+}
+
+// Add this helper function at the end of the file
+func ensureVersionPrefix(version string) string {
+	if !strings.HasPrefix(version, "v") {
+		return "v" + version
+	}
+	return version
 }

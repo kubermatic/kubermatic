@@ -24,7 +24,6 @@ default application doesn't exist in the values, the controller will not install
 cluster creation.
 3. If an enforced ApplicationDefinition is updated, the controller will update all the existing ApplicationInstallation resources. For this functionality, the
 controller watches for ApplicationDefinition resources as well and reconciles the affected Clusters against them.
-4. TODO: `force-delete` and `force-install` annotations that can be used to delete and install applications if they were defaulted/enforced by KKP.
 */
 
 package defaultapplicationcontroller
