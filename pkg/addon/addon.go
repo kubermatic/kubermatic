@@ -26,6 +26,7 @@ import (
 	"sync"
 	"text/template"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -48,7 +49,45 @@ func addonFunctions(overwriteRegistry string) template.FuncMap {
 	funcs["Registry"] = registry.GetOverwriteFunc(overwriteRegistry)
 	funcs["Image"] = registry.GetImageRewriterFunc(overwriteRegistry)
 	funcs["join"] = strings.Join
+	funcs["semverCompare"] = semverCompare
+
 	return funcs
+}
+
+// semverCompare checks if a given version matches the given constraint.
+// Both version and constraint can be either strings or already parsed semver
+// objects. If parsing fails or an incompatible type is given, the function
+// will silently return false to aid in using it in Go templates.
+func semverCompare(version any, constraint any) bool {
+	if sver, ok := version.(string); ok {
+		parsed, err := semverlib.NewVersion(sver)
+		if err != nil {
+			return false
+		}
+
+		return semverCompare(parsed, constraint)
+	}
+
+	if scon, ok := constraint.(string); ok {
+		parsed, err := semverlib.NewConstraint(scon)
+		if err != nil {
+			return false
+		}
+
+		return semverCompare(version, parsed)
+	}
+
+	ver, ok := version.(*semverlib.Version)
+	if !ok {
+		return false
+	}
+
+	con, ok := constraint.(*semverlib.Constraints)
+	if !ok {
+		return false
+	}
+
+	return con.Check(ver)
 }
 
 func listAddonFilesRecursively(root string) ([]string, error) {
