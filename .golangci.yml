@@ -40,7 +40,6 @@ linters:
     - errcheck
     - errname
     - errorlint
-    - exportloopref
     - fatcontext
     - goconst
     - gocritic
