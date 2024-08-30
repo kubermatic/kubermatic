@@ -119,10 +119,16 @@ func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelecto
 }
 
 func ValidateCredentials(apiKey, projectID string) error {
-	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
+	client := getClient(apiKey)
 	client.UserAgent = fmt.Sprintf("kubermatic %s", client.UserAgent)
 	_, _, err := client.Projects.Get(projectID, nil)
 	return err
+}
+
+func getClient(apiKey string) *packngo.Client {
+	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
+	client.UserAgent = fmt.Sprintf("kubermatic %s", client.UserAgent)
+	return client
 }
 
 // Used to decode response object.
@@ -139,7 +145,7 @@ func DescribeSize(apiKey, projectID, instanceType string) (*provider.NodeCapacit
 		return nil, fmt.Errorf("missing required parameter: projectID")
 	}
 
-	packetclient := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
+	packetclient := getClient(apiKey)
 	req, err := packetclient.NewRequest(http.MethodGet, "/projects/"+projectID+"/plans", nil)
 	if err != nil {
 		return nil, err
