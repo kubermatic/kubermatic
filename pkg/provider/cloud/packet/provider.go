@@ -120,6 +120,7 @@ func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelecto
 
 func ValidateCredentials(apiKey, projectID string) error {
 	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
+	client.UserAgent = fmt.Sprintf("kubermatic %s", client.UserAgent)
 	_, _, err := client.Projects.Get(projectID, nil)
 	return err
 }
