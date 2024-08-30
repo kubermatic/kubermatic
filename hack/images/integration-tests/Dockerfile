@@ -17,14 +17,10 @@ LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-# envtest binaries are not available for all k8s patch releases, so beware when updating
 ENV KUBE_VERSION=1.31.0
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \
-    mkdir -p /usr/local/kubebuilder/ && \
-    curl --fail -sL "https://go.kubebuilder.io/test-tools/${KUBE_VERSION}/$os/$arch" | tar -xz --strip-components=1 -C /usr/local/kubebuilder/ && \
-    curl --fail https://storage.googleapis.com/kubernetes-release/release/v$KUBE_VERSION/bin/$os/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
-    chmod +x /tmp/kube-apiserver && \
-    mv /tmp/kube-apiserver /usr/local/kubebuilder/bin/kube-apiserver && \
+    mkdir -p /usr/local/kubebuilder/bin/ && \
+    curl --fail -sL "https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v${KUBE_VERSION}/envtest-v${KUBE_VERSION}-$os-$arch.tar.gz" | tar -xz --strip-components=2 -C /usr/local/kubebuilder/bin/ && \
     echo 'export PATH=$PATH:/usr/local/kubebuilder/bin' >> ~/.bashrc
