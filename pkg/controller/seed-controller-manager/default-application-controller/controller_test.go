@@ -35,6 +35,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -74,7 +75,7 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 1: no default applications, no application installations",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, false, defaultValue),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, false, defaultValue, nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				// cluster should now have its special condition
@@ -94,7 +95,7 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 2: default applications are installed with correct values",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -117,9 +118,9 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 3: multiple default applications are installed with correct values",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue),
-				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", true, false, defaultValue),
-				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", true, false, ""),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
+				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", true, false, defaultValue, nil),
+				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", true, false, "", nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -142,7 +143,7 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 4: default applications are ignored if initial-application-installation condition exists on the cluster",
 			cluster: genCluster(clusterName, defaultDatacenterName, true),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -165,8 +166,8 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 5: enforced applications are installed",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, ""),
-				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", false, true, "test: value"),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, "", nil),
+				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", false, true, "test: value", nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -189,9 +190,9 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 5: enforced applications are installed even if initial-application-installation condition exists on the cluster",
 			cluster: genCluster(clusterName, defaultDatacenterName, true),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, ""),
-				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", false, true, defaultValue),
-				*genApplicationDefinition("applicationName3", "namespace3", appVersion, "", false, true, "test: value"),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, "", nil),
+				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", false, true, defaultValue, nil),
+				*genApplicationDefinition("applicationName3", "namespace3", appVersion, "", false, true, "test: value", nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -214,9 +215,9 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 6: enforced and default applications are installed",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue),
-				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", true, true, ""),
-				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.0", "", false, true, "test: value"),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
+				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", true, true, "", nil),
+				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.0", "", false, true, "test: value", nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -239,9 +240,9 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 7: enforced and default applications are installed for a certain datacenter",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", defaultDatacenterName, true, false, defaultValue),
-				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", defaultDatacenterName, true, true, ""),
-				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.0", defaultDatacenterName, false, true, "test: value"),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", defaultDatacenterName, true, false, defaultValue, nil),
+				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", defaultDatacenterName, true, true, "", nil),
+				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.0", defaultDatacenterName, false, true, "test: value", nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -264,7 +265,8 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 8: enforced and default applications are not installed if cluster doesn't belong to target datacenter",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "wrongdc,invalid", true, false, ""),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "wrongdc,invalid", true, false, "", nil),
+				*genApplicationDefinition("applicationName2", "namespace", "v1.0.0", "wrongdc,invalid", false, true, "", nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -287,7 +289,31 @@ func TestReconcile(t *testing.T) {
 			name:    "scenario 9: highest semver version is picked as the application version if defaultVersion is not specified",
 			cluster: genCluster(clusterName, defaultDatacenterName, false),
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "", "", true, false, ""),
+				*genApplicationDefinition("applicationName", "namespace", "", "", true, false, "", nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != len(applications) {
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
+				}
+
+				return compareApplications(apps.Items, applications)
+			},
+		},
+		{
+			name:    "scenario 10: application values are converted from defaultValues to defaultValuesBlock",
+			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, "", &runtime.RawExtension{Raw: []byte(`{"test":"value"}`)}),
+				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", false, true, "", &runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)}),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -422,14 +448,22 @@ func compareApplications(installedApps []appskubermaticv1.ApplicationInstallatio
 				}
 
 				// Compare annotations
-				delete(appDef.Annotations, appskubermaticv1.ApplicationTargetDatacenterAnnotation)
+				delete(appDef.Annotations, appskubermaticv1.ApplicationTargetDatacentersAnnotation)
 				if !reflect.DeepEqual(installedApp.Annotations, appDef.Annotations) {
 					return fmt.Errorf("installed app %s has incorrect annotations: expected %v, got %v", installedApp.Name, appDef.Annotations, installedApp.Annotations)
 				}
 
 				// Compare values
 				if installedApp.Spec.ValuesBlock != appDef.Spec.DefaultValuesBlock {
-					return fmt.Errorf("installed app %s has incorrect values: expected %v, got %v", installedApp.Name, installedApp.Spec.ValuesBlock, appDef.Spec.DefaultValuesBlock)
+					// Values have been converted from defaultValues to defaultValuesBlock
+					if appDef.Spec.DefaultValues != nil {
+						_ = convertDefaultValuesToDefaultValuesBlock(&appDef)
+						if installedApp.Spec.ValuesBlock != appDef.Spec.DefaultValuesBlock {
+							return fmt.Errorf("installed app %s has incorrect values: expected %q, got %q", installedApp.Name, appDef.Spec.DefaultValuesBlock, installedApp.Spec.ValuesBlock)
+						}
+					} else {
+						return fmt.Errorf("installed app %s has incorrect values: expected %q, got %q", installedApp.Name, appDef.Spec.DefaultValuesBlock, installedApp.Spec.ValuesBlock)
+					}
 				}
 				break
 			}
@@ -482,17 +516,17 @@ func genCluster(name, datacenter string, initialApplicationCondition bool) *kube
 	}
 }
 
-func genApplicationDefinition(name, namespace, defaultVersion, defaultDatacenterName string, defaultApp, enforced bool, defaultValues string) *appskubermaticv1.ApplicationDefinition {
+func genApplicationDefinition(name, namespace, defaultVersion, defaultDatacenterName string, defaultApp, enforced bool, defaultValues string, defaultRawValues *runtime.RawExtension) *appskubermaticv1.ApplicationDefinition {
 	annotations := map[string]string{}
 	if defaultApp {
 		annotations[appskubermaticv1.ApplicationDefaultAnnotation] = "true"
 	}
 	if enforced {
-		annotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
+		annotations[appskubermaticv1.ApplicationEnforceAnnotation] = "true"
 	}
 
 	if defaultDatacenterName != "" {
-		annotations[appskubermaticv1.ApplicationTargetDatacenterAnnotation] = defaultDatacenterName
+		annotations[appskubermaticv1.ApplicationTargetDatacentersAnnotation] = defaultDatacenterName
 	}
 
 	return &appskubermaticv1.ApplicationDefinition{
@@ -543,6 +577,7 @@ func genApplicationDefinition(name, namespace, defaultVersion, defaultDatacenter
 				},
 			},
 			DefaultValuesBlock: defaultValues,
+			DefaultValues:      defaultRawValues,
 			DefaultVersion:     defaultVersion,
 		},
 	}

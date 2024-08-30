@@ -114,7 +114,7 @@ require (
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
 
-require golang.org/x/mod v0.20.0
+require golang.org/x/mod v0.20.0 // indirect
 
 require (
 	cel.dev/expr v0.15.0 // indirect

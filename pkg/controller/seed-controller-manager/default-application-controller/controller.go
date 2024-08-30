@@ -23,7 +23,6 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	"golang.org/x/mod/semver"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
@@ -31,11 +30,13 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -90,7 +91,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		// Watch for clusters
-		For(&kubermaticv1.Cluster{}, builder.WithPredicates()).
+		For(&kubermaticv1.Cluster{}).
 		// Watch changes for ApplicationDefinitions that have been enforced.
 		Watches(&appskubermaticv1.ApplicationDefinition{}, enqueueClusters(reconciler.Client, log), builder.WithPredicates(withEventFilter())).
 		Build(reconciler)
@@ -138,7 +139,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	// for initial applications and initial application controller will not reconcile the cluster.
 	ignoreDefaultApplications := false
 
 	// If the cluster has the initial application installations request annotation, we don't want to install the default applications as they will be
@@ -150,6 +150,11 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	_, exists := cluster.Status.Conditions[kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess]
 	// We don't care about the state of the condition here since it `exists` is enough information to know that the initial application installations controller has already reconciled this cluster.
 	if exists {
+		ignoreDefaultApplications = true
+	}
+
+	// Default applications are already created.
+	if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully, corev1.ConditionTrue) {
 		ignoreDefaultApplications = true
 	}
 
@@ -173,7 +178,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		// Check if the ApplicationDefinition is targeted to the current cluster's datacenter.
-		if val, ok := applicationDefinition.Annotations[appskubermaticv1.ApplicationTargetDatacenterAnnotation]; ok {
+		if val, ok := applicationDefinition.Annotations[appskubermaticv1.ApplicationTargetDatacentersAnnotation]; ok {
 			// Split the list and check if the cluster's datacenter is included.
 			datacenters := strings.Split(val, ",")
 			if !slices.Contains(datacenters, cluster.Spec.Cloud.DatacenterName) {
@@ -181,7 +186,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 				continue
 			}
 		}
-		if applicationDefinition.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] == AnnotationTrueValue || (applicationDefinition.Annotations[appskubermaticv1.ApplicationDefaultAnnotation] == AnnotationTrueValue && !ignoreDefaultApplications) {
+		if applicationDefinition.Annotations[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue || (applicationDefinition.Annotations[appskubermaticv1.ApplicationDefaultAnnotation] == AnnotationTrueValue && !ignoreDefaultApplications) {
 			applications = append(applications, r.generateApplicationInstallation(applicationDefinition))
 		}
 	}
@@ -195,6 +200,22 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			errors = append(errors, err)
 		}
 	}
+
+	if len(errors) == 0 && !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully, corev1.ConditionTrue) {
+		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			kubermaticv1helper.SetClusterCondition(
+				cluster,
+				r.versions,
+				kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully,
+				corev1.ConditionTrue,
+				"",
+				"",
+			)
+		}); err != nil {
+			return &reconcile.Result{}, err
+		}
+	}
+
 	return nil, kerrors.NewAggregate(errors)
 }
 
@@ -204,11 +225,27 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 		return fmt.Errorf("failed to get usercluster client: %w", err)
 	}
 
+	// First ensure that the namespace exists
+	namespace := &corev1.Namespace{}
+	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Namespace}, namespace); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get namespace: %w", err)
+		}
+
+		// Create the namespace if it doesn't exist
+		namespace.Name = application.Namespace
+		err := userClusterClient.Create(ctx, namespace)
+		if err != nil {
+			return fmt.Errorf("failed to create namespace: %w", err)
+		}
+	}
+
 	existingApplication := &appskubermaticv1.ApplicationInstallation{}
 	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Name, Namespace: application.Namespace}, existingApplication); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get application installation: %w", err)
 		}
+
 		// Create the application
 		err := userClusterClient.Create(ctx, &application)
 		if err != nil {
@@ -218,7 +255,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 	}
 
 	// If the application is not enforced then we can't update it.
-	if application.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] != AnnotationTrueValue {
+	if application.Annotations[appskubermaticv1.ApplicationEnforceAnnotation] != AnnotationTrueValue {
 		return nil
 	}
 
@@ -252,11 +289,20 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 			if appVersion == "" {
 				appVersion = version.Version
 			}
-			// Ensure both versions have the "v" prefix. This should never happen because our webhooks should prevent versions with `v` prefix from being created.
-			v1 := ensureVersionPrefix(version.Version)
-			v2 := ensureVersionPrefix(appVersion)
 
-			if semver.Compare(v1, v2) > 0 {
+			currentVersion, err := semver.NewSemver(version.Version)
+			if err != nil {
+				// We can't do much here. The webhooks and kubebuilder validation markers already impose semver usage so this error should never happen.
+				continue
+			}
+
+			selectedVersion, err := semver.NewSemver(appVersion)
+			if err != nil {
+				// We can't do much here. The webhooks and kubebuilder validation markers already impose semver usage so this error should never happen.
+				continue
+			}
+
+			if currentVersion.GreaterThan(selectedVersion) {
 				appVersion = version.Version
 			}
 		}
@@ -268,7 +314,8 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 	}
 
 	// Drop apps.kubermatic.k8c.io/target-datacenter annotation. Datacenter is a concept used in master/seed components of KKP and user clusters shouldn't be aware of it.
-	delete(application.Annotations, appskubermaticv1.ApplicationTargetDatacenterAnnotation)
+	delete(application.Annotations, appskubermaticv1.ApplicationTargetDatacentersAnnotation)
+	delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
 
 	app := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
@@ -286,6 +333,7 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 				Version: appVersion,
 			},
 			ValuesBlock: application.Spec.DefaultValuesBlock,
+			Values:      runtime.RawExtension{Raw: []byte("{}")},
 		},
 	}
 
@@ -304,14 +352,14 @@ func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) ha
 		datacenters := []string{}
 
 		// Check if the application definition is enforced
-		if a.GetAnnotations()[appskubermaticv1.ApplicationEnforcedAnnotation] != AnnotationTrueValue {
+		if a.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] != AnnotationTrueValue {
 			return requests
 		}
 
 		// Check if the application is scoped to a datacenter
-		if a.GetAnnotations()[appskubermaticv1.ApplicationTargetDatacenterAnnotation] != "" {
+		if a.GetAnnotations()[appskubermaticv1.ApplicationTargetDatacentersAnnotation] != "" {
 			// Get the datacenters the application is scoped to
-			datacenters = strings.Split(a.GetAnnotations()[appskubermaticv1.ApplicationTargetDatacenterAnnotation], ",")
+			datacenters = strings.Split(a.GetAnnotations()[appskubermaticv1.ApplicationTargetDatacentersAnnotation], ",")
 		}
 
 		// List all clusters
@@ -341,7 +389,7 @@ func withEventFilter() predicate.Predicate {
 				return false
 			}
 
-			if e.Object.GetAnnotations()[appskubermaticv1.ApplicationEnforcedAnnotation] == AnnotationTrueValue {
+			if e.Object.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
 				return true
 			}
 			return false
@@ -350,7 +398,12 @@ func withEventFilter() predicate.Predicate {
 			if e.ObjectNew.GetDeletionTimestamp() != nil {
 				return false
 			}
-			if e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforcedAnnotation] == AnnotationTrueValue {
+			if e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] != e.ObjectOld.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] &&
+				e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
+				return true
+			}
+
+			if e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
 				return e.ObjectNew.GetGeneration() != e.ObjectOld.GetGeneration()
 			}
 			return false
@@ -363,7 +416,7 @@ func withEventFilter() predicate.Predicate {
 				return false
 			}
 
-			if e.Object.GetAnnotations()[appskubermaticv1.ApplicationEnforcedAnnotation] == AnnotationTrueValue {
+			if e.Object.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
 				return true
 			}
 			return false
