@@ -168,7 +168,6 @@ presubmits:
 
   - name: pre-kubermatic-test-user-ssh-key-agent-multiarch
     decorate: true
-    always_run: false
     run_if_changed: "cmd/user-ssh-keys-agent/"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -219,7 +218,6 @@ presubmits:
 
   - name: pre-kubermatic-test-build-utility-images
     decorate: true
-    always_run: false
     run_if_changed: "(hack/release-sidecar-images.sh|hack/images/|cmd/(alertmanager-authorization-server|http-prober|s3-exporter)/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -248,7 +246,6 @@ presubmits:
 
   - name: pre-kubermatic-test-addon-upgrades
     decorate: true
-    always_run: false
     run_if_changed: "(addons/|pkg/test/addon|pkg/addon|pkg/controller/seed-controller-manager/addon.*)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:

@@ -59,7 +59,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vmware-cloud-director-flatcar-1.31
     decorate: true
-    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vcloud-director: "true"

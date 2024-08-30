@@ -16,7 +16,6 @@ presubmits:
   - name: pre-kubermatic-e2e-anexia-flatcar-1.31
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    always_run: false
     labels:
       preset-anexia: "true"
       preset-vault: "true"

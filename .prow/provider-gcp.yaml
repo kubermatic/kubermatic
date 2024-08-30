@@ -15,7 +15,6 @@
 presubmits:
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.27
     decorate: true
-    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -59,7 +58,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.28
     decorate: true
-    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -103,7 +101,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.29
     decorate: true
-    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -235,7 +232,6 @@ presubmits:
 
   - name: pre-kubermatic-e2e-gcp-flatcar-1.31
     decorate: true
-    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
