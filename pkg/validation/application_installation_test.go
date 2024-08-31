@@ -23,10 +23,12 @@ import (
 	"time"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -38,7 +40,7 @@ const (
 
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
 func TestValidateApplicationInstallationSpec(t *testing.T) {
-	ad := getApplicationDefinition(defaultAppName)
+	ad := getApplicationDefinition(defaultAppName, false, false, nil)
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(ad).
@@ -225,8 +227,8 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
 func TestValidateApplicationInstallationUpdate(t *testing.T) {
-	ad := getApplicationDefinition(defaultAppName)
-	updatedAD := getApplicationDefinition("updated-app")
+	ad := getApplicationDefinition(defaultAppName, false, false, nil)
+	updatedAD := getApplicationDefinition("updated-app", false, false, nil)
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(ad, updatedAD).
@@ -405,7 +407,83 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 	}
 }
 
-func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
+func TestValidateApplicationInstallationDelete(t *testing.T) {
+	enforcedAppName := "enforced"
+	enforcedAppDCName := "enforced-dc"
+	enforcedWrongDCName := "enforced-wrong-dc"
+	defaultAppName := "default"
+	appName := "app"
+	dcName := "dc-1"
+	clusterName := "cluster-1"
+
+	applicationDefinitions := []ctrlruntimeclient.Object{
+		getApplicationDefinition(appName, false, false, nil),
+		getApplicationDefinition(defaultAppName, true, false, nil),
+		getApplicationDefinition(enforcedAppName, false, true, nil),
+		getApplicationDefinition(enforcedAppDCName, false, true, []string{dcName}),
+		getApplicationDefinition(enforcedWrongDCName, false, true, []string{"dc-2"}),
+	}
+
+	fakeClient := fake.
+		NewClientBuilder().
+		WithObjects(genCluster(clusterName, dcName), genCluster("cluster-2", "dc-2")).
+		WithObjects(applicationDefinitions...).
+		Build()
+
+	testCases := []struct {
+		name          string
+		ai            *appskubermaticv1.ApplicationInstallation
+		clusterName   string
+		expectedError string
+	}{
+		{
+			name:          "scenario 1: application deletion is allowed for non-default/non-enforced application installation",
+			ai:            getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, nil),
+			expectedError: "[]",
+		},
+		{
+			name:          "scenario 2: application deletion is allowed if referenced application definition is not found",
+			ai:            getApplicationInstallation(defaultAppName, "non-existent-app", defaultAppVersion, nil),
+			expectedError: "[]",
+		},
+		{
+			name:          "scenario 3: application deletion is allowed if referenced application definition is default application",
+			ai:            getApplicationInstallation(defaultAppName, defaultAppName, defaultAppVersion, nil),
+			expectedError: "[]",
+		},
+		{
+			name:          "scenario 4: application deletion is not allowed if referenced application definition is enforced application",
+			ai:            getApplicationInstallation(defaultAppName, enforcedAppName, defaultAppVersion, nil),
+			expectedError: `[spec.applicationRef.name: Forbidden: application "default" is enforced and cannot be deleted. Please contact your administrator.]`,
+		},
+		{
+			name:          "scenario 5: application deletion is not allowed if referenced application definition is enforced for the datacenter",
+			ai:            getApplicationInstallation(defaultAppName, enforcedAppDCName, defaultAppVersion, nil),
+			expectedError: `[spec.applicationRef.name: Forbidden: application "default" is enforced and cannot be deleted. Please contact your administrator.]`,
+			clusterName:   clusterName,
+		},
+		{
+			name:          "scenario 6: application deletion is allowed if referenced application definition is not enforced for the datacenter",
+			ai:            getApplicationInstallation(defaultAppName, enforcedWrongDCName, defaultAppVersion, nil),
+			expectedError: `[]`,
+			clusterName:   clusterName,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := ValidateApplicationInstallationDelete(context.Background(), fakeClient, testCase.clusterName, *testCase.ai)
+			if fmt.Sprint(err) != testCase.expectedError {
+				if testCase.expectedError == "[]" {
+					testCase.expectedError = "nil"
+				}
+				t.Fatalf("expected error to be %s but got %v", testCase.expectedError, err)
+			}
+		})
+	}
+}
+
+func getApplicationDefinition(name string, defaulted bool, enforced bool, datacenters []string) *appskubermaticv1.ApplicationDefinition {
 	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -419,6 +497,11 @@ func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 				{
 					Version: defaultAppSecondaryVersion,
 				},
+			},
+			Enforced: enforced,
+			Default:  defaulted,
+			Selector: appskubermaticv1.DefaultingSelector{
+				Datacenters: datacenters,
 			},
 		},
 	}
@@ -439,6 +522,19 @@ func getApplicationInstallation(name string, appName string, appVersion string, 
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    appName,
 				Version: appVersion,
+			},
+		},
+	}
+}
+
+func genCluster(name, datacenter string) *kubermaticv1.Cluster {
+	return &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: datacenter,
 			},
 		},
 	}

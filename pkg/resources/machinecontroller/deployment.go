@@ -92,7 +92,7 @@ func DeploymentReconciler(data machinecontrollerData) reconciling.NamedDeploymen
 }
 
 // DeploymentReconcilerWithoutInitWrapper returns the function to create and update the machine controller deployment without the
-// wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
+// wrapper that checks for apiserver availability. This allows to adjust the command.
 func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

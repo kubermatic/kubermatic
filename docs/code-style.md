@@ -58,7 +58,7 @@ following Go conventions - `stateLock`, `mapLock` etc.
 ### Imports
 
 We use [gimps](https://github.com/xrstf/gimps) to sort imports and have codified the rules
-in `.gimps.yaml`. In general the orer is
+in `.gimps.yaml`. In general the order is
 
 - Go stdlib
 - external packages which do not apply to other rules (Like `github.com/golang/glog`, etc.)
