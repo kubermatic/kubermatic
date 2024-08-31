@@ -185,6 +185,12 @@ func ValidateApplicationInstallationDelete(ctx context.Context, client ctrlrunti
 		return allErrs
 	}
 
+	// Defaulted/Enforced applications use the ApplicationDefinition name as their name and namespace.
+	// If the current object differs, it's not enforced and there is no need to validate further.
+	if ai.Name != ai.Spec.ApplicationRef.Name || ai.Namespace != ai.Spec.ApplicationRef.Name {
+		return allErrs
+	}
+
 	// Fetch the referenced ApplicationDefinition
 	ad := &appskubermaticv1.ApplicationDefinition{}
 	err := client.Get(ctx, types.NamespacedName{Name: ai.Spec.ApplicationRef.Name}, ad)

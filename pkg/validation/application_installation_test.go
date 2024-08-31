@@ -453,18 +453,24 @@ func TestValidateApplicationInstallationDelete(t *testing.T) {
 		},
 		{
 			name:          "scenario 4: application deletion is not allowed if referenced application definition is enforced application",
-			ai:            getApplicationInstallation(defaultAppName, enforcedAppName, defaultAppVersion, nil),
-			expectedError: `[spec.applicationRef.name: Forbidden: application "default" is enforced and cannot be deleted. Please contact your administrator.]`,
+			ai:            getApplicationInstallation(enforcedAppName, enforcedAppName, defaultAppVersion, nil),
+			expectedError: `[spec.applicationRef.name: Forbidden: application "enforced" is enforced and cannot be deleted. Please contact your administrator.]`,
 		},
 		{
 			name:          "scenario 5: application deletion is not allowed if referenced application definition is enforced for the datacenter",
-			ai:            getApplicationInstallation(defaultAppName, enforcedAppDCName, defaultAppVersion, nil),
-			expectedError: `[spec.applicationRef.name: Forbidden: application "default" is enforced and cannot be deleted. Please contact your administrator.]`,
+			ai:            getApplicationInstallation(enforcedAppDCName, enforcedAppDCName, defaultAppVersion, nil),
+			expectedError: `[spec.applicationRef.name: Forbidden: application "enforced-dc" is enforced and cannot be deleted. Please contact your administrator.]`,
 			clusterName:   clusterName,
 		},
 		{
 			name:          "scenario 6: application deletion is allowed if referenced application definition is not enforced for the datacenter",
-			ai:            getApplicationInstallation(defaultAppName, enforcedWrongDCName, defaultAppVersion, nil),
+			ai:            getApplicationInstallation(enforcedWrongDCName, enforcedWrongDCName, defaultAppVersion, nil),
+			expectedError: `[]`,
+			clusterName:   clusterName,
+		},
+		{
+			name:          "scenario 7: application deletion is allowed if the installed application name/namespace is different than the application definition name, even if application definition is marked as enforced",
+			ai:            getApplicationInstallation(defaultAppName, enforcedAppName, defaultAppVersion, nil),
 			expectedError: `[]`,
 			clusterName:   clusterName,
 		},
@@ -511,12 +517,12 @@ func getApplicationInstallation(name string, appName string, appVersion string, 
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Namespace: "kube-system",
+			Namespace: name,
 			Labels:    labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: appskubermaticv1.AppNamespaceSpec{
-				Name:   "default",
+				Name:   name,
 				Create: true,
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
