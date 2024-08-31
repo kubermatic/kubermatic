@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 
 	"go.uber.org/zap"
 
@@ -53,8 +52,7 @@ import (
 )
 
 const (
-	ControllerName      = "kkp-default-application-controller"
-	AnnotationTrueValue = "true"
+	ControllerName = "kkp-default-application-controller"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -178,15 +176,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		// Check if the ApplicationDefinition is targeted to the current cluster's datacenter.
-		if val, ok := applicationDefinition.Annotations[appskubermaticv1.ApplicationTargetDatacentersAnnotation]; ok {
-			// Split the list and check if the cluster's datacenter is included.
-			datacenters := strings.Split(val, ",")
-			if !slices.Contains(datacenters, cluster.Spec.Cloud.DatacenterName) {
-				// Skip this ApplicationDefinition if the cluster's datacenter is not in the list
+		if applicationDefinition.Spec.Selector.Datacenters != nil {
+			if !slices.Contains(applicationDefinition.Spec.Selector.Datacenters, cluster.Spec.Cloud.DatacenterName) {
 				continue
 			}
 		}
-		if applicationDefinition.Annotations[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue || (applicationDefinition.Annotations[appskubermaticv1.ApplicationDefaultAnnotation] == AnnotationTrueValue && !ignoreDefaultApplications) {
+
+		if applicationDefinition.Spec.Enforced || (applicationDefinition.Spec.Default && !ignoreDefaultApplications) {
 			applications = append(applications, r.generateApplicationInstallation(applicationDefinition))
 		}
 	}
@@ -255,7 +251,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 	}
 
 	// If the application is not enforced then we can't update it.
-	if application.Annotations[appskubermaticv1.ApplicationEnforceAnnotation] != AnnotationTrueValue {
+	if application.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] != "true" {
 		return nil
 	}
 
@@ -313,15 +309,25 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 		r.log.Debugf("Failed to convert default values to default values block: %v", err)
 	}
 
-	// Drop apps.kubermatic.k8c.io/target-datacenter annotation. Datacenter is a concept used in master/seed components of KKP and user clusters shouldn't be aware of it.
-	delete(application.Annotations, appskubermaticv1.ApplicationTargetDatacentersAnnotation)
 	delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
+
+	annotations := application.Annotations
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	if application.Spec.Enforced {
+		annotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
+	}
+	if application.Spec.Default {
+		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
+	}
 
 	app := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
 			Namespace:   application.Name,
-			Annotations: application.Annotations,
+			Annotations: annotations,
 			Labels:      application.Labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
@@ -349,17 +355,11 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
-		datacenters := []string{}
+		application := a.(*appskubermaticv1.ApplicationDefinition)
 
 		// Check if the application definition is enforced
-		if a.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] != AnnotationTrueValue {
+		if !application.Spec.Enforced {
 			return requests
-		}
-
-		// Check if the application is scoped to a datacenter
-		if a.GetAnnotations()[appskubermaticv1.ApplicationTargetDatacentersAnnotation] != "" {
-			// Get the datacenters the application is scoped to
-			datacenters = strings.Split(a.GetAnnotations()[appskubermaticv1.ApplicationTargetDatacentersAnnotation], ",")
 		}
 
 		// List all clusters
@@ -370,7 +370,7 @@ func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) ha
 		}
 
 		for _, cluster := range clusters.Items {
-			if len(datacenters) == 0 || slices.Contains(datacenters, cluster.Spec.Cloud.DatacenterName) {
+			if len(application.Spec.Selector.Datacenters) == 0 || slices.Contains(application.Spec.Selector.Datacenters, cluster.Spec.Cloud.DatacenterName) {
 				requests = append(requests, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Name: cluster.Name,
@@ -385,26 +385,30 @@ func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) ha
 func withEventFilter() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			if e.Object.GetDeletionTimestamp() != nil {
+			obj := e.Object.(*appskubermaticv1.ApplicationDefinition)
+			if obj.GetDeletionTimestamp() != nil {
 				return false
 			}
 
-			if e.Object.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
+			if obj.Spec.Enforced {
 				return true
 			}
 			return false
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			if e.ObjectNew.GetDeletionTimestamp() != nil {
+			oldObj := e.ObjectOld.(*appskubermaticv1.ApplicationDefinition)
+			newObj := e.ObjectNew.(*appskubermaticv1.ApplicationDefinition)
+
+			if newObj.GetDeletionTimestamp() != nil {
 				return false
 			}
-			if e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] != e.ObjectOld.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] &&
-				e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
+
+			if newObj.Spec.Enforced != oldObj.Spec.Enforced && newObj.Spec.Enforced {
 				return true
 			}
 
-			if e.ObjectNew.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
-				return e.ObjectNew.GetGeneration() != e.ObjectOld.GetGeneration()
+			if newObj.Spec.Enforced {
+				return newObj.GetGeneration() != oldObj.GetGeneration()
 			}
 			return false
 		},
@@ -412,11 +416,12 @@ func withEventFilter() predicate.Predicate {
 			return false
 		},
 		GenericFunc: func(e event.GenericEvent) bool {
-			if e.Object.GetDeletionTimestamp() != nil {
+			obj := e.Object.(*appskubermaticv1.ApplicationDefinition)
+			if obj.GetDeletionTimestamp() != nil {
 				return false
 			}
 
-			if e.Object.GetAnnotations()[appskubermaticv1.ApplicationEnforceAnnotation] == AnnotationTrueValue {
+			if obj.Spec.Enforced {
 				return true
 			}
 			return false
@@ -438,12 +443,4 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 		app.Spec.DefaultValues = nil
 	}
 	return nil
-}
-
-// Add this helper function at the end of the file.
-func ensureVersionPrefix(version string) string {
-	if !strings.HasPrefix(version, "v") {
-		return "v" + version
-	}
-	return version
 }

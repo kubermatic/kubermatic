@@ -231,6 +231,22 @@ type ApplicationDefinitionSpec struct {
 	// +optional
 	DefaultVersion string `json:"defaultVersion,omitempty"`
 
+	// Enforced specifies if the application is enforced to be installed on the user clusters. Enforced applications are
+	// installed/updated by KKP for the user clusters. Users are not allowed to update/delete them. KKP will revert the changes
+	// done by the application to the desired state specified in the ApplicationDefinition.
+	// +optional
+	Enforced bool `json:"enforced,omitempty"`
+
+	// Default specifies if the application should be installed by default when a new user cluster is created. Default applications are
+	// not enforced and users can update/delete them. KKP will only install them during cluster creation if the user didn't explicitly
+	// opt out from installing default applications.
+	// +optional
+	Default bool `json:"default,omitempty"`
+
+	// Selector is used to select the targeted user clusters for defaulting and enforcing applications. This is only used for default/enforced applications and ignored otherwise.
+	// +optional
+	Selector DefaultingSelector `json:"selector,omitempty"`
+
 	// DocumentationURL holds a link to official documentation of the Application
 	// Alternatively this can be a link to the Readme of a chart in a git repository
 	DocumentationURL string `json:"documentationURL,omitempty"`
@@ -247,6 +263,12 @@ type ApplicationDefinitionSpec struct {
 
 	// Available version for this application
 	Versions []ApplicationVersion `json:"versions"`
+}
+
+// DefaultingSelector is used to select the targeted user clusters for defaulting and enforcing applications.
+type DefaultingSelector struct {
+	// Datacenters is a list of datacenters where the application can be installed.
+	Datacenters []string `json:"datacenters,omitempty"`
 }
 
 //+kubebuilder:object:root=true

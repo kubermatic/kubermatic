@@ -448,8 +448,15 @@ func compareApplications(installedApps []appskubermaticv1.ApplicationInstallatio
 				}
 
 				// Compare annotations
-				delete(appDef.Annotations, appskubermaticv1.ApplicationTargetDatacentersAnnotation)
-				if !reflect.DeepEqual(installedApp.Annotations, appDef.Annotations) {
+				expectedAnnotations := map[string]string{}
+				if appDef.Spec.Default {
+					expectedAnnotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
+				}
+				if appDef.Spec.Enforced {
+					expectedAnnotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
+				}
+
+				if !reflect.DeepEqual(installedApp.Annotations, expectedAnnotations) {
 					return fmt.Errorf("installed app %s has incorrect annotations: expected %v, got %v", installedApp.Name, appDef.Annotations, installedApp.Annotations)
 				}
 
@@ -518,15 +525,9 @@ func genCluster(name, datacenter string, initialApplicationCondition bool) *kube
 
 func genApplicationDefinition(name, namespace, defaultVersion, defaultDatacenterName string, defaultApp, enforced bool, defaultValues string, defaultRawValues *runtime.RawExtension) *appskubermaticv1.ApplicationDefinition {
 	annotations := map[string]string{}
-	if defaultApp {
-		annotations[appskubermaticv1.ApplicationDefaultAnnotation] = "true"
-	}
-	if enforced {
-		annotations[appskubermaticv1.ApplicationEnforceAnnotation] = "true"
-	}
-
+	selector := appskubermaticv1.DefaultingSelector{}
 	if defaultDatacenterName != "" {
-		annotations[appskubermaticv1.ApplicationTargetDatacentersAnnotation] = defaultDatacenterName
+		selector.Datacenters = []string{defaultDatacenterName}
 	}
 
 	return &appskubermaticv1.ApplicationDefinition{
@@ -579,6 +580,9 @@ func genApplicationDefinition(name, namespace, defaultVersion, defaultDatacenter
 			DefaultValuesBlock: defaultValues,
 			DefaultValues:      defaultRawValues,
 			DefaultVersion:     defaultVersion,
+			Default:            defaultApp,
+			Enforced:           enforced,
+			Selector:           selector,
 		},
 	}
 }
