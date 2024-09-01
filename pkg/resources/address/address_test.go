@@ -42,6 +42,7 @@ const (
 	externalIP               = "34.89.181.151"
 	loadbBalancerHostName    = "xyz.eu-central-1.cloudprovider.test"
 	testDomain               = "dns-test.kubermatic.io"
+	testDomainWithNewIPs     = "dns-test-with-new-ips.kubermatic.io"
 	ipv6Address              = "2a01:4f8:1c0c:4b1d::1"
 )
 
@@ -49,6 +50,8 @@ func testLookupFunction(host string) ([]net.IP, error) {
 	switch host {
 	case testDomain:
 		return []net.IP{net.IPv4(192, 168, 1, 1), net.IPv4(192, 168, 1, 2)}, nil
+	case testDomainWithNewIPs:
+		return []net.IP{net.IPv4(192, 168, 1, 2), net.IPv4(192, 168, 1, 3)}, nil
 	case "fake-cluster.europe-west3-c.dev.kubermatic.io":
 		fallthrough
 	case "fake-cluster.alias-europe-west3-c.dev.kubermatic.io":
@@ -63,7 +66,19 @@ func testLookupFunction(host string) ([]net.IP, error) {
 }
 
 func TestGetExternalIP(t *testing.T) {
-	ip, err := NewModifiersBuilder(kubermaticlog.Logger).
+	modifier := NewModifiersBuilder(kubermaticlog.Logger)
+	modifier.cluster = &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fakeClusterName,
+		},
+		Status: kubermaticv1.ClusterStatus{
+			Address: kubermaticv1.ClusterAddress{
+				IP: "192.168.1.1",
+			},
+		},
+	}
+
+	ip, err := modifier.
 		lookupFunc(testLookupFunction).
 		getExternalIP(testDomain)
 	if err != nil {
@@ -72,6 +87,26 @@ func TestGetExternalIP(t *testing.T) {
 
 	if ip != "192.168.1.1" {
 		t.Fatalf("expected to get 192.168.1.1. Got: %s", ip)
+	}
+}
+
+func TestGetExternalIPWithNewAddress(t *testing.T) {
+	modifier := NewModifiersBuilder(kubermaticlog.Logger)
+	modifier.cluster = &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fakeClusterName,
+		},
+	}
+
+	ip, err := modifier.
+		lookupFunc(testLookupFunction).
+		getExternalIP(testDomainWithNewIPs)
+	if err != nil {
+		t.Fatalf("failed to get the external IP address for %s: %v", testDomainWithNewIPs, err)
+	}
+
+	if ip != "192.168.1.2" {
+		t.Fatalf("expected to get 192.168.1.2. Got: %s", ip)
 	}
 }
 
