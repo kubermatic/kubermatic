@@ -1058,6 +1058,11 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              enableConfigDrive:
+                                description: |-
+                                  Optional: enable a configuration drive that will be attached to the instance when it boots.
+                                  The instance can mount this drive and read files from it to get information
+                                type: boolean
                               enabledFlavors:
                                 description: 'Optional: List of enabled flavors for the given datacenter'
                                 items:
