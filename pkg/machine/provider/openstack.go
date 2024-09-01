@@ -119,7 +119,6 @@ func CompleteOpenstackProviderSpec(config *openstack.RawConfig, cluster *kuberma
 		if config.ConfigDrive.Value == nil && datacenter.EnableConfigDrive != nil {
 			config.ConfigDrive.Value = datacenter.EnableConfigDrive
 		}
-
 	}
 
 	if cluster != nil {
