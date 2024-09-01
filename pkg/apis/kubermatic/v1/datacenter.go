@@ -642,6 +642,9 @@ type DatacenterSpecOpenstack struct {
 	// Optional: configures enablement of topology support for the Cinder CSI Plugin.
 	// This requires Nova and Cinder to have matching availability zones configured.
 	CSICinderTopologyEnabled bool `json:"csiCinderTopologyEnabled,omitempty"`
+	// Optional: enable a configuration drive that will be attached to the instance when it boots.
+	// The instance can mount this drive and read files from it to get information
+	EnableConfigDrive *bool `json:"enableConfigDrive,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
