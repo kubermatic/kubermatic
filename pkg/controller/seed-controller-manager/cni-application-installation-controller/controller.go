@@ -235,7 +235,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	return result, nil
 }
 
-// ensureLegacyCNIAddonIsRemoved unsintalls CNI addons.
+// ensureLegacyCNIAddonIsRemoved uninstalls CNI addons.
 // It triggers the addon uninstall and checks if the addon has been uninstalled.
 // If the addon has not been uninstalled, it will requeue after 5 seconds.
 func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) (time.Duration, error) {

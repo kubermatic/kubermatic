@@ -35,6 +35,7 @@ type appOptions struct {
 	log         kubermaticlog.Options
 	caBundle    *certificates.CABundle
 	projectID   string
+	clusterName string
 }
 
 func initApplicationOptions() (appOptions, error) {
@@ -52,10 +53,10 @@ func initApplicationOptions() (appOptions, error) {
 
 	var caBundleFile string
 	var projectID string
-
+	var clusterName string
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.StringVar(&projectID, "project-id", "", "Project ID in which cluster the webhook is running in")
-
+	flag.StringVar(&clusterName, "cluster-name", "", "Cluster name in which the webhook is running in")
 	flag.Parse()
 
 	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)

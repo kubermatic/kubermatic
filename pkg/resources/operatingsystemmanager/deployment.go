@@ -94,7 +94,7 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 }
 
 // DeploymentReconcilerWithoutInitWrapper returns the function to create and update the operating system manager deployment without the
-// wrapper that checks for apiserver availabiltiy. This allows to adjust the command.
+// wrapper that checks for apiserver availability. This allows to adjust the command.
 func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {

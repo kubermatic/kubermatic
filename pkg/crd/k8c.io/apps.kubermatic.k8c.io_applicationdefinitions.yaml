@@ -42,6 +42,12 @@ spec:
             spec:
               description: ApplicationDefinitionSpec defines the desired state of ApplicationDefinition.
               properties:
+                default:
+                  description: |-
+                    Default specifies if the application should be installed by default when a new user cluster is created. Default applications are
+                    not enforced and users can update/delete them. KKP will only install them during cluster creation if the user didn't explicitly
+                    opt out from installing default applications.
+                  type: boolean
                 defaultDeployOptions:
                   description: |-
                     DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
@@ -82,6 +88,10 @@ spec:
                 defaultValuesBlock:
                   description: DefaultValuesBlock specifies default values for the UI which are passed to helm templating when creating an application. Comments are preserved.
                   type: string
+                defaultVersion:
+                  description: DefaultVersion of the application to use, if not specified the latest available version will be used.
+                  pattern: v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?
+                  type: string
                 description:
                   description: Description of the application. what is its purpose
                   type: string
@@ -93,6 +103,12 @@ spec:
                     DocumentationURL holds a link to official documentation of the Application
                     Alternatively this can be a link to the Readme of a chart in a git repository
                   type: string
+                enforced:
+                  description: |-
+                    Enforced specifies if the application is enforced to be installed on the user clusters. Enforced applications are
+                    installed/updated by KKP for the user clusters. Users are not allowed to update/delete them. KKP will revert the changes
+                    done by the application to the desired state specified in the ApplicationDefinition.
+                  type: boolean
                 logo:
                   description: Logo of the Application as a base64 encoded svg
                   type: string
@@ -107,6 +123,15 @@ spec:
                   enum:
                     - helm
                   type: string
+                selector:
+                  description: Selector is used to select the targeted user clusters for defaulting and enforcing applications. This is only used for default/enforced applications and ignored otherwise.
+                  properties:
+                    datacenters:
+                      description: Datacenters is a list of datacenters where the application can be installed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 sourceURL:
                   description: SourceURL holds a link to the official source code mirror or git repository of the application
                   type: string

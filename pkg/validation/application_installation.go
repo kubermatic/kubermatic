@@ -28,6 +28,7 @@ import (
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -173,6 +174,51 @@ func ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI appskubermatic
 		}
 	}
 
+	return allErrs
+}
+
+func ValidateApplicationInstallationDelete(ctx context.Context, client ctrlruntimeclient.Client, clusterName string, ai appskubermaticv1.ApplicationInstallation) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// If the ApplicationInstallation is already being deleted, we can't prevent the deletion.
+	if !ai.DeletionTimestamp.IsZero() {
+		return allErrs
+	}
+
+	// Defaulted/Enforced applications use the ApplicationDefinition name as their name and namespace.
+	// If the current object differs, it's not enforced and there is no need to validate further.
+	if ai.Name != ai.Spec.ApplicationRef.Name || ai.Namespace != ai.Spec.ApplicationRef.Name {
+		return allErrs
+	}
+
+	// Fetch the referenced ApplicationDefinition
+	ad := &appskubermaticv1.ApplicationDefinition{}
+	err := client.Get(ctx, types.NamespacedName{Name: ai.Spec.ApplicationRef.Name}, ad)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// If the ApplicationDefinition is not found, we can't prevent the deletion.
+			return allErrs
+		}
+		allErrs = append(allErrs, field.InternalError(field.NewPath("spec").Child("applicationRef", "name"), err))
+	}
+
+	// Check if the ApplicationDefinition is enforced and the selector matches the current cluster if any
+	if ad.Spec.Enforced && len(ad.Spec.Selector.Datacenters) == 0 {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("applicationRef", "name"),
+			fmt.Sprintf("application %q is enforced and cannot be deleted. Please contact your administrator.", ai.Name)))
+	} else if ad.Spec.Enforced && len(ad.Spec.Selector.Datacenters) > 0 {
+		cluster := &kubermaticv1.Cluster{}
+		err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster)
+		if err != nil {
+			allErrs = append(allErrs, field.InternalError(field.NewPath("spec").Child("applicationRef", "name"), err))
+		}
+
+		if slices.Contains(ad.Spec.Selector.Datacenters, cluster.Spec.Cloud.DatacenterName) {
+			// We don't want to inform the users about the selectors, if any. So keeping the error message simple.
+			allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("applicationRef", "name"),
+				fmt.Sprintf("application %q is enforced and cannot be deleted. Please contact your administrator.", ai.Name)))
+		}
+	}
 	return allErrs
 }
 

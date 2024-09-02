@@ -35,6 +35,7 @@ import (
 	cniapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cni-application-installation-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
+	defaultapplicationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/default-application-controller"
 	encryptionatrestcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/encryption-at-rest-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
@@ -82,6 +83,7 @@ var AllControllers = map[string]controllerCreator{
 	ipam.ControllerName:                                     createIPAMController,
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
 	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
+	defaultapplicationcontroller.ControllerName:             createDefaultApplicationController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
 }
@@ -456,6 +458,18 @@ func createOperatingSystemProfileController(ctrlCtx *controllerContext) error {
 	)
 }
 
+func createDefaultApplicationController(ctrlCtx *controllerContext) error {
+	return defaultapplicationcontroller.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.seedGetter,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.versions,
+	)
+}
 func createClusterCredentialsController(ctrlCtx *controllerContext) error {
 	return clustercredentialscontroller.Add(
 		ctrlCtx.mgr,

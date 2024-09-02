@@ -102,6 +102,7 @@ func DeploymentReconciler(data webhookData) reconciling.NamedDeploymentReconcile
 				fmt.Sprintf("-user-webhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-project-id=%s", projectID),
+				fmt.Sprintf("-cluster-name=%s", data.Cluster().Name),
 			}
 
 			if data.Cluster().Spec.DebugLog {

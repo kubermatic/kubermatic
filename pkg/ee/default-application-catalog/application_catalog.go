@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -98,8 +99,24 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.ApplicationDefinition) kkpreconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, kkpreconciling.ApplicationDefinitionReconciler) {
 		return appDef.Name, func(a *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
-			a.Labels = appDef.Labels
-			a.Annotations = appDef.Annotations
+			// Labels and annotations specified in the ApplicationDefinition installed on the cluster are merged with the ones specified in the ApplicationDefinition
+			// that is generated from the default application catalog.
+			kubernetes.EnsureLabels(a, appDef.Labels)
+			kubernetes.EnsureAnnotations(a, appDef.Annotations)
+
+			// State of the following fields in the cluster has a higher precedence than the one coming from the default application catalog.
+			if a.Spec.Enforced {
+				appDef.Spec.Enforced = true
+			}
+
+			if a.Spec.Default {
+				appDef.Spec.Default = true
+			}
+
+			if a.Spec.Selector.Datacenters != nil {
+				appDef.Spec.Selector.Datacenters = a.Spec.Selector.Datacenters
+			}
+
 			a.Spec = appDef.Spec
 			return a, nil
 		}

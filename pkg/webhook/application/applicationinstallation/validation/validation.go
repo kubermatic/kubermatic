@@ -37,17 +37,19 @@ import (
 
 // AdmissionHandler for validating ApplicationInstallation CRD.
 type AdmissionHandler struct {
-	log     *zap.SugaredLogger
-	decoder admission.Decoder
-	client  ctrlruntimeclient.Client
+	log         *zap.SugaredLogger
+	decoder     admission.Decoder
+	client      ctrlruntimeclient.Client
+	clusterName string
 }
 
 // NewAdmissionHandler returns a new validation AdmissionHandler.
-func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client, clusterName string) *AdmissionHandler {
 	return &AdmissionHandler{
-		log:     log,
-		decoder: admission.NewDecoder(scheme),
-		client:  client,
+		log:         log,
+		decoder:     admission.NewDecoder(scheme),
+		client:      client,
+		clusterName: clusterName,
 	}
 }
 
@@ -77,7 +79,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		allErrs = append(allErrs, validation.ValidateApplicationInstallationUpdate(ctx, h.client, *ad, *oldAD)...)
 
 	case admissionv1.Delete:
-		// NOP we always allow delete operations
+		if err := h.decoder.Decode(req, ad); err != nil {
+			return webhook.Errored(http.StatusBadRequest, err)
+		}
+		allErrs = append(allErrs, validation.ValidateApplicationInstallationDelete(ctx, h.client, h.clusterName, *ad)...)
 
 	default:
 		return webhook.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on ApplicationInstallation resources", req.Operation))
