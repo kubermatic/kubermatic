@@ -758,7 +758,11 @@ data:
             annotations:
               message: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h to complete.
               runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubecronjobrunning
-            expr: "time() - kube_cronjob_next_schedule_time{job=\"kube-state-metrics\"} > max by(namespace, cronjob) (\n  kube_cronjob_next_schedule_time - \n  kube_cronjob_status_last_schedule_time\n)\n"
+            expr: |
+              time() - kube_cronjob_next_schedule_time{job="kube-state-metrics"} > max by(namespace, cronjob) (
+                kube_cronjob_next_schedule_time -
+                kube_cronjob_status_last_schedule_time
+              )
             for: 1h
             labels:
               severity: warning

@@ -19,14 +19,21 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+  ARCH="amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+  ARCH="arm64"
+fi
+
 if ! [ -x "$(command -v promtool)" ]; then
   version=2.43.1
 
   echodate "Downloading promtool v$version..."
-
-  curl -L https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz | tar -xz
-  mv prometheus-$version.linux-amd64/promtool /usr/local/bin/
-  rm -rf prometheus-$version.linux-amd64
+  curl -L "https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.$OS-$ARCH.tar.gz" | tar -xz
+  mv prometheus-$version.$OS-$ARCH/promtool /usr/local/bin/
+  rm -rf prometheus-$version.$OS-$ARCH
 
   echodate "Done!"
 fi
