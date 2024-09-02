@@ -121,7 +121,7 @@ data:
           - alert: HttpProbeFailed
             annotations:
               message: Probing the blackbox-exporter target {{ $labels.instance }} failed.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpprobefailed
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-httpprobefailed
             expr: probe_success != 1
             for: 5m
             labels:
@@ -131,7 +131,7 @@ data:
           - alert: HttpProbeSlow
             annotations:
               message: "{{ $labels.instance }} takes {{ $value }} seconds to respond."
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpprobeslow
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-httpprobeslow
             expr: sum by (instance) (probe_http_duration_seconds) > 3
             for: 15m
             labels:
@@ -141,7 +141,7 @@ data:
           - alert: HttpCertExpiresSoon
             annotations:
               message: The certificate for {{ $labels.instance }} expires in less than 3 days.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpcertexpiressoon
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-httpcertexpiressoon
             expr: probe_ssl_earliest_cert_expiry - time() < 3*24*3600
             labels:
               severity: warning
@@ -150,7 +150,7 @@ data:
           - alert: HttpCertExpiresVerySoon
             annotations:
               message: The certificate for {{ $labels.instance }} expires in less than 24 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-httpcertexpiresverysoon
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-httpcertexpiresverysoon
             expr: probe_ssl_earliest_cert_expiry - time() < 24*3600
             labels:
               severity: critical
@@ -214,7 +214,7 @@ data:
           - alert: CertManagerCertExpiresSoon
             annotations:
               message: The certificate {{ $labels.name }} expires in less than 3 days.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-certmanagercertexpiressoon
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-certmanagercertexpiressoon
             expr: certmanager_certificate_expiration_timestamp_seconds - time() < 3*24*3600
             labels:
               severity: warning
@@ -223,7 +223,7 @@ data:
           - alert: CertManagerCertExpiresVerySoon
             annotations:
               message: The certificate {{ $labels.name }} expires in less than 24 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-certmanagercertexpiresverysoon
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-certmanagercertexpiresverysoon
             expr: certmanager_certificate_expiration_timestamp_seconds - time() < 24*3600
             labels:
               severity: critical
@@ -253,7 +253,7 @@ data:
           - alert: HelmReleaseNotDeployed
             annotations:
               message: The Helm release `{{ $labels.release }}` (`{{ $labels.chart }}` chart in namespace `{{ $labels.exported_namespace }}`) in version {{ $labels.version }} has not been ready for more than 15 minutes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-helmreleasenotdeployed
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-helmreleasenotdeployed
             expr: helm_chart_info != 1
             for: 15m
             labels:
@@ -302,7 +302,7 @@ data:
           - alert: KubernetesApiserverDown
             annotations:
               message: KubernetesApiserver has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubernetesapiserverdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubernetesapiserverdown
             expr: absent(up{job="apiserver"} == 1)
             for: 15m
             labels:
@@ -312,7 +312,7 @@ data:
           - alert: KubeAPITerminatedRequests
             annotations:
               message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
             expr: |
               sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
                 /
@@ -325,7 +325,7 @@ data:
           - alert: KubeAPITerminatedRequests
             annotations:
               message: The kubernetes apiserver has terminated {{ $value | humanizePercentage }} of its incoming requests.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeapiterminatedrequests
             expr: |
               sum(rate(apiserver_request_terminations_total{job="apiserver"}[10m]))
                 /
@@ -338,7 +338,7 @@ data:
           - alert: KubeClientCertificateExpiration
             annotations:
               message: A client certificate used to authenticate to the apiserver is expiring in less than 7 days.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
             expr: |
               apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
               and
@@ -350,7 +350,7 @@ data:
           - alert: KubeClientCertificateExpiration
             annotations:
               message: A client certificate used to authenticate to the apiserver is expiring in less than 24 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeclientcertificateexpiration
             expr: |
               apiserver_client_certificate_expiration_seconds_count{job="apiserver"} > 0
               and
@@ -383,7 +383,7 @@ data:
           - alert: KubeletDown
             annotations:
               message: Kubelet has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletdown
             expr: absent(up{job="kubelet"} == 1)
             for: 15m
             labels:
@@ -393,7 +393,7 @@ data:
           - alert: KubePersistentVolumeFillingUp
             annotations:
               message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
             expr: |
               (
                 kubelet_volume_stats_available_bytes{job="kubelet"}
@@ -414,7 +414,7 @@ data:
           - alert: KubePersistentVolumeFillingUp
             annotations:
               message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is only {{ $value | humanizePercentage }} free.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumefillingup
             expr: |
               (
                 kubelet_volume_stats_available_bytes{job="kubelet"}
@@ -435,7 +435,7 @@ data:
           - alert: KubePersistentVolumeInodesFillingUp
             annotations:
               message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} only has {{ $value | humanizePercentage }} free inodes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
             expr: |
               (
                 kubelet_volume_stats_inodes_free{job="kubelet"}
@@ -456,7 +456,7 @@ data:
           - alert: KubePersistentVolumeInodesFillingUp
             annotations:
               message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim }} in Namespace {{ $labels.namespace }} is expected to run out of inodes within four days. Currently {{ $value | humanizePercentage }} of its inodes are free.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeinodesfillingup
             expr: |
               (
                 kubelet_volume_stats_inodes_free{job="kubelet"}
@@ -479,7 +479,7 @@ data:
           - alert: KubePersistentVolumeErrors
             annotations:
               message: The persistent volume {{ $labels.persistentvolume }} has status {{ $labels.phase }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeerrors
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-name-kubepersistentvolumeerrors
             expr: |
               kube_persistentvolume_status_phase{phase=~"Failed|Pending",job="kube-state-metrics"} > 0
             for: 5m
@@ -490,7 +490,7 @@ data:
           - alert: KubeletTooManyPods
             annotations:
               message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close to the limit of 110.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubelettoomanypods
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubelettoomanypods
             expr: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
             for: 15m
             labels:
@@ -500,7 +500,7 @@ data:
           - alert: KubeletClientErrors
             annotations:
               message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f" $value }}% errors.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletclienterrors
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletclienterrors
             expr: |
               (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
                 /
@@ -515,7 +515,7 @@ data:
           - alert: KubeClientErrors
             annotations:
               message: The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{ printf "%0.0f" $value }}% errors.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeclienterrors
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeclienterrors
             expr: |
               (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="pods"}[5m])) by (namespace, pod)
                 /
@@ -529,7 +529,7 @@ data:
           - alert: KubeletRuntimeErrors
             annotations:
               message: The kubelet on {{ $labels.instance }} is having an elevated error rate for container runtime operations.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletruntimeerrors
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletruntimeerrors
             expr: |
               sum(rate(kubelet_runtime_operations_errors_total{job="kubelet"}[5m])) by (instance) > 0.1
             for: 15m
@@ -540,7 +540,7 @@ data:
           - alert: KubeletCGroupManagerDurationHigh
             annotations:
               message: The kubelet's cgroup manager duration on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletcgroupmanagerlatencyhigh
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletcgroupmanagerlatencyhigh
             expr: |
               sum(rate(kubelet_cgroup_manager_duration_seconds{quantile="0.9"}[5m])) by (instance) * 1000 > 1
             for: 15m
@@ -551,7 +551,7 @@ data:
           - alert: KubeletPodWorkerDurationHigh
             annotations:
               message: The kubelet's pod worker duration for {{ $labels.operation_type }} operations on {{ $labels.instance }} has been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeletpodworkerdurationhigh
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletpodworkerdurationhigh
             expr: |
               sum(rate(kubelet_pod_worker_duration_seconds{quantile="0.9"}[5m])) by (instance, operation_type) * 1000 > 250
             for: 15m
@@ -562,7 +562,7 @@ data:
           - alert: KubeVersionMismatch
             annotations:
               message: There are {{ $value }} different versions of Kubernetes components running.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeversionmismatch
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeversionmismatch
             expr: count(count(kubernetes_build_info{job!="dns"}) by (gitVersion)) > 1
             for: 1h
             labels:
@@ -628,7 +628,7 @@ data:
           - alert: KubeStateMetricsDown
             annotations:
               message: KubeStateMetrics has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatemetricsdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubestatemetricsdown
             expr: absent(up{job="kube-state-metrics"} == 1)
             for: 15m
             labels:
@@ -638,7 +638,7 @@ data:
           - alert: KubePodCrashLooping
             annotations:
               message: Pod {{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is restarting {{ printf "%.2f" $value }} times / 5 minutes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubepodcrashlooping
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubepodcrashlooping
             expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff", job="kube-state-metrics"}[5m]) >= 1
             for: 1h
             labels:
@@ -647,7 +647,7 @@ data:
           - alert: KubePodNotReady
             annotations:
               message: Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for longer than an hour.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubepodnotready
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubepodnotready
             expr: sum by (namespace, pod) (kube_pod_status_phase{job="kube-state-metrics", phase=~"Pending|Unknown"}) > 0
             for: 30m
             labels:
@@ -656,7 +656,7 @@ data:
           - alert: KubeDeploymentGenerationMismatch
             annotations:
               message: Deployment generation for {{ $labels.namespace }}/{{ $labels.deployment }} does not match, this indicates that the Deployment has failed but has not been rolled back.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedeploymentgenerationmismatch
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubedeploymentgenerationmismatch
             expr: |
               kube_deployment_status_observed_generation{job="kube-state-metrics"}
                 !=
@@ -668,7 +668,7 @@ data:
           - alert: KubeDeploymentReplicasMismatch
             annotations:
               message: Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has not matched the expected number of replicas for longer than an hour.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedeploymentreplicasmismatch
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubedeploymentreplicasmismatch
             expr: |
               kube_deployment_spec_replicas{job="kube-state-metrics"}
                 !=
@@ -680,7 +680,7 @@ data:
           - alert: KubeStatefulSetReplicasMismatch
             annotations:
               message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} has not matched the expected number of replicas for longer than 15 minutes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatefulsetreplicasmismatch
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubestatefulsetreplicasmismatch
             expr: |
               kube_statefulset_status_replicas_ready{job="kube-state-metrics"}
                 !=
@@ -692,7 +692,7 @@ data:
           - alert: KubeStatefulSetGenerationMismatch
             annotations:
               message: StatefulSet generation for {{ $labels.namespace }}/{{ $labels.statefulset }} does not match, this indicates that the StatefulSet has failed but has not been rolled back.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatefulsetgenerationmismatch
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubestatefulsetgenerationmismatch
             expr: |
               kube_statefulset_status_observed_generation{job="kube-state-metrics"}
                 !=
@@ -704,7 +704,7 @@ data:
           - alert: KubeStatefulSetUpdateNotRolledOut
             annotations:
               message: StatefulSet {{ $labels.namespace }}/{{ $labels.statefulset }} update has not been rolled out.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubestatefulsetupdatenotrolledout
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubestatefulsetupdatenotrolledout
             expr: |
               max without (revision) (
                 kube_statefulset_status_current_revision{job="kube-state-metrics"}
@@ -724,7 +724,7 @@ data:
           - alert: KubeDaemonSetRolloutStuck
             annotations:
               message: Only {{ $value }}% of the desired Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are scheduled and ready.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedaemonsetrolloutstuck
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubedaemonsetrolloutstuck
             expr: |
               kube_daemonset_status_number_ready{job="kube-state-metrics"}
                 /
@@ -736,7 +736,7 @@ data:
           - alert: KubeDaemonSetNotScheduled
             annotations:
               message: "{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are not scheduled."
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedaemonsetnotscheduled
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubedaemonsetnotscheduled
             expr: |
               kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"}
                 -
@@ -748,7 +748,7 @@ data:
           - alert: KubeDaemonSetMisScheduled
             annotations:
               message: "{{ $value }} Pods of DaemonSet {{ $labels.namespace }}/{{ $labels.daemonset }} are running where they are not supposed to run."
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubedaemonsetmisscheduled
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubedaemonsetmisscheduled
             expr: kube_daemonset_status_number_misscheduled{job="kube-state-metrics"} > 0
             for: 10m
             labels:
@@ -757,8 +757,12 @@ data:
           - alert: KubeCronJobRunning
             annotations:
               message: CronJob {{ $labels.namespace }}/{{ $labels.cronjob }} is taking more than 1h to complete.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecronjobrunning
-            expr: "time() - kube_cronjob_next_schedule_time{job=\"kube-state-metrics\"} > max by(namespace, cronjob) (\n  kube_cronjob_next_schedule_time - \n  kube_cronjob_status_last_schedule_time\n)\n"
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubecronjobrunning
+            expr: |
+              time() - kube_cronjob_next_schedule_time{job="kube-state-metrics"} > max by(namespace, cronjob) (
+                kube_cronjob_next_schedule_time -
+                kube_cronjob_status_last_schedule_time
+              )
             for: 1h
             labels:
               severity: warning
@@ -766,7 +770,7 @@ data:
           - alert: KubeJobCompletion
             annotations:
               message: Job {{ $labels.namespace }}/{{ $labels.job_name }} is taking more than one hour to complete.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubejobcompletion
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubejobcompletion
             expr: |
               time() - max by(namespace, job_name, cluster) (kube_job_status_start_time{job="kube-state-metrics"}
                 and
@@ -778,7 +782,7 @@ data:
           - alert: KubeJobFailed
             annotations:
               message: Job {{ $labels.namespace }}/{{ $labels.job_name }} failed to complete.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubejobfailed
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubejobfailed
             expr: kube_job_status_failed{job="kube-state-metrics"} > 0
             for: 1h
             labels:
@@ -787,7 +791,7 @@ data:
           - alert: KubeCPUOvercommit
             annotations:
               message: Cluster has overcommitted CPU resource requests for Pods by {{ $value }} CPU shares and cannot tolerate node failure.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecpuovercommit
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubecpuovercommit
             expr: |
               sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
                 -
@@ -806,7 +810,7 @@ data:
           - alert: KubeMemOvercommit
             annotations:
               message: Cluster has overcommitted memory resource requests for namespaces.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubememovercommit
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubememovercommit
             expr: |
               sum(kube_resourcequota{job="kube-state-metrics", type="hard", resource="requests.memory"})
                 /
@@ -820,7 +824,7 @@ data:
           - alert: KubeMemOvercommit
             annotations:
               message: Cluster has overcommitted memory resource requests for Pods by {{ $value }} bytes and cannot tolerate node failure.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubememovercommit
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubememovercommit
             expr: |
               sum(namespace_name:kube_pod_container_resource_requests_memory_bytes:sum)
                 -
@@ -839,7 +843,7 @@ data:
           - alert: KubeQuotaExceeded
             annotations:
               message: Namespace {{ $labels.namespace }} is using {{ printf "%0.0f" $value }}% of its {{ $labels.resource }} quota.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubequotaexceeded
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubequotaexceeded
             expr: |
               100 * kube_resourcequota{job="kube-state-metrics", type="used"}
                 / ignoring(instance, job, type)
@@ -853,7 +857,7 @@ data:
           - alert: KubePodOOMKilled
             annotations:
               message: Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} has been OOMKilled {{ $value }} times in the last 30 minutes.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubepodoomkilled
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubepodoomkilled
             expr: |
               (kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 30m >= 2)
               and
@@ -865,7 +869,7 @@ data:
           - alert: KubeNodeNotReady
             annotations:
               message: "{{ $labels.node }} has been unready for more than an hour."
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubenodenotready
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubenodenotready
             expr: kube_node_status_condition{job="kube-state-metrics",condition="Ready",status="true"} == 0
             for: 1h
             labels:
@@ -1048,7 +1052,7 @@ data:
           - alert: NodeFilesystemSpaceFillingUp
             annotations:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 24 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
             expr: |
               predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
               and
@@ -1063,7 +1067,7 @@ data:
           - alert: NodeFilesystemSpaceFillingUp
             annotations:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of space within the next 4 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemspacefillingup
             expr: |
               predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
               and
@@ -1078,7 +1082,7 @@ data:
           - alert: NodeFilesystemOutOfSpace
             annotations:
               message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
             expr: |
               node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
               and
@@ -1091,7 +1095,7 @@ data:
           - alert: NodeFilesystemOutOfSpace
             annotations:
               message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% available space left on drive {{ $labels.device }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutofspace
             expr: |
               node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
               and
@@ -1104,7 +1108,7 @@ data:
           - alert: NodeFilesystemFilesOutOfSpace
             annotations:
               message: Filesystem on node {{ $labels.node_name }} having IP {{ $labels.instance }} has only {{ $value }}% inodes available on drive {{ $labels.device }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesoutofspace
             expr: |
               node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 10
               and
@@ -1117,7 +1121,7 @@ data:
           - alert: NodeFilesystemFilesFillingUp
             annotations:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 24 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
             expr: |
               predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
               and
@@ -1132,7 +1136,7 @@ data:
           - alert: NodeFilesystemFilesFillingUp
             annotations:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted to run out of files within the next 4 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemfilesfillingup
             expr: |
               predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
               and
@@ -1147,7 +1151,7 @@ data:
           - alert: NodeFilesystemOutOfFiles
             annotations:
               message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only {{ $value }}% available inodes left.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodefilesystemoutoffiles
             expr: |
               node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
               and
@@ -1160,7 +1164,7 @@ data:
           - alert: NodeNetworkReceiveErrs
             annotations:
               message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while receiving packets ({{ $value }} errors in two minutes)."
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworkreceiveerrs
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodenetworkreceiveerrs
             expr: increase(node_network_receive_errs_total[2m]) > 10
             for: 1h
             labels:
@@ -1170,7 +1174,7 @@ data:
           - alert: NodeNetworkTransmitErrs
             annotations:
               message: "{{ $labels.instance }} interface {{ $labels.device }} shows errors while transmitting packets ({{ $value }} errors in two minutes)."
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-nodenetworktransmiterrs
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-nodenetworktransmiterrs
             expr: increase(node_network_transmit_errs_total[2m]) > 10
             for: 1h
             labels:
@@ -1210,7 +1214,7 @@ data:
           - alert: PromScrapeFailed
             annotations:
               message: Prometheus failed to scrape a target {{ $labels.job }} / {{ $labels.instance }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promscrapefailed
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promscrapefailed
             expr: up != 1
             for: 15m
             labels:
@@ -1220,7 +1224,7 @@ data:
           - alert: PromBadConfig
             annotations:
               message: Prometheus failed to reload config.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-prombadconfig
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-prombadconfig
             expr: prometheus_config_last_reload_successful{job="prometheus"} == 0
             for: 15m
             labels:
@@ -1230,7 +1234,7 @@ data:
           - alert: PromAlertmanagerBadConfig
             annotations:
               message: Alertmanager failed to reload config.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promalertmanagerbadconfig
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promalertmanagerbadconfig
             expr: alertmanager_config_last_reload_successful{job="alertmanager"} == 0
             for: 10m
             labels:
@@ -1240,7 +1244,7 @@ data:
           - alert: PromAlertsFailed
             annotations:
               message: Alertmanager failed to send an alert.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promalertsfailed
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promalertsfailed
             expr: sum(increase(alertmanager_notifications_failed_total{job="alertmanager"}[5m])) by (namespace) > 0
             for: 5m
             labels:
@@ -1250,7 +1254,7 @@ data:
           - alert: PromRemoteStorageFailures
             annotations:
               message: Prometheus failed to send {{ printf "%.1f" $value }}% samples.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promremotestoragefailures
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promremotestoragefailures
             expr: |
               (rate(prometheus_remote_storage_failed_samples_total{job="prometheus"}[1m]) * 100)
                 /
@@ -1264,7 +1268,7 @@ data:
           - alert: PromRuleFailures
             annotations:
               message: Prometheus failed to evaluate {{ printf "%.1f" $value }} rules/sec.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-promrulefailures
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-promrulefailures
             expr: rate(prometheus_rule_evaluation_failures_total{job="prometheus"}[1m]) > 0
             for: 15m
             labels:
@@ -1295,7 +1299,7 @@ data:
           - alert: VeleroBackupTakesTooLong
             annotations:
               message: Last backup with schedule {{ $labels.schedule }} has not finished successfully within 60min.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-velerobackuptakestoolong
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-velerobackuptakestoolong
             expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600
             for: 5m
             labels:
@@ -1305,7 +1309,7 @@ data:
           - alert: VeleroNoRecentBackup
             annotations:
               message: There has not been a successful backup for schedule {{ $labels.schedule }} in the last 24 hours.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-veleronorecentbackup
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-veleronorecentbackup
             expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
             labels:
               severity: critical
@@ -1373,7 +1377,7 @@ data:
           - alert: KubermaticAPIDown
             annotations:
               message: KubermaticAPI has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticapidown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticapidown
             expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-api"} == 1)
             for: 15m
             labels:
@@ -1382,7 +1386,7 @@ data:
           - alert: KubermaticAPITooManyErrors
             annotations:
               message: Kubermatic API is returning a high rate of HTTP 5xx responses.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticapitoomanyerrors
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticapitoomanyerrors
             expr: sum(rate(http_requests_total{app_kubernetes_io_name="kubermatic-api",code=~"5.."}[5m])) > 0.1
             for: 15m
             labels:
@@ -1398,7 +1402,7 @@ data:
           - alert: KubermaticMasterControllerManagerDown
             annotations:
               message: Kubermatic Master Controller Manager has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticmastercontrollermanagerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticmastercontrollermanagerdown
             expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-master-controller-manager"} == 1)
             for: 15m
             labels:
@@ -1407,7 +1411,7 @@ data:
           - alert: KubermaticSeedNotHealthy
             annotations:
               message: The Seed cluster {{ $labels.seed_name }} cannot be reached or reconciled properly.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticseednothealthy
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticseednothealthy
             expr: kubermatic_seed_info{phase!="Healthy"}
             for: 5m
             labels:
@@ -1437,7 +1441,7 @@ data:
           - alert: KubermaticTooManyUnhandledErrors
             annotations:
               message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing too many errors.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermatictoomanyunhandlederrors
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermatictoomanyunhandlederrors
             expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
             for: 10m
             labels:
@@ -1447,7 +1451,7 @@ data:
           - alert: KubermaticClusterDeletionTakesTooLong
             annotations:
               message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticclusterdeletiontakestoolong
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticclusterdeletiontakestoolong
             expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
             for: 0m
             labels:
@@ -1457,7 +1461,7 @@ data:
           - alert: KubermaticAddonDeletionTakesTooLong
             annotations:
               message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticaddondeletiontakestoolong
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticaddondeletiontakestoolong
             expr: (time() - max by (cluster,addon) (kubermatic_addon_deleted)) > 30*60
             for: 0m
             labels:
@@ -1467,7 +1471,7 @@ data:
           - alert: KubermaticAddonTakesTooLongToReconcile
             annotations:
               message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related resources created for more than 30min.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticaddonreconciliationtakestoolong
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticaddonreconciliationtakestoolong
             expr: |
               kubermatic_addon_reconcile_failed * on(cluster) group_left() max by(cluster) (kubermatic_cluster_created)
               - kubermatic_addon_reconcile_failed * on(cluster) group_left() max by(cluster) (kubermatic_cluster_deleted)
@@ -1480,7 +1484,7 @@ data:
           - alert: KubermaticSeedControllerManagerDown
             annotations:
               message: Kubermatic Seed Controller Manager has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubermaticseedcontrollermanagerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubermaticseedcontrollermanagerdown
             expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-seed-controller-manager"} == 1)
             for: 15m
             labels:
@@ -1489,7 +1493,7 @@ data:
           - alert: OpenVPNServerDown
             annotations:
               message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-openvpnserverdown
             expr: (kube_deployment_status_replicas_available{cluster!="",deployment="openvpn-server"} != kube_deployment_spec_replicas{cluster!="",deployment="openvpn-server"}) and count(kubermatic_cluster_info) > 0
             for: 15m
             labels:
@@ -1499,7 +1503,7 @@ data:
           - alert: UserClusterPrometheusAbsent
             annotations:
               message: There is no Prometheus in cluster {{ $labels.name }}.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
             expr: |
               (
                 kubermatic_cluster_info * on (name) group_left
@@ -1553,7 +1557,7 @@ data:
           - alert: KubeControllerManagerDown
             annotations:
               message: No healthy controller-manager pods exist inside the cluster.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubecontrollermanagerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubecontrollermanagerdown
             expr: absent(:ready_kube_controller_managers:sum) or :ready_kube_controller_managers:sum == 0
             for: 10m
             labels:
@@ -1591,7 +1595,7 @@ data:
           - alert: KubeSchedulerDown
             annotations:
               message: No healthy scheduler pods exist inside the cluster.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-kubeschedulerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeschedulerdown
             expr: absent(:ready_kube_schedulers:sum) or :ready_kube_schedulers:sum == 0
             for: 10m
             labels:
@@ -1622,7 +1626,7 @@ data:
           - alert: CortexDistributorDown
             annotations:
               message: Cortex-distributor has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexdistributordown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexdistributordown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="distributor",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1632,7 +1636,7 @@ data:
           - alert: CortexQuerierDown
             annotations:
               message: Cortex-querier has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexquerierdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexquerierdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="querier",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1642,7 +1646,7 @@ data:
           - alert: CortexQueryFrontendDown
             annotations:
               message: Cortex-query-frontend has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexqueryfrontenddown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexqueryfrontenddown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="query-frontend",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1652,7 +1656,7 @@ data:
           - alert: CortexRulerDown
             annotations:
               message: Cortex-ruler has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexrulerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexrulerdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ruler",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1662,7 +1666,7 @@ data:
           - alert: CortexMemcachedBlocksDown
             annotations:
               message: Cortex-memcached-blocks has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksdown
             expr: absent(up{job="pods",namespace="mla", app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks"} == 1)
             for: 15m
             labels:
@@ -1672,7 +1676,7 @@ data:
           - alert: CortexMemcachedBlocksMetadataDown
             annotations:
               message: Cortex-memcached-blocks-metadata has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksmetadatadown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksmetadatadown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks-metadata"} == 1)
             for: 15m
             labels:
@@ -1682,7 +1686,7 @@ data:
           - alert: CortexMemcachedBlocksIndexDown
             annotations:
               message: Cortex-memcached-blocks-index has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksindexdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexmemcachedblocksindexdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_instance="cortex",app_kubernetes_io_name="memcached-blocks-index"} == 1)
             for: 15m
             labels:
@@ -1692,7 +1696,7 @@ data:
           - alert: CortexAlertmanagerDown
             annotations:
               message: Cortex-alertmanager has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexalertmanagerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexalertmanagerdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="alertmanager",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1702,7 +1706,7 @@ data:
           - alert: CortexCompactorDown
             annotations:
               message: Cortex-compactor has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexcompactordown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexcompactordown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="compactor",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1712,7 +1716,7 @@ data:
           - alert: CortexIngesterDown
             annotations:
               message: Cortex-ingester has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexingesterdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexingesterdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ingester",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1722,7 +1726,7 @@ data:
           - alert: CortexStoreGatewayDown
             annotations:
               message: Cortex-store-gateway has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-cortexstoregatewaydown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-cortexstoregatewaydown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="store-gateway",app_kubernetes_io_name="cortex"} == 1)
             for: 15m
             labels:
@@ -1753,7 +1757,7 @@ data:
           - alert: LokiIngesterDown
             annotations:
               message: Loki-ingester has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokiingesterdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokiingesterdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ingester",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1763,7 +1767,7 @@ data:
           - alert: LokiDistributorDown
             annotations:
               message: Loki-distributor has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokidistributordown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokidistributordown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="distributor",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1773,7 +1777,7 @@ data:
           - alert: LokiQuerierDown
             annotations:
               message: Loki-querier has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokiquerierdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokiquerierdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="querier",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1783,7 +1787,7 @@ data:
           - alert: LokiQueryFrontendDown
             annotations:
               message: Loki-query-frontend has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokiqueryfrontenddown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokiqueryfrontenddown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="query-frontend",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1793,7 +1797,7 @@ data:
           - alert: LokiTableManagerDown
             annotations:
               message: Loki-table-manager has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokitablemanagerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokitablemanagerdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="table-manager",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1803,7 +1807,7 @@ data:
           - alert: LokiCompactorDown
             annotations:
               message: Loki-compactor has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokicompactordown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokicompactordown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="compactor",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1813,7 +1817,7 @@ data:
           - alert: LokiRulerDown
             annotations:
               message: Loki-ruler has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokirulerdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokirulerdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="ruler",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1823,7 +1827,7 @@ data:
           - alert: LokiMemcachedChunksDown
             annotations:
               message: Loki-memcached-chunks has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedchunksdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokimemcachedchunksdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-chunks",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1833,7 +1837,7 @@ data:
           - alert: LokiMemcachedFrontendDown
             annotations:
               message: Loki-memcached-frontend has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedfrontenddown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokimemcachedfrontenddown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-frontend",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1843,7 +1847,7 @@ data:
           - alert: LokiMemcachedIndexQueriesDown
             annotations:
               message: Loki-memcached-index-queries has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedindexqueriesdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokimemcachedindexqueriesdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-index-queries",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:
@@ -1853,7 +1857,7 @@ data:
           - alert: LokiMemcachedIndexWritesDown
             annotations:
               message: Loki-memcached-index-writes has disappeared from Prometheus target discovery.
-              runbook_url: https://docs.kubermatic.com/kubermatic/main/cheat-sheets/alerting-runbook/#alert-lokimemcachedindexwritesdown
+              runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-lokimemcachedindexwritesdown
             expr: absent(up{job="pods",namespace="mla",app_kubernetes_io_component="memcached-index-writes",app_kubernetes_io_name="loki-distributed"} == 1)
             for: 15m
             labels:

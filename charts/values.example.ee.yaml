@@ -28,13 +28,13 @@ dex:
     # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
     secret: <a-random-key>
     RedirectURIs:
-    # ensure the URLs below use the dex.ingress.host configured above
-    - https://kkp.example.com
-    - https://kkp.example.com/projects
+      # ensure the URLs below use the dex.ingress.host configured above
+      - https://kkp.example.com
+      - https://kkp.example.com/projects
 
     # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
     # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
-    # More about this configuration at https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
+    # More about this configuration at https://docs.kubermatic.com/kubermatic/latest/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
   - id: kubermaticIssuer
     name: Kubermatic OIDC Issuer
     # Generate a secure secret key
@@ -85,7 +85,7 @@ kubermaticOperator:
     }
 
 minio:
-  storeSize: '500Gi'
+  storeSize: "500Gi"
   storageClass: minio-hdd
 
 telemetry:
