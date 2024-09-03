@@ -439,6 +439,7 @@ const (
 	ClusterConditionApplicationInstallationControllerReconcilingSuccess          ClusterConditionType = "ApplicationInstallationControllerReconciledSuccessfully"
 	ClusterConditionDefaultApplicationInstallationControllerReconcilingSuccess   ClusterConditionType = "DefaultApplicationInstallationControllerReconciledSuccessfully"
 	ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully ClusterConditionType = "DefaultApplicationsCreatedSuccessfully"
+	ClusterConditionOperatingSystemManagerMigratorControllerReconcilingSuccess   ClusterConditionType = "OperatingSystemManagerMigratorControllerReconciledSuccessfully"
 	ClusterConditionKubeLBControllerReconcilingSuccess                           ClusterConditionType = "KubeLBControllerReconciledSuccessfully"
 	ClusterConditionCNIControllerReconcilingSuccess                              ClusterConditionType = "CNIControllerReconciledSuccessfully"
 	ClusterConditionMLAControllerReconcilingSuccess                              ClusterConditionType = "MLAControllerReconciledSuccessfully"

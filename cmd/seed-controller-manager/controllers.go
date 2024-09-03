@@ -45,6 +45,7 @@ import (
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
+	operatingsystemmanagermigrator "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-manager-migrator"
 	operatingsystemprofilesynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-profile-synchronizer"
 	presetcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/preset-controller"
 	projectcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/project"
@@ -83,6 +84,7 @@ var AllControllers = map[string]controllerCreator{
 	ipam.ControllerName:                                     createIPAMController,
 	clusterstuckcontroller.ControllerName:                   createClusterStuckController,
 	operatingsystemprofilesynchronizer.ControllerName:       createOperatingSystemProfileController,
+	operatingsystemmanagermigrator.ControllerName:           createOperatingSystemManagerMigratorController,
 	defaultapplicationcontroller.ControllerName:             createDefaultApplicationController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
@@ -458,6 +460,17 @@ func createOperatingSystemProfileController(ctrlCtx *controllerContext) error {
 	)
 }
 
+func createOperatingSystemManagerMigratorController(ctrlCtx *controllerContext) error {
+	return operatingsystemmanagermigrator.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.versions,
+	)
+}
+
 func createDefaultApplicationController(ctrlCtx *controllerContext) error {
 	return defaultapplicationcontroller.Add(
 		ctrlCtx.ctx,
@@ -470,6 +483,7 @@ func createDefaultApplicationController(ctrlCtx *controllerContext) error {
 		ctrlCtx.versions,
 	)
 }
+
 func createClusterCredentialsController(ctrlCtx *controllerContext) error {
 	return clustercredentialscontroller.Add(
 		ctrlCtx.mgr,
