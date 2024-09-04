@@ -241,7 +241,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		}
 	}
 
-	// All machines will live in one or more dedicated security group.
+	// Reconcile the security group(s)
 	if force || cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		cluster, err = reconcileSecurityGroups(ctx, netClient, cluster, update)
 		if err != nil {
@@ -304,7 +304,7 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 	_, err = createUserClusterNetwork(netClient, networkName)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create the kubermatic network: %w", err)
+		return nil, fmt.Errorf("failed to create the network: %w", err)
 	}
 
 	return cluster, nil
@@ -488,7 +488,7 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		// Proceed to create a new subnet
 		subnet, err = createSubnet(netClient, cluster.Name, network, dnservers)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create the kubermatic IPv4 subnet: %w", err)
+			return nil, fmt.Errorf("failed to create the IPv4 subnet: %w", err)
 		}
 
 		// Update the cluster spec with the new subnet ID
