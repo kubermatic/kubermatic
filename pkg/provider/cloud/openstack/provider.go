@@ -132,7 +132,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.SecurityGroups != "" {
-		if err := validateSecurityGroupsExist(netClient, strings.Split(spec.Openstack.SecurityGroups, ",")); err != nil {
+		if err := validateSecurityGroupsExist(netClient, splitString(spec.Openstack.SecurityGroups)); err != nil {
 			return err
 		}
 	}
@@ -241,9 +241,9 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		}
 	}
 
-	// All machines will live in one dedicated security group.
+	// All machines will live in one or more dedicated security group.
 	if force || cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		cluster, err = reconcileSecurityGroup(ctx, netClient, cluster, update)
+		cluster, err = reconcileSecurityGroups(ctx, netClient, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -350,12 +350,12 @@ func fetchExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, 
 	return cluster, err
 }
 
-func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	securityGroup := cluster.Spec.Cloud.Openstack.SecurityGroups
+func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	securityGroups := cluster.Spec.Cloud.Openstack.SecurityGroups
 
-	// if we already have an ID on the cluster, check if that group still exists
-	if securityGroup != "" {
-		err := validateSecurityGroupsExist(netClient, []string{securityGroup})
+	// if we already have an ID/IDs on the cluster, check if those groups still exists
+	if securityGroups != "" {
+		err := validateSecurityGroupsExist(netClient, []string{securityGroups})
 		if err != nil {
 			if !isNotFoundErr(err) {
 				return cluster, fmt.Errorf("failed to get security groups: %w", err)
@@ -364,8 +364,8 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 			return cluster, nil
 		}
 	}
-	if securityGroup == "" {
-		securityGroup = resourceNamePrefix + cluster.Name
+	if securityGroups == "" {
+		securityGroups = resourceNamePrefix + cluster.Name
 	}
 
 	lowPort, highPort := resources.NewTemplateDataBuilder().
@@ -378,7 +378,7 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
 
 	req := createSecurityGroupRequest{
-		secGroupName: securityGroup,
+		secGroupName: securityGroups,
 		ipv4Rules:    ipv4Network,
 		ipv6Rules:    ipv6Network,
 		lowPort:      lowPort,
@@ -389,7 +389,7 @@ func reconcileSecurityGroup(ctx context.Context, netClient *gophercloud.ServiceC
 
 	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
-		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
+		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroups
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to add security group name to cluster: %w", err)
@@ -626,8 +626,8 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 	}
 
 	if kubernetes.HasFinalizer(cluster, SecurityGroupCleanupFinalizer) {
-		for _, g := range strings.Split(cluster.Spec.Cloud.Openstack.SecurityGroups, ",") {
-			if err := deleteSecurityGroup(netClient, strings.TrimSpace(g)); err != nil {
+		for _, g := range splitString(cluster.Spec.Cloud.Openstack.SecurityGroups) {
+			if err := deleteSecurityGroup(netClient, g); err != nil {
 				if !isNotFoundErr(err) {
 					return nil, fmt.Errorf("failed to delete security group %q: %w", g, err)
 				}
@@ -1095,4 +1095,17 @@ func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region
 	}
 
 	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
+}
+
+func splitString(s string) []string {
+	parts := strings.Split(s, ",")
+	for i, part := range parts {
+		parts[i] = strings.TrimSpace(part)
+	}
+
+	return parts
+}
+
+func joinStrings(parts []string) string {
+	return strings.Join(parts, ",")
 }
