@@ -355,7 +355,7 @@ func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.Service
 
 	// if we already have an ID/IDs on the cluster, check if those groups still exists
 	if securityGroups != "" {
-		err := validateSecurityGroupsExist(netClient, []string{securityGroups})
+		err := validateSecurityGroupsExist(netClient, splitString(securityGroups))
 		if err != nil {
 			if !isNotFoundErr(err) {
 				return cluster, fmt.Errorf("failed to get security groups: %w", err)
@@ -1104,8 +1104,4 @@ func splitString(s string) []string {
 	}
 
 	return parts
-}
-
-func joinStrings(parts []string) string {
-	return strings.Join(parts, ",")
 }
