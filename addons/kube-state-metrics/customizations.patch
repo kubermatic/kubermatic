@@ -1,0 +1,18 @@
+--- a/addons/kube-state-metrics/kube-state-metrics.yaml
++++ b/addons/kube-state-metrics/kube-state-metrics.yaml
+@@ -14,6 +14,7 @@
+
+ # This file was generated, DO NOT EDIT.
+ # Run `make` instead.
++{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
+ apiVersion: networking.k8s.io/v1
+ kind: NetworkPolicy
+ metadata:
+@@ -53,6 +54,7 @@ spec:
+     - Ingress
+     - Egress
+ ---
++{{ end }}
+ apiVersion: policy/v1
+ kind: PodDisruptionBudget
+ metadata:

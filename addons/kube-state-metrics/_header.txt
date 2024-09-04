@@ -12,13 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: policy/v1
-kind: PodDisruptionBudget
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
-spec:
-  minAvailable: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: kube-state-metrics
+# This file was generated, DO NOT EDIT.
+# Run `make` instead.
