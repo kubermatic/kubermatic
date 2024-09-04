@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -52,6 +54,8 @@ var (
 			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
+
+	gte131, _ = semverlib.NewConstraint(">= 1.31")
 )
 
 const (
@@ -451,9 +455,21 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		)
 	}
 
-	if fg := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver()); len(fg) > 0 {
+	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
+
+	version := cluster.Status.Versions.Apiserver.Semver()
+	if gte131.Check(version) {
+		// enable recommended CEL cost feature gates (Kube 1.31+), as per
+		// https://github.com/kubernetes/kubernetes/pull/124675
+		featureGates = append(featureGates,
+			"StrictCostEnforcementForVAP=true",
+			"StrictCostEnforcementForWebhooks=true",
+		)
+	}
+
+	if len(featureGates) > 0 {
 		flags = append(flags, "--feature-gates")
-		flags = append(flags, strings.Join(fg, ","))
+		flags = append(flags, strings.Join(featureGates, ","))
 	}
 
 	if data.IsKonnectivityEnabled() {

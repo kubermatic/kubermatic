@@ -117,6 +117,8 @@ func getOSFlags(data *resources.TemplateData) []string {
 
 func OpenStackCCMTag(version semver.Semver) (string, error) {
 	// https://github.com/kubernetes/cloud-provider-openstack/releases
+	// gcrane ls --json registry.k8s.io/provider-os/openstack-cloud-controller-manager | jq -r '.tags[]'
+
 	switch version.MajorMinor() {
 	case v126:
 		return "v1.26.4", nil
@@ -127,6 +129,8 @@ func OpenStackCCMTag(version semver.Semver) (string, error) {
 	case v129:
 		return "v1.29.0", nil
 	case v130:
+		fallthrough
+	case v131:
 		return "v1.30.0", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)

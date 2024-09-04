@@ -36,13 +36,16 @@
 {{ $version = "v1.27.3" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.1" }}
+{{ $version = "v1.28.2" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.29" }}
 {{ $version = "v1.29.0" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.30" }}
-{{ $version = "v1.29.0" }}
+{{ $version = "v1.30.0" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.31" }}
+{{ $version = "v1.30.0" }}
 {{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 kind: Deployment

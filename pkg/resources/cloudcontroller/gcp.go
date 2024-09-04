@@ -218,7 +218,7 @@ func getGCPInitContainer(data *resources.TemplateData) corev1.Container {
 func GCPCCMVersion(version semver.Semver) string {
 	// https://github.com/kubernetes/cloud-provider-gcp/tags
 	// Image promotion is known to be laggy, so you can also check the registry contents directly:
-	// https://explore.ggcr.dev/?repo=registry.k8s.io%2Fcloud-provider-gcp%2Fcloud-controller-manager
+	// gcrane ls --json registry.k8s.io/cloud-provider-gcp/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
 	case v126:
@@ -230,6 +230,8 @@ func GCPCCMVersion(version semver.Semver) string {
 	case v129:
 		return "v29.0.0"
 	case v130:
+		fallthrough
+	case v131:
 		fallthrough
 	default:
 		return "v30.0.0"
