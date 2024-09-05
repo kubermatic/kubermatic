@@ -18,7 +18,6 @@ package resources
 
 import (
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -30,6 +29,7 @@ import (
 
 const (
 	AgentDaemonSetName = "flatcar-linux-update-agent"
+	operatorVersion    = "v0.7.3"
 )
 
 var (
@@ -64,7 +64,7 @@ func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-agent",
-					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:v0.7.3")),
+					Image:   operatorImage(imageRewriter),
 					Command: []string{"/bin/update-agent"},
 					SecurityContext: &corev1.SecurityContext{
 						RunAsUser: &userCore,

@@ -86,7 +86,7 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-operator",
-					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:v0.7.3")),
+					Image:   operatorImage(imageRewriter),
 					Command: []string{"/bin/update-operator"},
 					Env:     env,
 				},
@@ -95,4 +95,8 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 			return dep, nil
 		}
 	}
+}
+
+func operatorImage(imageRewriter registry.ImageRewriter) string {
+	return registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:" + operatorVersion))
 }
