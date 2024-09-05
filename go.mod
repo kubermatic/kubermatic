@@ -87,6 +87,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.3
+	k8c.io/kubelb v1.1.0
 	k8c.io/kubeone v1.7.3
 	k8c.io/operating-system-manager v1.5.1-0.20240814211720-9da099ea37a5
 	k8c.io/reconciler v0.5.0
@@ -113,8 +114,6 @@ require (
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
-
-require k8c.io/kubelb v1.1.0
 
 require (
 	cel.dev/expr v0.15.0 // indirect

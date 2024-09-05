@@ -54,9 +54,6 @@ resourceTypes:
   # gatekeeper/v1
   - { package: github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1, resourceName: ConstraintTemplate, importAlias: gatekeeperv1, apiVersionPrefix: Gatekeeper }
 
-  # kubelb/v1alpha1
-  - { package: k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1, resourceName: Tenant }
-
   # osm/v1alpha1
   - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemProfile }
   - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemConfig }

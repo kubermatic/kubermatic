@@ -1,4 +1,4 @@
-//-go:build ee
+//go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
@@ -373,23 +373,3 @@ func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Cli
 
 	return secret, nil
 }
-
-const kubeconfigTemplate = `apiVersion: v1
-kind: Config
-clusters:
-- name: kubelb-cluster
-  cluster:
-    certificate-authority-data: {{ .CA_Certificate }}
-    server: {{ .ServerURL }}
-contexts:
-- name: default-context
-  context:
-    cluster: kubelb-cluster
-    namespace: {{ .Namespace }}
-    user: default-user
-current-context: default-context
-users:
-- name: default-user
-  user:
-    token: {{ .Token }}
-`

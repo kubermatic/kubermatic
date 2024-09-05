@@ -32,6 +32,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -154,6 +155,10 @@ func main() {
 	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
 	}
+	if err := kubelbv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubelbv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
 	if err := mgr.GetAPIReader().List(rootCtx, &autoscalingv1.VerticalPodAutoscalerList{}); err != nil {
 		if meta.IsNoMatchError(err) {

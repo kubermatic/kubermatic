@@ -26,7 +26,6 @@ import (
 
 	gatekeeperv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
-	kubelbk8ciov1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
@@ -919,43 +918,6 @@ func ReconcileGatekeeperConstraintTemplates(ctx context.Context, namedFactories 
 
 		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &gatekeeperv1.ConstraintTemplate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %w", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
-// TenantReconciler defines an interface to create/update Tenants.
-type TenantReconciler = func(existing *kubelbk8ciov1alpha1.Tenant) (*kubelbk8ciov1alpha1.Tenant, error)
-
-// NamedTenantReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
-type NamedTenantReconcilerFactory = func() (name string, reconciler TenantReconciler)
-
-// TenantObjectWrapper adds a wrapper so the TenantReconciler matches ObjectReconciler.
-// This is needed as Go does not support function interface matching.
-func TenantObjectWrapper(reconciler TenantReconciler) reconciling.ObjectReconciler {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-		if existing != nil {
-			return reconciler(existing.(*kubelbk8ciov1alpha1.Tenant))
-		}
-		return reconciler(&kubelbk8ciov1alpha1.Tenant{})
-	}
-}
-
-// ReconcileTenants will create and update the Tenants coming from the passed TenantReconciler slice.
-func ReconcileTenants(ctx context.Context, namedFactories []NamedTenantReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
-	for _, factory := range namedFactories {
-		name, reconciler := factory()
-		reconcileObject := TenantObjectWrapper(reconciler)
-		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
-		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			reconcileObject = objectModifier(reconcileObject)
-		}
-
-		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubelbk8ciov1alpha1.Tenant{}, false); err != nil {
-			return fmt.Errorf("failed to ensure Tenant %s/%s: %w", namespace, name, err)
 		}
 	}
 
