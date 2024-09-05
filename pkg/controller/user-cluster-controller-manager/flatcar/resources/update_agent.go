@@ -29,7 +29,6 @@ import (
 
 const (
 	AgentDaemonSetName = "flatcar-linux-update-agent"
-	operatorVersion    = "v0.7.3"
 )
 
 var (

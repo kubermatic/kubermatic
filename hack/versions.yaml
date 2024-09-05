@@ -310,7 +310,7 @@ products:
       - helmChart: { directory: charts/oauth }
 
   - name: Flatcar Linux Update Operator
-    source: https://github.com/kinvolk/flatcar-linux-update-operator
+    source: https://github.com/flatcar/flatcar-linux-update-operator
     occurrences:
       - goConstant:
           package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources

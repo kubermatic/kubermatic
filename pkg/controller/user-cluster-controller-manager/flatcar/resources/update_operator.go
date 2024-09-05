@@ -18,7 +18,6 @@ package resources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -30,6 +29,7 @@ import (
 
 const (
 	OperatorDeploymentName = "flatcar-linux-update-operator"
+	operatorVersion        = "v0.9.0"
 )
 
 var (
@@ -98,5 +98,5 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 }
 
 func operatorImage(imageRewriter registry.ImageRewriter) string {
-	return registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:" + operatorVersion))
+	return registry.Must(imageRewriter("ghcr.io/flatcar/flatcar-linux-update-operator:" + operatorVersion))
 }

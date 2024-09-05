@@ -108,7 +108,7 @@ func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
 }
 
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
-// https://github.com/kinvolk/flatcar-linux-update-operator
+// https://github.com/flatcar/flatcar-linux-update-operator
 func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error {
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		resources.OperatorServiceAccountReconciler(),
