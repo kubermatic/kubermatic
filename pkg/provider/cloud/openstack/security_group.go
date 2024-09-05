@@ -45,13 +45,20 @@ func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygrou
 
 func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
 	for _, sg := range securityGroups {
-		results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sg})
-		if err != nil {
-			return fmt.Errorf("failed to get security group: %w", err)
+		if err := validateSecurityGroupExists(netClient, sg); err != nil {
+			return err
 		}
-		if len(results) == 0 {
-			return fmt.Errorf("specified security group %s not found", sg)
-		}
+	}
+	return nil
+}
+
+func validateSecurityGroupExists(netClient *gophercloud.ServiceClient, securityGroup string) error {
+	results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: securityGroup})
+	if err != nil {
+		return fmt.Errorf("failed to get security group: %w", err)
+	}
+	if len(results) == 0 {
+		return fmt.Errorf("specified security group %s not found", securityGroup)
 	}
 	return nil
 }
@@ -75,8 +82,8 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 	return nil
 }
 
-type createSecurityGroupRequest struct {
-	secGroupName   string
+type securityGroupSpec struct {
+	name           string
 	ipv4Rules      bool
 	ipv6Rules      bool
 	nodePortsCIDRs kubermaticv1.NetworkRanges
@@ -84,8 +91,8 @@ type createSecurityGroupRequest struct {
 	highPort       int
 }
 
-func createSecurityGroup(netClient *gophercloud.ServiceClient, req createSecurityGroupRequest) (string, error) {
-	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: req.secGroupName})
+func ensureSecurityGroup(netClient *gophercloud.ServiceClient, req securityGroupSpec) (string, error) {
+	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: req.name})
 	if err != nil {
 		return "", fmt.Errorf("failed to get security groups: %w", err)
 	}
@@ -94,7 +101,7 @@ func createSecurityGroup(netClient *gophercloud.ServiceClient, req createSecurit
 	switch len(secGroups) {
 	case 0:
 		gres := ossecuritygroups.Create(netClient, ossecuritygroups.CreateOpts{
-			Name:        req.secGroupName,
+			Name:        req.name,
 			Description: "Contains security rules for the Kubernetes worker nodes",
 		})
 		if gres.Err != nil {
@@ -109,7 +116,7 @@ func createSecurityGroup(netClient *gophercloud.ServiceClient, req createSecurit
 		securityGroupID = secGroups[0].ID
 	default:
 		return "", fmt.Errorf("there are already %d security groups with name %q, dont know which one to use",
-			len(secGroups), req.secGroupName)
+			len(secGroups), req.name)
 	}
 
 	var rules []ossecuritygrouprules.CreateOpts
@@ -200,29 +207,35 @@ func createSecurityGroup(netClient *gophercloud.ServiceClient, req createSecurit
 	}
 
 	for _, opts := range rules {
-	reiterate:
-		rres := ossecuritygrouprules.Create(netClient, opts)
-		if rres.Err != nil {
-			var unexpected gophercloud.ErrUnexpectedResponseCode
-			if errors.As(rres.Err, &unexpected) && unexpected.Actual == http.StatusConflict {
-				// already exists
-				continue
-			}
-
-			if errors.As(rres.Err, &gophercloud.ErrDefault400{}) && opts.Protocol == ossecuritygrouprules.ProtocolIPv6ICMP {
-				// workaround for old versions of Openstack with different protocol name,
-				// from before https://review.opendev.org/#/c/252155/
-				opts.Protocol = "icmpv6"
-				goto reiterate // I'm very sorry, but this was really the cleanest way.
-			}
-
-			return "", rres.Err
-		}
-
-		if _, err := rres.Extract(); err != nil {
+		if err := ensureSecurityGroupRule(netClient, opts); err != nil {
 			return "", err
 		}
 	}
 
-	return req.secGroupName, nil
+	return req.name, nil
+}
+
+func ensureSecurityGroupRule(netClient *gophercloud.ServiceClient, opts ossecuritygrouprules.CreateOpts) error {
+	res := ossecuritygrouprules.Create(netClient, opts)
+	if res.Err != nil {
+		var unexpected gophercloud.ErrUnexpectedResponseCode
+		if errors.As(res.Err, &unexpected) && unexpected.Actual == http.StatusConflict {
+			// already exists
+			return nil
+		}
+
+		if errors.As(res.Err, &gophercloud.ErrDefault400{}) && opts.Protocol == ossecuritygrouprules.ProtocolIPv6ICMP {
+			// workaround for old versions of Openstack with different protocol name,
+			// from before https://review.opendev.org/#/c/252155/
+			opts.Protocol = "icmpv6"
+
+			return ensureSecurityGroupRule(netClient, opts)
+		}
+
+		return res.Err
+	}
+
+	_, err := res.Extract()
+
+	return err
 }

@@ -42,6 +42,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -351,22 +353,26 @@ func fetchExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, 
 }
 
 func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	securityGroups := cluster.Spec.Cloud.Openstack.SecurityGroups
+	// first ensure we have our cleanup finalizer
+	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
+	}
 
-	// if we already have an ID/IDs on the cluster, check if those groups still exists
-	if securityGroups != "" {
-		err := validateSecurityGroupsExist(netClient, splitString(securityGroups))
-		if err != nil {
-			if !isNotFoundErr(err) {
-				return cluster, fmt.Errorf("failed to get security groups: %w", err)
-			}
-		} else {
-			return cluster, nil
-		}
+	securityGroups := splitString(cluster.Spec.Cloud.Openstack.SecurityGroups)
+
+	// automatically create and fill-in the default security group if none was specified
+	var updateRequired bool
+	if len(securityGroups) == 0 {
+		securityGroups = []string{resourceNamePrefix + cluster.Name}
+		updateRequired = true
 	}
-	if securityGroups == "" {
-		securityGroups = resourceNamePrefix + cluster.Name
-	}
+
+	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
+	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
+	ipRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
 
 	lowPort, highPort := resources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
@@ -374,30 +380,41 @@ func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.Service
 		Build().
 		NodePorts()
 
-	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
-	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
+	// for each security group, ensure that it exists
+	for _, sgName := range securityGroups {
+		err := validateSecurityGroupExists(netClient, sgName)
+		if err == nil {
+			continue // group exists
+		}
+		if !isNotFoundErr(err) {
+			return cluster, fmt.Errorf("failed to check security group: %w", err)
+		}
 
-	req := createSecurityGroupRequest{
-		secGroupName: securityGroups,
-		ipv4Rules:    ipv4Network,
-		ipv6Rules:    ipv6Network,
-		lowPort:      lowPort,
-		highPort:     highPort,
+		// group does not yet exist, so we create it
+		req := securityGroupSpec{
+			name:           sgName,
+			ipv4Rules:      ipv4Network,
+			ipv6Rules:      ipv6Network,
+			lowPort:        lowPort,
+			highPort:       highPort,
+			nodePortsCIDRs: ipRanges,
+		}
+
+		_, err = ensureSecurityGroup(netClient, req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create security group: %w", err)
+		}
 	}
 
-	req.nodePortsCIDRs = resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
+	if updateRequired {
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			cluster.Spec.Cloud.Openstack.SecurityGroups = joinStrings(securityGroups)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to update security groups in cluster: %w", err)
+		}
+	}
 
-	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
-		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroups
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add security group name to cluster: %w", err)
-	}
-	_, err = createSecurityGroup(netClient, req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create the user cluster security group: %w", err)
-	}
 	return cluster, nil
 }
 
@@ -1098,10 +1115,18 @@ func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region
 }
 
 func splitString(s string) []string {
-	parts := strings.Split(s, ",")
-	for i, part := range parts {
-		parts[i] = strings.TrimSpace(part)
+	items := sets.New[string]()
+
+	for _, part := range strings.Split(s, ",") {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			items.Insert(part)
+		}
 	}
 
-	return parts
+	return sets.List(items)
+}
+
+func joinStrings(values []string) string {
+	return strings.Join(values, ",")
 }
