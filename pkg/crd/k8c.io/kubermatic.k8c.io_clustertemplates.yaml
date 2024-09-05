@@ -2934,8 +2934,16 @@ spec:
                     KubeLB holds the configuration for the kubeLB component.
                     Only available in Enterprise Edition.
                   properties:
+                    enableGatewayAPI:
+                      description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+                      type: boolean
                     enabled:
                       description: Controls whether kubeLB is deployed or not.
+                      type: boolean
+                    useLoadBalancerClass:
+                      description: |-
+                        UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
+                        user cluster irrespective of the load balancer class.
                       type: boolean
                   required:
                     - enabled

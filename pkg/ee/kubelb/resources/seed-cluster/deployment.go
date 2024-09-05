@@ -1,4 +1,4 @@
-//go:build ee
+//-go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
@@ -49,11 +49,11 @@ var (
 	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
 		resources.KubeLBDeploymentName: {
 			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("64Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
+				corev1.ResourceMemory: resource.MustParse("128Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
 			},
 			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
 				corev1.ResourceCPU:    resource.MustParse("500m"),
 			},
 		},
@@ -138,7 +138,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 					Name:    resources.KubeLBDeploymentName,
 					Image:   repository + ":" + imageTag,
 					Command: []string{"/usr/local/bin/ccm"},
-					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB),
+					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB, data.Cluster().Spec.KubeLB),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: &corev1.HTTPGetAction{
@@ -194,7 +194,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 	}
 }
 
-func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings) []string {
+func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, clusterKubeLB *kubermaticv1.KubeLB) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-kubelb-kubeconfig", "/etc/kubernetes/kubelb-kubeconfig/kubeconfig",
@@ -206,6 +206,19 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings) []stri
 
 	if kubelb != nil {
 		flags = append(flags, "-node-address-type", kubelb.NodeAddressType)
+		if kubelb.EnableSecretSynchronizer {
+			flags = append(flags, "-enable-secret-synchronizer")
+		}
+		if kubelb.DisableIngressClass {
+			flags = append(flags, "-use-ingress-class", "false")
+		}
+	}
+
+	if (clusterKubeLB != nil && clusterKubeLB.EnableGatewayAPI != nil && *clusterKubeLB.EnableGatewayAPI) || (kubelb != nil && kubelb.EnableGatewayAPI) {
+		flags = append(flags, "-enable-gateway-api")
+	}
+	if (clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass) || (kubelb != nil && kubelb.UseLoadBalancerClass) {
+		flags = append(flags, "-use-loadbalancer-class")
 	}
 
 	return flags

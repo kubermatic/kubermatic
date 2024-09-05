@@ -1,4 +1,4 @@
-//go:build ee
+//-go:build ee
 
 /*
                   Kubermatic Enterprise Read-Only License
@@ -30,22 +30,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 )
-
-const (
-	ServiceAccountTokenSecretName = "kubelb-ccm"
-)
-
-func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretReconciler) {
-		return ServiceAccountTokenSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Annotations = map[string]string{
-				resources.ServiceAccountTokenAnnotation: serviceAccountName,
-			}
-			s.Type = resources.ServiceAccountTokenType
-			return s, nil
-		}
-	}
-}
 
 func TenantKubeconfigSecretReconciler(data string) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {

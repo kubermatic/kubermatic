@@ -281,6 +281,11 @@ func (c ClusterSpec) IsKubernetesDashboardEnabled() bool {
 type KubeLB struct {
 	// Controls whether kubeLB is deployed or not.
 	Enabled bool `json:"enabled"`
+	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
+	// user cluster irrespective of the load balancer class.
+	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
+	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {

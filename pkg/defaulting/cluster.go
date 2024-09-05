@@ -157,6 +157,14 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		}
 	}
 
+	if datacenter.Spec.KubeLB != nil && spec.KubeLB != nil {
+		if datacenter.Spec.KubeLB.UseLoadBalancerClass && spec.KubeLB.UseLoadBalancerClass == nil {
+			spec.KubeLB.UseLoadBalancerClass = ptr.To(true)
+		}
+		if datacenter.Spec.KubeLB.EnableGatewayAPI && spec.KubeLB.EnableGatewayAPI == nil {
+			spec.KubeLB.EnableGatewayAPI = ptr.To(true)
+		}
+	}
 	return nil
 }
 
