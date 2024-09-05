@@ -251,6 +251,9 @@ spec:
           csiCinderTopologyEnabled: false
           # Used for automatic network creation
           dnsServers: []
+          # Optional: enable a configuration drive that will be attached to the instance when it boots.
+          # The instance can mount this drive and read files from it to get information
+          enableConfigDrive: null
           # Optional: List of enabled flavors for the given datacenter
           enabledFlavors: []
           # Optional
