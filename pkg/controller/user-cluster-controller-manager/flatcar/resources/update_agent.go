@@ -37,7 +37,7 @@ var (
 )
 
 func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
-	var userCore int64 = 500 // UID of the flatcar admin user 'core'
+	var rootUser int64 = 0
 
 	return func() (string, reconciling.DaemonSetReconciler) {
 		return AgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
@@ -50,6 +50,8 @@ func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.
 			}
 			ds.Spec.UpdateStrategy.RollingUpdate.MaxUnavailable = &daemonSetMaxUnavailable
 
+			// We broke compatibility with upstream in #5875 and instead of performing a migration,
+			// we simply keep the changed labels.
 			labels := map[string]string{"app.kubernetes.io/name": AgentDaemonSetName}
 
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
@@ -58,7 +60,7 @@ func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.
 			// The agent should only run on Flatcar nodes
 			ds.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue}
 
-			ds.Spec.Template.Spec.ServiceAccountName = AgentServiceAccountName
+			ds.Spec.Template.Spec.ServiceAccountName = agentServiceAccountName
 
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -66,7 +68,7 @@ func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.
 					Image:   operatorImage(imageRewriter),
 					Command: []string{"/bin/update-agent"},
 					SecurityContext: &corev1.SecurityContext{
-						RunAsUser: &userCore,
+						RunAsUser: &rootUser,
 					},
 					Env: []corev1.EnvVar{
 						{
@@ -109,6 +111,7 @@ func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.
 				},
 			}
 
+			// This does not match upstream because in KKP, user clusters have no control-plane nodes.
 			ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 				{
 					Effect:   corev1.TaintEffectNoSchedule,

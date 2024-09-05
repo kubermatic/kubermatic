@@ -51,11 +51,13 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 				},
 			}
 
+			// We broke compatibility with upstream in #5875 and instead of performing a migration,
+			// we simply keep the changed labels.
 			labels := map[string]string{"app.kubernetes.io/name": OperatorDeploymentName}
 
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			dep.Spec.Template.ObjectMeta.Labels = labels
-			dep.Spec.Template.Spec.ServiceAccountName = OperatorServiceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = operatorServiceAccountName
 
 			env := []corev1.EnvVar{
 				{

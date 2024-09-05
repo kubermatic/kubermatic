@@ -23,13 +23,13 @@ import (
 )
 
 const (
-	OperatorClusterRoleName = "flatcar-linux-update-operator"
-	AgentClusterRoleName    = "flatcar-linux-update-agent"
+	operatorClusterRoleName = "flatcar-linux-update-operator"
+	agentClusterRoleName    = "flatcar-linux-update-agent"
 )
 
 func OperatorClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleReconciler) {
-		return OperatorClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+		return operatorClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
@@ -39,49 +39,6 @@ func OperatorClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFacto
 						"list",
 						"watch",
 						"update",
-					},
-				},
-				{
-					APIGroups: []string{""},
-					Resources: []string{"configmaps"},
-					Verbs: []string{
-						"create",
-						"get",
-						"update",
-						"list",
-						"watch",
-					},
-				},
-				{
-					APIGroups: []string{""},
-					Resources: []string{"events"},
-					Verbs: []string{
-						"create",
-						"watch",
-					},
-				},
-				{
-					APIGroups: []string{""},
-					Resources: []string{"pods"},
-					Verbs: []string{
-						"get",
-						"list",
-						"delete",
-					},
-				},
-				{
-					APIGroups: []string{"apps"},
-					Resources: []string{"daemonsets"},
-					Verbs: []string{
-						"get",
-					},
-				},
-				{
-					APIGroups:     []string{"policy"},
-					ResourceNames: []string{"flatcar-linux-update-operator"},
-					Resources:     []string{"podsecuritypolicies"},
-					Verbs: []string{
-						"use",
 					},
 				},
 			}
@@ -92,7 +49,7 @@ func OperatorClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFacto
 
 func AgentClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleReconciler) {
-		return AgentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
+		return agentClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
@@ -106,25 +63,6 @@ func AgentClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory 
 				},
 				{
 					APIGroups: []string{""},
-					Resources: []string{"configmaps"},
-					Verbs: []string{
-						"create",
-						"get",
-						"update",
-						"list",
-						"watch",
-					},
-				},
-				{
-					APIGroups: []string{""},
-					Resources: []string{"events"},
-					Verbs: []string{
-						"create",
-						"watch",
-					},
-				},
-				{
-					APIGroups: []string{""},
 					Resources: []string{"pods"},
 					Verbs: []string{
 						"get",
@@ -133,18 +71,17 @@ func AgentClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory 
 					},
 				},
 				{
+					APIGroups: []string{""},
+					Resources: []string{"pods/eviction"},
+					Verbs: []string{
+						"create",
+					},
+				},
+				{
 					APIGroups: []string{"apps"},
 					Resources: []string{"daemonsets"},
 					Verbs: []string{
 						"get",
-					},
-				},
-				{
-					APIGroups:     []string{"policy"},
-					ResourceNames: []string{"flatcar-linux-update-agentß"},
-					Resources:     []string{"podsecuritypolicies"},
-					Verbs: []string{
-						"use",
 					},
 				},
 			}
