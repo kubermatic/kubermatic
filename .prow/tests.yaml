@@ -44,7 +44,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/integration-tests:k8s-1.30.0-rev1
+        - image: quay.io/kubermatic/integration-tests:k8s-1.31.0-rev0
           command:
             - make
             - test-integration
@@ -252,7 +252,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/integration-tests:k8s-1.30.0-rev1
+        - image: quay.io/kubermatic/integration-tests:k8s-1.31.0-rev0
           command:
             - "./hack/ci/run-addons-integration-test.sh"
           resources:
