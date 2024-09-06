@@ -51,6 +51,26 @@ spec:
                     type: boolean
                   description: AllowedOperatingSystems shows if the operating system is allowed to be use in the machinedeployment.
                   type: object
+                annotations:
+                  description: Annotations are the settings for the annotations in KKP UI.
+                  properties:
+                    hiddenAnnotations:
+                      default:
+                        - kubectl.kubernetes.io/last-applied-configuration
+                        - kubermatic.io/initial-application-installations-request
+                        - kubermatic.io/initial-machinedeployment-request
+                      description: HiddenAnnotations are the annotations that are hidden from the user in the UI.
+                      items:
+                        type: string
+                      type: array
+                    protectedAnnotations:
+                      default:
+                        - presetName
+                      description: ProtectedAnnotations are the annotations that are visible in the UI but cannot be added or modified by the user.
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 cleanupOptions:
                   description: CleanupOptions control what happens when a cluster is deleted via the dashboard.
                   properties:
