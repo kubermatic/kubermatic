@@ -129,7 +129,25 @@ type SettingSpec struct {
 	// StaticLabels are a list of labels that can be used for the clusters.
 	StaticLabels []StaticLabel `json:"staticLabels,omitempty"`
 
+	// Annotations are the settings for the annotations in KKP UI.
+	Annotations AnnotationSettings `json:"annotations,omitempty"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
+}
+
+// AnnotationSettings is the settings for the annotations.
+type AnnotationSettings struct {
+	// +kubebuilder:default:={"kubectl.kubernetes.io/last-applied-configuration", "kubermatic.io/initial-application-installations-request", "kubermatic.io/initial-machinedeployment-request"}
+
+	// HiddenAnnotations are the annotations that are hidden from the user in the UI.
+	// +optional
+	HiddenAnnotations []string `json:"hiddenAnnotations,omitempty"`
+
+	// +kubebuilder:default:={"presetName"}
+
+	// ProtectedAnnotations are the annotations that are visible in the UI but cannot be added or modified by the user.
+	// +optional
+	ProtectedAnnotations []string `json:"protectedAnnotations,omitempty"`
 }
 
 func (s SettingSpec) HasDefaultProjectResourceQuota() bool {
