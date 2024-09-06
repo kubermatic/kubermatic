@@ -25,35 +25,17 @@
 package resources
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	"k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
+func ResourcesForDeletion(name string) []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
-		&corev1.ServiceAccount{
+		&v1alpha1.Tenant{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceAccountName,
-				Namespace: namespace,
-			},
-		},
-		&rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleName,
-				Namespace: namespace,
-			},
-		},
-		&rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleBindingName,
-				Namespace: namespace,
-			},
-		},
-		&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: namespace,
+				Name: name,
 			},
 		},
 	}

@@ -25,20 +25,18 @@
 package kubelbcontroller
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
-	"text/template"
+	"time"
 
 	"go.uber.org/zap"
 
+	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
-	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -62,8 +60,10 @@ import (
 )
 
 const (
-	ControllerName   = "kkp-kubelb-controller"
-	CleanupFinalizer = "kubermatic.k8c.io/cleanup-kubelb-ccm"
+	ControllerName                = "kkp-kubelb-controller"
+	CleanupFinalizer              = "kubermatic.k8c.io/cleanup-kubelb-ccm"
+	kubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
+	kubeconfigSecretKey           = "kubelb"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -179,7 +179,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Get kubeLB management cluster client.
-	kubeLBManagementClient, cfg, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
+	kubeLBManagementClient, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
 	if err != nil {
 		return nil, err
 	}
@@ -199,67 +199,33 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Create/update required resources in user cluster.
-	if err := r.createOrUpdateKubeLBUserClusterResources(ctx, cluster); err != nil {
+	if err := r.createOrUpdateKubeLBUserClusterResources(ctx, cluster, datacenter); err != nil {
 		return nil, err
 	}
 
 	// Create/update required resources in user cluster namespace in seed.
-	if err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, cfg, datacenter); err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+	return r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, datacenter)
 }
 
 func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	namespace := fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name)
-
-	// Create namespace; which is equivalent to registering the tenant.
-	nsReconcilers := []reconciling.NamedNamespaceReconcilerFactory{
-		kubelbmanagementresources.NamespaceReconciler(namespace),
+	// Check if tenant exists or not, if it doesn't we create it.
+	tenant := &kubelbv1alpha1.Tenant{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: cluster.Name,
+		},
 	}
-
-	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile namespace: %w", err)
-	}
-
-	// Create RBAC for the tenant.
-	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
-		kubelbmanagementresources.ServiceAccountReconciler(),
-	}
-
-	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile service account: %w", err)
-	}
-
-	roleReconcilers := []reconciling.NamedRoleReconcilerFactory{
-		kubelbmanagementresources.RoleReconciler(),
-	}
-
-	if err := reconciling.ReconcileRoles(ctx, roleReconcilers, namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile role: %w", err)
-	}
-
-	roleBindingReconcilers := []reconciling.NamedRoleBindingReconcilerFactory{
-		kubelbmanagementresources.RoleBindingReconciler(namespace),
-	}
-
-	if err := reconciling.ReconcileRoleBindings(ctx, roleBindingReconcilers, namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile role binding: %w", err)
-	}
-
-	// Create service account token secret.
-	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
-		kubelbmanagementresources.SecretReconciler(),
-	}
-
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, namespace, client); err != nil {
-		return fmt.Errorf("failed to reconcile secret: %w", err)
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), tenant); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get tenant: %w", err)
+		}
+		if err := client.Create(ctx, tenant); err != nil {
+			return fmt.Errorf("failed to create tenant: %w", err)
+		}
 	}
 	return nil
 }
 
-func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, dc kubermaticv1.Datacenter) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
@@ -275,7 +241,7 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 	}
 
 	clusterRoleReconciler := []reconciling.NamedClusterRoleReconcilerFactory{
-		kubelbuserclusterresources.ClusterRoleReconciler(),
+		kubelbuserclusterresources.ClusterRoleReconciler(dc, cluster),
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, clusterRoleReconciler, "", userClusterClient); err != nil {
@@ -301,23 +267,30 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 	return nil
 }
 
-func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, kubeLBManagementClient ctrlruntimeclient.Client, kubeconfig []byte, dc kubermaticv1.Datacenter) error {
+func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster, kubeLBManagementClient ctrlruntimeclient.Client, dc kubermaticv1.Datacenter) (*reconcile.Result, error) {
 	seedNamespace := cluster.Status.NamespaceName
 	tenantNamespace := fmt.Sprintf(kubelbresources.TenantNamespacePattern, cluster.Name)
 
 	// Generate kubeconfig secret.
-	tenantKubeconfig, err := r.generateKubeconfig(ctx, kubeLBManagementClient, tenantNamespace, string(kubeconfig))
+	kubelbKubeconfigSecret := &corev1.Secret{}
+	err := kubeLBManagementClient.Get(ctx, types.NamespacedName{Name: kubeLBCCMKubeconfigSecretName, Namespace: tenantNamespace}, kubelbKubeconfigSecret)
 	if err != nil {
-		return fmt.Errorf("failed to generate kubeconfig: %w", err)
+		if !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to get kubeLB kubeconfig secret: %w", err)
+		}
+		// KubeLB manager will create the secret eventually, so we requeue after 15 seconds.
+		return &reconcile.Result{RequeueAfter: 15 * time.Second}, nil
 	}
 
+	tenantKubeconfig := string(kubelbKubeconfigSecret.Data[kubeconfigSecretKey])
+
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
-		kubelbmanagementresources.TenantKubeconfigSecretReconciler(tenantKubeconfig),
+		kubelbseedresources.TenantKubeconfigSecretReconciler(tenantKubeconfig),
 	}
 
 	// Create kubeconfig secret in the user cluster namespace.
 	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, seedNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile kubeLB tenant kubeconfig secret: %w", err)
+		return nil, fmt.Errorf("failed to reconcile kubeLB tenant kubeconfig secret: %w", err)
 	}
 
 	// Create RBAC for the user cluster.
@@ -326,7 +299,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, seedNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile service account: %w", err)
+		return nil, fmt.Errorf("failed to reconcile service account: %w", err)
 	}
 
 	// Create/update kubeLB deployment.
@@ -334,80 +307,33 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
+		return nil, fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (r *reconciler) generateKubeconfig(ctx context.Context, client ctrlruntimeclient.Client, namespace string, kubeconfig string) (string, error) {
-	managementKubeconfig, err := clientcmd.Load([]byte(kubeconfig))
-	if err != nil {
-		return "", fmt.Errorf("failed to load kubeconfig: %w", err)
-	}
-
-	secret := corev1.Secret{}
-	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: kubelbmanagementresources.ServiceAccountTokenSecretName}, &secret)
-	if err != nil {
-		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %w", err)
-	}
-
-	var serverUrl string
-	// Get the first cluster from the kubeconfig.
-	for _, cluster := range managementKubeconfig.Clusters {
-		serverUrl = cluster.Server
-		break
-	}
-
-	ca := secret.Data[corev1.ServiceAccountRootCAKey]
-	token := secret.Data[corev1.ServiceAccountTokenKey]
-
-	// Generate kubeconfig.
-	data := struct {
-		CA_Certificate string
-		Token          string
-		Namespace      string
-		ServerURL      string
-	}{
-		CA_Certificate: base64.StdEncoding.EncodeToString(ca),
-		Token:          string(token),
-		Namespace:      namespace,
-		ServerURL:      serverUrl,
-	}
-
-	tmpl, err := template.New("kubeconfig").Parse(kubeconfigTemplate)
-	if err != nil {
-		return "", fmt.Errorf("failed to parse kubeconfig template: %w", err)
-	}
-
-	buf := &bytes.Buffer{}
-	if err := tmpl.Execute(buf, data); err != nil {
-		return "", fmt.Errorf("failed to execute kubeconfig template: %w", err)
-	}
-	return buf.String(), nil
-}
-
-func (r *reconciler) getKubeLBManagementClusterClient(ctx context.Context, seed *kubermaticv1.Seed, dc kubermaticv1.Datacenter) (ctrlruntimeclient.Client, []byte, error) {
+func (r *reconciler) getKubeLBManagementClusterClient(ctx context.Context, seed *kubermaticv1.Seed, dc kubermaticv1.Datacenter) (ctrlruntimeclient.Client, error) {
 	kubeLBManagerKubeconfig, err := getKubeLBKubeconfigSecret(ctx, r.Client, seed, dc)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	kubeconfigValue := kubeLBManagerKubeconfig.Data[resources.KubeconfigSecretKey]
 	if len(kubeconfigValue) == 0 {
-		return nil, nil, fmt.Errorf("no kubeconfig found")
+		return nil, fmt.Errorf("no kubeconfig found")
 	}
 
 	kubeconfig, err := clientcmd.Load(kubeconfigValue)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
+		return nil, fmt.Errorf("failed to parse kubeconfig: %w", err)
 	}
 	cfg, err := clientcmd.NewInteractiveClientConfig(*kubeconfig, "", nil, nil, nil).ClientConfig()
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to load kubeconfig: %w", err)
+		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{})
-	return client, kubeconfigValue, err
+	return client, err
 }
 
 func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, seed *kubermaticv1.Seed, dc kubermaticv1.Datacenter) (*corev1.Secret, error) {
@@ -438,23 +364,3 @@ func getKubeLBKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Cli
 
 	return secret, nil
 }
-
-const kubeconfigTemplate = `apiVersion: v1
-kind: Config
-clusters:
-- name: kubelb-cluster
-  cluster:
-    certificate-authority-data: {{ .CA_Certificate }}
-    server: {{ .ServerURL }}
-contexts:
-- name: default-context
-  context:
-    cluster: kubelb-cluster
-    namespace: {{ .Namespace }}
-    user: default-user
-current-context: default-context
-users:
-- name: default-user
-  user:
-    token: {{ .Token }}
-`

@@ -1101,6 +1101,15 @@ type KubeLBDatacenterSettings struct {
 	// +kubebuilder:validation:Enum=InternalIP;ExternalIP
 	// +kubebuilder:default=ExternalIP
 	NodeAddressType string `json:"nodeAddressType,omitempty"`
+	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
+	// user cluster irrespective of the load balancer class.
+	UseLoadBalancerClass bool `json:"useLoadBalancerClass,omitempty"`
+	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+	EnableGatewayAPI bool `json:"enableGatewayAPI,omitempty"`
+	// EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
+	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`
+	// DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
+	DisableIngressClass bool `json:"disableIngressClass,omitempty"`
 }
 
 // IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.

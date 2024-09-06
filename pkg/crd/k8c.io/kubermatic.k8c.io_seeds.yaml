@@ -340,6 +340,15 @@ spec:
                               Optional: KubeLB holds the configuration for the kubeLB at the data center level.
                               Only available in Enterprise Edition.
                             properties:
+                              disableIngressClass:
+                                description: DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
+                                type: boolean
+                              enableGatewayAPI:
+                                description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+                                type: boolean
+                              enableSecretSynchronizer:
+                                description: EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
+                                type: boolean
                               enabled:
                                 description: Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
                                 type: boolean
@@ -398,6 +407,11 @@ spec:
                                   - InternalIP
                                   - ExternalIP
                                 type: string
+                              useLoadBalancerClass:
+                                description: |-
+                                  UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
+                                  user cluster irrespective of the load balancer class.
+                                type: boolean
                             type: object
                           kubevirt:
                             description: Kubevirt configures a KubeVirt datacenter.

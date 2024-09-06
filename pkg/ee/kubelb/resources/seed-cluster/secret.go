@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2024 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -30,22 +30,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 )
-
-const (
-	ServiceAccountTokenSecretName = "kubelb-ccm"
-)
-
-func SecretReconciler() reconciling.NamedSecretReconcilerFactory {
-	return func() (string, reconciling.SecretReconciler) {
-		return ServiceAccountTokenSecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s.Annotations = map[string]string{
-				resources.ServiceAccountTokenAnnotation: serviceAccountName,
-			}
-			s.Type = resources.ServiceAccountTokenType
-			return s, nil
-		}
-	}
-}
 
 func TenantKubeconfigSecretReconciler(data string) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {

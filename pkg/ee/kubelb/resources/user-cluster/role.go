@@ -25,6 +25,7 @@
 package resources
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -79,7 +80,7 @@ func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
+func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster) reconciling.NamedClusterRoleReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleReconciler) {
 		return clusterRoleName,
 			func(r *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
@@ -87,32 +88,54 @@ func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 					{
 						APIGroups: []string{""},
 						Resources: []string{"nodes"},
-						Verbs: []string{
-							"get",
-							"list",
-							"watch",
-						},
+						Verbs:     []string{"get", "list", "watch"},
 					},
 					{
 						APIGroups: []string{""},
 						Resources: []string{"services"},
-						Verbs: []string{
-							"get",
-							"list",
-							"watch",
-							"patch",
-							"update",
-						},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
 					},
 					{
 						APIGroups: []string{""},
 						Resources: []string{"services/status"},
-						Verbs: []string{
-							"get",
-							"patch",
-							"update",
-						},
+						Verbs:     []string{"get", "patch", "update"},
 					},
+					{
+						APIGroups: []string{"kubelb.k8c.io"},
+						Resources: []string{"syncsecrets"},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
+					},
+					{
+						APIGroups: []string{"networking.k8s.io"},
+						Resources: []string{"ingresses"},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
+					},
+					{
+						APIGroups: []string{"networking.k8s.io"},
+						Resources: []string{"ingresses/status"},
+						Verbs:     []string{"get", "patch", "update"},
+					},
+				}
+
+				if dc.Spec.KubeLB != nil && dc.Spec.KubeLB.EnableSecretSynchronizer {
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{""},
+						Resources: []string{"secrets"},
+						Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
+					})
+				}
+
+				if cluster.Spec.KubeLB != nil && cluster.Spec.KubeLB.EnableGatewayAPI != nil && *cluster.Spec.KubeLB.EnableGatewayAPI {
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{"gateway.networking.k8s.io"},
+						Resources: []string{"gateways", "grpcroutes", "httproutes", "tcproutes", "udproutes", "tlsroutes"},
+						Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
+					})
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{"gateway.networking.k8s.io"},
+						Resources: []string{"gateways/status", "grpcroutes/status", "httproutes/status", "tcproutes/status", "udproutes/status", "tlsroutes/status"},
+						Verbs:     []string{"get", "patch", "update"},
+					})
 				}
 				return r, nil
 			}
