@@ -1150,6 +1150,48 @@ func TestValidateVersion(t *testing.T) {
 			}}, nil, nil),
 		},
 		{
+			name:  "version with automatic update via Automatic not supported",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.2"),
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.2"),
+					},
+					{
+						Version: semverlib.MustParse("1.2.3"),
+					},
+				},
+				[]*version.Update{{
+					From:      "1.2.2",
+					To:        "1.2.3",
+					Automatic: true,
+				}}, nil),
+		},
+		{
+			name:  "version with automatic update via AutomaticNodeUpdate not supported",
+			valid: false,
+			spec: &kubermaticv1.ClusterSpec{
+				Version: semver.Semver("1.2.2"),
+			},
+			versionManager: version.New(
+				[]*version.Version{
+					{
+						Version: semverlib.MustParse("1.2.2"),
+					},
+					{
+						Version: semverlib.MustParse("1.2.3"),
+					},
+				},
+				[]*version.Update{{
+					From:                "1.2.2",
+					To:                  "1.2.3",
+					AutomaticNodeUpdate: true,
+				}}, nil),
+		},
+		{
 			name:           "version update supported",
 			valid:          true,
 			currentVersion: semver.NewSemverOrDie("1.2.3"),
