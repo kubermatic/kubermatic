@@ -88,68 +88,32 @@ func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Clu
 					{
 						APIGroups: []string{""},
 						Resources: []string{"nodes"},
-						Verbs: []string{
-							"get",
-							"list",
-							"watch",
-						},
+						Verbs:     []string{"get", "list", "watch"},
 					},
 					{
 						APIGroups: []string{""},
 						Resources: []string{"services"},
-						Verbs: []string{
-							"create",
-							"get",
-							"list",
-							"watch",
-							"patch",
-							"update",
-							"delete",
-						},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
 					},
 					{
 						APIGroups: []string{""},
 						Resources: []string{"services/status"},
-						Verbs: []string{
-							"get",
-							"patch",
-							"update",
-						},
+						Verbs:     []string{"get", "patch", "update"},
 					},
 					{
 						APIGroups: []string{"kubelb.k8c.io"},
 						Resources: []string{"syncsecrets"},
-						Verbs: []string{
-							"create",
-							"get",
-							"list",
-							"watch",
-							"patch",
-							"update",
-							"delete",
-						},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
 					},
 					{
 						APIGroups: []string{"networking.k8s.io"},
 						Resources: []string{"ingresses"},
-						Verbs: []string{
-							"create",
-							"get",
-							"list",
-							"watch",
-							"patch",
-							"update",
-							"delete",
-						},
+						Verbs:     []string{"create", "get", "list", "watch", "patch", "update", "delete"},
 					},
 					{
 						APIGroups: []string{"networking.k8s.io"},
 						Resources: []string{"ingresses/status"},
-						Verbs: []string{
-							"get",
-							"patch",
-							"update",
-						},
+						Verbs:     []string{"get", "patch", "update"},
 					},
 				}
 

@@ -204,26 +204,17 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Create/update required resources in user cluster namespace in seed.
-	result, err := r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, datacenter)
-	if err != nil {
-		return nil, err
-	}
-
-	if result != nil {
-		return result, nil
-	}
-
-	return nil, nil
+	return r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, datacenter)
 }
 
 func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	// Since tenant configurations are not managed within KKP by this controller. We only check if tenant exists or not, if it doesn't we create it.
+	// Check if tenant exists or not, if it doesn't we create it.
 	tenant := &kubelbv1alpha1.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: cluster.Name,
 		},
 	}
-	if err := client.Get(ctx, types.NamespacedName{Name: cluster.Name}, tenant); err != nil {
+	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), tenant); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get tenant: %w", err)
 		}
