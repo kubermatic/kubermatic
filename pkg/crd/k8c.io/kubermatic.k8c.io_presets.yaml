@@ -60,6 +60,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     subscriptionID:
                       description: The Azure Subscription used for the user cluster.
                       type: string
@@ -89,6 +94,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                   required:
                     - accessKeyID
                     - accessKeySecret
@@ -103,6 +113,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     token:
                       description: Token is used to authenticate with the Anexia API.
@@ -139,6 +154,11 @@ spec:
                         Instance profile to use. This can be configured, but if left empty will be
                         automatically filled in during reconciliation.
                       type: string
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     roleARN:
                       description: |-
                         ARN to use. This can be configured, but if left empty will be
@@ -180,6 +200,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     loadBalancerSKU:
                       description: LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "standard" will be used
@@ -246,6 +271,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     tinkerbell:
                       properties:
                         kubeconfig:
@@ -265,6 +295,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     token:
                       description: Token is used to authenticate with the DigitalOcean API.
@@ -298,6 +333,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     secretAccessKey:
                       description: The Secret Access Key used to authenticate against AWS.
                       type: string
@@ -318,6 +358,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     token:
                       type: string
                   required:
@@ -333,6 +378,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     network:
                       type: string
@@ -355,6 +405,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     serviceAccount:
                       type: string
                   required:
@@ -370,6 +425,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     network:
                       description: |-
@@ -394,6 +454,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     kubeconfig:
                       description: Kubeconfig is the cluster's kubeconfig file, encoded with base64.
@@ -427,6 +492,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     password:
                       description: Password corresponding to the provided user.
@@ -470,6 +540,11 @@ spec:
                     floatingIPPool:
                       description: FloatingIPPool holds the name of the public network The public network is reachable from the outside world and should provide the pool of IP addresses to choose from.
                       type: string
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     network:
                       description: Network holds the name of the internal network When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created.
                       type: string
@@ -509,6 +584,11 @@ spec:
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
                       type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
                     projectID:
                       type: string
                   required:
@@ -542,6 +622,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     organization:
                       description: The name of organization to use.
@@ -592,6 +677,11 @@ spec:
                       type: string
                     enabled:
                       description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCutomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
                       type: boolean
                     networks:
                       description: List of vSphere networks.
