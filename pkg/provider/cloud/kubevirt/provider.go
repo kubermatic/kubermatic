@@ -170,25 +170,32 @@ func (k *kubevirt) CleanUpCloudProvider(ctx context.Context, cluster *kubermatic
 	if !kuberneteshelper.HasAnyFinalizer(cluster, FinalizerNamespace, FinalizerClonerRoleBinding) {
 		return cluster, nil
 	}
+	// When the seed and kubevirt provider cluster are the same, the user cluster's namespace (cluster-<clusterID>) created on the kubevirt-provider
+	// is the same as the namespace on the seed that has all the control plane pods of the user cluster. When a user cluster on such setup is deleted
+	// the namespace is cleaned up by the cloud provider finalizer (FinalizerNamespace) & doesn't wait for the etcd backups to be removed, the namespace
+	// deletion removes the secrets required for cleaning up etcd backups & blocks the cluster deletion, to prevent this we wait for the backups to get
+	// cleaned by before deleting the namespace.
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
+		client, err := k.GetClientForCluster(cluster.Spec.Cloud)
+		if err != nil {
+			return cluster, err
+		}
 
-	client, err := k.GetClientForCluster(cluster.Spec.Cloud)
-	if err != nil {
-		return cluster, err
-	}
+		if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
+			return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
+		}
+		cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
+		})
+		if err != nil {
+			return cluster, err
+		}
 
-	if err := deleteNamespace(ctx, cluster.Status.NamespaceName, client); err != nil && !apierrors.IsNotFound(err) {
-		return cluster, fmt.Errorf("failed to delete namespace %s: %w", cluster.Status.NamespaceName, err)
+		return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
+			kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerClonerRoleBinding)
+		})
 	}
-	cluster, err = update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerNamespace)
-	})
-	if err != nil {
-		return cluster, err
-	}
-
-	return update(ctx, cluster.Name, func(updatedCluster *kubermaticv1.Cluster) {
-		kuberneteshelper.RemoveFinalizer(updatedCluster, FinalizerClonerRoleBinding)
-	})
+	return cluster, nil
 }
 
 func (k *kubevirt) ValidateCloudSpecUpdate(ctx context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
