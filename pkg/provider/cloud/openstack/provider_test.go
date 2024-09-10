@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/gophercloud/gophercloud"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -611,4 +612,53 @@ type fakeClusterUpdater struct {
 func (f *fakeClusterUpdater) update(_ context.Context, _ string, updateFn func(c *kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
 	updateFn(f.c)
 	return f.c, nil
+}
+
+func TestSplitString(t *testing.T) {
+	testcases := []struct {
+		input    string
+		expected []string
+	}{
+		{
+			input:    "",
+			expected: []string{},
+		},
+		{
+			input:    "a",
+			expected: []string{"a"},
+		},
+		{
+			input:    "a b c",
+			expected: []string{"a b c"},
+		},
+		{
+			input:    "a,b , c ",
+			expected: []string{"a", "b", "c"},
+		},
+		{
+			input:    "a,",
+			expected: []string{"a"},
+		},
+		{
+			input:    ",,,",
+			expected: []string{},
+		},
+		{
+			input:    ",a,",
+			expected: []string{"a"},
+		},
+		{
+			input:    "a,b,a,b,a",
+			expected: []string{"a", "b"},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.input, func(t *testing.T) {
+			split := splitString(tc.input)
+			if !cmp.Equal(split, tc.expected) {
+				t.Fatalf("Expected %v, got %v.", tc.expected, split)
+			}
+		})
+	}
 }
