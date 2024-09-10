@@ -87,8 +87,7 @@ func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL s
 			se.Spec.Ports[0].Port = 443
 			if exposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 				se.Spec.Ports[0].TargetPort = intstr.FromInt(resources.APIServerSecurePort)
-				// skip setting nodeport as zero if the service type is LoadBalancer
-				if se.Spec.Type != corev1.ServiceTypeLoadBalancer {
+				if se.Spec.Type == corev1.ServiceTypeClusterIP {
 					se.Spec.Ports[0].NodePort = 0 // allows switching from other expose strategies
 				}
 			} else {
