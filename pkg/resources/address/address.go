@@ -290,5 +290,13 @@ func (m *ModifiersBuilder) getExternalIP(hostname string) (string, error) {
 	if len(ips) > 1 {
 		m.log.Debugw("Lookup returned multiple IP addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
 	}
+
+	// If the current cluster external address is found among the resolved IPs, the same IP will be returned, as there's no
+	// need to change the user cluster external endpoint. Otherwise, the cluster control plane components may enter an
+	// infinite reconciliation loop
+	if ipList.Has(m.cluster.Status.Address.IP) {
+		return m.cluster.Status.Address.IP, nil
+	}
+
 	return ips[0], nil
 }
