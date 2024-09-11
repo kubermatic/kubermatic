@@ -130,15 +130,6 @@ func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Na
 				}
 			}
 
-			i.Spec.DefaultBackend = &networkingv1.IngressBackend{
-				Service: &networkingv1.IngressServiceBackend{
-					Name: uiServiceName,
-					Port: networkingv1.ServiceBackendPort{
-						Number: 80,
-					},
-				},
-			}
-
 			pathType := networkingv1.PathTypePrefix
 
 			i.Spec.Rules = []networkingv1.IngressRule{
@@ -162,7 +153,14 @@ func IngressReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconciling.Na
 								{
 									Path:     "/",
 									PathType: &pathType,
-									Backend:  *i.Spec.DefaultBackend,
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: uiServiceName,
+											Port: networkingv1.ServiceBackendPort{
+												Number: 80,
+											},
+										},
+									},
 								},
 							},
 						},
