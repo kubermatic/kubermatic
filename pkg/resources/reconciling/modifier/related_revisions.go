@@ -24,6 +24,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -104,7 +105,7 @@ func getRelatedRevisionLabels(
 ) (map[string]string, error) {
 	labels := make(map[string]string)
 
-	loadSecret := func(name string) error {
+	loadSecret := func(name string, optional bool) error {
 		labelName := fmt.Sprintf("%s-secret-revision", name)
 
 		// skip checking the same secret again
@@ -115,6 +116,10 @@ func getRelatedRevisionLabels(
 		key := types.NamespacedName{Namespace: namespace, Name: name}
 		revision, err := secretRevision(ctx, client, key)
 		if err != nil {
+			if optional && apierrors.IsNotFound(err) {
+				return nil
+			}
+
 			return err
 		}
 
@@ -123,7 +128,7 @@ func getRelatedRevisionLabels(
 		return nil
 	}
 
-	loadConfigMap := func(name string) error {
+	loadConfigMap := func(name string, optional bool) error {
 		labelName := fmt.Sprintf("%s-configmap-revision", name)
 
 		// skip checking the same ConfigMap again
@@ -134,6 +139,10 @@ func getRelatedRevisionLabels(
 		key := types.NamespacedName{Namespace: namespace, Name: name}
 		revision, err := configMapRevision(ctx, client, key)
 		if err != nil {
+			if optional && apierrors.IsNotFound(err) {
+				return nil
+			}
+
 			return err
 		}
 
@@ -144,13 +153,13 @@ func getRelatedRevisionLabels(
 
 	for _, v := range volumes {
 		if v.VolumeSource.Secret != nil {
-			if err := loadSecret(v.VolumeSource.Secret.SecretName); err != nil {
+			if err := loadSecret(v.VolumeSource.Secret.SecretName, false); err != nil {
 				return nil, err
 			}
 		}
 
 		if v.VolumeSource.ConfigMap != nil {
-			if err := loadConfigMap(v.VolumeSource.ConfigMap.Name); err != nil {
+			if err := loadConfigMap(v.VolumeSource.ConfigMap.Name, false); err != nil {
 				return nil, err
 			}
 		}
@@ -160,13 +169,13 @@ func getRelatedRevisionLabels(
 		for _, e := range c.Env {
 			if source := e.ValueFrom; source != nil {
 				if cm := source.ConfigMapKeyRef; cm != nil {
-					if err := loadConfigMap(cm.Name); err != nil {
+					if err := loadConfigMap(cm.Name, cm.Optional != nil && *cm.Optional); err != nil {
 						return nil, err
 					}
 				}
 
 				if sec := source.SecretKeyRef; sec != nil {
-					if err := loadSecret(sec.Name); err != nil {
+					if err := loadSecret(sec.Name, sec.Optional != nil && *sec.Optional); err != nil {
 						return nil, err
 					}
 				}
@@ -175,13 +184,13 @@ func getRelatedRevisionLabels(
 
 		for _, e := range c.EnvFrom {
 			if cm := e.ConfigMapRef; cm != nil {
-				if err := loadConfigMap(cm.Name); err != nil {
+				if err := loadConfigMap(cm.Name, cm.Optional != nil && *cm.Optional); err != nil {
 					return nil, err
 				}
 			}
 
 			if sec := e.SecretRef; sec != nil {
-				if err := loadSecret(sec.Name); err != nil {
+				if err := loadSecret(sec.Name, sec.Optional != nil && *sec.Optional); err != nil {
 					return nil, err
 				}
 			}
