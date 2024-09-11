@@ -19,33 +19,33 @@ dex:
     host: kkp.example.com
 
   clients:
-  # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
-  # needs to be configured.
-  - id: kubermatic
-    name: Kubermatic
-    # Generate a secure secret key
-    # Those can be generated on the shell using:
-    # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
-    secret: <a-random-key>
-    RedirectURIs:
-    # ensure the URLs below use the dex.ingress.host configured above
-    - https://kkp.example.com
-    - https://kkp.example.com/projects
+    # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
+    # needs to be configured.
+    - id: kubermatic
+      name: Kubermatic
+      # Generate a secure secret key
+      # Those can be generated on the shell using:
+      # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+      secret: <a-random-key>
+      RedirectURIs:
+        # ensure the URLs below use the dex.ingress.host configured above
+        - https://kkp.example.com
+        - https://kkp.example.com/projects
 
-  # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
-  # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
-  # More about this configuration at https://docs.kubermatic.com/kubermatic/main/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
-  - id: kubermaticIssuer
-    name: Kubermatic OIDC Issuer
-    # Generate a secure secret key
-    # Those can be generated on the shell using:
-    # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
-    secret: <a-random-key>
-    RedirectURIs:
-      # ensure the URLs below use the dex.ingress.host configured above
-      - https://kkp.example.com/api/v1/kubeconfig
-      - https://kkp.example.com/api/v2/kubeconfig/secret
-      - https://kkp.example.com/api/v2/dashboard/login
+    # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
+    # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
+    # More about this configuration at https://docs.kubermatic.com/kubermatic/v2.25/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
+    - id: kubermaticIssuer
+      name: Kubermatic OIDC Issuer
+      # Generate a secure secret key
+      # Those can be generated on the shell using:
+      # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+      secret: <a-random-key>
+      RedirectURIs:
+        # ensure the URLs below use the dex.ingress.host configured above
+        - https://kkp.example.com/api/v1/kubeconfig
+        - https://kkp.example.com/api/v2/kubeconfig/secret
+        - https://kkp.example.com/api/v2/dashboard/login
 
   # Depending on your chosen login method, you need to configure either an OAuth provider like
   # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`
@@ -53,14 +53,14 @@ dex:
 
   # For testing purposes, we configure a single static user/password combination.
   staticPasswords:
-  - email: kubermatic@example.com
-    # bcrypt hash of the string "password", can be created using recent versions of htpasswd:
-    # `htpasswd -bnBC 10 "" PASSWORD_HERE | tr -d ':\n' | sed 's/$2y/$2a/'`
-    hash: "$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK"
+    - email: kubermatic@example.com
+      # bcrypt hash of the string "password", can be created using recent versions of htpasswd:
+      # `htpasswd -bnBC 10 "" PASSWORD_HERE | tr -d ':\n' | sed 's/$2y/$2a/'`
+      hash: "$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK"
 
-    # these are used within Kubermatic to identify the user
-    username: admin
-    userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
+      # these are used within Kubermatic to identify the user
+      username: admin
+      userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
   # If you want to deploy your own certificate without relying on cert-manager
@@ -73,7 +73,7 @@ dex:
     kind: ClusterIssuer
 
 minio:
-  storeSize: '500Gi'
+  storeSize: "500Gi"
   storageClass: minio-hdd
 
 telemetry:

@@ -162,7 +162,7 @@ func TestGetVsphereCredentials(t *testing.T) {
 		wantErr bool
 	}{
 		// vsphere auth can be split into using two sets of credentials or just using one.
-		// See https://docs.kubermatic.com/kubermatic/main/architecture/supported-providers/vsphere/vsphere#permissions for more details.
+		// See https://docs.kubermatic.com/kubermatic/v2.25/architecture/supported-providers/vsphere/vsphere#permissions for more details.
 		// When just using one, username and password will be used (obviously).
 		// When using two sets, infraManagementUser.Username and infraManagementUser.Password take precedence here.
 
