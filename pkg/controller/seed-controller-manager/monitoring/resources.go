@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/kubestatemetrics"
 	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -95,7 +96,12 @@ func GetDeploymentReconcilers(data *resources.TemplateData) []reconciling.NamedD
 func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetDeploymentReconcilers(data)
 
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r.Client)
+	modifiers := []reconciling.ObjectModifier{
+		modifier.RelatedRevisionsLabels(ctx, r),
+		modifier.ControlplaneComponent(cluster),
+	}
+
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r.Client, modifiers...)
 }
 
 // GetSecretReconcilerOperations returns all SecretReconcilers that are currently in use.
@@ -148,7 +154,12 @@ func GetStatefulSetReconcilers(data *resources.TemplateData) []reconciling.Named
 func (r *Reconciler) ensureStatefulSets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetStatefulSetReconcilers(data)
 
-	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, r.Client)
+	modifiers := []reconciling.ObjectModifier{
+		modifier.RelatedRevisionsLabels(ctx, r),
+		modifier.ControlplaneComponent(cluster),
+	}
+
+	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, r.Client, modifiers...)
 }
 
 func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *kubermaticv1.Cluster) error {

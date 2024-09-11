@@ -1239,22 +1239,14 @@ func UserClusterDNSPolicyAndConfig(d userClusterDNSPolicyAndConfigData) (corev1.
 }
 
 // BaseAppLabels returns the minimum required labels.
-func BaseAppLabels(name string, additionalLabels map[string]string) map[string]string {
+func BaseAppLabels(appName string, additionalLabels map[string]string) map[string]string {
 	labels := map[string]string{
-		AppLabelKey: name,
+		AppLabelKey: appName,
 	}
 	for k, v := range additionalLabels {
 		labels[k] = v
 	}
 	return labels
-}
-
-// AppClusterLabels returns the base app label + the cluster label. Additional labels can be included as well.
-func AppClusterLabels(appName, clusterName string, additionalLabels map[string]string) map[string]string {
-	podLabels := BaseAppLabels(appName, additionalLabels)
-	podLabels["cluster"] = clusterName
-
-	return podLabels
 }
 
 // CertWillExpireSoon returns if the certificate will expire in the next 30 days.

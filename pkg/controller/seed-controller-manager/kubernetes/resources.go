@@ -438,8 +438,13 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 		}
 	}
 
-	creators := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, modifier.RelatedRevisionsLabels(ctx, r))
+	modifiers := []reconciling.ObjectModifier{
+		modifier.RelatedRevisionsLabels(ctx, r),
+		modifier.ControlplaneComponent(cluster),
+	}
+
+	factories := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
+	return reconciling.ReconcileDeployments(ctx, factories, cluster.Status.NamespaceName, r, modifiers...)
 }
 
 // In #13180 and its backports the label selectors for the Azure CCM were fixed, but since they are
@@ -865,7 +870,12 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 
 	creators := GetStatefulSetReconcilers(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
 
-	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, modifier.RelatedRevisionsLabels(ctx, r))
+	modifiers := []reconciling.ObjectModifier{
+		modifier.RelatedRevisionsLabels(ctx, r),
+		modifier.ControlplaneComponent(c),
+	}
+
+	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, modifiers...)
 }
 
 func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData,
