@@ -17,6 +17,7 @@ spec:
       creationTimestamp: null
       labels:
         app: nodeport-proxy-lb-updater
+        cluster: de-test-01
     spec:
       containers:
       - command:

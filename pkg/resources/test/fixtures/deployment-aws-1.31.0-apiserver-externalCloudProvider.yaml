@@ -32,6 +32,7 @@ spec:
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cloud-config-secret-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
         cluster: de-test-01
         front-proxy-ca-secret-revision: "123456"
         konnectivity-kubeconfig-secret-revision: "123456"

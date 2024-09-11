@@ -27,6 +27,7 @@ spec:
         ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cloud-config-secret-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
         cluster: de-test-01
         controllermanager-kubeconfig-secret-revision: "123456"
         service-account-key-secret-revision: "123456"

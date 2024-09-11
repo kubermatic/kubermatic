@@ -23,6 +23,11 @@ spec:
       creationTimestamp: null
       labels:
         app: usercluster-webhook
+        ca-bundle-configmap-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
+        cluster: de-test-01
+        internal-admin-kubeconfig-secret-revision: "123456"
+        usercluster-webhook-serving-cert-secret-revision: "123456"
     spec:
       containers:
       - args:
