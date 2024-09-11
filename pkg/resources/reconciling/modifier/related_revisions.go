@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,34 +39,30 @@ func RelatedRevisionsLabels(ctx context.Context, client ctrlruntimeclient.Client
 				return obj, err
 			}
 
-			switch asserted := obj.(type) {
-			case *appsv1.Deployment:
-				if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
-					return obj, fmt.Errorf("failed to determine revision labels: %w", err)
-				}
-
-			case *appsv1.StatefulSet:
-				if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
-					return obj, fmt.Errorf("failed to determine revision labels: %w", err)
-				}
-
-			case *appsv1.DaemonSet:
-				if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
-					return obj, fmt.Errorf("failed to determine revision labels: %w", err)
-				}
-
-				// switch to a new map in case the asserted used the same map for selector.matchLabels and labels
-				// oldLabels := asserted.Spec.Template.Labels
-				// asserted.Spec.Template.Labels = revisionLabels
-
-				// for k, v := range oldLabels {
-				// 	asserted.Spec.Template.Labels[k] = v
-				// }
-			}
-
-			return obj, nil
+			return addRevisionLabelsToObject(ctx, client, obj)
 		}
 	}
+}
+
+func addRevisionLabelsToObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+	switch asserted := obj.(type) {
+	case *appsv1.Deployment:
+		if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
+			return nil, fmt.Errorf("failed to determine revision labels: %w", err)
+		}
+
+	case *appsv1.StatefulSet:
+		if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
+			return nil, fmt.Errorf("failed to determine revision labels: %w", err)
+		}
+
+	case *appsv1.DaemonSet:
+		if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
+			return nil, fmt.Errorf("failed to determine revision labels: %w", err)
+		}
+	}
+
+	return obj, nil
 }
 
 func addRevisionLabelsToPodSpec(ctx context.Context, client ctrlruntimeclient.Client, namespace string, ps *corev1.PodTemplateSpec) error {
@@ -80,7 +75,18 @@ func addRevisionLabelsToPodSpec(ctx context.Context, client ctrlruntimeclient.Cl
 		return err
 	}
 
-	kubernetes.EnsureLabels(ps, revisionLabels)
+	// Clone the original labels in case the identical map is also referenced elsewhere in the
+	// PodTemplate (most notably the MatchLabels in the Selector).
+
+	labels := map[string]string{}
+	for k, v := range ps.GetLabels() {
+		labels[k] = v
+	}
+	for k, v := range revisionLabels {
+		labels[k] = v
+	}
+
+	ps.SetLabels(labels)
 
 	return nil
 }
