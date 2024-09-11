@@ -271,14 +271,14 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	}
 
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		userclusterresources.DeploymentReconciler(),
+		userclusterresources.DeploymentReconciler(data),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile the cluster backup Deployment: %w", err)
 	}
 
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
-		userclusterresources.DaemonSetReconciler(),
+		userclusterresources.DaemonSetReconciler(data),
 	}
 	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero node-agent DaemonSet: %w", err)
