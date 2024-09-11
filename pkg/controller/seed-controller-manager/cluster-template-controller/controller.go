@@ -246,7 +246,7 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
 			Labels:      template.ClusterLabels,
-			Annotations: template.Annotations,
+			Annotations: template.ClusterAnnotations,
 		},
 	}
 

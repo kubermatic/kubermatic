@@ -1543,6 +1543,13 @@ func (in *ClusterTemplate) DeepCopyInto(out *ClusterTemplate) {
 			(*out)[key] = val
 		}
 	}
+	if in.ClusterAnnotations != nil {
+		in, out := &in.ClusterAnnotations, &out.ClusterAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.InheritedClusterLabels != nil {
 		in, out := &in.InheritedClusterLabels, &out.InheritedClusterLabels
 		*out = make(map[string]string, len(*in))
