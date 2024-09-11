@@ -122,7 +122,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create external cluster controller: %w", err)
 	}
-	if err := kubeone.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+	if err := kubeone.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.overwriteRegistry); err != nil {
 		return fmt.Errorf("failed to create kubeone controller: %w", err)
 	}
 	if err := kcstatuscontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.versions); err != nil {
