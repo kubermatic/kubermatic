@@ -18,7 +18,6 @@ package common
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -27,34 +26,22 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/reconciler/pkg/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
 	// OperatorName is used as the value for ManagedBy labels to establish
 	// a weak ownership to reconciled resources.
 	OperatorName = "kubermatic-operator"
-
-	// ManagedByLabel is the label used to identify the resources
-	// created by this controller.
-	ManagedByLabel = "app.kubernetes.io/managed-by"
-
-	// helmReleaseAnnotation is the indicator for the ownership modifier to
-	// not touch the object.
-	helmReleaseAnnotation = "meta.helm.sh/release-name"
 )
 
 var (
@@ -72,7 +59,7 @@ var (
 
 	// ManagedByOperatorSelector is a label selector that matches all resources created by
 	// the Kubermatic Operator.
-	ManagedByOperatorSelector, _ = labels.NewRequirement(ManagedByLabel, selection.Equals, []string{OperatorName})
+	ManagedByOperatorSelector, _ = labels.NewRequirement(modifier.ManagedByLabel, selection.Equals, []string{OperatorName})
 )
 
 func isKubermaticConfiguration(ref metav1.OwnerReference) bool {
@@ -95,113 +82,6 @@ func StringifyFeatureGates(cfg *kubermaticv1.KubermaticConfiguration) string {
 	}
 
 	return strings.Join(sets.List(features), ",")
-}
-
-// OwnershipModifierFactory is generating a new ObjectModifier that wraps an ObjectReconciler
-// and takes care of applying the ownership and other labels for all managed objects.
-func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) reconciling.ObjectModifier {
-	return func(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
-		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-			obj, err := create(existing)
-			if err != nil {
-				return obj, err
-			}
-
-			o, ok := obj.(metav1.Object)
-			if !ok {
-				return obj, nil
-			}
-
-			// Sometimes, the KKP operator needs to deal with objects that are owned by Helm
-			// and then re-appropriated by KKP. This will however interfere with Helm's own
-			// ownership concept. Also, reconciling resources owned by Helm will just lead to
-			// increased resourceVersions, which might then trigger Deployments to be reconciled
-			// due to the VolumeVersion annotations.
-			// To prevent this, if an object is already owned by Helm, we never touch it.
-			if _, exists := o.GetAnnotations()[helmReleaseAnnotation]; exists {
-				return obj, nil
-			}
-
-			// try to set an owner reference; on shared resources this would fail to set
-			// the second owner ref, we ignore this error and rely on the existing
-			// KubermaticConfiguration ownership
-			err = controllerutil.SetControllerReference(owner, o, scheme)
-			if err != nil {
-				var cerr *controllerutil.AlreadyOwnedError // do not use errors.Is() on this error type
-				if !errors.As(err, &cerr) {
-					return obj, fmt.Errorf("failed to set owner reference: %w", err)
-				}
-			}
-
-			labels := o.GetLabels()
-			if labels == nil {
-				labels = make(map[string]string)
-			}
-			labels[ManagedByLabel] = OperatorName
-			o.SetLabels(labels)
-
-			return obj, nil
-		}
-	}
-}
-
-// VolumeRevisionLabelsModifierFactory scans volume mounts for pod templates for ConfigMaps
-// and Secrets and will then put new labels for these mounts onto the pod template, causing
-// restarts when the volumes changed.
-func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntimeclient.Client) reconciling.ObjectModifier {
-	return func(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
-		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-			obj, err := create(existing)
-			if err != nil {
-				return obj, err
-			}
-
-			deployment, ok := obj.(*appsv1.Deployment)
-			if !ok {
-				return obj, nil
-			}
-
-			volumeLabels, err := resources.VolumeRevisionLabels(ctx, client, deployment.Namespace, deployment.Spec.Template.Spec.Volumes)
-			if err != nil {
-				return obj, fmt.Errorf("failed to determine revision labels for volumes: %w", err)
-			}
-
-			// switch to a new map in case the deployment used the same map for selector.matchLabels and labels
-			oldLabels := deployment.Spec.Template.Labels
-			deployment.Spec.Template.Labels = volumeLabels
-
-			for k, v := range oldLabels {
-				deployment.Spec.Template.Labels[k] = v
-			}
-
-			return obj, nil
-		}
-	}
-}
-
-// VersionLabelModifierFactory adds the version label for Deployments and their corresponding pods.
-func VersionLabelModifierFactory(version string) reconciling.ObjectModifier {
-	return func(create reconciling.ObjectReconciler) reconciling.ObjectReconciler {
-		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
-			obj, err := create(existing)
-			if err != nil {
-				return obj, err
-			}
-
-			deployment, ok := obj.(*appsv1.Deployment)
-			if !ok {
-				return obj, fmt.Errorf("VersionLabelModifier is only implemented for deployments, not %T", obj)
-			}
-
-			if deployment.ObjectMeta.Labels == nil {
-				deployment.ObjectMeta.Labels = make(map[string]string)
-			}
-			deployment.ObjectMeta.Labels[resources.VersionLabel] = version
-			deployment.Spec.Template.Labels[resources.VersionLabel] = version
-
-			return obj, nil
-		}
-	}
 }
 
 func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {

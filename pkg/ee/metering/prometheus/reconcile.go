@@ -29,7 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -43,8 +43,8 @@ const (
 
 // ReconcilePrometheus reconciles the prometheus instance used as a datasource for metering.
 func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, scheme *runtime.Scheme, getRegistry registry.ImageRewriter, seed *kubermaticv1.Seed) error {
-	seedOwner := common.OwnershipModifierFactory(seed, scheme)
-	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(ctx, client)
+	seedOwner := modifier.Ownership(seed, "", scheme)
+	revisionLabelsModifier := modifier.RelatedRevisionsLabels(ctx, client)
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountReconcilerFactory{
 		prometheusServiceAccount(),
@@ -72,7 +72,7 @@ func ReconcilePrometheus(ctx context.Context, client ctrlruntimeclient.Client, s
 
 	if err := reconciling.ReconcileStatefulSets(ctx, []reconciling.NamedStatefulSetReconcilerFactory{
 		PrometheusStatefulSet(getRegistry, seed),
-	}, seed.Namespace, client, seedOwner, volumeLabelModifier); err != nil {
+	}, seed.Namespace, client, seedOwner, revisionLabelsModifier); err != nil {
 		return fmt.Errorf("failed to reconcile StatefuleSet: %w", err)
 	}
 

@@ -63,7 +63,6 @@ const (
 // kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components.
 type kubernetesDashboardData interface {
 	Cluster() *kubermaticv1.Cluster
-	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	RewriteImage(string) (string, error)
 }
 
@@ -79,25 +78,18 @@ func DeploymentReconciler(data kubernetesDashboardData) reconciling.NamedDeploym
 				MatchLabels: baseLabels,
 			}
 
-			volumes := getVolumes()
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
 			containers, err := getContainers(data, dep.Spec.Template.Spec.Containers)
 			if err != nil {
 				return nil, err
 			}
 
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: tmpVolumeName,
 			})
 
-			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.Volumes = getVolumes()
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = containers

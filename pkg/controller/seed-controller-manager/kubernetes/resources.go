@@ -49,6 +49,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/openvpn"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/resources/scheduler"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
 	userclusterwebhook "k8c.io/kubermatic/v2/pkg/resources/usercluster-webhook"
@@ -438,7 +439,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 	}
 
 	creators := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r)
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, modifier.RelatedRevisionsLabels(ctx, r))
 }
 
 // In #13180 and its backports the label selectors for the Azure CCM were fixed, but since they are
@@ -864,7 +865,7 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 
 	creators := GetStatefulSetReconcilers(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
 
-	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client)
+	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, modifier.RelatedRevisionsLabels(ctx, r))
 }
 
 func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData,

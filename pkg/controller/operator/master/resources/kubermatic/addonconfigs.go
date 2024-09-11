@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 )
 
 var (
@@ -66,7 +67,7 @@ func makeReconciler(addonConfigReconciler func() *kubermaticv1.AddonConfig) reco
 			// (this is the default for KKP 2.22+) or whether an admin has manually created it.
 			owned := false
 
-			label, exists := existing.Labels[common.ManagedByLabel]
+			label, exists := existing.Labels[modifier.ManagedByLabel]
 			if label == common.OperatorName {
 				owned = true
 			} else if !exists {
@@ -86,7 +87,7 @@ func makeReconciler(addonConfigReconciler func() *kubermaticv1.AddonConfig) reco
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}
 			}
-			existing.Labels[common.ManagedByLabel] = common.OperatorName
+			existing.Labels[modifier.ManagedByLabel] = common.OperatorName
 
 			return existing, nil
 		}

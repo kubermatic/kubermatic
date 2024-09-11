@@ -69,6 +69,8 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			var err error
+
 			baseLabels := resources.BaseAppLabels(resources.ApiserverDeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
 
@@ -91,20 +93,15 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditWebhookBackendEnabled)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
-
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
-				resources.VersionLabel: version.String(),
-			})
-			if err != nil {
-				return nil, err
-			}
-
 			address := data.Cluster().Status.Address
 
 			// these volumes should not block the autoscaler from evicting the pod
 			safeToEvictVolumes := []string{resources.AuditLogVolumeName, resources.KonnectivityUDS}
 
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
+			kubernetes.EnsureLabels(&dep.Spec.Template, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
+
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				"prometheus.io/scrape_with_kube_cert":                   "true",
 				"prometheus.io/path":                                    "/metrics",

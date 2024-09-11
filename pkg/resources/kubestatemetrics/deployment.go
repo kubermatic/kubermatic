@@ -67,13 +67,6 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes()
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				// do not specify a port so that Prometheus automatically
 				// scrapes both the metrics and the telemetry endpoints
@@ -82,7 +75,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				"cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes": tmpVolume,
 			})
 
-			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.Volumes = getVolumes()
 
 			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				FSGroup: resources.Int64(65534),
@@ -165,7 +158,8 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 					},
 				},
 			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

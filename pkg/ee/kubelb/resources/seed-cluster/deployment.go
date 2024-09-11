@@ -66,7 +66,6 @@ const (
 )
 
 type kubeLBData interface {
-	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	DC() *kubermaticv1.Datacenter
@@ -114,21 +113,17 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 				MatchLabels: resources.BaseAppLabels(resources.KubeLBDeploymentName, nil),
 			}
 
-			volumes := []corev1.Volume{getCCMKubeconfigVolume(), getKubeLBManagerKubeconfigVolume()}
-			dep.Spec.Template.Spec.Volumes = volumes
-
-			podLabels, err := data.GetPodTemplateLabels(resources.KubeLBDeploymentName, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				"prometheus.io/scrape":                 "true",
 				"prometheus.io/path":                   "/metrics",
 				"prometheus.io/port":                   "8082",
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
+
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				getCCMKubeconfigVolume(),
+				getKubeLBManagerKubeconfigVolume(),
+			}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -184,7 +179,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

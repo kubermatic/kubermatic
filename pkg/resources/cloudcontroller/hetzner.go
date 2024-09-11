@@ -19,7 +19,6 @@ package cloudcontroller
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -49,13 +48,7 @@ func hetznerDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 		return HetznerCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = resources.Int32(1)
 
-			podLabels, err := data.GetPodTemplateLabels(HetznerCCMDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
-
+			var err error
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
 				resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {

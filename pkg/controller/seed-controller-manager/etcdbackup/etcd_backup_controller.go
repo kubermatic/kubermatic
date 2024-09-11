@@ -26,7 +26,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -34,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -821,7 +821,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 		),
 	}
 
-	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, modifier.Ownership(cluster, "", r.scheme))
 }
 
 func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
@@ -835,7 +835,7 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1
 		certificates.CABundleConfigMapReconciler(name, r.caBundle),
 	}
 
-	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, modifier.Ownership(cluster, "", r.scheme))
 }
 
 func parseCronSchedule(scheduleString string) (cron.Schedule, error) {

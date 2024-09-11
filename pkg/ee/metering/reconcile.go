@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -73,8 +74,8 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 
 	modifiers := []reconciling.ObjectModifier{
-		common.VolumeRevisionLabelsModifierFactory(ctx, client),
-		common.OwnershipModifierFactory(seed, scheme),
+		modifier.RelatedRevisionsLabels(ctx, client),
+		modifier.Ownership(seed, "", scheme),
 	}
 
 	if err := reconcileMeteringReportConfigurations(ctx, client, seed, cfg.Spec.CABundle, overwriter, modifiers...); err != nil {

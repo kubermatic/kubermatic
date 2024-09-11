@@ -326,7 +326,7 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client, modifier.RelatedRevisionsLabels(ctx, r)); err != nil {
 		return nil, fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 

@@ -19,8 +19,6 @@ limitations under the License.
 package vmwareclouddirector
 
 import (
-	"fmt"
-
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -112,18 +110,13 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 			}
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			podLabels, err := data.GetPodTemplateLabels(resources.VMwareCloudDirectorCSIControllerName, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "socket-dir",
 			})
 
+			var err error
 			dep.Spec.Template.Spec.ServiceAccountName = resources.VMwareCloudDirectorCSIServiceAccountName
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {

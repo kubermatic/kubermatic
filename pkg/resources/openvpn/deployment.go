@@ -71,7 +71,6 @@ const (
 
 type openVPNDeploymentReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
-	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	NodeAccessNetwork() string
 	RewriteImage(string) (string, error)
 }
@@ -101,13 +100,7 @@ func DeploymentReconciler(data openVPNDeploymentReconcilerData) reconciling.Name
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
 			procMountType := corev1.DefaultProcMount
-			volumes := getVolumes()
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
 
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				"prometheus.io/path":                   "/metrics",
 				"prometheus.io/port":                   fmt.Sprintf("%d", exporterPort),
@@ -145,7 +138,7 @@ func DeploymentReconciler(data openVPNDeploymentReconcilerData) reconciling.Name
 				"--route", nodeAccessNetwork.IP.String(), net.IP(nodeAccessNetwork.Mask).String(),
 			}...)
 
-			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.Volumes = getVolumes()
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{

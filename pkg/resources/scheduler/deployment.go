@@ -91,17 +91,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				MatchLabels: baseLabels,
 			}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled())
-			volumeMounts := getVolumeMounts()
-
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+			kubernetes.EnsureLabels(&dep.Spec.Template, map[string]string{
 				resources.VersionLabel: version.String(),
 			})
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				"prometheus.io/path":                   "/metrics",
 				"prometheus.io/scrape_with_kube_cert":  "true",
@@ -111,12 +103,11 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
+			var err error
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
-
-			dep.Spec.Template.Spec.Volumes = volumes
 
 			healthAction := &corev1.HTTPGetAction{
 				Path:   "/healthz",
@@ -137,7 +128,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 							Value: "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 						},
 					},
-					VolumeMounts: volumeMounts,
+					VolumeMounts: getVolumeMounts(),
 					ReadinessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
 							HTTPGet: healthAction,
@@ -171,6 +162,8 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
 				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
+
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {

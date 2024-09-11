@@ -61,7 +61,6 @@ var (
 
 type etcdStatefulSetReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
-	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	RewriteImage(string) (string, error)
 	EtcdDiskSize() resource.Quantity
 	EtcdLauncherImage() string
@@ -108,13 +107,6 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 			set.Spec.Template.Name = name
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 
-			volumes := getVolumes()
-			podLabels, err := data.GetPodTemplateLabels(resources.EtcdStatefulSetName, volumes, baseLabels)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
 				// NB: We purposefully do not want to use the cluster-last-restart annotation here to
 				// restart etcd, as that would lead to multiple complete restarts during an etcd restore.
@@ -331,7 +323,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 
 			set.Spec.Template.Spec.NodeSelector = data.Cluster().Spec.ComponentsOverride.Etcd.NodeSelector
 
-			set.Spec.Template.Spec.Volumes = volumes
+			set.Spec.Template.Spec.Volumes = getVolumes()
 
 			// Make sure we don't change volume claim template of existing sts
 			if len(set.Spec.VolumeClaimTemplates) == 0 {
