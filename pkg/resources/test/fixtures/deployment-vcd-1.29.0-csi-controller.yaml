@@ -76,9 +76,32 @@ spec:
           name: vcloud-csi-kubeconfig
           readOnly: true
       - args:
+        - --csi-address=$(ADDRESS)
+        - --timeout=30s
+        - --kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig
+        - --v=5
+        env:
+        - name: ADDRESS
+          value: /var/lib/csi/sockets/pluginproxy/csi.sock
+        image: registry.k8s.io/sig-storage/csi-resizer:v1.4.0
+        imagePullPolicy: IfNotPresent
+        name: csi-resizer
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/pluginproxy/
+          name: socket-dir
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: vcloud-csi-kubeconfig
+          readOnly: true
+      - args:
         - --endpoint=$(CSI_ENDPOINT)
         - --cloud-config=/etc/kubernetes/vcloud/config
-        - --v=5
         command:
         - /opt/vcloud/bin/cloud-director-named-disk-csi-driver
         env:
@@ -88,7 +111,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        image: projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.5.0
+        image: projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.6.0
         imagePullPolicy: IfNotPresent
         name: vcd-csi-plugin
         resources:

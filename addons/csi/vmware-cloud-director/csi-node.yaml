@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.5.0/manifests/csi-node.yaml
+# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.6.0/manifests/csi-node.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -78,7 +78,6 @@ spec:
           image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.2.0" }}
           imagePullPolicy: "IfNotPresent"
           args:
-            - "--v=5"
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
           lifecycle:
@@ -99,20 +98,32 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
+        - name: csi-resizer
+          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.4.0" }}
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--timeout=30s"
+            - "--v=5"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          imagePullPolicy: "IfNotPresent"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: vcd-csi-plugin
           securityContext:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.5.0" }}
+          image: {{ Image "projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.6.0" }}
           imagePullPolicy: IfNotPresent
           command :
             - /opt/vcloud/bin/cloud-director-named-disk-csi-driver
             - --nodeid=$(NODE_ID)
             - --endpoint=$(CSI_ENDPOINT)
             - --cloud-config=/etc/kubernetes/vcloud/vcloud-csi-config.yaml
-            - --v=5
           env:
             - name: NODE_ID
               valueFrom:
