@@ -1,0 +1,286 @@
+{{ if .Values.userMla.enable }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mla
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: project to group all user mla apps together
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: mla
+    server: https://kubernetes.default.svc
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mla
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.minio }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-minio
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/minio
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      releaseName: minio
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.secrets }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-secrets
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/mla-secrets
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+    helm:
+      # TODO: we should allow users to override releaseName. This will help in backward compatibility to existing helm charts AND not create duplicate resources
+      # releaseName: mla-secrets
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+---
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.minioLifecycleMgr }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-minio-lifecycle-manager
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/minio-lifecycle-mgr
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.grafana }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-grafana
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/grafana
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      releaseName: grafana
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.consul }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-consul
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/consul
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      releaseName: consul
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.alertmanagerProxy }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-alertmanager-proxy
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/alertmanager-proxy
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.cortex }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-cortex
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/cortex
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      releaseName: cortex
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cortex-runtime-config
+  namespace: mla
+data:
+  runtime-config.yaml: 'overrides:'
+{{ end }}
+
+{{ if and .Values.userMla.enable .Values.userMla.lokiDistributed }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-loki-distributed
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/mla/loki-distributed
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}
+
+
+{{ if and .Values.userMla.enable .Values.userMla.iapMla }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-iap
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/iap
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.user-mla-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+{{ end }}

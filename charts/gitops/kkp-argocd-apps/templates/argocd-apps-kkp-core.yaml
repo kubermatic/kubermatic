@@ -1,0 +1,160 @@
+{{ if or .Values.seedSettings .Values.seedExtras }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubermatic
+{{ end }}
+
+{{ if or .Values.oauth }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: oauth
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/oauth
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: oauth
+{{ end }}
+
+{{ if .Values.nginx }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ingress-controller
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress-controller
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/nginx-ingress-controller
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: nginx-ingress-controller
+  # ngnix ingress app to be synced automatically so that we can access ArgoCD via it!
+  syncPolicy:
+    automated: {}
+{{ end }}
+
+
+{{ if .Values.certManager }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/cert-manager
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      parameters:
+      - name: "cert-manager.installCRDs"
+        value: "true"
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: cert-manager
+  # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
+  syncPolicy:
+    automated: {}
+{{ end }}
+
+{{ if and .Values.seedSettings .Values.isMasterSeed}}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: master-settings-{{ .Values.seed }}
+  namespace: argocd
+spec:
+  # TODO: Create segregated projects - should be an option to use different project.
+  # project: kubermatic-config
+  project: default
+  sources:
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ template "argo-cd-apps.env-specific-kkp-settings.path" . }}
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kubermatic
+{{ end }}
+
+{{ if .Values.seedExtras }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: seed-extras-{{ .Values.seed }}
+  namespace: argocd
+spec:
+  # TODO: Create segregated projects
+  # project: kubermatic-config
+  project: default
+  sources:
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: '{{ .Values.environment }}'
+    directory:
+      recurse: true
+      exclude: 'values.yaml'
+      include: '{common/*,{{ .Values.seed }}/*}'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kubermatic
+{{ end }}
