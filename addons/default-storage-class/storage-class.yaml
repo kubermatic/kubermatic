@@ -211,6 +211,7 @@ reclaimPolicy: Delete
 parameters:
   storageProfile: {{ .Cluster.CSI.StorageProfile | quote }}
   filesystem: {{ default "ext4" .Cluster.CSI.Filesystem | quote }}
+allowVolumeExpansion: true
 {{ end }}
 {{ end }}
 

@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
-// Sourced from: https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.2.0/manifests/vcloud-csi-config.yaml
+// Sourced from: https://raw.githubusercontent.com/vmware/cloud-director-named-disk-csi-driver/1.6.0/manifests/vcloud-csi-config.yaml
 
 type CloudConfig struct {
 	VCD       VCDConfig `yaml:"vcd"`

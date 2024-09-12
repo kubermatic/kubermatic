@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.5.0/manifests/csi-controller.yaml
+# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.6.0/manifests/csi-controller.yaml
 #
 # Changes:
 # - image source includes registry templating
@@ -105,6 +105,43 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: csi-provisioner-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# external resizer
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-resizer-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims/status"]
+    verbs: ["update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-resizer-binding
+subjects:
+  - kind: User
+    name: kubermatic:vcloud-csi
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: csi-resizer-role
   apiGroup: rbac.authorization.k8s.io
 
 {{ end }}

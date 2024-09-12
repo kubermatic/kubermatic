@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Original source: https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.5.0/manifests/csi-controller.yaml
+// Original source: https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.6.0/manifests/csi-controller.yaml
 
 package vmwareclouddirector
 
@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	csiVersion = "1.5.0"
+	csiVersion = "1.6.0"
 )
 
 var (
@@ -209,6 +209,44 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					},
 				},
 				{
+					Name:            "csi-resizer",
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-resizer:v1.4.0")),
+					Args: []string{
+						"--csi-address=$(ADDRESS)",
+						"--timeout=30s",
+						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
+						"--v=5",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "ADDRESS",
+							Value: "/var/lib/csi/sockets/pluginproxy/csi.sock",
+						},
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: "/var/lib/csi/sockets/pluginproxy/",
+						},
+						{
+							Name:      resources.VMwareCloudDirectorCSIKubeconfigSecretName,
+							MountPath: "/etc/kubernetes/kubeconfig",
+							ReadOnly:  true,
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("24Mi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("100m"),
+							corev1.ResourceMemory: resource.MustParse("64Mi"),
+						},
+					},
+				},
+				{
 					Name:            "vcd-csi-plugin",
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Image:           registry.Must(data.RewriteImage("projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:" + csiVersion)),
@@ -216,7 +254,6 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					Args: []string{
 						"--endpoint=$(CSI_ENDPOINT)",
 						"--cloud-config=/etc/kubernetes/vcloud/config",
-						"--v=5",
 					},
 					Env: []corev1.EnvVar{
 						{
