@@ -38,8 +38,7 @@ type digitaloceanScenario struct {
 }
 
 func (s *digitaloceanScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](
-		providerconfig.OperatingSystemCentOS,
+	return sets.New(
 		providerconfig.OperatingSystemRockyLinux,
 		providerconfig.OperatingSystemUbuntu,
 	)
