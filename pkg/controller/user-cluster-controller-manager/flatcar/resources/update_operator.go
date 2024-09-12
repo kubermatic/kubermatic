@@ -18,7 +18,6 @@ package resources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -30,6 +29,7 @@ import (
 
 const (
 	OperatorDeploymentName = "flatcar-linux-update-operator"
+	operatorVersion        = "v0.9.0"
 )
 
 var (
@@ -51,11 +51,13 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 				},
 			}
 
+			// We broke compatibility with upstream in #5875 and instead of performing a migration,
+			// we simply keep the changed labels.
 			labels := map[string]string{"app.kubernetes.io/name": OperatorDeploymentName}
 
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			dep.Spec.Template.ObjectMeta.Labels = labels
-			dep.Spec.Template.Spec.ServiceAccountName = OperatorServiceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = operatorServiceAccountName
 
 			env := []corev1.EnvVar{
 				{
@@ -86,7 +88,7 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "update-operator",
-					Image:   registry.Must(imageRewriter(resources.RegistryQuay + "/kinvolk/flatcar-linux-update-operator:v0.7.3")),
+					Image:   operatorImage(imageRewriter),
 					Command: []string{"/bin/update-operator"},
 					Env:     env,
 				},
@@ -95,4 +97,8 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 			return dep, nil
 		}
 	}
+}
+
+func operatorImage(imageRewriter registry.ImageRewriter) string {
+	return registry.Must(imageRewriter("ghcr.io/flatcar/flatcar-linux-update-operator:" + operatorVersion))
 }

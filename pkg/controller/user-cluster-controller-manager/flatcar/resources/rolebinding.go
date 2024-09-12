@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@ import (
 )
 
 const (
-	operatorClusterRoleBindingName = "flatcar-linux-update-operator"
-	agentClusterRoleBindingName    = "flatcar-linux-update-agent"
+	operatorRoleBindingName = "flatcar-linux-update-operator"
+	agentRoleBindingName    = "flatcar-linux-update-agent"
 )
 
-func OperatorClusterRoleBindingReconciler(operatorNamespace string) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingReconciler) {
-		return operatorClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+func OperatorRoleBindingReconciler(operatorNamespace string) reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
+		return operatorRoleBindingName, func(crb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     operatorClusterRoleName,
+				Kind:     "Role",
+				Name:     operatorRoleName,
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{
@@ -47,13 +47,18 @@ func OperatorClusterRoleBindingReconciler(operatorNamespace string) reconciling.
 	}
 }
 
-func AgentClusterRoleBindingReconciler(operatorNamespace string) reconciling.NamedClusterRoleBindingReconcilerFactory {
-	return func() (string, reconciling.ClusterRoleBindingReconciler) {
-		return agentClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+// This RoleBinding is defined upstream, but points to a non-existing Role.
+// cf. https://github.com/flatcar/flatcar-linux-update-operator/pull/163
+// It seems harmless so we stay in-sync with upstream rather than deciding
+// ourselves that the RoleBinding is unnecessary.
+
+func AgentRoleBindingReconciler(operatorNamespace string) reconciling.NamedRoleBindingReconcilerFactory {
+	return func() (string, reconciling.RoleBindingReconciler) {
+		return agentRoleBindingName, func(crb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     agentClusterRoleName,
+				Kind:     "Role",
+				Name:     "flatcar-linux-update-agent",
 			}
 			crb.Subjects = []rbacv1.Subject{
 				{

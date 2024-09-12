@@ -28,50 +28,65 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func EnsureAllDeleted(ctx context.Context, client ctrlruntimeclient.Client) error {
+func EnsureAllDeleted(ctx context.Context, client ctrlruntimeclient.Client, operatorNamespace string) error {
 	objects := []ctrlruntimeclient.Object{
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      AgentDaemonSetName,
-				Namespace: metav1.NamespaceSystem,
+				Namespace: operatorNamespace,
 			},
 		},
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      OperatorDeploymentName,
-				Namespace: metav1.NamespaceSystem,
+				Namespace: operatorNamespace,
 			},
 		},
-		&rbacv1.ClusterRoleBinding{
+		&rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: OperatorClusterRoleBindingName,
+				Name: operatorRoleName,
 			},
 		},
-		&rbacv1.ClusterRoleBinding{
+		&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: AgentClusterRoleBindingName,
+				Name: operatorRoleBindingName,
+			},
+		},
+		&rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: agentRoleBindingName,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: OperatorClusterRoleName,
+				Name: operatorClusterRoleName,
 			},
 		},
 		&rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: AgentClusterRoleName,
+				Name: agentClusterRoleName,
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: operatorClusterRoleBindingName,
+			},
+		},
+		&rbacv1.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: agentClusterRoleBindingName,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      OperatorServiceAccountName,
-				Namespace: metav1.NamespaceSystem,
+				Name:      operatorServiceAccountName,
+				Namespace: operatorNamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      AgentServiceAccountName,
-				Namespace: metav1.NamespaceSystem,
+				Name:      agentServiceAccountName,
+				Namespace: operatorNamespace,
 			},
 		},
 	}
