@@ -35,7 +35,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/go-runner","args":["--redirect-stderr=true","/cloud-controller-manager","--v=2","--cloud-config=/etc/kubernetes/cloud/config","--secure-port=10258","--use-service-account-credentials","--cloud-provider=gce","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--allocate-node-cidrs","--controllers=*,-gkenetworkparamset","--cluster-name=de-test-01","--cluster-cidr=172.25.0.0/16"]}'
+        - '{"command":"/go-runner","args":["--redirect-stderr=true","/cloud-controller-manager","--v=2","--cloud-config=/etc/kubernetes/cloud/config","--secure-port=10258","--use-service-account-credentials","--cloud-provider=gce","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--allocate-node-cidrs","--cluster-name=de-test-01","--cluster-cidr=172.25.0.0/16"]}'
         command:
         - /http-prober-bin/http-prober
         env:
