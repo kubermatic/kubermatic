@@ -119,8 +119,6 @@ func VSphereCCMVersion(version semver.Semver) string {
 	// gcrane ls --json gcr.io/cloud-provider-vsphere/cpi/release/manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v126:
-		return "1.26.2"
 	case v127:
 		return "1.27.0"
 	case v128:

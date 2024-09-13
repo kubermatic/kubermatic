@@ -136,8 +136,6 @@ func AWSCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/provider-aws/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v126:
-		return "v1.26.13"
 	case v127:
 		return "v1.27.9"
 	case v128:
