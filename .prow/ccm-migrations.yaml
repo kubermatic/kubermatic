@@ -36,7 +36,7 @@ presubmits:
             - name: PROVIDER
               value: gcp
             - name: VERSION_TO_TEST
-              value: '1.27'
+              value: '1.28'
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
