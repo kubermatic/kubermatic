@@ -36,7 +36,6 @@ func TestCloudConfigToString(t *testing.T) {
 					SubnetID:                    "some-subnet",
 					KubernetesClusterID:         "some-tag",
 					DisableSecurityGroupIngress: true,
-					DisableStrictZoneCheck:      true,
 					ElbSecurityGroup:            "some-sg",
 					RoleARN:                     "some-arn",
 					RouteTableID:                "some-rt",
@@ -52,7 +51,6 @@ RoleARN = "some-arn"
 KubernetesClusterID = "some-tag"
 DisableSecurityGroupIngress = true
 ElbSecurityGroup = "some-sg"
-DisableStrictZoneCheck = true
 NodeIPFamilies = "ipv4"
 NodeIPFamilies = "ipv6"
 `),

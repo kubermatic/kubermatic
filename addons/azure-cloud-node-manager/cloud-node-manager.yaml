@@ -17,9 +17,6 @@
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.26" }}
-{{ $version = "v1.26.19" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.27" }}
 {{ $version = "v1.27.20" }}
 {{ end }}

@@ -38,11 +38,7 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) Clou
 			KubernetesClusterID:         cluster.Name,
 			DisableSecurityGroupIngress: false,
 			RouteTableID:                cluster.Spec.Cloud.AWS.RouteTableID,
-			// in 1.27, the AWS CCM removed the DisableStrictZoneCheck field, so
-			// for those setups we must set it to false, which will omit it from
-			// the generated cloudConfig
-			DisableStrictZoneCheck: cluster.Spec.Version.Semver().Minor() < 27,
-			RoleARN:                cluster.Spec.Cloud.AWS.ControlPlaneRoleARN,
+			RoleARN:                     cluster.Spec.Cloud.AWS.ControlPlaneRoleARN,
 		},
 	}
 
@@ -76,10 +72,7 @@ type GlobalOpts struct {
 	KubernetesClusterID         string
 	ElbSecurityGroup            string
 	DisableSecurityGroupIngress bool
-	// DisableStrictZoneCheck has been removed in Kubernetes 1.27+.
-	// See https://github.com/kubernetes/cloud-provider-aws/pull/573 for more information.
-	DisableStrictZoneCheck bool
-	NodeIPFamilies         []string
+	NodeIPFamilies              []string
 }
 
 func (o *GlobalOpts) toINI(section ini.Section) {
@@ -91,10 +84,6 @@ func (o *GlobalOpts) toINI(section ini.Section) {
 	section.AddStringKey("KubernetesClusterID", o.KubernetesClusterID)
 	section.AddBoolKey("DisableSecurityGroupIngress", o.DisableSecurityGroupIngress)
 	section.AddStringKey("ElbSecurityGroup", o.ElbSecurityGroup)
-
-	if o.DisableStrictZoneCheck {
-		section.AddBoolKey("DisableStrictZoneCheck", true)
-	}
 
 	for _, family := range o.NodeIPFamilies {
 		section.AddStringKey("NodeIPFamilies", family)

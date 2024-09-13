@@ -225,13 +225,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.27
-			newSemver("v1.27.3"),
-			newSemver("v1.27.6"),
-			newSemver("v1.27.10"),
-			newSemver("v1.27.11"),
-			newSemver("v1.27.13"),
-			newSemver("v1.27.14"),
 			// Kubernetes 1.28
 			newSemver("v1.28.2"),
 			newSemver("v1.28.5"),
