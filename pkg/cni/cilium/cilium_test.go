@@ -22,10 +22,14 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 )
@@ -268,6 +272,52 @@ func TestValidateImmutableValues(t *testing.T) {
 			if got := validateImmutableValues(tt.newValues, tt.oldValues, tt.fieldPath, tt.immutableValues, tt.acceptedFields); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s: validateImmutableValues() = %v, want %v", tt.name, got, tt.want)
 			}
+		})
+	}
+}
+
+func TestConvertValuesToValuesBlock(t *testing.T) {
+	tests := []struct {
+		name   string
+		appIn  *appskubermaticv1.ApplicationDefinition
+		expApp *appskubermaticv1.ApplicationDefinition
+	}{
+		{
+			name: "already using DefaultValuesBlock, nothing to do",
+			appIn: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{
+					DefaultValuesBlock: "key: value",
+				},
+			},
+			expApp: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{
+					DefaultValuesBlock: "key: value",
+				},
+			},
+		},
+		{
+			name: "using DefaultValues, convert to DefaultValuesBlock",
+			appIn: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{
+					DefaultValues: &runtime.RawExtension{Raw: []byte(`{"key": "value"}`)},
+				},
+			},
+			expApp: &appskubermaticv1.ApplicationDefinition{
+				Spec: appskubermaticv1.ApplicationDefinitionSpec{
+					DefaultValuesBlock: "key: value\n",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := convertDefaultValuesToDefaultValuesBlock(tt.appIn)
+			if err != nil {
+				t.Error(err)
+			}
+
+			assert.Equal(t, tt.appIn, tt.expApp)
 		})
 	}
 }

@@ -18,7 +18,6 @@ package validation
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -159,18 +158,15 @@ func ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI appskubermatic
 
 	// Validate CNI values
 	if newAI.Labels[appskubermaticv1.ApplicationTypeLabel] == appskubermaticv1.ApplicationTypeCNIValue {
-		newValues := make(map[string]any)
-		oldValues := make(map[string]any)
-		if len(newAI.Spec.Values.Raw) > 0 {
-			if err := json.Unmarshal(newAI.Spec.Values.Raw, &newValues); err != nil {
-				allErrs = append(allErrs, field.Invalid(valuesPath, string(newAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
-			}
+		newValues, err := newAI.Spec.GetParsedValues()
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(valuesPath, string(newAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
 		}
-		if len(oldAI.Spec.Values.Raw) > 0 {
-			if err := json.Unmarshal(oldAI.Spec.Values.Raw, &oldValues); err != nil {
-				allErrs = append(allErrs, field.Invalid(valuesPath, string(oldAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
-			}
+		oldValues, err := oldAI.Spec.GetParsedValues()
+		if err != nil {
+			allErrs = append(allErrs, field.Invalid(valuesPath, string(oldAI.Spec.Values.Raw), fmt.Sprintf("unable to unmarshal values: %s", err)))
 		}
+
 		if newAI.Name == kubermaticv1.CNIPluginTypeCilium.String() {
 			// Validate Cilium values update
 			allErrs = append(allErrs, cilium.ValidateValuesUpdate(newValues, oldValues, valuesPath)...)
