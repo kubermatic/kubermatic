@@ -353,13 +353,16 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		}
 	}
 
+	uiSecContext := maps.Clone(podSecurityContext)
+	uiSecContext["enabled"] = true
+
 	values["cni"] = valuesCni
 	values["operator"] = valuesOperator
 	values["certgen"] = valuesCertGen
 	values["hubble"] = map[string]any{
 		"relay": valuesRelay,
 		"ui": map[string]any{
-			"securityContext": podSecurityContext,
+			"securityContext": uiSecContext,
 			"frontend":        valuesFrontend,
 			"backend":         valuesBackend,
 		},
