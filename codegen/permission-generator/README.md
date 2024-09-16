@@ -6,7 +6,7 @@ Example usage:
 
 ```sh
 # running this from anywhere inside the KKP repo...
-permission-generator --provider=aws "k8c.io/kubermatic/v2/pkg/provider/cloud/aws,github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws" "github.com/aws/aws-sdk-go-v2/*"
+permission-generator --provider=aws "k8c.io/kubermatic/v2/pkg/provider/cloud/aws,k8c.io/machine-controller/pkg/cloudprovider/provider/aws" "github.com/aws/aws-sdk-go-v2/*"
 
 # ...will return something similar to this
 {
@@ -85,5 +85,5 @@ mapper could not find permissions for func abc from module xyz
 In these cases you have to update the defaultmapper.yml to include the new funcs. In order to make it easier to find all the funcs you can use the `--printFuncs` flag to display all funcs that are being used:
 
 ```sh
-permission-generator --provider=aws --printFuncs "k8c.io/kubermatic/v2/pkg/provider/cloud/aws,github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws" "github.com/aws/aws-sdk-go-v2/*"
+permission-generator --provider=aws --printFuncs "k8c.io/kubermatic/v2/pkg/provider/cloud/aws,k8c.io/machine-controller/pkg/cloudprovider/provider/aws" "github.com/aws/aws-sdk-go-v2/*"
 ```
