@@ -36,11 +36,6 @@ spec:
     hosts:
     - {{ .Values.dex.ingress.host }}
 {{- end }}
-  defaultBackend:
-    service:
-      name: dex
-      port:
-        number: 5556
   rules:
   - host: {{ .Values.dex.ingress.host }}
     http:

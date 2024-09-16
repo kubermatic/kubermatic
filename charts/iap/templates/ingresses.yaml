@@ -44,11 +44,6 @@ spec:
   {{- end }}
     hosts:
     - {{ .ingress.host | trim }}
-  defaultBackend:
-    service:
-      name: {{ .name }}-iap
-      port:
-        number: {{ $.Values.iap.port }}
   rules:
   - host: {{ .ingress.host | trim }}
     http:

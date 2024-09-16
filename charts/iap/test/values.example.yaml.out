@@ -330,11 +330,6 @@ spec:
   - secretName: alertmanager-tls
     hosts:
     - alertmanager.kubermatic.tld
-  defaultBackend:
-    service:
-      name: alertmanager-iap
-      port:
-        number: 3000
   rules:
   - host: alertmanager.kubermatic.tld
     http:
@@ -363,11 +358,6 @@ spec:
   - secretName: grafana-tls
     hosts:
     - grafana.kubermatic.tld
-  defaultBackend:
-    service:
-      name: grafana-iap
-      port:
-        number: 3000
   rules:
   - host: grafana.kubermatic.tld
     http:

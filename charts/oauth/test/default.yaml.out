@@ -347,11 +347,6 @@ spec:
   - secretName: dex-tls
     hosts:
     - 
-  defaultBackend:
-    service:
-      name: dex
-      port:
-        number: 5556
   rules:
   - host: 
     http:

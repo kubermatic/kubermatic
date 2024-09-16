@@ -349,11 +349,6 @@ spec:
   - secretName: dex-tls
     hosts:
     - kkp.example.com
-  defaultBackend:
-    service:
-      name: dex
-      port:
-        number: 5556
   rules:
   - host: kkp.example.com
     http:
