@@ -37,6 +37,8 @@ iap:
         tlsSecretName: ""
         host: "alertmanager.kubermatic.tld"
         annotations: {}
+        ## (Optional) Allow setting the value for ingressClassName to the different ingress controller such as "cilium". Default is set to "nginx"
+        class: "nginx"
     #
     grafana:
       name: grafana
@@ -58,6 +60,8 @@ iap:
       ingress:
         host: "grafana.kubermatic.tld"
         annotations: {}
+        ## (Optional) Allow setting the value for ingressClassName to the different ingress controller such as "cilium". Default is set to "nginx"
+        class: "nginx"
 
   certIssuer:
     name: letsencrypt-prod
