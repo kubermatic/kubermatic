@@ -19,8 +19,8 @@ package provider
 import (
 	"testing"
 
-	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubevirt "k8c.io/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 )
 
 func TestKubevirtConfigBuilder(t *testing.T) {

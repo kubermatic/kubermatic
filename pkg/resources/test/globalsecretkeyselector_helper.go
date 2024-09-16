@@ -19,7 +19,7 @@ package test
 import (
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 )
 
 // mock that raises an error when try to read secret.

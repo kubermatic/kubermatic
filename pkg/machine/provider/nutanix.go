@@ -19,10 +19,10 @@ package provider
 import (
 	"fmt"
 
-	nutanix "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
+	nutanix "k8c.io/machine-controller/pkg/cloudprovider/provider/nutanix/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/utils/ptr"
 )

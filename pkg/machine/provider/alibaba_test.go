@@ -19,8 +19,8 @@ package provider
 import (
 	"testing"
 
-	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	alibaba "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 )
 
 func TestAlibabaConfigBuilder(t *testing.T) {

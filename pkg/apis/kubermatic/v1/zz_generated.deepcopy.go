@@ -22,9 +22,9 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/machine-controller/pkg/providerconfig/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"

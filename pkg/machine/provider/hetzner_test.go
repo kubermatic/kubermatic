@@ -19,8 +19,8 @@ package provider
 import (
 	"testing"
 
-	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	hetzner "k8c.io/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 )
 
 func TestHetznerConfigBuilder(t *testing.T) {

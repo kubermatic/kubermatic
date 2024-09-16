@@ -24,9 +24,9 @@ import (
 	"go.uber.org/zap"
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

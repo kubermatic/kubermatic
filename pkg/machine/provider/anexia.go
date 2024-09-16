@@ -19,10 +19,10 @@ package provider
 import (
 	"fmt"
 
-	anexiaprovider "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia"
-	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	anexiaprovider "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia"
+	anexia "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 )
 
 type anexiaConfig struct {
