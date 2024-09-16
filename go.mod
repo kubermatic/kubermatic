@@ -116,6 +116,9 @@ require (
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
 
+// Pin prism-go-client to v0.4.0 as we have no way to test v0.5.1, as we don't have a working environment for Nutanix.
+replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/prism-go-client v0.4.0
+
 require (
 	cel.dev/expr v0.15.0 // indirect
 	cloud.google.com/go/auth v0.9.4 // indirect
