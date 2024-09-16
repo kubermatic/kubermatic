@@ -35,7 +35,7 @@ metadata:
 {{ toYaml .ingress.annotations | indent 4 }}
 {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .ingress.class | default "nginx" }}
   tls:
   {{- if .ingress.tlsSecretName }}
   - secretName: {{ .ingress.tlsSecretName }}

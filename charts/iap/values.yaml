@@ -58,6 +58,8 @@ iap:
     #     tlsSecretName: ""
     #     host: "alertmanager.kubermatic.tld"
     #     annotations: {}
+    #     ## (Optional) Allow setting the value for ingressClassName to the different ingress controller such as "cilium". Default is set to "nginx"
+    #     class: "nginx"
     #
     # grafana:
     #   name: grafana
@@ -79,6 +81,8 @@ iap:
     #   ingress:
     #     host: "grafana.kubermatic.tld"
     #     annotations: {}
+    #     ## (Optional) Allow setting the value for ingressClassName to the different ingress controller such as "cilium". Default is set to "nginx"
+    #     class: "nginx"
     #
     # prometheus:
     #   name: prometheus
@@ -98,6 +102,9 @@ iap:
     #     host: "prometheus.kubermatic.tld"
     #     annotations:
     #       ingress.kubernetes.io/upstream-hash-by: "ip_hash" ## needed for prometheus federations
+    #     ## (Optional) Allow setting the value for ingressClassName to the different ingress controller such as "cilium". Default is set to "nginx"
+    #     class: "nginx"
+
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates;
   # set this to an empty value to disable creating Certificate resources; in this case you need
