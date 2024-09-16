@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"time"
 
-	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	openstack "k8c.io/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/utils/ptr"
 )

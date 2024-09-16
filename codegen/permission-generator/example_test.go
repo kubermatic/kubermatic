@@ -41,7 +41,7 @@ func TestAddPolicyStatement(t *testing.T) {
 	fmt.Println(string(b))
 }
 
-var pkgs = []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws", "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws"}
+var pkgs = []string{"k8c.io/kubermatic/v2/pkg/provider/cloud/aws", "k8c.io/machine-controller/pkg/cloudprovider/provider/aws"}
 
 var filter = regexp.MustCompile("github.com/aws/aws-sdk-go-v2/*")
 

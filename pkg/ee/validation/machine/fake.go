@@ -28,7 +28,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 )

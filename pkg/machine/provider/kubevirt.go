@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
-	"github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubevirt "k8c.io/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
+	"k8c.io/machine-controller/pkg/providerconfig/types"
 )
 
 type kubevirtConfig struct {

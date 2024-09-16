@@ -78,13 +78,13 @@ func printHelp(w io.Writer) {
 	fmt.Fprintf(w, `
 Usage: permission-generator [options] <pkgs> <filter>
 
-	Pkgs is a comma separated list of packages which should be searched (e.g "k8c.io/kubermatic/v2/pkg/provider/cloud/aws,github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws").
+	Pkgs is a comma separated list of packages which should be searched (e.g "k8c.io/kubermatic/v2/pkg/provider/cloud/aws,k8c.io/machine-controller/pkg/cloudprovider/provider/aws").
 	Packages must be fully qualified go module names.
 
 	Search string can be any valid Go Regex (e.g. "github.com/aws/aws-sdk-go-v2/*")
 
 Full Examples:
-	permission-generator --provider=aws "github.com/mypackage,github.com/myotherpackage" "github.com/aws/aws-sdk-go-v2/*" 
+	permission-generator --provider=aws "github.com/mypackage,github.com/myotherpackage" "github.com/aws/aws-sdk-go-v2/*"
 
 options:
 	--provider	cloud provider to use (e.g. aws)

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"testing"
 
-	equinixmetal "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	equinixmetal "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
 )
 
 func TestEquinixMetalConfigBuilder(t *testing.T) {

@@ -19,8 +19,8 @@ package provider
 import (
 	"fmt"
 
-	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	azure "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
 
 	"k8s.io/utils/ptr"
 )

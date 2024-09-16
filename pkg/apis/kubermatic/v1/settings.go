@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

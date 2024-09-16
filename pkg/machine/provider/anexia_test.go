@@ -19,8 +19,8 @@ package provider
 import (
 	"testing"
 
-	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	anexia "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
 )
 
 func TestAnexiaConfigBuilder(t *testing.T) {

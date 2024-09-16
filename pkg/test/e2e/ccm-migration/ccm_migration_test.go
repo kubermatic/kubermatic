@@ -29,7 +29,6 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -40,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/ccm-migration/utils"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"

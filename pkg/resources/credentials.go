@@ -20,9 +20,9 @@ import (
 	"context"
 	"errors"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

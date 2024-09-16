@@ -19,9 +19,9 @@ package provider
 import (
 	"fmt"
 
-	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	vsphere "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/utils/ptr"
 )
