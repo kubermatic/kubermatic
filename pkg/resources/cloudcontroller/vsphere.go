@@ -74,8 +74,7 @@ func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 				return nil, err
 			}
 
-			version := getVSphereCCMVersion(data.Cluster().Status.Versions.ControlPlane)
-			container := getVSphereCCMContainer(version, data)
+			container := getVSphereCCMContainer(data)
 
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.Bool(false)
 			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)
@@ -88,8 +87,12 @@ func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 	}
 }
 
-func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1.Container {
-	controllerManagerImage := registry.Must(data.RewriteImage(resources.RegistryGCR + "/cloud-provider-vsphere/cpi/release/manager:v" + version))
+func getVSphereCCMContainer(data *resources.TemplateData) corev1.Container {
+	clusterVersion := data.Cluster().Status.Versions.ControlPlane
+	version := getVSphereCCMVersion(clusterVersion)
+	repository := ccmRepository(clusterVersion)
+
+	controllerManagerImage := registry.Must(data.RewriteImage(repository + ":v" + version))
 	c := corev1.Container{
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,
@@ -120,6 +123,17 @@ func getVSphereCCMContainer(version string, data *resources.TemplateData) corev1
 	}
 
 	return c
+}
+
+var registryCutoff = semver.NewSemverOrDie("1.28.0")
+
+func ccmRepository(version semver.Semver) string {
+	// See https://github.com/kubermatic/kubermatic/issues/13719 for why we have mirrored pre-1.28 images.
+	if version.LessThan(registryCutoff) {
+		return resources.RegistryQuay + "/kubermatic/mirror/cloud-provider-vsphere/ccm"
+	}
+
+	return resources.RegistryK8S + "/cloud-pv-vsphere/cloud-provider-vsphere"
 }
 
 func getVSphereCCMVersion(version semver.Semver) string {
