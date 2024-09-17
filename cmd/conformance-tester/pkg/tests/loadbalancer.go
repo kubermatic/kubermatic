@@ -175,7 +175,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 			return fmt.Errorf("failed to read response body from Hello-Kubernetes Pod (%s): %w", hostURL, err), nil
 		}
 
-		needle := "Hello Kubernetes!"
+		needle := "Hello, world!"
 		if strings.Contains(string(contents), needle) {
 			return nil, nil
 		}
