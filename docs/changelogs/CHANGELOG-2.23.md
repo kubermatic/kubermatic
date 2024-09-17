@@ -19,6 +19,20 @@
 - [v2.23.16](#v22316)
 - [v2.23.17](#v22317)
 - [v2.23.18](#v22318)
+- [v2.23.19](#v22319)
+
+## v2.23.19
+
+**GitHub release: [v2.23.19](https://github.com/kubermatic/kubermatic/releases/tag/v2.23.19)**
+
+### Bugfixes
+
+- Fix vSphere CCM/CSI images (pre 1.28 clusters will now use a Kubermatic-managed mirror on quay.io for the images). ([#13720](https://github.com/kubermatic/kubermatic/pull/13720))
+- Kubevirt provider waits for the etcd backups to get deleted before removing the namespace, when a cluster is deleted ([#13635](https://github.com/kubermatic/kubermatic/pull/13635))
+
+### Updates
+
+- Update Canal 3.27 to 3.27.4 ([#13634](https://github.com/kubermatic/kubermatic/pull/13634))
 
 ## v2.23.18
 

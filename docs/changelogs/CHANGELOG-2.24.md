@@ -13,6 +13,23 @@
 - [v2.24.10](#v22410)
 - [v2.24.11](#v22411)
 - [v2.24.12](#v22412)
+- [v2.24.13](#v22413)
+
+## v2.24.13
+
+**GitHub release: [v2.24.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.13)**
+
+### Bugfixes
+
+- Fix vSphere CCM/CSI images (pre 1.28 clusters will now use a Kubermatic-managed mirror on quay.io for the images). ([#13720](https://github.com/kubermatic/kubermatic/pull/13720))
+- Kubevirt provider waits for the etcd backups to get deleted before removing the namespace, when a cluster is deleted ([#13635](https://github.com/kubermatic/kubermatic/pull/13635))
+- Fix runbook URL for Prometheus alerting rules ([#13691](https://github.com/kubermatic/kubermatic/pull/13691))
+- `local` command in KKP installer does not check / wait for DNS anymore ([#13693](https://github.com/kubermatic/kubermatic/pull/13693))
+- Fix missing registry overwrites for cluster-backup (Velero) images, kubevirt CSI images and KubeOne jobs ([#13695](https://github.com/kubermatic/kubermatic/pull/13695))
+
+### Updates
+
+- Update Canal 3.27 to 3.27.4 ([#13633](https://github.com/kubermatic/kubermatic/pull/13633))
 
 ## v2.24.12
 
