@@ -134,6 +134,11 @@ func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger,
 	return errors.New(strings.Join(errorMsgs, "\n"))
 }
 
+const (
+	// legacyRegistryK8SGCR defines the kubernetes specific docker registry at google.
+	legacyRegistryK8SGCR = "k8s.gcr.io"
+)
+
 func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
 	if !opts.Tests.Has(ctypes.UserClusterSeccompTests) {
 		log.Info("User cluster Seccomp tests disabled, skipping.")
@@ -151,7 +156,7 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 
 	for _, pod := range pods.Items {
 		for _, container := range pod.Spec.Containers {
-			if strings.HasPrefix(container.Image, resources.RegistryK8SGCR) {
+			if strings.HasPrefix(container.Image, legacyRegistryK8SGCR) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("Container %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
@@ -168,7 +173,7 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 		}
 
 		for _, initContainer := range pod.Spec.InitContainers {
-			if strings.HasPrefix(initContainer.Image, resources.RegistryK8SGCR) {
+			if strings.HasPrefix(initContainer.Image, legacyRegistryK8SGCR) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("InitContainer %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
