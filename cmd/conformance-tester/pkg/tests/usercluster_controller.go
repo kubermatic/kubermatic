@@ -137,6 +137,10 @@ func TestUserClusterSeccompProfiles(ctx context.Context, log *zap.SugaredLogger,
 const (
 	// legacyRegistryK8SGCR defines the kubernetes specific docker registry at google.
 	legacyRegistryK8SGCR = "k8s.gcr.io"
+	// legacyRegistryEUGCR defines the docker registry at google EU.
+	legacyRegistryEUGCR = "eu.gcr.io"
+	// legacyRegistryUSGCR defines the docker registry at google US.
+	legacyRegistryUSGCR = "us.gcr.io"
 )
 
 func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
@@ -163,8 +167,8 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 				)
 			}
 			if strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
-				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
-				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryEUGCR)) ||
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryUSGCR)) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
@@ -180,8 +184,8 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 				)
 			}
 			if strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
-				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
-				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryEUGCR)) ||
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryUSGCR)) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),

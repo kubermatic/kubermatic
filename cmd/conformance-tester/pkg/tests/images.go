@@ -54,15 +54,15 @@ func TestNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctype
 
 	for _, pod := range pods.Items {
 		for _, container := range pod.Spec.Containers {
-			if strings.HasPrefix(container.Image, resources.RegistryK8SGCR) {
+			if strings.HasPrefix(container.Image, legacyRegistryK8SGCR) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("Container %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
 				)
 			}
 			if strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
-				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
-				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryEUGCR)) ||
+				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryUSGCR)) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
@@ -71,15 +71,15 @@ func TestNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctype
 		}
 
 		for _, initContainer := range pod.Spec.InitContainers {
-			if strings.HasPrefix(initContainer.Image, resources.RegistryK8SGCR) {
+			if strings.HasPrefix(initContainer.Image, legacyRegistryK8SGCR) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("InitContainer %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
 				)
 			}
 			if strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
-				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryEUGCR)) ||
-				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryUSGCR)) {
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryEUGCR)) ||
+				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryUSGCR)) {
 				errorMsgs = append(
 					errorMsgs,
 					fmt.Sprintf("Container %s in Pod %s/%s has image from gcr.io/k8s-* and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
