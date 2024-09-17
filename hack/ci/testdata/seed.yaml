@@ -101,7 +101,7 @@ spec:
       country: DE
       spec:
         vsphere:
-          cluster: vcenter.dc.k8c.io
+          cluster: vSAN Cluster
           datacenter: Hamburg
           datastore: Datastore0-truenas
           endpoint: https://10.10.0.100
@@ -112,7 +112,7 @@ spec:
             centos: kkp-centos-7
             flatcar: kkp-flatcar-3033.2.2
             rhel: kkp-rhel-8.6
-            ubuntu: kkp-ubuntu-22.04
+            ubuntu: kubeone-ubuntu-22.04
             rockylinux: kkp-rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
