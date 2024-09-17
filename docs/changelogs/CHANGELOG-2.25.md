@@ -9,6 +9,28 @@
 - [v2.25.6](#v2256)
 - [v2.25.7](#v2257)
 - [v2.25.8](#v2258)
+- [v2.25.9](#v2259)
+
+## v2.25.9
+
+**GitHub release: [v2.25.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.9)**
+
+### API Changes
+
+- Loadbalancer provider (`lb-provider`) & loadbalancer method (`lb-method`) can be configured at the datacenter for OpenStack provider ([#13628](https://github.com/kubermatic/kubermatic/pull/13628))
+
+### Bugfixes
+
+- Fix vSphere CCM/CSI images (pre 1.28 clusters will now use a Kubermatic-managed mirror on quay.io for the images). ([#13720](https://github.com/kubermatic/kubermatic/pull/13720))
+- `local` command in KKP installer does not check / wait for DNS anymore ([#13692](https://github.com/kubermatic/kubermatic/pull/13692))
+- Fix runbook URL for Prometheus alerting rules ([#13690](https://github.com/kubermatic/kubermatic/pull/13690))
+- Fix missing registry overwrites for cluster-backup (Velero) images, kubevirt CSI images and KubeOne jobs ([#13694](https://github.com/kubermatic/kubermatic/pull/13694))
+- Fix an issue where the cursor in the web terminal kept jumping to the beginning due to a sizing issue ([#6805](https://github.com/kubermatic/dashboard/pull/6805))
+- Kubevirt provider waits for the etcdbackups to get deleted before removing the namespace, when a cluster is deleted ([#13635](https://github.com/kubermatic/kubermatic/pull/13635))
+
+### Updates
+
+- Update Canal 3.27 to 3.27.4 ([#13632](https://github.com/kubermatic/kubermatic/pull/13632))
 
 ## v2.25.8
 
