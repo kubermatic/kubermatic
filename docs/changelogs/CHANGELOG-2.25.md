@@ -10,6 +10,15 @@
 - [v2.25.7](#v2257)
 - [v2.25.8](#v2258)
 - [v2.25.9](#v2259)
+- [v2.25.10](#v22510)
+
+## v2.25.10
+
+**GitHub release: [v2.25.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.10)**
+
+### Bugfixes
+
+- Fix failure to migrate Cilium `ApplicationInstallations` to new `valuesBlock` field. ([#13736](https://github.com/kubermatic/kubermatic/pull/13736))
 
 ## v2.25.9
 
