@@ -61,7 +61,7 @@ const (
 	// DeleteAllBackupsFinalizer indicates that the backups still need to be deleted in the backend.
 	DeleteAllBackupsFinalizer = "kubermatic.k8c.io/delete-all-backups"
 	// DefaultBackupContainerImage holds the default Image used for creating the etcd backups.
-	DefaultBackupContainerImage = "gcr.io/etcd-development/etcd"
+	DefaultBackupContainerImage = "registry.k8s.io/etcd"
 
 	// requeueAfter time after starting a job
 	// should be the time after which a started job will usually have completed.

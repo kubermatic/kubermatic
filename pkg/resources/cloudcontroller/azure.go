@@ -78,7 +78,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:         ccmContainerName,
-					Image:        registry.Must(data.RewriteImage(resources.RegistryMCR + "/oss/kubernetes/azure-cloud-controller-manager:v" + version)),
+					Image:        registry.Must(data.RewriteImage("mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager:v" + version)),
 					Command:      []string{"cloud-controller-manager"},
 					Args:         getAzureFlags(data),
 					Env:          getEnvVars(),

@@ -236,7 +236,7 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 				{
 					Name: resources.EtcdStatefulSetName,
 
-					Image:           registry.Must(data.RewriteImage(resources.RegistryGCR + "/etcd-development/etcd:" + imageTag)),
+					Image:           registry.Must(data.RewriteImage(resources.RegistryK8S + "/etcd:" + imageTag + "-0")),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled),
 					Env:             etcdEnv,
@@ -413,7 +413,10 @@ func GetBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	return resources.BaseAppLabels(resources.EtcdStatefulSetName, additionalLabels)
 }
 
-// ImageTag returns the correct etcd image tag for a given Cluster
+// ImageTag returns the correct etcd image tag for a given Cluster. Note that this tag does not
+// contain the "-0" suffix that the registry.k8s.io images have appended to them. This is because
+// semver comparisons then fail further up in the code and it's simpler to treat the "-0" suffix
+// as not part of the etcd tag itself.
 // TODO: Other functions use this function, switch them to getLauncherImage.
 func ImageTag(c *kubermaticv1.Cluster) string {
 	// most other control plane parts refer to the controller-manager's version, which
@@ -428,7 +431,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// 	return "v3.4.3"
 	// }
 
-	return "v3.5.9"
+	return "3.5.9"
 }
 
 func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {

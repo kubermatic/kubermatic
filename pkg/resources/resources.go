@@ -423,24 +423,14 @@ const (
 	// EtcdClusterSize defines the size of the etcd to use.
 	EtcdClusterSize = 3
 
-	// RegistryK8SGCR defines the kubernetes specific docker registry at google.
-	RegistryK8SGCR = "k8s.gcr.io"
 	// RegistryK8S defines the (new) official registry hosted by the Kubernetes project.
 	RegistryK8S = "registry.k8s.io"
-	// RegistryEUGCR defines the docker registry at google EU.
-	RegistryEUGCR = "eu.gcr.io"
-	// RegistryUSGCR defines the docker registry at google US.
-	RegistryUSGCR = "us.gcr.io"
 	// RegistryGCR defines the kubernetes docker registry at google.
 	RegistryGCR = "gcr.io"
 	// RegistryDocker defines the default docker.io registry.
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay.
 	RegistryQuay = "quay.io"
-	// RegistryMCR defines the image registry at Microsoft.
-	RegistryMCR = "mcr.microsoft.com"
-	// RegistryAnexia defines the anexia specific docker registry.
-	RegistryAnexia = "anx-cr.io"
 
 	// TopologyKeyHostname defines the topology key for the node hostname.
 	TopologyKeyHostname = "kubernetes.io/hostname"
