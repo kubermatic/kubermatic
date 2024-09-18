@@ -208,7 +208,7 @@ func (m *Manager) automaticUpdate(fromVersionRaw string, isForNode bool) (*Versi
 		if isForNode {
 			return u.AutomaticNodeUpdate
 		}
-		return u.Automatic
+		return u.Automatic || u.AutomaticNodeUpdate
 	}
 
 	var toVersions []string
