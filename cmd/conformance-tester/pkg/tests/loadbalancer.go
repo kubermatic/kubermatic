@@ -105,7 +105,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 			Containers: []corev1.Container{
 				{
 					Name:  "hello-kubernetes",
-					Image: "gcr.io/google-samples/node-hello:1.0",
+					Image: "us-docker.pkg.dev/google-samples/containers/gke/hello-app:2.0",
 					Ports: []corev1.ContainerPort{
 						{
 							Name:          "http",
@@ -175,7 +175,7 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 			return fmt.Errorf("failed to read response body from Hello-Kubernetes Pod (%s): %w", hostURL, err), nil
 		}
 
-		needle := "Hello Kubernetes!"
+		needle := "Hello, world!"
 		if strings.Contains(string(contents), needle) {
 			return nil, nil
 		}
