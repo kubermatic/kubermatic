@@ -141,6 +141,8 @@ const (
 	legacyRegistryEUGCR = "eu.gcr.io"
 	// legacyRegistryUSGCR defines the docker registry at google US.
 	legacyRegistryUSGCR = "us.gcr.io"
+	// legacyRegistryGCR defines the kubernetes docker registry at google.
+	legacyRegistryGCR = "gcr.io"
 )
 
 func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.Options, cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client) error {
@@ -166,7 +168,7 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 					fmt.Sprintf("Container %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", container.Name, pod.Namespace, pod.Name),
 				)
 			}
-			if strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
+			if strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryGCR)) ||
 				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryEUGCR)) ||
 				strings.HasPrefix(container.Image, fmt.Sprintf("%s/k8s-", legacyRegistryUSGCR)) {
 				errorMsgs = append(
@@ -183,7 +185,7 @@ func TestUserClusterNoK8sGcrImages(ctx context.Context, log *zap.SugaredLogger, 
 					fmt.Sprintf("InitContainer %s in Pod %s/%s has image from k8s.gcr.io and should be using registry.k8s.io instead", initContainer.Name, pod.Namespace, pod.Name),
 				)
 			}
-			if strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", resources.RegistryGCR)) ||
+			if strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryGCR)) ||
 				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryEUGCR)) ||
 				strings.HasPrefix(initContainer.Image, fmt.Sprintf("%s/k8s-", legacyRegistryUSGCR)) {
 				errorMsgs = append(
