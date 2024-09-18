@@ -39,6 +39,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -372,6 +373,12 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				return app, fmt.Errorf("failed to marshall CNI values: %w", err)
 			}
 			app.Spec.ValuesBlock = string(rawValues)
+
+			// Override .spec.values because values and valuesBlock must not be in the same
+			// ApplicationInstallation spec. If an existing ApplicationInstallation gets reconciled,
+			// both values (from pre-reconciliation) and valuesBlock (from this very reconciler func)
+			// would otherwise be set and fail validation at the webhook.
+			app.Spec.Values = runtime.RawExtension{}
 
 			return app, nil
 		}
