@@ -195,15 +195,13 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 		namespace = application.Spec.Namespace.Name
 	}
 
-	// Before creating an application, make sure that the namespace exists.
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
 	}
-
-	// First check if the namespace exists
-	err := client.Get(ctx, types.NamespacedName{Name: namespace}, ns)
+	// Before creating an application, make sure that the namespace exists.
+	err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ns), ns)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// If the namespace does not exist, create it
