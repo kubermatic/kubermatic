@@ -42,6 +42,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -64,6 +65,7 @@ const (
 	CleanupFinalizer              = "kubermatic.k8c.io/cleanup-kubelb-ccm"
 	kubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
 	kubeconfigSecretKey           = "kubelb"
+	healthCheckPeriod             = 5 * time.Second
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -140,6 +142,16 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Kubelb is disabled. Nothing to do.
 	if !cluster.Spec.IsKubeLBEnabled() {
 		return reconcile.Result{}, nil
+	}
+
+	if cluster.Status.NamespaceName == "" {
+		r.log.Debug("Skipping cluster reconciling because it has no namespace yet")
+		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
+	}
+
+	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
+		r.log.Debugf("API server is not running, trying again in %v", healthCheckPeriod)
+		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
 
 	// Add a wrapping here so we can emit an event on error
@@ -262,6 +274,14 @@ func (r *reconciler) createOrUpdateKubeLBUserClusterResources(ctx context.Contex
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient); err != nil {
 		return fmt.Errorf("failed to reconcile cluster role binding: %w", err)
+	}
+
+	crdReconciler := []kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory{
+		kubelbuserclusterresources.SyncSecretCRDReconciler(),
+	}
+
+	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, crdReconciler, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %w", err)
 	}
 
 	return nil
