@@ -86,6 +86,10 @@ if [ -z "${UIDOCKERTAG:-}" ]; then
   fi
 fi
 
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
 TEST_NAME="Build binaries"
 echodate "Building binaries"
 # Check if specific binary names are provided

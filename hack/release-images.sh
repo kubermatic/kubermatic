@@ -60,11 +60,11 @@ fi
 # build Docker images
 PRIMARY_TAG="${1}"
 VERSION_LABEL="org.opencontainers.image.version=${KUBERMATICDOCKERTAG:-$PRIMARY_TAG}"
-make docker-build TAGS="$PRIMARY_TAG"
-make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
-docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons
-docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile .
-docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile .
+make docker-build TAGS="$PRIMARY_TAG" &
+make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG" &
+docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons &
+docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" -f cmd/etcd-launcher/Dockerfile . &
+docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" -f cmd/conformance-tester/Dockerfile . &
 
 # switch to a multi platform-enabled builder
 docker buildx create --use
@@ -76,8 +76,6 @@ buildx_build() {
   local tag="$4"
 
   for arch in $ARCHITECTURES; do
-    # --load requires to build architectures individually, only
-    # --push would support building multiple archs at the same time.
     docker buildx build \
       --load \
       --platform "linux/$arch" \
@@ -87,8 +85,11 @@ buildx_build() {
       --file "$file" \
       --tag "$repository:$tag-$arch" \
       --label "$VERSION_LABEL" \
-      $context
+      $context &
   done
+
+  # Wait for all background processes to complete
+  wait
 }
 
 create_manifest() {
@@ -115,13 +116,16 @@ create_manifest() {
 
 # build multi-arch images
 echodate "Building user-ssh-keys-agent images..."
-buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG"
+buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" &
 
 echodate "Building kubeletdnat-controller images..."
-buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG"
+buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" &
 
 echodate "Building network-interface-manager images..."
-buildx_build . cmd/network-interface-manager/Dockerfile.multiarch "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG"
+buildx_build . cmd/network-interface-manager/Dockerfile.multiarch "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG" &
+
+# Wait for all background processes to complete
+wait
 
 # for each given tag, tag and push the image
 for TAG in $ALL_TAGS; do
@@ -130,27 +134,39 @@ for TAG in $ALL_TAGS; do
   fi
 
   echodate "Tagging as $TAG"
-  docker tag "$DOCKER_REPO/kubermatic$REPOSUFFIX:$PRIMARY_TAG" "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
-  docker tag "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "$DOCKER_REPO/nodeport-proxy:$TAG"
-  docker tag "$DOCKER_REPO/addons:$PRIMARY_TAG" "$DOCKER_REPO/addons:$TAG"
-  docker tag "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "$DOCKER_REPO/etcd-launcher:$TAG"
-  docker tag "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" "$DOCKER_REPO/conformance-tests:$TAG"
+  docker tag "$DOCKER_REPO/kubermatic$REPOSUFFIX:$PRIMARY_TAG" "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG" &
+  docker tag "$DOCKER_REPO/nodeport-proxy:$PRIMARY_TAG" "$DOCKER_REPO/nodeport-proxy:$TAG" &
+  docker tag "$DOCKER_REPO/addons:$PRIMARY_TAG" "$DOCKER_REPO/addons:$TAG" &
+  docker tag "$DOCKER_REPO/etcd-launcher:$PRIMARY_TAG" "$DOCKER_REPO/etcd-launcher:$TAG" &
+  docker tag "$DOCKER_REPO/conformance-tests:$PRIMARY_TAG" "$DOCKER_REPO/conformance-tests:$TAG" &
+
+  # Wait for all background processes to complete
+  wait
 
   if [ -z "${NO_PUSH:-}" ]; then
     echodate "Pushing images"
-    docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG"
-    docker push "$DOCKER_REPO/nodeport-proxy:$TAG"
-    docker push "$DOCKER_REPO/addons:$TAG"
-    docker push "$DOCKER_REPO/etcd-launcher:$TAG"
-    docker push "$DOCKER_REPO/conformance-tests:$TAG"
+    docker push "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAG" &
+    docker push "$DOCKER_REPO/nodeport-proxy:$TAG" &
+    docker push "$DOCKER_REPO/addons:$TAG" &
+    docker push "$DOCKER_REPO/etcd-launcher:$TAG" &
+    docker push "$DOCKER_REPO/conformance-tests:$TAG" &
 
-    create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
-    create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"
-    create_manifest "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG" "$TAG"
+    # Wait for all background processes to complete
+    wait
 
-    docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
-    docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG"
-    docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG"
+    create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG" &
+    create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG" &
+    create_manifest "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG" "$TAG" &
+
+    # Wait for all background processes to complete
+    wait
+
+    docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG" &
+    docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG" &
+    docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG" &
+
+    # Wait for all background processes to complete
+    wait
   fi
 done
 

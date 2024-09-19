@@ -41,7 +41,8 @@ DOCKER_BIN := $(shell which docker)
 all: build test
 
 .PHONY: build
-build: $(CMD)
+build:
+	$(MAKE) -j $(CMD)
 
 .PHONY: $(CMD)
 $(CMD): %: $(BUILD_DEST)/%
