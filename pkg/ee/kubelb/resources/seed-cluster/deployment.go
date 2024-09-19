@@ -137,7 +137,7 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 				{
 					Name:    resources.KubeLBDeploymentName,
 					Image:   repository + ":" + imageTag,
-					Command: []string{"/usr/local/bin/ccm"},
+					Command: []string{"/ccm"},
 					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB, data.Cluster().Spec.KubeLB),
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{

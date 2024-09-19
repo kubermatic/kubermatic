@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2024 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -25,41 +25,39 @@
 package resources
 
 import (
-	rbacv1 "k8s.io/api/rbac/v1"
+	_ "embed"
+
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-func ResourcesForDeletion() []ctrlruntimeclient.Object {
-	return []ctrlruntimeclient.Object{
-		// RBAC
-		&rbacv1.Role{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleName,
-				Namespace: metav1.NamespaceSystem,
-			},
-		},
-		&rbacv1.RoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      roleBindingName,
-				Namespace: metav1.NamespaceSystem,
-			},
-		},
-		&rbacv1.ClusterRole{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: clusterRoleName,
-			},
-		},
-		&rbacv1.ClusterRoleBinding{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: clusterRoleBindingName,
-			},
-		},
-		&apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: SyncSecretCRDName,
-			},
-		},
+var (
+	//go:embed static/crd-syncsecrets.yaml
+	syncSecretYAML string
+)
+
+const SyncSecretCRDName = "syncsecrets.kubelb.k8c.io"
+
+// SyncSecretCRDReconciler returns the SyncSecret CRD definition.
+func SyncSecretCRDReconciler() reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
+		return SyncSecretCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
+			var fileCRD *apiextensionsv1.CustomResourceDefinition
+			err := yaml.UnmarshalStrict([]byte(syncSecretYAML), &fileCRD)
+			if err != nil {
+				return nil, err
+			}
+
+			crd.Labels = fileCRD.Labels
+			crd.Annotations = fileCRD.Annotations
+			crd.Spec = fileCRD.Spec
+
+			// reconcile fails if conversion is not set as it's set by default to None
+			crd.Spec.Conversion = &apiextensionsv1.CustomResourceConversion{Strategy: apiextensionsv1.NoneConverter}
+
+			return crd, nil
+		}
 	}
 }
