@@ -79,7 +79,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		allErrs = append(allErrs, validation.ValidateApplicationInstallationUpdate(ctx, h.client, *ad, *oldAD)...)
 
 	case admissionv1.Delete:
-		if err := h.decoder.Decode(req, ad); err != nil {
+		if err := h.decoder.DecodeRaw(req.OldObject, ad); err != nil {
 			return webhook.Errored(http.StatusBadRequest, err)
 		}
 		allErrs = append(allErrs, validation.ValidateApplicationInstallationDelete(ctx, h.client, h.clusterName, *ad)...)
