@@ -11,6 +11,15 @@
 - [v2.25.8](#v2258)
 - [v2.25.9](#v2259)
 - [v2.25.10](#v22510)
+- [v2.25.11](#v22511)
+
+## v2.25.11
+
+**GitHub release: [v2.25.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.11)**
+
+### Bugfixes
+
+- Fix reconciling loop when resetting Application values to an empty value ([#13741](https://github.com/kubermatic/kubermatic/pull/13741))
 
 ## v2.25.10
 
