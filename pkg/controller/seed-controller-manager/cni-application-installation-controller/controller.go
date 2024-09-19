@@ -378,7 +378,9 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			// ApplicationInstallation spec. If an existing ApplicationInstallation gets reconciled,
 			// both values (from pre-reconciliation) and valuesBlock (from this very reconciler func)
 			// would otherwise be set and fail validation at the webhook.
-			app.Spec.Values = runtime.RawExtension{}
+			app.Spec.Values = runtime.RawExtension{
+				Raw: []byte("{}"),
+			}
 
 			return app, nil
 		}
