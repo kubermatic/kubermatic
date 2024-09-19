@@ -40,6 +40,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
     - Migration from machine-controller user data to OSM is automated. Users can scale up/down their machines, and there won't be any hindrance. However, existing machines/nodes using MC user data will not be rotated. This is by design to avoid unnecessary node rotations, but this can also lead to a drift between the cloud-config for new and old machines. It is recommended, not mandatory, to either rotate the machines one by one or rotate the machine deployment as a whole following https://docs.kubermatic.com/kubermatic/v2.26/cheat-sheets/rollout-machinedeployment/
 - Separate container image tag/tag-suffix can be set for KKP UI & KKP API ([#13274](https://github.com/kubermatic/kubermatic/pull/13274))
     - If custom image tag/tag-suffix is being used for KKP UI & the admin desires to use the same (or different) custom tag/tag-suffix for the Kubermatic API image as well, then it needs to be explicitly set in the `KubermaticConfiguration.spec.api.dockerTag/dockerTagSuffix` otherwise the default tag for the KKP version will be used
+- Initial applications are created in the namespace specified in the application specification instead of `kube-system` namespace. This doesn't affect any existing clusters and only applies to newly created clusters. Users are not affected and no action is required from their side ([#13746](https://github.com/kubermatic/kubermatic/pull/13746))
 
 ### API Changes
 
@@ -60,15 +61,17 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add Support for Kubernetes 1.30 ([#13314](https://github.com/kubermatic/kubermatic/pull/13314))
 - Add support for Kubernetes 1.31 ([#13593](https://github.com/kubermatic/kubermatic/pull/13593))
 - Remove support for new Kubernetes 1.27 clusters. Existing clusters can still be reconciled, but must be upgraded before upgrading to KKP 2.27 ([#13710](https://github.com/kubermatic/kubermatic/pull/13710))
+- Add support for Kubernetes v1.31.1, v1.30.5, v1.29.9, v1.28.14 ([#13773](https://github.com/kubermatic/kubermatic/pull/13773))
+    - Add 1.31, remove 1.27 from the list of supported Kubernetes releases on AKS and EKS
 
 #### Supported Versions
 
 - 1.28.9
-- 1.28.12
-- 1.28.13
+- 1.28.14
 - 1.29.4
-- 1.30.3
-- 1.31.0
+- 1.29.9
+- 1.30.5
+- 1.31.1
 
 ### Cloud Providers
 
@@ -154,7 +157,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - The image tag in the included `mla/minio-lifecycle-mgr` helm chart has been pinned from `latest` to `RELEASE.2024-03-13T23-51-57Z` ([#13199](https://github.com/kubermatic/kubermatic/pull/13199))
 - Add Baremetal Provider ([#13414](https://github.com/kubermatic/kubermatic/pull/13414))
     - Add Tinkerbell Support in KKP's baremetal provider ([#13570](https://github.com/kubermatic/kubermatic/pull/13570))
-- Automatically add seed cluster podCIDR when APIServerAllowedIPRanges are set ([#13579](https://github.com/kubermatic/kubermatic/pull/13579))
 
 
 ### Bugfixes
@@ -166,7 +168,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add `displayName` and `scope` columns for printing the cluster templates; `kubectl get clustertemplates` will now show the actual display name and scope for the cluster templates ([#13419](https://github.com/kubermatic/kubermatic/pull/13419))
 - Add images for metering prometheus to mirror-images ([#13503](https://github.com/kubermatic/kubermatic/pull/13503))
 - Add images for velero and kubeLB to mirrored images list ([#13192](https://github.com/kubermatic/kubermatic/pull/13192))
-- Addressing inconsistencies in helm that lead to an Application stuck in "pending-install" ([#13301](https://github.com/kubermatic/kubermatic/pull/13301))
+- Add automated retry for Applications stuck in "pending-install" due to an ongoing bug in helm ([#13301](https://github.com/kubermatic/kubermatic/pull/13301))
 - All Helm charts now use a plain semver (without leading "v") as their `version`, allowing for easier integration with Flux and other tools that do not allow leading "v" (like Helm does). Git tags and container image tags are not affected by this change ([#13268](https://github.com/kubermatic/kubermatic/pull/13268))
 - The cluster-autoscaler addon now works based on the namespace instead of cluster names; all MachineDeployments in the `kube-system` namespace are scaled ([#13202](https://github.com/kubermatic/kubermatic/pull/13202))
 - Deduplicate alerts in alertmanager ([#13569](https://github.com/kubermatic/kubermatic/pull/13569))
@@ -193,6 +195,14 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - When the cluster-backup feature is enabled, KKP will now reconcile a ConfigMap in the `velero` namespace in user clusters. This ConfigMap is used to configure the restore helper image in order to apply KKP's image rewriting mechanism ([#13471](https://github.com/kubermatic/kubermatic/pull/13471))
 - Fix an issue which prohibited users to specify custom values for Cilium system application ([#13276](https://github.com/kubermatic/kubermatic/pull/13276))
 - Allow `ingressClassName` configuration in IAP ([#13716](https://github.com/kubermatic/kubermatic/pull/13716))
+- Add kv-infra-namespace flag to usercluster-controller ([#13768](https://github.com/kubermatic/kubermatic/pull/13768))
+- Fix failure to migrate Cilium `ApplicationInstallations` to new `valuesBlock` field ([#13736](https://github.com/kubermatic/kubermatic/pull/13736))
+- Fix reconciling loop when resetting Application values to an empty value ([#13741](https://github.com/kubermatic/kubermatic/pull/13741))
+- Fix TOML/YAML configuration mixup in the IAP Helm chart ([#13776](https://github.com/kubermatic/kubermatic/pull/13776))
+- Fix vSphere CCM/CSI images (pre 1.28 clusters will now use a Kubermatic-managed mirror on quay.io for the images) ([#13720](https://github.com/kubermatic/kubermatic/pull/13720))
+- Nvidia-gpu-operator Application now configures a name override to be installable in the default `nvidia-gpu-operator` namespace ([#13766](https://github.com/kubermatic/kubermatic/pull/13766))
+- Only applicable if custom update rules in `KubermaticConfiguration.spec.versions.updates` were defined:* Custom update rules with `automaticNodeUpdate: true` and `automatic` either absent or explicitly set to "false" will be treated as automatic update rule.* All existing user clusters with a version matching the "from" version constraint of such a rule will be automatically updated to the configured target version.* New user clusters can not be created with a version matching the "from" version constraint of such a rule ([#13709](https://github.com/kubermatic/kubermatic/pull/13709))
+
 
 ### Updates
 
@@ -220,13 +230,13 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update Karma to v1.120 ([#13277](https://github.com/kubermatic/kubermatic/pull/13277))
 - Update kube-dependencies to 0.29.3 ([#13186](https://github.com/kubermatic/kubermatic/pull/13186))
 - Update kube-state-metrics to v2.12 ([#13278](https://github.com/kubermatic/kubermatic/pull/13278))
-- Update KubeLB to v1.1.1 ([#13712](https://github.com/kubermatic/kubermatic/pull/13712))
 - Update node-exporter to v1.7.0 ([#13279](https://github.com/kubermatic/kubermatic/pull/13279))
 - Update Prometheus to v2.51.1 ([#13280](https://github.com/kubermatic/kubermatic/pull/13280))
-- Update to Go 1.23.1 ([#13711](https://github.com/kubermatic/kubermatic/pull/13711))
 - Update usercluster kube-state-metrics to 2.12.0 ([#13307](https://github.com/kubermatic/kubermatic/pull/13307))
-- Update Velero Helm chart to v1.13.1 ([#13272](https://github.com/kubermatic/kubermatic/pull/13272))
 - Update Velero to v1.14.0 ([#13473](https://github.com/kubermatic/kubermatic/pull/13473))
+- Update KubeLB to v1.1.2 ([#13809](https://github.com/kubermatic/kubermatic/pull/13809))
+- Update oauth2-proxy to 7.7.0 ([#13788](https://github.com/kubermatic/kubermatic/pull/13788))
+- Update to Go 1.23.2 ([#13789](https://github.com/kubermatic/kubermatic/pull/13789))
 
 ### Cleanup
 
@@ -237,6 +247,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Replace custom Velero Helm chart with a wrapper around the official upstream chart ([#13488](https://github.com/kubermatic/kubermatic/pull/13488))
 - Replace kubernetes.io/ingress.class annotation with ingressClassName spec field ([#13549](https://github.com/kubermatic/kubermatic/pull/13549))
 - S3-Exporter does not run with root permissions and does not leak credentials via CLI flags anymore ([#13226](https://github.com/kubermatic/kubermatic/pull/13226))
+- Etcd container images are now loaded from registry.k8s.io instead of gcr.io/etcd-development ([#13726](https://github.com/kubermatic/kubermatic/pull/13726))  
 
 ### Deprecation
 
@@ -244,6 +255,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Cilium kubeProxyReplacement values `strict`, `partial`, `probe`, and `disabled` have been deprecated, please use true or false instead ([#13291](https://github.com/kubermatic/kubermatic/pull/13291))
 - Add support for Canal 3.28, deprecate Canal 3.25 ([#13504](https://github.com/kubermatic/kubermatic/pull/13504))
 - Remove deprecated Cilium and Hubble KKP Addons, as Cilium CNI is managed by Applications ([#13229](https://github.com/kubermatic/kubermatic/pull/13229))
+- The field `values` in ApplicationInstallation and `defaultValues` in ApplicationDefinition were deprecated in KKP 2.25 and will be removed in KKP 2.27+ ([#13747](https://github.com/kubermatic/kubermatic/pull/13747))
 
 ### Miscellaneous
 
@@ -253,6 +265,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Reduce number of Helm upgrades in application-installation-controller by tracking changes to Helm chart version, values and templated manifests ([#13121](https://github.com/kubermatic/kubermatic/pull/13121))
 - Add dynamic base id to envoy agent on the user cluster ([#13261](https://github.com/kubermatic/kubermatic/pull/13261))
 - Utility container images like `kubermatic/util` or `kubermatic/http-prober` are now built automatically on CI instead of relying on developer intervention ([#13189](https://github.com/kubermatic/kubermatic/pull/13189))
+- `kubermatic.io/initial-cni-values-request` is now included in the default hidden annotations list for the dashboard ([#13764](https://github.com/kubermatic/kubermatic/pull/13764))
 
 ### Dashboard and API
 
@@ -287,6 +300,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Admin panel settings for applications ([#6787](https://github.com/kubermatic/dashboard/pull/6787))
     - Admins can now manage applications using admin panel
     - Application can be marked as default or enforced using dashboard
+- Support Kube-OVN provider networks for VPCs and Subnets ([#6915](https://github.com/kubermatic/dashboard/pull/6915)) 
 
 #### Bugfixes
 
@@ -299,11 +313,15 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Grant admin all owner privileges on all projects ([#6754](https://github.com/kubermatic/dashboard/pull/6754))
 - Resolve conflict in determining available Kubernetes versions where upgrades where possible in `Cluster` object but not via the Dashboard ([#6651](https://github.com/kubermatic/dashboard/pull/6651))
 - Support for eBPF proxy mode when the CNI plugin is none ([#6757](https://github.com/kubermatic/dashboard/pull/6757))
+- Fix CNI plugin defaulting for Edge cloud provider ([#6878](https://github.com/kubermatic/dashboard/pull/6878))
+- Fix default CNI application values in cluster wizard ([#6884](https://github.com/kubermatic/dashboard/pull/6884))
+- Select correct template value when editing MD of VCD provider ([#6927](https://github.com/kubermatic/dashboard/pull/6927))
 
 #### Updates
 
-- Update Go version to 1.23.1 ([#6839](https://github.com/kubermatic/dashboard/pull/6839))
+- KKP API is now built using Go 1.23.2 ([#6924](https://github.com/kubermatic/dashboard/pull/6924))
 - Update to Angular version 17 ([#6639](https://github.com/kubermatic/dashboard/pull/6639))
+- Update web-terminal image to v0.9.1 ([#6890](https://github.com/kubermatic/dashboard/pull/6890))
 
 #### Cleanup
 
