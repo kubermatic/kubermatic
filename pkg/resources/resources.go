@@ -425,8 +425,6 @@ const (
 
 	// RegistryK8S defines the (new) official registry hosted by the Kubernetes project.
 	RegistryK8S = "registry.k8s.io"
-	// RegistryGCR defines the kubernetes docker registry at google.
-	RegistryGCR = "gcr.io"
 	// RegistryDocker defines the default docker.io registry.
 	RegistryDocker = "docker.io"
 	// RegistryQuay defines the image registry from coreos/redhat - quay.
