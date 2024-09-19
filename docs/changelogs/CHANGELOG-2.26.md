@@ -166,7 +166,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add `displayName` and `scope` columns for printing the cluster templates; `kubectl get clustertemplates` will now show the actual display name and scope for the cluster templates ([#13419](https://github.com/kubermatic/kubermatic/pull/13419))
 - Add images for metering prometheus to mirror-images ([#13503](https://github.com/kubermatic/kubermatic/pull/13503))
 - Add images for velero and kubeLB to mirrored images list ([#13192](https://github.com/kubermatic/kubermatic/pull/13192))
-- Addressing inconsistencies in helm that lead to an Application stuck in "pending-install" ([#13301](https://github.com/kubermatic/kubermatic/pull/13301))
+- Add automated retry for Applications stuck in "pending-install" due to an ongoing bug in helm ([#13301](https://github.com/kubermatic/kubermatic/pull/13301))
 - All Helm charts now use a plain semver (without leading "v") as their `version`, allowing for easier integration with Flux and other tools that do not allow leading "v" (like Helm does). Git tags and container image tags are not affected by this change ([#13268](https://github.com/kubermatic/kubermatic/pull/13268))
 - The cluster-autoscaler addon now works based on the namespace instead of cluster names; all MachineDeployments in the `kube-system` namespace are scaled ([#13202](https://github.com/kubermatic/kubermatic/pull/13202))
 - Deduplicate alerts in alertmanager ([#13569](https://github.com/kubermatic/kubermatic/pull/13569))
