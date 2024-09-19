@@ -272,7 +272,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 	application.UID = existingApplication.UID
 
 	if err := userClusterClient.Update(ctx, &application); err != nil {
-		return fmt.Errorf("failed to update application installation: %w", err)
+		return fmt.Errorf("failed to update application installation %q: %w", application.Name, err)
 	}
 	return nil
 }

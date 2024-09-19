@@ -89,7 +89,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	}
 
 	if len(allErrs) > 0 {
-		return webhook.Denied(fmt.Sprintf("ApplicationInstallation validation request %s denied: %v", req.UID, allErrs))
+		return webhook.Denied(fmt.Sprintf("ApplicationInstallation validation request %s denied for ApplicationInstallation %s/%s with error: %v", req.UID, ad.Namespace, ad.Name, allErrs))
 	}
 
 	return webhook.Allowed(fmt.Sprintf("ApplicationInstallation validation request %s allowed", req.UID))
