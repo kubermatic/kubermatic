@@ -172,7 +172,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	var errs []error
 	for _, app := range applications {
-		if err := r.createInitialApplicationInstallations(ctx, userClusterClient, app, cluster); err != nil {
+		if err := r.createInitialApplicationInstallation(ctx, userClusterClient, app, cluster); err != nil {
 			errs = append(errs, err)
 			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallation %s", app.Name)
 		}
@@ -189,7 +189,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, client ctrlruntimeclient.Client, application apiv1.Application, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createInitialApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, application apiv1.Application, cluster *kubermaticv1.Cluster) error {
 	namespace := application.Namespace
 	if namespace == "" {
 		namespace = application.Spec.Namespace.Name

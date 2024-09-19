@@ -333,6 +333,8 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name: application.Name,
+				// This ensures that the namespace is created in the user cluster, if it doesn't already exist.
+				Create: true,
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    application.Name,
