@@ -18,7 +18,7 @@
 
 ### Bugfixes
 
-- Fix failure to migrate Cilium `ApplicationInstallations` to new `valuesBlock` field. ([#13736](https://github.com/kubermatic/kubermatic/pull/13736))
+- Fix failure to migrate Cilium `ApplicationInstallations` to new `valuesBlock` field (this has been an undocumented change in KKP 2.25.9) ([#13736](https://github.com/kubermatic/kubermatic/pull/13736))
 
 ## v2.25.9
 
