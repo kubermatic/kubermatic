@@ -272,7 +272,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, applicat
 	application.UID = existingApplication.UID
 
 	if err := userClusterClient.Update(ctx, &application); err != nil {
-		return fmt.Errorf("failed to update application installation: %w", err)
+		return fmt.Errorf("failed to update application installation %q: %w", application.Name, err)
 	}
 	return nil
 }
@@ -333,6 +333,8 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: appskubermaticv1.AppNamespaceSpec{
 				Name: application.Name,
+				// This ensures that the namespace is created in the user cluster, if it doesn't already exist.
+				Create: true,
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    application.Name,

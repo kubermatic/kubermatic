@@ -172,7 +172,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 
 	var errs []error
 	for _, app := range applications {
-		if err := r.createInitialApplicationInstallations(ctx, userClusterClient, app, cluster); err != nil {
+		if err := r.createInitialApplicationInstallation(ctx, userClusterClient, app, cluster); err != nil {
 			errs = append(errs, err)
 			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ApplicationInstallationFailed", "Failed to create ApplicationInstallation %s", app.Name)
 		}
@@ -189,11 +189,36 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, client ctrlruntimeclient.Client, application apiv1.Application, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createInitialApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, application apiv1.Application, cluster *kubermaticv1.Cluster) error {
+	namespace := application.Namespace
+	if namespace == "" {
+		namespace = application.Spec.Namespace.Name
+	}
+
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: namespace,
+		},
+	}
+	// Before creating an application, make sure that the namespace exists.
+	err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(ns), ns)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// If the namespace does not exist, create it
+			err = client.Create(ctx, ns)
+			if err != nil {
+				return fmt.Errorf("failed to create namespace: %w", err)
+			}
+		} else {
+			return fmt.Errorf("failed to get namespace: %w", err)
+		}
+	}
+
+	// Create the application installation resource.
 	applicationInstallation := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
-			Namespace:   metav1.NamespaceSystem,
+			Namespace:   namespace,
 			Annotations: application.Annotations,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
@@ -212,7 +237,8 @@ func (r *Reconciler) createInitialApplicationInstallations(ctx context.Context, 
 		},
 	}
 
-	err := client.Create(ctx, &applicationInstallation)
+	// At this point, the namespace exists, so we can create the application installation.
+	err = client.Create(ctx, &applicationInstallation)
 	if err != nil {
 		// If the application already exists, we just ignore the error and move forward.
 		return ctrlruntimeclient.IgnoreAlreadyExists(err)

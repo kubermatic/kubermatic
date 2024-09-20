@@ -33,6 +33,9 @@ type ObjectMeta struct {
 	// Name represents human readable name for the resource
 	Name string `json:"name"`
 
+	// Namespace represents the namespace for the resource.
+	Namespace string `json:"namespace,omitempty"`
+
 	// Annotations that can be added to the resource
 	Annotations map[string]string `json:"annotations,omitempty"`
 
