@@ -21,6 +21,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
+
+	"k8s.io/utils/ptr"
 )
 
 func TestValidateKubermaticConfigurationVersions(t *testing.T) {
@@ -28,6 +30,7 @@ func TestValidateKubermaticConfigurationVersions(t *testing.T) {
 		name           string
 		versions       []string
 		defaultVersion string
+		updates        []kubermaticv1.Update
 		valid          bool
 	}{
 		{
@@ -78,6 +81,108 @@ func TestValidateKubermaticConfigurationVersions(t *testing.T) {
 			defaultVersion: "v1.2.3",
 			valid:          false,
 		},
+		{
+			name:           "should allow updates with automatic update rules from concrete version",
+			versions:       []string{"v1.11.1", "v1.12.2"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{{
+				From:      "v1.11.1",
+				To:        "v1.12.2",
+				Automatic: ptr.To(true),
+			}},
+			valid: true,
+		},
+		{
+			name:           "should allow updates with automatic node update rules from concrete version",
+			versions:       []string{"v1.11.1", "v1.12.2"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{{
+				From:                "v1.11.1",
+				To:                  "v1.12.2",
+				AutomaticNodeUpdate: ptr.To(true),
+			}},
+			valid: true,
+		},
+		{
+			name:           "should allow updates with automatic update rules from wildcard version",
+			versions:       []string{"v1.11.1", "v1.12.2"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{{
+				From:      "v1.11.*",
+				To:        "v1.12.2",
+				Automatic: ptr.To(true),
+			}},
+			valid: true,
+		},
+		{
+			name:           "should allow updates with automatic node update rules from wildcard version",
+			versions:       []string{"v1.11.1", "v1.12.2"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{{
+				From:                "v1.11.*",
+				To:                  "v1.12.2",
+				AutomaticNodeUpdate: ptr.To(true),
+			}},
+			valid: true,
+		},
+		{
+			name:           "should forbid updates with automatic update rules to wildcard version",
+			versions:       []string{"v1.11.1", "v1.12.2"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{{
+				From:      "v1.11.0",
+				To:        "v1.12.*",
+				Automatic: ptr.To(true),
+			}},
+			valid: false,
+		},
+		{
+			name:           "should forbid updates with automatic node update rules to wildcard version",
+			versions:       []string{"v1.11.1", "v1.12.2"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{{
+				From:                "v1.11.0",
+				To:                  "v1.12.*",
+				AutomaticNodeUpdate: ptr.To(true),
+			}},
+			valid: false,
+		},
+		{
+			name:           "should forbid updates with automatic update rules to version with concrete automatic update rule",
+			versions:       []string{"v1.11.1", "v1.12.2", "v1.13.3"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{
+				{
+					From:      "v1.11.1",
+					To:        "v1.12.2",
+					Automatic: ptr.To(true),
+				},
+				{
+					From:      "v1.12.2",
+					To:        "v1.13.3",
+					Automatic: ptr.To(true),
+				},
+			},
+			valid: false,
+		},
+		{
+			name:           "should forbid updates with automatic node update rules to version with concrete automatic update rule",
+			versions:       []string{"v1.11.1", "v1.12.2", "v1.13.3"},
+			defaultVersion: "v1.11.1",
+			updates: []kubermaticv1.Update{
+				{
+					From:                "v1.11.1",
+					To:                  "v1.12.2",
+					AutomaticNodeUpdate: ptr.To(true),
+				},
+				{
+					From:                "v1.12.2",
+					To:                  "v1.13.3",
+					AutomaticNodeUpdate: ptr.To(true),
+				},
+			},
+			valid: false,
+		},
 	}
 
 	for _, tt := range testcases {
@@ -91,6 +196,8 @@ func TestValidateKubermaticConfigurationVersions(t *testing.T) {
 				version := semver.NewSemverOrDie(v)
 				config.Versions = append(config.Versions, *version)
 			}
+
+			config.Updates = tt.updates
 
 			errs := ValidateKubermaticVersioningConfiguration(config, nil)
 			if tt.valid {
