@@ -436,23 +436,19 @@ func main() {
 			log.Fatalw("Failed to get KubeVirt infra kubeconfig", zap.Error(err))
 		}
 		// VM and VMIs are created in a namespace having the same name as the cluster namespace name.
-		kvCacheOpts := cache.Options{
-			DefaultNamespaces: map[string]cache.Config{
-				runOp.namespace: {},
-			},
-		}
+		kvInfraNamespace := runOp.namespace
 		// If kv-infra-namespace flag is set, that means Kubevirt is running in the namespaced mode, so all workloads will be deployed in the specified namespace.
 		if runOp.kubeVirtInfraNamespace != "" {
-			kvCacheOpts = cache.Options{
-				DefaultNamespaces: map[string]cache.Config{
-					runOp.kubeVirtInfraNamespace: {},
-				},
-			}
+			kvInfraNamespace = runOp.kubeVirtInfraNamespace
 		}
 		kubevirtInfraMgr, err := manager.New(kubevirtInfraConfig, manager.Options{
 			LeaderElection: false,
 			Metrics:        metricsserver.Options{BindAddress: "0"},
-			Cache:          kvCacheOpts,
+			Cache: cache.Options{
+				DefaultNamespaces: map[string]cache.Config{
+					kvInfraNamespace: {},
+				},
+			},
 		})
 		if err != nil {
 			log.Fatalw("Failed to construct kubevirt infra mgr", zap.Error(err))
