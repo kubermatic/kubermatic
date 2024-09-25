@@ -810,12 +810,6 @@ items:
 - apiVersion: kubermatic.k8c.io/v1
   kind: Addon
   metadata:
-    name: cilium
-    labels:
-      addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8c.io/v1
-  kind: Addon
-  metadata:
     name: csi
     labels:
       addons.kubermatic.io/ensure: true
