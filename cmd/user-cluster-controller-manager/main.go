@@ -109,6 +109,7 @@ type controllerRunOptions struct {
 	applicationCache                  string
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
+	kubeVirtInfraNamespace            string
 }
 
 func main() {
@@ -158,6 +159,7 @@ func main() {
 	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
 	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
+	flag.StringVar(&runOp.kubeVirtInfraNamespace, "kv-infra-namespace", "", "Kubevirt infra namespace where workload will be deployed")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -433,15 +435,23 @@ func main() {
 		if err != nil {
 			log.Fatalw("Failed to get KubeVirt infra kubeconfig", zap.Error(err))
 		}
+		kvCacheOpts := cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				runOp.namespace: {},
+			},
+		}
+		if runOp.kubeVirtInfraNamespace != "" {
+			kvCacheOpts = cache.Options{
+				DefaultNamespaces: map[string]cache.Config{
+					runOp.kubeVirtInfraNamespace: {},
+				},
+			}
+		}
 		kubevirtInfraMgr, err := manager.New(kubevirtInfraConfig, manager.Options{
 			LeaderElection: false,
 			Metrics:        metricsserver.Options{BindAddress: "0"},
 			// VM and VMIs are created in a namespace having the same name as the cluster namespace name.
-			Cache: cache.Options{
-				DefaultNamespaces: map[string]cache.Config{
-					runOp.namespace: {},
-				},
-			},
+			Cache: kvCacheOpts,
 		})
 		if err != nil {
 			log.Fatalw("Failed to construct kubevirt infra mgr", zap.Error(err))

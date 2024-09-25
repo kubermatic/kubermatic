@@ -223,6 +223,9 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			if data.Cluster().Spec.Cloud.Kubevirt != nil {
 				args = append(args, "-kv-vmi-eviction-controller")
 				args = append(args, "-kv-infra-kubeconfig", "/etc/kubernetes/kubevirt/infra-kubeconfig")
+				if data.DC().Spec.Kubevirt != nil && data.DC().Spec.Kubevirt.NamespacedMode != nil && data.DC().Spec.Kubevirt.NamespacedMode.Enabled {
+					args = append(args, "-kv-infra-namespace", data.DC().Spec.Kubevirt.NamespacedMode.Namespace)
+				}
 			}
 
 			if data.UserClusterMLAEnabled() && data.Cluster().Spec.MLA != nil {
