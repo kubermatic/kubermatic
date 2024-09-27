@@ -57,7 +57,7 @@ spec:
         - --silence-ping-logging=true
         - --reverse-proxy=true
         - --skip-provider-button=true
-        - --config=/config/config.yaml
+        - --config=/config/config.toml
         envFrom:
         - secretRef:
             name: iap-{{ .name }}-secret
@@ -102,8 +102,8 @@ spec:
         configMap:
           name: iap-{{ .name }}-configmap
           items:
-          - key: config.yaml
-            path: config.yaml
+          - key: config.toml
+            path: config.toml
       {{- if $.Values.iap.customProviderCA }}
       - name: ca
         secret:
