@@ -69,7 +69,7 @@ metadata:
   name: kube-state-metrics
   namespace: kube-system
 spec:
-  maxUnvailable: 1
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: kube-state-metrics
