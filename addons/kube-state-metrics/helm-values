@@ -15,6 +15,9 @@ kubeRBACProxy:
       cpu: 20m
       memory: 20Mi
 
+# with kubeRBACProxy enabled above, default scraping won't work, showring errors
+prometheusScrape: false
+
 networkPolicy:
   enabled: true
 

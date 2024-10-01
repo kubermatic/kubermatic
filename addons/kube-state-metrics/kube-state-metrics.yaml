@@ -362,8 +362,7 @@ subjects:
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    prometheus.io/scrape: "true"
+  annotations: null
   labels:
     app.kubernetes.io/component: metrics
     app.kubernetes.io/instance: kube-state-metrics
