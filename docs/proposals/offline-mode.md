@@ -30,7 +30,7 @@ Kubermatic:
     * Create a kubeadm seed + master cluster, during this phase Internet may be reachable
     * Execute the script that downloads and retags the images, during this phase Internet may be reachable
     * Deploys Kubermatic master cluster, during this time Internet must not be available
-    * Deploys a custmer cluster, during this time Internet must not be available
+    * Deploys a user cluster, during this time Internet must not be available
 
 ## Tasks and efforts
 

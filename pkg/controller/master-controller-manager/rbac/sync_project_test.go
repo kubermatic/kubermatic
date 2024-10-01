@@ -549,7 +549,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 						}
 					}
 
-					t.Fatalf("expected ClusteRoleBinding %q not found in cluster", expectedBinding.Name)
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedBinding.Name)
 				}
 
 				assert.Len(t, clusterRoleBindingList.Items, len(test.expectedClusterRoleBindingsForMaster),
@@ -575,7 +575,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 							continue expectedBindingLoopSeed
 						}
 					}
-					t.Fatalf("expected ClusteRoleBinding %q not found in cluster", expectedBinding.Name)
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedBinding.Name)
 				}
 
 				assert.Len(t, clusterRoleBindingList.Items, len(test.expectedClusterRoleBindingsForSeeds),
@@ -827,7 +827,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 							continue expectedBindingLoop
 						}
 					}
-					t.Fatalf("expected ClusteRoleBinding %q not found in cluster", expectedBinding.Name)
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedBinding.Name)
 				}
 
 				assert.Len(t, clusterRoleBindingList.Items, len(test.expectedClusterRoleBindingsForMaster),
@@ -853,7 +853,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 							continue expectedBindingLoopSeed
 						}
 					}
-					t.Fatalf("expected ClusteRoleBinding %q not found in cluster", expectedBinding.Name)
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedBinding.Name)
 				}
 
 				assert.Len(t, clusterRoleBindingList.Items, len(test.expectedClusterRoleBindingsForSeeds),

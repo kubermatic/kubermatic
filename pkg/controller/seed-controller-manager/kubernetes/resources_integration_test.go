@@ -211,7 +211,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 
 	// explicitly set TypeMeta because we need them for setting owner references
 	// and in a real-life scenario, the type meta is always set;
-	// set this *afte* the Create() call, which would remove the TypeMeta for some reason.
+	// set this *after* the Create() call, which would remove the TypeMeta for some reason.
 	namespace.TypeMeta = metav1.TypeMeta{
 		Kind:       "Namespace",
 		APIVersion: "v1",
