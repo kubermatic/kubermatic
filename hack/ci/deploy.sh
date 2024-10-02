@@ -74,10 +74,14 @@ function deploy {
     echodate "Deployment has been manually disabled on this cluster. Skipping this chart."
   else
     echodate "Upgrading $name..."
-
-    # Do not set --force, as this will cause problems when upgrading a Helm release.
-    # See Helm issue #7956 and the upstream k8s bug #91459, which was fixed in 1.22+.
-    retry 5 helm --namespace "$namespace" upgrade --install --atomic --timeout "$timeout" --values "$VALUES_FILE" "$name" "$path"
+    retry 5 helm upgrade \
+      --namespace "$namespace" \
+      --create-namespace \
+      --install \
+      --atomic \
+      --timeout "$timeout" \
+      --values "$VALUES_FILE" \
+      "$name" "$path"
   fi
 
   unset TEST_NAME
