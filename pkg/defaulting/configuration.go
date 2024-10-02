@@ -359,12 +359,12 @@ var (
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.30"),
+		Default: semver.NewSemverOrDie("v1.31"),
 		Versions: []semver.Semver{
+			newSemver("v1.31"),
 			newSemver("v1.30"),
 			newSemver("v1.29"),
 			newSemver("v1.28"),
-			newSemver("v1.27"),
 		},
 	}
 
