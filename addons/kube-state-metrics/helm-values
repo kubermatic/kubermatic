@@ -15,7 +15,7 @@ kubeRBACProxy:
       cpu: 20m
       memory: 20Mi
 
-# with kubeRBACProxy enabled above, default scraping won't work, showring errors
+# with kubeRBACProxy enabled above, default scraping won't work, showing errors
 prometheusScrape: false
 
 networkPolicy:
@@ -36,9 +36,9 @@ networkPolicy:
   egress:
     - to:
         - ipBlock:
-            cidr: '{{ .Cluster.Address.IP }}/32'
+            cidr: "{{ .Cluster.Address.IP }}/32"
       ports:
-        - port: '{{ .Cluster.Address.Port }}'
+        - port: "{{ .Cluster.Address.Port }}"
 
 resources:
   limits:
