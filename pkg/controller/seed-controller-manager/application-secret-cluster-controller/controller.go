@@ -187,7 +187,7 @@ func (r *reconciler) syncAllClusterNs(ctx context.Context, log *zap.SugaredLogge
 		}
 		err := action(r.client, cluster.Status.NamespaceName)
 		if err != nil {
-			return fmt.Errorf("failed syncing to sync secret with cluter: %w", err)
+			return fmt.Errorf("failed syncing to sync secret with cluster: %w", err)
 		}
 		log.Debug("Reconciled secret with cluster")
 	}

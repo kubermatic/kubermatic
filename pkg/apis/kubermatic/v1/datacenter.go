@@ -462,7 +462,7 @@ type DatacenterSpec struct {
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
 
 	// Optional: ProviderReconciliationInterval is the time that must have passed since a
-	// Cluster's status.lastProviderReconciliation to make the cliuster controller
+	// Cluster's status.lastProviderReconciliation to make the cluster controller
 	// perform an in-depth provider reconciliation, where for example missing security
 	// groups will be reconciled.
 	// Setting this too low can cause rate limits by the cloud provider, setting this

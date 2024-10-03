@@ -18,7 +18,7 @@ We expose API endpoints for all the operation which are needed for managing Role
 End-user will get UI interface to interact with RBACs on the cluster detail page.
 
 ## Implementation
-First we have to start with managing Role/CluterRole in the user cluster. A various endpoints will be created.
+First we have to start with managing Role/ClusterRole in the user cluster. A various endpoints will be created.
 
 For Roles:
 
