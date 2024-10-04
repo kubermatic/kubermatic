@@ -272,6 +272,17 @@ func TestProviderValidateCloudSpec(t *testing.T) {
 			},
 		},
 		{
+			name: "Inaccessible default datastore at datacenter level and datastore cluster at cluster level",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "i-am-inaccessible",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					DatastoreCluster: "DC0_POD0",
+				},
+			},
+		},
+		{
 			name: "Default datastore at datacenter level overridden at cluster level by non existing Datastore",
 			dc: &kubermaticv1.DatacenterSpecVSphere{
 				DefaultDatastore: "LocalDS_0",
