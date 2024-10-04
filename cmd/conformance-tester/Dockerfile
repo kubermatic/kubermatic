@@ -21,7 +21,7 @@ ENV KUBECTL_VERSION=v1.28.8
 
 RUN apk add --no-cache -U bash ca-certificates curl jq
 
-RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+RUN curl -Lo /usr/bin/kubectl https://dl.k8s.io/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl && \
     kubectl version --client
 

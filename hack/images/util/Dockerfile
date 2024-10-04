@@ -58,7 +58,7 @@ RUN curl -Lo /usr/bin/mc https://dl.minio.io/client/mc/release/linux-amd64/archi
     chmod +x /usr/bin/mc && \
     mc --version
 
-RUN curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+RUN curl -Lo /usr/bin/kubectl https://dl.k8s.io/${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x /usr/bin/kubectl && \
     kubectl version --client
 
