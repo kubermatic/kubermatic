@@ -200,8 +200,9 @@ var versionRegex = regexp.MustCompile(`^(.+)-([0-9]+)-g[0-9a-f]+$`)
 // special, and so would say "v2.21.0-10-gfd517a" < "v2.21.0-7-gfd517a".
 // Semverlib correctly handles the version suffix, so alpha.4 is smaller than
 // alpha.12.
-// This function knows about the KKP versioning scheme and zerofills the
-// number of commits to allow a stable sorting order.
+// This function knows about the KKP versioning scheme and turns the commit
+// number into a zeta suffix, effectively turning "v2.21.0-7-gabcdef" into
+// "v2.21.0-zeta.7".
 func comparableVersionSuffix(version string) string {
 	match := versionRegex.FindStringSubmatch(version)
 	if match == nil {
@@ -217,8 +218,8 @@ func comparableVersionSuffix(version string) string {
 
 		if parsed.Prerelease() == "" {
 			// Inject zeta as hopefully the highest we ever go in prereleases,
-			// so that "v1.0.0-zeta" > "v1.0.0-beta"
-			return fmt.Sprintf("%s-zeta-0", version)
+			// so that "v1.0.0-zeta.0" > "v1.0.0-beta"
+			return fmt.Sprintf("%s-zeta.0", version)
 		}
 
 		return version
@@ -227,11 +228,11 @@ func comparableVersionSuffix(version string) string {
 	base := match[1]
 	commits := match[2]
 
-	// a version like "v1.2.3-00007" is not valid, so we must treat
+	// a version like "v1.2.3-7" is not valid, so we must treat
 	// versions without a second segment special
 	if !strings.Contains(base, "-") {
-		return fmt.Sprintf("%s-zeta-%09s", base, commits)
+		return fmt.Sprintf("%s-zeta.%s", base, commits)
 	}
 
-	return fmt.Sprintf("%s-%09s", base, commits)
+	return fmt.Sprintf("%s.%s", base, commits)
 }
