@@ -1,0 +1,72 @@
+# customize as per environment
+
+# e.g. test / sandbox / dev / prod
+environment: notSet
+# your seed-identifier e.g. eu-central-1 / ireland / china / chicago / etc
+seed: notSet
+
+# set to true if you are installing on a master or master-seed combo
+isMasterSeed: false
+
+# As per the version being installed. You must specify this version as param to helm chart
+kkpVersion: notSet
+kkpRepoURL: https://github.com/kubermatic/kubermatic.git  # Repo where we can find all KKP helm charts
+kkpChartsInCustomRepo: false # Toggle this to `true` if you want to use custom repo for storing kkp charts and then adjust the kkpBasePath to match the path
+kkpBasePath: null
+
+# Repo where your environment specific KKP customizations are available. Typically, we have seen environment specific, seed specific override files stored in this repo.
+repoURL: notSet 
+envSpecificValuesFileName: values.yaml
+seedOverrideValuesFileName: values.yaml
+envSpecificSettingFolderName: settings
+userMlaValuesFileName: values-usermla.yaml
+
+# KKP Core
+oauth: false
+ngix: false
+certManager: false
+seedSettings: false
+# If you have any env specific and/or seed specific random yaml files to apply
+# e.g. preset, metering secret, kubeconfig secret in case of master seed, etc
+seedExtras: false
+
+#backup
+velero: false
+
+#monitoring
+prometheus: false
+alertManager: false
+grafana: false
+kubeStateMetrics: false
+nodeExporter: false
+blackboxExporter: false
+# TODO: Install thanos from upstream (bitnami / banzai / stevehipwell) directly
+thanos: false
+iapSeedMla: false
+
+#logging
+promtail: false
+loki: false
+
+# apps to install - by default everything is NOT deployed
+# minio chart is available with kkp OOTB.
+minio: false
+
+# TODO: Get these apps setup too
+# Recommeded: if you want more elaborated setup and not have single point of failure 
+# for all kinds of storages e.g. seed as well as user-cluster etcd backup storages, 
+# prometheus, thanos, grafana etc
+minioOperator: false
+
+#user cluster mla
+userMla:
+  enable: false # master switch to control whether you want to deploy user-cluster MLA or not
+  minio: false
+  minioLifecycleMgr: false
+  grafana: false
+  consul: false
+  cortex: false
+  lokiDistributed: false
+  alertmanagerProxy: false
+  iapMla: false
+  secrets: false

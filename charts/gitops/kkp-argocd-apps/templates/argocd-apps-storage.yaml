@@ -1,0 +1,33 @@
+{{ if .Values.minio }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/minio
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: minio
+{{ end }}

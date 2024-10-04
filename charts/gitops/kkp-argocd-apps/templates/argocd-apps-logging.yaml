@@ -1,0 +1,64 @@
+{{ if or .Values.promtail .Values.loki }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging
+{{ end }}
+
+{{ if .Values.promtail }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+spec:
+  project: default
+  # TODO: This assumes that we pull the charts from git repo. Currently, no support to pull charts from helm registry directly.
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/logging/promtail
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: logging
+{{ end }}
+
+{{ if .Values.loki }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/logging/loki
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: logging
+{{ end }}

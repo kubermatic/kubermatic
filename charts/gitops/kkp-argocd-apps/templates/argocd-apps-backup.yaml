@@ -1,0 +1,37 @@
+{{ if .Values.velero }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: velero
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/backup/velero
+    targetRevision: {{ .Values.kkpVersion }}
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/{{ template "argo-cd-apps.env-specific-values-file.path" . }}
+        - $values/{{ template "argo-cd-apps.seed-override-values-file.path" . }}
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: '{{ .Values.repoURL }}'
+    targetRevision: {{ template "git-tag-version" . }}
+    path: {{ .Values.valuesPathPrefix }}
+    ref: values
+  # TODO: In 2.24+, add a installCRD option in values.yaml since current Velero chart version is v1 and it does not install CRDs automatically
+  - repoURL: '{{ .Values.kkpRepoURL }}'
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/backup/velero/crd
+    targetRevision: {{ .Values.kkpVersion }}
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: velero
+{{ end }}
