@@ -407,6 +407,12 @@ type Kubevirt struct {
 
 	// Kubeconfig is the cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig"`
+
+	// VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt
+	VPCName string `json:"vpcName,omitempty"`
+
+	// SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+	SubnetName string `json:"subnetName,omitempty"`
 }
 
 func (s Kubevirt) IsValid() bool {
