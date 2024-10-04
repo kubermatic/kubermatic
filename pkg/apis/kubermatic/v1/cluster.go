@@ -1399,6 +1399,10 @@ type KubevirtCloudSpec struct {
 	StorageClasses []KubeVirtInfraStorageClass `json:"storageClasses,omitempty"`
 	// ImageCloningEnabled flag enable/disable cloning for a cluster.
 	ImageCloningEnabled bool `json:"imageCloningEnabled,omitempty"`
+	// VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.
+	VPCName string `json:"vpcName,omitempty"`
+	// SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+	SubnetName string `json:"subnetName,omitempty"`
 }
 
 type PreAllocatedDataVolume struct {
