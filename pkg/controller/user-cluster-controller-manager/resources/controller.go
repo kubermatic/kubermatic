@@ -23,7 +23,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"reflect"
 	"sync"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -151,7 +150,7 @@ func Add(
 
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
-				// There is no "parent object" like e.G. a cluster that can be used to reconcile, we just have a random set of resources
+				// There is no "parent object" like e.e. a cluster that can be used to reconcile, we just have a random set of resources
 				// we reconcile one after another. To ensure we always have only one reconcile running at a time, we
 				// use a static string as identifier
 				Name:      "identifier",
@@ -210,37 +209,12 @@ func Add(
 
 	var clusterObj ctrlruntimeclient.Object = &kubermaticv1.Cluster{}
 
-	// Watch cluster if user cluster MLA is enabled so that controller can get resource requirements for user cluster MLA components.
-	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
-		clusterPredicate := predicate.Funcs{
-			// For Update event, only trigger reconciliation when Resource Requirements change.
-			UpdateFunc: func(event event.UpdateEvent) bool {
-				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
-				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
-				oldResourceRequirements := oldCluster.GetUserClusterMLAResourceRequirements()
-				newResourceRequirements := newCluster.GetUserClusterMLAResourceRequirements()
-				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
-			},
-		}
-
-		bldr.WatchesRawSource(source.Kind(seedMgr.GetCache(), clusterObj, mapFn, clusterPredicate))
-	}
-
-	// Watch cluster if user cluster OPA is enabled so that controller can get resource requirements for user cluster OPA components.
-	if r.opaIntegration {
-		clusterPredicate := predicate.Funcs{
-			// For Update event, only trigger reconciliation when Resource Requirements change.
-			UpdateFunc: func(event event.UpdateEvent) bool {
-				oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
-				newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
-				oldResourceRequirements := oldCluster.GetUserClusterOPAResourceRequirements()
-				newResourceRequirements := newCluster.GetUserClusterOPAResourceRequirements()
-				return !reflect.DeepEqual(oldResourceRequirements, newResourceRequirements)
-			},
-		}
-
-		bldr.WatchesRawSource(source.Kind(seedMgr.GetCache(), clusterObj, mapFn, clusterPredicate))
-	}
+	bldr.WatchesRawSource(source.Kind(
+		seedMgr.GetCache(),
+		clusterObj,
+		mapFn,
+		predicate.TypedGenerationChangedPredicate[ctrlruntimeclient.Object]{},
+	))
 
 	_, err = bldr.Build(r)
 	if err != nil {
