@@ -120,7 +120,7 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 		is := strconv.Itoa(i)
 
 		// only test automatic rules
-		if update.Automatic == nil || !*update.Automatic {
+		if (update.Automatic == nil || !*update.Automatic) && (update.AutomaticNodeUpdate == nil || !*update.AutomaticNodeUpdate) {
 			continue
 		}
 
