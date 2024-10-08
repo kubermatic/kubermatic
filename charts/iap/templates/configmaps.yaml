@@ -19,7 +19,7 @@ kind: ConfigMap
 metadata:
   name: iap-{{ .name }}-configmap
 data:
-  config.yaml: |
+  config.toml: |
 {{- with .config }}
 {{ toToml . | indent 4 }}
 {{ end }}
