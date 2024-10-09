@@ -38,7 +38,7 @@ func VersionLabel(version string) reconciling.ObjectModifier {
 
 			deployment, ok := obj.(*appsv1.Deployment)
 			if !ok {
-				return obj, fmt.Errorf("VersionLabelModifier is only implemented for deployments, not %T", obj)
+				panic(fmt.Sprintf("VersionLabel modifier used on incompatible type %T", obj))
 			}
 
 			labels := map[string]string{

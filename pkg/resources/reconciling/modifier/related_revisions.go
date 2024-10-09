@@ -61,6 +61,9 @@ func addRevisionLabelsToObject(ctx context.Context, client ctrlruntimeclient.Cli
 		if err := addRevisionLabelsToPodSpec(ctx, client, asserted.Namespace, &asserted.Spec.Template); err != nil {
 			return nil, fmt.Errorf("failed to determine revision labels: %w", err)
 		}
+
+	default:
+		panic(fmt.Sprintf("RelatedRevisionsLabels modifier used on incompatible type %T", obj))
 	}
 
 	return obj, nil

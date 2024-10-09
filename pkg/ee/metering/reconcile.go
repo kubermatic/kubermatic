@@ -74,7 +74,6 @@ func ReconcileMeteringResources(ctx context.Context, client ctrlruntimeclient.Cl
 	}
 
 	modifiers := []reconciling.ObjectModifier{
-		modifier.RelatedRevisionsLabels(ctx, client),
 		modifier.Ownership(seed, "", scheme),
 	}
 
