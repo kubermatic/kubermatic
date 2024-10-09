@@ -19,7 +19,6 @@ package cloudcontroller
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -42,13 +41,6 @@ func anexiaDeploymentReconciler(data *resources.TemplateData) reconciling.NamedD
 	return func() (name string, create reconciling.DeploymentReconciler) {
 		return AnexiaCCMDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
 			deployment.Spec.Replicas = resources.Int32(1)
-
-			podLabels, err := data.GetPodTemplateLabels(AnexiaCCMDeploymentName, deployment.Spec.Template.Spec.Volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get pod template labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&deployment.Spec.Template, podLabels)
 
 			deployment.Spec.Template.Spec.AutomountServiceAccountToken = ptr.To(false)
 			deployment.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled(), true)

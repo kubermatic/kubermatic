@@ -76,13 +76,6 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 			set.Spec.Replicas = resources.Int32(1)
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 
-			volumes := getVolumes()
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, requiredBaseLabels)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&set.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
@@ -173,11 +166,13 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 					},
 				},
 			}
-			err = resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
+
+			set.Spec.Template.Spec.Volumes = getVolumes()
+
+			err := resources.SetResourceRequirements(set.Spec.Template.Spec.Containers, defaultResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), set.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
-			set.Spec.Template.Spec.Volumes = volumes
 
 			return set, nil
 		}

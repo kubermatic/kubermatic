@@ -63,16 +63,11 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 		return GCPCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Spec.Replicas = resources.Int32(1)
 
-			podLabels, err := data.GetPodTemplateLabels(GCPCCMDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "scratch",
 			})
 
+			var err error
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
 				resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {

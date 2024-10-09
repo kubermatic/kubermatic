@@ -55,11 +55,7 @@ var (
 func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			args := []string{
-				"-log-debug=false",
-				"-log-format", "json",
-				"-namespace", "kube-system",
-			}
+			var err error
 
 			baseLabels := resources.BaseAppLabels(resources.OperatingSystemManagerWebhookDeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
@@ -69,17 +65,6 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 				MatchLabels: baseLabels,
 			}
 
-			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
-			volumes := []corev1.Volume{getWebhookKubeconfigVolume(), getServingCertVolume(), getCABundleVolume()}
-			dep.Spec.Template.Spec.Volumes = volumes
-
-			podLabels, err := data.GetPodTemplateLabels(resources.OperatingSystemManagerWebhookDeploymentName, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
@@ -111,7 +96,11 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 					Name:    resources.OperatingSystemManagerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/webhook"},
-					Args:    args,
+					Args: []string{
+						"-log-debug=false",
+						"-log-format", "json",
+						"-namespace", "kube-system",
+					},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KUBECONFIG",
@@ -180,6 +169,15 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 					},
 				},
 			}
+
+			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
+
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				getWebhookKubeconfigVolume(),
+				getServingCertVolume(),
+				getCABundleVolume(),
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, webhookResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)

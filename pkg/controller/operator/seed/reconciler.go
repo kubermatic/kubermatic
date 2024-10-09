@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -243,8 +244,8 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 	}
 
 	modifiers := []reconciling.ObjectModifier{
-		common.OwnershipModifierFactory(seed, r.scheme),
-		common.VolumeRevisionLabelsModifierFactory(ctx, client),
+		modifier.Ownership(seed, common.OperatorName, r.scheme),
+		modifier.RelatedRevisionsLabels(ctx, client),
 	}
 	// add the image pull secret wrapper only when an image pull secret is provided
 	if cfg.Spec.ImagePullSecret != "" {
@@ -394,7 +395,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, cfg *kubermat
 		creators = append(creators, nodeportproxy.ServiceAccountReconciler(cfg))
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, r.namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic ServiceAccounts: %w", err)
 	}
 
@@ -425,7 +426,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, cfg *kubermaticv1.Kuber
 		creators = append(creators, nodeportproxy.RoleReconciler())
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, creators, r.namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
 	}
 
@@ -443,7 +444,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, cfg *kubermaticv
 		creators = append(creators, nodeportproxy.RoleBindingReconciler(cfg))
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, r.namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, creators, r.namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings: %w", err)
 	}
 
@@ -502,7 +503,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *kubermaticv1.
 		kubermaticseed.CABundleConfigMapReconciler(caBundle),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, cfg.Namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
@@ -521,7 +522,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *kubermaticv1.Kub
 		creators = append(creators, common.DockercfgSecretReconciler(cfg))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, creators, cfg.Namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Secrets: %w", err)
 	}
 
@@ -560,11 +561,11 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 		)
 	}
 
-	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(ctx, client)
+	volumeLabelModifier := modifier.RelatedRevisionsLabels(ctx, client)
 	modifiers := []reconciling.ObjectModifier{
-		common.OwnershipModifierFactory(seed, r.scheme),
+		modifier.Ownership(seed, common.OperatorName, r.scheme),
+		modifier.VersionLabel(r.versions.Kubermatic),
 		volumeLabelModifier,
-		common.VersionLabelModifierFactory(r.versions.Kubermatic),
 	}
 	// add the image pull secret wrapper only when an image pull secret is
 	// provided
@@ -617,7 +618,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, cfg *kub
 		creators = append(creators, nodeportproxy.EnvoyPDBReconciler())
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, cfg.Namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
@@ -644,7 +645,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, cfg *kubermaticv1.Ku
 		common.WebhookServiceReconciler(cfg, client),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServices(ctx, creators, cfg.Namespace, client, modifier.Ownership(seed, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Services: %w", err)
 	}
 

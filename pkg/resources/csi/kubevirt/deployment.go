@@ -76,12 +76,6 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					},
 				},
 			}
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
-				resources.VersionLabel: version.String(),
-			})
-			if err != nil {
-				return nil, err
-			}
 
 			d.Labels = resources.BaseAppLabels(resources.KubeVirtCSIControllerName, nil)
 
@@ -92,13 +86,16 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				},
 			}
 
-			kubernetes.EnsureLabels(&d.Spec.Template, podLabels)
+			kubernetes.EnsureLabels(&d.Spec.Template, map[string]string{
+				resources.VersionLabel: version.String(),
+			})
 			kubernetes.EnsureAnnotations(&d.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 				// these volumes should not block the autoscaler from evicting the pod
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "socket-dir",
 			})
 
+			var err error
 			d.Spec.Template.Spec.DNSPolicy, d.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err

@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -221,7 +222,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermatic
 		reconcilers = append(reconcilers, kubermatic.UIConfigConfigMapReconciler(config))
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
 
@@ -240,7 +241,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *kubermaticv1.
 		reconcilers = append(reconcilers, common.DockercfgSecretReconciler(config))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %w", err)
 	}
 
@@ -256,7 +257,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 		common.WebhookServiceAccountReconciler(config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
 	}
 
@@ -340,12 +341,12 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	}
 
 	modifiers := []reconciling.ObjectModifier{
-		common.OwnershipModifierFactory(config, r.scheme),
-		common.VolumeRevisionLabelsModifierFactory(ctx, r.Client),
-		common.VersionLabelModifierFactory(r.versions.Kubermatic),
+		modifier.Ownership(config, common.OperatorName, r.scheme),
+		modifier.RelatedRevisionsLabels(ctx, r.Client),
+		modifier.VersionLabel(r.versions.Kubermatic),
 	}
-	// add the image pull secret wrapper only when an image pull secret is
-	// provided
+
+	// add the image pull secret wrapper only when an image pull secret is provided
 	if config.Spec.ImagePullSecret != "" {
 		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
@@ -371,7 +372,7 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *
 		)
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 
@@ -392,7 +393,7 @@ func (r *Reconciler) reconcileServices(ctx context.Context, config *kubermaticv1
 		)
 	}
 
-	if err := reconciling.ReconcileServices(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServices(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
@@ -416,7 +417,7 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 		kubermatic.IngressReconciler(config),
 	}
 
-	if err := reconciling.ReconcileIngresses(ctx, reconcilers, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileIngresses(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
 	}
 

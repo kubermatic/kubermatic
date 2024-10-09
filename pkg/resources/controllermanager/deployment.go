@@ -96,14 +96,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				volumes = append(volumes, serviceAccountVolume)
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, map[string]string{
+			kubernetes.EnsureLabels(&dep.Spec.Template, map[string]string{
 				resources.VersionLabel: version.String(),
 			})
-			if err != nil {
-				return nil, err
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				"prometheus.io/path":                   "/metrics",
 				"prometheus.io/scrape_with_kube_cert":  "true",

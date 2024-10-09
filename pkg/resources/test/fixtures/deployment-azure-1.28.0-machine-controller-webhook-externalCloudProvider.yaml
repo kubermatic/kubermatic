@@ -21,6 +21,7 @@ spec:
       labels:
         app: machine-controller-webhook
         ca-bundle-configmap-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
         cluster: de-test-01
         machinecontroller-kubeconfig-secret-revision: "123456"
         machinecontroller-webhook-serving-cert-secret-revision: "123456"

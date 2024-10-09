@@ -20,6 +20,7 @@ spec:
       creationTimestamp: null
       labels:
         app: nodeport-proxy-envoy
+        cluster: de-test-01
     spec:
       affinity:
         podAntiAffinity:

@@ -23,6 +23,7 @@ spec:
       creationTimestamp: null
       labels:
         app: operating-system-manager
+        cloud-credentials-secret-revision: "123456"
         cluster: de-test-01
         operatingsystemmanager-kubeconfig-secret-revision: "123456"
     spec:

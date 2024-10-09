@@ -50,16 +50,12 @@ var (
 func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return VSphereCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			podLabels, err := data.GetPodTemplateLabels(VSphereCCMDeploymentName, dep.Spec.Template.Spec.Volumes, map[string]string{
+			kubernetes.EnsureLabels(&dep.Spec.Template, map[string]string{
 				"component": "cloud-controller-manager",
 				"tier":      "control-plane",
 			})
-			if err != nil {
-				return nil, err
-			}
 
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
-
+			var err error
 			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
 				resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {

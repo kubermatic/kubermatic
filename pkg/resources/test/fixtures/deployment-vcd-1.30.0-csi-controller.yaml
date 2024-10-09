@@ -19,7 +19,7 @@ spec:
         kubermatic.k8c.io/last-restart: ""
       creationTimestamp: null
       labels:
-        app: csi-controller
+        app: operating-system-manager
         cloud-config-csi-secret-revision: "123456"
         cluster: de-test-01
         vcloud-basic-auth-secret-revision: "123456"

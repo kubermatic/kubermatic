@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -58,6 +59,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/utils/ptr"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -633,6 +635,13 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
+									Name:            resources.UserClusterWebhookServingCertSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
 									Name:            resources.KubernetesDashboardKubeconfigSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
@@ -655,6 +664,20 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.AdminKubeconfigSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.ClusterCloudCredentialsSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            resources.CloudControllerManagerKubeconfigSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
@@ -848,7 +871,7 @@ func TestLoadFiles(t *testing.T) {
 						WithKonnectivityEnabled(true).
 						Build()
 
-					generateAndVerifyResources(t, data, tc, markFixtureUsed, kubermaticVersions)
+					generateAndVerifyResources(t, ctx, dynamicClient, data, tc, markFixtureUsed, kubermaticVersions)
 				})
 			}
 		}
@@ -859,15 +882,27 @@ func TestLoadFiles(t *testing.T) {
 	}
 }
 
-func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc testCase, fixtureDone func(string), versions kubermatic.Versions) {
+func generateAndVerifyResources(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, data *resources.TemplateData, tc testCase, fixtureDone func(string), versions kubermatic.Versions) {
 	cluster := data.Cluster()
+
+	revisionLabelModifier := modifier.RelatedRevisionsLabels(ctx, client)
+	controlPlaneModifier := modifier.ControlplaneComponent(cluster)
 
 	var deploymentReconcilers []reconciling.NamedDeploymentReconcilerFactory
 	deploymentReconcilers = append(deploymentReconcilers, kubernetescontroller.GetDeploymentReconcilers(data, true, versions)...)
 	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(data)...)
-	for _, create := range deploymentReconcilers {
-		name, creator := create()
-		res, err := creator(&appsv1.Deployment{})
+	for _, factory := range deploymentReconcilers {
+		name, reconciler := factory()
+		reconciler = wrapReconciler(reconciler, revisionLabelModifier)
+		reconciler = wrapReconciler(reconciler, controlPlaneModifier)
+
+		emptyObject := &appsv1.Deployment{}
+
+		// replicate what the reconciling framework would normally do
+		emptyObject.SetName(name)
+		emptyObject.SetNamespace(cluster.Status.NamespaceName)
+
+		res, err := reconciler(emptyObject)
 		if err != nil {
 			t.Fatalf("failed to create Deployment %s: %v", name, err)
 		}
@@ -884,9 +919,9 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	var namedConfigMapReconcilerFactories []reconciling.NamedConfigMapReconcilerFactory
 	namedConfigMapReconcilerFactories = append(namedConfigMapReconcilerFactories, kubernetescontroller.GetConfigMapReconcilers(data)...)
 	namedConfigMapReconcilerFactories = append(namedConfigMapReconcilerFactories, monitoringcontroller.GetConfigMapReconcilers(data)...)
-	for _, namedGetter := range namedConfigMapReconcilerFactories {
-		name, create := namedGetter()
-		res, err := create(&corev1.ConfigMap{})
+	for _, factory := range namedConfigMapReconcilerFactories {
+		name, reconciler := factory()
+		res, err := reconciler(&corev1.ConfigMap{})
 		if err != nil {
 			t.Fatalf("failed to create ConfigMap: %v", err)
 		}
@@ -899,9 +934,9 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	}
 
 	serviceReconcilers := kubernetescontroller.GetServiceReconcilers(data)
-	for _, creatorGetter := range serviceReconcilers {
-		name, create := creatorGetter()
-		res, err := create(&corev1.Service{})
+	for _, factory := range serviceReconcilers {
+		name, reconciler := factory()
+		res, err := reconciler(&corev1.Service{})
 		if err != nil {
 			t.Fatalf("failed to create Service: %v", err)
 		}
@@ -916,9 +951,18 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 	var statefulSetReconcilers []reconciling.NamedStatefulSetReconcilerFactory
 	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false)...)
 	statefulSetReconcilers = append(statefulSetReconcilers, monitoringcontroller.GetStatefulSetReconcilers(data)...)
-	for _, creatorGetter := range statefulSetReconcilers {
-		name, create := creatorGetter()
-		res, err := create(&appsv1.StatefulSet{})
+	for _, factory := range statefulSetReconcilers {
+		name, reconciler := factory()
+		reconciler = wrapReconciler(reconciler, revisionLabelModifier)
+		reconciler = wrapReconciler(reconciler, controlPlaneModifier)
+
+		emptyObject := &appsv1.StatefulSet{}
+
+		// replicate what the reconciling framework would normally do
+		emptyObject.SetName(name)
+		emptyObject.SetNamespace(cluster.Status.NamespaceName)
+
+		res, err := reconciler(emptyObject)
 		if err != nil {
 			t.Fatalf("failed to create StatefulSet: %v", err)
 		}
@@ -942,9 +986,9 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetPodDisruptionBudgetReconcilers(data) {
-		name, create := creatorGetter()
-		res, err := create(&policyv1.PodDisruptionBudget{})
+	for _, factory := range kubernetescontroller.GetPodDisruptionBudgetReconcilers(data) {
+		name, reconciler := factory()
+		res, err := reconciler(&policyv1.PodDisruptionBudget{})
 		if err != nil {
 			t.Fatalf("failed to create PodDisruptionBudget: %v", err)
 		}
@@ -960,9 +1004,9 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetCronJobReconcilers(data) {
-		name, create := creatorGetter()
-		res, err := create(&batchv1.CronJob{})
+	for _, factory := range kubernetescontroller.GetCronJobReconcilers(data) {
+		name, reconciler := factory()
+		res, err := reconciler(&batchv1.CronJob{})
 		if err != nil {
 			t.Fatalf("failed to create CronJob: %v", err)
 		}
@@ -983,9 +1027,9 @@ func generateAndVerifyResources(t *testing.T, data *resources.TemplateData, tc t
 		checkTestResult(t, fixturePath, res)
 	}
 
-	for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigReconcilers(data, generator.GenTestSeed()) {
-		name, create := creatorGetter()
-		res, err := create(&kubermaticv1.EtcdBackupConfig{})
+	for _, factory := range kubernetescontroller.GetEtcdBackupConfigReconcilers(data, generator.GenTestSeed()) {
+		name, reconciler := factory()
+		res, err := reconciler(&kubermaticv1.EtcdBackupConfig{})
 		if err != nil {
 			t.Fatalf("failed to create EtcdBackupConfig: %v", err)
 		}
@@ -1016,5 +1060,26 @@ func verifyContainerResources(owner string, podTemplateSpec corev1.PodTemplateSp
 				}
 			}
 		}
+	}
+}
+
+// wrapReconciler takes a typed reconciler (like a StatefulSetReconciler) and wraps it in a
+// "generic" modifier (which is based on ctrlruntimeclient.Object).
+func wrapReconciler[T ctrlruntimeclient.Object](reconciler func(existing T) (T, error), modifier reconciling.ObjectModifier) func(existing T) (T, error) {
+	// wrap the typed reconciler in a blunt, generic reconciler and then modify it
+	modifiedReconciler := modifier(func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		return reconciler(existing.(T))
+	})
+
+	return func(existing T) (T, error) {
+		reconciled, err := modifiedReconciler(existing)
+		if err != nil {
+			// cannot return nil for T, so we just return the existing object, assuming
+			// callers will ignore it anyway
+			return existing, err
+		}
+
+		// assert the ctrlruntimeclient.Object back to the typed resource (e.g. a StatefulSet)
+		return reconciled.(T), nil
 	}
 }

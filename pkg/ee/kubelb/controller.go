@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -323,10 +324,14 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 	}
 
 	// Create/update kubeLB deployment.
+	modifiers := []reconciling.ObjectModifier{
+		modifier.RelatedRevisionsLabels(ctx, r),
+		modifier.ControlplaneComponent(cluster),
+	}
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client, modifiers...); err != nil {
 		return nil, fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 

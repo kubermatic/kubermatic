@@ -63,7 +63,6 @@ const (
 // metricsServerData is the data needed to construct the metrics-server components.
 type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
-	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	GetRootCA() (*triple.KeyPair, error)
 	RewriteImage(string) (string, error)
 	DNATControllerImage() string
@@ -98,18 +97,11 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := getVolumes(data.IsKonnectivityEnabled())
-			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
 
-			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.Volumes = getVolumes(data.IsKonnectivityEnabled())
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
@@ -201,7 +193,8 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 				defResourceRequirements[dnatControllerSidecar.Name] = dnatControllerSidecar.Resources.DeepCopy()
 			}
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
+
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

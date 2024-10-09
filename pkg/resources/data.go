@@ -449,12 +449,6 @@ func (d *TemplateData) GetMLAGatewayCA() (*ECDSAKeyPair, error) {
 	return GetMLAGatewayCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
-// GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
-// This will force pods being restarted as soon as one of the secrets/configmaps get updated.
-func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {
-	return GetPodTemplateLabels(d.ctx, d.client, appName, d.cluster.Name, d.cluster.Status.NamespaceName, volumes, additionalLabels)
-}
-
 // GetOpenVPNServerPort returns the nodeport of the external apiserver service.
 func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed

@@ -89,15 +89,6 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 				return nil, err
 			}
 
-			volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume(), getCABundleVolume()}
-			dep.Spec.Template.Spec.Volumes = volumes
-
-			podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %w", err)
-			}
-
-			kubernetes.EnsureLabels(&dep.Spec.Template, podLabels)
 			kubernetes.EnsureAnnotations(&dep.Spec.Template, map[string]string{
 				resources.ClusterLastRestartAnnotation: data.Cluster().Annotations[resources.ClusterLastRestartAnnotation],
 			})
@@ -188,6 +179,13 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 					},
 				},
 			}
+
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				getKubeconfigVolume(),
+				getServingCertVolume(),
+				getCABundleVolume(),
+			}
+
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, webhookResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)

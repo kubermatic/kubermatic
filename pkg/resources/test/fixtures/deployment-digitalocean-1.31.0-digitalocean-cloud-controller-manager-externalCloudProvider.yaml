@@ -20,6 +20,10 @@ spec:
       creationTimestamp: null
       labels:
         app: digitalocean-cloud-controller-manager
+        ca-bundle-configmap-revision: "123456"
+        cloud-config-secret-revision: "123456"
+        cloud-controller-manager-kubeconfig-secret-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
         cluster: de-test-01
     spec:
       automountServiceAccountToken: false
