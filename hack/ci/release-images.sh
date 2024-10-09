@@ -27,35 +27,6 @@ GIT_HEAD_HASH="$(git rev-parse HEAD)"
 GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
-# if no explicit (usually temporary) tags are given, default to tagging based on Git tags and hashes
-if [ -z "${TAGS:-}" ]; then
-  TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
-
-  if [ "$GIT_BRANCH" == "main" ]; then
-    # we only want to create the "latest" tag if we're building the main branch
-    TAGS="$TAGS latest"
-  elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
-    # the dashboard e2e jobs in a release branch rely on a "latest" tag being
-    # available for KKP, so we turn "release/v2.21" into "v2.21-latest"
-    RELEASE_LATEST="${GIT_BRANCH#release/}"
-    RELEASE_LATEST="${RELEASE_LATEST//\//-}-latest"
-
-    TAGS="$TAGS $RELEASE_LATEST"
-  fi
-fi
-
-if [ -z "${NO_IMAGES:-}" ]; then
-  start_docker_daemon_ci
-
-  if [ -z "${NO_PUSH:-}" ]; then
-    echodate "Logging into Quay..."
-    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-    echodate "Successfully logged into Quay."
-  else
-    echodate "Skipping Quay login because \$NO_PUSH is set."
-  fi
-fi
-
 # prepare special variables that will be injected into the Kubermatic Operator;
 # use the latest tagged version of the dashboard when we ourselves are a tagged
 # release
@@ -83,6 +54,35 @@ if [ -z "${UIDOCKERTAG:-}" ]; then
       echo "Please release a new version for the dashboard and re-run this job."
       exit 1
     fi
+  fi
+fi
+
+# if no explicit (usually temporary) tags are given, default to tagging based on Git tags and hashes
+if [ -z "${TAGS:-}" ]; then
+  TAGS="$KUBERMATICDOCKERTAG"
+
+  if [ "$GIT_BRANCH" == "main" ]; then
+    # we only want to create the "latest" tag if we're building the main branch
+    TAGS="$TAGS latest"
+  elif [[ "$GIT_BRANCH" =~ release/v[0-9]+.* ]]; then
+    # the dashboard e2e jobs in a release branch rely on a "latest" tag being
+    # available for KKP, so we turn "release/v2.21" into "v2.21-latest"
+    RELEASE_LATEST="${GIT_BRANCH#release/}"
+    RELEASE_LATEST="${RELEASE_LATEST//\//-}-latest"
+
+    TAGS="$TAGS $RELEASE_LATEST"
+  fi
+fi
+
+if [ -z "${NO_IMAGES:-}" ]; then
+  start_docker_daemon_ci
+
+  if [ -z "${NO_PUSH:-}" ]; then
+    echodate "Logging into Quay..."
+    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    echodate "Successfully logged into Quay."
+  else
+    echodate "Skipping Quay login because \$NO_PUSH is set."
   fi
 fi
 
