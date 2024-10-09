@@ -54,7 +54,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "7f090ad5fc651ffb44d8f716735f32b692973506"
+	Tag  = "0fb8b75ceb46509f8a656494090cf0802c75c052"
 )
 
 type machinecontrollerData interface {
