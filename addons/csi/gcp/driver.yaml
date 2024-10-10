@@ -58,280 +58,296 @@ metadata:
   name: csi-gce-pd-leaderelection-role
   namespace: kube-system
 rules:
-- apiGroups:
-  - coordination.k8s.io
-  resources:
-  - leases
-  verbs:
-  - get
-  - watch
-  - list
-  - delete
-  - update
-  - create
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - watch
+      - list
+      - delete
+      - update
+      - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-attacher-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - csinodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - volumeattachments
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-  - patch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - volumeattachments/status
-  verbs:
-  - patch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csinodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattachments
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattachments/status
+    verbs:
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-controller-deploy
 rules:
-- apiGroups:
-  - policy
-  resourceNames:
-  - csi-gce-pd-controller-psp
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
+  - apiGroups:
+      - policy
+    resourceNames:
+      - csi-gce-pd-controller-psp
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-node-deploy
 rules:
-- apiGroups:
-  - policy
-  resourceNames:
-  - csi-gce-pd-node-psp
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
+  - apiGroups:
+      - policy
+    resourceNames:
+      - csi-gce-pd-node-psp
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-node-deploy-win
 rules:
-- apiGroups:
-  - policy
-  resourceNames:
-  - csi-gce-pd-node-psp-win
-  resources:
-  - podsecuritypolicies
-  verbs:
-  - use
+  - apiGroups:
+      - policy
+    resourceNames:
+      - csi-gce-pd-node-psp-win
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-provisioner-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - storageclasses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - list
-  - watch
-  - create
-  - update
-  - patch
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - csinodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - nodes
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
-  - volumesnapshots
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
-  - volumesnapshotcontents
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - storage.k8s.io
-  resources:
-  - volumeattachments
-  verbs:
-  - get
-  - list
-  - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - storageclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattributesclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csinodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshots
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattachments
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-resizer-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumes
-  verbs:
-  - get
-  - list
-  - watch
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolumeclaims/status
-  verbs:
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - list
-  - watch
-  - create
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  verbs:
-  - get
-  - list
-  - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims/status
+    verbs:
+      - update
+      - patch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - volumeattributesclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: csi-gce-pd-snapshotter-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - list
-  - watch
-  - create
-  - update
-  - patch
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
-  - volumesnapshotclasses
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
-  - volumesnapshotcontents
-  verbs:
-  - create
-  - get
-  - list
-  - watch
-  - update
-  - delete
-  - patch
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
-  - volumesnapshotcontents/status
-  verbs:
-  - update
-  - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - delete
+      - patch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      - volumesnapshotcontents/status
+    verbs:
+      - update
+      - patch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -345,9 +361,9 @@ roleRef:
   kind: Role
   name: csi-gce-pd-leaderelection-role
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -358,9 +374,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-node-deploy
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -371,9 +387,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-attacher-role
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -384,9 +400,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-controller-deploy
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -397,9 +413,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-provisioner-role
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -410,9 +426,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-snapshotter-role
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -423,9 +439,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-node-deploy
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-node-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-node-sa
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -436,9 +452,9 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-node-deploy-win
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-node-sa-win
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-node-sa-win
+    namespace: kube-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -449,13 +465,12 @@ roleRef:
   kind: ClusterRole
   name: csi-gce-pd-resizer-role
 subjects:
-- kind: ServiceAccount
-  name: csi-gce-pd-controller-sa
-  namespace: kube-system
+  - kind: ServiceAccount
+    name: csi-gce-pd-controller-sa
+    namespace: kube-system
 ---
 apiVersion: scheduling.k8s.io/v1
-description: This priority class should be used for the GCE PD CSI driver controller
-  deployment only.
+description: This priority class should be used for the GCE PD CSI driver controller deployment only.
 globalDefault: false
 kind: PriorityClass
 metadata:
@@ -463,8 +478,7 @@ metadata:
 value: 900000000
 ---
 apiVersion: scheduling.k8s.io/v1
-description: This priority class should be used for the GCE PD CSI driver node deployment
-  only.
+description: This priority class should be used for the GCE PD CSI driver node deployment only.
 globalDefault: false
 kind: PriorityClass
 metadata:
@@ -489,128 +503,132 @@ spec:
         app: gcp-compute-persistent-disk-csi-driver
     spec:
       containers:
-      - args:
-        - --v=5
-        - --csi-address=/csi/csi.sock
-        - --feature-gates=Topology=true
-        - --http-endpoint=:22011
-        - --leader-election-namespace=$(PDCSI_NAMESPACE)
-        - --timeout=250s
-        - --extra-create-metadata
-        - --leader-election
-        - --default-fstype=ext4
-        - --controller-publish-readonly=true
-        env:
-        - name: PDCSI_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.4.0" }}
-        livenessProbe:
-          failureThreshold: 1
-          httpGet:
-            path: /healthz/leader-election
-            port: http-endpoint
-          initialDelaySeconds: 10
-          periodSeconds: 20
-          timeoutSeconds: 10
-        name: csi-provisioner
-        ports:
-        - containerPort: 22011
-          name: http-endpoint
-          protocol: TCP
-        volumeMounts:
-        - mountPath: /csi
-          name: socket-dir
-      - args:
-        - --v=5
-        - --csi-address=/csi/csi.sock
-        - --http-endpoint=:22012
-        - --leader-election
-        - --leader-election-namespace=$(PDCSI_NAMESPACE)
-        - --timeout=250s
-        env:
-        - name: PDCSI_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.2.0" }}
-        livenessProbe:
-          failureThreshold: 1
-          httpGet:
-            path: /healthz/leader-election
-            port: http-endpoint
-          initialDelaySeconds: 10
-          periodSeconds: 20
-          timeoutSeconds: 10
-        name: csi-attacher
-        ports:
-        - containerPort: 22012
-          name: http-endpoint
-          protocol: TCP
-        volumeMounts:
-        - mountPath: /csi
-          name: socket-dir
-      - args:
-        - --v=5
-        - --csi-address=/csi/csi.sock
-        - --http-endpoint=:22013
-        - --leader-election
-        - --leader-election-namespace=$(PDCSI_NAMESPACE)
-        - --handle-volume-inuse-error=false
-        env:
-        - name: PDCSI_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.7.0" }}
-        livenessProbe:
-          failureThreshold: 1
-          httpGet:
-            path: /healthz/leader-election
-            port: http-endpoint
-          initialDelaySeconds: 10
-          periodSeconds: 20
-          timeoutSeconds: 10
-        name: csi-resizer
-        ports:
-        - containerPort: 22013
-          name: http-endpoint
-          protocol: TCP
-        volumeMounts:
-        - mountPath: /csi
-          name: socket-dir
-      - args:
-        - --v=5
-        - --csi-address=/csi/csi.sock
-        - --metrics-address=:22014
-        - --leader-election
-        - --leader-election-namespace=$(PDCSI_NAMESPACE)
-        - --timeout=300s
-        env:
-        - name: PDCSI_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        image: {{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.1.0" }}
-        name: csi-snapshotter
-        volumeMounts:
-        - mountPath: /csi
-          name: socket-dir
-      - args:
-        - --v=5
-        - --endpoint=unix:/csi/csi.sock
-        env:
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: /etc/cloud-sa/cloud-sa.json
-        image: {{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.10.1" }}
-        name: gce-pd-driver
-        volumeMounts:
-        - mountPath: /csi
-          name: socket-dir
-        - mountPath: /etc/cloud-sa
-          name: cloud-sa-volume
-          readOnly: true
+        - args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --feature-gates=Topology=true
+            - --http-endpoint=:22011
+            - --leader-election-namespace=$(PDCSI_NAMESPACE)
+            - --timeout=250s
+            - --extra-create-metadata
+            - --leader-election
+            - --default-fstype=ext4
+            - --controller-publish-readonly=true
+            - --feature-gates=VolumeAttributesClass=true
+          env:
+            - name: PDCSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.1.0" }}'
+          livenessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /healthz/leader-election
+              port: http-endpoint
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 10
+          name: csi-provisioner
+          ports:
+            - containerPort: 22011
+              name: http-endpoint
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --http-endpoint=:22012
+            - --leader-election
+            - --leader-election-namespace=$(PDCSI_NAMESPACE)
+            - --timeout=250s
+          env:
+            - name: PDCSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.4.3" }}'
+          livenessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /healthz/leader-election
+              port: http-endpoint
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 10
+          name: csi-attacher
+          ports:
+            - containerPort: 22012
+              name: http-endpoint
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --http-endpoint=:22013
+            - --leader-election
+            - --leader-election-namespace=$(PDCSI_NAMESPACE)
+            - --handle-volume-inuse-error=false
+            - --feature-gates=VolumeAttributesClass=true
+          env:
+            - name: PDCSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.11.1" }}'
+          livenessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /healthz/leader-election
+              port: http-endpoint
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 10
+          name: csi-resizer
+          ports:
+            - containerPort: 22013
+              name: http-endpoint
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --metrics-address=:22014
+            - --leader-election
+            - --leader-election-namespace=$(PDCSI_NAMESPACE)
+            - --timeout=300s
+          env:
+            - name: PDCSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3" }}'
+          name: csi-snapshotter
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - args:
+            - --v=5
+            - --endpoint=unix:/csi/csi.sock
+            - --supports-dynamic-iops-provisioning=hyperdisk-balanced,hyperdisk-extreme
+            - --supports-dynamic-throughput-provisioning=hyperdisk-balanced,hyperdisk-throughput,hyperdisk-ml
+          env:
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /etc/cloud-sa/cloud-sa.json
+          image: '{{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.15.0" }}'
+          name: gce-pd-driver
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /etc/cloud-sa
+              name: cloud-sa-volume
+              readOnly: true
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
@@ -620,11 +638,11 @@ spec:
           type: RuntimeDefault
       serviceAccountName: csi-gce-pd-controller-sa
       volumes:
-      - emptyDir: {}
-        name: socket-dir
-      - name: cloud-sa-volume
-        secret:
-          secretName: cloud-sa
+        - emptyDir: {}
+          name: socket-dir
+        - name: cloud-sa-volume
+          secret:
+            secretName: cloud-sa
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -641,46 +659,46 @@ spec:
         app: gcp-compute-persistent-disk-csi-driver
     spec:
       containers:
-      - args:
-        - --v=5
-        - --csi-address=/csi/csi.sock
-        - --kubelet-registration-path=/var/lib/kubelet/plugins/pd.csi.storage.gke.io/csi.sock
-        env:
-        - name: KUBE_NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.7.0" }}
-        name: csi-driver-registrar
-        volumeMounts:
-        - mountPath: /csi
-          name: plugin-dir
-        - mountPath: /registration
-          name: registration-dir
-      - args:
-        - --v=5
-        - --endpoint=unix:/csi/csi.sock
-        - --run-controller-service=false
-        image: {{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.10.1" }}
-        name: gce-pd-driver
-        securityContext:
-          privileged: true
-        volumeMounts:
-        - mountPath: /var/lib/kubelet
-          mountPropagation: Bidirectional
-          name: kubelet-dir
-        - mountPath: /csi
-          name: plugin-dir
-        - mountPath: /dev
-          name: device-dir
-        - mountPath: /etc/udev
-          name: udev-rules-etc
-        - mountPath: /lib/udev
-          name: udev-rules-lib
-        - mountPath: /run/udev
-          name: udev-socket
-        - mountPath: /sys
-          name: sys
+        - args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/pd.csi.storage.gke.io/csi.sock
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.3" }}'
+          name: csi-driver-registrar
+          volumeMounts:
+            - mountPath: /csi
+              name: plugin-dir
+            - mountPath: /registration
+              name: registration-dir
+        - args:
+            - --v=5
+            - --endpoint=unix:/csi/csi.sock
+            - --run-controller-service=false
+          image: '{{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.15.0" }}'
+          name: gce-pd-driver
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /var/lib/kubelet
+              mountPropagation: Bidirectional
+              name: kubelet-dir
+            - mountPath: /csi
+              name: plugin-dir
+            - mountPath: /dev
+              name: device-dir
+            - mountPath: /etc/udev
+              name: udev-rules-etc
+            - mountPath: /lib/udev
+              name: udev-rules-lib
+            - mountPath: /run/udev
+              name: udev-socket
+            - mountPath: /sys
+              name: sys
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
@@ -690,40 +708,40 @@ spec:
           type: RuntimeDefault
       serviceAccountName: csi-gce-pd-node-sa
       tolerations:
-      - operator: Exists
+        - operator: Exists
       volumes:
-      - hostPath:
-          path: /var/lib/kubelet/plugins_registry/
-          type: Directory
-        name: registration-dir
-      - hostPath:
-          path: /var/lib/kubelet
-          type: Directory
-        name: kubelet-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins/pd.csi.storage.gke.io/
-          type: DirectoryOrCreate
-        name: plugin-dir
-      - hostPath:
-          path: /dev
-          type: Directory
-        name: device-dir
-      - hostPath:
-          path: /etc/udev
-          type: Directory
-        name: udev-rules-etc
-      - hostPath:
-          path: /lib/udev
-          type: Directory
-        name: udev-rules-lib
-      - hostPath:
-          path: /run/udev
-          type: Directory
-        name: udev-socket
-      - hostPath:
-          path: /sys
-          type: Directory
-        name: sys
+        - hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: Directory
+          name: registration-dir
+        - hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+          name: kubelet-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins/pd.csi.storage.gke.io/
+            type: DirectoryOrCreate
+          name: plugin-dir
+        - hostPath:
+            path: /dev
+            type: Directory
+          name: device-dir
+        - hostPath:
+            path: /etc/udev
+            type: Directory
+          name: udev-rules-etc
+        - hostPath:
+            path: /lib/udev
+            type: Directory
+          name: udev-rules-lib
+        - hostPath:
+            path: /run/udev
+            type: Directory
+          name: udev-socket
+        - hostPath:
+            path: /sys
+            type: Directory
+          name: sys
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
