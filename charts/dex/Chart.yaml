@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: oauth
+apiVersion: v2
+name: dex
 version: 9.9.9-dev
-appVersion: v2.39.1
-description: Dex
-deprecated: true
+appVersion: 2.41.1
+description: A Helm chart for Dex
 keywords:
   - kubermatic
   - oauth
   - dex
 home: https://github.com/dexidp/dex
 sources:
-  - https://github.com/kubermatic/kubermatic
+  - https://github.com/dexidp/helm-charts/tree/master/charts/dex
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+  - repository: https://charts.dexidp.io
+    name: dex
+    version: 0.19.1
