@@ -1,0 +1,123 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - https://raw.githubusercontent.com/kubernetes-sigs/vsphere-csi-driver/refs/tags/v3.1.2/manifests/vanilla/vsphere-csi-driver.yaml
+patches:
+  # remove windows support daemon sets
+  - target:
+      kind: DaemonSet
+      name: vsphere-csi-node-windows
+    patch: |
+      $patch: delete
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: vsphere-csi-node-windows
+
+  # tweak configuration
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: internal-feature-states.csi.vsphere.vmware.com
+        namespace: vmware-system-csi
+      data:
+        "improved-volume-topology": "false"
+        "improved-csi-idempotency": "false"
+        "csi-migration": "{{ .Cluster.CSIMigration }}"
+
+  # remove node selector, add cluster-autoscaler annotation
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: vsphere-csi-controller
+        namespace: vmware-system-csi
+      spec:
+        template:
+          metadata:
+            annotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
+          spec:
+            nodeSelector: ~
+
+  # mount KKP CA bundle
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: vsphere-csi-controller
+        namespace: vmware-system-csi
+      spec:
+        template:
+          spec:
+            containers:
+              - name: vsphere-csi-controller
+                env:
+                  - name: SSL_CERT_FILE
+                    value: "/etc/kubermatic/certs/ca-bundle.pem"
+                volumeMounts:
+                  - mountPath: /etc/kubermatic/certs
+                    name: ca-bundle
+                    readOnly: true
+              - name: vsphere-syncer
+                env:
+                  - name: SSL_CERT_FILE
+                    value: "/etc/kubermatic/certs/ca-bundle.pem"
+                volumeMounts:
+                  - mountPath: /etc/kubermatic/certs
+                    name: ca-bundle
+                    readOnly: true
+            volumes:
+              - name: ca-bundle
+                configMap:
+                  name: ca-bundle
+
+  # also CA bundle, but for the DaemonSet
+  - patch: |-
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: vsphere-csi-node
+        namespace: vmware-system-csi
+      spec:
+        template:
+          spec:
+            containers:
+              - name: vsphere-csi-node
+                env:
+                  - name: SSL_CERT_FILE
+                    value: "/etc/kubermatic/certs/ca-bundle.pem"
+                volumeMounts:
+                  - mountPath: /etc/kubermatic/certs
+                    name: ca-bundle
+                    readOnly: true
+            volumes:
+              - name: ca-bundle
+                configMap:
+                  name: ca-bundle
+
+  # use the KKP-managed cloud-config
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: vsphere-csi-controller
+        namespace: vmware-system-csi
+      spec:
+        template:
+          spec:
+            containers:
+              - name: vsphere-csi-controller
+                env:
+                  - name: VSPHERE_CSI_CONFIG
+                    value: "/etc/cloud/config"
+              - name: vsphere-syncer
+                env:
+                  - name: VSPHERE_CSI_CONFIG
+                    value: "/etc/cloud/config"
+            volumes:
+              - name: vsphere-config-volume
+                secret:
+                  secretName: cloud-config-csi
