@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kube-system
 resources:
-  - https://raw.githubusercontent.com/kubernetes-sigs/vsphere-csi-driver/refs/tags/v3.1.2/manifests/vanilla/vsphere-csi-driver.yaml
+  - https://raw.githubusercontent.com/kubernetes-sigs/vsphere-csi-driver/refs/tags/v3.3.1/manifests/vanilla/vsphere-csi-driver.yaml
 patches:
   # remove windows support daemon sets
   - target:
@@ -27,7 +27,7 @@ patches:
         "improved-csi-idempotency": "false"
         "csi-migration": "{{ .Cluster.CSIMigration }}"
 
-  # remove node selector, add cluster-autoscaler annotation
+  # remove node selector and node affinity, add cluster-autoscaler annotation
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -40,6 +40,8 @@ patches:
             annotations:
               cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
           spec:
+            affinity:
+              nodeAffinity: ~
             nodeSelector: ~
 
   # mount KKP CA bundle
