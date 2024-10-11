@@ -25,6 +25,7 @@ import (
 
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
+	storagelocationcontroller "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	groupprojectbindingsyncer "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/sync-controller"
@@ -61,6 +62,10 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := resourcequotadefaultcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1); err != nil {
 		return fmt.Errorf("failed to create default project resource quota controller: %w", err)
+	}
+
+	if err := storagelocationcontroller.Add(ctrlCtx.mgr, ctrlCtx.workerCount, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create cluster backup storage location controller: %w", err)
 	}
 
 	return nil
