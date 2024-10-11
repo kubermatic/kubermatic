@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -79,18 +80,7 @@ func addRevisionLabelsToPodSpec(ctx context.Context, client ctrlruntimeclient.Cl
 		return err
 	}
 
-	// Clone the original labels in case the identical map is also referenced elsewhere in the
-	// PodTemplate (most notably the MatchLabels in the Selector).
-
-	labels := map[string]string{}
-	for k, v := range ps.GetLabels() {
-		labels[k] = v
-	}
-	for k, v := range revisionLabels {
-		labels[k] = v
-	}
-
-	ps.SetLabels(labels)
+	kubernetes.EnsureLabels(ps, revisionLabels)
 
 	return nil
 }
