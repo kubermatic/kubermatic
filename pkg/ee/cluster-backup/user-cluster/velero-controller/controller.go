@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package clusterbackup
+package velerocontroller
 
 import (
 	"context"
@@ -34,14 +34,11 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
+	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -57,13 +54,14 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
-	ControllerName = "cluster-backup-controller"
+	ControllerName = "cluster-backup-velero-controller"
 
 	clusterBackupComponentLabelKey   = "component"
 	clusterBackupComponentLabelValue = "velero"
@@ -76,57 +74,51 @@ const (
 	componentsInstalledLabel = "k8c.io/cluster-backup-installed"
 )
 
-// UserClusterClientProvider provides functionality to get a user cluster client.
-type UserClusterClientProvider interface {
-	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
-}
-
 type reconciler struct {
-	ctrlruntimeclient.Client
+	seedClient ctrlruntimeclient.Client
+	userClient ctrlruntimeclient.Client
 
-	seedGetter                    provider.SeedGetter
-	workerName                    string
-	recorder                      record.EventRecorder
-	userClusterConnectionProvider UserClusterClientProvider
-	log                           *zap.SugaredLogger
-	versions                      kubermatic.Versions
-	overwriteRegistry             string
+	recorder          record.EventRecorder
+	log               *zap.SugaredLogger
+	versions          kubermatic.Versions
+	overwriteRegistry string
 }
 
 func Add(
-	mgr manager.Manager,
-	numWorkers int,
-	workerName string,
-	userClusterConnectionProvider UserClusterClientProvider,
-	seedGetter provider.SeedGetter,
+	seedMgr, userMgr manager.Manager,
 	log *zap.SugaredLogger,
+	clusterName string,
 	versions kubermatic.Versions,
 	overwriteRegistry string,
 ) error {
 	reconciler := &reconciler{
-		Client:                        mgr.GetClient(),
-		seedGetter:                    seedGetter,
-		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
-		userClusterConnectionProvider: userClusterConnectionProvider,
-		log:                           log,
-		versions:                      versions,
-		overwriteRegistry:             overwriteRegistry,
+		seedClient:        seedMgr.GetClient(),
+		userClient:        userMgr.GetClient(),
+		recorder:          userMgr.GetEventRecorderFor(ControllerName),
+		log:               log,
+		versions:          versions,
+		overwriteRegistry: overwriteRegistry,
 	}
 
-	clusterIsAlive := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
-		cluster := o.(*kubermaticv1.Cluster)
-		// Only watch clusters that are in a state where they can be reconciled.
-		// Pause-flag is checked by the ReconcileWrapper.
-		return cluster.DeletionTimestamp == nil && cluster.Status.ExtendedHealth.ControlPlaneHealthy()
-	})
-
-	_, err := builder.ControllerManagedBy(mgr).
+	_, err := builder.ControllerManagedBy(userMgr).
 		Named(ControllerName).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: numWorkers,
-		}).
-		For(&kubermaticv1.Cluster{}, builder.WithPredicates(workerlabel.Predicate(workerName), clusterIsAlive)).
+		WatchesRawSource(source.Kind(
+			seedMgr.GetCache(),
+			&kubermaticv1.Cluster{},
+			handler.TypedEnqueueRequestsFromMapFunc[*kubermaticv1.Cluster, reconcile.Request](func(ctx context.Context, c *kubermaticv1.Cluster) []reconcile.Request {
+				return []reconcile.Request{{
+					NamespacedName: types.NamespacedName{
+						Name: clusterName,
+					},
+				}}
+			}),
+			predicate.TypedByName[*kubermaticv1.Cluster](clusterName),
+			predicate.TypedFactory(func(cluster *kubermaticv1.Cluster) bool {
+				// Only watch clusters that are in a state where they can be reconciled.
+				// Pause-flag is checked by the ReconcileWrapper.
+				return cluster.DeletionTimestamp == nil && cluster.Status.ExtendedHealth.ControlPlaneHealthy()
+			}),
+		)).
 		Build(reconciler)
 
 	return err
@@ -134,7 +126,7 @@ func Add(
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
-	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
+	if err := r.seedClient.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -149,8 +141,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
-		r.workerName,
+		r.seedClient,
+		"",
 		cluster,
 		r.versions,
 		kubermaticv1.ClusterConditionClusterBackupControllerReconcilingSuccess,
@@ -183,7 +175,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.Spec.BackupConfig.BackupStorageLocation.Name}, cbsl); err != nil {
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.Spec.BackupConfig.BackupStorageLocation.Name}, cbsl); err != nil {
 		log.Debug("ClusterBackupStorageLocation not found")
 		return nil, nil
 	}
@@ -228,57 +220,53 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		WithOverwriteRegistry(r.overwriteRegistry).
 		Build()
 
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get user cluster client: %w", err)
-	}
 	nsReconcilers := []reconciling.NamedNamespaceReconcilerFactory{
 		userclusterresources.NamespaceReconciler(),
 	}
-	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileNamespaces(ctx, nsReconcilers, "", r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero Namespace: %w", err)
 	}
 
 	cmReconcilers := []reconciling.NamedConfigMapReconcilerFactory{
 		userclusterresources.CustomizationConfigMapReconciler(data.RewriteImage),
 	}
-	if err := reconciling.ReconcileConfigMaps(ctx, cmReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, cmReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero ConfigMaps: %w", err)
 	}
 
 	saReconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		userclusterresources.ServiceAccountReconciler(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero ServiceAccount: %w", err)
 	}
 
 	clusterRoleBindingReconciler := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		userclusterresources.ClusterRoleBindingReconciler(),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingReconciler, "", r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero ClusterRoleBinding: %w", err)
 	}
 
 	// Create kubeconfig secret in the user cluster namespace.
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
-		userclusterresources.SecretReconciler(ctx, r.Client, cluster, cbsl),
+		userclusterresources.SecretReconciler(ctx, r.seedClient, cluster, cbsl),
 	}
-	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile cluster backup kubeconfig Secret: %w", err)
 	}
 
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		userclusterresources.DeploymentReconciler(data),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile the cluster backup Deployment: %w", err)
 	}
 
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		userclusterresources.DaemonSetReconciler(data),
 	}
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero node-agent DaemonSet: %w", err)
 	}
 
@@ -291,14 +279,14 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	for i := range clusterBackupCRDs {
 		creators = append(creators, userclusterresources.CRDReconciler(clusterBackupCRDs[i]))
 	}
-	if err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient, addManagedByLabel); err != nil {
+	if err = kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero CRDs: %w", err)
 	}
 
 	bslReconcilers := []kkpreconciling.NamedBackupStorageLocationReconcilerFactory{
 		userclusterresources.BSLReconciler(cluster, cbsl),
 	}
-	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, userClusterClient, addManagedByLabel); err != nil {
+	if err := kkpreconciling.ReconcileBackupStorageLocations(ctx, bslReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
 		return fmt.Errorf("failed to reconcile Velero BSL: %w", err)
 	}
 
@@ -310,20 +298,15 @@ func (r *reconciler) removeUserClusterComponents(ctx context.Context, cluster *k
 		return nil
 	}
 
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get user cluster client: %w", err)
-	}
-
-	if err := r.removeUserClusterResources(ctx, userClusterClient); err != nil {
+	if err := r.removeUserClusterResources(ctx); err != nil {
 		return fmt.Errorf("failed to remove user-cluster resources: %w", err)
 	}
 
-	if err := r.removeCRDs(ctx, userClusterClient); err != nil {
+	if err := r.removeCRDs(ctx); err != nil {
 		return fmt.Errorf("failed to remove CRDs: %w", err)
 	}
 
-	err = r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+	err := r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		delete(c.Labels, componentsInstalledLabel)
 	})
 	if err != nil {
@@ -333,8 +316,8 @@ func (r *reconciler) removeUserClusterComponents(ctx context.Context, cluster *k
 	return nil
 }
 
-func (r *reconciler) removeUserClusterResources(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
-	// remove resources created in ./pkg/ee/cluster-backup/resources/user-cluster
+func (r *reconciler) removeUserClusterResources(ctx context.Context) error {
+	// remove resources created in ./resources
 	userClusterResources := []ctrlruntimeclient.Object{
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
@@ -379,15 +362,15 @@ func (r *reconciler) removeUserClusterResources(ctx context.Context, userCluster
 	}
 
 	for _, resource := range userClusterResources {
-		if err := removeManagedObject(ctx, userClusterClient, resource); err != nil {
+		if err := r.removeManagedObject(ctx, resource); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func removeManagedObject(ctx context.Context, client ctrlruntimeclient.Client, resource ctrlruntimeclient.Object) error {
-	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(resource), resource); err != nil {
+func (r *reconciler) removeManagedObject(ctx context.Context, resource ctrlruntimeclient.Object) error {
+	if err := r.userClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(resource), resource); err != nil {
 		if apierrors.IsNotFound(err) || meta.IsNoMatchError(err) {
 			return nil
 		}
@@ -395,7 +378,7 @@ func removeManagedObject(ctx context.Context, client ctrlruntimeclient.Client, r
 	}
 
 	if isManagedBackupResource(resource) {
-		if err := client.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
+		if err := r.userClient.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
 			return fmt.Errorf("failed to delete user-cluster resource: %w", err)
 		}
 	}
@@ -403,7 +386,7 @@ func removeManagedObject(ctx context.Context, client ctrlruntimeclient.Client, r
 	return nil
 }
 
-func (r *reconciler) removeCRDs(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
+func (r *reconciler) removeCRDs(ctx context.Context) error {
 	crdList := &apiextensionsv1.CustomResourceDefinitionList{}
 
 	listOpts := &ctrlruntimeclient.ListOptions{
@@ -412,11 +395,11 @@ func (r *reconciler) removeCRDs(ctx context.Context, userClusterClient ctrlrunti
 			appskubermaticv1.ApplicationManagedByLabel: ControllerName,
 		}),
 	}
-	if err := userClusterClient.List(ctx, crdList, listOpts); err != nil {
+	if err := r.userClient.List(ctx, crdList, listOpts); err != nil {
 		return fmt.Errorf("failed to list CRDs: %w", err)
 	}
 	for _, crd := range crdList.Items {
-		if err := userClusterClient.Delete(ctx, &crd); err != nil && !apierrors.IsNotFound(err) {
+		if err := r.userClient.Delete(ctx, &crd); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete CRD: %w", err)
 		}
 	}
@@ -438,5 +421,5 @@ func (r *reconciler) patchCluster(ctx context.Context, cluster *kubermaticv1.Clu
 	patch(cluster)
 
 	// update the status
-	return r.Client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))
+	return r.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))
 }

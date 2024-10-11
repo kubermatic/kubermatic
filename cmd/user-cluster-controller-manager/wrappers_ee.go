@@ -19,16 +19,35 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
+
 	"go.uber.org/zap"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	velerocontroller "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller"
 	resourceusagecontroller "k8c.io/kubermatic/v2/pkg/ee/resource-usage-controller"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func addResourceUsageController(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterName string, caBundle *certificates.CABundle,
-	clusterIsPaused userclustercontrollermanager.IsPausedChecker) error {
-	return resourceusagecontroller.Add(log, seedMgr, userMgr, clusterName, caBundle, clusterIsPaused)
+func setupControllers(
+	log *zap.SugaredLogger,
+	seedMgr, userMgr manager.Manager,
+	clusterName string,
+	versions kubermatic.Versions,
+	overwriteRegistry string,
+	caBundle *certificates.CABundle,
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
+) error {
+	if err := resourceusagecontroller.Add(log, seedMgr, userMgr, clusterName, caBundle, clusterIsPaused); err != nil {
+		return fmt.Errorf("failed to create cluster-backup controller: %w", err)
+	}
+
+	if err := velerocontroller.Add(seedMgr, userMgr, log, clusterName, versions, overwriteRegistry); err != nil {
+		return fmt.Errorf("failed to create cluster-backup controller: %w", err)
+	}
+
+	return nil
 }

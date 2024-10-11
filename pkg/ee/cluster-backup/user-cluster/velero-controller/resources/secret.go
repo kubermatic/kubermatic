@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package userclusterresources
+package resources
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ import (
 	"text/template"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/backupstore/aws"
+	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller/backupstore/aws"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
