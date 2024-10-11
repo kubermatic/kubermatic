@@ -19,6 +19,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
 	"sort"
 	"strconv"
@@ -384,7 +385,7 @@ func EnsureUniqueOwnerReference(o metav1.Object, ref metav1.OwnerReference) {
 }
 
 func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
-	labels := o.GetLabels()
+	labels := maps.Clone(o.GetLabels())
 
 	if labels == nil {
 		labels = make(map[string]string)
@@ -396,7 +397,7 @@ func EnsureLabels(o metav1.Object, toEnsure map[string]string) {
 }
 
 func EnsureAnnotations(o metav1.Object, toEnsure map[string]string) {
-	annotations := o.GetAnnotations()
+	annotations := maps.Clone(o.GetAnnotations())
 
 	if annotations == nil {
 		annotations = make(map[string]string)
