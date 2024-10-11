@@ -258,6 +258,43 @@ func ReconcileClusters(ctx context.Context, namedFactories []NamedClusterReconci
 	return nil
 }
 
+// ClusterBackupStorageLocationReconciler defines an interface to create/update ClusterBackupStorageLocations.
+type ClusterBackupStorageLocationReconciler = func(existing *kubermaticv1.ClusterBackupStorageLocation) (*kubermaticv1.ClusterBackupStorageLocation, error)
+
+// NamedClusterBackupStorageLocationReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedClusterBackupStorageLocationReconcilerFactory = func() (name string, reconciler ClusterBackupStorageLocationReconciler)
+
+// ClusterBackupStorageLocationObjectWrapper adds a wrapper so the ClusterBackupStorageLocationReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func ClusterBackupStorageLocationObjectWrapper(reconciler ClusterBackupStorageLocationReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*kubermaticv1.ClusterBackupStorageLocation))
+		}
+		return reconciler(&kubermaticv1.ClusterBackupStorageLocation{})
+	}
+}
+
+// ReconcileClusterBackupStorageLocations will create and update the ClusterBackupStorageLocations coming from the passed ClusterBackupStorageLocationReconciler slice.
+func ReconcileClusterBackupStorageLocations(ctx context.Context, namedFactories []NamedClusterBackupStorageLocationReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := ClusterBackupStorageLocationObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.ClusterBackupStorageLocation{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ClusterBackupStorageLocation %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // ClusterTemplateReconciler defines an interface to create/update ClusterTemplates.
 type ClusterTemplateReconciler = func(existing *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error)
 
