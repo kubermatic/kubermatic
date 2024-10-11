@@ -126,7 +126,7 @@ func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBa
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	store, err := backupstore.NewBackupStore(ctx, cbsl, creds)
+	store, err := backupstore.NewBackupStore(cbsl, creds)
 	if err != nil {
 		return fmt.Errorf("failed to create backup store: %w", err)
 	}
@@ -138,6 +138,7 @@ func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBa
 			err.Error(),
 		)
 	}
+
 	return r.updateCBSLStatus(ctx,
 		cbsl,
 		velerov1.BackupStorageLocationPhaseAvailable,
