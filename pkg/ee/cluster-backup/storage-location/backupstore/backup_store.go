@@ -38,10 +38,10 @@ type BackupStore interface {
 	IsValid(context.Context) error
 }
 
-func NewBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (BackupStore, error) {
+func NewBackupStore(cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (BackupStore, error) {
 	if cbsl.Spec.Provider == "" || cbsl.Spec.Provider != "aws" {
 		return nil, fmt.Errorf("unsupported provider: %s", cbsl.Spec.Provider)
 	}
 
-	return aws.NewBackupStore(ctx, cbsl, credentials)
+	return aws.NewBackupStore(cbsl, credentials)
 }
