@@ -29,7 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/awsbackupstore"
+	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/backupstore/aws"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -43,5 +43,5 @@ func NewBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorage
 		return nil, fmt.Errorf("unsupported provider: %s", cbsl.Spec.Provider)
 	}
 
-	return awsbackupstore.NewAWSBackupStore(ctx, cbsl, credentials)
+	return aws.NewBackupStore(ctx, cbsl, credentials)
 }
