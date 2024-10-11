@@ -23,6 +23,7 @@
 */
 
 /*
-Package velerocontroller contains a controller that is responsible for configuring and installing velero components for user clusters.
+Package velerocontroller contains a controller that is responsible for
+configuring and installing velero components for user clusters.
 */
 package velerocontroller
