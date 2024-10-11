@@ -21,6 +21,8 @@ package main
 import (
 	"go.uber.org/zap"
 
+	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -33,6 +35,8 @@ func setupControllers(
 	clusterName string,
 	versions kubermatic.Versions,
 	overwriteRegistry string,
+	caBundle *certificates.CABundle,
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 ) error {
 	return nil
 }
