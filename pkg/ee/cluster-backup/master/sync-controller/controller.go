@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2023 Kubermatic GmbH
+                     Copyright © 2024 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -32,7 +32,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -52,11 +51,6 @@ const (
 	// cleanupFinalizer indicates that CBSLs on the seed clusters need cleanup.
 	cleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-storage-locations"
 )
-
-// UserClusterClientProvider provides functionality to get a user cluster client.
-type UserClusterClientProvider interface {
-	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
-}
 
 type reconciler struct {
 	log          *zap.SugaredLogger
