@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package awsbackupstore
+package aws
 
 import (
 	"context"
@@ -58,8 +58,8 @@ type awsBackupStore struct {
 }
 
 const (
-	AWSAccessKeyIDKeyName  = "accessKeyId"
-	AWSSecretAccessKeyName = "secretAccessKey"
+	AccessKeyIDKeyName  = "accessKeyId"
+	SecretAccessKeyName = "secretAccessKey"
 
 	s3URLKey                     = "s3Url"
 	regionKey                    = "region"
@@ -78,7 +78,7 @@ const (
 	taggingKey                   = "tagging"
 )
 
-func NewAWSBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (*awsBackupStore, error) {
+func NewBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (*awsBackupStore, error) {
 	spec := cbsl.Spec
 	err := validateVeleroConfig(cbsl)
 	if err != nil {
@@ -157,13 +157,13 @@ func (p *awsBackupStore) readAWSCredentials() (awsID, secretKey string, err erro
 		return "", "", fmt.Errorf("can't read AWS credentials: empty secret object")
 	}
 
-	id, ok := p.credentials.Data[AWSAccessKeyIDKeyName]
+	id, ok := p.credentials.Data[AccessKeyIDKeyName]
 	if !ok {
-		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", AWSAccessKeyIDKeyName)
+		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", AccessKeyIDKeyName)
 	}
-	secret, ok := p.credentials.Data[AWSSecretAccessKeyName]
+	secret, ok := p.credentials.Data[SecretAccessKeyName]
 	if !ok {
-		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", AWSSecretAccessKeyName)
+		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", SecretAccessKeyName)
 	}
 	return string(id), string(secret), nil
 }
