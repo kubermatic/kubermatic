@@ -112,7 +112,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedCBSL := &kubermaticv1.ClusterBackupStorageLocation{}
 		if err := seedClient.Get(ctx, request.NamespacedName, seedCBSL); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
+			return fmt.Errorf("failed to fetch storage location on seed cluster: %w", err)
 		}
 
 		// The informer can trigger a reconciliation before the cache backing the
@@ -121,7 +121,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		// and seed are the same cluster, this would effectively overwrite the
 		// change that just happened.
 		// To prevent this from occurring, we check the UID and refuse to update
-		// the project if the UID on the seed == UID on the master.
+		// the CBSL if the UID on the seed == UID on the master.
 		// Note that in this distinction cannot be made inside the creator function
 		// further down, as the reconciling framework reads the current state
 		// from cache and even if no changes were made (because of the UID match),
@@ -133,17 +133,17 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 		err := kkpreconciling.ReconcileClusterBackupStorageLocations(ctx, cbslReconcilerFactories, "", seedClient)
 		if err != nil {
-			return fmt.Errorf("failed to reconcile project: %w", err)
+			return fmt.Errorf("failed to reconcile storage location: %w", err)
 		}
 
-		// fetch the updated project from the cache
+		// fetch the updated CBSL from the cache
 		if err := seedClient.Get(ctx, request.NamespacedName, seedCBSL); err != nil {
-			return fmt.Errorf("failed to fetch project on seed cluster: %w", err)
+			return fmt.Errorf("failed to fetch storage location on seed cluster: %w", err)
 		}
 
 		if !equality.Semantic.DeepEqual(seedCBSL.Status, cbsl.Status) {
 			if err := seedClient.Status().Update(ctx, seedCBSL); err != nil {
-				return fmt.Errorf("failed to update project status on seed cluster: %w", err)
+				return fmt.Errorf("failed to update storage location status on seed cluster: %w", err)
 			}
 		}
 
