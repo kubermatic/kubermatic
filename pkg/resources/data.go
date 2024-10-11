@@ -828,6 +828,11 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
 	}
+	if cluster.Spec.Cloud.Baremetal != nil {
+		if cluster.Spec.Cloud.Baremetal.Tinkerbell != nil {
+			vars = append(vars, corev1.EnvVar{Name: "TINK_KUBECONFIG", ValueFrom: refTo(TinkerbellKubeconfig)})
+		}
+	}
 	if cluster.Spec.Cloud.Packet != nil {
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", ValueFrom: refTo(PacketAPIKey)})
 		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
