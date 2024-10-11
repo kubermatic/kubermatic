@@ -57,7 +57,7 @@ var (
 )
 
 const (
-	Tag = "db378951daf3f65467dbd0ff57126ba8b2a98a4c"
+	Tag = "6da6b7b6e0bc8d1473b4814cf3323707f9e7b137"
 )
 
 type operatingSystemManagerData interface {
