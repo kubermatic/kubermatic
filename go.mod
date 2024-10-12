@@ -87,7 +87,7 @@ require (
 	gopkg.in/gcfg.v1 v1.2.3
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.3
-	k8c.io/kubelb v1.1.1
+	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
 	k8c.io/machine-controller v1.59.1-0.20240913134034-7f090ad5fc65
 	k8c.io/operating-system-manager v1.5.1-0.20240814211720-9da099ea37a5
