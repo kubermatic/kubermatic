@@ -2,10 +2,10 @@
 
 For KKP to function effectively, we need to install a bunch of components like seed-mla (monitoring logging and alerting stack), minio, nginx-ingress-controller, user-cluster-mla stack, etc.
 
-Using a GitOps tool to manage these seed components can be very useful. This folder offers a slightly opinionated tooling to achive the same. The workflow to get this setup would be like below:
+Using a GitOps tool to manage these seed components can be very useful. This folder offers a slightly opinionated tooling to achieve the same. The workflow to get this setup would be like below:
 
 1. Install KKP using kkp-installer. (optionally, skip-charts for dex, nginx and cert-manager. See note below.)
-1. (Optionally) Setup indiviual seed clusters. Seed could be master-seed or standalone seed. 
+1. (Optionally) Setup individual seed clusters. Seed could be master-seed or standalone seed. 
 1. Install ArgoCD as helm-chart in each seed that you want to managed via GitOps.
 1. Install content of this folder as helm-chart in each seed to deploy various compoentns in each seed. Take a look at [values.yaml](./values.yaml) for various customizations possible for customizing what gets installed in each seed.
 
