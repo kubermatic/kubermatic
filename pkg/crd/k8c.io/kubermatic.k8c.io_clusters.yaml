@@ -993,6 +993,12 @@ spec:
                               - name
                             type: object
                           type: array
+                        subnetName:
+                          description: SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+                          type: string
+                        vpcName:
+                          description: VPCName  is a virtual network name dedicated to a single tenant within a KubeVirt.
+                          type: string
                       type: object
                     nutanix:
                       description: Nutanix defines the configuration data of the Nutanix.
