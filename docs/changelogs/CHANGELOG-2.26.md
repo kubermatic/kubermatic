@@ -237,6 +237,9 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update KubeLB to v1.1.2 ([#13809](https://github.com/kubermatic/kubermatic/pull/13809))
 - Update oauth2-proxy to 7.7.0 ([#13788](https://github.com/kubermatic/kubermatic/pull/13788))
 - Update to Go 1.23.2 ([#13789](https://github.com/kubermatic/kubermatic/pull/13789))
+- Bump machine-controller to 1.60.0, OSM to 1.6.0 ([#13815](https://github.com/kubermatic/kubermatic/pull/13815))
+    - Add support for Ubuntu 24.04.
+- Add support for KubeVirt provider network ([#13791](https://github.com/kubermatic/kubermatic/pull/13791))
 
 ### Cleanup
 
