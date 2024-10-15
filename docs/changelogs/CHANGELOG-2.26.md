@@ -157,7 +157,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - The image tag in the included `mla/minio-lifecycle-mgr` helm chart has been pinned from `latest` to `RELEASE.2024-03-13T23-51-57Z` ([#13199](https://github.com/kubermatic/kubermatic/pull/13199))
 - Add Baremetal Provider ([#13414](https://github.com/kubermatic/kubermatic/pull/13414))
     - Add Tinkerbell Support in KKP's baremetal provider ([#13570](https://github.com/kubermatic/kubermatic/pull/13570))
-
+- Add support for Ubuntu 24.04 ([#13815](https://github.com/kubermatic/kubermatic/pull/13815))
 
 ### Bugfixes
 
@@ -238,7 +238,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update oauth2-proxy to 7.7.0 ([#13788](https://github.com/kubermatic/kubermatic/pull/13788))
 - Update to Go 1.23.2 ([#13789](https://github.com/kubermatic/kubermatic/pull/13789))
 - Bump machine-controller to 1.60.0, OSM to 1.6.0 ([#13815](https://github.com/kubermatic/kubermatic/pull/13815))
-    - Add support for Ubuntu 24.04.
 - Add support for KubeVirt provider network ([#13791](https://github.com/kubermatic/kubermatic/pull/13791))
 
 ### Cleanup
