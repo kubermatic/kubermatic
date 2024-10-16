@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	storagev1 "k8s.io/api/storage/v1"
 	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -25,6 +24,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
