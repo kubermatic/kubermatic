@@ -49,7 +49,7 @@ const (
 	ControllerName = "kkp-cluster-credentials-controller"
 )
 
-type Reconciler struct {
+type reconciler struct {
 	ctrlruntimeclient.Client
 
 	workerName string
@@ -67,7 +67,7 @@ func Add(
 	versions kubermatic.Versions,
 	kkpNamespace string,
 ) error {
-	reconciler := &Reconciler{
+	reconciler := &reconciler{
 		Client: mgr.GetClient(),
 
 		workerName: workerName,
@@ -124,7 +124,7 @@ func newCredentialSecretHandler(client ctrlruntimeclient.Client) handler.TypedEv
 	})
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("cluster", request.Name)
 	log.Debug("Reconciling")
 
@@ -165,7 +165,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	oldCluster := cluster.DeepCopy()
 
 	// add the cleanup finalizer first (the pkg/clusterdeletion takes care of cleaning up)
