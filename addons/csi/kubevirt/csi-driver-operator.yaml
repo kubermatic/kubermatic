@@ -375,6 +375,7 @@ spec:
 {{- range  .Cluster.KubeVirtInfraStorageClasses }}
    - infraStorageClassName: {{ .Name }}
      isDefaultClass: {{ .IsDefaultClass }}
+     volumeBindingMode: {{ .VolumeBindingMode }}
      bus: scsi
 {{- end }}
 {{end}}

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	storagev1 "k8s.io/api/storage/v1"
 	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -845,6 +846,9 @@ type KubeVirtInfraStorageClass struct {
 	// If missing or false, annotation will be:
 	// storageclass.kubernetes.io/is-default-class : false
 	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
+	// VolumeBindingImmediate is used.
+	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
