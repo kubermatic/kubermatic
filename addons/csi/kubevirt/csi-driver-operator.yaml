@@ -331,7 +331,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: manager
-          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver:35836e0c8b68d9916d29a838ea60cdd3fc6199cf" }}
+          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.3.0" }}
           imagePullPolicy: Always
           command:
             - /manager
