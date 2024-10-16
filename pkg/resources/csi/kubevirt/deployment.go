@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	csiVersion = "latest"
+	csiVersion = "35836e0c8b68d9916d29a838ea60cdd3fc6199cf"
 )
 
 // DeploymentsReconcilers returns the CSI controller Deployments for KubeVirt.
@@ -105,7 +105,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-driver",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           registry.Must(data.RewriteImage("quay.io/kubevirt/csi-driver:" + csiVersion)),
+					Image:           registry.Must(data.RewriteImage("quay.io/kubermatic/kubevirt-csi-driver:" + csiVersion)),
 					Args: []string{
 						"--endpoint=$(CSI_ENDPOINT)",
 						fmt.Sprintf("--infra-cluster-namespace=%s", kubeVirtInfraNamespace),
