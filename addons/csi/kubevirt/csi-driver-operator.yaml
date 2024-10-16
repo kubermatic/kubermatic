@@ -76,6 +76,11 @@ spec:
                         : true If missing or false, annotation will be: storageclass.kubernetes.io/is-default-class
                         : false'
                       type: boolean
+                    volumeBindingMode:
+                      description: VolumeBindingMode indicates how PersistentVolumeClaims
+                        should be provisioned and bound. When unset, VolumeBindingImmediate
+                        is used.
+                      type: string
                   required:
                   - infraStorageClassName
                   type: object
