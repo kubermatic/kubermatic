@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -34,10 +35,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -62,6 +65,7 @@ func Add(
 	workerName string,
 	log *zap.SugaredLogger,
 	versions kubermatic.Versions,
+	kkpNamespace string,
 ) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
@@ -78,9 +82,46 @@ func Add(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.Cluster{}).
+		Watches(
+			&corev1.Secret{},
+			newCredentialSecretHandler(mgr.GetClient()),
+			builder.WithPredicates(predicate.ByNamespace(kkpNamespace)),
+		).
 		Build(reconciler)
 
 	return err
+}
+
+func newCredentialSecretHandler(client ctrlruntimeclient.Client) handler.TypedEventHandler[ctrlruntimeclient.Object, reconcile.Request] {
+	return handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, secret ctrlruntimeclient.Object) []reconcile.Request {
+		clusters := &kubermaticv1.ClusterList{}
+		if err := client.List(ctx, clusters); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+			return nil
+		}
+
+		requests := []reconcile.Request{}
+		for _, cluster := range clusters.Items {
+			ref, err := resources.GetCredentialsReference(&cluster)
+			if err != nil {
+				// ignore "errors" here silently, all this function wants is to know which clusters use the
+				// given secret, not which cluster are valid.
+				continue
+			}
+
+			if ref == nil {
+				continue
+			}
+
+			if ref.Name == secret.GetName() {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: ctrlruntimeclient.ObjectKeyFromObject(&cluster),
+				})
+			}
+		}
+
+		return requests
+	})
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -143,6 +184,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	// if the function above performed some magic, we need to persist the change and requeue
 	if !equality.Semantic.DeepEqual(oldCluster.Spec.Cloud, cluster.Spec.Cloud) {
+		log.Info("Moving cloud credentials into Secret…")
 		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return nil, fmt.Errorf("failed to patch cluster with credentials secret: %w", err)
 		}
