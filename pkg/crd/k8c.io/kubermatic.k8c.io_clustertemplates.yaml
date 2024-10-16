@@ -983,6 +983,11 @@ spec:
                                 type: boolean
                               name:
                                 type: string
+                              volumeBindingMode:
+                                description: |-
+                                  VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
+                                  VolumeBindingImmediate is used.
+                                type: string
                             required:
                               - name
                             type: object
