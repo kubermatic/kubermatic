@@ -34,7 +34,6 @@ spec:
           chartVersion: 0.4.4
           url: https://kube-vip.github.io/helm-charts
     version: v0.4.1
-  defaultValues: {}
   documentationURL: https://kube-vip.io/
   sourceURL: https://github.com/kube-vip/helm-charts
   logo: |+

@@ -34,7 +34,6 @@ spec:
             chartVersion: v1.1.0
             url: oci://quay.io/kubermatic/helm-charts
       version: v1.1.0
-  defaultValues: {}
   documentationURL: https://kubevirt.io/
   sourceURL: https://github.com/kubevirt/kubevirt
   logo: |+

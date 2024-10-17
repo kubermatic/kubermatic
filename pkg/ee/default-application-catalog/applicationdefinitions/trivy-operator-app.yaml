@@ -41,7 +41,7 @@ spec:
           chartVersion: 0.20.5
           url: https://aquasecurity.github.io/helm-charts/
     version: 0.18.4
-  defaultValues:
+  defaultValuesBlock: |
     trivy:
       # To specify that Trivy should ignore all unfixed vulnerabilities, set `ignoredUnfixed` flag to `true`
       ignoreUnfixed: true
