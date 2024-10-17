@@ -25,7 +25,7 @@ dex:
       name: Kubermatic
       # Generate a secure secret key
       # Those can be generated on the shell using:
-      # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+      # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
       secret: <a-random-key>
       RedirectURIs:
         # ensure the URLs below use the dex.ingress.host configured above
@@ -39,7 +39,7 @@ dex:
       name: Kubermatic OIDC Issuer
       # Generate a secure secret key
       # Those can be generated on the shell using:
-      # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+      # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
       secret: <a-random-key>
       RedirectURIs:
         # ensure the URLs below use the dex.ingress.host configured above
@@ -79,5 +79,5 @@ minio:
 telemetry:
   # uuid is the unique identifier of the client where the agent is running.
   # This field is required and will print an error message when that entry is missing.
-  # You can generate uuid using command uuidgen on your linux machine
+  # You can generate uuid using command `uuidgen` on your linux machine
   uuid: ""
