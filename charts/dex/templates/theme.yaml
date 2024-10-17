@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,18 +13,10 @@
 # limitations under the License.
 
 apiVersion: v1
-name: oauth
-version: 9.9.9-dev
-appVersion: v2.39.1
-description: Dex
-deprecated: true
-keywords:
-  - kubermatic
-  - oauth
-  - dex
-home: https://github.com/dexidp/dex
-sources:
-  - https://github.com/kubermatic/kubermatic
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
+kind: ConfigMap
+metadata:
+  name: dex-theme-kkp
+data:
+{{- range $name, $content := .Files.Glob "theme/*" }}
+  {{ replace "theme/" "" $name }}: {{ $content | toString | quote }}
+{{- end -}}
