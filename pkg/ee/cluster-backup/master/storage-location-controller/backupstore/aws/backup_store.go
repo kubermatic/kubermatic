@@ -22,12 +22,13 @@
    END OF TERMS AND CONDITIONS
 */
 
-package awsbackupstore
+package aws
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -58,27 +59,29 @@ type awsBackupStore struct {
 }
 
 const (
-	AWSAccessKeyIDKeyName  = "accessKeyId"
-	AWSSecretAccessKeyName = "secretAccessKey"
-
-	s3URLKey                     = "s3Url"
-	regionKey                    = "region"
-	publicURLKey                 = "publicUrl"
-	kmsKeyIDKey                  = "kmsKeyId"
-	customerKeyEncryptionFileKey = "customerKeyEncryptionFile"
-	s3ForcePathStyleKey          = "s3ForcePathStyle"
-	bucketKey                    = "bucket"
-	signatureVersionKey          = "signatureVersion"
-	credentialsFileKey           = "credentialsFile"
-	credentialProfileKey         = "profile"
-	serverSideEncryptionKey      = "serverSideEncryption"
-	insecureSkipTLSVerifyKey     = "insecureSkipTLSVerify"
-	caCertKey                    = "caCert"
-	enableSharedConfigKey        = "enableSharedConfig"
-	taggingKey                   = "tagging"
+	AccessKeyIDKeyName  = "accessKeyId"
+	SecretAccessKeyName = "secretAccessKey"
 )
 
-func NewAWSBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (*awsBackupStore, error) {
+var validVeleroConfigKeys = []string{
+	"bucket",
+	"caCert",
+	"credentialsFile",
+	"customerKeyEncryptionFile",
+	"enableSharedConfig",
+	"insecureSkipTLSVerify",
+	"kmsKeyId",
+	"profile",
+	"publicUrl",
+	"region",
+	"s3ForcePathStyle",
+	"s3Url",
+	"serverSideEncryption",
+	"signatureVersion",
+	"tagging",
+}
+
+func NewBackupStore(cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (*awsBackupStore, error) {
 	spec := cbsl.Spec
 	err := validateVeleroConfig(cbsl)
 	if err != nil {
@@ -117,26 +120,14 @@ func NewAWSBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStor
 }
 
 func validateVeleroConfig(cbsl *kubermaticv1.ClusterBackupStorageLocation) error {
-	if err := framework.ValidateObjectStoreConfigKeys(cbsl.Spec.Config, regionKey,
-		s3URLKey,
-		publicURLKey,
-		kmsKeyIDKey,
-		customerKeyEncryptionFileKey,
-		s3ForcePathStyleKey,
-		signatureVersionKey,
-		credentialsFileKey,
-		credentialProfileKey,
-		serverSideEncryptionKey,
-		insecureSkipTLSVerifyKey,
-		enableSharedConfigKey,
-		taggingKey); err != nil {
-		return fmt.Errorf("invalid ObjectStore config: %w", err)
+	if err := framework.ValidateObjectStoreConfigKeys(cbsl.Spec.Config, validVeleroConfigKeys...); err != nil {
+		return fmt.Errorf("invalid object store config: %w", err)
 	}
 	if cbsl.Spec.ObjectStorage == nil {
-		return fmt.Errorf("ObjectStorage can't be empty")
+		return errors.New("ObjectStorage can't be empty")
 	}
 	if cbsl.Spec.ObjectStorage.Bucket == "" {
-		return fmt.Errorf("bucket can't be empty")
+		return errors.New("bucket can't be empty")
 	}
 	return nil
 }
@@ -152,18 +143,18 @@ func (p *awsBackupStore) IsValid(ctx context.Context) error {
 	return nil
 }
 
-func (p *awsBackupStore) readAWSCredentials() (awsID, secretKey string, err error) {
+func (p *awsBackupStore) readAWSCredentials() (accessKeyID, secretKey string, err error) {
 	if p.credentials == nil || p.credentials.Data == nil {
-		return "", "", fmt.Errorf("can't read AWS credentials: empty secret object")
+		return "", "", errors.New("can't read AWS credentials: empty secret object")
 	}
 
-	id, ok := p.credentials.Data[AWSAccessKeyIDKeyName]
+	id, ok := p.credentials.Data[AccessKeyIDKeyName]
 	if !ok {
-		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", AWSAccessKeyIDKeyName)
+		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", AccessKeyIDKeyName)
 	}
-	secret, ok := p.credentials.Data[AWSSecretAccessKeyName]
+	secret, ok := p.credentials.Data[SecretAccessKeyName]
 	if !ok {
-		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", AWSSecretAccessKeyName)
+		return "", "", fmt.Errorf("can't read AWS credentials: %s is not set", SecretAccessKeyName)
 	}
 	return string(id), string(secret), nil
 }
@@ -191,15 +182,15 @@ func (p *awsBackupStore) newS3Client(ctx context.Context) (*s3.Client, error) {
 		awsOptions = append(awsOptions, config.WithHTTPClient(customHTTPClient(p.caCert, p.insecureSkipTLSVerify)))
 	}
 
-	awsID, secretKey, err := p.readAWSCredentials()
+	accessKeyID, secretKey, err := p.readAWSCredentials()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read credentials: %w", err)
 	}
-	awsOptions = append(awsOptions, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(awsID, secretKey, "")))
+	awsOptions = append(awsOptions, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyID, secretKey, "")))
 
 	awsConfig, err := config.LoadDefaultConfig(ctx, awsOptions...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load Default AWS Config: %w", err)
+		return nil, fmt.Errorf("failed to load default AWS config: %w", err)
 	}
 
 	s3Options := []func(*s3.Options){
@@ -210,7 +201,7 @@ func (p *awsBackupStore) newS3Client(ctx context.Context) (*s3.Client, error) {
 
 	if p.s3Url != "" {
 		if err := validateS3URL(p.s3Url); err != nil {
-			return nil, fmt.Errorf("invalid s3Url: %w", err)
+			return nil, fmt.Errorf("invalid S3 URL: %w", err)
 		}
 		s3Options = append(s3Options, func(o *s3.Options) {
 			o.BaseEndpoint = aws.String(p.s3Url)
@@ -226,7 +217,8 @@ func validateS3URL(s3Url string) error {
 	}
 
 	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
-		return fmt.Errorf("invalid s3Url scheme. Only 'http' or 'https' are supported")
+		return errors.New("invalid s3Url scheme. Only 'http' or 'https' are supported")
 	}
+
 	return nil
 }
