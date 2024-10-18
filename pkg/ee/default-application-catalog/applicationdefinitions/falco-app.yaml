@@ -41,7 +41,6 @@ spec:
           chartVersion: 4.1.1
           url: https://falcosecurity.github.io/charts
     version: 0.37.0
-  defaultValues: {}
   documentationURL: https://falco.org/
   sourceURL: https://github.com/falcosecurity/charts
   logo: |+
