@@ -23,12 +23,20 @@ import (
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // NOP
-func addResourceUsageController(_ *zap.SugaredLogger, _, _ manager.Manager, _ string, _ *certificates.CABundle,
-	_ userclustercontrollermanager.IsPausedChecker) error {
+func setupControllers(
+	log *zap.SugaredLogger,
+	seedMgr, userMgr manager.Manager,
+	clusterName string,
+	versions kubermatic.Versions,
+	overwriteRegistry string,
+	caBundle *certificates.CABundle,
+	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
+) error {
 	return nil
 }

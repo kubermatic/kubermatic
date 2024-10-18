@@ -144,7 +144,7 @@ products:
       - goConstant:
           package: k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster
           constant: imageTag
-          
+
   - name: KubeOne
     source: https://github.com/kubermatic/kubeone
     occurrences:
@@ -194,14 +194,14 @@ products:
     occurrences:
       - helmChart: { directory: charts/backup/velero }
       - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster
+          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources
           constant: version
 
   - name: Velero AWS Plugin
     source: https://github.com/vmware-tanzu/velero-plugin-for-aws
     occurrences:
       - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster
+          package: k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources
           constant: pluginVersion
 
   - name: cert-manager

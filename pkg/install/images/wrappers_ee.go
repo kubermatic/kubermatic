@@ -20,7 +20,7 @@ package images
 
 import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
-	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/resources/user-cluster"
+	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"

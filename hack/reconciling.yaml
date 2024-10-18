@@ -31,6 +31,7 @@ resourceTypes:
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Addon }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: AddonConfig }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Cluster }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ClusterBackupStorageLocation }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ClusterTemplate }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Constraint }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ConstraintTemplate }
