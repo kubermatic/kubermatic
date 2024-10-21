@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	csiVersion = "cc71b72b8d5a205685985244c61707c5e40c9d5f"
+	csiVersion = "35836e0c8b68d9916d29a838ea60cdd3fc6199cf"
 )
 
 // DeploymentsReconcilers returns the CSI controller Deployments for KubeVirt.
