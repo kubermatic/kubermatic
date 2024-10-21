@@ -208,6 +208,10 @@ spec:
               # If missing or false, annotation will be:
               # storageclass.kubernetes.io/is-default-class : false
               isDefaultClass: true
+              # Labels is a map of string keys and values that can be used to organize and categorize
+              # (scope and select) objects. May match selectors of replication controllers
+              # and services.
+              labels: null
               name: rook-ceph-block
               # VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
               # VolumeBindingImmediate is used.
