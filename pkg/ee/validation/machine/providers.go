@@ -86,9 +86,9 @@ const (
 	// Alibaba credential env.
 	envAlibabaAccessKeyID     = "ALIBABA_ACCESS_KEY_ID"
 	envAlibabaAccessKeySecret = "ALIBABA_ACCESS_KEY_SECRET"
-	// Packet credential env.
-	envPacketToken     = "PACKET_API_KEY"
-	envPacketProjectID = "PACKET_PROJECT_ID"
+	// Equinix Metal credential env.
+	envMetalToken     = "METAL_AUTH_TOKEN"
+	envMetalProjectID = "METAL_PROJECT_ID"
 	// KubeVirt credential env.
 	envKubeVirtKubeconfig = "KUBEVIRT_KUBECONFIG"
 )
@@ -172,7 +172,7 @@ func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 
 	serviceAccount, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ServiceAccount, envGoogleServiceAccount)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of \"serviceAccount\" field, error = %w", err)
+		return nil, fmt.Errorf("failed to get the value of \"serviceAccount\" field: %w", err)
 	}
 
 	machineType, err := configVarResolver.GetConfigVarStringValue(rawConfig.MachineType)
@@ -631,12 +631,12 @@ func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient
 		return nil, fmt.Errorf("failed to get packet raw config: %w", err)
 	}
 
-	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envPacketToken)
+	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envMetalToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of packet \"apiKey\": %w", err)
+		return nil, fmt.Errorf("failed to get the value of packet \"token\": %w", err)
 	}
 
-	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envPacketProjectID)
+	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envMetalProjectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of packet \"projectID\": %w", err)
 	}

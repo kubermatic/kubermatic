@@ -131,8 +131,8 @@ openstack)
   ;;
 
 packet)
-  extraArgs="-packet-api-key=$PACKET_API_KEY
-    -packet-project-id=$PACKET_PROJECT_ID
+  extraArgs="-packet-api-key=${METAL_AUTH_TOKEN:-$PACKET_API_KEY}
+    -packet-project-id=${METAL_PROJECT_ID:-$PACKET_PROJECT_ID}
     -packet-kkp-datacenter=packet-am"
   ;;
 

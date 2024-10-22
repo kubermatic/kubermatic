@@ -834,8 +834,8 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		}
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		vars = append(vars, corev1.EnvVar{Name: "PACKET_API_KEY", ValueFrom: refTo(PacketAPIKey)})
-		vars = append(vars, corev1.EnvVar{Name: "PACKET_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
+		vars = append(vars, corev1.EnvVar{Name: "METAL_AUTH_TOKEN", ValueFrom: refTo(PacketAPIKey)})
+		vars = append(vars, corev1.EnvVar{Name: "METAL_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
 	}
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(GCPServiceAccount)})

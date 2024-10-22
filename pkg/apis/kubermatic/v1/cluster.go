@@ -990,7 +990,7 @@ type CloudSpec struct {
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
 	// Openstack defines the configuration data of an OpenStack cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
-	// Packet defines the configuration data of a Packet cloud.
+	// Packet defines the configuration data of a Packet / Equinix Metal cloud.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
