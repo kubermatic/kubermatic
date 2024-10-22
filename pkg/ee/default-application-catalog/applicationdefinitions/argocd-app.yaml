@@ -41,7 +41,7 @@ spec:
             chartVersion: 6.0.0
             url: https://argoproj.github.io/argo-helm
       version: v2.10.0
-  defaultValues:
+  defaultValuesBlock: |
     server:
       service:
         # To Expose ArgoCD externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
