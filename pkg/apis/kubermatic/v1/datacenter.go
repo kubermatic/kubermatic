@@ -849,6 +849,10 @@ type KubeVirtInfraStorageClass struct {
 	// VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
 	// VolumeBindingImmediate is used.
 	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
+	// Labels is a map of string keys and values that can be used to organize and categorize
+	// (scope and select) objects. May match selectors of replication controllers
+	// and services.
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
