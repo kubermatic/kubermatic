@@ -853,6 +853,12 @@ type KubeVirtInfraStorageClass struct {
 	// (scope and select) objects. May match selectors of replication controllers
 	// and services.
 	Labels map[string]string `json:"labels,omitempty"`
+	// Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
+	// for increased availability
+	Zones []string `json:"zones,omitempty"`
+	// Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
+	// to span multiple regions
+	Regions []string `json:"regions,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
