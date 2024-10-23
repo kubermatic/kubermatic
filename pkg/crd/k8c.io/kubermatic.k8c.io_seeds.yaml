@@ -980,11 +980,25 @@ spec:
                                       type: boolean
                                     name:
                                       type: string
+                                    regions:
+                                      description: |-
+                                        Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
+                                        to span multiple regions
+                                      items:
+                                        type: string
+                                      type: array
                                     volumeBindingMode:
                                       description: |-
                                         VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
                                         VolumeBindingImmediate is used.
                                       type: string
+                                    zones:
+                                      description: |-
+                                        Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
+                                        for increased availability
+                                      items:
+                                        type: string
+                                      type: array
                                   required:
                                     - name
                                   type: object
