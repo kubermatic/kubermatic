@@ -17,7 +17,9 @@ limitations under the License.
 /*
 Package clustercredentialscontroller contains a controller that watches Cluster
 objects and is responsible for moving inline credentials (from the CloudSpec)
-into dedicated Kubernetes Secrets.
+into dedicated Kubernetes Secrets in the KKP namespace. From there, this controller
+will replicate/sync the Secret into the relevant usercluster namespace. The controller
+will then watch the Secret in the KKP namespace and re-sync whenever necessary.
 
 In a perfect future, we would not even ever create a Cluster with inline credentials,
 but for historical reasons it's the safest method to handle credentials for now.
