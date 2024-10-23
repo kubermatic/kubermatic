@@ -39,6 +39,11 @@ func setupControllers(ctrlCtx *controllerContext) error {
 	return nil
 }
 
+func setupLifecycleControllerCreators(ctrlCtx *controllerContext) []seedcontrollerlifecycle.ControllerFactory {
+	// NOP, no CE-only controllers exist
+	return []seedcontrollerlifecycle.ControllerFactory{}
+}
+
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {
 	return kubernetes.SeedsGetterFactory(ctx, client, namespace)
 }
