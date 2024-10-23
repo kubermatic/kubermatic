@@ -52,8 +52,7 @@ images=(
   "$DOCKER_REPO/network-interface-manager:$TAGS-amd64"
 )
 
-TRIVY=aquasec/trivy:0.43.1
-docker pull $TRIVY
+TRIVY=aquasec/trivy:0.56.2
 
 mkdir -p /tmp/trivy-cache
 
@@ -63,6 +62,8 @@ time docker run \
   -v "$(realpath .):/go/src/k8c.io/kubermatic" \
   -v /run/docker.sock:/var/run/docker.sock \
   -v /tmp/trivy-cache:/cache \
+  -e "TRIVY_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-db" \
+  -e "TRIVY_JAVA_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-java-db" \
   -w /go/src/k8c.io/kubermatic \
   $TRIVY --cache-dir /cache fs --quiet .
 
@@ -80,6 +81,8 @@ for image in "${images[@]}"; do
     -v "$(realpath .):/opt/src" \
     -v /run/docker.sock:/var/run/docker.sock \
     -v /tmp/trivy-cache:/cache \
+    -e "TRIVY_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-db" \
+    -e "TRIVY_JAVA_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-java-db" \
     -w /opt/src \
     $TRIVY --cache-dir /cache image --quiet "$image"
 
