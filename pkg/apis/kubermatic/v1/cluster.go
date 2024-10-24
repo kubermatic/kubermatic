@@ -1643,26 +1643,6 @@ func (cluster *Cluster) GetSecretName() string {
 	return ""
 }
 
-func (cluster *Cluster) GetUserClusterMLAResourceRequirements() map[string]*corev1.ResourceRequirements {
-	if cluster.Spec.MLA == nil {
-		return nil
-	}
-	return map[string]*corev1.ResourceRequirements{
-		"monitoring": cluster.Spec.MLA.MonitoringResources,
-		"logging":    cluster.Spec.MLA.LoggingResources,
-	}
-}
-
-func (cluster *Cluster) GetUserClusterOPAResourceRequirements() map[string]*corev1.ResourceRequirements {
-	if cluster.Spec.OPAIntegration == nil {
-		return nil
-	}
-	return map[string]*corev1.ResourceRequirements{
-		"controller": cluster.Spec.OPAIntegration.ControllerResources,
-		"audit":      cluster.Spec.OPAIntegration.AuditResources,
-	}
-}
-
 // IsEncryptionConfigurationEnabled returns whether encryption-at-rest is configured on this cluster.
 func (cluster *Cluster) IsEncryptionEnabled() bool {
 	return cluster.Spec.Features[ClusterFeatureEncryptionAtRest] && cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled
