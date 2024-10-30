@@ -29,6 +29,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -80,6 +81,11 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	config, err := r.configGetter(ctx)
 	if err != nil {
 		return nil, err
+	}
+	// get default seed values.
+	seed, err = defaulting.DefaultSeed(seed, config, r.log)
+	if err != nil {
+		return nil, fmt.Errorf("failed to apply default values to Seed: %w", err)
 	}
 	data, err := r.getClusterTemplateData(ctx, cluster, seed, config)
 	if err != nil {
