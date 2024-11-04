@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package userclusterresources
+package resources
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ import (
 	"text/template"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/awsbackupstore"
+	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller/backupstore/aws"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -51,10 +51,10 @@ func SecretReconciler(ctx context.Context, client ctrlruntimeclient.Client, clus
 				return nil, fmt.Errorf("failed to get backup destination credentials secret: %w", err)
 			}
 
-			awsAccessKeyId := secret.Data[awsbackupstore.AWSAccessKeyIDKeyName]
-			awsSecretAccessKey := secret.Data[awsbackupstore.AWSSecretAccessKeyName]
+			awsAccessKeyId := secret.Data[aws.AccessKeyIDKeyName]
+			awsSecretAccessKey := secret.Data[aws.SecretAccessKeyName]
 			if awsAccessKeyId == nil || awsSecretAccessKey == nil {
-				return nil, fmt.Errorf("backup destination credentials secret is not set correctly: [%s] and [%s] can't be empty", awsbackupstore.AWSAccessKeyIDKeyName, awsbackupstore.AWSSecretAccessKeyName)
+				return nil, fmt.Errorf("backup destination credentials secret is not set correctly: [%s] and [%s] can't be empty", aws.AccessKeyIDKeyName, aws.SecretAccessKeyName)
 			}
 
 			cloudCredsFile, err := getVeleroCloudCredentials(awsAccessKeyId, awsSecretAccessKey)

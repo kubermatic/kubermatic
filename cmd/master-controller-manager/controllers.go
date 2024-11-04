@@ -63,19 +63,25 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.labelSelectorFunc,
 		ctrlCtx.workerNamePredicate,
 	)
-	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
-	userSSHKeySynchronizerFactory := userSSHKeySynchronizerFactoryCreator(ctrlCtx)
-	masterConstraintSynchronizerFactory := masterConstraintSynchronizerFactoryCreator(ctrlCtx)
-	masterConstraintTemplateSynchronizerFactory := masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx)
-	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
-	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
-	userProjectBindingSynchronizerFactory := userProjectBindingSynchronizerFactoryCreator(ctrlCtx)
-	projectSynchronizerFactory := projectSynchronizerFactoryCreator(ctrlCtx)
-	applicationdefinitionsynchronizerFactory := applicationDefinitionSynchronizerFactoryCreator(ctrlCtx)
-	applicationSecretSynchronizerFactor := applicationSecretSynchronizerFactoryCreator(ctrlCtx)
-	presetSynchronizerFactory := presetSynchronizerFactoryCreator(ctrlCtx)
-	resourceQuotaSynchronizerFactory := resourceQuotaSynchronizerFactoryCreator(ctrlCtx)
-	resourceQuotaControllerFactory := resourceQuotaControllerFactoryCreator(ctrlCtx)
+
+	controllerFactories := []seedcontrollerlifecycle.ControllerFactory{
+		rbacControllerFactory,
+		projectLabelSynchronizerFactoryCreator(ctrlCtx),
+		userSSHKeySynchronizerFactoryCreator(ctrlCtx),
+		masterConstraintSynchronizerFactoryCreator(ctrlCtx),
+		masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx),
+		userSynchronizerFactoryCreator(ctrlCtx),
+		clusterTemplateSynchronizerFactoryCreator(ctrlCtx),
+		userProjectBindingSynchronizerFactoryCreator(ctrlCtx),
+		projectSynchronizerFactoryCreator(ctrlCtx),
+		applicationDefinitionSynchronizerFactoryCreator(ctrlCtx),
+		applicationSecretSynchronizerFactoryCreator(ctrlCtx),
+		presetSynchronizerFactoryCreator(ctrlCtx),
+		resourceQuotaSynchronizerFactoryCreator(ctrlCtx),
+		resourceQuotaControllerFactoryCreator(ctrlCtx),
+	}
+
+	controllerFactories = append(controllerFactories, setupLifecycleControllerCreators(ctrlCtx)...)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		ctrlCtx.log,
@@ -83,20 +89,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.namespace,
 		ctrlCtx.seedsGetter,
 		ctrlCtx.seedKubeconfigGetter,
-		rbacControllerFactory,
-		projectLabelSynchronizerFactory,
-		userSSHKeySynchronizerFactory,
-		masterConstraintSynchronizerFactory,
-		masterConstraintTemplateSynchronizerFactory,
-		userSynchronizerFactory,
-		clusterTemplateSynchronizerFactory,
-		userProjectBindingSynchronizerFactory,
-		projectSynchronizerFactory,
-		applicationdefinitionsynchronizerFactory,
-		applicationSecretSynchronizerFactor,
-		presetSynchronizerFactory,
-		resourceQuotaSynchronizerFactory,
-		resourceQuotaControllerFactory,
+		controllerFactories...,
 	); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %w", err)

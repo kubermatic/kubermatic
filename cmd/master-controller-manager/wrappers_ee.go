@@ -25,6 +25,7 @@ import (
 
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	allowedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/allowed-registry-controller"
+	storagelocationsynccontroller "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/sync-controller"
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	groupprojectbinding "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	groupprojectbindingsyncer "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/sync-controller"
@@ -64,6 +65,19 @@ func setupControllers(ctrlCtx *controllerContext) error {
 	}
 
 	return nil
+}
+
+func setupLifecycleControllerCreators(ctrlCtx *controllerContext) []seedcontrollerlifecycle.ControllerFactory {
+	return []seedcontrollerlifecycle.ControllerFactory{
+		func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+			return storagelocationsynccontroller.ControllerName, storagelocationsynccontroller.Add(
+				masterMgr,
+				seedManagerMap,
+				ctrlCtx.log,
+				ctrlCtx.workerCount,
+			)
+		},
+	}
 }
 
 func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.SeedsGetter, error) {

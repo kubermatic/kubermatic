@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package storagelocation
+package storagelocationcontroller
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/backupstore"
+	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller/backupstore"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -126,7 +126,7 @@ func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBa
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
-	store, err := backupstore.NewBackupStore(ctx, cbsl, creds)
+	store, err := backupstore.NewBackupStore(cbsl, creds)
 	if err != nil {
 		return fmt.Errorf("failed to create backup store: %w", err)
 	}
@@ -138,6 +138,7 @@ func (r *reconciler) reconcile(ctx context.Context, cbsl *kubermaticv1.ClusterBa
 			err.Error(),
 		)
 	}
+
 	return r.updateCBSLStatus(ctx,
 		cbsl,
 		velerov1.BackupStorageLocationPhaseAvailable,

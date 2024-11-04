@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2021 Kubermatic GmbH
+                     Copyright © 2023 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,7 +22,26 @@
    END OF TERMS AND CONDITIONS
 */
 
-/*
-Package clusterbackup contains a controller that is responsible for configuring and installing velero components for user clusters.
-*/
-package clusterbackup
+package backupstore
+
+import (
+	"context"
+	"fmt"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller/backupstore/aws"
+
+	corev1 "k8s.io/api/core/v1"
+)
+
+type BackupStore interface {
+	IsValid(context.Context) error
+}
+
+func NewBackupStore(cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (BackupStore, error) {
+	if cbsl.Spec.Provider == "" || cbsl.Spec.Provider != "aws" {
+		return nil, fmt.Errorf("unsupported provider: %s", cbsl.Spec.Provider)
+	}
+
+	return aws.NewBackupStore(cbsl, credentials)
+}

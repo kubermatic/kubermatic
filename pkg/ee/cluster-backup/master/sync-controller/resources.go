@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2023 Kubermatic GmbH
+                     Copyright © 2024 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -22,26 +22,24 @@
    END OF TERMS AND CONDITIONS
 */
 
-package backupstore
+package synccontroller
 
 import (
-	"context"
-	"fmt"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/storage-location/awsbackupstore"
-
-	corev1 "k8s.io/api/core/v1"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-type BackupStore interface {
-	IsValid(context.Context) error
-}
-
-func NewBackupStore(ctx context.Context, cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (BackupStore, error) {
-	if cbsl.Spec.Provider == "" || cbsl.Spec.Provider != "aws" {
-		return nil, fmt.Errorf("unsupported provider: %s", cbsl.Spec.Provider)
+func cbslReconcilerFactory(cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedClusterBackupStorageLocationReconcilerFactory {
+	return func() (string, reconciling.ClusterBackupStorageLocationReconciler) {
+		return cbsl.Name, func(existing *kubermaticv1.ClusterBackupStorageLocation) (*kubermaticv1.ClusterBackupStorageLocation, error) {
+			if existing.ObjectMeta.Labels == nil {
+				existing.ObjectMeta.Labels = map[string]string{}
+			}
+			for k, v := range cbsl.ObjectMeta.Labels {
+				existing.ObjectMeta.Labels[k] = v
+			}
+			existing.Spec = cbsl.Spec
+			return existing, nil
+		}
 	}
-
-	return awsbackupstore.NewAWSBackupStore(ctx, cbsl, credentials)
 }
