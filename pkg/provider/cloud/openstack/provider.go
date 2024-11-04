@@ -223,16 +223,11 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 	}
 
 	// Reconciling the external Network (the floating IP pool used for machines and LBs)
-	if force || cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
-		cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		cluster, err = fetchExtNetwork(ctx, netClient, cluster, update)
-		if err != nil {
-			return nil, err
-		}
+	// We don't need the usual if conditional here because the reconcile function doesn't
+	// create anything.
+	cluster, err = reconcileExtNetwork(ctx, netClient, cluster, update)
+	if err != nil {
+		return nil, err
 	}
 
 	// Reconciling the Network
@@ -313,40 +308,37 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 }
 
 func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	extNetwork, err := getDefaultExternalNetwork(netClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get external network: %w", err)
+	var (
+		err        error
+		extNetwork *NetworkWithExternalExt
+	)
+
+	if cluster.Spec.Cloud.Openstack.FloatingIPPool == "" {
+		// Fetch the default external network if no floating IP pool was provided.
+		extNetwork, err = getDefaultExternalNetwork(netClient)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get external network for floating IP pool: %w", err)
+		}
+	} else {
+		// Fetch the configured external network by name if a floating IP pool is provided.
+		extNetwork, err = getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get external network for floating IP pool by name: %w", err)
+		}
 	}
+
+	// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer.
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		// This should be a noop if the floating IP pool was already correctly provided.
 		cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 
 		if cluster.Annotations == nil {
 			cluster.Annotations = make(map[string]string)
 		}
 		cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
-		// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update cluster floating IP pool: %w", err)
-	}
-
-	return cluster, err
-}
-
-func fetchExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	extNetwork, err := getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.FloatingIPPool, true)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get external network by name: %w", err)
-	}
-	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		if cluster.Annotations == nil {
-			cluster.Annotations = make(map[string]string)
-		}
-		cluster.Annotations[FloatingIPPoolIDAnnotation] = extNetwork.ID
-		// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to update cluster floating IP pool ID annotation: %w", err)
 	}
 
 	return cluster, err
