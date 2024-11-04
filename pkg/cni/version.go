@@ -33,7 +33,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.27",
-		kubermaticv1.CNIPluginTypeCilium: "1.14.9",
+		kubermaticv1.CNIPluginTypeCilium: "1.14.16",
 	}
 )
 
@@ -52,7 +52,7 @@ var (
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real smever
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.13.14",
-			"1.14.9",
+			"1.14.16",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -73,6 +73,7 @@ var (
 			"1.14.1", // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
 			"1.14.2", // CVE-2023-44487 (High Severity)
 			"1.14.3", // CVE-2024-28860, CVE-2024-28248 (High Severity)
+			"1.14.9", // CVE-2024-47825 (Moderate Severity)
 		),
 	}
 )
