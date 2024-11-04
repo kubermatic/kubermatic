@@ -605,6 +605,120 @@ func TestGetCredentialsForCluster(t *testing.T) {
 	}
 }
 
+func TestReconcile(t *testing.T) {
+	tests := []struct {
+		name         string
+		dc           *kubermaticv1.DatacenterSpecOpenstack
+		cluster      *kubermaticv1.Cluster
+		resources    []ostesting.Resource
+		wantErr      bool
+		wantCluster  kubermaticv1.Cluster
+		wantRequests map[ostesting.Request]int
+	}{
+		{
+			name: "Network and subnet provided",
+			dc:   &kubermaticv1.DatacenterSpecOpenstack{},
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-xyz",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							Network:        "kubernetes-cluster-xyz",
+							SubnetID:       ostesting.SubnetID,
+							FloatingIPPool: "foo",
+						},
+					},
+				},
+			},
+			resources: []ostesting.Resource{
+				&ostesting.ExternalNetwork,
+				&ostesting.ExternalNetworkFoo,
+				&ostesting.InternalNetwork,
+				&ostesting.SubnetTest,
+			},
+			wantCluster: kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-xyz",
+					Finalizers: []string{
+						SecurityGroupCleanupFinalizer,
+						RouterCleanupFinalizer,
+						RouterSubnetLinkCleanupFinalizer,
+					},
+					Annotations: map[string]string{
+						FloatingIPPoolIDAnnotation: ostesting.ExternalNetworkFoo.ID,
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.25.0.0/16"}},
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							SecurityGroups: "kubernetes-cluster-xyz",
+							FloatingIPPool: "foo",
+							Network:        "kubernetes-cluster-xyz",
+							SubnetID:       ostesting.SubnetID,
+							RouterID:       ostesting.RouterID,
+						},
+					},
+				},
+			},
+			wantErr: false,
+			wantRequests: map[ostesting.Request]int{
+				{Method: http.MethodPost, Path: ostesting.SecurityGroupsEndpoint}:                        1,
+				{Method: http.MethodPost, Path: ostesting.NetworksEndpoint}:                              0,
+				{Method: http.MethodPost, Path: ostesting.SubnetsEndpoint}:                               0,
+				{Method: http.MethodPost, Path: ostesting.RoutersEndpoint}:                               1,
+				{Method: http.MethodPut, Path: ostesting.AddRouterInterfaceEndpoint(ostesting.RouterID)}: 1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			s := ostesting.NewSimulator(t).Add(tt.resources...)
+			defer s.TearDown()
+			os := &Provider{
+				dc: tt.dc,
+				getClientFunc: func(ctx context.Context, cluster kubermaticv1.CloudSpec, dc *kubermaticv1.DatacenterSpecOpenstack, secretKeySelector provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+					sc := s.GetClient()
+					return sc, nil
+				},
+			}
+			c, err := os.ReconcileCluster(ctx, tt.cluster, (&fakeClusterUpdater{c: tt.cluster}).update)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ReconcileCluster() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			// No need to proceed with further tests if an error is expected.
+			if tt.wantErr {
+				return
+			}
+			// We cannot guarantee order if finalizers serialized using sets and deep.Equal fails if order is different,
+			// thus we test finalizers equality separately.
+			if w, g := sets.New(tt.wantCluster.Finalizers...), sets.New(c.Finalizers...); !w.Equal(g) {
+				t.Errorf("Want finalizers: %v, got: %v", w, g)
+			} else {
+				tt.wantCluster.Finalizers = nil
+				c.Finalizers = nil
+			}
+			if !diff.SemanticallyEqual(tt.wantCluster, *c) {
+				t.Errorf("Diff found between actual and expected cluster:\n%v", diff.ObjectDiff(tt.wantCluster, *c))
+			}
+			rc := s.GetRequestCounters()
+			for req, e := range tt.wantRequests {
+				if a := rc[req]; a != e {
+					t.Errorf("Wanted %d requests %s, but got %d", e, req, a)
+				}
+			}
+		})
+	}
+}
+
 type fakeClusterUpdater struct {
 	c *kubermaticv1.Cluster
 }
