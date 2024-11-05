@@ -20,11 +20,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/packethost/packngo"
+	"github.com/equinix/equinix-sdk-go/services/metalv1"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -118,80 +117,87 @@ func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelecto
 	return apiKey, projectID, nil
 }
 
-func ValidateCredentials(apiKey, projectID string) error {
+func ValidateCredentials(ctx context.Context, apiKey, projectID string) error {
 	client := getClient(apiKey)
-	client.UserAgent = fmt.Sprintf("kubermatic %s", client.UserAgent)
-	_, _, err := client.Projects.Get(projectID, nil)
+	request := client.ProjectsApi.FindProjectById(ctx, projectID)
+
+	_, response, err := client.ProjectsApi.FindProjectByIdExecute(request)
+	defer response.Body.Close()
+
 	return err
 }
 
-func getClient(apiKey string) *packngo.Client {
-	client := packngo.NewClientWithAuth("kubermatic", apiKey, nil)
-	client.UserAgent = fmt.Sprintf("kubermatic %s", client.UserAgent)
-	return client
+func getClient(apiKey string) *metalv1.APIClient {
+	configuration := metalv1.NewConfiguration()
+	configuration.UserAgent = fmt.Sprintf("kubermatic %s", configuration.UserAgent)
+	configuration.AddDefaultHeader("X-Auth-Token", apiKey)
+
+	return metalv1.NewAPIClient(configuration)
 }
 
-// Used to decode response object.
-type plansRoot struct {
-	Plans []packngo.Plan `json:"plans"`
+func parsePlanQuantity(s string) (resource.Quantity, error) {
+	// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
+	return resource.ParseQuantity(strings.TrimSuffix(s, "B"))
 }
 
-func DescribeSize(apiKey, projectID, instanceType string) (*provider.NodeCapacity, error) {
+func DescribeSize(ctx context.Context, apiKey, projectID, instanceType string) (*provider.NodeCapacity, error) {
 	if len(apiKey) == 0 {
-		return nil, fmt.Errorf("missing required parameter: apiKey")
+		return nil, errors.New("missing required parameter: apiKey")
 	}
 
 	if len(projectID) == 0 {
-		return nil, fmt.Errorf("missing required parameter: projectID")
+		return nil, errors.New("missing required parameter: projectID")
 	}
 
-	packetclient := getClient(apiKey)
-	req, err := packetclient.NewRequest(http.MethodGet, "/projects/"+projectID+"/plans", nil)
+	client := getClient(apiKey)
+	request := client.PlansApi.FindPlansByProject(ctx, projectID)
+
+	plans, response, err := client.PlansApi.FindPlansByProjectExecute(request)
 	if err != nil {
 		return nil, err
 	}
+	defer response.Body.Close()
 
-	root := new(plansRoot)
-	_, err = packetclient.Do(req, root)
-	if err != nil {
-		return nil, err
-	}
+	for _, plan := range plans.Plans {
+		if plan.Slug != nil && *plan.Slug == instanceType {
+			var (
+				totalCPUs          int
+				storageReq, memReq resource.Quantity
+			)
 
-	plans := root.Plans
-	for _, currentPlan := range plans {
-		if currentPlan.Slug == instanceType {
-			var totalCPUs int
-			for _, cpu := range currentPlan.Specs.Cpus {
-				totalCPUs += cpu.Count
-			}
-
-			var storageReq, memReq resource.Quantity
-			for _, drive := range currentPlan.Specs.Drives {
-				if drive.Size == "" || drive.Count == 0 {
-					continue
+			if specs := plan.Specs; specs != nil {
+				for _, cpu := range specs.Cpus {
+					if cpu.Count != nil {
+						totalCPUs += int(*cpu.Count)
+					}
 				}
 
-				// trimming "B" as quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'.
-				storage, err := resource.ParseQuantity(strings.TrimSuffix(drive.Size, "B"))
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse plan disk size %q: %w", drive.Size, err)
+				for _, drive := range specs.Drives {
+					if drive.Size == nil || *drive.Size == "" || drive.Count == nil || *drive.Count == 0 {
+						continue
+					}
+
+					storage, err := parsePlanQuantity(*drive.Size)
+					if err != nil {
+						return nil, fmt.Errorf("failed to parse plan disk size %q: %w", *drive.Size, err)
+					}
+
+					// total storage for each types = drive count * drive Size.
+					strDrive := strconv.FormatInt(storage.Value()*int64(*drive.Count), 10)
+					totalStorage, err := resource.ParseQuantity(strDrive)
+					if err != nil {
+						return nil, fmt.Errorf("error parsing plan storage request to quantity: %w", err)
+					}
+
+					// Adding storage value for all storage types like "SSD", "NVME".
+					storageReq.Add(totalStorage)
 				}
 
-				// total storage for each types = drive count *drive Size.
-				strDrive := strconv.FormatInt(storage.Value()*int64(drive.Count), 10)
-				totalStorage, err := resource.ParseQuantity(strDrive)
-				if err != nil {
-					return nil, fmt.Errorf("error parsing machine storage request to quantity: %w", err)
-				}
-
-				// Adding storage value for all storage types like "SSD", "NVME".
-				storageReq.Add(totalStorage)
-			}
-
-			if currentPlan.Specs.Memory.Total != "" {
-				memReq, err = resource.ParseQuantity(strings.TrimSuffix(currentPlan.Specs.Memory.Total, "B"))
-				if err != nil {
-					return nil, fmt.Errorf("error parsing machine memory request to quantity: %w", err)
+				if memory := specs.Memory; memory != nil && memory.Total != nil && *memory.Total != "" {
+					memReq, err = parsePlanQuantity(*memory.Total)
+					if err != nil {
+						return nil, fmt.Errorf("error parsing plan memory request %q: %w", *memory.Total, err)
+					}
 				}
 			}
 

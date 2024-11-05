@@ -646,7 +646,7 @@ func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient
 		return nil, fmt.Errorf("failed to get the value of packet \"instanceType\": %w", err)
 	}
 
-	capacity, err := packet.DescribeSize(token, projectID, instanceType)
+	capacity, err := packet.DescribeSize(ctx, token, projectID, instanceType)
 	if err != nil {
 		return nil, err
 	}
