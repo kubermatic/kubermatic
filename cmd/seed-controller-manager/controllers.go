@@ -491,6 +491,7 @@ func createClusterCredentialsController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.log,
 		ctrlCtx.versions,
+		ctrlCtx.runOptions.namespace,
 	)
 }
 
