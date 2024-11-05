@@ -1361,7 +1361,7 @@ func setEnvForProvider(providerName string, envVar []corev1.EnvVar, credentialSe
 		envVar = append(
 			envVar,
 			corev1.EnvVar{
-				Name:      "PACKET_API_KEY",
+				Name:      "METAL_AUTH_TOKEN",
 				ValueFrom: envVarSource,
 			},
 		)
@@ -1369,7 +1369,7 @@ func setEnvForProvider(providerName string, envVar []corev1.EnvVar, credentialSe
 		envVar = append(
 			envVar,
 			corev1.EnvVar{
-				Name:      "PACKET_PROJECT_ID",
+				Name:      "METAL_PROJECT_ID",
 				ValueFrom: envVarSource,
 			},
 		)

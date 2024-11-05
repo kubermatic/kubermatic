@@ -1281,7 +1281,7 @@ spec:
                         - subnetID
                       type: object
                     packet:
-                      description: Packet defines the configuration data of a Packet cloud.
+                      description: Packet defines the configuration data of a Packet / Equinix Metal cloud.
                       properties:
                         apiKey:
                           type: string
