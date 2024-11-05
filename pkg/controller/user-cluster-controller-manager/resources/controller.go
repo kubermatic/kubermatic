@@ -150,9 +150,9 @@ func Add(
 
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
-				// There is no "parent object" like e.e. a cluster that can be used to reconcile, we just have a random set of resources
-				// we reconcile one after another. To ensure we always have only one reconcile running at a time, we
-				// use a static string as identifier
+				// There is no "parent object" like for example a cluster that can be used to reconcile,
+				// we just have a random set of resources we reconcile one after another.
+				// To ensure we always have only one reconcile running at a time, we use a static string as identifier.
 				Name:      "identifier",
 				Namespace: "",
 			}}}
