@@ -51,7 +51,11 @@ var versionProviderFuncs = map[string]versionProviderFunc{
 	"callKonnectivityVersion": func(clusterVersion semver.Semver) (string, error) {
 		return konnectivity.NetworkProxyVersion(clusterVersion), nil
 	},
-	"callKubernetesDashboardVersion": kubernetesdashboard.DashboardVersion,
+	"callKubernetesDashboardAPIVersion":            kubernetesdashboard.APIVersion,
+	"callKubernetesDashboardAuthVersion":           kubernetesdashboard.AuthVersion,
+	"callKubernetesDashboardWebVersion":            kubernetesdashboard.WebVersion,
+	"callKubernetesDashboardMetricsScraperVersion": kubernetesdashboard.MetricsScraperVersion,
+	"callKubernetesDashboardKongVersion":           kubernetesdashboard.KongVersion,
 }
 
 func CallGoFunction(function string) (map[string]string, error) {
