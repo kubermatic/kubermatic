@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,14 +17,25 @@ limitations under the License.
 package kubernetesdashboard
 
 import (
-	"k8c.io/reconciler/pkg/reconciling"
-
-	corev1 "k8s.io/api/core/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
-// NamespaceReconciler creates the namespace for the Kubernetes Dashboard.
-func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
-	return Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
-		return ns, nil
-	}
+func APIVersion(_ semver.Semver) (string, error) {
+	return "1.10.1", nil
+}
+
+func AuthVersion(_ semver.Semver) (string, error) {
+	return "1.2.2", nil
+}
+
+func WebVersion(_ semver.Semver) (string, error) {
+	return "1.6.0", nil
+}
+
+func MetricsScraperVersion(_ semver.Semver) (string, error) {
+	return "1.2.1", nil
+}
+
+func KongVersion(_ semver.Semver) (string, error) {
+	return "3.6", nil
 }

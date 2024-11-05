@@ -387,6 +387,15 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 		creators = append(creators, machinecontroller.ServiceReconciler())
 	}
 
+	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
+		creators = append(creators,
+			kubernetesdashboard.WebServiceReconciler(),
+			kubernetesdashboard.APIServiceReconciler(),
+			kubernetesdashboard.AuthServiceReconciler(),
+			kubernetesdashboard.KongProxyServiceReconciler(),
+		)
+	}
+
 	if data.IsKonnectivityEnabled() {
 		creators = append(creators, konnectivity.ServiceReconciler(data.Cluster().Spec.ExposeStrategy, extName))
 	} else {
@@ -432,7 +441,12 @@ func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCA
 	}
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
-		deployments = append(deployments, kubernetesdashboard.DeploymentReconciler(data))
+		deployments = append(deployments,
+			kubernetesdashboard.APIDeploymentReconciler(data),
+			kubernetesdashboard.AuthDeploymentReconciler(data),
+			kubernetesdashboard.WebDeploymentReconciler(data),
+			kubernetesdashboard.KongDeploymentReconciler(data),
+		)
 	}
 
 	if !data.IsKonnectivityEnabled() {
@@ -548,7 +562,8 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 
 	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
 		creators = append(creators,
-			resources.GetInternalKubeconfigReconciler(namespace, resources.KubernetesDashboardKubeconfigSecretName, resources.KubernetesDashboardCertUsername, nil, data, r.log),
+			kubernetesdashboard.CSRFSecretReconciler(),
+			kubernetesdashboard.KubeconfigReconciler(resources.KubernetesDashboardNamespace, data, r.log),
 		)
 	}
 
@@ -600,9 +615,9 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 }
 
 func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	namedSecretReconcilerFactories := r.GetSecretReconcilers(ctx, data)
+	factories := r.GetSecretReconcilers(ctx, data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactories, c.Status.NamespaceName, r); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, factories, c.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
@@ -610,7 +625,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 }
 
 func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedServiceAccountReconcilerFactories := []reconciling.NamedServiceAccountReconcilerFactory{
+	factories := []reconciling.NamedServiceAccountReconcilerFactory{
 		etcd.ServiceAccountReconciler,
 		usercluster.ServiceAccountReconciler,
 		userclusterwebhook.ServiceAccountReconciler,
@@ -618,19 +633,23 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	}
 
 	if c.Spec.Cloud.Edge == nil {
-		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, machinecontroller.ServiceAccountReconciler)
-		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, machinecontroller.WebhookServiceAccountReconciler)
+		factories = append(factories, machinecontroller.ServiceAccountReconciler)
+		factories = append(factories, machinecontroller.WebhookServiceAccountReconciler)
 	}
 
 	if !c.Spec.DisableCSIDriver {
-		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, csi.ServiceAccountReconcilers(c)...)
+		factories = append(factories, csi.ServiceAccountReconcilers(c)...)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedServiceAccountReconcilerFactories = append(namedServiceAccountReconcilerFactories, nodeportproxy.ServiceAccountReconciler)
+		factories = append(factories, nodeportproxy.ServiceAccountReconciler)
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountReconcilerFactories, c.Status.NamespaceName, r); err != nil {
+	if c.Spec.IsKubernetesDashboardEnabled() {
+		factories = append(factories, kubernetesdashboard.KongServiceAccountReconciler())
+	}
+
+	if err := reconciling.ReconcileServiceAccounts(ctx, factories, c.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %w", err)
 	}
 
@@ -646,12 +665,12 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 }
 
 func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedRoleReconcilerFactories := []reconciling.NamedRoleReconcilerFactory{
+	factories := []reconciling.NamedRoleReconcilerFactory{
 		usercluster.RoleReconciler,
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedRoleReconcilerFactories = append(namedRoleReconcilerFactories, nodeportproxy.RoleReconciler)
+		factories = append(factories, nodeportproxy.RoleReconciler)
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, namedRoleReconcilerFactories, c.Status.NamespaceName, r); err != nil {
@@ -662,34 +681,34 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 }
 
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedRoleBindingReconcilerFactories := []reconciling.NamedRoleBindingReconcilerFactory{
+	factories := []reconciling.NamedRoleBindingReconcilerFactory{
 		usercluster.RoleBindingReconciler,
 	}
 	if !c.Spec.DisableCSIDriver {
-		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, csi.RoleBindingsReconcilers(c)...)
+		factories = append(factories, csi.RoleBindingsReconcilers(c)...)
 	}
 
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		namedRoleBindingReconcilerFactories = append(namedRoleBindingReconcilerFactories, nodeportproxy.RoleBindingReconciler)
+		factories = append(factories, nodeportproxy.RoleBindingReconciler)
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingReconcilerFactories, c.Status.NamespaceName, r); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, factories, c.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %w", err)
 	}
 	return nil
 }
 
 func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedClusterRoleReconcilerFactories := []reconciling.NamedClusterRoleReconcilerFactory{
+	factories := []reconciling.NamedClusterRoleReconcilerFactory{
 		usercluster.ClusterRole(),
 		userclusterwebhook.ClusterRole(),
 	}
 
 	if !c.Spec.DisableCSIDriver {
-		namedClusterRoleReconcilerFactories = append(namedClusterRoleReconcilerFactories, csi.ClusterRolesReconcilers(c)...)
+		factories = append(factories, csi.ClusterRolesReconcilers(c)...)
 	}
 
-	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleReconcilerFactories, "", r); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, factories, "", r); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Roles: %w", err)
 	}
 
@@ -697,11 +716,11 @@ func (r *Reconciler) ensureClusterRoles(ctx context.Context, c *kubermaticv1.Clu
 }
 
 func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, namespace *corev1.Namespace) error {
-	namedClusterRoleBindingsReconcilerFactories := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+	factories := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		usercluster.ClusterRoleBinding(namespace),
 		userclusterwebhook.ClusterRoleBinding(namespace),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsReconcilerFactories, "", r); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, factories, "", r); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %w", err)
 	}
 
@@ -710,7 +729,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, namespace *c
 
 func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData, cfg *kubermaticv1.KubermaticConfiguration) error {
 	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
-		namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
+		factories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 			apiserver.DenyAllPolicyReconciler(),
 			apiserver.DNSAllowReconciler(c, data),
 			apiserver.EctdAllowReconciler(c),
@@ -725,9 +744,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		defer cancel()
 
 		if data.IsKonnectivityEnabled() {
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.ApiserverInternalAllowReconciler())
+			factories = append(factories, apiserver.ApiserverInternalAllowReconciler())
 		} else {
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
+			factories = append(factories,
 				apiserver.OpenVPNServerAllowReconciler(c),
 				apiserver.MetricsServerAllowReconciler(c),
 			)
@@ -749,7 +768,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			if err != nil {
 				return fmt.Errorf("failed to resolve OIDC issuer URL %q: %w", issuerURL, err)
 			}
-			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
+			factories = append(factories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
 		}
 
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
@@ -757,9 +776,9 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			return fmt.Errorf("failed to fetch Kubernetes API service IP list: %w", err)
 		}
 
-		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.SeedApiserverAllowReconciler(apiIPs))
+		factories = append(factories, apiserver.SeedApiServerAllowReconciler(apiIPs))
 
-		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, c.Status.NamespaceName, r); err != nil {
+		if err := reconciling.ReconcileNetworkPolicies(ctx, factories, c.Status.NamespaceName, r); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
 		}
 	}
@@ -776,6 +795,10 @@ func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedCo
 	}
 	if !data.Cluster().Spec.DisableCSIDriver {
 		creators = append(creators, csi.ConfigMapsReconcilers(data)...)
+	}
+
+	if data.Cluster().Spec.IsKubernetesDashboardEnabled() {
+		creators = append(creators, kubernetesdashboard.KongConfigMapReconciler())
 	}
 
 	if data.IsKonnectivityEnabled() {

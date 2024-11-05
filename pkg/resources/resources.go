@@ -94,14 +94,8 @@ const (
 	UserClusterControllerDeploymentName = "usercluster-controller"
 	// UserClusterControllerContainerName is the name of the container within the usercluster-controller deployment.
 	UserClusterControllerContainerName = "usercluster-controller"
-	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment.
-	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
 	// KubeLBDeploymentName is the name of the KubeLB deployment.
 	KubeLBDeploymentName = "kubelb-ccm"
-	// MetricsScraperDeploymentName is the name of dashboard-metrics-scraper deployment.
-	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
-	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service.
-	MetricsScraperServiceName = "dashboard-metrics-scraper"
 	// PrometheusStatefulSetName is the name for the prometheus StatefulSet.
 	PrometheusStatefulSetName = "prometheus"
 	// EtcdStatefulSetName is the name for the etcd StatefulSet.
@@ -179,8 +173,6 @@ const (
 	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
-	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
-	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
 	WEBTerminalKubeconfigSecretName = "web-terminal-kubeconfig"
 
@@ -223,12 +215,6 @@ const (
 	GoogleServiceAccountVolumeName = "google-service-account-volume"
 	// AuditLogVolumeName is the name of the volume that hold the audit log of the apiserver.
 	AuditLogVolumeName = "audit-log"
-	// KubernetesDashboardKeyHolderSecretName is the name of the secret that contains JWE token encryption key
-	// used by the Kubernetes Dashboard.
-	KubernetesDashboardKeyHolderSecretName = "kubernetes-dashboard-key-holder"
-	// KubernetesDashboardCsrfTokenSecretName is the name of the secret that contains CSRF token used by
-	// the Kubernetes Dashboard.
-	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
 	// CABundleConfigMapName is the name for the configmap that contains the CA bundle for all usercluster components.
 	CABundleConfigMapName = "ca-bundle"
@@ -300,11 +286,6 @@ const (
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert.
 	PrometheusCertUsername = "prometheus"
 
-	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert.
-	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
-	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert.
-	MetricsScraperServiceAccountUsername = "dashboard-metrics-scraper"
-
 	// KubeletDnatControllerClusterRoleName is the name for the KubeletDnatController cluster role.
 	KubeletDnatControllerClusterRoleName = "system:kubermatic-kubeletdnat-controller"
 	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding.
@@ -344,14 +325,6 @@ const (
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
 	// MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding.
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
-	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard.
-	KubernetesDashboardRoleName = "system:kubernetes-dashboard"
-	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard.
-	KubernetesDashboardRoleBindingName = "system:kubernetes-dashboard"
-	// MetricsScraperClusterRoleName is the name of the role for the dashboard-metrics-scraper.
-	MetricsScraperClusterRoleName = "system:dashboard-metrics-scraper"
-	// MetricsScraperClusterRoleBindingName is the name of the role binding for the dashboard-metrics-scraper.
-	MetricsScraperClusterRoleBindingName = "system:dashboard-metrics-scraper"
 
 	// EtcdPodDisruptionBudgetName is the name of the PDB for the etcd StatefulSet.
 	EtcdPodDisruptionBudgetName = "etcd"
@@ -394,6 +367,10 @@ const (
 	// the cloud provider credentials. This Secret is a copy of the credentials secret from the KKP
 	// namespace (which has a dynamic name).
 	ClusterCloudCredentialsSecretName = "cloud-credentials"
+
+	// KubernetesDashboardNamespace is the namespace inside a usercluster where all resources for the
+	// Kubernetes Dashboard are deployed into.
+	KubernetesDashboardNamespace = "kubernetes-dashboard"
 
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init.
