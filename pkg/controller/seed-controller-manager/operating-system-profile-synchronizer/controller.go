@@ -24,38 +24,17 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
 	ControllerName = "kkp-operating-system-profile-synchronizer"
-
-	// cleanupFinalizer indicates that the OperatingSystemProfile needs to be removed from all the user-cluster namespaces.
-	cleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-operating-system-profiles"
-	ospNamespace     = metav1.NamespaceSystem
 
 	operatingSystemManagerAPIVersion = "operatingsystemmanager.k8c.io/v1alpha1"
 	customOperatingSystemProfileKind = "CustomOperatingSystemProfile"
@@ -67,15 +46,8 @@ type UserClusterClientProvider interface {
 	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
-type Reconciler struct {
-	log *zap.SugaredLogger
-
-	workerNameLabelSelector       labels.Selector
-	workerName                    string
-	recorder                      record.EventRecorder
-	namespace                     string
-	seedClient                    ctrlruntimeclient.Client
-	userClusterConnectionProvider UserClusterClientProvider
+func controllerName(subname string) string {
+	return fmt.Sprintf("kkp-operating-system-profile-%s", subname)
 }
 
 func Add(
@@ -86,188 +58,15 @@ func Add(
 	namespace string,
 	numWorkers int,
 ) error {
-	workerSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %w", err)
+	if err := addClusterInitReconciler(mgr, userClusterConnectionProvider, log, workerName, namespace, numWorkers); err != nil {
+		return fmt.Errorf("failed to setup cluster init reconciler: %w", err)
 	}
 
-	reconciler := &Reconciler{
-		log:                           log.Named(ControllerName),
-		workerNameLabelSelector:       workerSelector,
-		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
-		namespace:                     namespace,
-		userClusterConnectionProvider: userClusterConnectionProvider,
-		seedClient:                    mgr.GetClient(),
-	}
-
-	customOSP := &unstructured.Unstructured{}
-	customOSP.SetAPIVersion(operatingSystemManagerAPIVersion)
-	customOSP.SetKind(customOperatingSystemProfileKind)
-
-	_, err = builder.ControllerManagedBy(mgr).
-		Named(ControllerName).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: numWorkers,
-		}).
-		// Watch changes for Custom Operating System Profiles.
-		For(customOSP, builder.WithPredicates(kubermaticpred.ByNamespace(namespace))).
-		// Watch changes for OSPs and then enqueue all the clusters where OSM is enabled.
-		Watches(&kubermaticv1.Cluster{}, enqueueOperatingSystemProfiles(reconciler.seedClient, namespace), builder.WithPredicates(workerlabel.Predicate(workerName), withEventFilter())).
-		Build(reconciler)
-
-	return err
-}
-
-func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("operatingsystemprofile", request.NamespacedName.String())
-	log.Debug("Reconciling")
-
-	osp := &unstructured.Unstructured{}
-	osp.SetAPIVersion(operatingSystemManagerAPIVersion)
-	osp.SetKind(customOperatingSystemProfileKind)
-
-	if err := r.seedClient.Get(ctx, request.NamespacedName, osp); err != nil {
-		if apierrors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{}, err
-	}
-
-	// OperatingSystemProfile is marked for deletion.
-	if osp.GetDeletionTimestamp() != nil {
-		log.Debug("Deletion timestamp found for operatingSystemProfile")
-		if kuberneteshelper.HasFinalizer(osp, cleanupFinalizer) {
-			if err := r.handleDeletion(ctx, log, osp); err != nil {
-				err = fmt.Errorf("failed to delete operatingSystemProfile: %w", err)
-
-				log.Errorw("ReconcilingError", zap.Error(err))
-				r.recorder.Event(osp, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-
-				return reconcile.Result{}, err
-			}
-			return reconcile.Result{}, nil
-		}
-		// Finalizer doesn't exist so clean up is already done.
-		return reconcile.Result{}, nil
-	}
-
-	err := r.reconcile(ctx, log, osp)
-	if err != nil {
-		r.recorder.Event(osp, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
-
-	return reconcile.Result{}, err
-}
-
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, u *unstructured.Unstructured) error {
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, u, cleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to add finalizer: %w", err)
-	}
-	return r.syncAllUserClusters(ctx, log, u)
-}
-
-func (r *Reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, u *unstructured.Unstructured) error {
-	err := r.syncAllUserClusters(ctx, log, u)
-	if err != nil {
-		return err
-	}
-
-	// Remove the finalizer
-	return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, u, cleanupFinalizer)
-}
-
-func (r *Reconciler) syncAllUserClusters(ctx context.Context, log *zap.SugaredLogger, u *unstructured.Unstructured) error {
-	osp, err := customOSPToOSP(u)
-	if err != nil {
-		return err
-	}
-
-	clusters := &kubermaticv1.ClusterList{}
-	if err := r.seedClient.List(ctx, clusters); err != nil {
-		log.Error(err)
-		utilruntime.HandleError(fmt.Errorf("failed to list clusters: %w", err))
-	}
-
-	var errors []error
-	for _, cluster := range clusters.Items {
-		// Ensure that this is a reconcilable cluster
-		if cluster.DeletionTimestamp == nil && !cluster.Spec.Pause && cluster.Status.NamespaceName != "" {
-			err := r.syncOperatingSystemProfile(ctx, osp, &cluster)
-			if err != nil {
-				errors = append(errors, err)
-			}
-		}
-	}
-
-	return kerrors.NewAggregate(errors)
-}
-
-func (r *Reconciler) syncOperatingSystemProfile(ctx context.Context, osp *osmv1alpha1.OperatingSystemProfile, cluster *kubermaticv1.Cluster) error {
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get user cluster client: %w", err)
-	}
-
-	// If OSP is marked for deletion then remove it from the user cluster.
-	if osp.DeletionTimestamp != nil {
-		toDelete := &osmv1alpha1.OperatingSystemProfile{}
-		toDelete.Name = osp.Name
-		toDelete.Namespace = ospNamespace
-
-		err := userClusterClient.Delete(ctx, toDelete)
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}
-
-	creators := []reconciling.NamedOperatingSystemProfileReconcilerFactory{
-		ospReconciler(osp),
-	}
-
-	if err := reconciling.ReconcileOperatingSystemProfiles(ctx, creators, ospNamespace, userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile OSP: %w", err)
+	if err := addSyncReconciler(mgr, userClusterConnectionProvider, log, workerName, namespace, numWorkers); err != nil {
+		return fmt.Errorf("failed to setup sync reconciler: %w", err)
 	}
 
 	return nil
-}
-
-func withEventFilter() predicate.Predicate {
-	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			cluster, ok := e.Object.(*kubermaticv1.Cluster)
-			if !ok {
-				return false
-			}
-			return cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return false
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return false
-		},
-	}
-}
-
-func enqueueOperatingSystemProfiles(client ctrlruntimeclient.Client, namespace string) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
-		var requests []reconcile.Request
-
-		ospList := &unstructured.UnstructuredList{}
-		ospList.SetAPIVersion(operatingSystemManagerAPIVersion)
-		ospList.SetKind(fmt.Sprintf("%sList", customOperatingSystemProfileKind))
-
-		if err := client.List(ctx, ospList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
-			utilruntime.HandleError(fmt.Errorf("failed to list customOperatingSystemProfiles: %w", err))
-		}
-
-		for _, osp := range ospList.Items {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
-				Name:      osp.GetName(),
-				Namespace: osp.GetNamespace(),
-			}})
-		}
-		return requests
-	})
 }
 
 func ospReconciler(osp *osmv1alpha1.OperatingSystemProfile) reconciling.NamedOperatingSystemProfileReconcilerFactory {
