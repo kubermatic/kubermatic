@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,16 @@ limitations under the License.
 
 package kubernetesdashboard
 
-const (
-	Namespace = "kubernetes-dashboard"
-	AppName   = "kubernetes-dashboard"
+import (
+	"k8c.io/reconciler/pkg/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
+
+func NamespaceReconciler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			return ns, nil
+		}
+	}
+}
