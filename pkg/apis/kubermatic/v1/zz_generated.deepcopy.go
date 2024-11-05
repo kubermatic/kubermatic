@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/machine-controller/pkg/providerconfig/types"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -4228,6 +4229,11 @@ func (in *KubeVirtInfraStorageClass) DeepCopyInto(out *KubeVirtInfraStorageClass
 	if in.IsDefaultClass != nil {
 		in, out := &in.IsDefaultClass, &out.IsDefaultClass
 		*out = new(bool)
+		**out = **in
+	}
+	if in.VolumeBindingMode != nil {
+		in, out := &in.VolumeBindingMode, &out.VolumeBindingMode
+		*out = new(storagev1.VolumeBindingMode)
 		**out = **in
 	}
 }

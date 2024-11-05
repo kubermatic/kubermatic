@@ -24,6 +24,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -845,6 +846,9 @@ type KubeVirtInfraStorageClass struct {
 	// If missing or false, annotation will be:
 	// storageclass.kubernetes.io/is-default-class : false
 	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
+	// VolumeBindingImmediate is used.
+	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
