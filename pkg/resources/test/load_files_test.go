@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -642,7 +643,14 @@ func TestLoadFiles(t *testing.T) {
 							&corev1.Secret{
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
-									Name:            resources.KubernetesDashboardKubeconfigSecretName,
+									Name:            kubernetesdashboard.KubeconfigSecretName,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.Secret{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            kubernetesdashboard.CSRFSecretName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
@@ -763,6 +771,13 @@ func TestLoadFiles(t *testing.T) {
 								ObjectMeta: metav1.ObjectMeta{
 									ResourceVersion: "123456",
 									Name:            resources.KonnectivityKubeApiserverEgress,
+									Namespace:       cluster.Status.NamespaceName,
+								},
+							},
+							&corev1.ConfigMap{
+								ObjectMeta: metav1.ObjectMeta{
+									ResourceVersion: "123456",
+									Name:            kubernetesdashboard.KongConfigMapName,
 									Namespace:       cluster.Status.NamespaceName,
 								},
 							},
