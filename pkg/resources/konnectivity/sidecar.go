@@ -136,12 +136,16 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 
 	switch clusterVersion.MajorMinor() {
 	case "1.27":
-		return "v0.1.5"
+		return "v0.1.10"
 	case "1.28":
-		return "v0.28.2"
+		return "v0.28.6"
 	case "1.29":
+		return "v0.29.3"
+	case "1.30":
+		return "v0.30.3"
+	case "1.31":
 		fallthrough
 	default:
-		return "v0.29.0"
+		return "v0.31.0"
 	}
 }
