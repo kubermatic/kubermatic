@@ -251,7 +251,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			}, nil
 		},
 		configGetter: func(_ context.Context) (*kubermaticv1.KubermaticConfiguration, error) {
-			return &kubermaticv1.KubermaticConfiguration{}, nil
+			kubermaticConfig := &kubermaticv1.KubermaticConfiguration{}
+			kubermaticConfig, err := defaulting.DefaultConfiguration(kubermaticConfig, kubermaticlog.Logger)
+			if err != nil {
+				return nil, err
+			}
+			return kubermaticConfig, nil
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
