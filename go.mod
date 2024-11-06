@@ -35,6 +35,7 @@ require (
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
 	github.com/envoyproxy/go-control-plane v0.12.1-0.20240621013728-1eb8caab5155
+	github.com/equinix/equinix-sdk-go v0.46.0
 	github.com/go-git/go-git/v5 v5.11.0
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-test/deep v1.1.1
@@ -53,7 +54,6 @@ require (
 	github.com/onsi/gomega v1.34.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20240110234408-18fa1fc7dc06 // Gatekeeper's desired version
 	github.com/open-policy-agent/gatekeeper/v3 v3.15.1
-	github.com/packethost/packngo v0.31.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/prometheus/client_golang v1.20.3
@@ -89,7 +89,7 @@ require (
 	helm.sh/helm/v3 v3.14.3
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
-	k8c.io/machine-controller v1.60.0
+	k8c.io/machine-controller v1.60.1-0.20241104231631-36a68f1ae069
 	k8c.io/operating-system-manager v1.6.0
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.31.1
