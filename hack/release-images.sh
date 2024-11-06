@@ -69,6 +69,14 @@ docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/conformance-tests:$PRIMAR
 # switch to a multi platform-enabled builder
 docker buildx create --use
 
+# get gocache in all archs
+GOCACHE_BASE="$(mktemp -d)"
+
+for arch in $ARCHITECTURES; do
+  echodate "Downloading gocache for $arch…"
+  TARGET_DIRECTORY="$GOCACHE_BASE/$arch" GOARCH="$arch" ./hack/ci/download-gocache.sh
+done
+
 buildx_build() {
   local context="$1"
   local file="$2"
@@ -76,18 +84,25 @@ buildx_build() {
   local tag="$4"
 
   for arch in $ARCHITECTURES; do
+    # move relevant gocache temporarily here
+    mv "$GOCACHE_BASE/$arch" .gocache
+
     # --load requires to build architectures individually, only
     # --push would support building multiple archs at the same time.
     docker buildx build \
       --load \
       --platform "linux/$arch" \
       --build-arg "GOPROXY=${GOPROXY:-}" \
+      --build-arg "GOCACHE=/go/src/k8c.io/kubermatic/.gocache" \
       --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
       --provenance false \
       --file "$file" \
       --tag "$repository:$tag-$arch" \
       --label "$VERSION_LABEL" \
       $context
+
+    # move gocache back
+    mv .gocache "$GOCACHE_BASE/$arch"
   done
 }
 

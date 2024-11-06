@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export CGO_ENABLED=0
+export GOFLAGS ?= -trimpath
+
 KUBERMATIC_EDITION ?= ce
 DOCKER_REPO ?= "quay.io/kubermatic"
 LDFLAGS ?= -w -extldflags '-static'
 GOTOOLFLAGS ?= -ldflags '$(LDFLAGS)' -v
-
-export CGO_ENABLED=0
 
 .PHONY: build
 build:

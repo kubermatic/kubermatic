@@ -13,12 +13,15 @@
 # limitations under the License.
 
 export CGO_ENABLED=0
+export GOFLAGS ?= -trimpath
 
 DOCKER_REPO ?= "quay.io/kubermatic"
+LDFLAGS ?= -w -extldflags '-static'
+GOTOOLFLAGS ?= -ldflags '$(LDFLAGS)' -v
 
 .PHONY: build
 build:
-	go build -v -o ./_build/network-interface-manager .
+	go build $(GOTOOLFLAGS) -o ./_build/network-interface-manager .
 
 .PHONY: docker
 docker: build
