@@ -60,6 +60,8 @@ fi
 # build Docker images
 PRIMARY_TAG="${1}"
 VERSION_LABEL="org.opencontainers.image.version=${KUBERMATICDOCKERTAG:-$PRIMARY_TAG}"
+
+docker build --label "$VERSION_LABEL" .
 make docker-build TAGS="$PRIMARY_TAG"
 make -C cmd/nodeport-proxy docker TAG="$PRIMARY_TAG"
 docker build --label "$VERSION_LABEL" -t "$DOCKER_REPO/addons:$PRIMARY_TAG" addons

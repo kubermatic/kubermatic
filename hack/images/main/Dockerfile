@@ -12,6 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+FROM docker.io/golang:1.23.2 AS builder
+
+ARG GOPROXY=
+ARG GOCACHE=
+ARG KUBERMATIC_EDITION=ce
+
+ENV GOPROXY=$GOPROXY
+ENV GOCACHE=$GOCACHE
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
+
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make \
+      kubermatic-operator \
+      kubermatic-installer \
+      kubermatic-webhook \
+      master-controller-manager \
+      seed-controller-manager \
+      user-cluster-controller-manager \
+      user-cluster-webhook
+
 FROM docker.io/alpine:3.19
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
@@ -30,16 +51,7 @@ RUN wget -O- https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz | tar xzOf - li
 # We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
 
-# Do not needless copy all files from _build/ into the image.
-COPY ./_build/kubermatic-operator \
-     ./_build/kubermatic-installer \
-     ./_build/kubermatic-webhook \
-     ./_build/master-controller-manager \
-     ./_build/seed-controller-manager \
-     ./_build/user-cluster-controller-manager \
-     ./_build/user-cluster-webhook \
-     /usr/local/bin/
-
-COPY ./charts /opt/charts
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
+COPY --from=builder /go/src/k8c.io/kubermatic/charts /opt/charts
 
 USER nobody
