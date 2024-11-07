@@ -13,6 +13,7 @@
 # limitations under the License.
 
 export CGO_ENABLED=0
+export GOFLAGS ?= -trimpath
 
 DOCKER_REPO ?= "quay.io/kubermatic"
 
