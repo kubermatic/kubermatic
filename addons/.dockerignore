@@ -1,3 +1,12 @@
-Dockerfile
 README.md
-.dockerignore
+Dockerfile
+OWNERS
+**/Makefile
+**/.gitignore
+**/.dockerignore
+**/*.sh
+**/*.txt
+**/*.patch
+**/Kustomization
+**/helm-values
+*.yaml

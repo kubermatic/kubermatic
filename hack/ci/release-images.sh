@@ -86,37 +86,18 @@ if [ -z "${NO_IMAGES:-}" ]; then
   fi
 fi
 
-TEST_NAME="Build binaries"
-echodate "Building binaries"
-# Check if specific binary names are provided
-if [ -z "${BINARY_NAMES:-}" ]; then
-  # No specific binaries specified, build all
-  retry 1 make build
-else
-  # Build each specified binary
-  for binary in $BINARY_NAMES; do
-    echodate "Building $binary"
-    retry 1 make build "$binary"
-  done
-fi
-echodate "Successfully finished building binaries"
+echodate "Building and pushing container images…"
 
-if [ -z "${NO_IMAGES:-}" ]; then
-  TEST_NAME="Build and push container images"
-  echodate "Building and pushing container images"
+# prepare Helm charts, do not use $KUBERMATICDOCKERTAG for the chart version,
+# as it could just be a git hash and we need to ensure a proper semver version
+set_helm_charts_version "${GIT_HEAD_TAG:-9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
 
-  # prepare Helm charts, do not use $KUBERMATICDOCKERTAG for the chart version,
-  # as it could just be a git hash and we need to ensure a proper semver version
-  set_helm_charts_version "${GIT_HEAD_TAG:-9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCKERTAG"
+# make sure that the main container image contains ready made CRDs, as the installer
+# will take them from the operator chart and not use the compiled-in versions.
+copy_crds_to_chart
+set_crds_version_annotation
 
-  # make sure that the main container image contains ready made CRDs, as the installer
-  # will take them from the operator chart and not use the compiled-in versions.
-  copy_crds_to_chart
-  set_crds_version_annotation
-
-  set -f # prevent globbing, do word splitting
-  # shellcheck disable=SC2086
-  retry 1 ./hack/release-images.sh $TAGS
-  echodate "Successfully finished building and pushing container images"
-  unset TEST_NAME
-fi
+set -f # prevent globbing, do word splitting
+# shellcheck disable=SC2086
+retry 1 ./hack/release-images.sh $TAGS
+echodate "Successfully finished building and pushing container images"

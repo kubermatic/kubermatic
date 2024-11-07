@@ -16,15 +16,11 @@ export CGO_ENABLED ?= 0
 export GOFLAGS ?= -mod=readonly -trimpath
 export GO111MODULE = on
 export KUBERMATIC_EDITION ?= ce
-DOCKER_REPO ?= quay.io/kubermatic
-REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
 CMD ?= $(filter-out OWNERS nodeport-proxy kubeletdnat-controller network-interface-manager, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
 GIT_VERSION = $(shell git describe --tags --always --match='v*')
 TAGS ?= $(GIT_VERSION)
-DOCKERTAGS = $(TAGS) latestbuild
-DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT ?= $(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
 UIDOCKERTAG ?= NA
@@ -35,7 +31,14 @@ LDFLAGS += -extldflags '-static' \
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
-DOCKER_BIN := $(shell which docker)
+
+DOCKER_REPO ?= quay.io/kubermatic
+KKP_REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
+DOCKER_TAGS = $(TAGS) latestbuild
+DOCKER_VERSION_LABEL = org.opencontainers.image.version=$(KUBERMATICDOCKERTAG)
+DOCKER_BUILD_FLAG = --label "$(VERSION_LABEL)"
+DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKER_TAGS), -t $(KKP_REPO):$(tag))
+
 
 .PHONY: all
 all: build test
@@ -90,19 +93,26 @@ clean:
 
 .PHONY: docker-build
 docker-build: build
-ifndef DOCKER_BIN
-	$(error "Docker not available in your environment, please install it and retry.")
-endif
-	$(DOCKER_BIN) build $(DOCKER_BUILD_FLAG) --label "org.opencontainers.image.version=$(KUBERMATICDOCKERTAG)" .
+	docker build $(DOCKER_BUILD_FLAG) --label "org.opencontainers.image.version=$(KUBERMATICDOCKERTAG)" .
+
+
+docker buildx build \
+      --load \
+      --platform "linux/$arch" \
+      --build-arg "GOPROXY=${GOPROXY:-}" \
+      --build-arg "GOCACHE=/go/src/k8c.io/kubermatic/.gocache" \
+      --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
+      --provenance false \
+      --file "$file" \
+      --tag "$repository:$tag-$arch" \
+      --label "$VERSION_LABEL" \
+      $context
 
 .PHONY: docker-push
 docker-push:
-ifndef DOCKER_BIN
-	$(error "Docker not available in your environment, please install it and retry.")
-endif
-	@for tag in $(DOCKERTAGS) ; do \
+	@for tag in $(DOCKER_TAGS) ; do \
 		echo "docker push $(REPO):$$tag"; \
-		$(DOCKER_BIN) push $(REPO):$$tag; \
+		docker push $(REPO):$$tag; \
 	done
 
 .PHONY: lint
