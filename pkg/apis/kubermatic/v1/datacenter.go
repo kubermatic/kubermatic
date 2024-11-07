@@ -831,7 +831,7 @@ type DatacenterSpecKubevirt struct {
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
 
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
-	ProviderNetwork ProviderNetwork `json:"providerNetwork,omitempty"`
+	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
