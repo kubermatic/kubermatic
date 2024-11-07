@@ -975,7 +975,7 @@ spec:
                                       description: |-
                                         Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
                                         storageclass.kubernetes.io/is-default-class : true
-                                        If missing or false, annotation will be:
+                                        If missing or false,  annotation will be:
                                         storageclass.kubernetes.io/is-default-class : false
                                       type: boolean
                                     labels:
@@ -1021,6 +1021,37 @@ spec:
                                     default: kubevirt-workload
                                     description: Namespace is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
                                     type: string
+                                type: object
+                              providerNetwork:
+                                description: 'Optional: ProviderNetwork describes the infra cluster network fabric that is being used'
+                                properties:
+                                  name:
+                                    type: string
+                                  vpc:
+                                    items:
+                                      description: |-
+                                        VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
+                                        is isolated from any other resources within the KubeVirt infra cluster.
+                                      properties:
+                                        name:
+                                          type: string
+                                        subnet:
+                                          items:
+                                            description: Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+                                            properties:
+                                              name:
+                                                type: string
+                                            required:
+                                              - name
+                                            type: object
+                                          type: array
+                                      required:
+                                        - name
+                                      type: object
+                                    type: array
+                                required:
+                                  - name
+                                  - vpc
                                 type: object
                             type: object
                           machineFlavorFilter:
