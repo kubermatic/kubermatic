@@ -115,66 +115,6 @@ func clusterIsolationNetworkPolicyReconciler(clusterIp string, nameservers []str
 	}
 }
 
-// namespacedClusterIsolationNetworkPolicyReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network
-func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subnets []string, subnetGateways []string) reconciling.NamedNetworkPolicyReconcilerFactory {
-	// Allow egress for subnet gateways
-	subnetGatewaysRule := []networkingv1.NetworkPolicyEgressRule{}
-	for _, gw := range subnetGateways {
-		subnetGatewaysRule = append(subnetGatewaysRule, networkingv1.NetworkPolicyEgressRule{
-			To: []networkingv1.NetworkPolicyPeer{
-				{
-					IPBlock: &networkingv1.IPBlock{
-						CIDR: gw + "/32",
-					},
-				},
-			},
-		})
-	}
-	// Allow egress for anything but other workload subnets in the same vpc.
-	subnetRule := networkingv1.NetworkPolicyEgressRule{
-		To: []networkingv1.NetworkPolicyPeer{
-			{
-				IPBlock: &networkingv1.IPBlock{
-					CIDR:   "0.0.0.0/0",
-					Except: subnets,
-				},
-			},
-		},
-	}
-
-	return func() (string, reconciling.NetworkPolicyReconciler) {
-		return fmt.Sprintf("cluster-isolation-%s", clusterName), func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
-			np.Spec = networkingv1.NetworkPolicySpec{
-				PodSelector: metav1.LabelSelector{
-					MatchLabels: map[string]string{
-						"cluster.x-k8s.io/cluster-name": clusterName,
-					},
-				},
-				Egress: []networkingv1.NetworkPolicyEgressRule{
-					// Allow egress for pods with the cluster.x-k8s.io/cluster-name label and api-router pod
-					{
-						To: []networkingv1.NetworkPolicyPeer{
-							{
-								PodSelector: &metav1.LabelSelector{
-									MatchLabels: map[string]string{
-										"cluster.x-k8s.io/cluster-name": clusterName,
-									},
-								},
-							},
-						},
-					},
-				},
-				PolicyTypes: []networkingv1.PolicyType{
-					networkingv1.PolicyTypeEgress,
-				},
-			}
-			np.Spec.Egress = append(np.Spec.Egress, subnetGatewaysRule...)
-			np.Spec.Egress = append(np.Spec.Egress, subnetRule)
-			return np, nil
-		}
-	}
-}
-
 // clusterImporterNetworkPolicyReconciler creates a special network policy that allows the importer pod to access
 // the image-repo in the cluster.
 func clusterImporterNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
