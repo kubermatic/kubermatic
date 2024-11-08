@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/zapr"
+	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
@@ -157,6 +158,9 @@ func main() {
 	}
 	if err := kubelbv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubelbv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := kubeovnv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", "api", kubeovnv1.SchemeGroupVersion, zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
