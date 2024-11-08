@@ -12,6 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
+
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
+
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
+
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make conformance-tester
+
 FROM docker.io/alpine:3.19
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/conformance-tester/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
@@ -25,8 +38,8 @@ RUN curl -Lo /usr/bin/kubectl https://dl.k8s.io/${KUBECTL_VERSION}/bin/linux/amd
     chmod +x /usr/bin/kubectl && \
     kubectl version --client
 
-COPY ./_build/conformance-tester /usr/local/bin/conformance-tester
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
 
 WORKDIR /conformance-tester
 USER nobody
-ENTRYPOINT [ "conformance-tester" ]
+ENTRYPOINT ["conformance-tester"]

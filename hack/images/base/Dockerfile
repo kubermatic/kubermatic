@@ -12,17 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CGO_ENABLED=0
-export GOFLAGS ?= -trimpath
+FROM docker.io/golang:1.23.2
 
-DOCKER_REPO ?= "quay.io/kubermatic"
-LDFLAGS ?= -w -extldflags '-static'
-GOTOOLFLAGS ?= -ldflags '$(LDFLAGS)' -v
+ENV GOCACHE=/gocache
 
-.PHONY: build
-build:
-	go build $(GOTOOLFLAGS) -o ./_build/conformance-tester .
-
-.PHONY: docker
-docker: build
-	docker build --tag $(DOCKER_REPO)/conformance-tests:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .
+COPY . /gocache

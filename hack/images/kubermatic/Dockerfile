@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/golang:1.23.2 AS builder
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
 
 ARG GOPROXY=
-ARG GOCACHE=
 ARG KUBERMATIC_EDITION=ce
 
 ENV GOPROXY=$GOPROXY
-ENV GOCACHE=$GOCACHE
 ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
 
 WORKDIR /go/src/k8c.io/kubermatic

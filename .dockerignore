@@ -1,0 +1,5 @@
+_build/
+.prow/
+.github/
+charts/.gitignore
+charts/OWNERS
