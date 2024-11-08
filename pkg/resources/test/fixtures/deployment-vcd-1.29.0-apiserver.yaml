@@ -73,7 +73,7 @@ spec:
         - --keepalive-time=1m
         command:
         - /proxy-server
-        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.29.0
+        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.29.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
