@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 
+	kubevirtnetworkcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubevirt-network-controller"
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
@@ -51,6 +52,10 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := kubelbcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.seedGetter, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create KubeLB controller: %w", err)
+	}
+
+	if err := kubevirtnetworkcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.seedGetter, ctrlCtx.configGetter, ctrlCtx.versions); err != nil {
+		return fmt.Errorf("failed to create KubeVirt network controller: %w", err)
 	}
 
 	return nil

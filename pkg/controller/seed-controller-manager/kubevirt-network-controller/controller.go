@@ -27,7 +27,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -45,11 +44,6 @@ const (
 	ControllerName      = "kubevirt-network-controller"
 	WorkloadSubnetLabel = "k8c.io/kubevirt-workload-subnet"
 )
-
-// userClusterConnectionProvider offers functions to retrieve clients for the given user clusters.
-type userClusterConnectionProvider interface {
-	GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
-}
 
 type Reconciler struct {
 	ctrlruntimeclient.Client
@@ -70,12 +64,10 @@ func Add(
 	numWorkers int,
 	workerName string,
 
-	userClusterConnProvider userClusterConnectionProvider,
 	seedGetter provider.SeedGetter,
 	configGetter provider.KubermaticConfigurationGetter,
 
 	versions kubermatic.Versions,
-	overwriteRegistry string,
 ) error {
 	reconciler := &Reconciler{
 		log:          log.Named(ControllerName),
