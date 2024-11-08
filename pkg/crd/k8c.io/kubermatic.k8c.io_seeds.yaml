@@ -1022,6 +1022,36 @@ spec:
                                     description: Namespace is the name of the namespace to be used, if not specified the default "kubevirt-workload" will be used.
                                     type: string
                                 type: object
+                              providerNetwork:
+                                description: 'Optional: ProviderNetwork describes the infra cluster network fabric that is being used'
+                                properties:
+                                  name:
+                                    type: string
+                                  vpcs:
+                                    items:
+                                      description: |-
+                                        VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
+                                        is isolated from any other resources within the KubeVirt infra cluster.
+                                      properties:
+                                        name:
+                                          type: string
+                                        subnets:
+                                          items:
+                                            description: Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+                                            properties:
+                                              name:
+                                                type: string
+                                            required:
+                                              - name
+                                            type: object
+                                          type: array
+                                      required:
+                                        - name
+                                      type: object
+                                    type: array
+                                required:
+                                  - name
+                                type: object
                             type: object
                           machineFlavorFilter:
                             description: 'Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.'
