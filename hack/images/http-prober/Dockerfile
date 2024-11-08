@@ -12,9 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
+
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
+
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
+
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make http-prober
+
 FROM docker.io/alpine:3.19
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/http-prober/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-COPY ./_build/http-prober /usr/local/bin/
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
