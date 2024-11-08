@@ -975,7 +975,7 @@ spec:
                                       description: |-
                                         Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
                                         storageclass.kubernetes.io/is-default-class : true
-                                        If missing or false,  annotation will be:
+                                        If missing or false, annotation will be:
                                         storageclass.kubernetes.io/is-default-class : false
                                       type: boolean
                                     labels:
@@ -1027,7 +1027,7 @@ spec:
                                 properties:
                                   name:
                                     type: string
-                                  vpc:
+                                  vpcs:
                                     items:
                                       description: |-
                                         VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
@@ -1035,7 +1035,7 @@ spec:
                                       properties:
                                         name:
                                           type: string
-                                        subnet:
+                                        subnets:
                                           items:
                                             description: Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
                                             properties:
@@ -1051,7 +1051,6 @@ spec:
                                     type: array
                                 required:
                                   - name
-                                  - vpc
                                 type: object
                             type: object
                           machineFlavorFilter:

@@ -837,14 +837,14 @@ type DatacenterSpecKubevirt struct {
 // ProviderNetwork describes the infra cluster network fabric that is being used.
 type ProviderNetwork struct {
 	Name string `json:"name"`
-	VPC  []VPC  `json:"vpc"`
+	VPCs []VPC  `json:"vpcs,omitempty"`
 }
 
 // VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
 // is isolated from any other resources within the KubeVirt infra cluster.
 type VPC struct {
-	Name   string   `json:"name"`
-	Subnet []Subnet `json:"subnet,omitempty"`
+	Name    string   `json:"name"`
+	Subnets []Subnet `json:"subnets,omitempty"`
 }
 
 // Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
@@ -864,7 +864,7 @@ type KubeVirtInfraStorageClass struct {
 	Name string `json:"name"`
 	// Optional: IsDefaultClass. If true, the created StorageClass in the tenant cluster will be annotated with:
 	// storageclass.kubernetes.io/is-default-class : true
-	// If missing or false,  annotation will be:
+	// If missing or false, annotation will be:
 	// storageclass.kubernetes.io/is-default-class : false
 	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
 	// VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
