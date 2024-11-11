@@ -37,6 +37,7 @@ boilerplate \
   -exclude pkg/crd/k8c.io \
   -exclude pkg/crd/k8s.io \
   -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
+  -exclude pkg/resources/kubernetes-dashboard/source \
   -exclude pkg/provider/cloud/eks/authenticator \
   -exclude pkg/test/addon/data \
   -exclude .github
