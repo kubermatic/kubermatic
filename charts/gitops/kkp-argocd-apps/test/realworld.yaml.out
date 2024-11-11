@@ -325,7 +325,6 @@ metadata:
   namespace: argocd
 spec:
   project: kubermatic-config
-  project: default
   sources:
   - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
@@ -344,7 +343,6 @@ metadata:
   namespace: argocd
 spec:
   project: kubermatic-config
-  project: default
   sources:
   - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
