@@ -27,6 +27,7 @@ package metering
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/lifecycle"
@@ -130,7 +131,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 	if err := mc.SetBucketLifecycle(ctx, bucket, config); err != nil {
 		// Ignore conflicts in case lock after previous reconciliation process still exists.
 		errResp := minio.ToErrorResponse(err)
-		if errResp.StatusCode == 409 && errResp.Code == "OperationAborted" {
+		if errResp.StatusCode == http.StatusConflict && errResp.Code == "OperationAborted" {
 			return nil
 		}
 		return fmt.Errorf("failed to update bucket lifecycle: %w", err)
