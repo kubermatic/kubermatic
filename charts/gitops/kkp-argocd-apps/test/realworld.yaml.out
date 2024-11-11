@@ -351,7 +351,7 @@ spec:
     path: 'dev'
     directory:
       recurse: true
-      exclude: 'values.yaml'
+      exclude: 'values.yaml,values-usermla.yaml'
       include: '{common/*,demo-master/*}'
   destination:
     server: 'https://kubernetes.default.svc'
