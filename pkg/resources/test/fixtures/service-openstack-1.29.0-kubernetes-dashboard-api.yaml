@@ -1,0 +1,16 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  name: kubernetes-dashboard-api
+  namespace: cluster-de-test-01
+spec:
+  ports:
+  - name: api
+    port: 8000
+    protocol: TCP
+    targetPort: 8000
+  selector:
+    app: kubernetes-dashboard-api
+status:
+  loadBalancer: {}
