@@ -17,7 +17,7 @@ limitations under the License.
 package kubernetesdashboard
 
 import (
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/sdk/v2/semver"
 )
 
 func APIVersion(_ semver.Semver) (string, error) {

@@ -24,8 +24,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -148,7 +148,7 @@ func HealthStatus(ctx context.Context, client ctrlruntimeclient.Client, cluster 
 		if err != nil {
 			return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine health: %w", err)
 		}
-		status = kubermaticv1helper.GetHealthStatus(status, cluster, versions)
+		status = util.GetHealthStatus(status, cluster, versions)
 
 		// only remember the smallest (worst) common status among the deployments
 		worstStatus = worseStatus(worstStatus, &status)
