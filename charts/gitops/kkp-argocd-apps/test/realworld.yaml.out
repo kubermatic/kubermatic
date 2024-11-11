@@ -1,0 +1,901 @@
+---
+# Source: argocd-apps/templates/argocd-apps-backup.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: velero
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubermatic
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: oauth
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-ingress-controller
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+---
+# Source: argocd-apps/templates/argocd-apps-logging.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: iap
+---
+# Source: argocd-apps/templates/argocd-apps-storage.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mla
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cortex-runtime-config
+  namespace: mla
+data:
+  runtime-config.yaml: 'overrides:'
+---
+# Source: argocd-apps/templates/argocd-apps-backup.yaml
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: argocd-apps/templates/argocd-apps-logging.yaml
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: argocd-apps/templates/argocd-apps-storage.yaml
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: kubermatic-config
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ArgoCD Project for all core KKP configurations
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: kubermatic
+    server: https://kubernetes.default.svc
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mla
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ArgoCD Project for all user cluster mla apps
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: mla
+    server: https://kubernetes.default.svc
+---
+# Source: argocd-apps/templates/argocd-apps-backup.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/backup/velero
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  # TODO: In 2.24+, add a installCRD option in values.yaml since current Velero chart version is v1 and it does not install CRDs automatically
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/backup/velero/crd
+    targetRevision: notSet
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: velero
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/oauth
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: oauth
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-ingress-controller
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/nginx-ingress-controller
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: nginx-ingress-controller
+  # nginx ingress app to be synced automatically so that we can access ArgoCD via it!
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/cert-manager
+    targetRevision: notSet
+    helm:
+      parameters:
+      - name: "cert-manager.installCRDs"
+        value: "true"
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: cert-manager
+  # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: master-settings-demo-master
+  namespace: argocd
+spec:
+  project: kubermatic-config
+  project: default
+  sources:
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: dev/settings
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kubermatic
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: seed-extras-demo-master
+  namespace: argocd
+spec:
+  project: kubermatic-config
+  project: default
+  sources:
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: 'dev'
+    directory:
+      recurse: true
+      exclude: 'values.yaml'
+      include: '{common/*,demo-master/*}'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kubermatic
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-logging.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+spec:
+  project: default
+  # TODO: This assumes that we pull the charts from git repo. Currently, no support to pull charts from helm registry directly.
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/logging/promtail
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: logging
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-logging.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/logging/loki
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: logging
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/monitoring/prometheus
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alertmanager
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/monitoring/alertmanager
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/monitoring/grafana
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  # need to work around long annotations for dashboard configmaps
+  syncPolicy:
+    syncOptions:
+    - ServerSideApply=true
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-state-metrics
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/monitoring/kube-state-metrics
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  # since kube-state-metrics comes with its own autoscaling resizer.. ignore resource value changes.
+  ignoreDifferences:
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/template/spec/containers/0/resources
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: node-exporter
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/monitoring/node-exporter
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blackbox-exporter
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/monitoring/blackbox-exporter
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: seed-mla-iap
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/iap
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: iap
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-storage.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  project: default
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/minio
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/values.yaml
+        - $values/dev/demo-master/values.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: minio
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-minio
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/minio
+    targetRevision: notSet
+    helm:
+      releaseName: minio
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-secrets
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/mla-secrets
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+    helm:
+      # TODO: we should allow users to override releaseName. This will help in backward compatibility to existing helm charts AND not create duplicate resources
+      # releaseName: mla-secrets
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-minio-lifecycle-manager
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/minio-lifecycle-mgr
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-grafana
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/grafana
+    targetRevision: notSet
+    helm:
+      releaseName: grafana
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-consul
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/consul
+    targetRevision: notSet
+    helm:
+      releaseName: consul
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-alertmanager-proxy
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/alertmanager-proxy
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-cortex
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/cortex
+    targetRevision: notSet
+    helm:
+      releaseName: cortex
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-loki-distributed
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/mla/loki-distributed
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}
+---
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: user-mla-iap
+  namespace: argocd
+spec:
+  project: mla
+  sources:
+  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
+    path: ./charts/iap
+    targetRevision: notSet
+    helm:
+      valueFiles:
+        - values.yaml
+        - $values/dev/demo-master/values-usermla.yaml
+  # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
+  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+    targetRevision: dev-kkp-notSet
+    path: .
+    ref: values
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: mla
+  syncPolicy:
+    automated: {}

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if or .Values.prometheus .Values.alertManager .Values.grafana .Values.kubeStateMetrics .Values.nodeExporter .Values.blackboxExporter .Values.thanos }}
+{{ if or .Values.prometheus .Values.alertManager.enable .Values.grafana.enable .Values.kubeStateMetrics.enable .Values.nodeExporter.enable .Values.blackboxExporter.enable .Values.thanos.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -20,7 +20,7 @@ metadata:
   name: monitoring
 {{ end }}
 
-{{ if .Values.prometheus }}
+{{ if .Values.prometheus.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -46,9 +46,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
+  {{- if .Values.prometheus.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.alertManager }}
+{{ if .Values.alertManager.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -74,9 +78,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
+  {{- if .Values.alertManager.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.grafana }}
+{{ if .Values.grafana.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -106,9 +114,12 @@ spec:
   syncPolicy:
     syncOptions:
     - ServerSideApply=true
+  {{- if .Values.grafana.autoSync }}
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.kubeStateMetrics }}
+{{ if .Values.kubeStateMetrics.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -140,9 +151,13 @@ spec:
     kind: Deployment
     jsonPointers:
     - /spec/template/spec/containers/0/resources
+  {{- if .Values.kubeStateMetrics.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.nodeExporter }}
+{{ if .Values.nodeExporter.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -168,9 +183,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
+  {{- if .Values.nodeExporter.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.blackboxExporter }}
+{{ if .Values.blackboxExporter.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -196,13 +215,17 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
+  {{- if .Values.blackboxExporter.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
 {{/* 
 
 TODO: THANOS IS STILL TO BE INTEGRATED
 
-{{ if .Values.thanos }}
+{{ if .Values.thanos.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -229,11 +252,15 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
+  {{- if .Values.thanos.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
 */}}
 
-{{ if .Values.iapSeedMla }}
+{{ if .Values.iapSeedMla.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -264,4 +291,8 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: iap
+  {{- if .Values.iapSeedMla.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}

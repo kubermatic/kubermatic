@@ -22,7 +22,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  description: project to group all user mla apps together
+  description: ArgoCD Project for all user cluster mla apps
   clusterResourceWhitelist:
   - group: '*'
     kind: '*'
@@ -38,7 +38,7 @@ metadata:
   name: mla
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.minio }}
+{{ if and .Values.userMla.enable .Values.userMla.minio.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -64,9 +64,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.minio.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.secrets }}
+{{ if and .Values.userMla.enable .Values.userMla.secrets.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -94,10 +98,14 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.secrets.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 ---
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.minioLifecycleMgr }}
+{{ if and .Values.userMla.enable .Values.userMla.minioLifecycleMgr.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -122,9 +130,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.minioLifecycleMgr.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.grafana }}
+{{ if and .Values.userMla.enable .Values.userMla.grafana.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -150,9 +162,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.grafana.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.consul }}
+{{ if and .Values.userMla.enable .Values.userMla.consul.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -178,9 +194,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.consul.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.alertmanagerProxy }}
+{{ if and .Values.userMla.enable .Values.userMla.alertmanagerProxy.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -205,9 +225,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.alertmanagerProxy.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.cortex }}
+{{ if and .Values.userMla.enable .Values.userMla.cortex.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -233,6 +257,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.cortex.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 
 ---
 apiVersion: v1
@@ -244,7 +272,7 @@ data:
   runtime-config.yaml: 'overrides:'
 {{ end }}
 
-{{ if and .Values.userMla.enable .Values.userMla.lokiDistributed }}
+{{ if and .Values.userMla.enable .Values.userMla.lokiDistributed.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -269,10 +297,14 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.lokiDistributed.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
 
-{{ if and .Values.userMla.enable .Values.userMla.iapMla }}
+{{ if and .Values.userMla.enable .Values.userMla.iapMla.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -297,4 +329,8 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: mla
+  {{- if .Values.userMla.iapMla.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}

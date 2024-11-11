@@ -12,15 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if or .Values.seedSettings .Values.seedExtras }}
+{{ if or .Values.seedSettings.enable .Values.seedExtras.enable }}
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
   name: kubermatic
 {{ end }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: kubermatic-config
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ArgoCD Project for all core KKP configurations
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: kubermatic
+    server: https://kubernetes.default.svc
 
-{{ if or .Values.oauth }}
+{{ if .Values.oauth.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -51,9 +69,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: oauth
+  {{- if .Values.oauth.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.nginx }}
+{{ if .Values.nginx.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -85,12 +107,14 @@ spec:
     server: 'https://kubernetes.default.svc'
     namespace: nginx-ingress-controller
   # nginx ingress app to be synced automatically so that we can access ArgoCD via it!
+  {{- if .Values.nginx.autoSync }}
   syncPolicy:
     automated: {}
+  {{ end }}
 {{ end }}
 
 
-{{ if .Values.certManager }}
+{{ if .Values.certManager.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -125,11 +149,13 @@ spec:
     server: 'https://kubernetes.default.svc'
     namespace: cert-manager
   # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
+  {{- if .Values.certManager.autoSync }}
   syncPolicy:
     automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.seedSettings .Values.isMasterSeed}}
+{{ if and .Values.seedSettings.enable .Values.isMasterSeed }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -137,9 +163,7 @@ metadata:
   name: master-settings-{{ .Values.seed }}
   namespace: argocd
 spec:
-  # TODO: Create segregated projects - should be an option to use different project.
-  # project: kubermatic-config
-  project: default
+  project: kubermatic-config
   sources:
   - repoURL: '{{ .Values.repoURL }}'
     targetRevision: {{ template "git-tag-version" . }}
@@ -147,9 +171,13 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kubermatic
+  {{- if .Values.seedSettings.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.seedExtras }}
+{{ if .Values.seedExtras.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -157,18 +185,20 @@ metadata:
   name: seed-extras-{{ .Values.seed }}
   namespace: argocd
 spec:
-  # TODO: Create segregated projects
-  # project: kubermatic-config
-  project: default
+  project: kubermatic-config
   sources:
   - repoURL: '{{ .Values.repoURL }}'
     targetRevision: {{ template "git-tag-version" . }}
     path: '{{ .Values.environment }}'
     directory:
       recurse: true
-      exclude: 'values.yaml'
+      exclude: 'values.yaml,{{ .Values.userMlaValuesFileName }}'
       include: '{common/*,{{ .Values.seed }}/*}'
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kubermatic
+  {{- if .Values.seedExtras.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}

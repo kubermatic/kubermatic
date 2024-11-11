@@ -1,0 +1,99 @@
+environment: dev
+seed: demo-master
+isMasterSeed: true
+
+kkpBasePath: "."
+
+repoURL: https://github.com/dharapvj/kkp-using-argocd.git
+valuesPathPrefix: "." # This is prefix wrt environment folder e.g. /dev/
+
+# KKP Core
+nginx:
+  enable: true
+certManager:
+  enable: true
+oauth:
+  enable: true
+  autoSync: true
+seedSettings:
+  enable: true
+  autoSync: true
+seedExtras:
+  enable: true
+  autoSync: true
+
+#monitoring
+prometheus:
+  enable: true
+  autoSync: true
+alertManager:
+  enable: true
+  autoSync: true
+grafana:
+  enable: true
+  autoSync: true
+kubeStateMetrics:
+  enable: true
+  autoSync: true
+nodeExporter:
+  enable: true
+  autoSync: true
+blackboxExporter:
+  enable: true
+  autoSync: true
+# FIXME: Get thanos deployment to work as we expect it
+thanos:    # This gets installed from upstream (bitnami / banzai / stevehipwell) directly
+  enable: false
+  autoSync: true
+iapSeedMla:
+  enable: true
+  autoSync: true
+
+#logging
+promtail:
+  enable: true
+  autoSync: true
+loki:
+  enable: true
+  autoSync: true
+
+#backup
+velero:
+  enable: true
+  autoSync: true
+
+# storage
+minio:
+  enable: true
+  autoSync: true
+
+#user cluster mla
+userMla:
+  enable: true # master switch to control whether you want to deploy user-cluster MLA or not
+  minio:
+    enable: true
+    autoSync: true
+  minioLifecycleMgr:
+    enable: true
+    autoSync: true
+  grafana:
+    enable: true
+    autoSync: true
+  consul:
+    enable: true
+    autoSync: true
+  cortex:
+    enable: true
+    autoSync: true
+  lokiDistributed:
+    enable: true
+    autoSync: true
+  alertmanagerProxy:
+    enable: true
+    autoSync: true
+  iapMla:
+    enable: true
+    autoSync: true
+  secrets:
+    enable: true
+    autoSync: true

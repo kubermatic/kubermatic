@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if .Values.velero }}
+{{ if .Values.velero.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -48,4 +48,8 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: velero
+  {{- if .Values.velero.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if .Values.minio }}
+{{ if .Values.minio.enable }}
 ---
 apiVersion: v1
 kind: Namespace
@@ -44,4 +44,8 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: minio
+  {{- if .Values.minio.autoSync }}
+  syncPolicy:
+    automated: {}
+  {{ end }}
 {{ end }}
