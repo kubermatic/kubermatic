@@ -294,7 +294,11 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
-	if !data.kubernetesDashboardEnabled {
+	if data.kubernetesDashboardEnabled {
+		if err := kubernetesdashboard.Migrate(ctx, r, resources.KubernetesDashboardNamespace); err != nil {
+			return fmt.Errorf("failed to migrate old kubernetes dashboard resources: %w", err)
+		}
+	} else {
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx); err != nil {
 			return err
 		}

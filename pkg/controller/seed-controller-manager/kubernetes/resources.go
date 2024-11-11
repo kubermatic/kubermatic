@@ -202,8 +202,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
-	// Ensure that kubernetes-dashboard is completely removed, when disabled
-	if !cluster.Spec.IsKubernetesDashboardEnabled() {
+	if cluster.Spec.IsKubernetesDashboardEnabled() {
+		if err := kubernetesdashboard.Migrate(ctx, r, resources.KubernetesDashboardNamespace); err != nil {
+			return nil, fmt.Errorf("failed to migrate old kubernetes dashboard resources: %w", err)
+		}
+	} else {
+		// Ensure that kubernetes-dashboard is completely removed, when disabled
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
