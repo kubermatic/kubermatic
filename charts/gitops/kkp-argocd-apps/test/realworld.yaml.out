@@ -214,7 +214,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -246,7 +246,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -274,7 +274,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -306,7 +306,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -327,7 +327,7 @@ spec:
   project: kubermatic-config
   project: default
   sources:
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: dev/settings
   destination:
@@ -346,7 +346,7 @@ spec:
   project: kubermatic-config
   project: default
   sources:
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: 'dev'
     directory:
@@ -378,7 +378,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -406,7 +406,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -434,7 +434,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -462,7 +462,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -490,7 +490,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -521,7 +521,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -555,7 +555,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -583,7 +583,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -611,7 +611,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -639,7 +639,7 @@ spec:
         - $values/dev/values.yaml
         - $values/dev/demo-master/values.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -667,7 +667,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -694,7 +694,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -725,7 +725,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -753,7 +753,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -781,7 +781,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -808,7 +808,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -836,7 +836,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -863,7 +863,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
@@ -890,7 +890,7 @@ spec:
         - values.yaml
         - $values/dev/demo-master/values-usermla.yaml
   # This is your private repo where you have stored the values.yaml customizations which you used to provide to KKP installer. 
-  - repoURL: 'https://github.com/dharapvj/temp-argocd-test.git'
+  - repoURL: 'https://github.com/dharapvj/kkp-using-argocd.git'
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
