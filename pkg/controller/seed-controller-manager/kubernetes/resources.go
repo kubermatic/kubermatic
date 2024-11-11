@@ -202,8 +202,12 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		}
 	}
 
-	// Ensure that kubernetes-dashboard is completely removed, when disabled
-	if !cluster.Spec.IsKubernetesDashboardEnabled() {
+	if cluster.Spec.IsKubernetesDashboardEnabled() {
+		if err := kubernetesdashboard.Migrate(ctx, r, resources.KubernetesDashboardNamespace); err != nil {
+			return nil, fmt.Errorf("failed to migrate old kubernetes dashboard resources: %w", err)
+		}
+	} else {
+		// Ensure that kubernetes-dashboard is completely removed, when disabled
 		if err := r.ensureKubernetesDashboardResourcesAreRemoved(ctx, data); err != nil {
 			return nil, err
 		}
@@ -673,7 +677,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 		factories = append(factories, nodeportproxy.RoleReconciler)
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, namedRoleReconcilerFactories, c.Status.NamespaceName, r); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, factories, c.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %w", err)
 	}
 
@@ -776,7 +780,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			return fmt.Errorf("failed to fetch Kubernetes API service IP list: %w", err)
 		}
 
-		factories = append(factories, apiserver.SeedApiServerAllowReconciler(apiIPs))
+		factories = append(factories, apiserver.SeedApiserverAllowReconciler(apiIPs))
 
 		if err := reconciling.ReconcileNetworkPolicies(ctx, factories, c.Status.NamespaceName, r); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)
