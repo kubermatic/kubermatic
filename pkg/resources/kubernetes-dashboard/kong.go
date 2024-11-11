@@ -29,8 +29,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/ptr"
+)
+
+// These values are used by the KKP Dashboard to setup the internal proxying.
+
+var (
+	// ProxyPort is the port on the kong proxy pod that ingests traffic.
+	ProxyPodPort = 8443
+	// ProxyPodSelector is selecting the Kong pods.
+	ProxyPodSelector = labels.Set(resources.BaseAppLabels(kongDeploymentName, nil)).String()
 )
 
 const (
