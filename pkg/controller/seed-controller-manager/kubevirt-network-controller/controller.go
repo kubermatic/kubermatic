@@ -24,8 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -35,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -76,7 +75,6 @@ func Add(
 		workerName:   workerName,
 		recorder:     mgr.GetEventRecorderFor(ControllerName),
 	}
-	enqueueCluster := controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())
 
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(ControllerName).
@@ -84,7 +82,31 @@ func Add(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.Cluster{}).
-		Watches(&kubeovnv1.Subnet{}, enqueueCluster, builder.WithPredicates(predicateutil.ByLabelExists(WorkloadSubnetLabel))).
+		Watches(
+			&kubeovnv1.Subnet{},
+			handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+				subnet, ok := obj.(*kubeovnv1.Subnet)
+				if !ok {
+					return nil
+				}
+
+				if subnet.Labels == nil || subnet.Labels[WorkloadSubnetLabel] == "" {
+					return nil
+				}
+
+				var requests []reconcile.Request
+				for _, namespace := range subnet.Spec.Namespaces {
+					requests = append(requests, reconcile.Request{
+						NamespacedName: ctrlruntimeclient.ObjectKey{
+							Name:      subnet.Labels[WorkloadSubnetLabel],
+							Namespace: namespace,
+						},
+					})
+				}
+
+				return requests
+			}),
+		).
 		Build(reconciler)
 
 	return err
@@ -128,6 +150,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	var subnets kubeovnv1.SubnetList
+	if err := r.List(ctx, &subnets, ctrlruntimeclient.MatchingLabels{
+		WorkloadSubnetLabel: cluster.Name,
+	}); err != nil {
+		return &reconcile.Result{}, err
+	}
+
+	var (
+		gateways = make(map[string]string, len(subnets.Items))
+		cidrs    = make(map[string]string, len(subnets.Items))
+	)
+	for _, subnet := range subnets.Items {
+		gateways[subnet.Name] = subnet.Spec.Gateway
+		cidrs[subnet.Name] = subnet.Spec.CIDRBlock
+	}
+
+	// TODO use gateways and cidrs
 
 	return nil, nil
 }
