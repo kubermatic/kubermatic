@@ -1,8 +1,8 @@
 module k8c.io/kubermatic/v2
 
-go 1.22.4
+go 1.22.8
 
-toolchain go1.22.5
+toolchain go1.23.3
 
 require (
 	dario.cat/mergo v1.0.1
@@ -63,7 +63,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.6-0.20210604193023-d5e0c0615ace
 	github.com/stretchr/testify v1.9.0
-	github.com/vishvananda/netlink v1.2.1-beta.2.0.20240524165444-4d4ba1473f21
+	github.com/vishvananda/netlink v1.2.1-beta.2.0.20240713210050-d13535d71ed3
 	github.com/vmware-tanzu/velero v1.14.0
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.43.0
@@ -92,18 +92,18 @@ require (
 	k8c.io/machine-controller v1.60.1-0.20241104231631-36a68f1ae069
 	k8c.io/operating-system-manager v1.6.0
 	k8c.io/reconciler v0.5.0
-	k8s.io/api v0.31.1
+	k8s.io/api v0.31.2
 	k8s.io/apiextensions-apiserver v0.31.1
-	k8s.io/apimachinery v0.31.1
-	k8s.io/apiserver v0.31.1
+	k8s.io/apimachinery v0.31.2
+	k8s.io/apiserver v0.31.2
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
-	k8s.io/cli-runtime v0.31.1
-	k8s.io/client-go v0.31.1
-	k8s.io/code-generator v0.31.1
+	k8s.io/cli-runtime v0.31.2
+	k8s.io/client-go v1.5.2
+	k8s.io/code-generator v0.31.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-aggregator v0.31.1
 	k8s.io/kubectl v0.31.1
-	k8s.io/metrics v0.31.1
+	k8s.io/metrics v0.31.2
 	k8s.io/test-infra v0.0.0-20240318095924-244bb169e955
 	k8s.io/utils v0.0.0-20240902221715-702e33fdd3c3
 	kubevirt.io/api v1.3.1
@@ -119,6 +119,8 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // Pin prism-go-client to v0.4.0 as we have no way to test v0.5.1, as we don't have a working environment for Nutanix.
 replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/prism-go-client v0.4.0
 
+require github.com/kubeovn/kube-ovn v1.12.28
+
 require (
 	cel.dev/expr v0.15.0 // indirect
 	cloud.google.com/go/auth v0.9.4 // indirect
@@ -126,7 +128,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.5.1 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.9.0 // indirect
-	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
+	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
 	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
@@ -227,11 +229,11 @@ require (
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/gorilla/websocket v1.5.1 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gosimple/slug v1.1.1 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
@@ -277,7 +279,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
-	github.com/moby/spdystream v0.4.0 // indirect
+	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -290,8 +292,9 @@ require (
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
+	github.com/ovn-org/libovsdb v0.7.0 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
-	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/peterhellberg/link v1.2.0 // indirect
 	github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5 // indirect
@@ -312,7 +315,7 @@ require (
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/rubenv/sql-migrate v1.5.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sagikazarmark/locafero v0.4.0 // indirect
+	github.com/sagikazarmark/locafero v0.6.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
@@ -322,7 +325,7 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
-	github.com/spf13/viper v1.18.1 // indirect
+	github.com/spf13/viper v1.19.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
@@ -351,14 +354,14 @@ require (
 	go.opentelemetry.io/otel v1.30.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.44.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.28.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.27.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.30.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.30.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.28.0 // indirect
 	go.opentelemetry.io/otel/exporters/prometheus v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.27.0 // indirect
 	go.opentelemetry.io/otel/metric v1.30.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.30.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.27.0 // indirect
 	go.opentelemetry.io/otel/trace v1.30.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
@@ -378,10 +381,10 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/component-base v0.31.1 // indirect
+	k8s.io/component-base v0.31.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
+	k8s.io/kube-openapi v0.30.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
@@ -389,4 +392,40 @@ require (
 	sigs.k8s.io/kustomize/api v0.17.2 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.17.1 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
+)
+
+replace (
+	github.com/mdlayher/arp => github.com/kubeovn/arp v0.0.0-20240218024213-d9612a263f68
+	github.com/openshift/client-go => github.com/openshift/client-go v0.0.1
+	github.com/ovn-org/libovsdb => github.com/kubeovn/libovsdb v0.0.0-20240814054845-978196448fb2
+	k8s.io/api => k8s.io/api v0.31.2
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.2
+	k8s.io/apimachinery => k8s.io/apimachinery v0.31.2
+	k8s.io/apiserver => k8s.io/apiserver v0.31.2
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.31.2
+	k8s.io/client-go => k8s.io/client-go v0.31.2
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.31.2
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.31.2
+	k8s.io/code-generator => k8s.io/code-generator v0.31.2
+	k8s.io/component-base => k8s.io/component-base v0.31.2
+	k8s.io/component-helpers => k8s.io/component-helpers v0.31.2
+	k8s.io/controller-manager => k8s.io/controller-manager v0.31.2
+	k8s.io/cri-api => k8s.io/cri-api v0.31.2
+	k8s.io/cri-client => k8s.io/cri-client v0.31.2
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.31.2
+	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.31.2
+	k8s.io/endpointslice => k8s.io/endpointslice v0.31.2
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.31.2
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.31.2
+	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20240812233141-91dab695df6f
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.31.2
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.31.2
+	k8s.io/kubectl => k8s.io/kubectl v0.31.2
+	k8s.io/kubelet => k8s.io/kubelet v0.31.2
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.31.2
+	k8s.io/metrics => k8s.io/metrics v0.31.2
+	k8s.io/mount-utils => k8s.io/mount-utils v0.31.2
+	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.31.2
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.31.2
+	kubevirt.io/client-go => github.com/kubeovn/kubevirt-client-go v0.0.0-20240823060554-65405ba5499d
 )
