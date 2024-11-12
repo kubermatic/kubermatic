@@ -1027,6 +1027,8 @@ spec:
                                 properties:
                                   name:
                                     type: string
+                                  networkPolicyEnabled:
+                                    type: boolean
                                   vpcs:
                                     items:
                                       description: |-
