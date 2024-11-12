@@ -39,8 +39,9 @@ import (
 )
 
 const (
-	ControllerName      = "kubevirt-network-controller"
-	WorkloadSubnetLabel = "k8c.io/kubevirt-workload-subnet"
+	ControllerName                = "kubevirt-network-controller"
+	WorkloadSubnetLabel           = "k8c.io/kubevirt-workload-subnet"
+	NetworkPolicyPodSelectorLabel = "cluster.x-k8s.io/cluster-name"
 )
 
 type Reconciler struct {
@@ -132,19 +133,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*reconcile.Result, error) {
 	var subnets kubeovnv1.SubnetList
-	gateways := make(map[string]string, len(subnets.Items))
-	cidrs := make(map[string]string, len(subnets.Items))
+	gateways := make([]string, 0, len(subnets.Items))
+	cidrs := make([]string, 0, len(subnets.Items))
 	if err := r.List(ctx, &subnets, ctrlruntimeclient.MatchingLabels{
 		WorkloadSubnetLabel: cluster.Name,
 	}); err != nil {
 		return &reconcile.Result{}, err
 	}
 	for _, subnet := range subnets.Items {
-		gateways[subnet.Name] = subnet.Spec.Gateway
-		cidrs[subnet.Name] = subnet.Spec.CIDRBlock
+		gateways = append(gateways, subnet.Spec.Gateway)
+		cidrs = append(cidrs, subnet.Spec.CIDRBlock)
 	}
-
-	// TODO use gateways and cidrs
 
 	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, r.Client, cluster, cidrs, gateways, cluster.Status.NamespaceName); err != nil {
 		return &reconcile.Result{}, err
