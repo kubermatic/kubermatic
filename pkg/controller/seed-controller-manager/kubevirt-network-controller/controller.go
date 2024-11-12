@@ -18,6 +18,7 @@ package kubevirtnetworkcontroller
 
 import (
 	"context"
+	"fmt"
 
 	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
 	"go.uber.org/zap"
@@ -82,7 +83,10 @@ func Add(
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
-		For(&kubermaticv1.Cluster{}).
+		For(&kubermaticv1.Cluster{}, builder.WithPredicates(predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
+			cluster := o.(*kubermaticv1.Cluster)
+			return cluster.Spec.Cloud.ProviderName == string(kubermaticv1.KubevirtCloudProvider)
+		}))).
 		Watches(&kubeovnv1.Subnet{}, enqueueCluster, builder.WithPredicates(predicateutil.ByLabelExists(WorkloadSubnetLabel))).
 		Build(reconciler)
 
@@ -107,6 +111,17 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
+	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
+	if !found {
+		return reconcile.Result{}, fmt.Errorf("couldn't find datacenter %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
+	}
+
+	// Check if the datacenter is kubevirt and if kubevirt is configured with NamespacedMode
+	if datacenter.Spec.Kubevirt == nil || !datacenter.Spec.Kubevirt.NamespacedMode.Enabled {
+		log.Debug("Skipping reconciliation as the datacenter is not kubevirt or kubevirt is not configured with NamespacedMode")
+		return reconcile.Result{}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -116,7 +131,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionKubeVirtNetworkControllerSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, log, cluster, seed)
+			return r.reconcile(ctx, log, cluster, datacenter.Spec.Kubevirt)
 		},
 	)
 
@@ -131,13 +146,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) (*reconcile.Result, error) {
 	var subnets kubeovnv1.SubnetList
 	gateways := make([]string, 0, len(subnets.Items))
 	cidrs := make([]string, 0, len(subnets.Items))
-	if err := r.List(ctx, &subnets, ctrlruntimeclient.MatchingLabels{
-		WorkloadSubnetLabel: cluster.Name,
-	}); err != nil {
+	if err := r.List(ctx, &subnets, ctrlruntimeclient.HasLabels{WorkloadSubnetLabel}); err != nil {
 		return &reconcile.Result{}, err
 	}
 	for _, subnet := range subnets.Items {
@@ -145,7 +158,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		cidrs = append(cidrs, subnet.Spec.CIDRBlock)
 	}
 
-	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, r.Client, cluster, cidrs, gateways, cluster.Status.NamespaceName); err != nil {
+	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, r.Client, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
 		return &reconcile.Result{}, err
 	}
 
