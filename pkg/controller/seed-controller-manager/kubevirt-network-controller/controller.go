@@ -152,23 +152,24 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		log.Debug("Skipping reconciliation as the network policy is not enabled")
 		return nil, nil
 	}
+
+	kubeVirtInfraClient, err := r.setupKubeVirtInfraClient(ctx, cluster)
+	if err != nil {
+		return &reconcile.Result{}, err
+	}
+
 	gateways := make([]string, 0)
 	cidrs := make([]string, 0)
 	// Assuming providerSettings is part of the cluster spec or passed as a parameter
 	for _, vpc := range dc.ProviderNetwork.VPCs {
 		for _, subnet := range vpc.Subnets {
-			gateway, cidr, err := r.processSubnet(ctx, subnet.Name)
+			gateway, cidr, err := r.processSubnet(ctx, kubeVirtInfraClient, subnet.Name)
 			if err != nil {
 				return &reconcile.Result{}, err
 			}
 			gateways = append(gateways, gateway)
 			cidrs = append(cidrs, cidr)
 		}
-	}
-
-	kubeVirtInfraClient, err := r.setupKubeVirtInfraClient(ctx, cluster)
-	if err != nil {
-		return &reconcile.Result{}, err
 	}
 
 	log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster")
@@ -211,9 +212,9 @@ func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kuber
 	return kubeconfig, nil
 }
 
-func (r *Reconciler) processSubnet(ctx context.Context, subnetName string) (string, string, error) {
+func (r *Reconciler) processSubnet(ctx context.Context, kvInfraClient ctrlruntimeclient.Client, subnetName string) (string, string, error) {
 	var subnet kubeovnv1.Subnet
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: subnetName}, &subnet); err != nil {
+	if err := kvInfraClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: subnetName}, &subnet); err != nil {
 		return "", "", err
 	}
 	return subnet.Spec.Gateway, subnet.Spec.CIDRBlock, nil
