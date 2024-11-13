@@ -18,15 +18,17 @@ package kubevirtnetworkcontroller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
 	"go.uber.org/zap"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -77,7 +79,7 @@ func Add(
 		workerName:   workerName,
 		recorder:     mgr.GetEventRecorderFor(ControllerName),
 	}
-	enqueueCluster := controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())
+
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(ControllerName).
 		WithOptions(controller.Options{
@@ -87,7 +89,6 @@ func Add(
 			cluster := o.(*kubermaticv1.Cluster)
 			return cluster.Spec.Cloud.ProviderName == string(kubermaticv1.KubevirtCloudProvider)
 		}))).
-		Watches(&kubeovnv1.Subnet{}, enqueueCluster, builder.WithPredicates(predicateutil.ByLabelExists(WorkloadSubnetLabel))).
 		Build(reconciler)
 
 	return err
@@ -158,9 +159,46 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		cidrs = append(cidrs, subnet.Spec.CIDRBlock)
 	}
 
-	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, r.Client, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
+	kubeVirtInfraClient, err := r.setupKubeVirtInfraClient(ctx, cluster)
+	if err != nil {
+		return &reconcile.Result{}, err
+	}
+
+	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, kubeVirtInfraClient, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
 		return &reconcile.Result{}, err
 	}
 
 	return nil, nil
+}
+
+func (r *Reconciler) setupKubeVirtInfraClient(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubevirt.Client, error) {
+	kubeconfig, err := r.getKubeVirtInfraKConfig(ctx, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	kubeVirtInfraClient, err := kubevirt.NewClient(kubeconfig, kubevirt.ClientOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return kubeVirtInfraClient, nil
+}
+
+func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kubermaticv1.Cluster) (string, error) {
+	if cluster.Spec.Cloud.Kubevirt.Kubeconfig != "" {
+		return cluster.Spec.Cloud.Kubevirt.Kubeconfig, nil
+	}
+
+	if cluster.Spec.Cloud.Kubevirt.CredentialsReference == nil {
+		return "", errors.New("no credentials provided")
+	}
+
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
+	kubeconfig, err := secretKeySelectorFunc(cluster.Spec.Cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeconfig)
+	if err != nil {
+		return "", err
+	}
+
+	return kubeconfig, nil
 }
