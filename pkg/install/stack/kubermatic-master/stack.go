@@ -380,6 +380,12 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		logger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
 		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
 	} else if ip := ingresses[0].IP; ip != "" {
+		for _, ingress := range ingresses {
+			if common.ValidatePublicIp(ingress.IP) {
+				ip = ingress.IP
+				break
+			}
+		}
 		logger.Infof("  Ingress via IP      : %s", ip)
 		logger.Info("")
 		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
