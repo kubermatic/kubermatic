@@ -148,6 +148,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) (*reconcile.Result, error) {
+	if dc.ProviderNetwork == nil {
+		log.Debug("Skipping reconciliation as the provider network is not configured")
+		return nil, nil
+	}
+
 	if !dc.ProviderNetwork.NetworkPolicyEnabled {
 		log.Debug("Skipping reconciliation as the network policy is not enabled")
 		return nil, nil
@@ -160,7 +165,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	gateways := make([]string, 0)
 	cidrs := make([]string, 0)
-	// Assuming providerSettings is part of the cluster spec or passed as a parameter
 	for _, vpc := range dc.ProviderNetwork.VPCs {
 		for _, subnet := range vpc.Subnets {
 			gateway, cidr, err := r.processSubnet(ctx, kubeVirtInfraClient, subnet.Name)
