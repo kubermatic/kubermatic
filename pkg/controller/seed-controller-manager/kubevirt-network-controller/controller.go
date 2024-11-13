@@ -118,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Check if the datacenter is kubevirt and if kubevirt is configured with NamespacedMode
-	if datacenter.Spec.Kubevirt == nil || !datacenter.Spec.Kubevirt.NamespacedMode.Enabled {
+	if datacenter.Spec.Kubevirt == nil || datacenter.Spec.Kubevirt.NamespacedMode == nil || !datacenter.Spec.Kubevirt.NamespacedMode.Enabled {
 		log.Debug("Skipping reconciliation as the datacenter is not kubevirt or kubevirt is not configured with NamespacedMode")
 		return reconcile.Result{}, nil
 	}
@@ -148,15 +148,22 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) (*reconcile.Result, error) {
-	var subnets kubeovnv1.SubnetList
-	gateways := make([]string, 0, len(subnets.Items))
-	cidrs := make([]string, 0, len(subnets.Items))
-	if err := r.List(ctx, &subnets, ctrlruntimeclient.HasLabels{WorkloadSubnetLabel}); err != nil {
-		return &reconcile.Result{}, err
+	if !dc.ProviderNetwork.NetworkPolicyEnabled {
+		log.Debug("Skipping reconciliation as the network policy is not enabled")
+		return nil, nil
 	}
-	for _, subnet := range subnets.Items {
-		gateways = append(gateways, subnet.Spec.Gateway)
-		cidrs = append(cidrs, subnet.Spec.CIDRBlock)
+	gateways := make([]string, 0)
+	cidrs := make([]string, 0)
+	// Assuming providerSettings is part of the cluster spec or passed as a parameter
+	for _, vpc := range dc.ProviderNetwork.VPCs {
+		for _, subnet := range vpc.Subnets {
+			gateway, cidr, err := r.processSubnet(ctx, subnet.Name)
+			if err != nil {
+				return &reconcile.Result{}, err
+			}
+			gateways = append(gateways, gateway)
+			cidrs = append(cidrs, cidr)
+		}
 	}
 
 	kubeVirtInfraClient, err := r.setupKubeVirtInfraClient(ctx, cluster)
@@ -164,6 +171,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, err
 	}
 
+	log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster")
 	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, kubeVirtInfraClient, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
 		return &reconcile.Result{}, err
 	}
@@ -201,4 +209,12 @@ func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kuber
 	}
 
 	return kubeconfig, nil
+}
+
+func (r *Reconciler) processSubnet(ctx context.Context, subnetName string) (string, string, error) {
+	var subnet kubeovnv1.Subnet
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: subnetName}, &subnet); err != nil {
+		return "", "", err
+	}
+	return subnet.Spec.Gateway, subnet.Spec.CIDRBlock, nil
 }
