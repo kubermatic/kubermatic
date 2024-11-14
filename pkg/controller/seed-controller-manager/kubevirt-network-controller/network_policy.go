@@ -28,7 +28,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// namespacedClusterIsolationNetworkPolicyReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network
+// namespacedClusterIsolationNetworkPolicyReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network.
 func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subnets []string, subnetGateways []string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	// Allow egress for subnet gateways
 	subnetGatewaysRule := []networkingv1.NetworkPolicyEgressRule{}
