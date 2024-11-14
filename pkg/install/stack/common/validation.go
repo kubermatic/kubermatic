@@ -21,7 +21,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"net"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
@@ -140,19 +139,4 @@ func randomString() (string, error) {
 	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-// ValidatePublicIp validates whether ip provided is public
-func ValidatePublicIp(ipAddress string) bool {
-
-	ipAddr := net.ParseIP(ipAddress)
-	if ipAddr == nil {
-		return false
-	}
-
-	if ipAddr.IsPrivate() {
-		return false
-	}
-
-	return true
 }

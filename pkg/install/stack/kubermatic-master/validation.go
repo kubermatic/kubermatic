@@ -22,6 +22,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
@@ -384,4 +385,12 @@ func randomString() (string, error) {
 	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// isPublicIp validates whether ip provided is public
+func isPublicIp(ipAddress string) bool {
+
+	ipAddr := net.ParseIP(ipAddress)
+
+	return ipAddr != nil && !ipAddr.IsPrivate()
 }
