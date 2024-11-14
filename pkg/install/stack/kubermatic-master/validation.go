@@ -70,7 +70,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	// other validations are supposed to be based on the given config.
 	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, opt.KubeClient, KubermaticOperatorNamespace)
 	if err != nil && !errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
-		return append(errs, fmt.Errorf("failed to create fetch KubermaticConfiguration: %w", err))
+		return append(errs, fmt.Errorf("failed to fetch KubermaticConfiguration: %w", err))
 	}
 
 	var currentVersion string
