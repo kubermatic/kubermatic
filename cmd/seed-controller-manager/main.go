@@ -160,7 +160,7 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubelbv1alpha1.SchemeGroupVersion), zap.Error(err))
 	}
 	if err := kubeovnv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", "api", kubeovnv1.SchemeGroupVersion, zap.Error(err))
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubeovnv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer

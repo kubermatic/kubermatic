@@ -18,7 +18,6 @@ package kubevirtnetworkcontroller
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
@@ -28,12 +27,11 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -159,16 +157,16 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, nil
 	}
 
-	kubeVirtInfraClient, err := r.setupKubeVirtInfraClient(ctx, cluster)
+	kubeVirtInfraClient, err := r.SetupKubeVirtInfraClient(ctx, cluster)
 	if err != nil {
 		return &reconcile.Result{}, err
 	}
-
 	gateways := make([]string, 0)
 	cidrs := make([]string, 0)
 	for _, vpc := range dc.ProviderNetwork.VPCs {
 		for _, subnet := range vpc.Subnets {
-			gateway, cidr, err := r.processSubnet(ctx, kubeVirtInfraClient, subnet.Name)
+			log.Debug("Fetching gateway and cidr for subnet: %s", subnet.Name)
+			gateway, cidr, err := processSubnet(ctx, kubeVirtInfraClient, subnet.Name)
 			if err != nil {
 				return &reconcile.Result{}, err
 			}
@@ -177,50 +175,21 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster")
-	if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, kubeVirtInfraClient, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
-		return &reconcile.Result{}, err
+	if len(gateways) > 0 && len(cidrs) > 0 {
+		log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster")
+		if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, kubeVirtInfraClient, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
+			return &reconcile.Result{}, err
+		}
 	}
 
 	return nil, nil
 }
 
-func (r *Reconciler) setupKubeVirtInfraClient(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubevirt.Client, error) {
-	kubeconfig, err := r.getKubeVirtInfraKConfig(ctx, cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	kubeVirtInfraClient, err := kubevirt.NewClient(kubeconfig, kubevirt.ClientOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	return kubeVirtInfraClient, nil
-}
-
-func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kubermaticv1.Cluster) (string, error) {
-	if cluster.Spec.Cloud.Kubevirt.Kubeconfig != "" {
-		return cluster.Spec.Cloud.Kubevirt.Kubeconfig, nil
-	}
-
-	if cluster.Spec.Cloud.Kubevirt.CredentialsReference == nil {
-		return "", errors.New("no credentials provided")
-	}
-
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
-	kubeconfig, err := secretKeySelectorFunc(cluster.Spec.Cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeconfig)
-	if err != nil {
-		return "", err
-	}
-
-	return kubeconfig, nil
-}
-
-func (r *Reconciler) processSubnet(ctx context.Context, kvInfraClient ctrlruntimeclient.Client, subnetName string) (string, string, error) {
-	var subnet kubeovnv1.Subnet
-	if err := kvInfraClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: subnetName}, &subnet); err != nil {
+func processSubnet(ctx context.Context, kvInfraClient ctrlruntimeclient.Client, subnetName string) (string, string, error) {
+	subnet := &kubeovnv1.Subnet{}
+	if err := kvInfraClient.Get(ctx, types.NamespacedName{Name: subnetName}, subnet); err != nil {
 		return "", "", err
 	}
+
 	return subnet.Spec.Gateway, subnet.Spec.CIDRBlock, nil
 }

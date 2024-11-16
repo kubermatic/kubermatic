@@ -33,18 +33,22 @@ func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subne
 	// Allow egress for subnet gateways
 	subnetGatewaysRule := []networkingv1.NetworkPolicyEgressRule{}
 	for _, gw := range subnetGateways {
-		subnetGatewaysRule = append(subnetGatewaysRule, networkingv1.NetworkPolicyEgressRule{
-			To: []networkingv1.NetworkPolicyPeer{
-				{
-					IPBlock: &networkingv1.IPBlock{
-						CIDR: gw + "/32",
+		if gw != "" {
+			subnetGatewaysRule = append(subnetGatewaysRule, networkingv1.NetworkPolicyEgressRule{
+				To: []networkingv1.NetworkPolicyPeer{
+					{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: gw + "/32",
+						},
 					},
 				},
-			},
-		})
+			})
+		}
 	}
+
+	subnetRule := networkingv1.NetworkPolicyEgressRule{}
 	// Allow egress for anything but other workload subnets in the same vpc.
-	subnetRule := networkingv1.NetworkPolicyEgressRule{
+	subnetRule = networkingv1.NetworkPolicyEgressRule{
 		To: []networkingv1.NetworkPolicyPeer{
 			{
 				IPBlock: &networkingv1.IPBlock{
@@ -64,7 +68,7 @@ func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subne
 					},
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
-					// Allow egress for pods with the cluster.x-k8s.io/cluster-name label and api-router pod
+					// Allow egress for pods with the cluster.x-k8s.io/cluster-name label
 					{
 						To: []networkingv1.NetworkPolicyPeer{
 							{

@@ -23,10 +23,10 @@ import (
 	"flag"
 	"fmt"
 
-	kubevirtnetworkcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubevirt-network-controller"
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
+	kubevirtnetworkcontroller "k8c.io/kubermatic/v2/pkg/ee/kubevirt-network-controller"
 	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
