@@ -20,10 +20,12 @@ import (
 	"context"
 	"fmt"
 
+	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -212,4 +214,18 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	clustersUpdatingInProgressCount := len(clusters.Items) - finishedUpdatingClustersCount
 
 	return clustersUpdatingInProgressCount >= limit, nil
+}
+
+func GetCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cniType kubermaticv1.CNIPluginType) (*appskubermaticv1.ApplicationInstallation, error) {
+	app := &appskubermaticv1.ApplicationInstallation{}
+	switch cniType {
+	case kubermaticv1.CNIPluginTypeCilium:
+		name := kubermaticv1.CNIPluginTypeCilium.String()
+		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, app); err != nil {
+			return nil, fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err)
+		}
+		return app, nil
+	}
+
+	return nil, fmt.Errorf("unsupported CNI type: %s", cniType)
 }
