@@ -54,9 +54,8 @@ func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subne
 		}
 	}
 
-	subnetRule := networkingv1.NetworkPolicyEgressRule{}
 	// Allow egress for anything but other workload subnets in the same vpc.
-	subnetRule = networkingv1.NetworkPolicyEgressRule{
+	subnetRule := networkingv1.NetworkPolicyEgressRule{
 		To: []networkingv1.NetworkPolicyPeer{
 			{
 				IPBlock: &networkingv1.IPBlock{
