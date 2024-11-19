@@ -13,6 +13,7 @@
 
 ### New Features
 
+- Bump KubeVirt CSI Driver Operator to support zone-aware topologies ([#13833](https://github.com/kubermatic/kubermatic/pull/13833))
 - Support for Kube-OVN subnet and VPCs for KubeVirt ([#6941](https://github.com/kubermatic/dashboard/pull/6941))
 
 ### Bugfixes
