@@ -987,6 +987,14 @@ spec:
                                   If missing or false, annotation will be:
                                   storageclass.kubernetes.io/is-default-class : false
                                 type: boolean
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                description: |-
+                                  Labels is a map of string keys and values that can be used to organize and categorize
+                                  (scope and select) objects. May match selectors of replication controllers
+                                  and services.
+                                type: object
                               name:
                                 type: string
                               regions:
