@@ -231,7 +231,7 @@ func getCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlru
 	return nil, fmt.Errorf("unsupported CNI type: %s", cniType)
 }
 
-// IsCNIApplicationReady checks if the CNI application is deployed and ready
+// IsCNIApplicationReady checks if the CNI application is deployed and ready.
 func IsCNIApplicationReady(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
 	if cluster.Spec.CNIPlugin == nil || !cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
 		return true, nil // No CNI plugin or not managed by app infra, consider it ready
