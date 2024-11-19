@@ -14,12 +14,6 @@
 
 {{ if .Values.velero.enable }}
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: velero
-
----
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -48,8 +42,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: velero
-  {{- if .Values.velero.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.velero.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}

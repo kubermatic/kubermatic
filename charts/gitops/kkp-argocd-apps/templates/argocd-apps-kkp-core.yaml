@@ -12,13 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if or .Values.seedSettings.enable .Values.seedExtras.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: kubermatic
-{{ end }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -37,13 +30,14 @@ spec:
   destinations:
   - namespace: kubermatic
     server: https://kubernetes.default.svc
+  - namespace: mla
+    server: https://kubernetes.default.svc
+  - namespace: iap
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
 
 {{ if .Values.oauth.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: oauth
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -69,18 +63,15 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: oauth
-  {{- if .Values.oauth.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.oauth.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
 
 {{ if .Values.nginx.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: nginx-ingress-controller
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -107,19 +98,16 @@ spec:
     server: 'https://kubernetes.default.svc'
     namespace: nginx-ingress-controller
   # nginx ingress app to be synced automatically so that we can access ArgoCD via it!
-  {{- if .Values.nginx.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.nginx.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
 
 
 {{ if .Values.certManager.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cert-manager
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -148,9 +136,11 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: cert-manager
-  # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
-  {{- if .Values.certManager.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.certManager.autoSync }}
+  # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
     automated: {}
   {{ end }}
 {{ end }}
@@ -171,8 +161,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kubermatic
-  {{- if .Values.seedSettings.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.seedSettings.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -197,8 +189,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kubermatic
-  {{- if .Values.seedExtras.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.seedExtras.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}

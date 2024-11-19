@@ -12,14 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if or .Values.prometheus .Values.alertManager.enable .Values.grafana.enable .Values.kubeStateMetrics.enable .Values.nodeExporter.enable .Values.blackboxExporter.enable .Values.thanos.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: monitoring
-{{ end }}
-
 {{ if .Values.prometheus.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -46,8 +38,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  {{- if .Values.prometheus.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.prometheus.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -78,8 +72,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  {{- if .Values.alertManager.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.alertManager.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -113,7 +109,8 @@ spec:
   # need to work around long annotations for dashboard configmaps
   syncPolicy:
     syncOptions:
-    - ServerSideApply=true
+      - CreateNamespace=true
+      - ServerSideApply=true
   {{- if .Values.grafana.autoSync }}
     automated: {}
   {{ end }}
@@ -151,8 +148,10 @@ spec:
     kind: Deployment
     jsonPointers:
     - /spec/template/spec/containers/0/resources
-  {{- if .Values.kubeStateMetrics.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.kubeStateMetrics.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -183,8 +182,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  {{- if .Values.nodeExporter.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.nodeExporter.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -215,8 +216,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  {{- if .Values.blackboxExporter.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.blackboxExporter.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -252,8 +255,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  {{- if .Values.thanos.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.thanos.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -261,11 +266,6 @@ spec:
 */}}
 
 {{ if .Values.iapSeedMla.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: iap
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -291,8 +291,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: iap
-  {{- if .Values.iapSeedMla.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.iapSeedMla.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}

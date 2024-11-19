@@ -1,9 +1,10 @@
 ---
-# Source: argocd-apps/templates/argocd-apps-monitoring.yaml
+# Source: argocd-apps/templates/argocd-apps-usermla.yaml
+# in case of mla, we define a configmap so - we will need to create NS explicitly.
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: monitoring
+  name: mla
 ---
 # Source: argocd-apps/templates/argocd-apps-backup.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -112,4 +113,10 @@ spec:
   - '*'
   destinations:
   - namespace: kubermatic
+    server: https://kubernetes.default.svc
+  - namespace: mla
+    server: https://kubernetes.default.svc
+  - namespace: iap
+    server: https://kubernetes.default.svc
+  - namespace: argocd
     server: https://kubernetes.default.svc

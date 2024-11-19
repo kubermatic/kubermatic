@@ -12,14 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if or .Values.promtail.enable .Values.loki.enable }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: logging
-{{ end }}
-
 {{ if .Values.promtail.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
@@ -47,8 +39,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: logging
-  {{- if .Values.promtail.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.promtail.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
@@ -79,8 +73,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: logging
-  {{- if .Values.loki.autoSync }}
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.loki.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}
