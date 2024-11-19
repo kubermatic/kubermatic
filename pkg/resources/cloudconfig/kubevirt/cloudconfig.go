@@ -27,19 +27,34 @@ type CloudConfig struct {
 	Kubeconfig string `yaml:"kubeconfig"`
 	// Namespace used in KubeVirt cloud-controller-manager as infra cluster namespace.
 	Namespace string `yaml:"namespace"`
+	// InstancesV2 used in KubeVirt cloud-controller-manager as metadata information about the infra cluster nodes
+	InstancesV2 InstancesV2 `yaml:"instancesV2,omitempty"`
+}
+
+type InstancesV2 struct {
+	ZoneAndRegionEnabled bool `yaml:"zoneAndRegionEnabled,omitempty"`
 }
 
 func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) CloudConfig {
-	infraNamespace := cluster.Status.NamespaceName
+	cloudConfig := CloudConfig{
+		Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",
+		Namespace:  cluster.Status.NamespaceName,
+		InstancesV2: InstancesV2{
+			ZoneAndRegionEnabled: true,
+		},
+	}
 
 	if dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {
-		infraNamespace = dc.Spec.Kubevirt.NamespacedMode.Namespace
+		cloudConfig.Namespace = dc.Spec.Kubevirt.NamespacedMode.Namespace
 	}
 
-	return CloudConfig{
-		Kubeconfig: "/etc/kubernetes/cloud/infra-kubeconfig",
-		Namespace:  infraNamespace,
+	if dc.Spec.Kubevirt != nil &&
+		dc.Spec.Kubevirt.CCMZoneAndRegionEnabled != nil &&
+		*dc.Spec.Kubevirt.CCMZoneAndRegionEnabled == false {
+		cloudConfig.InstancesV2.ZoneAndRegionEnabled = false
 	}
+
+	return cloudConfig
 }
 
 func (c *CloudConfig) String() (string, error) {
