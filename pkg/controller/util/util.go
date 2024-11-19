@@ -22,6 +22,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -216,7 +217,7 @@ func ConcurrencyLimitReached(ctx context.Context, client ctrlruntimeclient.Clien
 	return clustersUpdatingInProgressCount >= limit, nil
 }
 
-func GetCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cniType kubermaticv1.CNIPluginType) (*appskubermaticv1.ApplicationInstallation, error) {
+func getCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cniType kubermaticv1.CNIPluginType) (*appskubermaticv1.ApplicationInstallation, error) {
 	app := &appskubermaticv1.ApplicationInstallation{}
 	switch cniType {
 	case kubermaticv1.CNIPluginTypeCilium:
@@ -228,4 +229,18 @@ func GetCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlru
 	}
 
 	return nil, fmt.Errorf("unsupported CNI type: %s", cniType)
+}
+
+// IsCNIApplicationReady checks if the CNI application is deployed and ready
+func IsCNIApplicationReady(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
+	if cluster.Spec.CNIPlugin == nil || !cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
+		return true, nil // No CNI plugin or not managed by app infra, consider it ready
+	}
+
+	cniApp, err := getCNIApplicationInstallation(ctx, userClusterClient, cluster.Spec.CNIPlugin.Type)
+	if err != nil {
+		return false, err
+	}
+	// Check if the application is deployed and status is updated with app version.
+	return cniApp != nil && cniApp.Status.ApplicationVersion != nil, nil
 }

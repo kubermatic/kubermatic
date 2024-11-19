@@ -29,7 +29,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -148,17 +147,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
-		ciliumApp, err := util.GetCNIApplicationInstallation(ctx, userClusterClient, cluster.Spec.CNIPlugin.Type)
-		if err != nil {
-			r.log.Debug("Requeue as it could not get Cilium system ApplicationInstallation")
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
-		// check if application is deployed and status is updated with app version.
-		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
-			r.log.Debug("Requeue as Cilium system application is not ready yet")
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
+	cniReady, err := util.IsCNIApplicationReady(ctx, userClusterClient, cluster)
+	if err != nil {
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
+	}
+	if !cniReady {
+		r.log.Debug("CNI application is not ready yet")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	applications, err := r.parseApplications(request)
