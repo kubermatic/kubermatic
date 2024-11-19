@@ -829,6 +829,27 @@ type DatacenterSpecKubevirt struct {
 	// In the tenant cluster, the created StorageClass name will have as name:
 	// kubevirt-<infra-storageClass-name>
 	InfraStorageClasses []KubeVirtInfraStorageClass `json:"infraStorageClasses,omitempty"`
+
+	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
+	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
+}
+
+// ProviderNetwork describes the infra cluster network fabric that is being used.
+type ProviderNetwork struct {
+	Name string `json:"name"`
+	VPCs []VPC  `json:"vpcs,omitempty"`
+}
+
+// VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
+// is isolated from any other resources within the KubeVirt infra cluster.
+type VPC struct {
+	Name    string   `json:"name"`
+	Subnets []Subnet `json:"subnets,omitempty"`
+}
+
+// Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
+type Subnet struct {
+	Name string `json:"name"`
 }
 
 type NamespacedMode struct {
