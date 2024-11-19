@@ -832,6 +832,9 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: ProviderNetwork describes the infra cluster network fabric that is being used
 	ProviderNetwork *ProviderNetwork `json:"providerNetwork,omitempty"`
+
+	// Optional: indicates if region and zone labels from the cloud provider should be fetched.
+	CCMZoneAndRegionEnabled *bool `json:"ccmZoneAndRegionEnabled,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
