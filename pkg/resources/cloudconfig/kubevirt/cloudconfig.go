@@ -50,7 +50,7 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) Clou
 
 	if dc.Spec.Kubevirt != nil &&
 		dc.Spec.Kubevirt.CCMZoneAndRegionEnabled != nil &&
-		*dc.Spec.Kubevirt.CCMZoneAndRegionEnabled == false {
+		!*dc.Spec.Kubevirt.CCMZoneAndRegionEnabled {
 		cloudConfig.InstancesV2.ZoneAndRegionEnabled = false
 	}
 
