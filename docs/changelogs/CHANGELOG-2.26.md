@@ -14,6 +14,8 @@
 ### New Features
 
 - Bump KubeVirt CSI Driver Operator to support zone-aware topologies ([#13833](https://github.com/kubermatic/kubermatic/pull/13833))
+- Support `ZoneAndRegionEnable` field in the CCM cloud config ([#13876](https://github.com/kubermatic/kubermatic/pull/13876))
+- Setup KubeVirt network controller in the seed-controller-manager. ([#13858](https://github.com/kubermatic/kubermatic/pull/13858))
 - Support for Kube-OVN subnet and VPCs for KubeVirt ([#6941](https://github.com/kubermatic/dashboard/pull/6941))
 
 ### Bugfixes
@@ -23,6 +25,7 @@
 - Refactor Cluster Backups ([#13807](https://github.com/kubermatic/kubermatic/pull/13807))
     - The controllers for this feature now run in the master-controller-manager and usercluster-controller-manager instead of the seed-controller-manager
     - Fix ClusterBackupStorageLocations not being synchronized from the master to seed clusters.
+- Fixing the issue with blocked cluster provisioning, when selecting default applications that conflicted with Cilium system application and user-cluster-controller-manager was stuck. ([#13870](https://github.com/kubermatic/kubermatic/pull/13870))
 - [EE] Fix Cluster Backups failing because of empty label selectors ([#6971](https://github.com/kubermatic/dashboard/pull/6971))
 - KubeVirt: use infra namespace from datacenter configuration, if specified ([#6964](https://github.com/kubermatic/dashboard/pull/6964))
 
