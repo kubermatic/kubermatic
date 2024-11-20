@@ -396,9 +396,7 @@ spec:
   storageClasses:
 {{- range  .Cluster.KubeVirtInfraStorageClasses }}
    - infraStorageClassName: {{ .Name }}
-{{- if .IsDefaultClass }}
      isDefaultClass: {{ .IsDefaultClass }}
-{{- end }}
 {{- if .VolumeBindingMode  }}
      volumeBindingMode: {{ .VolumeBindingMode }}
 {{- end }}
@@ -406,13 +404,13 @@ spec:
 {{- if .Regions }}
      regions:
 {{- range .Regions }}
-- {{ . }}
+     - {{ . }}
 {{- end }}
 {{- end }}
 {{- if .Zones }}
      zones:
 {{- range .Zones }}
-- {{ . }}
+     - {{ . }}
 {{- end }}
 {{- end }}
 {{- if .Labels }}
