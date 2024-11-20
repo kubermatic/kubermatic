@@ -122,7 +122,6 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 	if err != nil {
 		return cluster, err
 	}
-
 	kubevirtNamespace := cluster.Status.NamespaceName
 	if k.dc.NamespacedMode != nil && k.dc.NamespacedMode.Enabled {
 		kubevirtNamespace = k.dc.NamespacedMode.Namespace

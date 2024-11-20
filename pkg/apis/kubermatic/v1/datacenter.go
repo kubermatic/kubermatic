@@ -836,8 +836,9 @@ type DatacenterSpecKubevirt struct {
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
 type ProviderNetwork struct {
-	Name string `json:"name"`
-	VPCs []VPC  `json:"vpcs,omitempty"`
+	Name                 string `json:"name"`
+	VPCs                 []VPC  `json:"vpcs,omitempty"`
+	NetworkPolicyEnabled bool   `json:"networkPolicyEnabled,omitempty"`
 }
 
 // VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
