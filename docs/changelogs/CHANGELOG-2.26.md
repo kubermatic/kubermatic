@@ -14,6 +14,8 @@
 ### New Features
 
 - Bump KubeVirt CSI Driver Operator to support zone-aware topologies ([#13833](https://github.com/kubermatic/kubermatic/pull/13833))
+- Support `ZoneAndRegionEnable` field in the CCM cloud config ([#13876](https://github.com/kubermatic/kubermatic/pull/13876))
+- Setup KubeVirt network controller in the seed-controller-manager. ([#13858](https://github.com/kubermatic/kubermatic/pull/13858))
 - Support for Kube-OVN subnet and VPCs for KubeVirt ([#6941](https://github.com/kubermatic/dashboard/pull/6941))
 
 ### Bugfixes
