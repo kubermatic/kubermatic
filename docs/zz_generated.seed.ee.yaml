@@ -208,10 +208,20 @@ spec:
               # If missing or false, annotation will be:
               # storageclass.kubernetes.io/is-default-class : false
               isDefaultClass: true
+              # Labels is a map of string keys and values that can be used to organize and categorize
+              # (scope and select) objects. May match selectors of replication controllers
+              # and services.
+              labels: null
               name: rook-ceph-block
+              # Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
+              # to span multiple regions
+              regions: null
               # VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
               # VolumeBindingImmediate is used.
               volumeBindingMode: null
+              # Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
+              # for increased availability
+              zones: null
           # NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
           namespacedMode: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used

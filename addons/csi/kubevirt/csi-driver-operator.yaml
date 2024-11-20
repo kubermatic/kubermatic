@@ -76,11 +76,33 @@ spec:
                         : true If missing or false, annotation will be: storageclass.kubernetes.io/is-default-class
                         : false'
                       type: boolean
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels is a map of string keys and values that
+                        can be used to organize and categorize (scope and select)
+                        objects. May match selectors of replication controllers and
+                        services.
+                      type: object
+                    regions:
+                      description: Regions represents a larger domain, made up of
+                        one or more zones. It is uncommon for Kubernetes clusters
+                        to span multiple regions
+                      items:
+                        type: string
+                      type: array
                     volumeBindingMode:
                       description: VolumeBindingMode indicates how PersistentVolumeClaims
                         should be provisioned and bound. When unset, VolumeBindingImmediate
                         is used.
                       type: string
+                    zones:
+                      description: Zones represent a logical failure domain. It is
+                        common for Kubernetes clusters to span multiple zones for
+                        increased availability
+                      items:
+                        type: string
+                      type: array
                   required:
                   - infraStorageClassName
                   type: object
@@ -336,7 +358,7 @@ spec:
         runAsNonRoot: true
       containers:
         - name: manager
-          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.3.0" }}
+          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:56c18cb61cf2581a696eefbbcd55c27a9c789ec2" }}
           imagePullPolicy: Always
           command:
             - /manager
@@ -374,8 +396,30 @@ spec:
   storageClasses:
 {{- range  .Cluster.KubeVirtInfraStorageClasses }}
    - infraStorageClassName: {{ .Name }}
+{{- if .IsDefaultClass }}
      isDefaultClass: {{ .IsDefaultClass }}
+{{- end }}
+{{- if .VolumeBindingMode  }}
      volumeBindingMode: {{ .VolumeBindingMode }}
+{{- end }}
      bus: scsi
+{{- if .Regions }}
+     regions:
+{{- range .Regions }}
+- {{ . }}
+{{- end }}
+{{- end }}
+{{- if .Zones }}
+     zones:
+{{- range .Zones }}
+- {{ . }}
+{{- end }}
+{{- end }}
+{{- if .Labels }}
+     labels:
+{{- range $key, $value := .Labels }}
+       {{ $key }}: {{ $value }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{end}}
