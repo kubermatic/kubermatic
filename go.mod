@@ -28,7 +28,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.56.1
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.7
 	github.com/aws/smithy-go v1.20.4
-	github.com/cert-manager/cert-manager v1.14.4
+	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.15.10
 	github.com/containerd/containerd v1.7.20
 	github.com/digitalocean/godo v1.124.0
