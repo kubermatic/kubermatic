@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -28,6 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -156,6 +158,20 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		ignoreDefaultApplications = true
 	}
 
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	cniReady, err := util.IsCNIApplicationReady(ctx, userClusterClient, cluster)
+	if err != nil {
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
+	}
+	if !cniReady {
+		r.log.Debug("CNI application is not ready yet")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
 	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
 	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
 		r.log.Debug("Application controller not healthy")
@@ -191,7 +207,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	var errors []error
 	for _, application := range applications {
 		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
-		err := r.ensureApplicationInstallation(ctx, application, cluster)
+		err := r.ensureApplicationInstallation(ctx, userClusterClient, application, cluster)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -215,12 +231,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, application appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) error {
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return fmt.Errorf("failed to get usercluster client: %w", err)
-	}
-
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) error {
 	// First ensure that the namespace exists
 	namespace := &corev1.Namespace{}
 	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Namespace}, namespace); err != nil {

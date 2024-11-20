@@ -29,7 +29,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/cni"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -39,7 +39,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -148,17 +147,13 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	if cluster.Spec.CNIPlugin != nil && cni.IsManagedByAppInfra(cluster.Spec.CNIPlugin.Type, cluster.Spec.CNIPlugin.Version) {
-		ciliumApp, err := getCNIApplicationInstallation(ctx, userClusterClient, cluster.Spec.CNIPlugin.Type)
-		if err != nil {
-			r.log.Debug("Requeue as it could not get Cilium system ApplicationInstallation")
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
-		// check if application is deployed and status is updated with app version.
-		if ciliumApp != nil && ciliumApp.Status.ApplicationVersion == nil {
-			r.log.Debug("Requeue as Cilium system application is not ready yet")
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
+	cniReady, err := util.IsCNIApplicationReady(ctx, userClusterClient, cluster)
+	if err != nil {
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
+	}
+	if !cniReady {
+		r.log.Debug("CNI application is not ready yet")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	applications, err := r.parseApplications(request)
@@ -261,18 +256,4 @@ func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1
 	oldCluster := cluster.DeepCopy()
 	delete(cluster.Annotations, kubermaticv1.InitialApplicationInstallationsRequestAnnotation)
 	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
-}
-
-func getCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, cniType kubermaticv1.CNIPluginType) (*appskubermaticv1.ApplicationInstallation, error) {
-	app := &appskubermaticv1.ApplicationInstallation{}
-	switch cniType {
-	case kubermaticv1.CNIPluginTypeCilium:
-		name := kubermaticv1.CNIPluginTypeCilium.String()
-		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, app); err != nil {
-			return nil, fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err)
-		}
-		return app, nil
-	}
-
-	return nil, fmt.Errorf("unsupported CNI type: %s", cniType)
 }

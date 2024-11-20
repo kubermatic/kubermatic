@@ -18,6 +18,7 @@ package defaultapplicationcontroller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -46,6 +47,13 @@ import (
 var (
 	kubernetesVersion = defaulting.DefaultKubernetesVersioning.Default
 	testScheme        = fake.NewScheme()
+	noneCNISettings   = kubermaticv1.CNIPluginSettings{
+		Type: kubermaticv1.CNIPluginTypeNone,
+	}
+	ciliumCNISettings = kubermaticv1.CNIPluginSettings{
+		Type:    kubermaticv1.CNIPluginTypeCilium,
+		Version: "1.15.0",
+	}
 )
 
 const (
@@ -66,14 +74,15 @@ func TestReconcile(t *testing.T) {
 	log := zap.NewNop().Sugar()
 
 	testCases := []struct {
-		name         string
-		cluster      *kubermaticv1.Cluster
-		applications []appskubermaticv1.ApplicationDefinition
-		validate     func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
+		name                        string
+		cluster                     *kubermaticv1.Cluster
+		applications                []appskubermaticv1.ApplicationDefinition
+		systemAppInstallationValues map[string]any
+		validate                    func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
 	}{
 		{
 			name:    "scenario 1: no default applications, no application installations",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, false, defaultValue, nil),
 			},
@@ -93,7 +102,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 2: default applications are installed with correct values",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
 			},
@@ -116,7 +125,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 3: multiple default applications are installed with correct values",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
 				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", true, false, defaultValue, nil),
@@ -141,7 +150,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 4: default applications are ignored if initial-application-installation condition exists on the cluster",
-			cluster: genCluster(clusterName, defaultDatacenterName, true),
+			cluster: genCluster(clusterName, defaultDatacenterName, true, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
 			},
@@ -164,7 +173,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 5: enforced applications are installed",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, "", nil),
 				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", false, true, "test: value", nil),
@@ -188,7 +197,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 5: enforced applications are installed even if initial-application-installation condition exists on the cluster",
-			cluster: genCluster(clusterName, defaultDatacenterName, true),
+			cluster: genCluster(clusterName, defaultDatacenterName, true, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, "", nil),
 				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", false, true, defaultValue, nil),
@@ -213,7 +222,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 6: enforced and default applications are installed",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
 				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", "", true, true, "", nil),
@@ -238,7 +247,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 7: enforced and default applications are installed for a certain datacenter",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", defaultDatacenterName, true, false, defaultValue, nil),
 				*genApplicationDefinition("applicationName2", "namespace2", "v1.0.3", defaultDatacenterName, true, true, "", nil),
@@ -263,7 +272,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 8: enforced and default applications are not installed if cluster doesn't belong to target datacenter",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "wrongdc,invalid", true, false, "", nil),
 				*genApplicationDefinition("applicationName2", "namespace", "v1.0.0", "wrongdc,invalid", false, true, "", nil),
@@ -287,7 +296,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 9: highest semver version is picked as the application version if defaultVersion is not specified",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "", "", true, false, "", nil),
 			},
@@ -310,7 +319,7 @@ func TestReconcile(t *testing.T) {
 		},
 		{
 			name:    "scenario 10: application values are converted from defaultValues to defaultValuesBlock",
-			cluster: genCluster(clusterName, defaultDatacenterName, false),
+			cluster: genCluster(clusterName, defaultDatacenterName, false, noneCNISettings),
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", false, true, "", &runtime.RawExtension{Raw: []byte(`{"test":"value"}`)}),
 				*genApplicationDefinition("applicationName3", "namespace3", "v1.0.3", "", false, true, "", &runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)}),
@@ -332,6 +341,54 @@ func TestReconcile(t *testing.T) {
 				return compareApplications(apps.Items, applications)
 			},
 		},
+		{
+			name:                        "scenario 11: should create default application in cluster with ready Cilium system application",
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), 2)
+				}
+
+				return compareApplications(apps.Items, applications)
+			},
+		},
+		{
+			name:                        "scenario 12: should not create default application in cluster with not ready Cilium system application",
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "not-ready"},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 1 && apps.Items[0].Name == kubermaticv1.CNIPluginTypeCilium.String() {
+					return errors.New("did not expect ApplicationInstallations in the user cluster after the reconciler finished")
+				}
+
+				return nil
+			},
+		},
 	}
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
@@ -347,9 +404,11 @@ func TestReconcile(t *testing.T) {
 				WithObjects(objects...).
 				WithObjects(project).
 				Build()
+			userClusterObjects := getUserClusterObjects(t, test.systemAppInstallationValues)
 			userClusterClient := fake.
 				NewClientBuilder().
 				WithScheme(testScheme).
+				WithObjects(userClusterObjects...).
 				Build()
 
 			ctx := context.Background()
@@ -413,6 +472,31 @@ func TestReconcile(t *testing.T) {
 			}
 		})
 	}
+}
+func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]any) []ctrlruntimeclient.Object {
+	userClusterObjects := []ctrlruntimeclient.Object{}
+	if systemAppInstallationValues != nil {
+		appInst := &appskubermaticv1.ApplicationInstallation{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kubermaticv1.CNIPluginTypeCilium.String(),
+				Namespace: metav1.NamespaceSystem,
+			},
+		}
+		if systemAppInstallationValues["status"] == "ready" {
+			appInst.Status = appskubermaticv1.ApplicationInstallationStatus{
+				ApplicationVersion: &appskubermaticv1.ApplicationVersion{
+					Version: "1.15.0",
+				},
+			}
+		}
+		rawValues, err := json.Marshal(systemAppInstallationValues)
+		if err != nil {
+			t.Fatalf("Test's systemAppInstallationValues marshalling failed: %v", err)
+		}
+		appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
+		userClusterObjects = append(userClusterObjects, appInst)
+	}
+	return userClusterObjects
 }
 
 func compareApplications(installedApps []appskubermaticv1.ApplicationInstallation, declaredApps []appskubermaticv1.ApplicationDefinition) error {
@@ -496,7 +580,7 @@ func healthy() kubermaticv1.ExtendedClusterHealth {
 	}
 }
 
-func genCluster(name, datacenter string, initialApplicationCondition bool) *kubermaticv1.Cluster {
+func genCluster(name, datacenter string, initialApplicationCondition bool, cniPluginSettings kubermaticv1.CNIPluginSettings) *kubermaticv1.Cluster {
 	conditions := map[kubermaticv1.ClusterConditionType]kubermaticv1.ClusterCondition{}
 	if initialApplicationCondition {
 		conditions[kubermaticv1.ClusterConditionApplicationInstallationControllerReconcilingSuccess] = kubermaticv1.ClusterCondition{
@@ -515,6 +599,7 @@ func genCluster(name, datacenter string, initialApplicationCondition bool) *kube
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: datacenter,
 			},
+			CNIPlugin: &cniPluginSettings,
 		},
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: healthy(),
