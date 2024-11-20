@@ -14,6 +14,22 @@
 - [v2.24.11](#v22411)
 - [v2.24.12](#v22412)
 - [v2.24.13](#v22413)
+- [v2.24.14](#v22414)
+
+## v2.24.14
+
+**GitHub release: [2.24.14](https://github.com/kubermatic/kubermatic/releases/tag/2.24.14)**
+
+### Bugfixes
+
+- Fix seed controller panic while creating `nodeport-proxy-envoy` deployment for user clusters ([#13835](https://github.com/kubermatic/kubermatic/pull/13835))
+- Fix TOML/YAML configuration mixup in the IAP Helm chart ([#13786](https://github.com/kubermatic/kubermatic/pull/13786))
+- Select correct template value when editing MD of VCD provider ([#6927](https://github.com/kubermatic/dashboard/pull/6927))
+
+### Updates
+
+- Security: Update Cilium to 1.13.14 / 1.14.16 because the previous versions are affected by multiple CVEs ([#13849](https://github.com/kubermatic/kubermatic/pull/13849))
+
 
 ## v2.24.13
 
