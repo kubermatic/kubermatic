@@ -74,6 +74,14 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 			}
 
 			set.Spec.Replicas = resources.Int32(1)
+			if data.Cluster().Spec.ComponentsOverride.Prometheus.Replicas != nil {
+				set.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Prometheus.Replicas
+			}
+
+			if data.Cluster().Spec.ComponentsOverride.Prometheus.Tolerations != nil {
+				set.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.Prometheus.Tolerations
+			}
+
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 
 			kubernetes.EnsureAnnotations(&set.Spec.Template, map[string]string{
