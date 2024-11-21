@@ -1,6 +1,42 @@
 # Kubermatic 2.26
 
 - [v2.26.0](#v2260)
+- [v2.26.1](#v2261)
+
+## v2.26.1
+
+**GitHub release: [2.26.1](https://github.com/kubermatic/kubermatic/releases/tag/2.26.1)**
+
+### ACTION REQUIRED
+
+- A regression in 2.26.0 started overriding the `floatingIPPool` fields of OpenStack Clusters with the default external network. If you are using a floating IP pool that is not the default external network, you might have to update `Cluster` objects manually after upgrading KKP to set the correct floating IP pool again ([#13834](https://github.com/kubermatic/kubermatic/pull/13834))
+
+### New Features
+
+- Bump KubeVirt CSI Driver Operator to support zone-aware topologies ([#13833](https://github.com/kubermatic/kubermatic/pull/13833))
+- Support `ZoneAndRegionEnable` field in the CCM cloud config ([#13876](https://github.com/kubermatic/kubermatic/pull/13876))
+- Setup KubeVirt network controller in the seed-controller-manager. ([#13858](https://github.com/kubermatic/kubermatic/pull/13858))
+- Support for Kube-OVN subnet and VPCs for KubeVirt ([#6941](https://github.com/kubermatic/dashboard/pull/6941))
+
+### Bugfixes
+
+- Fix cluster credentials not being synced into cluster namespaces whenever a Secret is updated in the KKP namespace ([#13819](https://github.com/kubermatic/kubermatic/pull/13819))
+- Fix seed controller panic while creating `nodeport-proxy-envoy` deployment for user clusters ([#13835](https://github.com/kubermatic/kubermatic/pull/13835))
+- Refactor Cluster Backups ([#13807](https://github.com/kubermatic/kubermatic/pull/13807))
+    - The controllers for this feature now run in the master-controller-manager and usercluster-controller-manager instead of the seed-controller-manager
+    - Fix ClusterBackupStorageLocations not being synchronized from the master to seed clusters.
+- [EE] Fix Cluster Backups failing because of empty label selectors ([#6971](https://github.com/kubermatic/dashboard/pull/6971))
+- KubeVirt: use infra namespace from datacenter configuration, if specified ([#6964](https://github.com/kubermatic/dashboard/pull/6964))
+
+### Updates
+
+- Security: Update Cilium to 1.14.16 / 1.15.10 because the previous versions are affected by CVE-2024-47825 ([#13832](https://github.com/kubermatic/kubermatic/pull/13832))
+- Update AWS cloud-controller-manager to 1.31.1 ([#13838](https://github.com/kubermatic/kubermatic/pull/13838))
+- Support KubeVirt VolumeBindingMode in the tenant storage class ([#13821](https://github.com/kubermatic/kubermatic/pull/13821))
+
+### Miscellaneous
+
+- CustomOperatingSystemProfiles are now applied more consistently and earlier when creating new user clusters ([#13831](https://github.com/kubermatic/kubermatic/pull/13831))
 
 
 ## v2.26.0
