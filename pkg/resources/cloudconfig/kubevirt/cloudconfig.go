@@ -28,11 +28,11 @@ type CloudConfig struct {
 	// Namespace used in KubeVirt cloud-controller-manager as infra cluster namespace.
 	Namespace string `yaml:"namespace"`
 	// InstancesV2 used in KubeVirt cloud-controller-manager as metadata information about the infra cluster nodes
-	InstancesV2 InstancesV2 `yaml:"instancesV2,omitempty"`
+	InstancesV2 InstancesV2 `yaml:"instancesV2"`
 }
 
 type InstancesV2 struct {
-	ZoneAndRegionEnabled bool `yaml:"zoneAndRegionEnabled,omitempty"`
+	ZoneAndRegionEnabled bool `yaml:"zoneAndRegionEnabled"`
 }
 
 func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) CloudConfig {
