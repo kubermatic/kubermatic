@@ -10,6 +10,44 @@
 - [v2.25.7](#v2257)
 - [v2.25.8](#v2258)
 - [v2.25.9](#v2259)
+- [v2.25.10](#v22510)
+- [v2.25.11](#v22511)
+- [v2.25.12](#v22512)
+
+## v2.25.12
+
+**GitHub release: [2.25.12](https://github.com/kubermatic/kubermatic/releases/tag/2.25.12)**
+
+### Bugfixes
+
+- Update oauth2-proxy to 7.7.0 ([#13794](https://github.com/kubermatic/kubermatic/pull/13794))
+    - Fix TOML/YAML configuration mixup in the IAP Helm chart.
+- Fix seed controller panic while creating `nodeport-proxy-envoy` deployment for user clusters ([#13835](https://github.com/kubermatic/kubermatic/pull/13835))
+- [EE]: Fix Cluster Backups failing because of empty label selectors ([#6971](https://github.com/kubermatic/dashboard/pull/6971))
+- Fix CNI plugin defaulting for Edge cloud provider ([#6879](https://github.com/kubermatic/dashboard/pull/6879))
+- Fix default CNI application values in cluster wizard ([#6887](https://github.com/kubermatic/dashboard/pull/6887))
+- Select correct template value when editing MD of VCD provider ([#6927](https://github.com/kubermatic/dashboard/pull/6927))
+
+### Updates
+
+- Security: Update Cilium to 1.14.16 because the previous versions are affected by CVE-2024-47825 ([#13848](https://github.com/kubermatic/kubermatic/pull/13848))
+- Update to Go 1.22.8 ([#13790](https://github.com/kubermatic/kubermatic/pull/13790))
+
+## v2.25.11
+
+**GitHub release: [v2.25.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.11)**
+
+### Bugfixes
+
+- Fix reconciling loop when resetting Application values to an empty value ([#13741](https://github.com/kubermatic/kubermatic/pull/13741))
+
+## v2.25.10
+
+**GitHub release: [v2.25.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.10)**
+
+### Bugfixes
+
+- Fix failure to migrate Cilium `ApplicationInstallations` to new `valuesBlock` field (this has been an undocumented change in KKP 2.25.9) ([#13736](https://github.com/kubermatic/kubermatic/pull/13736))
 
 ## v2.25.9
 
