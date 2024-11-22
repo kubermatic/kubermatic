@@ -223,7 +223,7 @@ func getCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlru
 	case kubermaticv1.CNIPluginTypeCilium:
 		name := kubermaticv1.CNIPluginTypeCilium.String()
 		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, app); err != nil {
-			return nil, fmt.Errorf("failed to get Cilium ApplicationInstallation in user cluster: %w", err)
+			return nil, ctrlruntimeclient.IgnoreNotFound(err)
 		}
 		return app, nil
 	}
