@@ -495,7 +495,9 @@ spec:
     operatingSystemManager: null
     # Prometheus configures the Prometheus instance deployed into the cluster control plane.
     prometheus:
+      replicas: null
       resources: null
+      tolerations: null
     # Scheduler configures kube-scheduler settings.
     scheduler:
       leaderElection:
