@@ -113,10 +113,10 @@ groups:
           runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-userclusterprometheusdisappeared
         expr: |
           (
-            kubermatic_cluster_info * on (name) group_left
+            (label_replace(kube_statefulset_replicas{statefulset="prometheus", namespace=~"cluster-.*"}, "name", "$1", "namespace", "cluster-(.+)") > 0) * on (name) group_left
             label_replace(up{job="clusters"}, "name", "$1", "namespace", "cluster-(.+)")
             or
-            kubermatic_cluster_info * 0
+            (label_replace(kube_statefulset_replicas{statefulset="prometheus", namespace=~"cluster-.*"}, "name", "$1", "namespace", "cluster-(.+)") > 0)
           ) == 0
         for: 15m
         labels:
