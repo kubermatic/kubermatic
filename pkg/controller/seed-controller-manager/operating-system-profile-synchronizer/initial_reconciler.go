@@ -93,11 +93,7 @@ func addClusterInitReconciler(
 func clusterFilter() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
-			cluster, ok := e.Object.(*kubermaticv1.Cluster)
-			if !ok {
-				return false
-			}
-			return cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
+			return true
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			return false
