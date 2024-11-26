@@ -217,6 +217,12 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		}
 	}
 
+	key := types.NamespacedName{Name: cbsl.Spec.Credential.Name, Namespace: resources.KubermaticNamespace}
+	credentials := &corev1.Secret{}
+	if err := r.seedClient.Get(ctx, key, credentials); err != nil {
+		return fmt.Errorf("failed to get backup destination credentials secret: %w", err)
+	}
+
 	data := resources.NewTemplateDataBuilder().
 		WithCluster(cluster).
 		WithOverwriteRegistry(r.overwriteRegistry).
@@ -250,19 +256,18 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		return fmt.Errorf("failed to reconcile Velero ClusterRoleBinding: %w", err)
 	}
 
-	// Create kubeconfig secret in the user cluster namespace.
 	secretReconcilers := []reconciling.NamedSecretReconcilerFactory{
-		userclusterresources.SecretReconciler(ctx, r.seedClient, cluster, cbsl),
+		userclusterresources.SecretReconciler(credentials),
 	}
 	if err := reconciling.ReconcileSecrets(ctx, secretReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
-		return fmt.Errorf("failed to reconcile cluster backup kubeconfig Secret: %w", err)
+		return fmt.Errorf("failed to reconcile Velero cloud credentials: %w", err)
 	}
 
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		userclusterresources.DeploymentReconciler(data),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, resources.ClusterBackupNamespaceName, r.userClient, addManagedByLabel); err != nil {
-		return fmt.Errorf("failed to reconcile the cluster backup Deployment: %w", err)
+		return fmt.Errorf("failed to reconcile Velero Deployment: %w", err)
 	}
 
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
@@ -274,7 +279,7 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 
 	clusterBackupCRDs, err := userclusterresources.CRDs()
 	if err != nil {
-		return fmt.Errorf("failed to load cluster backup CRDs: %w", err)
+		return fmt.Errorf("failed to load Velero CRDs: %w", err)
 	}
 
 	creators := []kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory{}
