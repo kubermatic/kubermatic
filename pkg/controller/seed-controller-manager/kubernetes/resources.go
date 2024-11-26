@@ -235,7 +235,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
-	var cbsl *kubermaticv1.ClusterBackupStorageLocation
+	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
 	if cluster.Spec.IsClusterBackupEnabled() {
 		key := types.NamespacedName{
 			Namespace: resources.KubermaticNamespace,
@@ -247,6 +247,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 			// seed-level reconciling for this cluster.
 			cbsl = nil
 		}
+	} else {
+		cbsl = nil
 	}
 
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
