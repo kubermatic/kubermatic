@@ -105,8 +105,14 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
+	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
+	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.Spec.BackupConfig.BackupStorageLocation.Name}
+	if err := r.seedClient.Get(ctx, key, cbsl); err != nil {
+		return fmt.Errorf("failed to get ClusterBackupStorageLocation %v: %w", key, err)
+	}
+
 	roleReconcilers := []reconciling.NamedRoleReconcilerFactory{
-		roleReconciler(cluster),
+		roleReconciler(cluster, cbsl),
 	}
 	if err := reconciling.ReconcileRoles(ctx, roleReconcilers, kkpNamespace, r.seedClient); err != nil {
 		return fmt.Errorf("failed to reconcile Roles: %w", err)
@@ -157,20 +163,27 @@ func roleBindingName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("kubermatic:manage-cluster-backups:%s", cluster.Name)
 }
 
-func roleReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedRoleReconcilerFactory {
+func roleReconciler(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return roleName(cluster), func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{""},
-					Resources: []string{"secrets"},
-					Verbs:     []string{"get", "list", "watch"},
+					APIGroups:     []string{kubermaticv1.GroupName},
+					Resources:     []string{"clusterbackupstoragelocations"},
+					ResourceNames: []string{cbsl.Name},
+					Verbs:         []string{"get", "list", "watch"},
 				},
-				{
-					APIGroups: []string{kubermaticv1.GroupName},
-					Resources: []string{"clusterbackupstoragelocations"},
-					Verbs:     []string{"get", "list", "watch"},
-				},
+			}
+
+			// This might be overly cautious. Most other places in the codebase require Credential
+			// not to be nil, but here we want to be more cautious.
+			if cred := cbsl.Spec.Credential; cred != nil {
+				r.Rules = append(r.Rules, rbacv1.PolicyRule{
+					APIGroups:     []string{""},
+					Resources:     []string{"secrets"},
+					ResourceNames: []string{cred.Name},
+					Verbs:         []string{"get", "list", "watch"},
+				})
 			}
 
 			return r, nil

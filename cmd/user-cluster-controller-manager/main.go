@@ -56,7 +56,6 @@ import (
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -64,7 +63,6 @@ import (
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -113,6 +111,13 @@ type controllerRunOptions struct {
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
 	kubeVirtInfraNamespace            string
+
+	clusterBackup clusterBackupOptions
+}
+
+type clusterBackupOptions struct {
+	backupStorageLocation string
+	credentialSecret      string
 }
 
 func main() {
@@ -122,6 +127,7 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
+	addFlags(flag.CommandLine, &runOp)
 
 	flag.StringVar(&runOp.metricsListenAddr, "metrics-listen-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
@@ -250,7 +256,7 @@ func main() {
 		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
 	if err != nil {
-		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
+		log.Fatalw("Failed creating user cluster manager", zap.Error(err))
 	}
 
 	var seedConfig *rest.Config
@@ -264,28 +270,8 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to get seed kubeconfig", zap.Error(err))
 	}
-	seedMgr, err := manager.New(seedConfig, manager.Options{
-		LeaderElection: false,
-		Metrics:        metricsserver.Options{BindAddress: "0"},
-		Cache: cache.Options{
-			DefaultNamespaces: map[string]cache.Config{
-				runOp.namespace: {},
-			},
-			// The cluster backup feature (EE) needs to read CBSL and their credentials from the kubermatic namespace.
-			ByObject: map[client.Object]cache.ByObject{
-				&kubermaticv1.ClusterBackupStorageLocation{}: {
-					Namespaces: map[string]cache.Config{
-						resources.KubermaticNamespace: {},
-					},
-				},
-				&corev1.Secret{}: {
-					Namespaces: map[string]cache.Config{
-						resources.KubermaticNamespace: {},
-					},
-				},
-			},
-		},
-	})
+
+	seedMgr, err := setupSeedManager(seedConfig, runOp)
 	if err != nil {
 		log.Fatalw("Failed to construct seed mgr", zap.Error(err))
 	}
