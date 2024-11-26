@@ -105,7 +105,7 @@ func Add(
 		WatchesRawSource(source.Kind(
 			seedMgr.GetCache(),
 			&kubermaticv1.Cluster{},
-			handler.TypedEnqueueRequestsFromMapFunc[*kubermaticv1.Cluster, reconcile.Request](func(ctx context.Context, c *kubermaticv1.Cluster) []reconcile.Request {
+			handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, c *kubermaticv1.Cluster) []reconcile.Request {
 				return []reconcile.Request{{
 					NamespacedName: types.NamespacedName{
 						Name: clusterName,
@@ -175,17 +175,19 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
-	if err := r.seedClient.Get(ctx, types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.Spec.BackupConfig.BackupStorageLocation.Name}, cbsl); err != nil {
-		log.Debug("ClusterBackupStorageLocation not found")
-		return nil, nil
+	key := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: cluster.Spec.BackupConfig.BackupStorageLocation.Name}
+	if err := r.seedClient.Get(ctx, key, cbsl); err != nil {
+		return nil, fmt.Errorf("failed to get ClusterBackupStorageLocation %v: %w", key, err)
 	}
 
 	if !inSameProject(cluster, cbsl) {
 		return nil, fmt.Errorf("unable to use ClusterBackupStorageLocation %q: cluster and CBSL must belong to the same project", cbsl.Name)
 	}
+
 	if err := r.ensureUserClusterResources(ctx, cluster, cbsl); err != nil {
 		return nil, fmt.Errorf("failed to ensure user-cluster resources: %w", err)
 	}
+
 	return nil, nil
 }
 
