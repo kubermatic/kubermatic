@@ -94,7 +94,7 @@ func Add(
 	reconciler := &reconciler{
 		seedClient:        seedMgr.GetClient(),
 		userClient:        userMgr.GetClient(),
-		recorder:          userMgr.GetEventRecorderFor(ControllerName),
+		recorder:          seedMgr.GetEventRecorderFor(ControllerName),
 		log:               log,
 		versions:          versions,
 		overwriteRegistry: overwriteRegistry,
