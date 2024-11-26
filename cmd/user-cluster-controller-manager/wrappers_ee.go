@@ -53,10 +53,9 @@ func setupSeedManager(restConfig *rest.Config, opt controllerRunOptions) (manage
 		},
 	}
 
-	cbslCredentialCacheOptions := cache.ByObject{
+	secretCacheOptions := cache.ByObject{
 		Namespaces: map[string]cache.Config{
-			opt.namespace:                 {},
-			resources.KubermaticNamespace: {},
+			opt.namespace: {},
 		},
 	}
 
@@ -67,7 +66,7 @@ func setupSeedManager(restConfig *rest.Config, opt controllerRunOptions) (manage
 	}
 
 	if cred := opt.clusterBackup.credentialSecret; cred != "" {
-		cbslCredentialCacheOptions.Namespaces[resources.KubermaticNamespace] = cache.Config{
+		secretCacheOptions.Namespaces[resources.KubermaticNamespace] = cache.Config{
 			FieldSelector: fields.SelectorFromSet(fields.Set{"metadata.name": cred}),
 		}
 	}
@@ -84,7 +83,7 @@ func setupSeedManager(restConfig *rest.Config, opt controllerRunOptions) (manage
 			// cluster namespace however, we are allowed to access all Secrets.
 			ByObject: map[ctrlruntimeclient.Object]cache.ByObject{
 				&kubermaticv1.ClusterBackupStorageLocation{}: cbslCacheOptions,
-				&corev1.Secret{}: cbslCredentialCacheOptions,
+				&corev1.Secret{}: secretCacheOptions,
 			},
 		},
 	})
