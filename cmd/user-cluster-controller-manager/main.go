@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/zapr"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -55,6 +56,7 @@ import (
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -62,6 +64,7 @@ import (
 	"k8s.io/klog/v2"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -268,6 +271,19 @@ func main() {
 			DefaultNamespaces: map[string]cache.Config{
 				runOp.namespace: {},
 			},
+			// The cluster backup feature (EE) needs to read CBSL and their credentials from the kubermatic namespace.
+			ByObject: map[client.Object]cache.ByObject{
+				&kubermaticv1.ClusterBackupStorageLocation{}: {
+					Namespaces: map[string]cache.Config{
+						resources.KubermaticNamespace: {},
+					},
+				},
+				&corev1.Secret{}: {
+					Namespaces: map[string]cache.Config{
+						resources.KubermaticNamespace: {},
+					},
+				},
+			},
 		},
 	})
 	if err != nil {
@@ -289,6 +305,9 @@ func main() {
 	}
 	if err := osmv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	isPausedChecker := userclustercontrollermanager.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)
