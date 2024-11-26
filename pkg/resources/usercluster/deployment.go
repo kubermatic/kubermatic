@@ -318,7 +318,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
-			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 
 			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(resources.UserClusterControllerContainerName))
 			if err != nil {
