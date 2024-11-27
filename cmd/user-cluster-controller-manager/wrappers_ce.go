@@ -19,14 +19,35 @@ limitations under the License.
 package main
 
 import (
+	"flag"
+
 	"go.uber.org/zap"
 
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
+
+func addFlags(fs *flag.FlagSet, opt *controllerRunOptions) {
+	// NOP
+}
+
+func setupSeedManager(restConfig *rest.Config, opt controllerRunOptions) (manager.Manager, error) {
+	return manager.New(restConfig, manager.Options{
+		LeaderElection: false,
+		Metrics:        metricsserver.Options{BindAddress: "0"},
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				opt.namespace: {},
+			},
+		},
+	})
+}
 
 // NOP
 func setupControllers(

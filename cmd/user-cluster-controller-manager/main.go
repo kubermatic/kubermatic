@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/zapr"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -110,6 +111,13 @@ type controllerRunOptions struct {
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
 	kubeVirtInfraNamespace            string
+
+	clusterBackup clusterBackupOptions
+}
+
+type clusterBackupOptions struct {
+	backupStorageLocation string
+	credentialSecret      string
 }
 
 func main() {
@@ -119,6 +127,7 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
+	addFlags(flag.CommandLine, &runOp)
 
 	flag.StringVar(&runOp.metricsListenAddr, "metrics-listen-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
@@ -247,7 +256,7 @@ func main() {
 		PprofBindAddress:        pprofOpts.ListenAddress,
 	})
 	if err != nil {
-		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
+		log.Fatalw("Failed creating user cluster manager", zap.Error(err))
 	}
 
 	var seedConfig *rest.Config
@@ -261,15 +270,8 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to get seed kubeconfig", zap.Error(err))
 	}
-	seedMgr, err := manager.New(seedConfig, manager.Options{
-		LeaderElection: false,
-		Metrics:        metricsserver.Options{BindAddress: "0"},
-		Cache: cache.Options{
-			DefaultNamespaces: map[string]cache.Config{
-				runOp.namespace: {},
-			},
-		},
-	})
+
+	seedMgr, err := setupSeedManager(seedConfig, runOp)
 	if err != nil {
 		log.Fatalw("Failed to construct seed mgr", zap.Error(err))
 	}
@@ -289,6 +291,9 @@ func main() {
 	}
 	if err := osmv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", osmv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	isPausedChecker := userclustercontrollermanager.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)

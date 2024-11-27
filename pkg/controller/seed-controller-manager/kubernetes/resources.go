@@ -235,6 +235,20 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
+	var cbsl *kubermaticv1.ClusterBackupStorageLocation
+	if cluster.Spec.IsClusterBackupEnabled() {
+		key := types.NamespacedName{
+			Namespace: resources.KubermaticNamespace,
+			Name:      cluster.Spec.BackupConfig.BackupStorageLocation.Name,
+		}
+
+		if err := r.Get(ctx, key, cbsl); err != nil {
+			// A defunct CBSL reference is not nice, but should not cancel the entire
+			// seed-level reconciling for this cluster.
+			cbsl = nil
+		}
+	}
+
 	konnectivityEnabled := cluster.Spec.ClusterNetwork.KonnectivityEnabled != nil && *cluster.Spec.ClusterNetwork.KonnectivityEnabled //nolint:staticcheck
 
 	return resources.NewTemplateDataBuilder().
@@ -261,6 +275,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithMachineControllerImageRepository(r.machineControllerImageRepository).
 		WithBackupPeriod(r.backupSchedule).
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
+		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
 		Build(), nil
 }
