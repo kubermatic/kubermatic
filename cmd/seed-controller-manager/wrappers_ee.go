@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 
+	clusterbackuprbac "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/seed/rbac-controller"
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
@@ -56,6 +57,10 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := kubevirtnetworkcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.seedGetter, ctrlCtx.configGetter, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create KubeVirt network controller: %w", err)
+	}
+
+	if err := clusterbackuprbac.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create cluster-backup rbac controller: %w", err)
 	}
 
 	return nil

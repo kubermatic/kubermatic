@@ -39,8 +39,7 @@ import (
 )
 
 const (
-	DeploymentName                    = "velero"
-	clusterbackupKubeConfigSecretName = "velero-kubeconfig"
+	DeploymentName = "velero"
 )
 
 type templateData interface {
@@ -154,14 +153,6 @@ func getVolumeMounts() []corev1.VolumeMount {
 
 func getVolumes() []corev1.Volume {
 	vs := []corev1.Volume{
-		{
-			Name: resources.ClusterBackupKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.ClusterBackupKubeconfigSecretName,
-				},
-			},
-		},
 		{
 			Name:         "plugins",
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},

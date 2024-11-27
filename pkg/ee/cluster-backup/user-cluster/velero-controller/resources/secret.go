@@ -26,33 +26,21 @@ package resources
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"text/template"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/cluster-backup/master/storage-location-controller/backupstore/aws"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // SecretReconciler returns a function to create the Secret containing the backup destination credentials.
-func SecretReconciler(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedSecretReconcilerFactory {
+func SecretReconciler(credentials *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return CloudCredentialsSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			key := types.NamespacedName{Name: cbsl.Spec.Credential.Name, Namespace: resources.KubermaticNamespace}
-
-			secret := &corev1.Secret{}
-			if err := client.Get(ctx, key, secret); err != nil {
-				return nil, fmt.Errorf("failed to get backup destination credentials secret: %w", err)
-			}
-
-			awsAccessKeyId := secret.Data[aws.AccessKeyIDKeyName]
-			awsSecretAccessKey := secret.Data[aws.SecretAccessKeyName]
+			awsAccessKeyId := credentials.Data[aws.AccessKeyIDKeyName]
+			awsSecretAccessKey := credentials.Data[aws.SecretAccessKeyName]
 			if awsAccessKeyId == nil || awsSecretAccessKey == nil {
 				return nil, fmt.Errorf("backup destination credentials secret is not set correctly: [%s] and [%s] can't be empty", aws.AccessKeyIDKeyName, aws.SecretAccessKeyName)
 			}

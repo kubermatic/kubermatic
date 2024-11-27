@@ -1,10 +1,10 @@
-# This file has been generated with Velero v1.12.0. Do not edit.
+# This file has been generated with Velero v1.14.0. Do not edit.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.12.0
+    controller-gen.kubebuilder.io/version: v0.14.0
   labels:
     component: velero
   name: backupstoragelocations.velero.io
@@ -41,10 +41,19 @@ spec:
           description: BackupStorageLocation is a location where Velero stores backup objects
           properties:
             apiVersion:
-              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
               type: string
             kind:
-              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
               type: string
             metadata:
               type: object
@@ -73,7 +82,10 @@ spec:
                       description: The key of the secret to select from.  Must be a valid secret key.
                       type: string
                     name:
-                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      description: |-
+                        Name of the referent.
+                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                        TODO: Add other useful fields. apiVersion, kind, uid?
                       type: string
                     optional:
                       description: Specify whether the Secret or its key must be defined
@@ -116,21 +128,36 @@ spec:
               description: BackupStorageLocationStatus defines the observed state of BackupStorageLocation
               properties:
                 accessMode:
-                  description: "AccessMode is an unused field. Deprecated: there is now an AccessMode field on the Spec and this field will be removed entirely as of v2.0."
+                  description: |-
+                    AccessMode is an unused field.
+
+
+                    Deprecated: there is now an AccessMode field on the Spec and this field
+                    will be removed entirely as of v2.0.
                   enum:
                     - ReadOnly
                     - ReadWrite
                   type: string
                 lastSyncedRevision:
-                  description: "LastSyncedRevision is the value of the `metadata/revision` file in the backup storage location the last time the BSL's contents were synced into the cluster. Deprecated: this field is no longer updated or used for detecting changes to the location's contents and will be removed entirely in v2.0."
+                  description: |-
+                    LastSyncedRevision is the value of the `metadata/revision` file in the backup
+                    storage location the last time the BSL's contents were synced into the cluster.
+
+
+                    Deprecated: this field is no longer updated or used for detecting changes to
+                    the location's contents and will be removed entirely in v2.0.
                   type: string
                 lastSyncedTime:
-                  description: LastSyncedTime is the last time the contents of the location were synced into the cluster.
+                  description: |-
+                    LastSyncedTime is the last time the contents of the location were synced into
+                    the cluster.
                   format: date-time
                   nullable: true
                   type: string
                 lastValidationTime:
-                  description: LastValidationTime is the last time the backup store location was validated the cluster.
+                  description: |-
+                    LastValidationTime is the last time the backup store location was validated
+                    the cluster.
                   format: date-time
                   nullable: true
                   type: string

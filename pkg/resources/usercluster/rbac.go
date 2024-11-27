@@ -29,13 +29,13 @@ import (
 )
 
 const (
-	serviceAccountName = "kubermatic-usercluster-controller-manager"
+	ServiceAccountName = "kubermatic-usercluster-controller-manager"
 	roleName           = "kubermatic:usercluster-controller-manager"
 	roleBindingName    = "kubermatic:usercluster-controller-manager"
 )
 
 func ServiceAccountReconciler() (string, reconciling.ServiceAccountReconciler) {
-	return serviceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+	return ServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
 		return sa, nil
 	}
 }
@@ -96,7 +96,7 @@ func RoleBindingReconciler() (string, reconciling.RoleBindingReconciler) {
 		rb.Subjects = []rbacv1.Subject{
 			{
 				Kind: rbacv1.ServiceAccountKind,
-				Name: serviceAccountName,
+				Name: ServiceAccountName,
 			},
 		}
 		return rb, nil
@@ -157,7 +157,7 @@ func ClusterRoleBinding(namespace *corev1.Namespace) reconciling.NamedClusterRol
 			rb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      rbacv1.ServiceAccountKind,
-					Name:      serviceAccountName,
+					Name:      ServiceAccountName,
 					Namespace: namespace.Name,
 				},
 			}
