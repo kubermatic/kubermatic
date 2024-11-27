@@ -387,10 +387,8 @@ func randomString() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// isPublicIp validates whether ip provided is public
+// isPublicIp validates whether ip provided is public.
 func isPublicIp(ipAddress string) bool {
-
 	ipAddr := net.ParseIP(ipAddress)
-
 	return ipAddr != nil && !ipAddr.IsPrivate()
 }
