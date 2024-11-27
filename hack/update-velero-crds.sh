@@ -49,7 +49,7 @@ if ! [ -x "$(command -v $velero)" ]; then
   echodate "Done!"
 fi
 
-crd_dir="pkg/ee/cluster-backup/resources/user-cluster/static"
+crd_dir="pkg/ee/cluster-backup/user-cluster/velero-controller/resources/static"
 cd "$crd_dir"
 
 version=$($velero version --client-only | grep Version | cut -d' ' -f2)
