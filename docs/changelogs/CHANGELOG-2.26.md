@@ -2,6 +2,27 @@
 
 - [v2.26.0](#v2260)
 - [v2.26.1](#v2261)
+- [v2.26.2](#v2262)
+
+## v2.26.2
+
+**GitHub release: [v2.26.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.2)**
+
+### Bugfixes
+
+- Fix Cluster Backup feature not provisioning Velero inside user clusters ([#13901](https://github.com/kubermatic/kubermatic/pull/13901))
+- Fix a bug where `groups` scope was missing in authentication request for kubernetes-dashboard ([#7014](https://github.com/kubermatic/dashboard/pull/7014))
+- Fix initial sync for CustomOperatingSystemProfiles when creating new user clusters (follow-up to #13831) ([#13895](https://github.com/kubermatic/kubermatic/pull/13895))
+- Update Cluster-Backup Velero CRDs ([#13901](https://github.com/kubermatic/kubermatic/pull/13901))
+
+### Updates
+
+- Update OpenStack CCM to 1.30.2 / 1.31.2 ([#13899](https://github.com/kubermatic/kubermatic/pull/13899))
+- Update kubevirt CSI driver to commit 35836e0c8b68d9916d29a838ea60cdd3fc6199cf ([#13896](https://github.com/kubermatic/kubermatic/pull/13896))
+
+### Miscellaneous
+
+- Add e2e tests for the Cluster Backup feature ([#13901](https://github.com/kubermatic/kubermatic/pull/13901))
 
 ## v2.26.1
 
@@ -286,7 +307,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Replace custom Velero Helm chart with a wrapper around the official upstream chart ([#13488](https://github.com/kubermatic/kubermatic/pull/13488))
 - Replace kubernetes.io/ingress.class annotation with ingressClassName spec field ([#13549](https://github.com/kubermatic/kubermatic/pull/13549))
 - S3-Exporter does not run with root permissions and does not leak credentials via CLI flags anymore ([#13226](https://github.com/kubermatic/kubermatic/pull/13226))
-- Etcd container images are now loaded from registry.k8s.io instead of gcr.io/etcd-development ([#13726](https://github.com/kubermatic/kubermatic/pull/13726))  
+- Etcd container images are now loaded from registry.k8s.io instead of gcr.io/etcd-development ([#13726](https://github.com/kubermatic/kubermatic/pull/13726))
 
 ### Deprecation
 
@@ -334,18 +355,18 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Display the used preset name on the cluster detail page ([#6705](https://github.com/kubermatic/dashboard/pull/6705))
 - Enable editing allowed IP ranges for NodePorts ([#6783](https://github.com/kubermatic/dashboard/pull/6783))
 - Support for configuring internet access for the web terminal ([#6668](https://github.com/kubermatic/dashboard/pull/6668))
-- Support for enabling/disabling operating systems for machines in user clusters at the project level ([#6723](https://github.com/kubermatic/dashboard/pull/6723)) 
+- Support for enabling/disabling operating systems for machines in user clusters at the project level ([#6723](https://github.com/kubermatic/dashboard/pull/6723))
 - Update KubeLB integration to support enabling/disabling gateway API and load balancer class ([#6810](https://github.com/kubermatic/dashboard/pull/6810))
 - Admin panel settings for applications ([#6787](https://github.com/kubermatic/dashboard/pull/6787))
     - Admins can now manage applications using admin panel
     - Application can be marked as default or enforced using dashboard
-- Support Kube-OVN provider networks for VPCs and Subnets ([#6915](https://github.com/kubermatic/dashboard/pull/6915)) 
+- Support Kube-OVN provider networks for VPCs and Subnets ([#6915](https://github.com/kubermatic/dashboard/pull/6915))
 
 #### Bugfixes
 
 - Adjust the preset domain field to accept emails ([#6690](https://github.com/kubermatic/dashboard/pull/6690))
 - Fix a bug where CNI was always being defaulted to Cilium irrespective of what was configured in the cluster template or default cluster template ([#6708](https://github.com/kubermatic/dashboard/pull/6708))
-- Fix an issue where the cursor in web terminal kept jumping to the beginning due to sizing issue ([#6799](https://github.com/kubermatic/dashboard/pull/6799))     
+- Fix an issue where the cursor in web terminal kept jumping to the beginning due to sizing issue ([#6799](https://github.com/kubermatic/dashboard/pull/6799))
 - Fix template value for machine deployments in edit mode ([#6669](https://github.com/kubermatic/dashboard/pull/6669))
 - Fix the pagination in project members table ([#6741](https://github.com/kubermatic/dashboard/pull/6741))
 - Fix TLS errors in the admin page when using a custom CA for the metering object store ([#6752](https://github.com/kubermatic/dashboard/pull/6752))
