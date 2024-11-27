@@ -221,7 +221,7 @@ func (j *ClusterJig) ClusterClient(ctx context.Context) (ctrlruntimeclient.Clien
 	}
 
 	var clusterClient ctrlruntimeclient.Client
-	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
+	err = wait.PollImmediate(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		clusterClient, transient = provider.GetClient(ctx, cluster)
 		return transient, nil
 	})
@@ -244,7 +244,7 @@ func (j *ClusterJig) ClusterRESTConfig(ctx context.Context) (*rest.Config, error
 	}
 
 	var clusterClient *rest.Config
-	err = wait.Poll(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
+	err = wait.PollImmediate(ctx, 1*time.Second, 30*time.Second, func(ctx context.Context) (transient error, terminal error) {
 		clusterClient, transient = provider.GetClientConfig(ctx, cluster)
 		return transient, nil
 	})
