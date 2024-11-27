@@ -28,6 +28,7 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -824,6 +825,20 @@ func TestLoadFiles(t *testing.T) {
 						close(stopCh)
 					}()
 
+					cbsl := &kubermaticv1.ClusterBackupStorageLocation{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "my-backup-location",
+							Namespace: resources.KubermaticNamespace,
+						},
+						Spec: velerov1.BackupStorageLocationSpec{
+							Credential: &corev1.SecretKeySelector{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "my-backup-location-secret", // does not exist in this testcase, doesn't matter
+								},
+							},
+						},
+					}
+
 					ctx := context.Background()
 					data := resources.NewTemplateDataBuilder().
 						WithContext(ctx).
@@ -846,6 +861,7 @@ func TestLoadFiles(t *testing.T) {
 						WithVersions(kubermaticVersions).
 						WithFailureDomainZoneAntiaffinity(true).
 						WithKonnectivityEnabled(true).
+						WithClusterBackupStorageLocation(cbsl).
 						Build()
 
 					generateAndVerifyResources(t, data, tc, markFixtureUsed, kubermaticVersions)

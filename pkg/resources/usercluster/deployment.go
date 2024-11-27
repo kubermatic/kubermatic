@@ -77,6 +77,7 @@ type userclusterControllerData interface {
 	DC() *kubermaticv1.Datacenter
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
+	GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation
 }
 
 // DeploymentReconciler returns the function to create and update the user cluster controller deployment
@@ -158,6 +159,16 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
 			}, getNetworkArgs(data)...)
+
+			backupLocation := data.GetClusterBackupStorageLocation()
+			if backupLocation != nil {
+				args = append(args, fmt.Sprintf("-cluster-backup-storage-location=%s", backupLocation.Name))
+
+				// This should always be non-nil.
+				if cred := backupLocation.Spec.Credential; cred != nil {
+					args = append(args, fmt.Sprintf("-cluster-backup-credential-secret=%s", cred.Name))
+				}
+			}
 
 			if email := data.Cluster().Status.UserEmail; email != "" {
 				args = append(args, "-owner-email", email)
@@ -326,7 +337,7 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
-			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
 
 			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(resources.UserClusterControllerContainerName))
 			if err != nil {

@@ -83,6 +83,7 @@ type TemplateData struct {
 	backupSchedule                   time.Duration
 	versions                         kubermatic.Versions
 	caBundle                         CABundle
+	clusterBackupStorageLocation     *kubermaticv1.ClusterBackupStorageLocation
 
 	supportsFailureDomainZoneAntiAffinity bool
 
@@ -167,6 +168,11 @@ func (td *TemplateDataBuilder) WithKonnectivityEnabled(enabled bool) *TemplateDa
 
 func (td *TemplateDataBuilder) WithCABundle(bundle CABundle) *TemplateDataBuilder {
 	td.data.caBundle = bundle
+	return td
+}
+
+func (td *TemplateDataBuilder) WithClusterBackupStorageLocation(loc *kubermaticv1.ClusterBackupStorageLocation) *TemplateDataBuilder {
+	td.data.clusterBackupStorageLocation = loc
 	return td
 }
 
@@ -359,6 +365,10 @@ func (d *TemplateData) ComputedNodePortRange() string {
 	}
 
 	return nodePortRange
+}
+
+func (d *TemplateData) GetClusterBackupStorageLocation() *kubermaticv1.ClusterBackupStorageLocation {
+	return d.clusterBackupStorageLocation
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData.

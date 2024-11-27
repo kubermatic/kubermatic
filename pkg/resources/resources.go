@@ -1067,10 +1067,9 @@ const (
 )
 
 const (
-	ClusterBackupKubeconfigSecretName = "velero-kubeconfig"
-	ClusterBackupUsername             = "velero"
-	ClusterBackupServiceAccountName   = "velero"
-	ClusterBackupNamespaceName        = "velero"
+	ClusterBackupUsername           = "velero"
+	ClusterBackupServiceAccountName = "velero"
+	ClusterBackupNamespaceName      = "velero"
 )
 
 var DefaultApplicationCacheSize = resource.MustParse("300Mi")
