@@ -27,7 +27,7 @@ patches:
         "improved-csi-idempotency": "false"
         "csi-migration": "{{ .Cluster.CSIMigration }}"
 
-  # remove node selector and node affinity, add cluster-autoscaler annotation
+  # remove node selector and node affinity, add cluster-autoscaler annotation and seccomp profile
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -43,6 +43,9 @@ patches:
             affinity:
               nodeAffinity: ~
             nodeSelector: ~
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
 
   # mount KKP CA bundle
   - patch: |-
@@ -76,7 +79,7 @@ patches:
                 configMap:
                   name: ca-bundle
 
-  # also CA bundle, but for the DaemonSet
+  # also CA bundle, but for the DaemonSet, and add seccomp profile
   - patch: |-
       apiVersion: apps/v1
       kind: DaemonSet
@@ -99,6 +102,9 @@ patches:
               - name: ca-bundle
                 configMap:
                   name: ca-bundle
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
 
   # use the KKP-managed cloud-config
   - patch: |-

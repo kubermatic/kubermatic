@@ -543,6 +543,9 @@ spec:
               name: socket-dir
       dnsPolicy: Default
       priorityClassName: system-cluster-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: vsphere-csi-controller
       tolerations:
         - effect: NoSchedule
@@ -677,6 +680,9 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: vsphere-csi-node
       tolerations:
         - effect: NoExecute
