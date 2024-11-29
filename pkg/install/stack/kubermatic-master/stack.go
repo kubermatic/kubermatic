@@ -371,15 +371,30 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	logger.Infof("  Ingress             : %s / %s", ingressName.Namespace, ingressName.Name)
 
 	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
+	hostname, ip := "", ""
+	for _, ingress := range ingresses {
+		if ingress.Hostname != "" {
+			hostname = ingress.Hostname
+			break
+		}
+		if ingress.IP != "" {
+			if ip == "" {
+				ip = ingress.IP
+			}
+			if isPublicIp(ingress.IP) {
+				ip = ingress.IP
+			}
+		}
+	}
 
-	if hostname := ingresses[0].Hostname; hostname != "" {
+	if hostname != "" {
 		logger.Infof("  Ingress via hostname: %s", hostname)
 		logger.Info("")
 		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
 		logger.Info("")
 		logger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
 		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
-	} else if ip := ingresses[0].IP; ip != "" {
+	} else if ip != "" {
 		logger.Infof("  Ingress via IP      : %s", ip)
 		logger.Info("")
 		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)

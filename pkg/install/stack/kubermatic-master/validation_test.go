@@ -120,3 +120,18 @@ func TestClusterVersionIsConfigured(t *testing.T) {
 		})
 	}
 }
+
+func Test_isPublicIp(t *testing.T) {
+	testCases := map[string]bool{
+		"10.100.197.9":   false,
+		"172.16.1.9":     false,
+		"192.168.1.1":    false,
+		"167.233.10.245": true,
+	}
+
+	for ip, want := range testCases {
+		if got := isPublicIp(ip); got != want {
+			t.Errorf("isPublicIp(%s) = %v , want: %v", ip, got, want)
+		}
+	}
+}

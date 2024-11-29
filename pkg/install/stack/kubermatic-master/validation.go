@@ -22,6 +22,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
@@ -69,7 +70,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	// other validations are supposed to be based on the given config.
 	config, err := kubernetes.GetRawKubermaticConfiguration(ctx, opt.KubeClient, KubermaticOperatorNamespace)
 	if err != nil && !errors.Is(err, provider.ErrNoKubermaticConfigurationFound) {
-		return append(errs, fmt.Errorf("failed to create fetch KubermaticConfiguration: %w", err))
+		return append(errs, fmt.Errorf("failed to fetch KubermaticConfiguration: %w", err))
 	}
 
 	var currentVersion string
@@ -384,4 +385,10 @@ func randomString() (string, error) {
 	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// isPublicIp validates whether ip provided is public.
+func isPublicIp(ipAddress string) bool {
+	ipAddr := net.ParseIP(ipAddress)
+	return ipAddr != nil && !ipAddr.IsPrivate()
 }
