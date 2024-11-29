@@ -26,6 +26,9 @@ import (
 
 func TestDefaultSpec(t *testing.T) {
 	for _, os := range providerconfig.AllOperatingSystems {
+		if os == "centos" {
+			continue
+		}
 		for _, provider := range kubermaticv1.SupportedProviders {
 			t.Run(fmt.Sprintf("%s on %s", os, provider), func(t *testing.T) {
 				spec, err := DefaultSpec(os, provider)

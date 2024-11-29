@@ -31,7 +31,6 @@ import (
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -193,12 +192,9 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 	}
 
-	// Cilium became KKP's default CNI plugin but our CentOS images do not support it yet
+	// Cilium became KKP's default CNI plugin but our images do not support it yet
 	// https://github.com/kubermatic/kubermatic/pull/12752
 	// https://github.com/kubermatic/kubermatic/pull/12878#issuecomment-1842451739
-	if scenario.OperatingSystem() == providerconfig.OperatingSystemCentOS {
-		cluster.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{Type: kubermaticv1.CNIPluginTypeCanal}
-	}
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
