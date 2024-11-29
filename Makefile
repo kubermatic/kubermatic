@@ -16,11 +16,10 @@ export CGO_ENABLED ?= 0
 export GOFLAGS ?= -mod=readonly -trimpath
 export GO111MODULE = on
 export KUBERMATIC_EDITION ?= ce
-CMD ?= $(filter-out OWNERS nodeport-proxy kubeletdnat-controller network-interface-manager, $(notdir $(wildcard ./cmd/*)))
+CMD ?= $(filter-out nodeport-proxy, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
 GIT_VERSION = $(shell git describe --tags --always --match='v*')
-TAGS ?= $(GIT_VERSION)
 KUBERMATICCOMMIT ?= $(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
 UIDOCKERTAG ?= NA

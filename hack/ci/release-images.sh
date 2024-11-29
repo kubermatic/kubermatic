@@ -79,7 +79,7 @@ if [ -z "${NO_IMAGES:-}" ]; then
 
   if [ -z "${NO_PUSH:-}" ]; then
     echodate "Logging into Quay..."
-    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
     echodate "Successfully logged into Quay."
   else
     echodate "Skipping Quay login because \$NO_PUSH is set."
@@ -97,7 +97,22 @@ set_helm_charts_version "${GIT_HEAD_TAG:-9.9.9-$GIT_HEAD_HASH}" "$KUBERMATICDOCK
 copy_crds_to_chart
 set_crds_version_annotation
 
-set -f # prevent globbing, do word splitting
-# shellcheck disable=SC2086
-retry 1 ./hack/release-images.sh $TAGS
+# finally build and push the container images that are KKP-version dependent (i.e.
+# not http-prober or the util images)
+images=(
+  addons
+  alertmanager-authorization-server
+  conformance-tester
+  etcd-launcher
+  kubeletdnat-controller
+  kubermatic
+  network-interface-manager
+  nodeport-proxy
+  user-ssh-keys-agent
+)
+
+# TODO: Bring back the ability to set multiple tags at once.
+export TAG="$KUBERMATICDOCKERTAG"
+retry 1 ./hack/images/release.sh "${images[@]}"
+
 echodate "Successfully finished building and pushing container images"
