@@ -12,12 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-DOCKER_REPO ?= "quay.io/kubermatic"
-
-.PHONY: docker
-docker:
-	docker build -t $(DOCKER_REPO)/addons:$(TAG) .
-
 .PHONY: aws-node-termination-handler
 aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
 aws-node-termination-handler:
