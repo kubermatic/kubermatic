@@ -65,6 +65,7 @@ spec:
           # to define the AMIs statically.
           images:
             amzn2: ""
+            centos: ""
             flatcar: ""
             rhel: ""
             rockylinux: ""
@@ -86,6 +87,8 @@ spec:
               http:
                 # OperatingSystems represents list of supported operating-systems with their URLs.
                 operatingSystems:
+                  centos:
+                    vX.Y: http://example.com/images/os.iso
                   flatcar:
                     vX.Y: http://example.com/images/os.iso
                   rhel:
@@ -184,6 +187,8 @@ spec:
             http:
               # OperatingSystems represents list of supported operating-systems with their URLs.
               operatingSystems:
+                centos:
+                  vX.Y: http://example.com/images/os.iso
                 flatcar:
                   vX.Y: http://example.com/images/os.iso
                 rhel:
@@ -242,6 +247,7 @@ spec:
           # Images to use for each supported operating system
           images:
             amzn2: ""
+            centos: ""
             flatcar: ""
             rhel: ""
             rockylinux: ""
@@ -271,6 +277,7 @@ spec:
           # Images to use for each supported operating system.
           images:
             amzn2: ""
+            centos: ""
             flatcar: ""
             rhel: ""
             rockylinux: ""
@@ -306,6 +313,7 @@ spec:
         # Optional: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.
         operatingSystemProfiles:
           amzn2: ""
+          centos: ""
           flatcar: ""
           rhel: ""
           rockylinux: ""
@@ -343,6 +351,7 @@ spec:
           # define at least one template.
           templates:
             amzn2: ""
+            centos: ""
             flatcar: ""
             rhel: ""
             rockylinux: ""
@@ -386,6 +395,7 @@ spec:
           # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
           templates:
             amzn2: ""
+            centos: ""
             flatcar: ""
             rhel: ""
             rockylinux: ""
