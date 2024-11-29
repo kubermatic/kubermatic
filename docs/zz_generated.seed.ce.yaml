@@ -87,8 +87,6 @@ spec:
               http:
                 # OperatingSystems represents list of supported operating-systems with their URLs.
                 operatingSystems:
-                  centos:
-                    vX.Y: http://example.com/images/os.iso
                   flatcar:
                     vX.Y: http://example.com/images/os.iso
                   rhel:
@@ -187,8 +185,6 @@ spec:
             http:
               # OperatingSystems represents list of supported operating-systems with their URLs.
               operatingSystems:
-                centos:
-                  vX.Y: http://example.com/images/os.iso
                 flatcar:
                   vX.Y: http://example.com/images/os.iso
                 rhel:
