@@ -53,6 +53,11 @@ if [ -z "$IMAGES_TO_BUILD" ]; then
   exit 1
 fi
 
+REPOSUFFIX=""
+if [ "$KUBERMATIC_EDITION" != "ce" ]; then
+  REPOSUFFIX="-$KUBERMATIC_EDITION"
+fi
+
 # When building many container images, copying the gocache into the docker build
 # context gets expensive really fast (each multiarch image needs to copy ~4GB of
 # data for each architecture), so to reduce this, we make use of "caching". Most
@@ -96,9 +101,15 @@ for REPOSITORY in $IMAGES_TO_BUILD; do
 
   unset BUILD_TAG
   unset BUILD_CONTEXT
+  unset BUILD_PER_EDITION
 
   # load image settings; this sets $BUILD_TAG (optional), $BUILD_CONTEXT
   source "$IMAGES_DIR/$REPOSITORY/settings.sh"
+
+  FULL_REPOSITORY="$REPOSITORY"
+  if [[ -n "${BUILD_PER_EDITION:-}" ]]; then
+    FULL_REPOSITORY+="$REPOSUFFIX"
+  fi
 
   # a BUILD_TAG has precedence over a $TAG environment variable
   IMAGE_TAG="${BUILD_TAG:-}"
@@ -112,7 +123,7 @@ for REPOSITORY in $IMAGES_TO_BUILD; do
     fi
   fi
 
-  MANIFEST_NAME="$DOCKER_REPO/$REPOSITORY:$IMAGE_TAG"
+  MANIFEST_NAME="$DOCKER_REPO/$FULL_REPOSITORY:$IMAGE_TAG"
   ALL_MANIFESTS="$ALL_MANIFESTS $MANIFEST_NAME"
 
   # Images within a manifest are not unique per architecture, so if this script
@@ -134,17 +145,23 @@ for REPOSITORY in $IMAGES_TO_BUILD; do
 
     echodate "Building $IMAGE…"
 
+    args=()
+    [ -n "${KUBERMATICCOMMIT:-}" ]    && args+=(--env "KUBERMATICCOMMIT=$KUBERMATICCOMMIT")
+    [ -n "${KUBERMATICDOCKERTAG:-}" ] && args+=(--env "KUBERMATICDOCKERTAG=$KUBERMATICDOCKERTAG")
+    [ -n "${UIDOCKERTAG:-}" ]         && args+=(--env "UIDOCKERTAG=$UIDOCKERTAG")
+    [ -n "${BASE_IMAGE:-}" ]          && args+=(--build-arg "BASE_IMAGE=$BASE_IMAGE")
+    [ -n "${GOPROXY:-}" ]             && args+=(--build-arg "GOPROXY=$GOPROXY")
+    [ -n "${KUBERMATIC_EDITION:-}" ]  && args+=(--build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION")
+
     (
       set -x
       buildah build \
         --platform "linux/$ARCH" \
         --manifest "$MANIFEST_NAME" \
-        --build-arg "BASE_IMAGE=$BASE_IMAGE" \
-        --build-arg "GOPROXY=${GOPROXY:-}" \
-        --build-arg "KUBERMATIC_EDITION=$KUBERMATIC_EDITION" \
         --file "$IMAGES_DIR/$REPOSITORY/Dockerfile" \
         --tag "$IMAGE" \
         --label "org.opencontainers.image.version=$IMAGE_TAG" \
+        ${args[@]} \
         ${BUILD_CONTEXT:-.}
     )
   done
