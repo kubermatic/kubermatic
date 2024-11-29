@@ -22,7 +22,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
-	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
@@ -33,8 +32,6 @@ func DefaultSpec(os providerconfig.OperatingSystem, cloudProvider kubermaticv1.P
 	switch os {
 	case providerconfig.OperatingSystemAmazonLinux2:
 		return NewAmazonLinux2SpecBuilder(cloudProvider).Build(), nil
-	case providerconfig.OperatingSystemCentOS:
-		return NewCentOSSpecBuilder(cloudProvider).Build(), nil
 	case providerconfig.OperatingSystemFlatcar:
 		return NewFlatcarSpecBuilder(cloudProvider).Build(), nil
 	case providerconfig.OperatingSystemRHEL:
@@ -61,23 +58,6 @@ func (b *UbuntuSpecBuilder) Build() ubuntu.Config {
 }
 
 func (b *UbuntuSpecBuilder) WithDistUpgradeOnBoot(enable bool) *UbuntuSpecBuilder {
-	b.DistUpgradeOnBoot = enable
-	return b
-}
-
-type CentOSSpecBuilder struct {
-	centos.Config
-}
-
-func (b *CentOSSpecBuilder) Build() centos.Config {
-	return b.Config
-}
-
-func NewCentOSSpecBuilder(_ kubermaticv1.ProviderType) *CentOSSpecBuilder {
-	return &CentOSSpecBuilder{}
-}
-
-func (b *CentOSSpecBuilder) WithDistUpgradeOnBoot(enable bool) *CentOSSpecBuilder {
 	b.DistUpgradeOnBoot = enable
 	return b
 }

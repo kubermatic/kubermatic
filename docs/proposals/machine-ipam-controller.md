@@ -106,7 +106,6 @@ When there are no free IP's left for the specified CIDR's, the `machine-ipam-con
 *   Add support for network configuration in `machine-controller`
   * Configuration implemented for every OS
     * CoreOS
-    * CentOS
     * Ubuntu
 * Add handling in `cluster-controller`
   * Deployment of `machine-ipam-controller`
