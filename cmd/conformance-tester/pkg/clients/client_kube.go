@@ -192,9 +192,6 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 	}
 
-	// Cilium became KKP's default CNI plugin but our images do not support it yet
-	// https://github.com/kubermatic/kubermatic/pull/12752
-	// https://github.com/kubermatic/kubermatic/pull/12878#issuecomment-1842451739
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
