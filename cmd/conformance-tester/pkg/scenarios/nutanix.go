@@ -42,7 +42,6 @@ type nutanixScenario struct {
 func (s *nutanixScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
-		providerconfig.OperatingSystemCentOS,
 		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
 		providerconfig.OperatingSystemRockyLinux,

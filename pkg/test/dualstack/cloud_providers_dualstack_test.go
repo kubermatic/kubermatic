@@ -35,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/machine-controller/pkg/cloudprovider/util"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
-	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
@@ -72,7 +71,6 @@ func (t *testCase) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 
 var (
 	osSpecs = map[providerconfig.OperatingSystem]interface{}{
-		providerconfig.OperatingSystemCentOS:     centos.Config{},
 		providerconfig.OperatingSystemFlatcar:    flatcar.Config{},
 		providerconfig.OperatingSystemRHEL:       rhel.Config{},
 		providerconfig.OperatingSystemRockyLinux: rockylinux.Config{},
@@ -157,7 +155,6 @@ var (
 		{
 			cloudProvider: kubermaticv1.AzureCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemCentOS,
 				providerconfig.OperatingSystemFlatcar,
 				providerconfig.OperatingSystemRHEL,
 				providerconfig.OperatingSystemRockyLinux,
@@ -237,7 +234,6 @@ var (
 			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
 				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemCentOS,
 				providerconfig.OperatingSystemRockyLinux,
 			},
 			cni:      CanalCNI,
@@ -247,7 +243,6 @@ var (
 			cloudProvider: kubermaticv1.PacketCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
 				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemCentOS,
 				providerconfig.OperatingSystemFlatcar,
 				providerconfig.OperatingSystemRockyLinux,
 			},

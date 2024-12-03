@@ -39,7 +39,6 @@ type packetScenario struct {
 
 func (s *packetScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
-		providerconfig.OperatingSystemCentOS,
 		providerconfig.OperatingSystemFlatcar,
 		providerconfig.OperatingSystemRockyLinux,
 		providerconfig.OperatingSystemUbuntu,

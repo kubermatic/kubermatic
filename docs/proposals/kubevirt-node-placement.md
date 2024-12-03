@@ -94,7 +94,7 @@ spec:
             memory: 2Gi
             namespace: default
             pvcSize: 10Gi
-            sourceURL: http://10.107.208.71/centos.img
+            sourceURL: http://10.107.208.71/ubuntu.img
             storageClassName: local-path
             podAffinityPreset: ""                # Allowed values: "", "soft", "hard"
             podAntiAffinityPreset: "soft"        # Allowed values: "", "soft", "hard"
@@ -110,7 +110,7 @@ spec:
                 values:
                 - bar1
                 - bar2
-          operatingSystem: centos
+          operatingSystem: ubuntu
           operatingSystemSpec:
             distUpgradeOnBoot: false
           sshPublicKeys:
@@ -161,8 +161,8 @@ kind: VirtualMachine
 metadata:
   annotations:
   labels:
-    kubevirt.io/vm: prow-e2e-kubevirt-centos-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
-  name: prow-e2e-kubevirt-centos-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
+    kubevirt.io/vm: prow-e2e-kubevirt-ubuntu-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
+  name: prow-e2e-kubevirt-ubuntu-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
   namespace: kube-system
   resourceVersion: "72190267"
   uid: 4034c48c-f61c-43bb-ab43-6c59e41d8605
@@ -173,7 +173,7 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        kubevirt.io/vm: prow-e2e-kubevirt-centos-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
+        kubevirt.io/vm: prow-e2e-kubevirt-ubuntu-1.22.5-7ljx725j-worker-q6h88-7d78kw5pl
     spec:
       affinity:
           # Section podAntiAffinity present if:

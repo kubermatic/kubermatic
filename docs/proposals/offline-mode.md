@@ -16,7 +16,7 @@ machine-controller:
 
 * Ubuntu: Download url for Kubernetes binaries must be configurable
 * Container Linux: Download url for `hyperkube` image must be configurable
-* CentOS/RHEL: Repo url must be configurable
+* RHEL: Repo url must be configurable
 * All: An optional config option for `--pod-infra-container` must be exposed
 
 Kubermatic:
