@@ -5,13 +5,18 @@ environment, then configuring that cluster to be managed by a locally running co
 
 The basic steps to get started on this are these:
 
+* Login to our vault; this is required for the scripts mentioned below to work.
 * Clone the dashboard repo onto your `GOPATH`: `git clone git@github.com:kubermatic/dashboard.git $(go env GOPATH)/src/k8c.io/dashboard`
-* Start all the components via the respective scripts. All of them are blocking so it is suggested to start a terminal instance for each:
-    * API: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-api.sh`
-    * Dashboard: `$(go env GOPATH)/src/k8c.io/dashboard/hack/run-local-dashboard.sh`
-    * Controller-Manager: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-controller.sh`
+* Start all the components via the respective scripts. All of them are blocking, so it is suggested to start a terminal instance for each:
+  * API: `$(go env GOPATH)/src/k8c.io/dashboard/modules/api/hack/run-api.sh`
+  * Dashboard: `$(go env GOPATH)/src/k8c.io/dashboard/modules/web/hack/run-local-dashboard.sh`
+  * Run the desired controller:
+    * Seed Controller Manager: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-seed-controller-manager.sh`
+    * User Cluster Controller Manager: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-user-cluster-controller-manager.sh`
+    * Master Controller Manager: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-master-controller-manager.sh`
+    * KKP Operator: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-operator.sh`
 
-Now you can visit http://localhost:8000 in your webbrowser, log in and create a cluster
+Now you can visit <http://localhost:8000> in your webbrowser, log in and create a cluster
 at a provider of your choice. The result can then be viewed by looking into the respective
 seed cluster:
 
@@ -79,7 +84,6 @@ scheduler-77c956dbf6-c7cgh                    2/2       Running   0          57m
 * The controller will now run. It does run in foreground, this means that it will block the
   terminal window which is why it is suggested to use a dedicated terminal. You can stop the
   controller by pressing `ctrl + c`.
-
 
 ## Pausing resource updates
 
