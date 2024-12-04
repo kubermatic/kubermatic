@@ -1,4 +1,4 @@
-# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,27 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/golang:1.23.2 AS builder
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
 
-# import the GOPROXY variable via an arg and then use
-# that arg to define the environment variable later on
 ARG GOPROXY=
-ARG GOCACHE=
 ARG KUBERMATIC_EDITION=ce
 
 ENV GOPROXY=$GOPROXY
-ENV GOCACHE=$GOCACHE
 ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
 
 WORKDIR /go/src/k8c.io/kubermatic
 COPY . .
-RUN make -C ./cmd/network-interface-manager build
+RUN make alertmanager-authorization-server
 
-FROM gcr.io/distroless/static-debian12
-LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/network-interface-manager/Dockerfile.multiarch"
+FROM gcr.io/distroless/static-debian12:nonroot
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/alertmanager-authorization-server/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-COPY --from=builder /go/src/k8c.io/kubermatic/cmd/network-interface-manager/_build/network-interface-manager /usr/local/bin/network-interface-manager
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
 
-ENTRYPOINT ["network-interface-manager"]
+ENTRYPOINT ["alertmanager-authorization-server"]

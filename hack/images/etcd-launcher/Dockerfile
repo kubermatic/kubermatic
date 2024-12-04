@@ -12,17 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CGO_ENABLED=0
-export GOFLAGS ?= -trimpath
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
 
-DOCKER_REPO ?= "quay.io/kubermatic"
-LDFLAGS ?= -w -extldflags '-static'
-GOTOOLFLAGS ?= -ldflags '$(LDFLAGS)' -v
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
 
-.PHONY: build
-build:
-	go build $(GOTOOLFLAGS) -v -o ./_build/kubeletdnat-controller .
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
 
-.PHONY: docker
-docker: build
-	docker build --tag $(DOCKER_REPO)/kubeletdnat-controller:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make etcd-launcher
+
+FROM busybox:1.32.1
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/etcd-launcher/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
+
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
+
+ENTRYPOINT ["etcd-launcher"]
