@@ -80,7 +80,9 @@ spec:
                       type: object
                   type: object
                 defaultNamespace:
-                  description: DefaultNamespace specifies default namespace for the UI which are passed to helm templating when creating an application. Comments are preserved.
+                  description: |-
+                    DefaultNamespace specifies the default namespace which is used if a referencing ApplicationInstallation has no target namespace defined.
+                    If unset, the name of the ApplicationDefinition is being used instead.
                   properties:
                     annotations:
                       additionalProperties:
