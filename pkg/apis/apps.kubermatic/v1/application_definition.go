@@ -220,6 +220,9 @@ type ApplicationDefinitionSpec struct {
 	// DefaultValuesBlock specifies default values for the UI which are passed to helm templating when creating an application. Comments are preserved.
 	DefaultValuesBlock string `json:"defaultValuesBlock,omitempty"`
 
+	// DefaultNamespace specifies default namespace for the UI which are passed to helm templating when creating an application. Comments are preserved.
+	DefaultNamespace AppNamespaceSpec `json:"defaultNamespace,omitempty"`
+
 	// DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
 	// These settings can be overridden in applicationInstallation.
 	DefaultDeployOptions *DeployOptions `json:"defaultDeployOptions,omitempty"`
