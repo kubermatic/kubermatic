@@ -1,5 +1,7 @@
 # KKP Components management via GitOps
 
+> This is a Alpha version of Kubermatic management via GitOps which can become the default way to manage KKP in future. But this feature can also change significantly and in backward incompatible ways. **Please use this setup in production at your own risk.**
+
 For KKP to function effectively, we need to install a bunch of components like seed-mla (monitoring logging and alerting stack), minio, nginx-ingress-controller, user-cluster-mla stack, etc.
 
 Using a GitOps tool to manage these seed components can be very useful. This folder offers a slightly opinionated tooling to achieve the same. The workflow to get this setup would be like below:

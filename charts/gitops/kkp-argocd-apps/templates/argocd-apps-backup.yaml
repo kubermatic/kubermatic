@@ -12,13 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if .Values.velero }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: velero
-
+{{ if .Values.velero.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -48,4 +42,10 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: velero
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.velero.autoSync }}
+    automated: {}
+  {{ end }}
 {{ end }}

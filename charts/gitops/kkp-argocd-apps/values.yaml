@@ -36,51 +36,103 @@ envSpecificSettingFolderName: settings
 userMlaValuesFileName: values-usermla.yaml
 
 # KKP Core
-oauth: false
-nginx: false
-certManager: false
-seedSettings: false
+oauth:
+  enable: false
+  autoSync: false
+nginx:
+  enable: false
+  autoSync: true
+certManager:
+  enable: false
+  autoSync: true
+seedSettings:
+  enable: false
+  autoSync: false
 # If you have any env specific and/or seed specific random yaml files to apply
 # e.g. preset, metering secret, kubeconfig secret in case of master seed, etc
-seedExtras: false
+seedExtras:
+  enable: false
+  autoSync: false
 
 #backup
-velero: false
+velero:
+  enable: false
+  autoSync: false
 
 #monitoring
-prometheus: false
-alertManager: false
-grafana: false
-kubeStateMetrics: false
-nodeExporter: false
-blackboxExporter: false
+prometheus:
+  enable: false
+  autoSync: false
+alertManager:
+  enable: false
+  autoSync: false
+grafana:
+  enable: false
+  autoSync: false
+kubeStateMetrics:
+  enable: false
+  autoSync: false
+nodeExporter:
+  enable: false
+  autoSync: false
+blackboxExporter:
+  enable: false
+  autoSync: false
 # TODO: Install thanos from upstream (bitnami / banzai / stevehipwell) directly
-thanos: false
-iapSeedMla: false
+thanos:
+  enable: false
+  autoSync: false
+iapSeedMla:
+  enable: false
+  autoSync: false
 
 #logging
-promtail: false
-loki: false
+promtail:
+  enable: false
+  autoSync: false
+loki:
+  enable: false
+  autoSync: false
 
 # apps to install - by default everything is NOT deployed
 # minio chart is available with kkp OOTB.
-minio: false
+minio:
+  enable: false
+  autoSync: false
 
 # TODO: Get these apps setup too
 # Recommended: if you want more elaborated setup and not have single point of failure 
 # for all kinds of storages e.g. seed as well as user-cluster etcd backup storages, 
 # prometheus, thanos, grafana etc
-minioOperator: false
+# minioOperator: false
 
 #user cluster mla
 userMla:
   enable: false # master switch to control whether you want to deploy user-cluster MLA or not
-  minio: false
-  minioLifecycleMgr: false
-  grafana: false
-  consul: false
-  cortex: false
-  lokiDistributed: false
-  alertmanagerProxy: false
-  iapMla: false
-  secrets: false
+  minio:
+    enable: false
+    autoSync: false
+  minioLifecycleMgr:
+    enable: false
+    autoSync: false
+  grafana:
+    enable: false
+    autoSync: false
+  consul:
+    enable: false
+    autoSync: false
+  cortex:
+    enable: false
+    autoSync: false
+  lokiDistributed:
+    enable: false
+    autoSync: false
+  alertmanagerProxy:
+    enable: false
+    autoSync: false
+  iapMla:
+    enable: false
+    autoSync: false
+  secrets:
+    enable: false
+    autoSync: false
