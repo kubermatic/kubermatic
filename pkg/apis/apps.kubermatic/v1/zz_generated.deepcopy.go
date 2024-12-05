@@ -120,8 +120,8 @@ func (in *ApplicationDefinitionSpec) DeepCopyInto(out *ApplicationDefinitionSpec
 		*out = new(runtime.RawExtension)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.DefaultNamespace != nil {
-		in, out := &in.DefaultNamespace, &out.DefaultNamespace
+	if in.DefaultAppNamespace != nil {
+		in, out := &in.DefaultAppNamespace, &out.DefaultAppNamespace
 		*out = new(AppNamespaceSpec)
 		(*in).DeepCopyInto(*out)
 	}

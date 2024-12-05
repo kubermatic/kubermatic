@@ -48,6 +48,40 @@ spec:
                     not enforced and users can update/delete them. KKP will only install them during cluster creation if the user didn't explicitly
                     opt out from installing default applications.
                   type: boolean
+                defaultAppNamespace:
+                  description: |-
+                    DefaultAppNamespace specifies the default namespace which is used if a referencing ApplicationInstallation has no target namespace defined.
+                    If unset, the name of the ApplicationDefinition is being used instead.
+                  properties:
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        Annotations of the namespace
+                        More info: http://kubernetes.io/docs/user-guide/annotations
+                      type: object
+                    create:
+                      default: true
+                      description: Create defines whether the namespace should be created if it does not exist. Defaults to true
+                      type: boolean
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        Labels of the namespace
+                        More info: http://kubernetes.io/docs/user-guide/labels
+                      type: object
+                    name:
+                      description: |-
+                        Name is the namespace to deploy the Application into.
+                        Should be a valid lowercase RFC1123 domain name
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      type: string
+                  required:
+                    - create
+                    - name
+                  type: object
                 defaultDeployOptions:
                   description: |-
                     DefaultDeployOptions holds the settings specific to the templating method used to deploy the application.
@@ -81,38 +115,11 @@ spec:
                   type: object
                 defaultNamespace:
                   description: |-
-                    DefaultNamespace specifies the default namespace which is used if a referencing ApplicationInstallation has no target namespace defined.
+                    DefaultNamespace specifies the default namespace which is used in a referencing ApplicationInstallation.
                     If unset, the name of the ApplicationDefinition is being used instead.
-                  properties:
-                    annotations:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        Annotations of the namespace
-                        More info: http://kubernetes.io/docs/user-guide/annotations
-                      type: object
-                    create:
-                      default: true
-                      description: Create defines whether the namespace should be created if it does not exist. Defaults to true
-                      type: boolean
-                    labels:
-                      additionalProperties:
-                        type: string
-                      description: |-
-                        Labels of the namespace
-                        More info: http://kubernetes.io/docs/user-guide/labels
-                      type: object
-                    name:
-                      description: |-
-                        Name is the namespace to deploy the Application into.
-                        Should be a valid lowercase RFC1123 domain name
-                      maxLength: 63
-                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-                      type: string
-                  required:
-                    - create
-                    - name
-                  type: object
+                  maxLength: 63
+                  pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                  type: string
                 defaultValues:
                   description: |-
                     DefaultValues specify default values for the UI which are passed to helm templating when creating an application. Comments are not preserved.
