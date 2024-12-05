@@ -89,8 +89,8 @@ require (
 	helm.sh/helm/v3 v3.14.3
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
-	k8c.io/machine-controller v1.60.0
-	k8c.io/operating-system-manager v1.6.0
+	k8c.io/machine-controller v1.60.1-0.20241118073303-4f251c4bc5a3
+	k8c.io/operating-system-manager v1.6.1-0.20241118134103-5db575f65108
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.31.2
 	k8s.io/apiextensions-apiserver v0.31.1
