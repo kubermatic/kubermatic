@@ -54,22 +54,6 @@ spec:
         - ipBlock:
             cidr: 0.0.0.0/0
 {{ end }}
-allowVolumeExpansion: true
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: csi-cinder-sc-delete
-provisioner: cinder.csi.openstack.org
-reclaimPolicy: Delete
----
-allowVolumeExpansion: true
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: csi-cinder-sc-retain
-provisioner: cinder.csi.openstack.org
-reclaimPolicy: Retain
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
