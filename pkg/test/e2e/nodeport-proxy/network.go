@@ -54,7 +54,7 @@ type DialConfig struct {
 func (n *networkingTestConfig) Dial(ctx context.Context, dc DialConfig) (string, error) {
 	ipPort := net.JoinHostPort(dc.TargetIP, strconv.Itoa(dc.TargetPort))
 
-	// The current versions of curl included in CentOS and RHEL distros
+	// The current versions of curl included in RHEL distros
 	// misinterpret square brackets around IPv6 as globbing, so use the -g
 	// argument to disable globbing to handle the IPv6 case.
 	c := []string{

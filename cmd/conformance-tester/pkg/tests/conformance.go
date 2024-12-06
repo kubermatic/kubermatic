@@ -292,9 +292,6 @@ func getGinkgoRuns(
 		case providerconfig.OperatingSystemUbuntu:
 			args = append(args, "--node-os-distro=ubuntu")
 			env = append(env, "KUBE_SSH_USER=ubuntu")
-		case providerconfig.OperatingSystemCentOS:
-			args = append(args, "--node-os-distro=centos")
-			env = append(env, "KUBE_SSH_USER=centos")
 		case providerconfig.OperatingSystemFlatcar:
 			args = append(args, "--node-os-distro=flatcar")
 			env = append(env, "KUBE_SSH_USER=core")

@@ -82,7 +82,7 @@ _build/conformance-tester \
 This script can be used like so:
 
 ```bash
-DISTRIBUTIONS=ubuntu,centos RELEASES=1.27 runtests.sh
+DISTRIBUTIONS=ubuntu RELEASES=1.27 runtests.sh
 ```
 
 ### Common customizations
@@ -96,7 +96,7 @@ Setting `-log-debug=true` will enable the debug logs.
 The providers which should be covered can be set via the `-providers` flag, which is a comma-separated list of
 provider names. For example, setting `-providers=aws` will only test AWS clusters.
 
-The same goes for `-distributions`, which can be used like `ubuntu,centos,flatcar`.
+The same goes for `-distributions`, which can be used like `ubuntu, flatcar`.
 
 `-releases` is likewise a comma-separated list of Kubernetes releases to test (usually just major.minor).
 The tester will automatically choose the most recent version supported for each given release. You can also

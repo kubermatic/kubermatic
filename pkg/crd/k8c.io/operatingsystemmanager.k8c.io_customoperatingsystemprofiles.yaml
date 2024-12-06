@@ -203,7 +203,6 @@ spec:
                   enum:
                     - flatcar
                     - rhel
-                    - centos
                     - ubuntu
                     - amzn2
                     - rockylinux

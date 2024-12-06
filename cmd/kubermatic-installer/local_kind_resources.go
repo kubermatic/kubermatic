@@ -176,9 +176,6 @@ var kindLocalSeed = kubermaticv1.Seed{
 						Images: kubermaticv1.KubeVirtImageSources{
 							HTTP: &kubermaticv1.KubeVirtHTTPSource{
 								OperatingSystems: map[providerconfig.OperatingSystem]kubermaticv1.OSVersions{
-									providerconfig.OperatingSystemCentOS: map[string]string{
-										"7": "docker://quay.io/kubermatic-virt-disks/centos:7",
-									},
 									providerconfig.OperatingSystemFlatcar: map[string]string{
 										"3374.2.2": "docker://quay.io/kubermatic-virt-disks/flatcar:3374.2.2",
 									},

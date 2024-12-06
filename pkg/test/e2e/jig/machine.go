@@ -31,7 +31,6 @@ import (
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 	evictiontypes "k8c.io/machine-controller/pkg/node/eviction/types"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
-	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
@@ -144,10 +143,6 @@ func (j *MachineJig) AddSSHKey(key *kubermaticv1.UserSSHKey) *MachineJig {
 
 func (j *MachineJig) WithUbuntu() *MachineJig {
 	return j.WithOSSpec(ubuntu.Config{})
-}
-
-func (j *MachineJig) WithCentOS() *MachineJig {
-	return j.WithOSSpec(centos.Config{})
 }
 
 func (j *MachineJig) WithRHEL() *MachineJig {

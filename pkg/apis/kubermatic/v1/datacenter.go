@@ -732,7 +732,6 @@ type DatacenterSpecBaremetal struct {
 
 var (
 	SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemCentOS:     nil,
 		providerconfig.OperatingSystemUbuntu:     nil,
 		providerconfig.OperatingSystemRHEL:       nil,
 		providerconfig.OperatingSystemFlatcar:    nil,
@@ -896,7 +895,6 @@ type CustomNetworkPolicy struct {
 
 var (
 	SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemCentOS:     nil,
 		providerconfig.OperatingSystemUbuntu:     nil,
 		providerconfig.OperatingSystemRHEL:       nil,
 		providerconfig.OperatingSystemFlatcar:    nil,

@@ -40,7 +40,6 @@ type vSphereScenario struct {
 func (s *vSphereScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
-		providerconfig.OperatingSystemCentOS,
 		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
 		providerconfig.OperatingSystemRockyLinux,

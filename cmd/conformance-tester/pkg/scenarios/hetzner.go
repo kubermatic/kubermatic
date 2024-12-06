@@ -39,7 +39,6 @@ type hetznerScenario struct {
 
 func (s *hetznerScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New(
-		providerconfig.OperatingSystemCentOS,
 		providerconfig.OperatingSystemRockyLinux,
 		providerconfig.OperatingSystemUbuntu,
 	)
