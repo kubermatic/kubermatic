@@ -11,6 +11,10 @@ secret:
   name: cloud-config-csi
   filename: config # key inside the cloud-config-csi Secret
 
+# Storage classes are not installed through this addon. They are managed using the `default-storage-class` addon.
+storageClass:
+  enabled: false
+
 csi:
   plugin:
     volumes:
