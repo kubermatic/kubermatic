@@ -16,15 +16,10 @@ export CGO_ENABLED ?= 0
 export GOFLAGS ?= -mod=readonly -trimpath
 export GO111MODULE = on
 export KUBERMATIC_EDITION ?= ce
-DOCKER_REPO ?= quay.io/kubermatic
-REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
-CMD ?= $(filter-out OWNERS nodeport-proxy kubeletdnat-controller network-interface-manager, $(notdir $(wildcard ./cmd/*)))
+CMD ?= $(filter-out nodeport-proxy, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
 GIT_VERSION = $(shell git describe --tags --always)
-TAGS ?= $(GIT_VERSION)
-DOCKERTAGS = $(TAGS) latestbuild
-DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT ?= $(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
 UIDOCKERTAG ?= NA
@@ -35,7 +30,6 @@ LDFLAGS += -extldflags '-static' \
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
-DOCKER_BIN := $(shell which docker)
 
 .PHONY: all
 all: build test
@@ -87,23 +81,6 @@ test-update:
 clean:
 	rm -rf $(BUILD_DEST)
 	@echo "Cleaned $(BUILD_DEST)"
-
-.PHONY: docker-build
-docker-build: build
-ifndef DOCKER_BIN
-	$(error "Docker not available in your environment, please install it and retry.")
-endif
-	$(DOCKER_BIN) build $(DOCKER_BUILD_FLAG) --label "org.opencontainers.image.version=$(KUBERMATICDOCKERTAG)" .
-
-.PHONY: docker-push
-docker-push:
-ifndef DOCKER_BIN
-	$(error "Docker not available in your environment, please install it and retry.")
-endif
-	@for tag in $(DOCKERTAGS) ; do \
-		echo "docker push $(REPO):$$tag"; \
-		$(DOCKER_BIN) push $(REPO):$$tag; \
-	done
 
 .PHONY: lint
 lint: lint-crds

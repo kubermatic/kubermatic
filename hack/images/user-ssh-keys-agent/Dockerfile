@@ -12,11 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.19
-LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/nodeport-proxy/Dockerfile"
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
+
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
+
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
+
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make user-ssh-keys-agent
+
+FROM gcr.io/distroless/static-debian12
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/user-ssh-keys-agent/Dockerfile.multiarch"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-ADD ./_build/lb-updater /
-ADD ./_build/envoy-manager /
-ADD ./envoy.yaml /
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
+
+ENTRYPOINT ["user-ssh-keys-agent"]
