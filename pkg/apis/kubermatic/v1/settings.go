@@ -132,6 +132,9 @@ type SettingSpec struct {
 	// Annotations are the settings for the annotations in KKP UI.
 	Annotations AnnotationSettings `json:"annotations,omitempty"`
 
+	// The announcement feature allows administrators to broadcast important messages to all users.
+	Announcements map[string]Announcement `json:"announcements,omitempty"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
@@ -247,6 +250,19 @@ type StaticLabel struct {
 	Values    []string `json:"values"`
 	Default   bool     `json:"default"`
 	Protected bool     `json:"protected"`
+}
+
+// The announcement feature allows administrators to broadcast important messages to all users.
+type Announcement struct {
+	// The message content of the announcement.
+	Message string `json:"message"`
+	// Indicates whether the announcement is active.
+	IsActive bool `json:"isActive"`
+	// Timestamp when the announcement was created.
+	CreatedAt metav1.Time `json:"createdAt"`
+	// Expiration date for the announcement.
+	// +optional
+	Expires *metav1.Time `json:"expires,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
