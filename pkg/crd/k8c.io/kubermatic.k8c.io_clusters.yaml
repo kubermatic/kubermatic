@@ -242,6 +242,28 @@ spec:
                       type: object
                       x-kubernetes-map-type: atomic
                   type: object
+                authorizationConfig:
+                  description:
+                  properties:
+                    enabledModes:
+                      description: 'Optional: List of enabled Authorization modes (by default "Node,RBAC"), order matters'
+                      items:
+                        type: string
+                      type: array
+                    authorizationWebhookConfiguration:
+                      description: 'Settings for the Webhook Authorization mode'
+                      properties:
+                        secretName:
+                          description: 'The secret containing the webhook configuration'
+                          type: string
+                        secretKey:
+                          description: 'The secret Key inside the secret'
+                          type: string
+                        webhookVersion:
+                          description: 'The Webhook Version, by default "v1"'
+                          type: string
+                      type: object
+                  type: object
                 cloud:
                   description: |-
                     Cloud contains information regarding the cloud provider that
