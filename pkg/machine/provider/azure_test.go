@@ -17,6 +17,7 @@ limitations under the License.
 package provider
 
 import (
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -46,10 +47,12 @@ func TestAzureConfigBuilder(t *testing.T) {
 
 type azureTestcase struct {
 	baseTestcase[azure.RawConfig, kubermaticv1.DatacenterSpecAzure]
+
+	os providerconfig.OperatingSystem
 }
 
 func (tt *azureTestcase) Run(cluster *kubermaticv1.Cluster) (*azure.RawConfig, error) {
-	return CompleteAzureProviderSpec(tt.Input(), cluster, tt.datacenter)
+	return CompleteAzureProviderSpec(tt.Input(), cluster, tt.datacenter, tt.os)
 }
 
 var _ testcase[azure.RawConfig] = &azureTestcase{}
@@ -59,12 +62,12 @@ func TestCompleteAzureProviderSpec(t *testing.T) {
 		datacenter := &kubermaticv1.DatacenterSpecAzure{}
 
 		cluster := &kubermaticv1.Cluster{}
-		if _, err := CompleteAzureProviderSpec(nil, cluster, datacenter); err == nil {
+		if _, err := CompleteAzureProviderSpec(nil, cluster, datacenter, ""); err == nil {
 			t.Error("Should have complained about invalid provider, but returned nil error.")
 		}
 
 		cluster.Spec.Cloud.Azure = &kubermaticv1.AzureCloudSpec{}
-		if _, err := CompleteAzureProviderSpec(nil, cluster, datacenter); err != nil {
+		if _, err := CompleteAzureProviderSpec(nil, cluster, datacenter, ""); err != nil {
 			t.Errorf("Cluster is now matching Azure, should not have returned an error, but got: %v", err)
 		}
 	})
