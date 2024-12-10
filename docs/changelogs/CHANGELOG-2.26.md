@@ -26,7 +26,7 @@
 
 ## v2.26.1
 
-**GitHub release: [2.26.1](https://github.com/kubermatic/kubermatic/releases/tag/2.26.1)**
+**GitHub release: [v2.26.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.1)**
 
 ### ACTION REQUIRED
 
