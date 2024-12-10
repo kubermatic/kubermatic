@@ -72,6 +72,27 @@ spec:
                         type: string
                       type: array
                   type: object
+                announcements:
+                  description: The announcement feature allows administrators to broadcast important messages to all users.
+                  items:
+                    properties:
+                      createdAt:
+                        type: string
+                      expires:
+                        type: string
+                      id:
+                        type: string
+                      message:
+                        type: string
+                      status:
+                        type: string
+                    required:
+                      - createdAt
+                      - id
+                      - message
+                      - status
+                    type: object
+                  type: array
                 cleanupOptions:
                   description: CleanupOptions control what happens when a cluster is deleted via the dashboard.
                   properties:

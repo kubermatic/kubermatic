@@ -133,6 +133,11 @@ spec:
                     Project is the name of the project that this service account user is tied to. This
                     field is only applicable to service accounts and regular users must not set this field.
                   type: string
+                readAnnouncements:
+                  description: ReadAnnouncements holds the IDs of admin announcements that the user has read.
+                  items:
+                    type: string
+                  type: array
                 settings:
                   description: |-
                     Settings contains both user-configurable and system-owned configuration for the
