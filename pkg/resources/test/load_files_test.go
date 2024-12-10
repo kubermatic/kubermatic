@@ -226,7 +226,6 @@ var (
 			AWS: &kubermaticv1.DatacenterSpecAWS{
 				Images: kubermaticv1.ImageList{
 					providerconfig.OperatingSystemUbuntu:  "ubuntu-ami",
-					providerconfig.OperatingSystemCentOS:  "centos-ami",
 					providerconfig.OperatingSystemRHEL:    "rhel-ami",
 					providerconfig.OperatingSystemFlatcar: "flatcar-ami",
 				},

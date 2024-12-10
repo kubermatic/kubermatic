@@ -39,7 +39,6 @@ import (
 	"k8c.io/machine-controller/pkg/cloudprovider/util"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
-	"k8c.io/operating-system-manager/pkg/providerconfig/centos"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rockylinux"
@@ -148,8 +147,6 @@ func KubermaticProviderType(mcName providerconfig.CloudProvider) (kubermaticv1.P
 // OperatingSystemFromSpec returns the OS name for the given OS spec.
 func OperatingSystemFromSpec(osSpec interface{}) (providerconfig.OperatingSystem, error) {
 	switch osSpec.(type) {
-	case centos.Config:
-		return providerconfig.OperatingSystemCentOS, nil
 	case rhel.Config:
 		return providerconfig.OperatingSystemRHEL, nil
 	case rockylinux.Config:

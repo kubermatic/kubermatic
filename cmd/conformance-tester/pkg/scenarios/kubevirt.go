@@ -45,7 +45,6 @@ type kubevirtScenario struct {
 func (s *kubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
-		providerconfig.OperatingSystemCentOS,
 		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
 		providerconfig.OperatingSystemRockyLinux,
@@ -106,8 +105,6 @@ func (s *kubevirtScenario) getOSImage() (string, error) {
 	switch s.operatingSystem {
 	case providerconfig.OperatingSystemUbuntu:
 		return kubevirtImageHttpServerSvc + "/ubuntu-22.04.img", nil
-	case providerconfig.OperatingSystemCentOS:
-		return kubevirtImageHttpServerSvc + "/centos.img", nil
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)
 	}
