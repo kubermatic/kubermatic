@@ -18,7 +18,7 @@
 
 ## v2.24.14
 
-**GitHub release: [2.24.14](https://github.com/kubermatic/kubermatic/releases/tag/2.24.14)**
+**GitHub release: [v2.24.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.14)**
 
 ### Bugfixes
 
