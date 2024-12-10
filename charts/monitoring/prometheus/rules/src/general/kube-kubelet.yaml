@@ -17,7 +17,7 @@ groups:
     rules:
       - alert: KubeletDown
         annotations:
-          message: Kubelet has disappeared from Prometheus target discovery.
+          message: All Kubelet instances have disappeared from Prometheus target discovery.
           runbook_url: https://docs.kubermatic.com/kubermatic/latest/cheat-sheets/alerting-runbook/#alert-kubeletdown
         expr: absent(up{job="kubelet"} == 1)
         for: 15m
