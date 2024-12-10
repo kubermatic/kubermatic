@@ -2322,6 +2322,12 @@ spec:
                       description: APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
                       format: int32
                       type: integer
+                    defaultApplications:
+                      description: DefaultApplications contains configuration for default Applications settings.
+                      properties:
+                        namespace:
+                          type: string
+                      type: object
                     disableApiserverEndpointReconciling:
                       description: |-
                         DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
