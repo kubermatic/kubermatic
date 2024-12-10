@@ -15,8 +15,6 @@
 export CGO_ENABLED=0
 export GOFLAGS ?= -trimpath
 
-DOCKER_REPO ?= "quay.io/kubermatic"
-
 .PHONY: lb-updater
 lb-updater:
 	go build -o ./_build/lb-updater -v k8c.io/kubermatic/v2/cmd/nodeport-proxy/lb-updater
@@ -30,11 +28,7 @@ build: envoy-manager lb-updater
 
 .PHONY: clean
 clean:
-	rm -f envoy-manager lb-updater
-
-.PHONY: docker
-docker: build
-	docker build --tag $(DOCKER_REPO)/nodeport-proxy:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .
+	rm -rf _build
 
 .PHONY: test
 test:
