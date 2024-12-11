@@ -17,11 +17,11 @@ limitations under the License.
 package provider
 
 import (
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	azure "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 )
 
 func TestAzureConfigBuilder(t *testing.T) {
