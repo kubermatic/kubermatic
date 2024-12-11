@@ -603,6 +603,9 @@ const (
 	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert.
 	ServingCertKeySecretKey = "serving.key"
 
+	// AuthorizationWebhookVolumeName
+	AuthorizationWebhookVolumeName = "authorization-webhook"
+
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
 	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret.

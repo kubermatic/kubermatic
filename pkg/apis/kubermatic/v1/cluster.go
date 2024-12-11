@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -263,6 +264,9 @@ type ClusterSpec struct {
 
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
+
+	// Optional: AuthorizationConfig to configure the apiserver authorization modes
+	AuthorizationConfig *AuthorizationConfig `json:"authorizationConfig,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -426,6 +430,53 @@ func (c ClusterSpec) IsClusterBackupEnabled() bool {
 	return c.BackupConfig != nil &&
 		c.BackupConfig.BackupStorageLocation != nil &&
 		c.BackupConfig.BackupStorageLocation.Name != ""
+}
+
+type AuthorizationConfig struct {
+	// Optional: List of enabled Authorization modes (by default 'Node,RBAC')
+	// Important: order matters
+	EnabledModes []string `json:"enabledModes,omitempty"`
+	// Contains the settions for the AuthorizationWebhook if EnabledModes
+	AuthorizationWebhookConfiguration *AuthorizationWebhookConfiguration `json:"authorizationWebhookConfiguration,omitempty"`
+}
+type AuthorizationWebhookConfiguration struct {
+	// The secret containing the webhook configuration
+	SecretName string `json:"secretName"`
+	// The secret Key inside the secret
+	SecretKey string `json:"secretKey"`
+	// the Webhook Version, by default "v1"
+	WebhookVersion string `json:"webhookVersion"`
+}
+
+func (c ClusterSpec) GetAuthorizationModesString() string {
+	if c.AuthorizationConfig != nil && c.AuthorizationConfig.EnabledModes != nil {
+		return strings.Join(c.AuthorizationConfig.EnabledModes, ",")
+	}
+
+	return "Node,RBAC"
+}
+
+func (c ClusterSpec) IsWebhookAuthorizationEnabled() bool {
+	if c.AuthorizationConfig == nil || c.AuthorizationConfig.EnabledModes == nil || c.AuthorizationConfig.AuthorizationWebhookConfiguration == nil {
+		return false
+	}
+
+	if !slices.Contains(c.AuthorizationConfig.EnabledModes, "Webhook") {
+		return false
+	}
+
+	if len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretName) == 0 || len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretKey) == 0 {
+		return false
+	}
+	return true
+}
+
+func (c ClusterSpec) GetAuthorizationWebhookVersion() string {
+	if c.AuthorizationConfig != nil && c.AuthorizationConfig.AuthorizationWebhookConfiguration != nil && len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.WebhookVersion) > 0 {
+		return c.AuthorizationConfig.AuthorizationWebhookConfiguration.WebhookVersion
+	}
+
+	return "v1"
 }
 
 const (
