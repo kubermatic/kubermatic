@@ -426,7 +426,7 @@ func TestReconcile(t *testing.T) {
 			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
 			systemAppInstallationValues: map[string]any{"status": "ready"},
 			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, nil),
+				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, &applicationNamespace),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
 				if reconcileErr != nil {
@@ -763,7 +763,6 @@ func (f *fakeClientProvider) GetClient(ctx context.Context, c *kubermaticv1.Clus
 }
 
 func createKubermaticConfiguration(defaultAppNamespace string) *kubermaticv1.KubermaticConfiguration {
-
 	return &kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
