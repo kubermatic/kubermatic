@@ -200,7 +200,6 @@ spec:
                                   found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
                                 type: string
                             required:
-                              - images
                               - location
                             type: object
                           baremetal:
