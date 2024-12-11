@@ -1,0 +1,19 @@
+{{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vsphere-csi
+  namespace: kube-system
+spec:
+  podSelector:
+    matchLabels:
+      role: vsphere-csi
+  policyTypes:
+    - Egress
+  egress:
+    - {}
+{{ end }}
+
+{{ end }}
+{{ end }}
