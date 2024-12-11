@@ -662,7 +662,7 @@ type DatacenterSpecAzure struct {
 	Location string `json:"location"`
 
 	// Images to use for each supported operating system
-	Images ImageList `json:"images,omitempty""`
+	Images ImageList `json:"images,omitempty"`
 }
 
 // DatacenterSpecVSphere describes a vSphere datacenter.
