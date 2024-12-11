@@ -660,6 +660,9 @@ type DatacenterSpecAzure struct {
 	// Region to use, for example "westeurope". A list of available regions can be
 	// found at https://azure.microsoft.com/en-us/global-infrastructure/locations/
 	Location string `json:"location"`
+
+	// Images to use for each supported operating system
+	Images ImageList `json:"images,omitempty"`
 }
 
 // DatacenterSpecVSphere describes a vSphere datacenter.

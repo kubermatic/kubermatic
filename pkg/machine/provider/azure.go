@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	azure "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
+	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/utils/ptr"
 )
@@ -100,7 +101,7 @@ func (b *azureConfig) WithTag(tagKey string, tagValue string) *azureConfig {
 	return b
 }
 
-func CompleteAzureProviderSpec(config *azure.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAzure) (*azure.RawConfig, error) {
+func CompleteAzureProviderSpec(config *azure.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecAzure, os providerconfig.OperatingSystem) (*azure.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.Azure == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Azure cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)
 	}
@@ -112,6 +113,12 @@ func CompleteAzureProviderSpec(config *azure.RawConfig, cluster *kubermaticv1.Cl
 	if datacenter != nil {
 		if config.Location.Value == "" {
 			config.Location.Value = datacenter.Location
+		}
+
+		if config.ImageID.Value == "" && os != "" {
+			// This can still be empty, but that's okay, the machine-controller will later, during
+			// reconciliations, default the image for us.
+			config.ImageID.Value = datacenter.Images[os]
 		}
 	}
 

@@ -189,6 +189,11 @@ spec:
                           azure:
                             description: Azure configures an Azure datacenter.
                             properties:
+                              images:
+                                additionalProperties:
+                                  type: string
+                                description: Images to use for each supported operating system
+                                type: object
                               location:
                                 description: |-
                                   Region to use, for example "westeurope". A list of available regions can be
