@@ -16,7 +16,7 @@
 
 ## v2.25.12
 
-**GitHub release: [2.25.12](https://github.com/kubermatic/kubermatic/releases/tag/2.25.12)**
+**GitHub release: [v2.25.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.12)**
 
 ### Bugfixes
 
