@@ -68,18 +68,20 @@ type Reconciler struct {
 	workerName                    string
 	recorder                      record.EventRecorder
 	seedGetter                    provider.SeedGetter
+	configGetter                  provider.KubermaticConfigurationGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, kubermaticConfigurationGetter provider.KubermaticConfigurationGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:                    seedGetter,
+		configGetter:                  kubermaticConfigurationGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
@@ -199,7 +201,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		if applicationDefinition.Spec.Enforced || (applicationDefinition.Spec.Default && !ignoreDefaultApplications) {
-			applications = append(applications, r.generateApplicationInstallation(applicationDefinition))
+			applications = append(applications, r.generateApplicationInstallation(ctx, applicationDefinition))
 		}
 	}
 
@@ -288,7 +290,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	return nil
 }
 
-func (r *Reconciler) generateApplicationInstallation(application appskubermaticv1.ApplicationDefinition) appskubermaticv1.ApplicationInstallation {
+func (r *Reconciler) generateApplicationInstallation(ctx context.Context, application appskubermaticv1.ApplicationDefinition) appskubermaticv1.ApplicationInstallation {
 	appVersion := application.Spec.DefaultVersion
 	if appVersion == "" {
 		// Iterate through all the versions and find the latest one by semver comparison
@@ -334,19 +336,34 @@ func (r *Reconciler) generateApplicationInstallation(application appskubermaticv
 		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
 	}
 
+	appNamespace := appskubermaticv1.AppNamespaceSpec{
+		Name:   application.Name,
+		Create: true,
+	}
+	if application.Spec.DefaultNamespace != nil {
+		appNamespace = *application.Spec.DefaultNamespace
+	}
+
+	namespace := application.Name
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		r.log.Warnf("failed to check kubermatic configuration default settings for applications: %w", err)
+	}
+	if config != nil {
+		if config.Spec.UserCluster.DefaultApplications.Namespace != "" {
+			namespace = config.Spec.UserCluster.DefaultApplications.Namespace
+		}
+	}
+
 	app := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
-			Namespace:   application.Name,
+			Namespace:   namespace,
 			Annotations: annotations,
 			Labels:      application.Labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
-				Name: application.Name,
-				// This ensures that the namespace is created in the user cluster, if it doesn't already exist.
-				Create: true,
-			},
+			Namespace: appNamespace,
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    application.Name,
 				Version: appVersion,
