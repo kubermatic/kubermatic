@@ -249,10 +249,6 @@ spec:
     targetRevision: dev-kkp-notSet
     path: .
     ref: values
-  # TODO: In 2.24+, add a installCRD option in values.yaml since current Velero chart version is v1 and it does not install CRDs automatically
-  - repoURL: 'https://github.com/kubermatic/kubermatic.git'
-    path: ./charts/backup/velero/crd
-    targetRevision: notSet
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: velero
@@ -398,6 +394,13 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
+    # sometimes things take time and hence we should control the retry params
+    retry:
+      limit: 100
+      backoff:
+        duration: "20s"
+        factor: 1
+        maxDuration: "3m0s"
     automated: {}
 ---
 # Source: argocd-apps/templates/argocd-apps-logging.yaml
