@@ -336,14 +336,6 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
 	}
 
-	appNamespace := appskubermaticv1.AppNamespaceSpec{
-		Name:   application.Name,
-		Create: true,
-	}
-	if application.Spec.DefaultNamespace != nil {
-		appNamespace = *application.Spec.DefaultNamespace
-	}
-
 	namespace := application.Name
 	config, err := r.configGetter(ctx)
 	if err != nil {
@@ -355,6 +347,7 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 		}
 	}
 
+	appNamespace := r.getAppNamespace(ctx, application)
 	app := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,

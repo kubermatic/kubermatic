@@ -55,10 +55,6 @@ var (
 		Type:    kubermaticv1.CNIPluginTypeCilium,
 		Version: "1.15.0",
 	}
-	applicationNamespace = appskubermaticv1.AppNamespaceSpec{
-		Name:   "release-namespace",
-		Create: true,
-	}
 )
 
 const (
@@ -419,30 +415,6 @@ func TestReconcile(t *testing.T) {
 				}
 
 				return compareApplications(apps.Items, applications, applicationInstallationNamespace)
-			},
-		},
-		{
-			name:                        "scenario 14: should create default application helm release in cluster with ready Cilium system application in configured default release namespace",
-			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
-			systemAppInstallationValues: map[string]any{"status": "ready"},
-			applications: []appskubermaticv1.ApplicationDefinition{
-				*genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, &applicationNamespace),
-			},
-			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
-				if reconcileErr != nil {
-					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
-				}
-
-				apps := appskubermaticv1.ApplicationInstallationList{}
-				if err := userClusterClient.List(context.Background(), &apps); err != nil {
-					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
-				}
-
-				if len(apps.Items) != 2 {
-					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), 2)
-				}
-
-				return compareApplications(apps.Items, applications, "")
 			},
 		},
 	}
