@@ -192,6 +192,13 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
+    # sometimes things take time and hence we should control the retry params
+    retry:
+      limit: 100
+      backoff:
+        duration: "20s"
+        factor: 1
+        maxDuration: "3m0s"
   {{- if .Values.seedExtras.autoSync }}
     automated: {}
   {{ end }}
