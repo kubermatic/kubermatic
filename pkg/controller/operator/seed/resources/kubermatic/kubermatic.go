@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +28,7 @@ import (
 )
 
 const (
-	serviceAccountName    = "kubermatic-seed"
-	caBundleConfigMapName = "ca-bundle"
+	serviceAccountName = "kubermatic-seed"
 )
 
 func ClusterRoleBindingName(cfg *kubermaticv1.KubermaticConfiguration) string {
@@ -69,7 +69,7 @@ func ClusterRoleBindingReconciler(cfg *kubermaticv1.KubermaticConfiguration, see
 
 func CABundleConfigMapReconciler(caBundle *corev1.ConfigMap) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapReconciler) {
-		return caBundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return resources.CABundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = caBundle.Data
 
 			return c, nil
