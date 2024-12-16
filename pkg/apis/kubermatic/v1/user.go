@@ -95,6 +95,10 @@ type UserSpec struct {
 	// InvalidTokensReference is a reference to a Secret that contains invalidated
 	// login tokens. The tokens are used to provide a safe logout mechanism.
 	InvalidTokensReference *providerconfig.GlobalSecretKeySelector `json:"invalidTokensReference,omitempty"`
+
+	// ReadAnnouncements holds the IDs of admin announcements that the user has read.
+	// +optional
+	ReadAnnouncements []string `json:"readAnnouncements,omitempty"`
 }
 
 // UserSettings represent an user settings.

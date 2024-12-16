@@ -72,6 +72,31 @@ spec:
                         type: string
                       type: array
                   type: object
+                announcements:
+                  additionalProperties:
+                    description: The announcement feature allows administrators to broadcast important messages to all users.
+                    properties:
+                      createdAt:
+                        description: Timestamp when the announcement was created.
+                        format: date-time
+                        type: string
+                      expires:
+                        description: Expiration date for the announcement.
+                        format: date-time
+                        type: string
+                      isActive:
+                        description: Indicates whether the announcement is active.
+                        type: boolean
+                      message:
+                        description: The message content of the announcement.
+                        type: string
+                    required:
+                      - createdAt
+                      - isActive
+                      - message
+                    type: object
+                  description: The announcement feature allows administrators to broadcast important messages to all users.
+                  type: object
                 cleanupOptions:
                   description: CleanupOptions control what happens when a cluster is deleted via the dashboard.
                   properties:
