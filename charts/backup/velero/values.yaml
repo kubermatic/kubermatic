@@ -13,8 +13,17 @@
 # limitations under the License.
 
 velero:
+  # whether to enable etcd backups?
+  # if you set this as true, you must provide valid configuration for velero.configuration.backupStorageLocation[0]
+  backupsEnabled: false
+
+  # whether to enable volume backups?
+  # if you set this as true, you must provide valid configuration for velero.configuration.volumeSnapshotLocation[0]
+  snapshotsEnabled: false
+  # see more about config options here: https://github.com/vmware-tanzu/helm-charts/blob/velero-7.1.0/charts/velero/values.yaml#L316C1-L360
+
   # Whether to deploy the node-agent daemonset.
-  deployNodeAgent: true
+  deployNodeAgent: false
 
   # Init containers to add to the Velero deployment's pod spec. At least one plugin provider image is required.
   # If the value is a string then it is evaluated as a template.
