@@ -379,6 +379,11 @@ check_seed_ready() {
   return 0
 }
 
+check_default-application-catalog-apps_ready() {
+
+  return 0
+}
+
 cleanup_kubermatic_clusters_in_kind() {
   # Tolerate errors and just continue
   set +e
