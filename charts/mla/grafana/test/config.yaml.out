@@ -38,6 +38,8 @@ data:
     url = https://grafana.net
     [log]
     mode = console
+    [metrics]
+    enabled = false
     [paths]
     data = /var/lib/grafana/
     logs = /var/log/grafana
@@ -5992,7 +5994,7 @@ spec:
         app.kubernetes.io/name: grafana
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: 8997fd5ca74c33b72bd846e819cdfcb264695817096f1d9b867a7fcee5556f6f
+        checksum/config: 911498eb26e4e6fbb4c3712a71f0848926acb1e28b6cfbfcb1f353a4f38c092d
         checksum/dashboards-json-config: d5dd01108fc9173e77bb0988f2610b9d96b581a55ef53741e3a14a1178c825f5
         checksum/sc-dashboard-provider-config: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
         kubectl.kubernetes.io/default-container: grafana
