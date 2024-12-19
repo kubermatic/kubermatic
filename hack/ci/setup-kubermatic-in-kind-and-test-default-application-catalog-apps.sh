@@ -236,7 +236,7 @@ metadata:
 spec:
   applicationRef:
     name: argocd
-    version: 6.0.0
+    version: v2.10.0
   namespace:
     create: true
     name: argocd
