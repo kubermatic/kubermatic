@@ -46,5 +46,5 @@ echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 
 beforeKubermaticSetup=$(nowms)
-source hack/ci/setup-kubermatic-in-kind.sh
+source hack/ci/setup-kubermatic-in-kind-and-test-default-application-catalog-apps.sh
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
