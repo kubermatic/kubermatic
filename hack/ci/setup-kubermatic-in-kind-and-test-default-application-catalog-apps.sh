@@ -225,6 +225,25 @@ echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
 
+kubectl apply -f - <<EOF
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationInstallation
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  applicationRef:
+    name: argocd
+    version: 6.0.0
+  namespace:
+    create: true
+    name: argocd
+  valuesBlock: |
+    alertmanager:
+      enabled: false
+EOF
+
+sleep 5
 echodate "Waiting for Apps from default applicaiton catalogs to be ready..."
 retry 9 check_default-application-catalog-apps_ready kubermatic
 echodate "Apps are ready."
