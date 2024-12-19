@@ -238,9 +238,6 @@ spec:
   namespace:
     create: true
     name: argocd
-  valuesBlock: |
-    alertmanager:
-      enabled: false
 EOF
 
 sleep 5
