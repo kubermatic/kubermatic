@@ -225,6 +225,8 @@ echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
 
+kubectl create namespace argocd
+
 kubectl apply -f - <<EOF
 apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationInstallation
