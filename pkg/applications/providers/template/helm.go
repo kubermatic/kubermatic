@@ -96,7 +96,13 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		return util.NoStatusUpdate, fmt.Errorf("failed to unmarshal values: %w", err)
 	}
 
-	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), values, *deployOpts, auth)
+	renderedValues, err := h.parsePreDefinedValues(values)
+
+	if err != nil {
+		return util.NoStatusUpdate, fmt.Errorf("failed to render pre defined values: %w", err)
+	}
+
+	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), renderedValues, *deployOpts, auth)
 	statusUpdater := util.NoStatusUpdate
 
 	// In some case, even if an error occurred, the helmRelease is updated.
