@@ -66,6 +66,8 @@ func CreateNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 	return ns
 }
 
+// EnsureClusterWithCleanup creates a cluster resource with a static name "default" and needed status fields for fetching it
+// based on the namespacedname and registers a hook on T.Cleanup that removes it at the end of the test.
 func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
@@ -86,7 +88,7 @@ func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlrunt
 		},
 	}
 	if err := client.Create(ctx, cluster); err != nil {
-		t.Fatalf("failed to create test namespace: %s", err)
+		t.Fatalf("failed to create test cluster: %s", err)
 	}
 	cluster.Status = kubermaticv1.ClusterStatus{
 		UserEmail: "owner@email.com",
@@ -101,7 +103,7 @@ func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlrunt
 	}
 
 	if err := client.Status().Update(ctx, cluster); err != nil {
-		t.Fatalf("failed to update testcluster: %v", err)
+		t.Fatalf("failed to update testcluster status: %v", err)
 	}
 
 	t.Cleanup(func() {
