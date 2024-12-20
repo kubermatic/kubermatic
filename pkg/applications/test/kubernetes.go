@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
@@ -63,6 +64,58 @@ func CreateNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 		t.Fatalf("timeout waiting for namespace creation")
 	}
 	return ns
+}
+
+func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
+	cluster := &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "default",
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			HumanReadableName: "humanreadable-cluster-name",
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				ProxyMode: "iptables",
+				Pods: kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{"10.0.0.0/24"},
+				},
+				Services: kubermaticv1.NetworkRanges{
+					CIDRBlocks: []string{"10.1.0.0/24"},
+				},
+			},
+			ExposeStrategy: "NodePort",
+		},
+	}
+	if err := client.Create(ctx, cluster); err != nil {
+		t.Fatalf("failed to create test namespace: %s", err)
+	}
+	cluster.Status = kubermaticv1.ClusterStatus{
+		UserEmail: "owner@email.com",
+		Address: kubermaticv1.ClusterAddress{
+			URL:  "https://cluster.seed.kkp",
+			Port: 6443,
+		},
+		Versions: kubermaticv1.ClusterVersionsStatus{
+			ControlPlane: semver.Semver("v1.30.5"),
+		},
+		NamespaceName: "default",
+	}
+
+	if err := client.Status().Update(ctx, cluster); err != nil {
+		t.Fatalf("failed to update testcluster: %v", err)
+	}
+
+	t.Cleanup(func() {
+		if err := client.Delete(ctx, cluster); err != nil {
+			t.Fatalf("failed to cleanup test namespace: %s", err)
+		}
+	})
+
+	if !utils.WaitFor(ctx, time.Second*1, time.Second*10, func() bool {
+		c := &kubermaticv1.Cluster{}
+		return client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), c) == nil
+	}) {
+		t.Fatalf("timeout waiting for namespace creation")
+	}
 }
 
 // StartTestEnvWithCleanup bootstraps the testing environment and return the to the kubeconfig. It also registers a hook on T.Cleanup to
