@@ -28,11 +28,11 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 )
 
-func GetAppNamespace(ctx context.Context, application appskubermaticv1.ApplicationDefinition) appskubermaticv1.AppNamespaceSpec {
+func GetAppNamespace(ctx context.Context, application *appskubermaticv1.ApplicationDefinition) *appskubermaticv1.AppNamespaceSpec {
 	if application.Spec.DefaultNamespace != nil {
-		return *application.Spec.DefaultNamespace
+		return application.Spec.DefaultNamespace
 	}
-	return appskubermaticv1.AppNamespaceSpec{
+	return &appskubermaticv1.AppNamespaceSpec{
 		Name:   application.Name,
 		Create: true,
 	}

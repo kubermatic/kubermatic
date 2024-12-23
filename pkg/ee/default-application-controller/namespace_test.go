@@ -27,16 +27,12 @@ import (
 	"testing"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/test/fake"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
 var (
-	testScheme           = fake.NewScheme()
 	applicationNamespace = appskubermaticv1.AppNamespaceSpec{
 		Name:   "release-namespace",
 		Create: true,
@@ -47,10 +43,6 @@ const (
 	defaultValue = "not-empty:\n  value"
 	appVersion   = "v1.2.0"
 )
-
-func init() {
-	utilruntime.Must(clusterv1alpha1.AddToScheme(testScheme))
-}
 
 func TestGetAppNamespace(t *testing.T) {
 	testCases := []struct {
@@ -63,7 +55,7 @@ func TestGetAppNamespace(t *testing.T) {
 			name:        "scenario 1: application namespace should be set to default value when a default value is configured",
 			application: *genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, &applicationNamespace),
 			validate: func(application appskubermaticv1.ApplicationDefinition) bool {
-				namespace := GetAppNamespace(context.Background(), application)
+				namespace := GetAppNamespace(context.Background(), &application)
 				return namespace.Name == applicationNamespace.Name
 			},
 		},
@@ -71,7 +63,7 @@ func TestGetAppNamespace(t *testing.T) {
 			name:        "scenario 2: application namespace should be set to application name when no default value is configured",
 			application: *genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, nil),
 			validate: func(application appskubermaticv1.ApplicationDefinition) bool {
-				namespace := GetAppNamespace(context.Background(), application)
+				namespace := GetAppNamespace(context.Background(), &application)
 				return namespace.Name == application.Name
 			},
 		},

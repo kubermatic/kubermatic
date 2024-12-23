@@ -24,8 +24,8 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 )
 
-func (r *Reconciler) getAppNamespace(ctx context.Context, application appskubermaticv1.ApplicationDefinition) appskubermaticv1.AppNamespaceSpec {
-	return appskubermaticv1.AppNamespaceSpec{
+func (r *Reconciler) getAppNamespace(ctx context.Context, application *appskubermaticv1.ApplicationDefinition) *appskubermaticv1.AppNamespaceSpec {
+	return &appskubermaticv1.AppNamespaceSpec{
 		Name:   application.Name,
 		Create: true,
 	}

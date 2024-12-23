@@ -347,7 +347,7 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 		}
 	}
 
-	appNamespace := r.getAppNamespace(ctx, application)
+	appNamespace := r.getAppNamespace(ctx, &application)
 	app := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
@@ -356,7 +356,7 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 			Labels:      application.Labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appNamespace,
+			Namespace: *appNamespace,
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    application.Name,
 				Version: appVersion,

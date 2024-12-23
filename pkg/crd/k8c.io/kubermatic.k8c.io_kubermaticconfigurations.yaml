@@ -2323,7 +2323,7 @@ spec:
                       format: int32
                       type: integer
                     defaultApplications:
-                      description: DefaultApplications contains configuration for default Applications settings.
+                      description: DefaultApplications contains configuration for default Application settings.
                       properties:
                         namespace:
                           type: string

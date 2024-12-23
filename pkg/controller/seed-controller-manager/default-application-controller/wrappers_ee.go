@@ -25,6 +25,6 @@ import (
 	eeutil "k8c.io/kubermatic/v2/pkg/ee/default-application-controller"
 )
 
-func (r *Reconciler) getAppNamespace(ctx context.Context, application appskubermaticv1.ApplicationDefinition) appskubermaticv1.AppNamespaceSpec {
+func (r *Reconciler) getAppNamespace(ctx context.Context, application *appskubermaticv1.ApplicationDefinition) *appskubermaticv1.AppNamespaceSpec {
 	return eeutil.GetAppNamespace(ctx, application)
 }
