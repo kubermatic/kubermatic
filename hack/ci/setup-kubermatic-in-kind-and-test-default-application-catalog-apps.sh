@@ -225,6 +225,193 @@ echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
 
+kubectl apply -f -<<EOF
+apiVersion: kubermatic.k8c.io/v1
+kind: Cluster
+metadata:
+  annotations:
+    kubermatic.io/aws-region: eu-west-1
+  finalizers:
+  - kubermatic.k8c.io/cleanup-aws
+  - kubermatic.k8c.io/cleanup-backups
+  - kubermatic.k8c.io/cleanup-credentials-secrets
+  - kubermatic.k8c.io/cleanup-etcdbackupconfigs
+  - kubermatic.k8c.io/cleanup-kubermatic-constraints
+  - kubermatic.k8c.io/cleanup-namespace
+  - kubermatic.k8c.io/cleanup-usersshkeys-cluster-ids
+  - kubermatic.k8c.io/delete-nodes
+  labels:
+    project-id: l8zvpg6dph
+  name: avznsmznpt
+spec:
+  auditLogging: {}
+  cloud:
+    aws:
+      credentialsReference:
+        name: credential-aws-avznsmznpt
+        namespace: kubermatic
+      instanceProfileName: kubernetes-avznsmznpt
+      nodePortsAllowedIPRanges:
+        cidrBlocks:
+        - 0.0.0.0/0
+      roleARN: kubernetes-avznsmznpt-control-plane
+      routeTableID: rtb-0fa00466c420a3a96
+      securityGroupID: sg-025fc15d1095ecbc4
+      vpcID: vpc-05b5e4db034fe2fa0
+    dc: aws-eu-west-1a-mirror
+    providerName: aws
+  clusterNetwork:
+    dnsDomain: cluster.local
+    ipFamily: IPv4
+    ipvs:
+      strictArp: true
+    konnectivityEnabled: true
+    nodeCidrMaskSizeIPv4: 24
+    nodeLocalDNSCacheEnabled: true
+    pods:
+      cidrBlocks:
+      - 172.25.0.0/16
+    proxyMode: ipvs
+    services:
+      cidrBlocks:
+      - 10.240.16.0/20
+  cniPlugin:
+    type: canal
+    version: v3.25
+  componentsOverride:
+    apiserver:
+      nodePortRange: 30000-32767
+      replicas: 2
+    controllerManager:
+      leaderElection: {}
+      replicas: 1
+    etcd:
+      clusterSize: 3
+      diskSize: 5Gi
+    konnectivityProxy: {}
+    nodePortProxyEnvoy:
+      resources: {}
+    prometheus: {}
+    scheduler:
+      leaderElection: {}
+      replicas: 1
+  containerRuntime: containerd
+  enableUserSSHKeyAgent: false
+  exposeStrategy: NodePort
+  features:
+    apiserverNetworkPolicy: true
+    ccmClusterName: true
+    etcdLauncher: true
+    externalCloudProvider: true
+  humanReadableName: test cluster
+  kubernetesDashboard: {}
+  mla: {}
+  oidc: {}
+  opaIntegration:
+    webhookTimeoutSeconds: 10
+  pause: false
+  version: 1.27.6
+status:
+  address:
+    adminToken: xxxxxx.xxxxxxxxxxxxxxxx
+    externalName: yadda.yadda.yadda
+    internalURL: apiserver-external.cluster-avznsmznpt.svc.cluster.local.
+    ip: 1.2.3.4
+    port: 32479
+    url: https://yadda.yadda.yadda:32479
+  conditions:
+    AddonControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:05Z"
+      lastTransitionTime: "2024-03-21T19:19:03Z"
+      status: "True"
+    AddonInstallerControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:02Z"
+      lastTransitionTime: "2024-03-21T19:18:50Z"
+      status: "True"
+    BackupControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:51:58Z"
+      status: "True"
+    CloudControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:51:58Z"
+      lastTransitionTime: "2023-10-02T20:13:10Z"
+      status: "True"
+    ClusterControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:22Z"
+      lastTransitionTime: "2024-02-08T16:19:40Z"
+      status: "True"
+    ClusterInitialized:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:16Z"
+      message: Cluster has been initialized successfully
+      status: "True"
+    EtcdClusterInitialized:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:16Z"
+      message: Etcd Cluster has been initialized successfully
+      status: "True"
+    IPAMControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:02Z"
+      status: "True"
+    MachineDeploymentReconciledSuccessfully:
+      kubermaticVersion: v2.22.2
+      lastHeartbeatTime: "2023-05-22T10:06:59Z"
+      status: "True"
+    MonitoringControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:04Z"
+      lastTransitionTime: "2024-02-08T16:19:39Z"
+      status: "True"
+    SeedResourcesUpToDate:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-04-04T20:19:43Z"
+      lastTransitionTime: "2024-04-04T20:19:43Z"
+      message: All control plane components are up to date
+      reason: ClusterUpdateSuccessful
+      status: "True"
+    UpdateControllerReconciledSuccessfully:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:04Z"
+      lastTransitionTime: "2023-11-27T21:39:09Z"
+      status: "True"
+    UpdateProgress:
+      kubermaticVersion: v2.23.12
+      lastHeartbeatTime: "2024-03-25T12:52:06Z"
+      message: No update in progress, cluster has reached its desired version.
+      reason: UpToDate
+      status: "True"
+  extendedHealth:
+    apiserver: HealthStatusUp
+    applicationController: HealthStatusUp
+    cloudProviderInfrastructure: HealthStatusUp
+    controller: HealthStatusUp
+    etcd: HealthStatusUp
+    konnectivity: HealthStatusUp
+    machineController: HealthStatusUp
+    operatingSystemManager: HealthStatusUp
+    scheduler: HealthStatusUp
+    userClusterControllerManager: HealthStatusUp
+  lastProviderReconciliation: "2024-04-08T14:28:41Z"
+  namespaceName: cluster-avznsmznpt
+  phase: Running
+  resourceUsage:
+    cpu: "12"
+    memory: 48G
+    storage: 400G
+  userEmail: user@example.com
+  versions:
+    apiserver: 1.27.6
+    controlPlane: 1.27.6
+    controllerManager: 1.27.6
+    oldestNodeVersion: 1.27.6
+    scheduler: 1.27.6
+EOF
+
 # [kkp-cluster] Kubermatic KKP - extracts kubeconfig of user cluster and connects it in a new bash
 kkp-cluster() {
     TMP_KUBECONFIG=$(mktemp)
