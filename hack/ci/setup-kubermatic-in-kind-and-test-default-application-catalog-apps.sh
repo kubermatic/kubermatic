@@ -225,6 +225,16 @@ echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
 
+# [kkp-cluster] Kubermatic KKP - extracts kubeconfig of user cluster and connects it in a new bash
+kkp-cluster() {
+    TMP_KUBECONFIG=$(mktemp)
+    local cluster="$(kubectl get cluster)"
+    kubectl get secret admin-kubeconfig -n cluster-$cluster -o go-template='{{ index .data "kubeconfig" | base64decode }}' > $TMP_KUBECONFIG
+    KUBECONFIG=$TMP_KUBECONFIG $SHELL
+}
+
+kkp-cluster
+
 kubectl create namespace argocd
 
 kubectl apply -f - <<EOF
