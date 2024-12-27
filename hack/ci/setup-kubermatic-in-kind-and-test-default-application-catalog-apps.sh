@@ -228,7 +228,6 @@ echodate "Kubermatic is ready."
 kubectl apply -f -<<EOF
 apiVersion: kubermatic.k8c.io/v1
 kind: Cluster
-  name: avznsmznpt
 spec:
   auditLogging: {}
   clusterNetwork:
@@ -268,12 +267,6 @@ spec:
       replicas: 1
   containerRuntime: containerd
   enableUserSSHKeyAgent: false
-  exposeStrategy: NodePort
-  features:
-    apiserverNetworkPolicy: true
-    ccmClusterName: true
-    etcdLauncher: true
-    externalCloudProvider: true
   humanReadableName: testcluster
 EOF
 
