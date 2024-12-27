@@ -225,62 +225,64 @@ echodate "Waiting for Deployments to roll out..."
 retry 9 check_all_deployments_ready kubermatic
 echodate "Kubermatic is ready."
 
-kubectl apply -f -<<EOF
-apiVersion: kubermatic.k8c.io/v1
-kind: Cluster
-metadata:
-  name: xyz1234
-spec:
-  auditLogging: {}
-  clusterNetwork:
-    dnsDomain: cluster.local
-    ipFamily: IPv4
-    ipvs:
-      strictArp: true
-    konnectivityEnabled: true
-    nodeCidrMaskSizeIPv4: 24
-    nodeLocalDNSCacheEnabled: true
-    pods:
-      cidrBlocks:
-      - 172.25.0.0/16
-    proxyMode: ipvs
-    services:
-      cidrBlocks:
-      - 10.240.16.0/20
-  cniPlugin:
-    type: canal
-    version: v3.25
-  componentsOverride:
-    apiserver:
-      nodePortRange: 30000-32767
-      replicas: 2
-    controllerManager:
-      leaderElection: {}
-      replicas: 1
-    etcd:
-      clusterSize: 3
-      diskSize: 5Gi
-    konnectivityProxy: {}
-    nodePortProxyEnvoy:
-      resources: {}
-    prometheus: {}
-    scheduler:
-      leaderElection: {}
-      replicas: 1
-  containerRuntime: containerd
-  enableUserSSHKeyAgent: false
-  humanReadableName: testcluster
-EOF
+#kubectl apply -f -<<EOF
+#apiVersion: kubermatic.k8c.io/v1
+#kind: Cluster
+#metadata:
+#  name: xyz1234
+#spec:
+#  auditLogging: {}
+#  clusterNetwork:
+#    dnsDomain: cluster.local
+#    ipFamily: IPv4
+#    ipvs:
+#      strictArp: true
+#    konnectivityEnabled: true
+#    nodeCidrMaskSizeIPv4: 24
+#    nodeLocalDNSCacheEnabled: true
+#    pods:
+#      cidrBlocks:
+#      - 172.25.0.0/16
+#    proxyMode: ipvs
+#    services:
+#      cidrBlocks:
+#      - 10.240.16.0/20
+#  cniPlugin:
+#    type: canal
+#    version: v3.25
+#  componentsOverride:
+#    apiserver:
+#      nodePortRange: 30000-32767
+#      replicas: 2
+#    controllerManager:
+#      leaderElection: {}
+#      replicas: 1
+#    etcd:
+#      clusterSize: 3
+#      diskSize: 5Gi
+#    konnectivityProxy: {}
+#    nodePortProxyEnvoy:
+#      resources: {}
+#    prometheus: {}
+#    scheduler:
+#      leaderElection: {}
+#      replicas: 1
+#  containerRuntime: containerd
+#  enableUserSSHKeyAgent: false
+#  humanReadableName: testcluster
+#EOF
+#
+## [kkp-cluster] Kubermatic KKP - extracts kubeconfig of user cluster and connects it in a new bash
+#kkp-cluster() {
+#    TMP_KUBECONFIG=$(mktemp)
+#    local cluster="$(kubectl get cluster)"
+#    kubectl get secret admin-kubeconfig -n cluster-$cluster -o go-template='{{ index .data "kubeconfig" | base64decode }}' > $TMP_KUBECONFIG
+#    KUBECONFIG=$TMP_KUBECONFIG $SHELL
+#}
+#
+#kkp-cluster
 
-# [kkp-cluster] Kubermatic KKP - extracts kubeconfig of user cluster and connects it in a new bash
-kkp-cluster() {
-    TMP_KUBECONFIG=$(mktemp)
-    local cluster="$(kubectl get cluster)"
-    kubectl get secret admin-kubeconfig -n cluster-$cluster -o go-template='{{ index .data "kubeconfig" | base64decode }}' > $TMP_KUBECONFIG
-    KUBECONFIG=$TMP_KUBECONFIG $SHELL
-}
-
-kkp-cluster
+source hack/run-user-cluster-controller-manager.sh
 
 kubectl create namespace argocd
 
