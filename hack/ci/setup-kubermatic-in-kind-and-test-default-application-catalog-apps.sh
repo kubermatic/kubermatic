@@ -228,8 +228,6 @@ echodate "Kubermatic is ready."
 kubectl apply -f -<<EOF
 apiVersion: kubermatic.k8c.io/v1
 kind: Cluster
-  labels:
-    project-id: l8zvpg6dph
   name: avznsmznpt
 spec:
   auditLogging: {}
