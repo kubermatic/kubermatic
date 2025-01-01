@@ -209,10 +209,10 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 		}
 	}
 
-	if (clusterKubeLB != nil && clusterKubeLB.EnableGatewayAPI != nil && *clusterKubeLB.EnableGatewayAPI) || (kubelb != nil && kubelb.EnableGatewayAPI) {
+	if clusterKubeLB != nil && clusterKubeLB.EnableGatewayAPI != nil && *clusterKubeLB.EnableGatewayAPI {
 		flags = append(flags, "-enable-gateway-api")
 	}
-	if (clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass) || (kubelb != nil && kubelb.UseLoadBalancerClass) {
+	if clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass {
 		flags = append(flags, "-use-loadbalancer-class")
 	}
 
