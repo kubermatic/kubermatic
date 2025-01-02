@@ -458,6 +458,16 @@ set_helm_charts_version() {
       continue
     fi
 
+    # download all charts dependencies
+    chartRepoURL=$(yq eval '.dependencies[0].repository' $chartFile)
+    if [ "$chartRepoURL" != "null" ]; then
+      chartDepName=$(yq eval '.dependencies[0].name' $chartFile)
+      helm repo add $chartDepName $chartRepoURL
+
+      chartDirParent=$(dirname "$chartFile")
+      helm dependency build $chartDirParent --skip-refresh
+    fi
+
     yq --inplace ".version = \"$semver\"" "$chartFile"
     if [ "$chart" = "kubermatic-operator" ]; then
       yq --inplace ".appVersion = \"$version\"" "$chartFile"
