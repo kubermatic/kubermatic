@@ -191,7 +191,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 
 	installArgoCDTests(ctx, t, log, client)
 
-	log.Info("Waiting for Cilium connectivity pods to get ready...")
+	log.Info("Waiting for ArgoCD pods to get ready...")
 	err = waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
 		"argocd",
 	})
