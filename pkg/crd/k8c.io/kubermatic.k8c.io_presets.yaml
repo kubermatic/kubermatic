@@ -387,8 +387,6 @@ spec:
                       type: boolean
                     username:
                       type: string
-                  required:
-                    - domain
                   type: object
                 packet:
                   description: Access data for Packet Cloud.
