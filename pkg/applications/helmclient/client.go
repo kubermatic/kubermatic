@@ -473,6 +473,9 @@ func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
 // Rollback wraps helms Rollback command to be used with our ActionConfig.
 func (h HelmClient) Rollback(releaseName string) error {
 	client := action.NewRollback(h.actionConfig)
+	// we need to set the last successful deployed revision explicit because otherwise it would be the current revision minus 1
+	// which could lead to errors due to missing revisions when the latest ones failed because we configure history limits
+	// on upgrade actions
 	latestDeployedRelease, err := h.actionConfig.Releases.Deployed(releaseName)
 	if err != nil {
 		return fmt.Errorf("Could not fetch last successful release %q: %w", releaseName, err)
