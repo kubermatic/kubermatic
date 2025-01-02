@@ -33,3 +33,37 @@ presubmits:
               cpu: 4
             limits:
               memory: 18Gi
+
+  - name: argocd-newer-version-test2
+    run_if_changed: ".*(cilium|apis|hubble|addon|connectivity-check|defaults|cni|validation|operator|webhook|crd|.prow|go.mod).*"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-argocd-e2e-test.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi

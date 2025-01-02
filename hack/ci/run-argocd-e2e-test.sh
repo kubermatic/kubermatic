@@ -54,10 +54,10 @@ fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
-echodate "Running Cilium tests..."
+echodate "Running ArgoCD tests..."
 
-go_test cilium_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/default-app-catalog-applications-test/argocd \
+go_test argocd_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/default-app-catalog-applications-test/argocd \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
-echodate "Cilium tests done."
+echodate "ArgoCD tests done."
