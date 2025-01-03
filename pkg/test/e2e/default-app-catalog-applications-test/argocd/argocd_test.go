@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -62,7 +60,7 @@ var (
 )
 
 const (
-	projectName = "cilium-test-project"
+	projectName = "argocd-test-project"
 	argoCDNs    = "argocd"
 	argoCDName  = "argocd"
 )
@@ -144,6 +142,7 @@ func TestArgoCDClusters(t *testing.T) {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
 
+	installArgoCDTests(ctx, t, tLogger, seedClient)
 	installArgoCDTests(ctx, t, tLogger, seedClient)
 
 	testUserCluster(ctx, t, tLogger, client)
@@ -251,20 +250,78 @@ func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 		}
 	}()
 
-	objs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
+	//objs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
+	//if err != nil {
+	//	t.Fatalf("failed to read objects from yaml: %v", err)
+	//}
+	//
+	//for _, obj := range objs {
+	//	obj.SetNamespace(argoCDNs)
+	//	if err := client.Create(ctx, obj); err != nil {
+	//		t.Fatalf("failed to apply resource: %v", err)
+	//	}
+	//
+	//	log.Info("installed resources")
+	//	log.Debugw("Created object", "kind", obj.GetObjectKind(), "name", obj.GetName())
+	//}
+
+	appDef := &appskubermaticv1.ApplicationDefinition{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
+			Kind:       appskubermaticv1.ApplicationDefinitionKindName,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "argocd", // Replace with the correct application name if needed
+		},
+		Spec: appskubermaticv1.ApplicationDefinitionSpec{
+			Description: "Argo CD - Declarative, GitOps Continuous Delivery Tool for Kubernetes.",
+			Method:      appskubermaticv1.HelmTemplateMethod,
+			Versions: []appskubermaticv1.ApplicationVersion{
+				{
+					Version: "v2.4.14",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "https://argoproj.github.io/argo-helm",
+								ChartName:    "argo-cd",
+								ChartVersion: "5.5.12",
+							},
+						},
+					},
+				},
+				{
+					Version: "v2.10.0",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "https://argoproj.github.io/argo-helm",
+								ChartName:    "argo-cd",
+								ChartVersion: "6.0.0",
+							},
+						},
+					},
+				},
+			},
+			DefaultValuesBlock: `
+server:
+  service:
+    # To Expose ArgoCD externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
+    type: "LoadBalancer"
+`,
+			DocumentationURL: "https://argoproj.github.io/cd/",
+			SourceURL:        "https://github.com/argoproj/argo-helm",
+		},
+	}
+
+	// Apply the ApplicationDefinition
+	// Assuming your ApplicationDefinition CRD is installed on the cluster
+	err = client.Create(ctx, appDef)
 	if err != nil {
-		t.Fatalf("failed to read objects from yaml: %v", err)
+		t.Fatalf("failed to apply ApplicationDefinition: %v", err)
 	}
 
-	for _, obj := range objs {
-		obj.SetNamespace(argoCDNs)
-		if err := client.Create(ctx, obj); err != nil {
-			t.Fatalf("failed to apply resource: %v", err)
-		}
-
-		log.Info("installed resources")
-		log.Debugw("Created object", "kind", obj.GetObjectKind(), "name", obj.GetName())
-	}
+	// Print success message
+	t.Log("ApplicationDefinition argocd applied successfully!")
 }
 
 func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
