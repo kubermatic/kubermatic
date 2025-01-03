@@ -25,7 +25,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"os"
 	"testing"
 	"time"
@@ -35,7 +34,6 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -137,42 +135,19 @@ func TestArgoCDClusters(t *testing.T) {
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
-	tests := []struct {
-		name      string
-		proxyMode string
-	}{
-		{
-			name:      "ebpf proxy mode test",
-			proxyMode: resources.EBPFProxyMode,
-		},
-		// IPVS is not supported ATM due to https://github.com/cilium/cilium/issues/18610
-		// {
-		//	 name:      "ipvs proxy mode test",
-		//	 proxyMode: resources.IPVSProxyMode,
-		// },
-		{
-			name:      "iptables proxy mode test",
-			proxyMode: resources.IPTablesProxyMode,
-		},
+	client, cleanup, tLogger, err := createUserCluster(ctx, t, logger, seedClient)
+	if cleanup != nil {
+		defer cleanup()
 	}
 
-	for _, test := range tests {
-		proxyMode := test.proxyMode
-		t.Run(test.name, func(t *testing.T) {
-			client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
-			if cleanup != nil {
-				defer cleanup()
-			}
-
-			if err != nil {
-				t.Fatalf("failed to create user cluster: %v", err)
-			}
-
-			installArgoCDTests(ctx, t, tLogger, seedClient)
-
-			testUserCluster(ctx, t, tLogger, client)
-		})
+	if err != nil {
+		t.Fatalf("failed to create user cluster: %v", err)
 	}
+
+	installArgoCDTests(ctx, t, tLogger, seedClient)
+
+	testUserCluster(ctx, t, tLogger, client)
+
 }
 
 //gocyclo:ignore
@@ -263,6 +238,19 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 }
 
 func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+	ns := corev1.Namespace{}
+	ns.Name = argoCDNs
+	err := client.Create(ctx, &ns)
+	if err != nil {
+		t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
+	}
+	defer func() {
+		err := client.Delete(ctx, &ns)
+		if err != nil {
+			t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
+		}
+	}()
+
 	objs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
 	if err != nil {
 		t.Fatalf("failed to read objects from yaml: %v", err)
@@ -340,7 +328,6 @@ func createUserCluster(
 	t *testing.T,
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
-	proxyMode string,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
 	testAppAnnotation, err := getTestApplicationAnnotation(argoCDName)
 	if err != nil {
@@ -350,13 +337,8 @@ func createUserCluster(
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
-		WithTestName("cilium").
-		WithProxyMode(proxyMode).
+		WithTestName("argocd").
 		WithKonnectivity(true).
-		WithCNIPlugin(&kubermaticv1.CNIPluginSettings{
-			Type:    kubermaticv1.CNIPluginTypeCilium,
-			Version: cni.GetDefaultCNIPluginVersion(kubermaticv1.CNIPluginTypeCilium),
-		}).
 		WithAnnotations(map[string]string{
 			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(testAppAnnotation),
 		})
