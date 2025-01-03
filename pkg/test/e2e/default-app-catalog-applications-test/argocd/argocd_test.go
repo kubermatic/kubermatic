@@ -144,7 +144,6 @@ func TestArgoCDClusters(t *testing.T) {
 	}
 
 	installArgoCDTests(ctx, t, tLogger, seedClient)
-	installArgoCDTests(ctx, t, tLogger, seedClient)
 
 	testUserCluster(ctx, t, tLogger, client)
 
