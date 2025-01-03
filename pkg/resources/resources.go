@@ -605,6 +605,8 @@ const (
 
 	// AuthorizationWebhookVolumeName
 	AuthorizationWebhookVolumeName = "authorization-webhook"
+	// AuthorizationConfigurationVolumeName
+	AuthorizationConfigurationVolumeName = "authorization-configuration"
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"

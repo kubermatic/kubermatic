@@ -250,8 +250,21 @@ spec:
                       items:
                         type: string
                       type: array
+                    authorizationConfigurationFile:
+                      description: 'Settings for the new configuration approach of the authorization chain (not compatible with authorizationWebhookConfiguration)'
+                      properties:
+                        secretName:
+                          description: 'The secret containing the authorization configurations. The whole secrets get mounted to support additional config files like kubeconfigs'
+                          type: string
+                        secretKey:
+                          description: 'The secret Key containing the AuthorizationConfig object'
+                          type: string
+                        secretMountPath:
+                          description: 'The path where the secret gets mounted. By default: /etc/kubernetes/authorization-configs'
+                          type: string
+                      type: object
                     authorizationWebhookConfiguration:
-                      description: 'Settings for the Webhook Authorization mode'
+                      description: 'Settings for the Webhook Authorization mode command line parameters (not compatible with authorizationConfigurationFile)'
                       properties:
                         secretName:
                           description: 'The secret containing the webhook configuration'

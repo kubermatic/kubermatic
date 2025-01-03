@@ -436,8 +436,10 @@ type AuthorizationConfig struct {
 	// Optional: List of enabled Authorization modes (by default 'Node,RBAC')
 	// Important: order matters
 	EnabledModes []string `json:"enabledModes,omitempty"`
-	// Contains the settions for the AuthorizationWebhook if EnabledModes
+	// Contains the settions for the AuthorizationWebhook if EnabledModes contains Webhook
 	AuthorizationWebhookConfiguration *AuthorizationWebhookConfiguration `json:"authorizationWebhookConfiguration,omitempty"`
+
+	AuthorizationConfigurationFile *AuthorizationConfigurationFile `json:"authorizationConfigurationFile,omitempty"`
 }
 type AuthorizationWebhookConfiguration struct {
 	// The secret containing the webhook configuration
@@ -446,6 +448,15 @@ type AuthorizationWebhookConfiguration struct {
 	SecretKey string `json:"secretKey"`
 	// the Webhook Version, by default "v1"
 	WebhookVersion string `json:"webhookVersion"`
+}
+
+type AuthorizationConfigurationFile struct {
+	// The secret containing the authorizaion configuration
+	SecretName string `json:"secretName"`
+	// The secret Key containing the AuthorizationConfig k8s object
+	SecretKey string `json:"secretKey"`
+	// the path were the secret should be mounted, by default '/etc/kubernetes/authorization-configs'
+	SecretMountPath string `json:"secretMountPath"`
 }
 
 func (c ClusterSpec) GetAuthorizationModesString() string {
@@ -477,6 +488,26 @@ func (c ClusterSpec) GetAuthorizationWebhookVersion() string {
 	}
 
 	return "v1"
+}
+
+func (c ClusterSpec) IsAuthorizationConfigurationFileEnabled() bool {
+	if c.AuthorizationConfig == nil || c.AuthorizationConfig.AuthorizationConfigurationFile == nil {
+		return false
+	}
+
+	if len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretName) == 0 || len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey) == 0 {
+		return false
+	}
+
+	return true
+}
+
+func (c ClusterSpec) GetAuthorizationConfigurationMountPath() string {
+	if c.AuthorizationConfig != nil && c.AuthorizationConfig.AuthorizationConfigurationFile != nil && len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretMountPath) > 0 {
+		return c.AuthorizationConfig.AuthorizationConfigurationFile.SecretMountPath
+	}
+
+	return "/etc/kubernetes/authorization-configs"
 }
 
 const (
