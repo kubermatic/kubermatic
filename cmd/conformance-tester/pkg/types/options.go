@@ -141,7 +141,7 @@ func (o *Options) AddFlags() {
 	flag.Var(flagopts.SetFlag(o.EnableTests), "tests", "Comma-separated list of enabled tests (cannot be used in conjunction with -exclude-tests)")
 	flag.Var(flagopts.SetFlag(o.ExcludeTests), "exclude-tests", "Run all the tests except the ones in this comma-separated list (cannot be used in conjunction with -tests)")
 	flag.Var(flagopts.SetFlag(o.ScenarioOptions), "scenario-options", "Comma-separated list of additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
-	flag.StringVar(&o.RepoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
+	flag.StringVar(&o.RepoRoot, "repo-root", "/kubetests/", "Root path for the different kubernetes repositories")
 	flag.StringVar(&o.KubermaticProject, "kubermatic-project", "", "Kubermatic project to use; leave empty to create a new one")
 	flag.StringVar(&o.KubermaticSeedName, "kubermatic-seed-cluster", o.KubermaticSeedName, "Seed cluster name to create test cluster in")
 	flag.StringVar(&o.KubermaticNamespace, "kubermatic-namespace", o.KubermaticNamespace, "Namespace where Kubermatic is installed to")
