@@ -25,6 +25,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"os"
 	"testing"
 	"time"
@@ -167,7 +168,7 @@ func TestArgoCDClusters(t *testing.T) {
 				t.Fatalf("failed to create user cluster: %v", err)
 			}
 
-			installArgoCDTests(ctx, t, log, seedClient)
+			installArgoCDTests(ctx, t, tLogger, seedClient)
 
 			testUserCluster(ctx, t, tLogger, client)
 		})
@@ -196,7 +197,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	//installArgoCDTests(ctx, t, log, client)
 
 	log.Info("Waiting for ArgoCD pods to get ready...")
-	err = waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
+	err := waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
 		"argocd",
 	})
 	if err != nil {
@@ -373,7 +374,7 @@ func createUserCluster(
 
 	ns := corev1.Namespace{}
 	ns.Name = argoCDNs
-	err := clusterClient.Create(ctx, &ns)
+	err = clusterClient.Create(ctx, &ns)
 	if err != nil {
 		t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
 	}
