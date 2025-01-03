@@ -465,7 +465,7 @@ func (h HelmClient) GetMetadata(releaseName string) (*action.Metadata, error) {
 	client := action.NewGetMetadata(h.actionConfig)
 	res, err := client.Run(releaseName)
 	if err != nil {
-		return nil, fmt.Errorf("Could not retrieve metadata for release %q: %w", releaseName, err)
+		return nil, fmt.Errorf("could not retrieve metadata for release %q: %w", releaseName, err)
 	}
 	return res, nil
 }
@@ -478,12 +478,12 @@ func (h HelmClient) Rollback(releaseName string) error {
 	// on upgrade actions
 	latestDeployedRelease, err := h.actionConfig.Releases.Deployed(releaseName)
 	if err != nil {
-		return fmt.Errorf("Could not fetch last successful release %q: %w", releaseName, err)
+		return fmt.Errorf("could not fetch last successful release %q: %w", releaseName, err)
 	}
 	client.Version = latestDeployedRelease.Version
 	err = client.Run(releaseName)
 	if err != nil {
-		return fmt.Errorf("Could not rollback release %q: %w", releaseName, err)
+		return fmt.Errorf("could not rollback release %q: %w", releaseName, err)
 	}
 	return nil
 }
