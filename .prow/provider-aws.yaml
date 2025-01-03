@@ -29,6 +29,16 @@ presubmits:
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
+      initContainers:
+        - image: quay.io/kubermatic/build:kubetests
+          command:
+            - cp
+            - -ar
+            - /opt/kube-test
+            - /kubetests
+          volumeMounts:
+            - name: kubetests
+              mountPath: /kubetests
       containers:
         - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
           env:
@@ -54,3 +64,9 @@ presubmits:
               cpu: 3.5
             limits:
               memory: 6Gi
+          volumeMounts:
+            - name: kubetests
+              mountPath: /kubetests
+      volumes:
+        - name: kubetests
+          emptyDir: {}
