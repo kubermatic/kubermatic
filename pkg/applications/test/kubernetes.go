@@ -71,7 +71,7 @@ func CreateNamespaceWithCleanup(t *testing.T, ctx context.Context, client ctrlru
 func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "default",
+			Name: "cluster-default",
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: "humanreadable-cluster-name",
@@ -88,7 +88,7 @@ func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlrunt
 		},
 	}
 	if err := client.Create(ctx, cluster); err != nil {
-		t.Fatalf("failed to create test cluster: %s", err)
+		t.Fatalf("failed to create test cluster: %v", err)
 	}
 	cluster.Status = kubermaticv1.ClusterStatus{
 		UserEmail: "owner@email.com",
@@ -99,25 +99,18 @@ func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlrunt
 		Versions: kubermaticv1.ClusterVersionsStatus{
 			ControlPlane: semver.Semver("v1.30.5"),
 		},
-		NamespaceName: "default",
+		NamespaceName: "cluster-default",
 	}
 
 	if err := client.Status().Update(ctx, cluster); err != nil {
-		t.Fatalf("failed to update testcluster status: %v", err)
+		t.Fatalf("failed to update test cluster status: %v", err)
 	}
 
 	t.Cleanup(func() {
 		if err := client.Delete(ctx, cluster); err != nil {
-			t.Fatalf("failed to cleanup test namespace: %s", err)
+			t.Fatalf("failed to cleanup test cluster: %s", err)
 		}
 	})
-
-	if !utils.WaitFor(ctx, time.Second*1, time.Second*10, func() bool {
-		c := &kubermaticv1.Cluster{}
-		return client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), c) == nil
-	}) {
-		t.Fatalf("timeout waiting for namespace creation")
-	}
 }
 
 // StartTestEnvWithCleanup bootstraps the testing environment and return the to the kubeconfig. It also registers a hook on T.Cleanup to

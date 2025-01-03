@@ -68,10 +68,10 @@ type TemplateProvider interface {
 }
 
 // NewTemplateProvider return the concrete implementation of TemplateProvider according to the templateMethod.
-func NewTemplateProvider(ctx context.Context, seedClient ctrlruntimeclient.Client, kubeconfig string, cacheDir string, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation, secretNamespace string) (TemplateProvider, error) {
+func NewTemplateProvider(ctx context.Context, seedClient ctrlruntimeclient.Client, clusterName string, kubeconfig string, cacheDir string, log *zap.SugaredLogger, appInstallation *appskubermaticv1.ApplicationInstallation, secretNamespace string) (TemplateProvider, error) {
 	switch appInstallation.Status.Method {
 	case appskubermaticv1.HelmTemplateMethod:
-		return template.HelmTemplate{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, SecretNamespace: secretNamespace, SeedClient: seedClient}, nil
+		return template.HelmTemplate{Ctx: ctx, Kubeconfig: kubeconfig, CacheDir: cacheDir, Log: log, SecretNamespace: secretNamespace, ClusterName: clusterName, SeedClient: seedClient}, nil
 	default:
 		return nil, fmt.Errorf("template method '%v' not implemented", appInstallation.Status.Method)
 	}

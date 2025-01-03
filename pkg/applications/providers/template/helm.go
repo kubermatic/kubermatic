@@ -49,6 +49,9 @@ type HelmTemplate struct {
 	// Namespace where credential secrets are stored.
 	SecretNamespace string
 
+	// ClusterName of the user-cluster
+	ClusterName string
+
 	// SeedClient to seed cluster.
 	SeedClient ctrlruntimeclient.Client
 }
@@ -96,10 +99,10 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 		return util.NoStatusUpdate, fmt.Errorf("failed to unmarshal values: %w", err)
 	}
 
-	renderedValues, err := h.parsePreDefinedValues(values)
+	renderedValues, err := h.templatePreDefinedValues(values)
 
 	if err != nil {
-		return util.NoStatusUpdate, fmt.Errorf("failed to render pre defined values: %w", err)
+		return util.NoStatusUpdate, fmt.Errorf("failed to render pre-defined values: %w", err)
 	}
 
 	helmRelease, err := helmClient.InstallOrUpgrade(chartLoc, getReleaseName(applicationInstallation), renderedValues, *deployOpts, auth)

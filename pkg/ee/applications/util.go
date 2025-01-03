@@ -32,12 +32,10 @@ import (
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubernetesutil "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-var ErrNoClusterForTemplating = fmt.Errorf("no cluster found for template data")
 
 // TemplateData is the root context injected into each application values.
 type TemplateData struct {
@@ -62,13 +60,10 @@ type ClusterData struct {
 }
 
 // GetTemplateData fetches the related cluster object by the given cluster namespace, parses pre defined values to a template data struct.
-func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, clusterNamespace string) (*TemplateData, error) {
-	cluster, err := kubernetesutil.ClusterFromNamespace(ctx, seedClient, clusterNamespace)
-	if err != nil {
-		return nil, err
-	}
-	if cluster == nil {
-		return nil, ErrNoClusterForTemplating
+func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, clusterName string) (*TemplateData, error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+		return nil, fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
 	}
 	var clusterVersion *semverlib.Version
 	if s := cluster.Status.Versions.ControlPlane.Semver(); s != nil {
@@ -76,16 +71,20 @@ func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 	} else {
 		clusterVersion = cluster.Spec.Version.Semver()
 	}
-	return &TemplateData{
-		Cluster: ClusterData{
-			Name:              cluster.Name,
-			HumanReadableName: cluster.Spec.HumanReadableName,
-			OwnerEmail:        cluster.Status.UserEmail,
-			Address:           cluster.Status.Address,
-			Version:           fmt.Sprintf("%d.%d.%d", clusterVersion.Major(), clusterVersion.Minor(), clusterVersion.Patch()),
-			MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()),
-		},
-	}, nil
+	if clusterVersion != nil {
+		return &TemplateData{
+			Cluster: ClusterData{
+				Name:              cluster.Name,
+				HumanReadableName: cluster.Spec.HumanReadableName,
+				OwnerEmail:        cluster.Status.UserEmail,
+				Address:           cluster.Status.Address,
+				Version:           fmt.Sprintf("%d.%d.%d", clusterVersion.Major(), clusterVersion.Minor(), clusterVersion.Patch()),
+				MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()),
+			},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("failed to parse semver version for cluster %q", clusterName)
 }
 
 // RenderValueTemplate is rendering the given template data into the given map of values an error is returned when undefined values are used in the values map values.

@@ -1,7 +1,7 @@
 //go:build ee
 
 /*
-Copyright 2024 The Kubermatic Kubernetes Platform contributors.
+Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import (
 	eeutil "k8c.io/kubermatic/v2/pkg/ee/applications"
 )
 
-func (h *HelmTemplate) parsePreDefinedValues(applicationValues map[string]interface{}) (map[string]interface{}, error) {
-	templateData, err := eeutil.GetTemplateData(h.Ctx, h.SeedClient, h.SecretNamespace)
+func (h *HelmTemplate) templatePreDefinedValues(applicationValues map[string]any) (map[string]any, error) {
+	templateData, err := eeutil.GetTemplateData(h.Ctx, h.SeedClient, h.ClusterName)
 
 	if err != nil {
 		return nil, err

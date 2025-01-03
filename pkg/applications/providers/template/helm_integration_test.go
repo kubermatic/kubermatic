@@ -245,6 +245,7 @@ func TestHelmProvider(t *testing.T) {
 					Log:             kubermaticlog.Logger,
 					SecretNamespace: "default",
 					SeedClient:      client,
+					ClusterName:     "cluster-default",
 				}
 
 				statusUpdater, err := template.InstallOrUpgrade(exampleV2ChartLoc, &appskubermaticv1.ApplicationDefinition{}, app)
@@ -283,6 +284,7 @@ func TestHelmProvider(t *testing.T) {
 					Log:             kubermaticlog.Logger,
 					SecretNamespace: "default",
 					SeedClient:      client,
+					ClusterName:     "cluster-default",
 				}
 
 				statusUpdater, err := template.InstallOrUpgrade(exampleV2ChartLoc, &appskubermaticv1.ApplicationDefinition{Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: deployOpts}}, app)
@@ -339,6 +341,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 		CacheDir:        t.TempDir(),
 		Log:             kubermaticlog.Logger,
 		SecretNamespace: "default",
+		ClusterName:     "cluster-default",
 		SeedClient:      client,
 	}
 
