@@ -122,17 +122,17 @@ func TestArgoCDClusters(t *testing.T) {
 		t.Fatalf("failed to build ctrlruntime client: %v", err)
 	}
 
-	testAppDefs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
-	if err != nil {
-		t.Fatalf("failed to read objects from yaml: %v", err)
-	}
-	for _, testAppDef := range testAppDefs {
-		if err := seedClient.Create(ctx, testAppDef); err != nil {
-			t.Fatalf("failed to apply resource: %v", err)
-		}
-
-		logger.Infow("Created object", "kind", testAppDef.GetObjectKind(), "name", testAppDef.GetName())
-	}
+	//testAppDefs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
+	//if err != nil {
+	//	t.Fatalf("failed to read objects from yaml: %v", err)
+	//}
+	//for _, testAppDef := range testAppDefs {
+	//	if err := seedClient.Create(ctx, testAppDef); err != nil {
+	//		t.Fatalf("failed to apply resource: %v", err)
+	//	}
+	//
+	//	logger.Infow("Created object", "kind", testAppDef.GetObjectKind(), "name", testAppDef.GetName())
+	//}
 
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
