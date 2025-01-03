@@ -339,7 +339,7 @@ type Openstack struct {
 	// ProjectID, formally known as tenantID.
 	ProjectID string `json:"projectID,omitempty"`
 	// Domain holds the name of the identity service (keystone) domain.
-	Domain string `json:"domain"`
+	Domain string `json:"domain,omitempty"`
 
 	// Network holds the name of the internal network When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created.
 	Network        string `json:"network,omitempty"`

@@ -271,7 +271,7 @@ func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kube
 	case kubermaticv1.AWSCloudProvider:
 		return provider.CompleteAWSProviderSpec(assert[aws.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.AWS, os)
 	case kubermaticv1.AzureCloudProvider:
-		return provider.CompleteAzureProviderSpec(assert[azure.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Azure)
+		return provider.CompleteAzureProviderSpec(assert[azure.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Azure, os)
 	case kubermaticv1.DigitaloceanCloudProvider:
 		return provider.CompleteDigitaloceanProviderSpec(assert[digitalocean.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Digitalocean)
 	case kubermaticv1.GCPCloudProvider:

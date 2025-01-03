@@ -200,3 +200,7 @@ grafana:
       header_name: "X-Forwarded-Email"
       header_property: "username"
       auto_sign_up: "true"
+    metrics:
+      # Grafana does not support a custom port for metrics, and as such exposes metrics
+      # on the main HTTP endpoint accessible to users.
+      enabled: false
