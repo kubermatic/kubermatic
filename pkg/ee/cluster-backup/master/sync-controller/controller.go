@@ -131,7 +131,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return nil
 		}
 
-		err := kkpreconciling.ReconcileClusterBackupStorageLocations(ctx, cbslReconcilerFactories, "", seedClient)
+		err := kkpreconciling.ReconcileClusterBackupStorageLocations(ctx, cbslReconcilerFactories, request.Namespace, seedClient)
 		if err != nil {
 			return fmt.Errorf("failed to reconcile storage location: %w", err)
 		}
