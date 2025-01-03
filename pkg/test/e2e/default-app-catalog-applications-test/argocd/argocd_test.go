@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,6 +50,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -100,96 +102,98 @@ func TestInExistingCluster(t *testing.T) {
 	testUserCluster(context.Background(), t, logger, client)
 }
 
-//func TestCiliumClusters(t *testing.T) {
-//	rawLog := log.NewFromOptions(logOptions)
-//	logger := rawLog.Sugar()
-//	ctx := context.Background()
-//
-//	if err := credentials.Parse(); err != nil {
-//		t.Fatalf("Failed to get credentials: %v", err)
-//	}
-//
-//	config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
-//	if err != nil {
-//		t.Fatalf("failed to build config: %v", err)
-//	}
-//
-//	seedClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
-//	if err != nil {
-//		t.Fatalf("failed to build ctrlruntime client: %v", err)
-//	}
-//
-//	testAppDefs, err := resourcesFromYaml("./testdata/test-app-def.yaml")
-//	if err != nil {
-//		t.Fatalf("failed to read objects from yaml: %v", err)
-//	}
-//	for _, testAppDef := range testAppDefs {
-//		if err := seedClient.Create(ctx, testAppDef); err != nil {
-//			t.Fatalf("failed to apply resource: %v", err)
-//		}
-//
-//		logger.Infow("Created object", "kind", testAppDef.GetObjectKind(), "name", testAppDef.GetName())
-//	}
-//
-//	// set the logger used by sigs.k8s.io/controller-runtime
-//	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
-//
-//	tests := []struct {
-//		name      string
-//		proxyMode string
-//	}{
-//		{
-//			name:      "ebpf proxy mode test",
-//			proxyMode: resources.EBPFProxyMode,
-//		},
-//		// IPVS is not supported ATM due to https://github.com/cilium/cilium/issues/18610
-//		// {
-//		//	 name:      "ipvs proxy mode test",
-//		//	 proxyMode: resources.IPVSProxyMode,
-//		// },
-//		{
-//			name:      "iptables proxy mode test",
-//			proxyMode: resources.IPTablesProxyMode,
-//		},
-//	}
-//
-//	for _, test := range tests {
-//		proxyMode := test.proxyMode
-//		t.Run(test.name, func(t *testing.T) {
-//			client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
-//			if cleanup != nil {
-//				defer cleanup()
-//			}
-//
-//			if err != nil {
-//				t.Fatalf("failed to create user cluster: %v", err)
-//			}
-//
-//			testUserCluster(ctx, t, tLogger, client)
-//		})
-//	}
-//}
+func TestArgoCDClusters(t *testing.T) {
+	rawLog := log.NewFromOptions(logOptions)
+	logger := rawLog.Sugar()
+	ctx := context.Background()
+
+	if err := credentials.Parse(); err != nil {
+		t.Fatalf("Failed to get credentials: %v", err)
+	}
+
+	config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
+	if err != nil {
+		t.Fatalf("failed to build config: %v", err)
+	}
+
+	seedClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		t.Fatalf("failed to build ctrlruntime client: %v", err)
+	}
+
+	testAppDefs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
+	if err != nil {
+		t.Fatalf("failed to read objects from yaml: %v", err)
+	}
+	for _, testAppDef := range testAppDefs {
+		if err := seedClient.Create(ctx, testAppDef); err != nil {
+			t.Fatalf("failed to apply resource: %v", err)
+		}
+
+		logger.Infow("Created object", "kind", testAppDef.GetObjectKind(), "name", testAppDef.GetName())
+	}
+
+	// set the logger used by sigs.k8s.io/controller-runtime
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+
+	tests := []struct {
+		name      string
+		proxyMode string
+	}{
+		{
+			name:      "ebpf proxy mode test",
+			proxyMode: resources.EBPFProxyMode,
+		},
+		// IPVS is not supported ATM due to https://github.com/cilium/cilium/issues/18610
+		// {
+		//	 name:      "ipvs proxy mode test",
+		//	 proxyMode: resources.IPVSProxyMode,
+		// },
+		{
+			name:      "iptables proxy mode test",
+			proxyMode: resources.IPTablesProxyMode,
+		},
+	}
+
+	for _, test := range tests {
+		proxyMode := test.proxyMode
+		t.Run(test.name, func(t *testing.T) {
+			client, cleanup, tLogger, err := createUserCluster(ctx, t, logger.With("proxymode", proxyMode), seedClient, proxyMode)
+			if cleanup != nil {
+				defer cleanup()
+			}
+
+			if err != nil {
+				t.Fatalf("failed to create user cluster: %v", err)
+			}
+
+			installArgoCDTests(ctx, t, log, seedClient)
+
+			testUserCluster(ctx, t, tLogger, client)
+		})
+	}
+}
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
 	log.Info("Running ArgoCD tests...")
-	ns := corev1.Namespace{}
-	ns.Name = argoCDNs
-	err := client.Create(ctx, &ns)
-	if err != nil {
-		t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
-	}
-	defer func() {
-		err := client.Delete(ctx, &ns)
-		if err != nil {
-			t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
-		}
-	}()
+	//ns := corev1.Namespace{}
+	//ns.Name = argoCDNs
+	//err := client.Create(ctx, &ns)
+	//if err != nil {
+	//	//t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
+	//}
+	//defer func() {
+	//	err := client.Delete(ctx, &ns)
+	//	if err != nil {
+	//		t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
+	//	}
+	//}()
+	//
+	//log = log.With("namespace", argoCDNs)
+	//log.Debug("Namespace created")
 
-	log = log.With("namespace", argoCDNs)
-	log.Debug("Namespace created")
-
-	installArgoCDTests(ctx, t, log, client)
+	//installArgoCDTests(ctx, t, log, client)
 
 	log.Info("Waiting for ArgoCD pods to get ready...")
 	err = waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
@@ -269,6 +273,7 @@ func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 			t.Fatalf("failed to apply resource: %v", err)
 		}
 
+		log.Info("installed resources")
 		log.Debugw("Created object", "kind", obj.GetObjectKind(), "name", obj.GetName())
 	}
 }
@@ -365,6 +370,22 @@ func createUserCluster(
 	}
 
 	clusterClient, err := testJig.ClusterClient(ctx)
+
+	ns := corev1.Namespace{}
+	ns.Name = argoCDNs
+	err := clusterClient.Create(ctx, &ns)
+	if err != nil {
+		t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
+	}
+	defer func() {
+		err := clusterClient.Delete(ctx, &ns)
+		if err != nil {
+			t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
+		}
+	}()
+
+	log = log.With("namespace", argoCDNs)
+	log.Debug("Namespace created")
 
 	return clusterClient, cleanup, log, err
 }
