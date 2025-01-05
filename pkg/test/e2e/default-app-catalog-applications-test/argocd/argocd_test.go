@@ -73,33 +73,6 @@ func init() {
 	logOptions.AddFlags(flag.CommandLine)
 }
 
-func TestInExistingCluster(t *testing.T) {
-	if userconfig == "" {
-		t.Logf("kubeconfig for usercluster not provided, test passes vacuously.")
-		t.Logf("to run against an existing usercluster use following command:")
-		t.Logf("go test ./pkg/test/e2e/default-app-catalog-applications-test/argocd -v -tags e2e -timeout 30m -run TestInExistingCluster -userconfig <USERCLUSTER KUBECONFIG>")
-		return
-	}
-
-	rawLog := log.NewFromOptions(logOptions)
-	logger := rawLog.Sugar()
-
-	config, err := clientcmd.BuildConfigFromFlags("", userconfig)
-	if err != nil {
-		t.Fatalf("failed to build config: %v", err)
-	}
-
-	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
-	if err != nil {
-		t.Fatalf("failed to build ctrlruntime client: %v", err)
-	}
-
-	// set the logger used by sigs.k8s.io/controller-runtime
-	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
-
-	testUserCluster(context.Background(), t, logger, client)
-}
-
 func TestArgoCDClusters(t *testing.T) {
 	rawLog := log.NewFromOptions(logOptions)
 	logger := rawLog.Sugar()
@@ -118,18 +91,6 @@ func TestArgoCDClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to build ctrlruntime client: %v", err)
 	}
-
-	//testAppDefs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
-	//if err != nil {
-	//	t.Fatalf("failed to read objects from yaml: %v", err)
-	//}
-	//for _, testAppDef := range testAppDefs {
-	//	if err := seedClient.Create(ctx, testAppDef); err != nil {
-	//		t.Fatalf("failed to apply resource: %v", err)
-	//	}
-	//
-	//	logger.Infow("Created object", "kind", testAppDef.GetObjectKind(), "name", testAppDef.GetName())
-	//}
 
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
@@ -152,23 +113,6 @@ func TestArgoCDClusters(t *testing.T) {
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
 	log.Info("Running ArgoCD tests...")
-	//ns := corev1.Namespace{}
-	//ns.Name = argoCDNs
-	//err := client.Create(ctx, &ns)
-	//if err != nil {
-	//	//t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
-	//}
-	//defer func() {
-	//	err := client.Delete(ctx, &ns)
-	//	if err != nil {
-	//		t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
-	//	}
-	//}()
-	//
-	//log = log.With("namespace", argoCDNs)
-	//log.Debug("Namespace created")
-
-	//installArgoCDTests(ctx, t, log, client)
 
 	log.Info("Waiting for ArgoCD pods to get ready...")
 	err := waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
@@ -249,21 +193,6 @@ func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 			t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
 		}
 	}()
-
-	//objs, err := resourcesFromYaml("./testdata/argocd-app.yaml")
-	//if err != nil {
-	//	t.Fatalf("failed to read objects from yaml: %v", err)
-	//}
-	//
-	//for _, obj := range objs {
-	//	obj.SetNamespace(argoCDNs)
-	//	if err := client.Create(ctx, obj); err != nil {
-	//		t.Fatalf("failed to apply resource: %v", err)
-	//	}
-	//
-	//	log.Info("installed resources")
-	//	log.Debugw("Created object", "kind", obj.GetObjectKind(), "name", obj.GetName())
-	//}
 
 	appDef := &appskubermaticv1.ApplicationDefinition{
 		TypeMeta: metav1.TypeMeta{

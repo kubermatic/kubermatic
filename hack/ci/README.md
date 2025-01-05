@@ -192,13 +192,3 @@ vars, this script won't run properly.
 This ensures that the Prometheus rules deployed into userclusters
 are valid Prometheus rules.
 
-# run-tests-default-application-catalog.sh
-
-This script sets up a local KKP installation in kind and call setup-kubermatic-in-kind-and-test-default-application-catalog-apps.sh to check if all apps from default application catalog are ready.
-
-# setup-kubermatic-in-kind-and-test-default-application-catalog-apps.sh
-
-This script creates a local kind cluster, compiles the KKP binaries, creates all Docker images and loads them into the kind cluster, then installs KKP using the KKP installer + operator and sets up a single shared master/seed system. Checks if all applications from default application catalog are ready.
-
-This script should be sourced, not called, so callers get the variables it sets.
-

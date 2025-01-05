@@ -379,17 +379,6 @@ check_seed_ready() {
   return 0
 }
 
-check_default-application-catalog-apps_ready() {
-  #let's test only argocd for now
-  status="$(kubectl --namespace argocd get applicationinstallation argocd --output json | jq -r '.status.conditions.Ready.status')"
-  if [ "$status" != "True" ]; then
-    echodate "ApplicationInstallation argocd does not yet have Ready=True condition."
-    return 1
-  fi
-
-  return 0
-}
-
 cleanup_kubermatic_clusters_in_kind() {
   # Tolerate errors and just continue
   set +e
