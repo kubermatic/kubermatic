@@ -12,13 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if .Values.velero }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: velero
-
+{{ if .Values.velero.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -41,11 +35,13 @@ spec:
     targetRevision: {{ template "git-tag-version" . }}
     path: {{ .Values.valuesPathPrefix }}
     ref: values
-  # TODO: In 2.24+, add a installCRD option in values.yaml since current Velero chart version is v1 and it does not install CRDs automatically
-  - repoURL: '{{ .Values.kkpRepoURL }}'
-    path: {{ template "kkp.chart.pathprefix" . }}/charts/backup/velero/crd
-    targetRevision: {{ .Values.kkpVersion }}
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: velero
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.velero.autoSync }}
+    automated: {}
+  {{ end }}
 {{ end }}
