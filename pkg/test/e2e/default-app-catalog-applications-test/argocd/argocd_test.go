@@ -212,7 +212,6 @@ func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 				Name:    "argocd",
 				Version: "v2.10.0",
 			},
-			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
 		},
 	}
 
