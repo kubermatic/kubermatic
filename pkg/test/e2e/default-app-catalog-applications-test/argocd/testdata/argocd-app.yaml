@@ -1,151 +1,43 @@
-#                Kubermatic Enterprise Read-Only License
-#                       Version 1.0 ("KERO-1.0”)
-#                   Copyright © 2023 Kubermatic GmbH
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
-# 1.	You may only view, read and display for studying purposes the source
-#    code of the software licensed under this license, and, to the extent
-#    explicitly provided under this license, the binary code.
-# 2.	Any use of the software which exceeds the foregoing right, including,
-#    without limitation, its execution, compilation, copying, modification
-#    and distribution, is expressly prohibited.
-# 3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
-#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# END OF TERMS AND CONDITIONS
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#apiVersion: apps.kubermatic.k8c.io/v1
+#kind: ApplicationDefinition
+#metadata:
+#  name: nginx
+#spec:
+#  description: Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer.
+#  method: helm
+#  versions:
+#  - template:
+#      source:
+#        helm:
+#          chartName: ingress-nginx
+#          chartVersion: 4.7.1
+#          url: https://kubernetes.github.io/ingress-nginx
+#    version: 1.8.1
+#  defaultValues: {}
 
 apiVersion: apps.kubermatic.k8c.io/v1
-kind: ApplicationDefinition
+kind: ApplicationInstallation
 metadata:
   name: argocd
+  namespace: argocd
 spec:
-  description: Argo CD - Declarative, GitOps Continuous Delivery Tool for Kubernetes.
-  displayName: Argo CD
-  method: helm
-  versions:
-    - template:
-        source:
-          helm:
-            chartName: argo-cd
-            chartVersion: 5.5.12
-            url: https://argoproj.github.io/argo-helm
-      version: v2.4.14
-    - template:
-        source:
-          helm:
-            chartName: argo-cd
-            chartVersion: 6.0.0
-            url: https://argoproj.github.io/argo-helm
-      version: v2.10.0
-  defaultValuesBlock: |
-    server:
-      service:
-        # To Expose ArgoCD externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-        type: "LoadBalancer"
-  documentationURL: https://argoproj.github.io/cd/
-  sourceURL: https://github.com/argoproj/argo-helm
-  logo: |+
-    iVBORw0KGgoAAAANSUhEUgAAACcAAAAyCAYAAADfuMIdAAAABGdBTUEAALGPC/xhBQAAAAlwSFlz
-    AAALDwAACw8BkvkDpQAAAVlpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1s
-    bnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpS
-    REYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMj
-    Ij4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6
-    dGlmZj0iaHR0cDovL25zLmFkb2JlLmNvbS90aWZmLzEuMC8iPgogICAgICAgICA8dGlmZjpPcmll
-    bnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAg
-    PC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KTMInWQAAFBlJREFUWEedWWmQXNV1Pnd5W3dPb7NoZjRC
-    OyOhZSQhCwUMsnBsE7MEOxEhsfPHReEqHNuVyp9UORWVykmlKjhOubJUhYp/OFUOFZONuGIT5AQL
-    44DBSCAJIQntK5qte6aXt90l3+2RhLEgODniTXe/fu++757lO99pGP0/zRKxz/36Hw9kQWlQFIMB
-    zXi/JV0xXITMWIlLjGU6sUa0hE0bJslmCnlwZcnB56f3HHkqW1jlf7f/M7gv/PZf9Lcjf7Bt9KD2
-    ZZ0LXibhR5azgIwOGMc7y/Aft9YYg03k2ErKFSXYUcvL06aXZ9M2U5OrLjw9tWffPnV16RvsFwb3
-    2c8+XuTcH86iwgojxdJMsAE8tcg9ITmXpBk8ZQmYjGEARsTJGM0ZObDEucHDjDbCUsJU1pDKnPNV
-    fpLl+cVu979bTz31lL76qOv2C4Fz3poO+bjxgjXKl8NasiITknEhEEHSRmvbcxbAGQaIV43jH+E0
-    /Mfde1zKnVuxE8u1Tn2dT3uxOsGT5Oj9yejFh5566F0AxdXX97Tv0C5R/I0vjM0Xvc069CdSTy7O
-    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
-    AABJRU5ErkJggg==
-  logoFormat: png
+  applicationRef:
+    name: argocd
+    version: v2.10.0
+  namespace:
+    create: true
+    name: argocd
