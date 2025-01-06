@@ -194,57 +194,30 @@ func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 		}
 	}()
 
-	appDef := &appskubermaticv1.ApplicationDefinition{
+	appInstallation := &appskubermaticv1.ApplicationInstallation{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: appskubermaticv1.SchemeGroupVersion.String(),
-			Kind:       appskubermaticv1.ApplicationDefinitionKindName,
+			APIVersion: "apps.kubermatic.k8c.io/v1",
+			Kind:       "ApplicationInstallation",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "argocd", // Replace with the correct application name if needed
+			Name:      "argocd",
+			Namespace: "argocd",
 		},
-		Spec: appskubermaticv1.ApplicationDefinitionSpec{
-			Description: "Argo CD - Declarative, GitOps Continuous Delivery Tool for Kubernetes.",
-			Method:      appskubermaticv1.HelmTemplateMethod,
-			Versions: []appskubermaticv1.ApplicationVersion{
-				{
-					Version: "v2.4.14",
-					Template: appskubermaticv1.ApplicationTemplate{
-						Source: appskubermaticv1.ApplicationSource{
-							Helm: &appskubermaticv1.HelmSource{
-								URL:          "https://argoproj.github.io/argo-helm",
-								ChartName:    "argo-cd",
-								ChartVersion: "5.5.12",
-							},
-						},
-					},
-				},
-				{
-					Version: "v2.10.0",
-					Template: appskubermaticv1.ApplicationTemplate{
-						Source: appskubermaticv1.ApplicationSource{
-							Helm: &appskubermaticv1.HelmSource{
-								URL:          "https://argoproj.github.io/argo-helm",
-								ChartName:    "argo-cd",
-								ChartVersion: "6.0.0",
-							},
-						},
-					},
-				},
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: appskubermaticv1.AppNamespaceSpec{
+				Name:   "argocd",
+				Create: true,
 			},
-			DefaultValuesBlock: `
-server:
-  service:
-    # To Expose ArgoCD externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-    type: "LoadBalancer"
-`,
-			DocumentationURL: "https://argoproj.github.io/cd/",
-			SourceURL:        "https://github.com/argoproj/argo-helm",
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name:    "argocd",
+				Version: "v2.10.0",
+			},
+			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
 		},
 	}
 
-	// Apply the ApplicationDefinition
-	// Assuming your ApplicationDefinition CRD is installed on the cluster
-	err = client.Create(ctx, appDef)
+	// Apply the ArgoCD ApplicationInstallation
+	err = client.Create(ctx, appInstallation)
 	if err != nil {
 		t.Fatalf("failed to apply ApplicationDefinition: %v", err)
 	}
