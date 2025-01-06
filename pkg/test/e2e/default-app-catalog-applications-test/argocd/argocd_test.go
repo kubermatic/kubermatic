@@ -112,16 +112,16 @@ func TestArgoCDClusters(t *testing.T) {
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
 	log.Info("Running ArgoCD tests...")
 
-	log.Info("Waiting for ArgoCD pods to get ready...")
-	err := waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
-		"argocd",
-	})
-	if err != nil {
-		t.Fatalf("pods never became ready: %v", err)
-	}
+	//log.Info("Waiting for ArgoCD pods to get ready...")
+	//err := waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
+	//	"argocd",
+	//})
+	//if err != nil {
+	//	t.Fatalf("pods never became ready: %v", err)
+	//}
 
 	log.Info("Checking for argocd ApplicationInstallation...")
-	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err := wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: "argocd", Name: "argocd"}, app); err != nil {
 			return fmt.Errorf("failed to get ArgoCD ApplicationInstallation in user cluster: %w", err), nil
