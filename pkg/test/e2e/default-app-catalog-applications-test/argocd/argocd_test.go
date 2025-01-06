@@ -341,21 +341,21 @@ func createUserCluster(
 
 	clusterClient, err := testJig.ClusterClient(ctx)
 
-	ns := corev1.Namespace{}
-	ns.Name = argoCDNs
-	err = clusterClient.Create(ctx, &ns)
-	if err != nil {
-		t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
-	}
-	defer func() {
-		err := clusterClient.Delete(ctx, &ns)
-		if err != nil {
-			t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
-		}
-	}()
-
-	log = log.With("namespace", argoCDNs)
-	log.Debug("Namespace created")
+	//ns := corev1.Namespace{}
+	//ns.Name = argoCDNs
+	//err = clusterClient.Create(ctx, &ns)
+	//if err != nil {
+	//	t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
+	//}
+	//defer func() {
+	//	err := clusterClient.Delete(ctx, &ns)
+	//	if err != nil {
+	//		t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
+	//	}
+	//}()
+	//
+	//log = log.With("namespace", argoCDNs)
+	//log.Debug("Namespace created")
 
 	return clusterClient, cleanup, log, err
 }
