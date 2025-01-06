@@ -106,8 +106,8 @@ elif [[ $provider == "nutanix" ]]; then
 elif [[ $provider == "vmwareclouddirector" ]]; then
   EXTRA_ARGS="-vmware-cloud-director-username=${VCD_USER}
     -vmware-cloud-director-password=${VCD_PASSWORD}
-    -vmware-cloud-director-organization=${VCD_ORG}
-    -vmware-cloud-director-vdc=${VCD_VDC}
+    -vmware-cloud-director-organization=O1060SM
+    -vmware-cloud-director-vdc=O1060SM_GEO02_KUBERMATIC
     -vmware-cloud-director-ovdc-networks=${VCD_OVDC_NETWORK}
     -vmware-cloud-director-kkp-datacenter=vmware-cloud-director-ger"
 fi
