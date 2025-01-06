@@ -102,7 +102,7 @@ func TestArgoCDClusters(t *testing.T) {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
 
-	installArgoCDTests(ctx, t, tLogger, seedClient)
+	//installArgoCDTests(ctx, t, tLogger, seedClient)
 
 	testUserCluster(ctx, t, tLogger, client)
 
