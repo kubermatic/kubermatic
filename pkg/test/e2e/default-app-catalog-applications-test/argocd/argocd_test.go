@@ -218,11 +218,11 @@ func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogge
 	// Apply the ArgoCD ApplicationInstallation
 	err = client.Create(ctx, appInstallation)
 	if err != nil {
-		t.Fatalf("failed to apply ApplicationDefinition: %v", err)
+		t.Fatalf("failed to apply ArgoCD ApplicationInstallation: %v", err)
 	}
 
 	// Print success message
-	t.Log("ApplicationDefinition argocd applied successfully!")
+	t.Log("ArgoCD ApplicationInstallation applied successfully!")
 }
 
 func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
