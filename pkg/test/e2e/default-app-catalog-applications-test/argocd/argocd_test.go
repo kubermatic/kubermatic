@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -280,6 +278,32 @@ func getTestApplicationAnnotation(appName string) ([]byte, error) {
 	return data, nil
 }
 
+func getArgoCDApplication() ([]byte, error) {
+	app := apiv1.Application{
+		ObjectMeta: apiv1.ObjectMeta{
+			Name:      "argocd",
+			Namespace: "argocd",
+		},
+		Spec: apiv1.ApplicationSpec{
+			Namespace: apiv1.NamespaceSpec{
+				Name:   "argocd",
+				Create: true,
+			},
+			ApplicationRef: apiv1.ApplicationRef{
+				Name:    "argocd",
+				Version: "v2.10.0",
+			},
+		},
+	}
+	applications := []apiv1.Application{app}
+	data, err := json.Marshal(applications)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 // creates a usercluster on aws.
 func createUserCluster(
 	ctx context.Context,
@@ -287,7 +311,12 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	testAppAnnotation, err := getTestApplicationAnnotation(argoCDName)
+	//testAppAnnotation, err := getTestApplicationAnnotation(argoCDName)
+	//if err != nil {
+	//	return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
+	//}
+
+	argoCDAppAnnotation, err := getArgoCDApplication()
 	if err != nil {
 		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
 	}
@@ -298,7 +327,7 @@ func createUserCluster(
 		WithTestName("argocd").
 		WithKonnectivity(true).
 		WithAnnotations(map[string]string{
-			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(testAppAnnotation),
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(argoCDAppAnnotation),
 		})
 
 	cleanup := func() {
