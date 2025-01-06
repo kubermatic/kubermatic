@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -17,10 +19,8 @@ limitations under the License.
 package argocd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -36,17 +36,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/sets"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -102,8 +94,6 @@ func TestArgoCDClusters(t *testing.T) {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
 
-	//installArgoCDTests(ctx, t, tLogger, seedClient)
-
 	testUserCluster(ctx, t, tLogger, client)
 
 }
@@ -112,18 +102,10 @@ func TestArgoCDClusters(t *testing.T) {
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
 	log.Info("Running ArgoCD tests...")
 
-	//log.Info("Waiting for ArgoCD pods to get ready...")
-	//err := waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
-	//	"argocd",
-	//})
-	//if err != nil {
-	//	t.Fatalf("pods never became ready: %v", err)
-	//}
-
 	log.Info("Checking for argocd ApplicationInstallation...")
 	err := wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
-		if err := client.Get(context.Background(), types.NamespacedName{Namespace: "argocd", Name: "argocd"}, app); err != nil {
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: argoCDNs, Name: argoCDName}, app); err != nil {
 			return fmt.Errorf("failed to get ArgoCD ApplicationInstallation in user cluster: %w", err), nil
 		}
 		if app.Status.ApplicationVersion == nil {
@@ -136,161 +118,19 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	}
 }
 
-func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
-	log = log.With("namespace", namespace)
-
-	r, err := labels.NewRequirement(key, selection.In, names)
-	if err != nil {
-		return fmt.Errorf("failed to build requirement: %w", err)
-	}
-	l := labels.NewSelector().Add(*r)
-
-	return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
-		pods := corev1.PodList{}
-		err = client.List(ctx, &pods, ctrlruntimeclient.InNamespace(namespace), ctrlruntimeclient.MatchingLabelsSelector{Selector: l})
-		if err != nil {
-			return fmt.Errorf("failed to list Pods: %w", err), nil
-		}
-
-		if len(pods.Items) == 0 {
-			return errors.New("no Pods found"), nil
-		}
-
-		unready := sets.New[string]()
-		for _, pod := range pods.Items {
-			ready := false
-			for _, c := range pod.Status.Conditions {
-				if c.Type == corev1.ContainersReady {
-					ready = c.Status == corev1.ConditionTrue
-				}
-			}
-
-			if !ready {
-				unready.Insert(pod.Name)
-			}
-		}
-
-		if unready.Len() > 0 {
-			return fmt.Errorf("not all Pods are ready: %v", sets.List(unready)), nil
-		}
-
-		return nil, nil
-	})
-}
-
-func installArgoCDTests(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	ns := corev1.Namespace{}
-	ns.Name = argoCDNs
-	err := client.Create(ctx, &ns)
-	if err != nil {
-		t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
-	}
-	defer func() {
-		err := client.Delete(ctx, &ns)
-		if err != nil {
-			t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
-		}
-	}()
-
-	appInstallation := &appskubermaticv1.ApplicationInstallation{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps.kubermatic.k8c.io/v1",
-			Kind:       "ApplicationInstallation",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "argocd",
-			Namespace: "argocd",
-		},
-		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
-				Name:   "argocd",
-				Create: true,
-			},
-			ApplicationRef: appskubermaticv1.ApplicationRef{
-				Name:    "argocd",
-				Version: "v2.10.0",
-			},
-		},
-	}
-
-	// Apply the ArgoCD ApplicationInstallation
-	err = client.Create(ctx, appInstallation)
-	if err != nil {
-		t.Fatalf("failed to apply ArgoCD ApplicationInstallation: %v", err)
-	}
-
-	// Print success message
-	t.Log("ArgoCD ApplicationInstallation applied successfully!")
-}
-
-func resourcesFromYaml(filename string) ([]ctrlruntimeclient.Object, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	manifests, err := yamlutil.ParseMultipleDocuments(bytes.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-
-	var objs []ctrlruntimeclient.Object
-	for _, m := range manifests {
-		obj := &unstructured.Unstructured{}
-		if err := kyaml.NewYAMLOrJSONDecoder(bytes.NewReader(m.Raw), 1024).Decode(obj); err != nil {
-			return nil, err
-		}
-
-		objs = append(objs, obj)
-	}
-
-	return objs, nil
-}
-
-func getTestApplicationAnnotation(appName string) ([]byte, error) {
-	var values json.RawMessage
-	err := json.Unmarshal([]byte(`{"controller":{"ingressClass":"test-nginx"}}`), &values)
-	if err != nil {
-		return nil, err
-	}
-
-	app := apiv1.Application{
-		ObjectMeta: apiv1.ObjectMeta{
-			Name: appName,
-		},
-		Spec: apiv1.ApplicationSpec{
-			Namespace: apiv1.NamespaceSpec{
-				Name: metav1.NamespaceSystem,
-			},
-			ApplicationRef: apiv1.ApplicationRef{
-				Name:    appName,
-				Version: "1.8.1",
-			},
-			Values: values,
-		},
-	}
-	applications := []apiv1.Application{app}
-	data, err := json.Marshal(applications)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 func getArgoCDApplication() ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
-			Name:      "argocd",
-			Namespace: "argocd",
+			Name:      argoCDName,
+			Namespace: argoCDNs,
 		},
 		Spec: apiv1.ApplicationSpec{
 			Namespace: apiv1.NamespaceSpec{
-				Name:   "argocd",
+				Name:   argoCDName,
 				Create: true,
 			},
 			ApplicationRef: apiv1.ApplicationRef{
-				Name:    "argocd",
+				Name:    argoCDName,
 				Version: "v2.10.0",
 			},
 		},
@@ -311,11 +151,6 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	//testAppAnnotation, err := getTestApplicationAnnotation(argoCDName)
-	//if err != nil {
-	//	return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
-	//}
-
 	argoCDAppAnnotation, err := getArgoCDApplication()
 	if err != nil {
 		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
@@ -340,22 +175,6 @@ func createUserCluster(
 	}
 
 	clusterClient, err := testJig.ClusterClient(ctx)
-
-	//ns := corev1.Namespace{}
-	//ns.Name = argoCDNs
-	//err = clusterClient.Create(ctx, &ns)
-	//if err != nil {
-	//	t.Fatalf("failed to create %q namespace: %v", argoCDNs, err)
-	//}
-	//defer func() {
-	//	err := clusterClient.Delete(ctx, &ns)
-	//	if err != nil {
-	//		t.Fatalf("failed to delete %q namespace: %v", argoCDNs, err)
-	//	}
-	//}()
-	//
-	//log = log.With("namespace", argoCDNs)
-	//log.Debug("Namespace created")
 
 	return clusterClient, cleanup, log, err
 }
