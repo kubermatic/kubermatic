@@ -89,10 +89,10 @@ func TestValidateContainerRuntime(t *testing.T) {
 			valid: true,
 		},
 		{
-			name: "use docker with 1.26",
+			name: "use docker with 1.28",
 			spec: &kubermaticv1.ClusterSpec{
 				ContainerRuntime: "docker",
-				Version:          *semver.NewSemverOrDie("1.26.0"),
+				Version:          *semver.NewSemverOrDie("1.28.0"),
 			},
 			valid: false,
 		},
