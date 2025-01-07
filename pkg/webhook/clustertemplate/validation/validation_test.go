@@ -539,7 +539,6 @@ func TestHandle(t *testing.T) {
 				},
 				ExposeStrategy:        "NodePort",
 				ExternalCloudProvider: false,
-				Version:               semver.NewSemverOrDie("1.28.2"), // last version for which in-tree CCMs existed
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
