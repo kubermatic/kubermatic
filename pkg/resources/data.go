@@ -725,8 +725,10 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
-		// been migrated.
-		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
+		// been migrated. Both of these feature gates have already been removed in Kubernetes 1.30+.
+		migrationCompleted := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue
+
+		if migrationCompleted && cluster.Spec.Version.Semver().Minor() < 30 {
 			if cluster.Spec.Cloud.Openstack != nil {
 				featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
 			}
