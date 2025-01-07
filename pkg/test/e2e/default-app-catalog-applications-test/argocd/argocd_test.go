@@ -100,6 +100,20 @@ func TestArgoCDClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+	log.Info("Waiting for pods to get ready...")
+	err := waitForPods(ctx, t, log, client, "kube-system", "name", []string{
+		"argocd-argocd-application-controller",
+		"argocd-argocd-applicationset-controller",
+		"argocd-argocd-dex-server",
+		"argocd-argocd-notifications-controller",
+		"argocd-argocd-redis",
+		"argocd-argocd-repo-server",
+		"argocd-argocd-server",
+	})
+	if err != nil {
+		t.Fatalf("pods never became ready: %v", err)
+	}
+
 	log.Info("Running ArgoCD tests...")
 
 	log.Info("Checking for argocd ApplicationInstallation...")
