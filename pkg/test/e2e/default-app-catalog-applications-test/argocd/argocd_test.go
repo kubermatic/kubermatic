@@ -107,13 +107,13 @@ func TestArgoCDClusters(t *testing.T) {
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
 	log.Info("Waiting for pods to get ready...")
 	err := waitForPods(ctx, t, log, client, argoCDNs, "name", []string{
-		"argocd-argocd-application-controller",
-		"argocd-argocd-applicationset-controller",
-		"argocd-argocd-dex-server",
-		"argocd-argocd-notifications-controller",
-		"argocd-argocd-redis",
-		"argocd-argocd-repo-server",
-		"argocd-argocd-server",
+		"argocd-application-controller",
+		"argocd-applicationset-controller",
+		"argocd-dex-server",
+		"argocd-notifications-controller",
+		"argocd-redis",
+		"argocd-repo-server",
+		"argocd-server",
 	})
 	if err != nil {
 		t.Fatalf("pods never became ready: %v", err)
