@@ -40,14 +40,12 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	var binary string
 
 	switch version.MajorMinor() {
-	case "1.28":
-		binary = kubectl128
 	case "1.29":
-		binary = kubectl130
+		binary = kubectl129
 	case "1.30":
-		binary = kubectl130
+		binary = kubectl131
 	case "1.31":
-		binary = kubectl130
+		binary = kubectl131
 	default:
 		return "", fmt.Errorf("unsupported Kubernetes version %v", version)
 	}
