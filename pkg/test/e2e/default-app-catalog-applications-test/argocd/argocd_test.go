@@ -21,8 +21,13 @@ package argocd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"os"
 	"testing"
 	"time"
@@ -117,7 +122,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	log.Info("Running ArgoCD tests...")
 
 	log.Info("Checking for argocd ApplicationInstallation...")
-	err := wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: argoCDNs, Name: argoCDName}, app); err != nil {
 			return fmt.Errorf("failed to get ArgoCD ApplicationInstallation in user cluster: %w", err), nil
@@ -130,6 +135,48 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	if err != nil {
 		t.Fatalf("Application observe test failed: %v", err)
 	}
+}
+
+func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
+	log = log.With("namespace", namespace)
+
+	r, err := labels.NewRequirement(key, selection.In, names)
+	if err != nil {
+		return fmt.Errorf("failed to build requirement: %w", err)
+	}
+	l := labels.NewSelector().Add(*r)
+
+	return wait.PollLog(ctx, log, 5*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		pods := corev1.PodList{}
+		err = client.List(ctx, &pods, ctrlruntimeclient.InNamespace(namespace), ctrlruntimeclient.MatchingLabelsSelector{Selector: l})
+		if err != nil {
+			return fmt.Errorf("failed to list Pods: %w", err), nil
+		}
+
+		if len(pods.Items) == 0 {
+			return errors.New("no Pods found"), nil
+		}
+
+		unready := sets.New[string]()
+		for _, pod := range pods.Items {
+			ready := false
+			for _, c := range pod.Status.Conditions {
+				if c.Type == corev1.ContainersReady {
+					ready = c.Status == corev1.ConditionTrue
+				}
+			}
+
+			if !ready {
+				unready.Insert(pod.Name)
+			}
+		}
+
+		if unready.Len() > 0 {
+			return fmt.Errorf("not all Pods are ready: %v", sets.List(unready)), nil
+		}
+
+		return nil, nil
+	})
 }
 
 func getArgoCDApplication() ([]byte, error) {
