@@ -1,7 +1,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2024 Kubermatic GmbH
+                     Copyright © 2025 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -25,9 +25,7 @@ package applications
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
-	"text/template"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -39,9 +37,10 @@ import (
 )
 
 var (
-	clusterNamespace          = "test-cluster"
-	ErrNoClusterForTemplating = errors.New("failed to get cluster \"test-cluster\": clusters.kubermatic.k8c.io \"test-cluster\" not found")
-	ErrNoValidClusterVersion  = errors.New("failed to parse semver version for cluster \"test-cluster\"")
+	clusterNamespace           = "test-cluster"
+	ErrNoClusterForTemplating  = errors.New("failed to get cluster \"test-cluster\": clusters.kubermatic.k8c.io \"test-cluster\" not found")
+	ErrNoValidClusterVersion   = errors.New("failed to parse semver version for cluster \"test-cluster\"")
+	ErrUnknownTemplateVariable = errors.New("failed to render template: template: application-pre-defined-values:2:14: executing \"application-pre-defined-values\" at <.Foo.Name>: can't evaluate field Foo in type *applications.TemplateData")
 )
 
 func TestGetTemplateData(t *testing.T) {
@@ -126,10 +125,10 @@ func TestGetTemplateData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := GetTemplateData(context.Background(), tt.seedClient, tt.namespace)
-			if err != nil && diff.StringDiff(err.Error(), tt.wantErr.Error()) != "" {
-				t.Fatalf("GetTemplateData() diff: %s", diff.StringDiff(err.Error(), tt.wantErr.Error()))
+			if diff.ObjectDiff(err, tt.wantErr) != "" {
+				t.Fatalf("GetTemplateData() diff: %s", diff.ObjectDiff(err, tt.wantErr))
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if diff.ObjectDiff(got, tt.want) != "" {
 				t.Fatalf("GetTemplateData() got = %v, want %v", got, tt.want)
 			}
 		})
@@ -142,6 +141,7 @@ func TestRenderValueTemplate(t *testing.T) {
 		values       map[string]any
 		templateData TemplateData
 		want         map[string]any
+		wantErr      error
 	}{
 		{
 			name: "case 1: rendering for cluster name and version should succeed",
@@ -165,6 +165,7 @@ func TestRenderValueTemplate(t *testing.T) {
 					"nestedkey": "9.9.9",
 				},
 			},
+			wantErr: nil,
 		},
 		{
 			name: "case 2: parsing unknown variables should lead to an error",
@@ -181,16 +182,18 @@ func TestRenderValueTemplate(t *testing.T) {
 					Version: "9.9.9",
 				},
 			},
-			want: nil,
+			want:    nil,
+			wantErr: ErrUnknownTemplateVariable,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := RenderValueTemplate(tt.values, &tt.templateData)
-			if err != nil && !errors.As(err, &template.ExecError{}) {
+			if diff.ObjectDiff(tt.wantErr, err) != "" {
 				t.Fatalf("RenderValueTemplate() error is not of expected type. error: %v", err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+
+			if diff.ObjectDiff(got, tt.want) != "" {
 				t.Fatalf("RenderValueTemplate() got = %v, want %v", got, tt.want)
 			}
 		})
