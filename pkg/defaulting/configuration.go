@@ -225,13 +225,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.28
-			newSemver("v1.28.2"),
-			newSemver("v1.28.5"),
-			newSemver("v1.28.6"),
-			newSemver("v1.28.7"),
-			newSemver("v1.28.9"),
-			newSemver("v1.28.14"),
 			// Kubernetes 1.29
 			newSemver("v1.29.0"),
 			newSemver("v1.29.1"),
@@ -244,23 +237,7 @@ var (
 			newSemver("v1.31.1"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.27 =======
-			{
-				// Allow to change to any patch version
-				From: "1.27.*",
-				To:   "1.27.*",
-			},
-			{
-				// Allow to next minor release
-				From: "1.27.*",
-				To:   "1.28.*",
-			},
 			// ======= 1.28 =======
-			{
-				// Allow to change to any patch version
-				From: "1.28.*",
-				To:   "1.28.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.28.*",
@@ -296,36 +273,6 @@ var (
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
-			// In-tree cloud provider for AWS is not supported starting with Kubernetes 1.27.
-			// This can be removed once we drop support for Kubernetes 1.27 (note: not for 1.26, because
-			// at that point we still might have clusters that needs to be upgraded from 1.26 to 1.27).
-			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
-				Version:   ">= 1.27.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  string(kubermaticv1.AWSCloudProvider),
-				Version:   ">= 1.27.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
-			// In-tree cloud provider for OpenStack is not supported starting with Kubernetes 1.26.
-			// This can be removed once we drop support for Kubernetes 1.26 (note: not for 1.25, because
-			// at that point we still might have clusters that needs to be upgraded from 1.25 to 1.26).
-			{
-				Provider:  string(kubermaticv1.OpenstackCloudProvider),
-				Version:   ">= 1.26.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
-			{
-				Provider:  string(kubermaticv1.OpenstackCloudProvider),
-				Version:   ">= 1.26.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.UpdateOperation,
-			},
 			// In-tree cloud providers have been fully removed in Kubernetes 1.29.
 			// Thus, no in-tree provider is available anymore, and no cluster with in-tree CCM
 			// can be upgraded to 1.29.
