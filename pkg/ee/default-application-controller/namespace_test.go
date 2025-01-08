@@ -34,7 +34,7 @@ import (
 
 var (
 	applicationNamespace = appskubermaticv1.AppNamespaceSpec{
-		Name:   "release-namespace",
+		Name:   "test-namespace",
 		Create: true,
 	}
 )
@@ -46,10 +46,9 @@ const (
 
 func TestGetAppNamespace(t *testing.T) {
 	testCases := []struct {
-		name                        string
-		application                 appskubermaticv1.ApplicationDefinition
-		defaultApplicationNamespace string
-		validate                    func(applications appskubermaticv1.ApplicationDefinition) bool
+		name        string
+		application appskubermaticv1.ApplicationDefinition
+		validate    func(applications appskubermaticv1.ApplicationDefinition) bool
 	}{
 		{
 			name:        "scenario 1: application namespace should be set to default value when a default value is configured",
@@ -73,7 +72,7 @@ func TestGetAppNamespace(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// validate the result
 			if !test.validate(test.application) {
-				t.Fatalf("Test failed for: %v with default appnamespace value %v", test.name, test.defaultApplicationNamespace)
+				t.Fatalf("Validation failed for %v", test.name)
 			}
 		})
 	}
