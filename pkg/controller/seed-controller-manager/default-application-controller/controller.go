@@ -339,7 +339,8 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 	namespace := application.Name
 	config, err := r.configGetter(ctx)
 	if err != nil {
-		r.log.Warnf("failed to check kubermatic configuration default settings for applications: %w", err)
+		// This is a non-critical error and we can still continue by using the application name as the namespace
+		r.log.Debugf("failed to check kubermatic configuration default settings for applications: %w", err)
 	}
 	if config != nil {
 		if config.Spec.UserCluster.DefaultApplications.Namespace != "" {

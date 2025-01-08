@@ -261,7 +261,7 @@ type KubermaticUserClusterConfiguration struct {
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// SystemApplications contains configuration for system Applications (such as CNI).
 	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
-	// DefaultApplications contains configuration for default Application settings.
+	// DefaultApplications contains configuration for default Application settings. This is an ee-only feature.
 	DefaultApplications DefaultApplicationsConfiguration `json:"defaultApplications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
