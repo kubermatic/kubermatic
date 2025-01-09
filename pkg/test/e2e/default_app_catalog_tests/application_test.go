@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -23,6 +21,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/flux"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/k8sgpt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -42,6 +42,18 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/argocd"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/cert_manager"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/echoserver"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/echoserver_with_variables"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/falco"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/kube-vip"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/kubevirt"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/metallb"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/nginx_ingress_controller"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/nvidia_gpu_operator"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/sealed_secrets"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/trivy"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/trivy_operator"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,9 +61,10 @@ import (
 )
 
 var (
-	userconfig  string
-	credentials jig.AWSCredentials
-	logOptions  = utils.DefaultLogOptions
+	userconfig      string
+	applicationName string
+	credentials     jig.AWSCredentials
+	logOptions      = utils.DefaultLogOptions
 )
 
 const (
@@ -59,17 +72,47 @@ const (
 )
 
 func init() {
-	flag.StringVar(&userconfig, "userconfig", "", "path to kubeconfig of usercluster")
+	flag.StringVar(&applicationName, "application-name", "", "name of an application from the default app catalog")
 	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
 
 func getChosenApplication() ApplicationInterface {
-	application := "argocd"
+	// Parse the flags
+	flag.Parse()
+
 	var applicationStruct ApplicationInterface
-	if application == "argocd" {
+	if applicationName == "argocd" {
 		applicationStruct = &argocd.DefaultArgoCD
+	} else if applicationName == "cert-manager" {
+		applicationStruct = &cert_manager.DefaultCertManager
+	} else if applicationName == "echoserver" {
+		applicationStruct = &echoserver.DefaultEchoServer
+	} else if applicationName == "echoserver-with-variables" {
+		applicationStruct = &echoserver_with_variables.DefaultEchoServerWithVariables
+	} else if applicationName == "falco" {
+		applicationStruct = &falco.DefaultFalco
+	} else if applicationName == "flux" {
+		applicationStruct = &flux.DefaultFlux
+	} else if applicationName == "k8sgpt" {
+		applicationStruct = &k8sgpt.DefaultK8sGpt
+	} else if applicationName == "kube-vip" {
+		applicationStruct = &kube_vip.DefaultKubeVip
+	} else if applicationName == "kubevirt" {
+		applicationStruct = &kubevirt.DefaultKubeVirt
+	} else if applicationName == "metallb" {
+		applicationStruct = &metallb.DefaultMetalLB
+	} else if applicationName == "nginx_ingress_controller" {
+		applicationStruct = &nginx_ingress_controller.DefaultNginxIngressController
+	} else if applicationName == "nvidia_gpu_operator" {
+		applicationStruct = &nvidia_gpu_operator.DefaultNvidiaGpuOperator
+	} else if applicationName == "sealed-secrets" {
+		applicationStruct = &sealed_secrets.DefaultSealedSecrets
+	} else if applicationName == "trivy" {
+		applicationStruct = &trivy.DefaultTrivy
+	} else if applicationName == "trivy-operator" {
+		applicationStruct = &trivy_operator.DefaultTrivyOperator
 	}
 
 	return applicationStruct
