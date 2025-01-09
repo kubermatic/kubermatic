@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -16,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package argocd
+package default_app_catalog_applications_tests
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,7 +31,6 @@ import (
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -43,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/argocd"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -56,9 +53,7 @@ var (
 )
 
 const (
-	projectName = "argocd-test-project"
-	argoCDNs    = "argocd"
-	argoCDName  = "argocd"
+	projectName = "def-app-catalog-test-project"
 )
 
 func init() {
@@ -68,7 +63,17 @@ func init() {
 	logOptions.AddFlags(flag.CommandLine)
 }
 
-func TestArgoCDClusters(t *testing.T) {
+func getChosenApplication() ApplicationInterface {
+	application := "argocd"
+	var applicationStruct ApplicationInterface
+	if application == "argocd" {
+		applicationStruct = &argocd.DefaultArgoCD
+	}
+
+	return applicationStruct
+}
+
+func TestClusters(t *testing.T) {
 	rawLog := log.NewFromOptions(logOptions)
 	logger := rawLog.Sugar()
 	ctx := context.Background()
@@ -105,27 +110,21 @@ func TestArgoCDClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+	application := getChosenApplication()
+	name, namespace, key, names := application.FetchData()
 	log.Info("Waiting for pods to get ready...")
-	err := waitForPods(ctx, t, log, client, argoCDNs, "app.kubernetes.io/name", []string{
-		"argocd-application-controller",
-		"argocd-applicationset-controller",
-		"argocd-dex-server",
-		"argocd-notifications-controller",
-		"argocd-redis",
-		"argocd-repo-server",
-		"argocd-server",
-	})
+	err := waitForPods(ctx, t, log, client, namespace, key, names)
 	if err != nil {
 		t.Fatalf("pods never became ready: %v", err)
 	}
 
-	log.Info("Running ArgoCD tests...")
+	log.Info("Running tests...")
 
-	log.Info("Checking for argocd ApplicationInstallation...")
+	log.Info("Checking for ApplicationInstallation...")
 	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
-		if err := client.Get(context.Background(), types.NamespacedName{Namespace: argoCDNs, Name: argoCDName}, app); err != nil {
-			return fmt.Errorf("failed to get ArgoCD ApplicationInstallation in user cluster: %w", err), nil
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, app); err != nil {
+			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
 		}
 		if app.Status.ApplicationVersion == nil {
 			return fmt.Errorf("application not yet installed: %v", app.Status), nil
@@ -179,32 +178,6 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 	})
 }
 
-func getArgoCDApplication() ([]byte, error) {
-	app := apiv1.Application{
-		ObjectMeta: apiv1.ObjectMeta{
-			Name:      argoCDName,
-			Namespace: argoCDNs,
-		},
-		Spec: apiv1.ApplicationSpec{
-			Namespace: apiv1.NamespaceSpec{
-				Name:   argoCDName,
-				Create: true,
-			},
-			ApplicationRef: apiv1.ApplicationRef{
-				Name:    argoCDName,
-				Version: "v2.10.0",
-			},
-		},
-	}
-	applications := []apiv1.Application{app}
-	data, err := json.Marshal(applications)
-	if err != nil {
-		return nil, err
-	}
-
-	return data, nil
-}
-
 // creates a usercluster on aws.
 func createUserCluster(
 	ctx context.Context,
@@ -212,7 +185,8 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	argoCDAppAnnotation, err := getArgoCDApplication()
+	application := getChosenApplication()
+	appAnnotation, err := application.GetApplication()
 	if err != nil {
 		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
 	}
@@ -223,7 +197,7 @@ func createUserCluster(
 		WithTestName("argocd").
 		WithKonnectivity(true).
 		WithAnnotations(map[string]string{
-			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(argoCDAppAnnotation),
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
 		})
 
 	cleanup := func() {
