@@ -58,7 +58,7 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 
 echodate "Running ArgoCD tests..."
 
-go_test argocd_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/default-app-catalog-applications-test/argocd \
+go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/default_app_catalog_tests \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
