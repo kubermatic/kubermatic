@@ -1,4 +1,4 @@
-package echoserver
+package flux
 
 import (
 	"encoding/json"

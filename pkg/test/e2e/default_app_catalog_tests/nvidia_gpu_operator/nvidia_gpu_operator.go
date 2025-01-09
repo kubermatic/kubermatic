@@ -1,4 +1,4 @@
-package cert_manager
+package nvidia_gpu_operator
 
 import (
 	"encoding/json"

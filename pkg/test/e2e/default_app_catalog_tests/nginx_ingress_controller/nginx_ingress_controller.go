@@ -1,4 +1,4 @@
-package cert_manager
+package nginx_ingress_controller
 
 import (
 	"encoding/json"

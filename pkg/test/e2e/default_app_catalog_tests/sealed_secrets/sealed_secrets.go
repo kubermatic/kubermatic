@@ -1,33 +1,33 @@
-package cert_manager
+package sealed_secrets
 
 import (
 	"encoding/json"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )
 
-type NvidiaGpuOperator struct {
+type SealedSecrets struct {
 	Namespace string
 	Name      string
 }
 
-var DefaultNvidiaGpuOperator = NvidiaGpuOperator{
-	Namespace: "nvidia-gpu-operator",
-	Name:      "nvidia-gpu-operator",
+var DefaultSealedSecrets = SealedSecrets{
+	Namespace: "sealed-secrets",
+	Name:      "sealed-secrets",
 }
 
-func (ngo *NvidiaGpuOperator) GetApplication() ([]byte, error) {
+func (ss *SealedSecrets) GetApplication() ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
-			Name:      ngo.Name,
-			Namespace: ngo.Namespace,
+			Name:      ss.Name,
+			Namespace: ss.Namespace,
 		},
 		Spec: apiv1.ApplicationSpec{
 			Namespace: apiv1.NamespaceSpec{
-				Name:   ngo.Namespace,
+				Name:   ss.Namespace,
 				Create: true,
 			},
 			ApplicationRef: apiv1.ApplicationRef{
-				Name:    ngo.Name,
+				Name:    ss.Name,
 				Version: "v23.9.1",
 			},
 		},
@@ -41,12 +41,12 @@ func (ngo *NvidiaGpuOperator) GetApplication() ([]byte, error) {
 	return data, nil
 }
 
-func (ngo *NvidiaGpuOperator) FetchData() (name, namespace, key string, names []string) {
+func (ss *SealedSecrets) FetchData() (name, namespace, key string, names []string) {
 	names = []string{
 		"gpu-operator",
 		"node-feature-discovery",
 	}
 
 	key = "app.kubernetes.io/name"
-	return ngo.Name, ngo.Namespace, key, names
+	return ss.Name, ss.Namespace, key, names
 }

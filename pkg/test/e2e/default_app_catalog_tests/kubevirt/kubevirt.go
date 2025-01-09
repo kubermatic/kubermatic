@@ -1,4 +1,4 @@
-package echoserver
+package kubevirt
 
 import (
 	"encoding/json"

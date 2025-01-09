@@ -1,4 +1,4 @@
-package cert_manager
+package trivy
 
 import (
 	"encoding/json"

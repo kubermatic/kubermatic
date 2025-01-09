@@ -1,4 +1,4 @@
-package echoserver
+package kube_vip
 
 import (
 	"encoding/json"
