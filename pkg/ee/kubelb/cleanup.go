@@ -49,6 +49,7 @@ func (r *reconciler) handleKubeLBCleanup(ctx context.Context, cluster *kubermati
 	if err := r.ensureKubeLBManagementClusterResourcesAreRemoved(ctx, cluster); err != nil {
 		return err
 	}
+
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, CleanupFinalizer)
 }
 

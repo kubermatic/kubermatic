@@ -100,7 +100,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 	clusterIsAlive := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		cluster := o.(*kubermaticv1.Cluster)
 		// Only watch clusters that are in a state where they can be reconciled.
-		return !cluster.Spec.Pause && cluster.DeletionTimestamp == nil && cluster.Status.NamespaceName != ""
+		return !cluster.Spec.Pause && cluster.Status.NamespaceName != ""
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -115,6 +115,9 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	log := r.log.With("cluster", request.Name)
+	log.Debug("Reconciling")
+
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -126,7 +129,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Resource is marked for deletion.
 	if cluster.DeletionTimestamp != nil {
 		if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) {
-			r.log.Debugw("Cleaning up kubeLB resources", "cluster", cluster.Name)
+			log.Debug("Cleaning up kubeLB resources")
 			return reconcile.Result{}, r.handleKubeLBCleanup(ctx, cluster)
 		}
 		// Finalizer doesn't exist so clean up is already done.
@@ -135,7 +138,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// Kubelb was disabled after it was enabled. Clean up resources.
 	if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) && !cluster.Spec.IsKubeLBEnabled() {
-		r.log.Debugw("Cleaning up kubeLB resources", "cluster", cluster.Name)
+		log.Debug("Cleaning up kubeLB resources")
 		return reconcile.Result{}, r.handleKubeLBCleanup(ctx, cluster)
 	}
 
@@ -145,12 +148,12 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if cluster.Status.NamespaceName == "" {
-		r.log.Debug("Skipping cluster reconciling because it has no namespace yet")
+		log.Debug("Skipping cluster reconciling because it has no namespace yet")
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
 
 	if cluster.Status.ExtendedHealth.Apiserver != kubermaticv1.HealthStatusUp {
-		r.log.Debugf("API server is not running, trying again in %v", healthCheckPeriod)
+		log.Debugf("API server is not running, trying again in %v", healthCheckPeriod)
 		return reconcile.Result{RequeueAfter: healthCheckPeriod}, nil
 	}
 
