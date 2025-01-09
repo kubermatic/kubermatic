@@ -16,6 +16,11 @@ var DefaultArgoCD = ArgoCD{
 }
 
 func (a *ArgoCD) GetApplication() ([]byte, error) {
+	valuesBlock := `
+server:
+  service:
+    type: "LoadBalancer"`
+
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      a.Name,
@@ -30,6 +35,7 @@ func (a *ArgoCD) GetApplication() ([]byte, error) {
 				Name:    a.Name,
 				Version: "v2.10.0",
 			},
+			ValuesBlock: valuesBlock,
 		},
 	}
 	applications := []apiv1.Application{app}
