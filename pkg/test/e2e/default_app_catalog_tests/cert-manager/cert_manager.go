@@ -16,6 +16,8 @@ var DefaultCertManager = CertManager{
 }
 
 func (cm *CertManager) GetApplication() ([]byte, error) {
+	valuesBlock := `installCRDs: true`
+
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      cm.Name,
@@ -30,6 +32,7 @@ func (cm *CertManager) GetApplication() ([]byte, error) {
 				Name:    cm.Name,
 				Version: "v1.14.1",
 			},
+			ValuesBlock: valuesBlock,
 		},
 	}
 	applications := []apiv1.Application{app}
@@ -43,16 +46,12 @@ func (cm *CertManager) GetApplication() ([]byte, error) {
 
 func (cm *CertManager) FetchData() (name, namespace, key string, names []string) {
 	names = []string{
-		"argocd-application-controller",
-		"argocd-applicationset-controller",
-		"argocd-dex-server",
-		"argocd-notifications-controller",
-		"argocd-redis",
-		"argocd-repo-server",
-		"argocd-server",
+		"cert-manager",
+		"cert-manager-cainjector",
+		"cert-manager-startupapicheck",
+		"cert-manager-webhook",
 	}
 
 	key = "app.kubernetes.io/name"
-
 	return cm.Name, cm.Namespace, key, names
 }
