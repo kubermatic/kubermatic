@@ -1,4 +1,4 @@
-package echoserver
+package k8sgpt
 
 import (
 	"encoding/json"
