@@ -54,10 +54,11 @@ const (
 	name      = resources.KubernetesDashboardDeploymentName
 	imageName = "kubernetesui/dashboard"
 	// Namespace used by dashboard to find required resources.
-	Namespace     = "kubernetes-dashboard"
-	ContainerPort = 9090
-	AppLabel      = resources.AppLabelKey + "=" + name
-	tmpVolumeName = "tmp-volume"
+	Namespace        = "kubernetes-dashboard"
+	ContainerPort    = 9090
+	AppLabel         = resources.AppLabelKey + "=" + name
+	tmpVolumeName    = "tmp-volume"
+	dashboardVersion = "v2.7.0"
 )
 
 // kubernetesDashboardData is the data needed to construct the Kubernetes Dashboard components.
@@ -181,13 +182,15 @@ func DashboardVersion(clusterVersion semver.Semver) (string, error) {
 
 	switch clusterVersion.MajorMinor() {
 	case "1.28":
-		return "v2.7.0", nil // not officially marked as supported
+		return dashboardVersion, nil // not officially marked as supported
 	case "1.29":
-		return "v2.7.0", nil // not officially marked as supported
+		return dashboardVersion, nil // not officially marked as supported
 	case "1.30":
-		return "v2.7.0", nil // not officially marked as supported
+		return dashboardVersion, nil // not officially marked as supported
 	case "1.31":
-		return "v2.7.0", nil // not officially marked as supported
+		return dashboardVersion, nil // not officially marked as supported
+	case "1.32":
+		return dashboardVersion, nil // not officially marked as supported
 	default:
 		return "", fmt.Errorf("no compatible version defined for Kubernetes %q", clusterVersion.MajorMinor())
 	}

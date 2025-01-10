@@ -2,15 +2,14 @@
 
 data:
   egress-selector-configuration.yaml: |
-    EgressSelections:
-    - Connection:
-        ProxyProtocol: GRPC
-        Transport:
-          TCP: null
-          UDS:
-            UDSName: /etc/kubernetes/konnectivity-server/konnectivity-server.socket
-      Name: cluster
     apiVersion: apiserver.k8s.io/v1beta1
+    egressSelections:
+    - connection:
+        proxyProtocol: GRPC
+        transport:
+          uds:
+            udsName: /etc/kubernetes/konnectivity-server/konnectivity-server.socket
+      name: cluster
     kind: EgressSelectorConfiguration
 metadata:
   creationTimestamp: null
