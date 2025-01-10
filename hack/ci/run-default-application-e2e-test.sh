@@ -25,6 +25,25 @@ source hack/lib.sh
 TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
 
+APPLICATION_NAME=""
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --application-name)
+      APPLICATION_NAME="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown parameter: $1"
+      exit 1
+      ;;
+  esac
+done
+
+echo "Running test with application name: $APPLICATION_NAME"
+
+
 beforeGocache=$(nowms)
 make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
@@ -60,6 +79,7 @@ echodate "Running ArgoCD tests..."
 
 go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/default_app_catalog_tests \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
-  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
+  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
+  -application-name "$APPLICATION_NAME"
 
 echodate "ArgoCD tests done."

@@ -1,5 +1,5 @@
 presubmits:
-  - name: argocd-newer-version-test
+  - name: argocd
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -17,6 +17,9 @@ presubmits:
         - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
+          args:
+            - "--application-name"
+            - "argocd"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
