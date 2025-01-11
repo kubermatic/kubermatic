@@ -135,6 +135,8 @@ func (c *kubeClient) DeleteProject(ctx context.Context, log *zap.SugaredLogger, 
 }
 
 func (c *kubeClient) EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error {
+	return nil
+
 	creators := []kkpreconciling.NamedUserSSHKeyReconcilerFactory{}
 
 	for i, key := range c.opts.PublicKeys {
