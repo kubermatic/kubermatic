@@ -56,6 +56,7 @@ for resource in seed kubermaticConfiguration applicationDefinition applicationIn
 done
 
 cp ../docs/zz_generated.addondata.go.txt content/kubermatic/main/data/addondata.go
+cp ../docs/zz_generated.applicationdata.go.txt content/kubermatic/main/data/applicationdata.go
 cp ../docs/zz_generated.prometheusdata.go.txt content/kubermatic/main/data/prometheusdata.go
 cp ../addonresources.json content/kubermatic/main/data/addonresources.json
 
