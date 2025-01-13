@@ -19,6 +19,7 @@
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 
 {{ $version := "UNSUPPORTED" }}
+
 {{ if eq .Cluster.MajorMinorVersion "1.28" }}
 {{ $version = "v1.28.1" }}
 {{ end }}

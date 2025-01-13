@@ -71,7 +71,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -89,7 +89,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 ---
@@ -100,7 +100,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
 rules:
   - apiGroups:
@@ -264,7 +264,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -282,7 +282,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 rules:
@@ -310,7 +310,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 roleRef:
@@ -329,7 +329,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:
@@ -351,7 +351,7 @@ metadata:
     app.kubernetes.io/instance: cluster-autoscaler
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: clusterapi-cluster-autoscaler
-    helm.sh/chart: cluster-autoscaler-9.37.0
+    helm.sh/chart: cluster-autoscaler-9.45.0
   name: cluster-autoscaler-clusterapi-cluster-autoscaler
   namespace: kube-system
 spec:

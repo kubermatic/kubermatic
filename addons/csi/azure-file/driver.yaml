@@ -883,7 +883,7 @@ spec:
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
               value: /var/lib/kubelet/plugins/file.csi.azure.com/csi.sock
-          image: '{{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-node-driver-registrar:v2.11.0" }}'
+          image: '{{ Image "mcr.microsoft.com/oss/kubernetes-csi/csi-node-driver-registrar:v2.12.0" }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
             exec:
