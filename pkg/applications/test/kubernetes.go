@@ -108,7 +108,7 @@ func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlrunt
 
 	t.Cleanup(func() {
 		if err := client.Delete(ctx, cluster); err != nil {
-			t.Fatalf("failed to cleanup test cluster: %s", err)
+			t.Fatalf("failed to cleanup test cluster: %v", err)
 		}
 	})
 }

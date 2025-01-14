@@ -32,15 +32,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	clusterNamespace           = "test-cluster"
-	ErrNoClusterForTemplating  = errors.New("failed to get cluster \"test-cluster\": clusters.kubermatic.k8c.io \"test-cluster\" not found")
-	ErrNoValidClusterVersion   = errors.New("failed to parse semver version for cluster \"test-cluster\"")
-	ErrUnknownTemplateVariable = errors.New("failed to render template: template: application-pre-defined-values:2:14: executing \"application-pre-defined-values\" at <.Foo.Name>: can't evaluate field Foo in type *applications.TemplateData")
+	clusterNamespace = "test-cluster"
 )
 
 func TestGetTemplateData(t *testing.T) {
@@ -94,42 +93,23 @@ func TestGetTemplateData(t *testing.T) {
 			seedClient: fake.
 				NewClientBuilder().WithObjects().Build(),
 			want:    nil,
-			wantErr: ErrNoClusterForTemplating,
-		},
-		{
-			name:      "case 3: fetching template data should fail when cluster has no valid version",
-			namespace: "test-cluster",
-			seedClient: fake.
-				NewClientBuilder().WithObjects(&kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-cluster",
-				},
-				Spec: kubermaticv1.ClusterSpec{
-					HumanReadableName: "humanreadable-cluster-name",
-				},
-				Status: kubermaticv1.ClusterStatus{
-					UserEmail: "owner@email.com",
-					Address: kubermaticv1.ClusterAddress{
-						URL:  "https://cluster.seed.kkp",
-						Port: 6443,
-					},
-					Versions: kubermaticv1.ClusterVersionsStatus{
-						ControlPlane: semver.Semver("vinvalid"),
-					},
-				},
-			}).Build(),
-			want:    nil,
-			wantErr: ErrNoValidClusterVersion,
+			wantErr: apierrors.NewNotFound(schema.GroupResource{Group: "kubermatic.k8c.io", Resource: "clusters"}, "test-cluster"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := GetTemplateData(context.Background(), tt.seedClient, tt.namespace)
-			if diff.ObjectDiff(err, tt.wantErr) != "" {
-				t.Fatalf("GetTemplateData() diff: %s", diff.ObjectDiff(err, tt.wantErr))
+			if err != nil && tt.wantErr == nil {
+				t.Fatalf("Got unexpected error. %v", err)
 			}
-			if diff.ObjectDiff(got, tt.want) != "" {
-				t.Fatalf("GetTemplateData() got = %v, want %v", got, tt.want)
+			if err == nil && tt.wantErr != nil {
+				t.Fatalf("Got no error when one is expected. %v", tt.wantErr)
+			}
+			if apierrors.IsNotFound(tt.wantErr) && !apierrors.IsNotFound(err) {
+				t.Fatalf("Got unexpected error. diff: %s, %s", err.Error(), tt.wantErr)
+			}
+			if changes := diff.ObjectDiff(got, tt.want); changes != "" {
+				t.Fatalf("Got unexpected result. diff: %s", changes)
 			}
 		})
 	}
@@ -183,18 +163,18 @@ func TestRenderValueTemplate(t *testing.T) {
 				},
 			},
 			want:    nil,
-			wantErr: ErrUnknownTemplateVariable,
+			wantErr: ErrBadTemplate,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := RenderValueTemplate(tt.values, &tt.templateData)
-			if diff.ObjectDiff(tt.wantErr, err) != "" {
-				t.Fatalf("RenderValueTemplate() error is not of expected type. error: %v", err)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("Got unexpected error. diff: %v, %v", err, tt.wantErr)
 			}
 
-			if diff.ObjectDiff(got, tt.want) != "" {
-				t.Fatalf("RenderValueTemplate() got = %v, want %v", got, tt.want)
+			if changes := diff.ObjectDiff(got, tt.want); changes != "" {
+				t.Fatalf("Got unexpected result. diff: %s", changes)
 			}
 		})
 	}

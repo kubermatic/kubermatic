@@ -25,6 +25,7 @@ package applications
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 
@@ -59,11 +60,13 @@ type ClusterData struct {
 	MajorMinorVersion string
 }
 
+var ErrBadTemplate = errors.New("failed to render template:")
+
 // GetTemplateData fetches the related cluster object by the given cluster namespace, parses pre defined values to a template data struct.
 func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, clusterName string) (*TemplateData, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
-		return nil, fmt.Errorf("failed to get cluster %q: %w", clusterName, err)
+		return nil, err
 	}
 	var clusterVersion *semverlib.Version
 	if s := cluster.Status.Versions.ControlPlane.Semver(); s != nil {
@@ -102,7 +105,7 @@ func RenderValueTemplate(applicationValues map[string]interface{}, templateData 
 
 	var buffer bytes.Buffer
 	if err := parsed.Execute(&buffer, templateData); err != nil {
-		return nil, fmt.Errorf("failed to render template: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrBadTemplate, err.Error())
 	}
 
 	parsedMap := make(map[string]interface{})
