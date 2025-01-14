@@ -26,10 +26,10 @@ const (
 	// PolicyInstanceKindName represents "Kind" defined in Kubernetes.
 	PolicyInstanceKindName = "PolicyInstance"
 
-	// PolicyInstanceScopeCluster is the cluster scope of the policy instance
+	// PolicyInstanceScopeCluster is the cluster scope of the policy instance.
 	PolicyInstanceScopeCluster = "cluster"
 
-	// PolicyInstanceScopeNamespaced is the namespaced scope of the policy instance
+	// PolicyInstanceScopeNamespaced is the namespaced scope of the policy instance.
 	PolicyInstanceScopeNamespaced = "namespaced"
 )
 
@@ -40,7 +40,7 @@ const (
 // +kubebuilder:printcolumn:name="Scope",type=string,JSONPath=".spec.scope",description="cluster or namespace"
 
 // PolicyInstance binds a PolicyTemplate to specific clusters/projects and
-// optionally enables or disables it (if the template is not enforced)
+// optionally enables or disables it (if the template is not enforced).
 type PolicyInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -48,7 +48,7 @@ type PolicyInstance struct {
 	Spec PolicyInstanceSpec `json:"spec,omitempty"`
 }
 
-// PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate
+// PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate.
 type PolicyInstanceSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
 	PolicyTemplateRef ObjectReference `json:"policyTemplateRef"`
@@ -69,13 +69,13 @@ type PolicyInstanceSpec struct {
 	Target PolicyTargetSpec `json:"target,omitempty"`
 }
 
-// ObjectReference is a local reference to a PolicyTemplate
+// ObjectReference is a local reference to a PolicyTemplate.
 type ObjectReference struct {
 	// Name is the name of the policy template
 	Name string `json:"name"`
 }
 
-// PolicyTargetSpec indicates how to select projects/clusters in Kubermatic
+// PolicyTargetSpec indicates how to select projects/clusters in Kubermatic.
 type PolicyTargetSpec struct {
 	// AllProjects indicates that the policy applies to all projects
 	AllProjects bool `json:"allProjects,omitempty"`
