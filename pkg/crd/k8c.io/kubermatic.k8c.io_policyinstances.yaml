@@ -56,7 +56,7 @@ spec:
                     Enabled determines whether we apply the policy
 
                     If the referenced template is enforced, "enabled" is ignored (or disallowed)
-                    If the referenced template is not enforce, "enabled" determines whether we apply the policy
+                    If the referenced template is not enforced, "enabled" determines whether we apply the policy
                   type: boolean
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
@@ -68,11 +68,11 @@ spec:
                     - name
                   type: object
                 scope:
-                  default: Cluster
+                  default: cluster
                   description: |-
                     Scope specifies the Kyverno Policy to be created.
 
-                    The scope can be "Cluster" or "Namespaced", by default it is "Cluster"
+                    The scope can be "cluster" or "namespaced", by default it is "cluster"
                   type: string
                 target:
                   description: Target specifies which clusters/projects to apply the policy to

@@ -25,6 +25,12 @@ const (
 
 	// PolicyInstanceKindName represents "Kind" defined in Kubernetes.
 	PolicyInstanceKindName = "PolicyInstance"
+
+	// PolicyInstanceScopeCluster is the scope of the policy instance
+	PolicyInstanceScopeCluster = "cluster"
+
+	// PolicyInstanceScopeNamespaced is the scope of the policy instance
+	PolicyInstanceScopeNamespaced = "namespaced"
 )
 
 // +kubebuilder:resource:scope=Cluster
@@ -55,15 +61,15 @@ type PolicyInstanceSpec struct {
 
 	// Scope specifies the Kyverno Policy to be created.
 	//
-	// The scope can be "Cluster" or "Namespaced", by default it is "Cluster"
-	// +kubebuilder:default=Cluster
+	// The scope can be "cluster" or "namespaced", by default it is "cluster"
+	// +kubebuilder:default=cluster
 	Scope string `json:"scope,omitempty"`
 
 	// Target specifies which clusters/projects to apply the policy to
 	Target PolicyTargetSpec `json:"target,omitempty"`
 }
 
-// ObjectReference is a local reference (similar to corev1.LocalObjectReference)
+// ObjectReference is a local reference to a PolicyTemplate
 type ObjectReference struct {
 	// Name is the name of the policy template
 	Name string `json:"name"`
