@@ -26,10 +26,10 @@ const (
 	// PolicyInstanceKindName represents "Kind" defined in Kubernetes.
 	PolicyInstanceKindName = "PolicyInstance"
 
-	// PolicyInstanceScopeCluster is the scope of the policy instance
+	// PolicyInstanceScopeCluster is the cluster scope of the policy instance
 	PolicyInstanceScopeCluster = "cluster"
 
-	// PolicyInstanceScopeNamespaced is the scope of the policy instance
+	// PolicyInstanceScopeNamespaced is the namespaced scope of the policy instance
 	PolicyInstanceScopeNamespaced = "namespaced"
 )
 
