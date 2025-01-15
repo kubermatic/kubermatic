@@ -13,6 +13,24 @@
 - [v2.25.10](#v22510)
 - [v2.25.11](#v22511)
 - [v2.25.12](#v22512)
+- [v2.25.13](#v22513)
+
+## v2.25.13
+
+**GitHub release: [v2.25.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.13)**
+
+### Bugfixes
+
+- Disable `/metrics` endpoint in master/seed MLA and user cluster MLA charts for Grafana ([#13939](https://github.com/kubermatic/kubermatic/pull/13939))
+- Mount correct `ca-bundle` ConfigMap in kubermatic-seed-controller-manager Deployment on dedicated master/seed environments ([#13938](https://github.com/kubermatic/kubermatic/pull/13938))
+- The rollback revision is now set explicit to the last deployed revision when a helm release managed by an application installation fails and a rollback is executed to avoid errors when the last deployed revision is not the current minus 1 and history limit is set to 1 ([#13980](https://github.com/kubermatic/kubermatic/pull/13980))
+- Fix an issue where selecting "Backup All Namespaces" in the create backup/schedule dialog for cluster backups caused new namespaces to be excluded ([#7036](https://github.com/kubermatic/dashboard/pull/7036))
+- Fix missing AMI value in edit machine deployment dialog ([#7002](https://github.com/kubermatic/dashboard/pull/7002))
+- Make `Domain` field optional when using application credentials for Openstack provider ([#7044](https://github.com/kubermatic/dashboard/pull/7044))
+
+### Cleanup
+
+- Mark domain as optional field for OpenStack preset ([#13951](https://github.com/kubermatic/kubermatic/pull/13951))
 
 ## v2.25.12
 
