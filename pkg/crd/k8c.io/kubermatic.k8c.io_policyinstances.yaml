@@ -29,7 +29,7 @@ spec:
         openAPIV3Schema:
           description: |-
             PolicyInstance binds a PolicyTemplate to specific clusters/projects and
-            optionally enables or disables it (if the template is not enforced)
+            optionally enables or disables it (if the template is not enforced).
           properties:
             apiVersion:
               description: |-
@@ -49,7 +49,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate
+              description: PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate.
               properties:
                 enabled:
                   description: |-
