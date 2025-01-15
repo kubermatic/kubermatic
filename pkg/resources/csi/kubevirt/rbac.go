@@ -170,7 +170,7 @@ func ControllerRoleBindingReconciler(c *kubermaticv1.Cluster) reconciling.NamedR
 			r.RoleRef = rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "ClusterRole",
-				Name:     resources.KubeVirtCSIClusterRoleName,
+				Name:     resources.KubeVirtCSIControllerName,
 			}
 
 			return r, nil
