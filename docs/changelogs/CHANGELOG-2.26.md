@@ -24,6 +24,7 @@
 - [EE] Fix ClusterBackupStorageLocation sync on remote seed clusters ([#13955](https://github.com/kubermatic/kubermatic/pull/13955))
 - [EE] Fix kubeLB cleanup not being performed when clusters are deleted ([#13960](https://github.com/kubermatic/kubermatic/pull/13960))
 - Disable `/metrics` endpoint in master/seed MLA and user cluster MLA charts for Grafana ([#13939](https://github.com/kubermatic/kubermatic/pull/13939))
+- Do not add `InTree*Unregister` feature gates to clusters on Kubernetes 1.30+ ([#13983](https://github.com/kubermatic/kubermatic/pull/13983))
 - Kubelb: rely only on cluster spec for `enable-gateway-api` and `use-loadbalancer-class` flags for KubeLB CCM ([#13947](https://github.com/kubermatic/kubermatic/pull/13947))
 - Mount correct `ca-bundle` ConfigMap in kubermatic-seed-controller-manager Deployment on dedicated master/seed environments ([#13938](https://github.com/kubermatic/kubermatic/pull/13938))
 - Remove redundant storage classes from OpenStack CSI addon ([#13920](https://github.com/kubermatic/kubermatic/pull/13920))
