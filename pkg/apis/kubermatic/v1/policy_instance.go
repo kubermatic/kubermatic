@@ -71,8 +71,8 @@ type PolicyInstanceSpec struct {
 
 // ObjectReference is a local reference to a PolicyTemplate.
 type ObjectReference struct {
-	// Name is the name of the policy template
-	Name string `json:"name"`
+	// PolicyTemplateName is the name of the policy template.
+	PolicyTemplateName string `json:"policyTemplateName"`
 }
 
 // PolicyTargetSpec indicates how to select projects/clusters in Kubermatic.

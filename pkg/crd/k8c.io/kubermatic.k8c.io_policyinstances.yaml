@@ -61,11 +61,11 @@ spec:
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
                   properties:
-                    name:
-                      description: Name is the name of the policy template
+                    policyTemplateName:
+                      description: PolicyTemplateName is the name of the policy template.
                       type: string
                   required:
-                    - name
+                    - policyTemplateName
                   type: object
                 scope:
                   default: cluster
