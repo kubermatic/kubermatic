@@ -43,9 +43,14 @@ func (flux *Flux) GetApplication() ([]byte, error) {
 
 func (flux *Flux) FetchData() (name, namespace, key string, names []string) {
 	names = []string{
-		"flux2",
+		"helm-controller",
+		"image-automation-controller",
+		"image-reflector-controller",
+		"kustomize-controller",
+		"notification-controller",
+		"source-controller",
 	}
 
-	key = "app.kubernetes.io/instance"
+	key = "app"
 	return flux.Name, flux.Namespace, key, names
 }

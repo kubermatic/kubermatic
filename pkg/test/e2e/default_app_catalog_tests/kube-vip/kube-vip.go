@@ -42,7 +42,9 @@ func (kv *KubeVip) GetApplication() ([]byte, error) {
 }
 
 func (kv *KubeVip) FetchData() (name, namespace, key string, names []string) {
-	names = []string{}
+	names = []string{
+		"kube-vip",
+	}
 
 	key = "app.kubernetes.io/name"
 	return kv.Name, kv.Namespace, key, names
