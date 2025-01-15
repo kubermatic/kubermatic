@@ -15,6 +15,23 @@
 - [v2.24.12](#v22412)
 - [v2.24.13](#v22413)
 - [v2.24.14](#v22414)
+- [v2.24.15](#v22415)
+
+## v2.24.15
+
+**GitHub release: [v2.24.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.24.15)**
+
+### Bugfixes
+
+- Mount correct `ca-bundle` ConfigMap in kubermatic-seed-controller-manager Deployment on dedicated master/seed environments ([#13938](https://github.com/kubermatic/kubermatic/pull/13938))
+- The rollback revision is now set explicit to the last deployed revision when a helm release managed by an application installation fails and a rollback is executed to avoid errors when the last deployed revision is not the current minus 1 and history limit is set to 1 ([#13981](https://github.com/kubermatic/kubermatic/pull/13981))
+- Fix a bug where `groups` scope was missing in authentication request for kubernetes-dashboard ([#7014](https://github.com/kubermatic/dashboard/pull/7014))
+- Fix missing AMI value in edit machine deployment dialog ([#7002](https://github.com/kubermatic/dashboard/pull/7002))
+- Make `Domain` field optional when using application credentials for Openstack provider ([#7044](https://github.com/kubermatic/dashboard/pull/7044))
+
+### Cleanup
+
+- Mark domain as optional field for OpenStack preset ([#13952](https://github.com/kubermatic/kubermatic/pull/13952))
 
 ## v2.24.14
 
