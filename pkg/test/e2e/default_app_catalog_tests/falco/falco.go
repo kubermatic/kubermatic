@@ -42,7 +42,9 @@ func (f *Falco) GetApplication() ([]byte, error) {
 }
 
 func (f *Falco) FetchData() (name, namespace, key string, names []string) {
-	names = []string{}
+	names = []string{
+		"falco",
+	}
 
 	key = "app.kubernetes.io/name"
 	return f.Name, f.Namespace, key, names
