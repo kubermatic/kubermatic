@@ -646,6 +646,8 @@ type DatacenterSpecOpenstack struct {
 	// Optional: enable a configuration drive that will be attached to the instance when it boots.
 	// The instance can mount this drive and read files from it to get information
 	EnableConfigDrive *bool `json:"enableConfigDrive,omitempty"`
+	// Optional: DefaultSecurityGroup is a flag that determines whether KKP should create the default NodePort security group for the cluster open to 0.0.0.0/0. If set, users need to handle Security Groups by themselves.
+	DefaultSecurityGroup bool `json:"defaultSecurityGroups,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {
