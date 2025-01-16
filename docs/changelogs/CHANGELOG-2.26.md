@@ -29,10 +29,16 @@
 - Mount correct `ca-bundle` ConfigMap in kubermatic-seed-controller-manager Deployment on dedicated master/seed environments ([#13938](https://github.com/kubermatic/kubermatic/pull/13938))
 - Remove redundant storage classes from OpenStack CSI addon ([#13920](https://github.com/kubermatic/kubermatic/pull/13920))
 - Remove storage classes filtration in KubeVirt Namespaced mode ([#13985](https://github.com/kubermatic/kubermatic/pull/13985))
+- The created RBAC Role for the csi-driver now grants get for VirtualMachineInstances ([#13967](https://github.com/kubermatic/kubermatic/pull/13967))
 - The rollback revision is now set explicit to the last deployed revision when a helm release managed by an application installation fails and a rollback is executed to avoid errors when the last deployed revision is not the current minus 1 and history limit is set to 1 ([#13953](https://github.com/kubermatic/kubermatic/pull/13953))
 - Fix an issue where selecting "Backup All Namespaces" in the create backup/schedule dialog for cluster backups caused new namespaces to be excluded ([#7037](https://github.com/kubermatic/dashboard/pull/7037))
 - Fix list images in kubevirt and tinkerbell ([#7049](https://github.com/kubermatic/dashboard/pull/7049))
 - Make `Domain` field optional when using application credentials for Openstack provider ([#7044](https://github.com/kubermatic/dashboard/pull/7044))
+
+### Updates
+
+- Update KubeVirt CSI Driver operator to v0.4.1 in KKP ([#14011](https://github.com/kubermatic/kubermatic/pull/14011))
+- Update MC version to [v.1.60.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.60.1) ([#14016](https://github.com/kubermatic/kubermatic/pull/14016))
 
 ### Cleanup
 
