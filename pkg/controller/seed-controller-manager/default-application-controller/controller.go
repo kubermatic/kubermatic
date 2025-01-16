@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -54,7 +55,8 @@ import (
 )
 
 const (
-	ControllerName = "kkp-default-application-controller"
+	ControllerName      = "kkp-default-application-controller"
+	appDefinitionRefKey = ".spec.applicationRef.name"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -187,7 +189,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Collect all applications that need to be installed/updated.
-	applications := []appskubermaticv1.ApplicationInstallation{}
+	applications := []appskubermaticv1.ApplicationDefinition{}
 	for _, applicationDefinition := range applicationDefinitions.Items {
 		if applicationDefinition.DeletionTimestamp != nil {
 			continue
@@ -201,7 +203,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		if applicationDefinition.Spec.Enforced || (applicationDefinition.Spec.Default && !ignoreDefaultApplications) {
-			applications = append(applications, r.generateApplicationInstallation(ctx, applicationDefinition))
+			applications = append(applications, applicationDefinition)
 		}
 	}
 
@@ -233,30 +235,59 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) error {
-	// First ensure that the namespace exists
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, cluster *kubermaticv1.Cluster) error {
+	// First check if the installation is already present
+	// we do this by field selector to avoid to deploy an application twice in different namespaces by mistake
+	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
+	if err := userClusterClient.List(ctx, existingApplicationList); err != nil {
+		return fmt.Errorf("failed to fetch existing application: %w", err)
+	}
+
+	namespaceName := r.getApplicationInstallationNamespace(ctx, application.Name)
+	var currentApplicationInstallation *appskubermaticv1.ApplicationInstallation
+	for _, exisitingApplication := range existingApplicationList.Items {
+		// if we find an application installation which is defaulted and enforced we found an existing resource
+		if exisitingApplication.Name == application.Name {
+			// we can suppress the error here because the return value will be false im something cannot be parsed
+			appEnforcedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
+			appDefaultedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
+			// if enforced and defaulted we found the existing default application installation
+			if appEnforcedEnabled && appDefaultedEnabled {
+				currentApplicationInstallation = &exisitingApplication
+			}
+		}
+	}
+
+	if currentApplicationInstallation != nil {
+		if currentApplicationInstallation.Namespace != namespaceName {
+			r.log.Warnf("namespace for default application installation %s has changed. Keeping the old one because configuring the namespace is only allowed when creating it.", application.Name)
+			namespaceName = currentApplicationInstallation.Namespace
+		}
+	}
+
+	// ensure that the namespace exists
 	namespace := &corev1.Namespace{}
-	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Namespace}, namespace); err != nil {
+	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: namespaceName}, namespace); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get namespace: %w", err)
 		}
 
 		// Create the namespace if it doesn't exist
-		namespace.Name = application.Namespace
+		namespace.Name = namespaceName
 		err := userClusterClient.Create(ctx, namespace)
 		if err != nil {
-			return fmt.Errorf("failed to create namespace: %w", err)
+			return fmt.Errorf("failed to creat namespace: %w", err)
 		}
 	}
 
-	existingApplication := &appskubermaticv1.ApplicationInstallation{}
-	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Name, Namespace: application.Namespace}, existingApplication); err != nil {
+	applicationInstallation := r.generateApplicationInstallation(ctx, application, namespaceName)
+	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Name, Namespace: namespaceName}, applicationInstallation); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get application installation: %w", err)
 		}
 
 		// Create the application
-		err := userClusterClient.Create(ctx, &application)
+		err := userClusterClient.Create(ctx, applicationInstallation)
 		if err != nil {
 			return fmt.Errorf("failed to create application installation: %w", err)
 		}
@@ -264,25 +295,25 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	// If the application is not enforced then we can't update it.
-	if application.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] != "true" {
+	if applicationInstallation.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] != "true" {
 		return nil
 	}
 
 	// Before comparison delete the kubectl.kubernetes.io/last-applied-configuration annotation.
 	// This annotation is automatically generated by kubectl when applying a resource
 	// and causes unnecessary diffs
-	delete(existingApplication.Annotations, corev1.LastAppliedConfigAnnotation)
+	delete(applicationInstallation.Annotations, corev1.LastAppliedConfigAnnotation)
 
 	// Application installation already exists, update it if needed
-	if equality.Semantic.DeepEqual(existingApplication.Spec, application.Spec) &&
-		equality.Semantic.DeepEqual(existingApplication.Labels, application.Labels) &&
-		equality.Semantic.DeepEqual(existingApplication.Annotations, application.Annotations) {
+	if equality.Semantic.DeepEqual(applicationInstallation.Spec, application.Spec) &&
+		equality.Semantic.DeepEqual(applicationInstallation.Labels, application.Labels) &&
+		equality.Semantic.DeepEqual(applicationInstallation.Annotations, application.Annotations) {
 		return nil
 	}
 
 	// Required to update the object.
-	application.ResourceVersion = existingApplication.ResourceVersion
-	application.UID = existingApplication.UID
+	application.ResourceVersion = applicationInstallation.ResourceVersion
+	application.UID = applicationInstallation.UID
 
 	if err := userClusterClient.Update(ctx, &application); err != nil {
 		return fmt.Errorf("failed to update application installation %q: %w", application.Name, err)
@@ -290,7 +321,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	return nil
 }
 
-func (r *Reconciler) generateApplicationInstallation(ctx context.Context, application appskubermaticv1.ApplicationDefinition) appskubermaticv1.ApplicationInstallation {
+func (r *Reconciler) generateApplicationInstallation(ctx context.Context, application appskubermaticv1.ApplicationDefinition, applicationInstallationNamespace string) *appskubermaticv1.ApplicationInstallation {
 	appVersion := application.Spec.DefaultVersion
 	if appVersion == "" {
 		// Iterate through all the versions and find the latest one by semver comparison
@@ -336,23 +367,11 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
 	}
 
-	namespace := application.Name
-	config, err := r.configGetter(ctx)
-	if err != nil {
-		// This is a non-critical error and we can still continue by using the application name as the namespace
-		r.log.Debugf("failed to check kubermatic configuration default settings for applications: %w", err)
-	}
-	if config != nil {
-		if config.Spec.UserCluster.DefaultApplications.Namespace != "" {
-			namespace = config.Spec.UserCluster.DefaultApplications.Namespace
-		}
-	}
-
-	appNamespace := r.getAppNamespace(ctx, &application)
+	appNamespace := getAppNamespace(&application)
 	app := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
-			Namespace:   namespace,
+			Namespace:   applicationInstallationNamespace,
 			Annotations: annotations,
 			Labels:      application.Labels,
 		},
@@ -373,7 +392,22 @@ func (r *Reconciler) generateApplicationInstallation(ctx context.Context, applic
 		app.Spec.Values = *application.Spec.DefaultValues
 	}
 
-	return app
+	return &app
+}
+
+func (r *Reconciler) getApplicationInstallationNamespace(ctx context.Context, applicationName string) string {
+	namespaceName := applicationName
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		// This is a non-critical error and we can still continue by using the application name as the namespace
+		r.log.Debugf("failed to check kubermatic configuration default settings for applications: %w", err)
+	}
+	if config != nil {
+		if config.Spec.UserCluster.DefaultApplications.Namespace != "" {
+			namespaceName = config.Spec.UserCluster.DefaultApplications.Namespace
+		}
+	}
+	return namespaceName
 }
 
 func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {

@@ -1,5 +1,3 @@
-//go:build ee
-
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -19,12 +17,15 @@ limitations under the License.
 package defaultapplicationcontroller
 
 import (
-	"context"
-
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	eeutil "k8c.io/kubermatic/v2/pkg/ee/default-application-controller"
 )
 
-func (r *Reconciler) getAppNamespace(ctx context.Context, application *appskubermaticv1.ApplicationDefinition) *appskubermaticv1.AppNamespaceSpec {
-	return eeutil.GetAppNamespace(ctx, application)
+func getAppNamespace(application *appskubermaticv1.ApplicationDefinition) *appskubermaticv1.AppNamespaceSpec {
+	if application.Spec.DefaultNamespace != nil {
+		return application.Spec.DefaultNamespace
+	}
+	return &appskubermaticv1.AppNamespaceSpec{
+		Name:   application.Name,
+		Create: true,
+	}
 }
