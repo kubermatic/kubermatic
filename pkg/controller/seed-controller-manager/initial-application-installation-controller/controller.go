@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -29,7 +28,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
@@ -145,15 +143,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
-	}
-
-	cniReady, err := util.IsCNIApplicationReady(ctx, userClusterClient, cluster)
-	if err != nil {
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
-	}
-	if !cniReady {
-		r.log.Debug("CNI application is not ready yet")
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	applications, err := r.parseApplications(request)

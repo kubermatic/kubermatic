@@ -248,44 +248,6 @@ func TestReconcile(t *testing.T) {
 				return nil
 			},
 		},
-		{
-			name: "should not create initial application in cluster with not ready Cilium system application",
-			cluster: func() *kubermaticv1.Cluster {
-				app := generateApplication(applicationName)
-				applications := []apiv1.Application{app}
-
-				data, err := json.Marshal(applications)
-				if err != nil {
-					panic(fmt.Sprintf("cannot marshal initial application installations: %v", err))
-				}
-				ciliumCNISettings := kubermaticv1.CNIPluginSettings{
-					Type:    kubermaticv1.CNIPluginTypeCilium,
-					Version: "1.13.7",
-				}
-				return genCluster(string(data), ciliumCNISettings)
-			}(),
-			systemAppInstallationValues: map[string]any{"status": "not-ready"},
-			validate: func(cluster *kubermaticv1.Cluster, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
-				if reconcileErr != nil {
-					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
-				}
-
-				if ann, ok := cluster.Annotations[kubermaticv1.InitialApplicationInstallationsRequestAnnotation]; !ok {
-					return fmt.Errorf("annotation should not have been removed, but did not found %q on the cluster", ann)
-				}
-
-				apps := appskubermaticv1.ApplicationInstallationList{}
-				if err := userClusterClient.List(context.Background(), &apps); err != nil {
-					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
-				}
-
-				if len(apps.Items) != 1 {
-					return errors.New("did not find the expected ApplicationInstallations in the user cluster after the reconciler finished")
-				}
-
-				return nil
-			},
-		},
 	}
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
