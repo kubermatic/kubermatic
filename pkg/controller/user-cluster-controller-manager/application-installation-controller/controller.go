@@ -31,6 +31,7 @@ import (
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -125,16 +126,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
-
-	cniReady, err := util.IsCNIApplicationReady(ctx, r.userClient, cluster)
-	if err != nil {
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
-	}
-	if !cniReady {
-		r.log.Debug("CNI application is not ready yet")
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-	}
-
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
 
 	if err := r.userClient.Get(ctx, request.NamespacedName, appInstallation); err != nil {
@@ -143,6 +134,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get applicationInstallation: %w", err)
+	}
+
+	cniReady, err := util.IsCNIApplicationReady(ctx, r.userClient, cluster)
+	if err != nil {
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
+	}
+	if !cniReady && appInstallation.Name != kubermaticv1.CNIPluginTypeCilium.String() {
+		r.log.Debug("CNI application is not ready yet")
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	err = r.reconcile(ctx, log, appInstallation)
