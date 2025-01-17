@@ -53,6 +53,7 @@ func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient
 	// this function will fail to list storage classes which means it will fail to create the cluster.
 	if dc.NamespacedMode != nil && dc.NamespacedMode.Enabled {
 		// considering the storage classes in the dc object as the only canonical truth and skip filtering storage classes.
+		spec.StorageClasses = dc.InfraStorageClasses
 		return nil
 	}
 
