@@ -261,8 +261,8 @@ type KubermaticUserClusterConfiguration struct {
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// SystemApplications contains configuration for system Applications (such as CNI).
 	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
-	// DefaultApplications contains configuration for default Application settings. This is an ee-only feature.
-	DefaultApplications DefaultApplicationsConfiguration `json:"defaultApplications,omitempty"`
+	// Applications contains configuration for default Application settings. This is an ee-only feature.
+	Applications ApplicationsConfiguration `json:"applications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
@@ -356,8 +356,8 @@ type SystemApplicationsConfiguration struct {
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
 }
 
-// DefaultApplicationsConfiguration contains configuration for default Applications configuration settings.
-type DefaultApplicationsConfiguration struct {
+// ApplicationsConfiguration contains configuration for default Applications configuration settings.
+type ApplicationsConfiguration struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 

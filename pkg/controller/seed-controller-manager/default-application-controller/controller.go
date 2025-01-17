@@ -403,8 +403,8 @@ func (r *Reconciler) getApplicationInstallationNamespace(ctx context.Context, ap
 		r.log.Debugf("failed to check kubermatic configuration default settings for applications: %w", err)
 	}
 	if config != nil {
-		if config.Spec.UserCluster.DefaultApplications.Namespace != "" {
-			namespaceName = config.Spec.UserCluster.DefaultApplications.Namespace
+		if config.Spec.UserCluster.Applications.Namespace != "" {
+			namespaceName = config.Spec.UserCluster.Applications.Namespace
 		}
 	}
 	return namespaceName

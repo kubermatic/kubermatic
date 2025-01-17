@@ -2322,8 +2322,8 @@ spec:
                       description: APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
                       format: int32
                       type: integer
-                    defaultApplications:
-                      description: DefaultApplications contains configuration for default Application settings. This is an ee-only feature.
+                    applications:
+                      description: Applications contains configuration for default Application settings. This is an ee-only feature.
                       properties:
                         namespace:
                           type: string

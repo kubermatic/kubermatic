@@ -738,7 +738,7 @@ func createKubermaticConfiguration(defaultAppNamespace string) *kubermaticv1.Kub
 	return &kubermaticv1.KubermaticConfiguration{
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
-				DefaultApplications: kubermaticv1.DefaultApplicationsConfiguration{
+				Applications: kubermaticv1.ApplicationsConfiguration{
 					Namespace: defaultAppNamespace,
 				},
 			},
