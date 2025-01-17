@@ -15,7 +15,7 @@ var DefaultEchoServerWithVariables = EchoServerWithVariables{
 	Name:      "echoserver-with-variables",
 }
 
-func (es *EchoServerWithVariables) GetApplication() ([]byte, error) {
+func (es *EchoServerWithVariables) GetApplication(version string) ([]byte, error) {
 	valuesBlock := `foo: '{{ .Cluster.Version }}'
 ingress:
   enabled: true
@@ -37,7 +37,7 @@ replicaCount: 3`
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    es.Name,
-				Version: "0.7.0",
+				Version: version,
 			},
 			ValuesBlock: valuesBlock,
 		},

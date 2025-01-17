@@ -15,7 +15,7 @@ var DefaultMetalLB = MetalLB{
 	Name:      "metallb",
 }
 
-func (mlb *MetalLB) GetApplication() ([]byte, error) {
+func (mlb *MetalLB) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      mlb.Name,
@@ -28,7 +28,7 @@ func (mlb *MetalLB) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    mlb.Name,
-				Version: "v0.14.3",
+				Version: version,
 			},
 		},
 	}
