@@ -15,7 +15,7 @@ var DefaultKubeVirt = KubeVirt{
 	Name:      "kubevirt",
 }
 
-func (kv *KubeVirt) GetApplication() ([]byte, error) {
+func (kv *KubeVirt) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      kv.Name,
@@ -28,7 +28,7 @@ func (kv *KubeVirt) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    kv.Name,
-				Version: "v1.1.0",
+				Version: version,
 			},
 		},
 	}

@@ -61,10 +61,11 @@ import (
 )
 
 var (
-	userconfig      string
-	applicationName string
-	credentials     jig.AWSCredentials
-	logOptions      = utils.DefaultLogOptions
+	userconfig         string
+	applicationName    string
+	applicationVersion string
+	credentials        jig.AWSCredentials
+	logOptions         = utils.DefaultLogOptions
 )
 
 const (
@@ -73,6 +74,8 @@ const (
 
 func init() {
 	flag.StringVar(&applicationName, "application-name", "", "name of an application from the default app catalog")
+	credentials.AddFlags(flag.CommandLine)
+	flag.StringVar(&applicationVersion, "application-version", "", "version of an application from the default app catalog")
 	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
@@ -231,7 +234,7 @@ func createUserCluster(
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
 	application := getChosenApplication()
-	appAnnotation, err := application.GetApplication()
+	appAnnotation, err := application.GetApplication(applicationVersion)
 	if err != nil {
 		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
 	}
