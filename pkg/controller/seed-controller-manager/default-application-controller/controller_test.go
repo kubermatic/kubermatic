@@ -58,13 +58,14 @@ var (
 )
 
 const (
-	defaultDatacenterName            = "global"
-	clusterName                      = "cluster1"
-	defaultValue                     = "not-empty:\n  value"
-	projectID                        = "testproject"
-	applicationInstallationNamespace = "applications"
-	applicationName                  = "katana"
-	appVersion                       = "v1.2.0"
+	defaultDatacenterName                   = "global"
+	clusterName                             = "cluster1"
+	defaultValue                            = "not-empty:\n  value"
+	projectID                               = "testproject"
+	applicationInstallationNamespace        = "applications"
+	changedApplicationInstallationNamespace = "applications-changed"
+	applicationName                         = "katana"
+	appVersion                              = "v1.2.0"
 )
 
 func init() {
@@ -76,12 +77,13 @@ func TestReconcile(t *testing.T) {
 	log := zap.NewNop().Sugar()
 
 	testCases := []struct {
-		name                        string
-		cluster                     *kubermaticv1.Cluster
-		applications                []appskubermaticv1.ApplicationDefinition
-		defaultApplicationNamespace string
-		systemAppInstallationValues map[string]any
-		validate                    func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
+		name                               string
+		cluster                            *kubermaticv1.Cluster
+		applications                       []appskubermaticv1.ApplicationDefinition
+		defaultApplicationNamespace        string
+		systemAppInstallationValues        map[string]any
+		additionalApplicationInstallations []appskubermaticv1.ApplicationInstallation
+		validate                           func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error
 	}{
 		{
 			name:    "scenario 1: no default applications, no application installations",
@@ -417,6 +419,41 @@ func TestReconcile(t *testing.T) {
 				return compareApplications(apps.Items, applications, applicationInstallationNamespace)
 			},
 		},
+		{
+			name:                        "scenario 14: should not update default application in cluster with ready Cilium system application when the default applicationinstallation namespace",
+			defaultApplicationNamespace: changedApplicationInstallationNamespace,
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			additionalApplicationInstallations: []appskubermaticv1.ApplicationInstallation{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "applicationName",
+						Namespace:   applicationInstallationNamespace,
+						Annotations: map[string]string{appskubermaticv1.ApplicationEnforcedAnnotation: "true", appskubermaticv1.ApplicationDefaultedAnnotation: "true"},
+					},
+					Spec: appskubermaticv1.ApplicationInstallationSpec{},
+				},
+			},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinition("applicationName", applicationInstallationNamespace, "v1.0.0", "", true, true, defaultValue, nil, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), 2)
+				}
+
+				return compareApplications(apps.Items, applications, applicationInstallationNamespace)
+			},
+		},
 	}
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
@@ -432,7 +469,7 @@ func TestReconcile(t *testing.T) {
 				WithObjects(objects...).
 				WithObjects(project).
 				Build()
-			userClusterObjects := getUserClusterObjects(t, test.systemAppInstallationValues)
+			userClusterObjects := getUserClusterObjects(t, test.systemAppInstallationValues, test.additionalApplicationInstallations)
 			userClusterClient := fake.
 				NewClientBuilder().
 				WithScheme(testScheme).
@@ -504,7 +541,7 @@ func TestReconcile(t *testing.T) {
 		})
 	}
 }
-func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]any) []ctrlruntimeclient.Object {
+func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]any, existingApplications []appskubermaticv1.ApplicationInstallation) []ctrlruntimeclient.Object {
 	userClusterObjects := []ctrlruntimeclient.Object{}
 	if systemAppInstallationValues != nil {
 		appInst := &appskubermaticv1.ApplicationInstallation{
@@ -526,6 +563,10 @@ func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]
 		}
 		appInst.Spec.Values = runtime.RawExtension{Raw: rawValues}
 		userClusterObjects = append(userClusterObjects, appInst)
+	}
+
+	for _, application := range existingApplications {
+		userClusterObjects = append(userClusterObjects, &application)
 	}
 	return userClusterObjects
 }

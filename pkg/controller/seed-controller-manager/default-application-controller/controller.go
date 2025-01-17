@@ -281,11 +281,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	applicationInstallation := r.generateApplicationInstallation(ctx, application, namespaceName)
-	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Name, Namespace: namespaceName}, applicationInstallation); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get application installation: %w", err)
-		}
-
+	if currentApplicationInstallation == nil {
 		// Create the application
 		err := userClusterClient.Create(ctx, applicationInstallation)
 		if err != nil {
@@ -305,17 +301,17 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	delete(applicationInstallation.Annotations, corev1.LastAppliedConfigAnnotation)
 
 	// Application installation already exists, update it if needed
-	if equality.Semantic.DeepEqual(applicationInstallation.Spec, application.Spec) &&
-		equality.Semantic.DeepEqual(applicationInstallation.Labels, application.Labels) &&
-		equality.Semantic.DeepEqual(applicationInstallation.Annotations, application.Annotations) {
+	if equality.Semantic.DeepEqual(applicationInstallation.Spec, currentApplicationInstallation.Spec) &&
+		equality.Semantic.DeepEqual(applicationInstallation.Labels, currentApplicationInstallation.Labels) &&
+		equality.Semantic.DeepEqual(applicationInstallation.Annotations, currentApplicationInstallation.Annotations) {
 		return nil
 	}
 
 	// Required to update the object.
-	application.ResourceVersion = applicationInstallation.ResourceVersion
-	application.UID = applicationInstallation.UID
+	applicationInstallation.ResourceVersion = currentApplicationInstallation.ResourceVersion
+	applicationInstallation.UID = currentApplicationInstallation.UID
 
-	if err := userClusterClient.Update(ctx, &application); err != nil {
+	if err := userClusterClient.Update(ctx, applicationInstallation); err != nil {
 		return fmt.Errorf("failed to update application installation %q: %w", application.Name, err)
 	}
 	return nil
