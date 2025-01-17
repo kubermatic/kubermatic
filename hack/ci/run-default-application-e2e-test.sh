@@ -26,12 +26,17 @@ TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
 
 APPLICATION_NAME=""
+APPLICATION_VERSION=""
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --application-name)
       APPLICATION_NAME="$2"
+      shift 2
+      ;;
+    --application-version)
+      APPLICATION_VERSION="$2"
       shift 2
       ;;
     *)
@@ -41,7 +46,7 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-echo "Running test with application name: $APPLICATION_NAME"
+echo "Running test with application name '$APPLICATION_NAME' and version '$APPLICATION_NAME'"
 
 
 beforeGocache=$(nowms)
@@ -75,11 +80,12 @@ fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
-echodate "Running ArgoCD tests..."
+echodate "Running $APPLICATION_NAME tests..."
 
 go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/default_app_catalog_tests \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
-  -application-name "$APPLICATION_NAME"
+  -application-name "$APPLICATION_NAME" \
+  -application-version "$APPLICATION_VERSION"
 
-echodate "ArgoCD tests done."
+echodate "Application $APPLICATION_NAME tests done."
