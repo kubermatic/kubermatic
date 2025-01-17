@@ -74,7 +74,6 @@ const (
 
 func init() {
 	flag.StringVar(&applicationName, "application-name", "", "name of an application from the default app catalog")
-	credentials.AddFlags(flag.CommandLine)
 	flag.StringVar(&applicationVersion, "application-version", "", "version of an application from the default app catalog")
 	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
