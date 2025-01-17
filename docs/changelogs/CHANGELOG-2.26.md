@@ -4,6 +4,20 @@
 - [v2.26.1](#v2261)
 - [v2.26.2](#v2262)
 - [v2.26.3](#v2263)
+- [v2.26.4](#v2264)
+
+## v2.26.4
+
+**GitHub release: [v2.26.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.4)**
+
+### Bugfixes
+
+- Fix Seed-MLA's Prometheus trying to scrape Kopia job Pods from Velero ([#14007](https://github.com/kubermatic/kubermatic/pull/14007))
+- Ignore reading the storage classes from the infra cluster and only roll out the ones from the seed object ([#14023](https://github.com/kubermatic/kubermatic/pull/14023))
+
+### Updates
+
+- Update OSM to 1.6.2 ([#14025](https://github.com/kubermatic/kubermatic/pull/14025))
 
 ## v2.26.3
 
