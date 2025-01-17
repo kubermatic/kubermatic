@@ -399,7 +399,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: metallb
+  - name: pre-kubermatic-appcatalog-metallb
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
