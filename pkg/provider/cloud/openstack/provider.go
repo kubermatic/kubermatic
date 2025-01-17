@@ -240,7 +240,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 
 	// Reconcile the security group(s)
 	if force || cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		cluster, err = reconcileSecurityGroups(ctx, netClient, cluster, update)
+		cluster, err = os.reconcileSecurityGroups(ctx, netClient, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -344,7 +344,7 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 	return cluster, err
 }
 
-func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	// first ensure we have our cleanup finalizer
 	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
@@ -364,7 +364,8 @@ func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.Service
 
 	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
 	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
-	ipRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
+
+	ipRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange, os.dc.NodePortsAllowedIPRanges)
 
 	lowPort, highPort := resources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
