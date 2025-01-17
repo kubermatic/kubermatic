@@ -85,38 +85,42 @@ func getChosenApplication() ApplicationInterface {
 	flag.Parse()
 
 	var applicationStruct ApplicationInterface
-	if applicationName == "argocd" {
+	switch applicationName {
+	case "argocd":
 		applicationStruct = &argocd.DefaultArgoCD
-	} else if applicationName == "cert-manager" {
+	case "cert-manager":
 		applicationStruct = &cert_manager.DefaultCertManager
-	} else if applicationName == "cluster-autoscaler" {
+	case "cluster-autoscaler":
 		applicationStruct = &cluster_autoscaler.DefaultClusterAutoScaler
-	} else if applicationName == "echoserver" {
+	case "echoserver":
 		applicationStruct = &echoserver.DefaultEchoServer
-	} else if applicationName == "echoserver-with-variables" {
+	case "echoserver-with-variables":
 		applicationStruct = &echoserver_with_variables.DefaultEchoServerWithVariables
-	} else if applicationName == "falco" {
+	case "falco":
 		applicationStruct = &falco.DefaultFalco
-	} else if applicationName == "flux" {
+	case "flux":
 		applicationStruct = &flux.DefaultFlux
-	} else if applicationName == "k8sgpt" {
+	case "k8sgpt":
 		applicationStruct = &k8sgpt.DefaultK8sGpt
-	} else if applicationName == "kube-vip" {
+	case "kube-vip":
 		applicationStruct = &kube_vip.DefaultKubeVip
-	} else if applicationName == "kubevirt" {
+	case "kubevirt":
 		applicationStruct = &kubevirt.DefaultKubeVirt
-	} else if applicationName == "metallb" {
+	case "metallb":
 		applicationStruct = &metallb.DefaultMetalLB
-	} else if applicationName == "nginx_ingress_controller" {
+	case "nginx_ingress_controller":
 		applicationStruct = &nginx_ingress_controller.DefaultNginxIngressController
-	} else if applicationName == "nvidia_gpu_operator" {
+	case "nvidia_gpu_operator":
 		applicationStruct = &nvidia_gpu_operator.DefaultNvidiaGpuOperator
-	} else if applicationName == "sealed-secrets" {
+	case "sealed-secrets":
 		applicationStruct = &sealed_secrets.DefaultSealedSecrets
-	} else if applicationName == "trivy" {
+	case "trivy":
 		applicationStruct = &trivy.DefaultTrivy
-	} else if applicationName == "trivy-operator" {
+	case "trivy-operator":
 		applicationStruct = &trivy_operator.DefaultTrivyOperator
+	default:
+		// Handle unknown applicationName if necessary
+		applicationStruct = nil
 	}
 
 	return applicationStruct
@@ -154,7 +158,6 @@ func TestClusters(t *testing.T) {
 	}
 
 	testUserCluster(ctx, t, tLogger, client)
-
 }
 
 //gocyclo:ignore
