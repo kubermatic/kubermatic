@@ -21,6 +21,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/cluster_autoscaler"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/flux"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/k8sgpt"
 	corev1 "k8s.io/api/core/v1"
@@ -90,6 +91,8 @@ func getChosenApplication() ApplicationInterface {
 		applicationStruct = &argocd.DefaultArgoCD
 	} else if applicationName == "cert-manager" {
 		applicationStruct = &cert_manager.DefaultCertManager
+	} else if applicationName == "cluster-autoscaler" {
+		applicationStruct = &cluster_autoscaler.DefaultClusterAutoScaler
 	} else if applicationName == "echoserver" {
 		applicationStruct = &echoserver.DefaultEchoServer
 	} else if applicationName == "echoserver-with-variables" {

@@ -10,7 +10,7 @@ type ClusterAutoScaler struct {
 	Name      string
 }
 
-var DefaultCertManager = ClusterAutoScaler{
+var DefaultClusterAutoScaler = ClusterAutoScaler{
 	Namespace: "cluster-autoscaler",
 	Name:      "cluster-autoscaler",
 }
