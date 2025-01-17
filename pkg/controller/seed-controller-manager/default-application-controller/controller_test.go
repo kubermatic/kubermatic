@@ -420,7 +420,7 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 		{
-			name:                        "scenario 14: should not update default application in cluster with ready Cilium system application when the default applicationinstallation namespace",
+			name:                        "scenario 14: should not update default application in cluster with ready Cilium system application when the default applicationinstallation namespace has changed",
 			defaultApplicationNamespace: changedApplicationInstallationNamespace,
 			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
 			systemAppInstallationValues: map[string]any{"status": "ready"},
