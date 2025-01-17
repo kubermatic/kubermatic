@@ -62,7 +62,6 @@ import (
 )
 
 var (
-	userconfig         string
 	applicationName    string
 	applicationVersion string
 	credentials        jig.AWSCredentials
