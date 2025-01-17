@@ -1,5 +1,5 @@
 presubmits:
-  - name: argocd
+  - name: pre-kubermatic-appcatalog-argocd
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -39,7 +39,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: cert-manager
+  - name: pre-kubermatic-appcatalog-cert-manager
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -79,7 +79,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: cluster-autoscaler
+  - name: pre-kubermatic-appcatalog-cluster-autoscaler
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -119,7 +119,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: echoserver
+  - name: pre-kubermatic-appcatalog-echoserver
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -159,7 +159,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: echoserver-with-variables
+  - name: pre-kubermatic-appcatalog-echoserver-with-variables
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -199,7 +199,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: falco
+  - name: pre-kubermatic-appcatalog-falco
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -239,7 +239,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: flux
+  - name: pre-kubermatic-appcatalog-flux
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -279,7 +279,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: k8sgpt
+  - name: pre-kubermatic-appcatalog-k8sgpt
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -319,7 +319,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: kube-vip
+  - name: pre-kubermatic-appcatalog-kube-vip
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -359,7 +359,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: kubevirt
+  - name: pre-kubermatic-appcatalog-kubevirt
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -439,7 +439,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: nginx_ingress_controller
+  - name: pre-kubermatic-appcatalog-nginx-ingress-controller
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -479,7 +479,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: nvidia_gpu_operator
+  - name: pre-kubermatic-appcatalog-nvidia-gpu-operator
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -519,7 +519,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: sealed-secrets
+  - name: pre-kubermatic-appcatalog-sealed-secrets
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -559,7 +559,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: trivy
+  - name: pre-kubermatic-appcatalog-trivy
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -599,7 +599,7 @@ presubmits:
             limits:
               memory: 18Gi
 
-  - name: trivy-operator
+  - name: pre-kubermatic-appcatalog-trivy-operator
     run_if_changed: "(pkg/ee/default-application-catalog/|.prow/)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
