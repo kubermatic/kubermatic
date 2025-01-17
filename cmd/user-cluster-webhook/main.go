@@ -126,7 +126,7 @@ func main() {
 	// setup webhooks
 
 	// Setup the mutation admission handler for ApplicationInstallation CRDs in seed manager.
-	applicationinstallationmutation.NewAdmissionHandler(log, seedMgr.GetScheme(), userMgr.GetClient()).SetupWebhookWithManager(seedMgr)
+	applicationinstallationmutation.NewAdmissionHandler(log, seedMgr.GetScheme(), seedMgr.GetClient()).SetupWebhookWithManager(seedMgr)
 
 	// Setup the validation admission handler for ApplicationInstallation CRDs in seed manager.
 	applicationinstallationvalidation.NewAdmissionHandler(log, seedMgr.GetScheme(), seedMgr.GetClient(), options.clusterName).SetupWebhookWithManager(seedMgr)
