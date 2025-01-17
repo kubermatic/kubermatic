@@ -43,8 +43,7 @@ func (ss *SealedSecrets) GetApplication(version string) ([]byte, error) {
 
 func (ss *SealedSecrets) FetchData() (name, namespace, key string, names []string) {
 	names = []string{
-		"gpu-operator",
-		"node-feature-discovery",
+		"sealed-secrets",
 	}
 
 	key = "app.kubernetes.io/name"

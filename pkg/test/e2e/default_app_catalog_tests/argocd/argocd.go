@@ -49,7 +49,13 @@ server:
 
 func (a *ArgoCD) FetchData() (name, namespace, key string, names []string) {
 	names = []string{
-		"cluster-autoscaler",
+		"argocd-application-controller",
+		"argocd-applicationset-controller",
+		"argocd-dex-server",
+		"argocd-notifications-controller",
+		"argocd-redis",
+		"argocd-repo-server",
+		"argocd-server",
 	}
 
 	key = "app.kubernetes.io/name"
