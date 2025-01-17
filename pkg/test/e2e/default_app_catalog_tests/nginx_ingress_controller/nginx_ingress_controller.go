@@ -15,7 +15,7 @@ var DefaultNginxIngressController = NginxIngressController{
 	Name:      "nginx",
 }
 
-func (nic *NginxIngressController) GetApplication() ([]byte, error) {
+func (nic *NginxIngressController) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      nic.Name,
@@ -28,7 +28,7 @@ func (nic *NginxIngressController) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    nic.Name,
-				Version: "1.9.6",
+				Version: version,
 			},
 		},
 	}

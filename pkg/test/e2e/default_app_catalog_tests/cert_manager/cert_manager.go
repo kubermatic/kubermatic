@@ -15,7 +15,7 @@ var DefaultCertManager = CertManager{
 	Name:      "cert-manager",
 }
 
-func (cm *CertManager) GetApplication() ([]byte, error) {
+func (cm *CertManager) GetApplication(version string) ([]byte, error) {
 	valuesBlock := `installCRDs: true`
 
 	app := apiv1.Application{
@@ -30,7 +30,7 @@ func (cm *CertManager) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    cm.Name,
-				Version: "v1.14.1",
+				Version: version,
 			},
 			ValuesBlock: valuesBlock,
 		},

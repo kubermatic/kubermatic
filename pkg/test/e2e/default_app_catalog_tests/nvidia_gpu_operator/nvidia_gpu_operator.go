@@ -15,7 +15,7 @@ var DefaultNvidiaGpuOperator = NvidiaGpuOperator{
 	Name:      "nvidia-gpu-operator",
 }
 
-func (ngo *NvidiaGpuOperator) GetApplication() ([]byte, error) {
+func (ngo *NvidiaGpuOperator) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      ngo.Name,
@@ -28,7 +28,7 @@ func (ngo *NvidiaGpuOperator) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    ngo.Name,
-				Version: "v23.9.1",
+				Version: version,
 			},
 		},
 	}

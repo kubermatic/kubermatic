@@ -15,7 +15,7 @@ var DefaultTrivy = Trivy{
 	Name:      "trivy",
 }
 
-func (t *Trivy) GetApplication() ([]byte, error) {
+func (t *Trivy) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      t.Name,
@@ -28,7 +28,7 @@ func (t *Trivy) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    t.Name,
-				Version: "0.37.2",
+				Version: version,
 			},
 		},
 	}
