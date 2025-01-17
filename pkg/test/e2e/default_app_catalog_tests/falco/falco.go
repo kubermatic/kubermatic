@@ -15,7 +15,7 @@ var DefaultFalco = Falco{
 	Name:      "falco",
 }
 
-func (f *Falco) GetApplication() ([]byte, error) {
+func (f *Falco) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      f.Name,
@@ -28,7 +28,7 @@ func (f *Falco) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    f.Name,
-				Version: "0.37.0",
+				Version: version,
 			},
 		},
 	}

@@ -15,7 +15,7 @@ var DefaultTrivyOperator = TrivyOperator{
 	Name:      "trivy-operator",
 }
 
-func (to *TrivyOperator) GetApplication() ([]byte, error) {
+func (to *TrivyOperator) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      to.Name,
@@ -28,7 +28,7 @@ func (to *TrivyOperator) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    to.Name,
-				Version: "0.18.4",
+				Version: version,
 			},
 		},
 	}

@@ -15,7 +15,7 @@ var DefaultK8sGpt = K8sGpt{
 	Name:      "k8sgpt",
 }
 
-func (kg *K8sGpt) GetApplication() ([]byte, error) {
+func (kg *K8sGpt) GetApplication(version string) ([]byte, error) {
 	valuesBlock := `serviceMonitor:
   enabled: false
   additionalLabels: {}
@@ -40,7 +40,7 @@ grafanaDashboard:
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    kg.Name,
-				Version: "v0.3.26",
+				Version: version,
 			},
 			ValuesBlock: valuesBlock,
 		},

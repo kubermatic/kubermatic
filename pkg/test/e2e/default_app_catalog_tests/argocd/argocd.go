@@ -15,7 +15,7 @@ var DefaultArgoCD = ArgoCD{
 	Name:      "argocd",
 }
 
-func (a *ArgoCD) GetApplication() ([]byte, error) {
+func (a *ArgoCD) GetApplication(version string) ([]byte, error) {
 	valuesBlock := `
 server:
   service:
@@ -33,7 +33,7 @@ server:
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    a.Name,
-				Version: "v2.10.0",
+				Version: version,
 			},
 			ValuesBlock: valuesBlock,
 		},

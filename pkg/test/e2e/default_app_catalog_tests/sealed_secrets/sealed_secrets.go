@@ -15,7 +15,7 @@ var DefaultSealedSecrets = SealedSecrets{
 	Name:      "sealed-secrets",
 }
 
-func (ss *SealedSecrets) GetApplication() ([]byte, error) {
+func (ss *SealedSecrets) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      ss.Name,
@@ -28,7 +28,7 @@ func (ss *SealedSecrets) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    ss.Name,
-				Version: "v23.9.1",
+				Version: version,
 			},
 		},
 	}

@@ -15,7 +15,7 @@ var DefaultCertManager = ClusterAutoScaler{
 	Name:      "cluster-autoscaler",
 }
 
-func (ca *ClusterAutoScaler) GetApplication() ([]byte, error) {
+func (ca *ClusterAutoScaler) GetApplication(version string) ([]byte, error) {
 	valuesBlock := `cloudProvider: clusterapi
 clusterAPIMode: incluster-incluster
 autoDiscovery:
@@ -79,7 +79,7 @@ extraObjects:
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    ca.Name,
-				Version: "1.31.0",
+				Version: version,
 			},
 			ValuesBlock: valuesBlock,
 		},

@@ -15,7 +15,7 @@ var DefaultFlux = Flux{
 	Name:      "flux2",
 }
 
-func (flux *Flux) GetApplication() ([]byte, error) {
+func (flux *Flux) GetApplication(version string) ([]byte, error) {
 	app := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      flux.Name,
@@ -28,7 +28,7 @@ func (flux *Flux) GetApplication() ([]byte, error) {
 			},
 			ApplicationRef: apiv1.ApplicationRef{
 				Name:    flux.Name,
-				Version: "2.2.2",
+				Version: version,
 			},
 		},
 	}
