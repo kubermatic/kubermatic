@@ -31,7 +31,6 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermatictest "k8c.io/kubermatic/v2/pkg/test"
-	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -56,7 +55,6 @@ var (
 		Type:    kubermaticv1.CNIPluginTypeCilium,
 		Version: "1.15.0",
 	}
-	failedKKPConfigurationErr = fmt.Errorf("namespace for default application installation %s has changed. Keeping the old one because configuring the namespace is only allowed when creating it.", applicationName)
 )
 
 const (
@@ -433,17 +431,31 @@ func TestReconcile(t *testing.T) {
 						Namespace:   applicationInstallationNamespace,
 						Annotations: map[string]string{appskubermaticv1.ApplicationEnforcedAnnotation: "true", appskubermaticv1.ApplicationDefaultedAnnotation: "true"},
 					},
-					Spec: appskubermaticv1.ApplicationInstallationSpec{},
+					Spec: appskubermaticv1.ApplicationInstallationSpec{
+						ApplicationRef: appskubermaticv1.ApplicationRef{
+							Name: applicationName,
+						},
+					},
 				},
 			},
 			applications: []appskubermaticv1.ApplicationDefinition{
 				*genApplicationDefinition(applicationName, applicationInstallationNamespace, "v1.0.0", "", true, true, defaultValue, nil, nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
-				if compare := diff.StringDiff(reconcileErr.Error(), failedKKPConfigurationErr.Error()); compare != "" {
-					return fmt.Errorf("reconciling got an unexpected error: %s", compare)
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
 				}
-				return nil
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
+				}
+
+				return compareApplications(apps.Items, applications, changedApplicationInstallationNamespace)
 			},
 		},
 	}

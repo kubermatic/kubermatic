@@ -37,7 +37,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -236,19 +235,22 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, cluster *kubermaticv1.Cluster) error {
-	// First check if the installation is already present
-	// we do this by field selector to avoid to deploy an application twice in different namespaces by mistake
+	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
+	// for this we need to list all existing applications installations
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
 	if err := userClusterClient.List(ctx, existingApplicationList); err != nil {
 		return fmt.Errorf("failed to list installed applications: %w", err)
 	}
 
-	namespaceName := r.getApplicationInstallationNamespace(ctx, application.Name)
+	namespaceName, err := r.getApplicationInstallationNamespace(ctx, application.Name)
+	if err != nil {
+		return err
+	}
 	var currentApplicationInstallation *appskubermaticv1.ApplicationInstallation
 	for _, exisitingApplication := range existingApplicationList.Items {
 		// if we find an application installation which is defaulted and enforced we found an existing resource
-		if exisitingApplication.Name == application.Name {
-			// we can suppress the error here because the return value will be false im something cannot be parsed
+		if exisitingApplication.Spec.ApplicationRef.Name == application.Name && exisitingApplication.Name == application.Name {
+			// we can suppress the error here because the return value will be false if something cannot be parsed
 			appEnforcedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
 			appDefaultedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
 			// if enforced and defaulted we found the existing default application installation
@@ -260,8 +262,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	if currentApplicationInstallation != nil && currentApplicationInstallation.Namespace != namespaceName {
-		r.log.Error("namespace for default application installation has changed. Keeping the old one because configuring the namespace is only allowed when creating it.", "application", application.Name)
-		return fmt.Errorf("namespace for default application installation %s has changed. Keeping the old one because configuring the namespace is only allowed when creating it.", application.Name)
+		namespaceName = currentApplicationInstallation.Namespace
 	}
 
 	// ensure that the namespace exists
@@ -336,21 +337,16 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 			}
 
 			appNamespace := getAppNamespace(&application)
-			app = &appskubermaticv1.ApplicationInstallation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        application.Name,
-					Annotations: annotations,
-					Labels:      application.Labels,
+			app.Annotations = annotations
+			app.Labels = application.Labels
+			app.Spec = appskubermaticv1.ApplicationInstallationSpec{
+				Namespace: *appNamespace,
+				ApplicationRef: appskubermaticv1.ApplicationRef{
+					Name:    application.Name,
+					Version: appVersion,
 				},
-				Spec: appskubermaticv1.ApplicationInstallationSpec{
-					Namespace: *appNamespace,
-					ApplicationRef: appskubermaticv1.ApplicationRef{
-						Name:    application.Name,
-						Version: appVersion,
-					},
-					ValuesBlock: application.Spec.DefaultValuesBlock,
-					Values:      runtime.RawExtension{Raw: []byte("{}")},
-				},
+				ValuesBlock: application.Spec.DefaultValuesBlock,
+				Values:      runtime.RawExtension{Raw: []byte("{}")},
 			}
 
 			// We already tried conversion and it failed. This should never happen but we have to work around it anyways.
@@ -361,23 +357,21 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 
 			return app, nil
 		}
-
 	}
 }
 
-func (r *Reconciler) getApplicationInstallationNamespace(ctx context.Context, applicationName string) string {
+func (r *Reconciler) getApplicationInstallationNamespace(ctx context.Context, applicationName string) (string, error) {
 	namespaceName := applicationName
 	config, err := r.configGetter(ctx)
 	if err != nil {
-		// This is a non-critical error and we can still continue by using the application name as the namespace
-		r.log.Debugf("failed to check kubermatic configuration default settings for applications: %w", err)
+		return "", err
 	}
 	if config != nil {
 		if config.Spec.UserCluster.Applications.Namespace != "" {
 			namespaceName = config.Spec.UserCluster.Applications.Namespace
 		}
 	}
-	return namespaceName
+	return namespaceName, nil
 }
 
 func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {

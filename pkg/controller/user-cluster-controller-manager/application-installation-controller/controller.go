@@ -193,6 +193,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		}
 	}
 
+	if err := setAppNamespace(ctx, r.seedClient, appInstallation); err != nil {
+		return fmt.Errorf("failed to set namespace for application: %w", err)
+	}
+
 	// install application into the user-cluster
 	if err := r.handleInstallation(ctx, log, applicationDef, appInstallation); err != nil {
 		return fmt.Errorf("handling installation of application installation: %w", err)
@@ -212,6 +216,20 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 		}
 	}
 	return fmt.Errorf("application version '%s' does not exist in applicationDefinition %s", desiredVersion, applicationDef.Name)
+}
+
+func setAppNamespace(ctx context.Context, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
+	applicationDefinition := appskubermaticv1.ApplicationDefinition{}
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: applicationInstallation.Spec.ApplicationRef.Name}, &applicationDefinition); err != nil {
+		return fmt.Errorf("error on fetching application definition for setting appinstallation namespace. %w", err)
+	}
+
+	if applicationInstallation.Spec.Namespace.Name == "" && applicationDefinition.Spec.DefaultNamespace != nil {
+		applicationInstallation.Spec.Namespace.Name = applicationDefinition.Spec.DefaultNamespace.Name
+		applicationInstallation.Spec.Namespace.Create = true
+	}
+
+	return nil
 }
 
 // handleInstallation installs or updates the application in the user cluster.

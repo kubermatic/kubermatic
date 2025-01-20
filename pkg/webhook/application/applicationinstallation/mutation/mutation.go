@@ -29,9 +29,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -40,15 +38,13 @@ import (
 type AdmissionHandler struct {
 	log     *zap.SugaredLogger
 	decoder admission.Decoder
-	client  ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new ApplicationInstallation AdmissionHandler.
-func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme) *AdmissionHandler {
 	return &AdmissionHandler{
 		log:     log,
 		decoder: admission.NewDecoder(scheme),
-		client:  client,
 	}
 }
 
@@ -66,11 +62,6 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		}
 
 		if err := defaulting.DefaultApplicationInstallation(appInstall); err != nil {
-			h.log.Error(err, "ApplicationInstallation mutation failed")
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("ApplicationInstallation mutation request %s failed: %w", req.UID, err))
-		}
-
-		if err := mutateAppNamespace(ctx, h.client, appInstall); err != nil {
 			h.log.Error(err, "ApplicationInstallation mutation failed")
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("ApplicationInstallation mutation request %s failed: %w", req.UID, err))
 		}
@@ -98,18 +89,4 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedAppInstall)
-}
-
-func mutateAppNamespace(ctx context.Context, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
-	applicationDefinition := appskubermaticv1.ApplicationDefinition{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: applicationInstallation.Spec.ApplicationRef.Name}, &applicationDefinition); err != nil {
-		return fmt.Errorf("error on fetching application definition for mutating appinstallation namespace. %w", err)
-	}
-
-	if applicationInstallation.Spec.Namespace.Name == "" && applicationDefinition.Spec.DefaultNamespace != nil {
-		applicationInstallation.Spec.Namespace.Name = applicationDefinition.Spec.DefaultNamespace.Name
-		applicationInstallation.Spec.Namespace.Create = true
-	}
-
-	return nil
 }

@@ -31,32 +31,31 @@ var (
 
 func TestGetAppNamespace(t *testing.T) {
 	testCases := []struct {
-		name        string
-		application appskubermaticv1.ApplicationDefinition
-		validate    func(applications appskubermaticv1.ApplicationDefinition) bool
+		name              string
+		applicationName   string
+		appNamespace      *appskubermaticv1.AppNamespaceSpec
+		expectedNamespace string
 	}{
 		{
-			name:        "scenario 1: application namespace should be set to default value when a default value is configured",
-			application: *genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, &applicationNamespace),
-			validate: func(application appskubermaticv1.ApplicationDefinition) bool {
-				namespace := getAppNamespace(&application)
-				return namespace.Name == applicationNamespace.Name
-			},
+			name:              "scenario 1: application namespace should be set to default value when a default value is configured",
+			applicationName:   "applicationName",
+			appNamespace:      &applicationNamespace,
+			expectedNamespace: applicationNamespace.Name,
 		},
 		{
-			name:        "scenario 2: application namespace should be set to application name when no default value is configured",
-			application: *genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, nil),
-			validate: func(application appskubermaticv1.ApplicationDefinition) bool {
-				namespace := getAppNamespace(&application)
-				return namespace.Name == application.Name
-			},
+			name:              "scenario 2: application namespace should be set to application name when no default value is configured",
+			applicationName:   "applicationName",
+			appNamespace:      nil,
+			expectedNamespace: applicationName,
 		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
+			application := *genApplicationDefinition("applicationName", "namespace", "v1.0.0", "", true, false, defaultValue, nil, test.appNamespace)
+			namespace := getAppNamespace(&application)
 			// validate the result
-			if !test.validate(test.application) {
+			if namespace.Name != test.expectedNamespace {
 				t.Fatalf("Validation failed for %v", test.name)
 			}
 		})
