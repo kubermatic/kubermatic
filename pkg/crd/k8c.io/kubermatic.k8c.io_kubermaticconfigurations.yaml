@@ -2326,6 +2326,9 @@ spec:
                       description: Applications contains configuration for default Application settings. This is an ee-only feature.
                       properties:
                         namespace:
+                          description: |-
+                            Namespace is the namespace which is set as the default for applications installed via ui
+                            If left empty the default for the application installation namespace is the name of the resource itself
                           type: string
                       type: object
                     disableApiserverEndpointReconciling:

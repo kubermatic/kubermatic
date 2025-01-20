@@ -358,6 +358,8 @@ type SystemApplicationsConfiguration struct {
 
 // ApplicationsConfiguration contains configuration for default Applications configuration settings.
 type ApplicationsConfiguration struct {
+	// Namespace is the namespace which is set as the default for applications installed via ui
+	// If left empty the default for the application installation namespace is the name of the resource itself
 	Namespace string `json:"namespace,omitempty"`
 }
 
