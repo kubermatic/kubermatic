@@ -21,7 +21,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/cluster_autoscaler"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/flux"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/k8sgpt"
 	corev1 "k8s.io/api/core/v1"
@@ -44,8 +43,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/argocd"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/cert_manager"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/echoserver"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/echoserver_with_variables"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/falco"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/kube-vip"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/kubevirt"
@@ -90,12 +87,6 @@ func getChosenApplication() ApplicationInterface {
 		applicationStruct = &argocd.DefaultArgoCD
 	case "cert-manager":
 		applicationStruct = &cert_manager.DefaultCertManager
-	case "cluster-autoscaler":
-		applicationStruct = &cluster_autoscaler.DefaultClusterAutoScaler
-	case "echoserver":
-		applicationStruct = &echoserver.DefaultEchoServer
-	case "echoserver-with-variables":
-		applicationStruct = &echoserver_with_variables.DefaultEchoServerWithVariables
 	case "falco":
 		applicationStruct = &falco.DefaultFalco
 	case "flux":
