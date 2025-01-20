@@ -309,6 +309,11 @@ func deployGrafana(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrun
 }
 
 func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if opt.MLASkipLogging {
+		logger.Info("⭕ Skipping Loki deployment.")
+		return nil
+	}
+
 	logger.Info("📦 Deploying Loki…")
 	sublogger := log.Prefix(logger, "   ")
 
