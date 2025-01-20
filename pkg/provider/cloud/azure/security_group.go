@@ -60,7 +60,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		WithCluster(cluster).
 		Build().
 		NodePorts()
-	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange)
+	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange, nil)
 
 	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRanges.GetIPv4CIDRs(), nodePortsAllowedIPRanges.GetIPv6CIDRs())
 
