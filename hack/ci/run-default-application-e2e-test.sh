@@ -31,23 +31,22 @@ APPLICATION_VERSION=""
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    --application-name)
-      APPLICATION_NAME="$2"
-      shift 2
-      ;;
-    --application-version)
-      APPLICATION_VERSION="$2"
-      shift 2
-      ;;
-    *)
-      echo "Unknown parameter: $1"
-      exit 1
-      ;;
+  --application-name)
+    APPLICATION_NAME="$2"
+    shift 2
+    ;;
+  --application-version)
+    APPLICATION_VERSION="$2"
+    shift 2
+    ;;
+  *)
+    echo "Unknown parameter: $1"
+    exit 1
+    ;;
   esac
 done
 
 echo "Running test with application name '$APPLICATION_NAME' and version '$APPLICATION_NAME'"
-
 
 beforeGocache=$(nowms)
 make download-gocache
