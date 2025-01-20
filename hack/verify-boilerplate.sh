@@ -41,7 +41,7 @@ boilerplate \
   -exclude pkg/test/addon/data \
   -exclude .github \
   -exclude pkg/test/e2e/default_app_catalog_tests \
-  -exclude .prow/applications-catalog.yaml \
+  -exclude .prow/applications-catalog.yaml
 
 echodate "Checking Kubermatic EE licenses..."
 boilerplate \
