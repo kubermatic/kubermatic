@@ -29,7 +29,6 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -70,11 +69,6 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("ApplicationInstallation mutation request %s failed: %w", req.UID, err))
 		}
 
-		if err := mutateAppNamespace(ctx, h.client, appInstall); err != nil {
-			h.log.Error(err, "ApplicationInstallation mutation failed")
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("ApplicationInstallation mutation request %s failed: %w", req.UID, err))
-		}
-
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, appInstall); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -98,18 +92,4 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedAppInstall)
-}
-
-func mutateAppNamespace(ctx context.Context, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
-	applicationDefinition := appskubermaticv1.ApplicationDefinition{}
-	if err := seedClient.Get(ctx, types.NamespacedName{Name: applicationInstallation.Spec.ApplicationRef.Name}, &applicationDefinition); err != nil {
-		return fmt.Errorf("error on fetching application definition for mutating appinstallation namespace. %w", err)
-	}
-
-	if applicationInstallation.Spec.Namespace.Name == "" && applicationDefinition.Spec.DefaultNamespace != nil {
-		applicationInstallation.Spec.Namespace.Name = applicationDefinition.Spec.DefaultNamespace.Name
-		applicationInstallation.Spec.Namespace.Create = true
-	}
-
-	return nil
 }

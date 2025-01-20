@@ -37,7 +37,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -248,7 +247,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	for _, exisitingApplication := range existingApplicationList.Items {
 		// if we find an application installation which is defaulted and enforced we found an existing resource
 		if exisitingApplication.Name == application.Name {
-			// we can suppress the error here because the return value will be false im something cannot be parsed
+			// we can suppress the error here because the return value will be false if something cannot be parsed
 			appEnforcedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
 			appDefaultedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
 			// if enforced and defaulted we found the existing default application installation
@@ -336,21 +335,16 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 			}
 
 			appNamespace := getAppNamespace(&application)
-			app = &appskubermaticv1.ApplicationInstallation{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        application.Name,
-					Annotations: annotations,
-					Labels:      application.Labels,
+			app.Annotations = annotations
+			app.Labels = application.Labels
+			app.Spec = appskubermaticv1.ApplicationInstallationSpec{
+				Namespace: *appNamespace,
+				ApplicationRef: appskubermaticv1.ApplicationRef{
+					Name:    application.Name,
+					Version: appVersion,
 				},
-				Spec: appskubermaticv1.ApplicationInstallationSpec{
-					Namespace: *appNamespace,
-					ApplicationRef: appskubermaticv1.ApplicationRef{
-						Name:    application.Name,
-						Version: appVersion,
-					},
-					ValuesBlock: application.Spec.DefaultValuesBlock,
-					Values:      runtime.RawExtension{Raw: []byte("{}")},
-				},
+				ValuesBlock: application.Spec.DefaultValuesBlock,
+				Values:      runtime.RawExtension{Raw: []byte("{}")},
 			}
 
 			// We already tried conversion and it failed. This should never happen but we have to work around it anyways.
@@ -361,7 +355,6 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 
 			return app, nil
 		}
-
 	}
 }
 

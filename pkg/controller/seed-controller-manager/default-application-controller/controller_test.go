@@ -56,7 +56,7 @@ var (
 		Type:    kubermaticv1.CNIPluginTypeCilium,
 		Version: "1.15.0",
 	}
-	failedKKPConfigurationErr = fmt.Errorf("namespace for default application installation %s has changed. Keeping the old one because configuring the namespace is only allowed when creating it.", applicationName)
+	errFailedKKPConfiguration = fmt.Errorf("namespace for default application installation %s has changed. Keeping the old one because configuring the namespace is only allowed when creating it.", applicationName)
 )
 
 const (
@@ -440,7 +440,7 @@ func TestReconcile(t *testing.T) {
 				*genApplicationDefinition(applicationName, applicationInstallationNamespace, "v1.0.0", "", true, true, defaultValue, nil, nil),
 			},
 			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
-				if compare := diff.StringDiff(reconcileErr.Error(), failedKKPConfigurationErr.Error()); compare != "" {
+				if compare := diff.StringDiff(reconcileErr.Error(), errFailedKKPConfiguration.Error()); compare != "" {
 					return fmt.Errorf("reconciling got an unexpected error: %s", compare)
 				}
 				return nil

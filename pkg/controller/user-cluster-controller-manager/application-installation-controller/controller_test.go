@@ -33,7 +33,9 @@ import (
 	kubermaticfake "k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -46,7 +48,19 @@ func init() {
 }
 
 const (
-	applicationNamespace = "apps"
+	applicationName          = "applicationName"
+	applicationNamespaceName = "apps"
+)
+
+var (
+	applicationNamespace = appskubermaticv1.AppNamespaceSpec{
+		Name:   applicationNamespaceName,
+		Create: true,
+	}
+	defaultApplicationNamespace = appskubermaticv1.AppNamespaceSpec{
+		Name:   "default",
+		Create: false,
+	}
 )
 
 func TestEnqueueApplicationInstallation(t *testing.T) {
@@ -58,34 +72,34 @@ func TestEnqueueApplicationInstallation(t *testing.T) {
 	}{
 		{
 			name:                  "scenario 1: only applications that reference ApplicationDef 'app-def-1' are enqueued",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0),
-					genApplicationInstallation("appInstallation-2", "app-def-2", "1.0.0", 0, 1, 0),
-					genApplicationInstallation("appInstallation-3", "app-def-1", "1.0.0", 0, 1, 0)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-2", &defaultApplicationNamespace, "app-def-2", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-3", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}},
-				{NamespacedName: types.NamespacedName{Name: "appInstallation-3", Namespace: applicationNamespace}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}},
+				{NamespacedName: types.NamespacedName{Name: "appInstallation-3", Namespace: applicationNamespaceName}},
 			},
 		},
 		{
 			name:                  "scenario 2: when no application reference ApplicationDef 'app-def-1', nothing is enqueued",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-2", "1.0.0", 0, 1, 0),
-					genApplicationInstallation("appInstallation-2", "app-def-3", "1.0.0", 0, 1, 0),
-					genApplicationInstallation("appInstallation-3", "app-def-4", "1.0.0", 0, 1, 0)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-2", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-2", &defaultApplicationNamespace, "app-def-3", "1.0.0", 0, 1, 0),
+					genApplicationInstallation("appInstallation-3", &defaultApplicationNamespace, "app-def-4", "1.0.0", 0, 1, 0)).
 				Build(),
 			expectedReconcileRequests: []reconcile.Request{},
 		},
 		{
 			name:                  "scenario 3: when no application in cluster, nothing is enqueued",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				Build(),
@@ -124,11 +138,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 	}{
 		{
 			name:                  "[atomic=true -> limited retries]installation succeeds",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)).
 				Build(),
 			appInstaller:             fake.ApplicationInstallerLogger{},
 			installErr:               nil,
@@ -138,12 +152,12 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=false -> unlimited retries] installation succeeds",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					func() *appskubermaticv1.ApplicationInstallation {
-						appInstall := genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 0)
+						appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
 						appInstall.Spec.DeployOptions.Helm.Atomic = false
 						return appInstall
 					}(),
@@ -157,11 +171,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=true -> limited retries] installation fails [atomic=true -> limited retries]: app.Status.Failures should be increased and condition set to false",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 1)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 2, 1, 1)).
 				Build(),
 			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
 			installErr:               installError,
@@ -171,11 +185,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=true -> limited retries] installation succeeds after a failure: app.Status.Failures should be reset and condition set to true",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 1, 0)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 2, 1, 0)).
 				Build(),
 			appInstaller:             fake.ApplicationInstallerLogger{},
 			installErr:               nil,
@@ -185,11 +199,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=true -> limited retries] installation fails after failure and spec changed app.Status.Failures should be set to 1 (reset + failure) and condition set to false",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 2, 2, 1)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 2, 2, 1)).
 				Build(),
 			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
 			installErr:               installError,
@@ -199,11 +213,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=true -> limited retries] installation fails and reaches max retries: condition should be set to fails and no error should be returned (to not requeue object)",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 1, 1)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", maxRetries+1, 1, 1)).
 				Build(),
 			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
 			installErr:               nil,
@@ -214,11 +228,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 
 		{
 			name:                  "[atomic=true -> limited retries] installation has reached max retries and then spec has changed (with working install): app.Status.Failures should be reset and condition set to true",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
 				Build(),
 			appInstaller:             fake.ApplicationInstallerLogger{},
 			installErr:               nil,
@@ -228,11 +242,11 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=true -> limited retries] installation has reached max retries and then spec has changed (with not working install): app.Status.Failures should be set to 1 ( reset + failure) and condition set to false",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
-					genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
+					genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", maxRetries+1, 2, 1)).
 				Build(),
 			appInstaller:             fake.CustomApplicationInstaller{ApplyFunc: errorOnInstall},
 			installErr:               installError,
@@ -242,12 +256,12 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		},
 		{
 			name:                  "[atomic=false -> unlimited retries] installation fails: retries should not be incremented",
-			applicationDefinition: genApplicationDefinition("app-def-1"),
+			applicationDefinition: genApplicationDefinition("app-def-1", nil),
 			userClient: kubermaticfake.
 				NewClientBuilder().
 				WithObjects(
 					func() *appskubermaticv1.ApplicationInstallation {
-						appInstall := genApplicationInstallation("appInstallation-1", "app-def-1", "1.0.0", 0, 1, 1)
+						appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 1)
 						appInstall.Spec.DeployOptions.Helm.Atomic = false
 						return appInstall
 					}(),
@@ -268,10 +282,10 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			r := reconciler{log: kubermaticlog.Logger, seedClient: tc.userClient, userClient: tc.userClient, userRecorder: nil, clusterIsPaused: nil, appInstaller: tc.appInstaller}
 
 			appInstall := &appskubermaticv1.ApplicationInstallation{}
-			if err := tc.userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}, appInstall); err != nil {
+			if err := tc.userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}, appInstall); err != nil {
 				t.Fatalf("failed to get application installation")
 			}
-			err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1"), appInstall)
+			err := r.handleInstallation(ctx, kubermaticlog.Logger, genApplicationDefinition("app-def-1", nil), appInstall)
 
 			// check the error
 			if !tc.wantErr && err != nil {
@@ -282,7 +296,7 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 			}
 
 			appInstall = &appskubermaticv1.ApplicationInstallation{}
-			if err := tc.userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespace}, appInstall); err != nil {
+			if err := tc.userClient.Get(ctx, types.NamespacedName{Name: "appInstallation-1", Namespace: applicationNamespaceName}, appInstall); err != nil {
 				t.Fatalf("failed to get application installation")
 			}
 			// Check number of failure.
@@ -305,13 +319,84 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 		})
 	}
 }
-func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
+
+func TestSetAppNamespace(t *testing.T) {
+	testCases := []struct {
+		name            string
+		applicationName string
+		appNamespace    *appskubermaticv1.AppNamespaceSpec
+		seedClient      ctrlruntimeclient.Client
+		wantErr         error
+	}{
+		{
+			name:            "scenario 1: application namespace should be set to default value when a default value is configured",
+			applicationName: "applicationName",
+			appNamespace:    &applicationNamespace,
+			seedClient: kubermaticfake.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationDefinition("app-def-1", &applicationNamespace),
+				).
+				Build(),
+			wantErr: nil,
+		},
+		{
+			name:            "scenario 2: application namespace should be set to application name when no default value is configured",
+			applicationName: applicationName,
+			appNamespace:    &appskubermaticv1.AppNamespaceSpec{},
+			seedClient: kubermaticfake.
+				NewClientBuilder().
+				WithObjects(
+					genApplicationDefinition("app-def-1", nil),
+				).
+				Build(),
+			wantErr: nil,
+		},
+		{
+			name:            "scenario 3: an error should be returned when the referenced application definition cannot be found",
+			applicationName: applicationName,
+			appNamespace:    &defaultApplicationNamespace,
+			seedClient: kubermaticfake.
+				NewClientBuilder().
+				WithObjects().
+				Build(),
+			wantErr: apierrors.NewNotFound(schema.ParseGroupResource("applicationdefinition.apps.k8c.io"), applicationName),
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			application := *genApplicationInstallation("appInstallation-1", test.appNamespace, "app-def-1", "1.0.0", 0, 1, 0)
+			err := setAppNamespace(context.Background(), test.seedClient, &application)
+			// validate the result
+			if err != nil && test.wantErr == nil {
+				t.Fatalf("Unexpected error: %s", err.Error())
+			}
+			if test.wantErr != nil && err == nil {
+				t.Fatalf("Unexpected nil error. Expected: %s", test.wantErr.Error())
+			}
+
+			if test.wantErr != nil && err != nil {
+				if errors.Is(err, test.wantErr) {
+					t.Fatalf("Unexpected error, got: %s wanted: %s", err, test.wantErr)
+				}
+			}
+
+			if test.appNamespace != nil && application.Spec.Namespace.Name != test.appNamespace.Name {
+				t.Fatalf("Expected application namespace %s got instead %s", test.appNamespace.Name, application.Spec.Namespace.Name)
+			}
+		})
+	}
+}
+
+func genApplicationDefinition(name string, defaultAppNamespace *appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationDefinition {
 	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: appskubermaticv1.ApplicationDefinitionSpec{
-			Method: appskubermaticv1.HelmTemplateMethod,
+			Method:           appskubermaticv1.HelmTemplateMethod,
+			DefaultNamespace: defaultAppNamespace,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: "1.0.0",
@@ -344,7 +429,7 @@ func genApplicationDefinition(name string) *appskubermaticv1.ApplicationDefiniti
 	}
 }
 
-func genApplicationInstallation(name string, applicationDefName string, appVersion string, failures int, generation int64, observedGeneration int64) *appskubermaticv1.ApplicationInstallation {
+func genApplicationInstallation(name string, appNamespace *appskubermaticv1.AppNamespaceSpec, applicationDefName string, appVersion string, failures int, generation int64, observedGeneration int64) *appskubermaticv1.ApplicationInstallation {
 	message := ""
 	if failures > maxRetries {
 		message = "previous error"
@@ -352,14 +437,11 @@ func genApplicationInstallation(name string, applicationDefName string, appVersi
 	return &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       name,
-			Namespace:  applicationNamespace,
+			Namespace:  applicationNamespace.Name,
 			Generation: generation,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
-				Name:   "default",
-				Create: false,
-			},
+			Namespace: *appNamespace,
 
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    applicationDefName,

@@ -28,7 +28,6 @@ import (
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,42 +41,11 @@ var (
 	testScheme = runtime.NewScheme()
 )
 
-const (
-	defaultAppName    = "app-def-1"
-	defaultAppVersion = "1.2.3"
-)
-
 func init() {
 	_ = appskubermaticv1.AddToScheme(testScheme)
 }
 
-func getApplicationDefinition(name string) *appskubermaticv1.ApplicationDefinition {
-	return &appskubermaticv1.ApplicationDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: appskubermaticv1.ApplicationDefinitionSpec{
-			Description: "Description",
-			Versions: []appskubermaticv1.ApplicationVersion{
-				{
-					Version: defaultAppVersion,
-				},
-			},
-			DefaultNamespace: &appskubermaticv1.AppNamespaceSpec{
-				Name:   "default",
-				Create: true,
-			},
-		},
-	}
-}
-
 func TestHandle(t *testing.T) {
-	ad := getApplicationDefinition(defaultAppName)
-	fakeClient := fake.
-		NewClientBuilder().
-		WithObjects(ad).
-		Build()
-
 	tests := []struct {
 		name        string
 		req         webhook.AdmissionRequest
@@ -225,35 +193,6 @@ func TestHandle(t *testing.T) {
 			},
 			wantPatches: []jsonpatch.Operation{},
 		},
-		{
-			name: "Create ApplicationInstallation without app namespace configured --> default application namespace should be used",
-			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1.AdmissionRequest{
-					Operation: admissionv1.Create,
-					RequestKind: &metav1.GroupVersionKind{
-						Group:   appskubermaticv1.GroupName,
-						Version: appskubermaticv1.GroupVersion,
-						Kind:    "ApplicationInstallation",
-					},
-					Name: "foo",
-					Object: runtime.RawExtension{
-						Raw: toByteWithSerOpts(
-							func() *appskubermaticv1.ApplicationInstallation {
-								ai := commonAppInstall()
-								ai.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{}
-								ai.Spec.DeployOptions = &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Timeout: metav1.Duration{Duration: 5 * time.Minute}}}
-								ai.Spec.Values = runtime.RawExtension{Raw: []byte(`{"not-empty":"value"}`)}
-								return ai
-							}(),
-						),
-					},
-				},
-			},
-			wantPatches: []jsonpatch.Operation{
-				jsonpatch.NewOperation("replace", "/spec/namespace/name", "default"),
-				jsonpatch.NewOperation("replace", "/spec/namespace/create", true),
-			},
-		},
 	}
 
 	for _, tt := range tests {
@@ -261,7 +200,6 @@ func TestHandle(t *testing.T) {
 			handler := AdmissionHandler{
 				log:     zap.NewNop().Sugar(),
 				decoder: admission.NewDecoder(testScheme),
-				client:  fakeClient,
 			}
 			res := handler.Handle(context.Background(), tt.req)
 			if res.AdmissionResponse.Result != nil && (res.AdmissionResponse.Result.Code == http.StatusInternalServerError || res.AdmissionResponse.Result.Code == http.StatusBadRequest) {
