@@ -30,6 +30,7 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -38,13 +39,15 @@ import (
 type AdmissionHandler struct {
 	log     *zap.SugaredLogger
 	decoder admission.Decoder
+	client  ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new ApplicationInstallation AdmissionHandler.
-func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme) *AdmissionHandler {
+func NewAdmissionHandler(log *zap.SugaredLogger, scheme *runtime.Scheme, client ctrlruntimeclient.Client) *AdmissionHandler {
 	return &AdmissionHandler{
 		log:     log,
 		decoder: admission.NewDecoder(scheme),
+		client:  client,
 	}
 }
 

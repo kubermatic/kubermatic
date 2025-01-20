@@ -381,6 +381,11 @@ spec:
       dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
+    # Applications contains configuration for default Application settings. This is an ee-only feature.
+    applications:
+      # Namespace is the namespace which is set as the default for applications installed via ui
+      # If left empty the default for the application installation namespace is the name of the resource itself
+      namespace: ""
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
