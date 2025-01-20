@@ -425,7 +425,7 @@ func deployIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 }
 
 func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, LokiChartName) {
+	if slices.Contains(opt.SkipCharts, LokiChartName) || opt.MLASkipLogging {
 		logger.Info("⭕ Skipping Loki deployment.")
 		return nil
 	}
@@ -457,7 +457,7 @@ func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntim
 }
 
 func deployPromtail(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, PromtailChartName) {
+	if slices.Contains(opt.SkipCharts, PromtailChartName) || opt.MLASkipLogging {
 		logger.Info("⭕ Skipping Promtail deployment.")
 		return nil
 	}
