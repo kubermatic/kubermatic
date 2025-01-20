@@ -119,6 +119,10 @@ func getChosenApplication() ApplicationInterface {
 }
 
 func TestClusters(t *testing.T) {
+	if applicationName == "" || applicationVersion == "" {
+		return
+	}
+
 	rawLog := log.NewFromOptions(logOptions)
 	logger := rawLog.Sugar()
 	ctx := context.Background()
