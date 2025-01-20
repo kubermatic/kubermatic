@@ -2,6 +2,7 @@ package kubevirt
 
 import (
 	"encoding/json"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )
 
