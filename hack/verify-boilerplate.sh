@@ -39,7 +39,9 @@ boilerplate \
   -exclude pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static \
   -exclude pkg/provider/cloud/eks/authenticator \
   -exclude pkg/test/addon/data \
-  -exclude .github
+  -exclude .github \
+  -exclude pkg/test/e2e/default_app_catalog_tests \
+  -exclude .prow/applications-catalog.yaml \
 
 echodate "Checking Kubermatic EE licenses..."
 boilerplate \
