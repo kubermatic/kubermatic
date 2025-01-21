@@ -251,6 +251,19 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 						},
 					},
 				},
+				{
+					Version: "1.16.5",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								ChartName:    ciliumHelmChartName,
+								ChartVersion: "1.16.5",
+								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								Credentials:  credentials,
+							},
+						},
+					},
+				},
 			}
 
 			// to make it compatible with older cilium controller versions, convert any DefaultValues into DefaultValuesBlock
