@@ -56,7 +56,7 @@ func TestGetAppNamespace(t *testing.T) {
 			namespace := getAppNamespace(&application)
 			// validate the result
 			if namespace.Name != test.expectedNamespace {
-				t.Fatalf("Validation failed for %v", test.name)
+				t.Fatalf("Validation failed. Expected namespace %q, got %q instead", test.expectedNamespace, namespace.Name)
 			}
 		})
 	}

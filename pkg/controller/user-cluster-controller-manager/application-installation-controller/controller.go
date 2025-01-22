@@ -221,7 +221,7 @@ func (r *reconciler) getApplicationVersion(appInstallation *appskubermaticv1.App
 func setAppNamespace(ctx context.Context, seedClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
 	applicationDefinition := appskubermaticv1.ApplicationDefinition{}
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: applicationInstallation.Spec.ApplicationRef.Name}, &applicationDefinition); err != nil {
-		return fmt.Errorf("error on fetching application definition for setting appinstallation namespace. %w", err)
+		return fmt.Errorf("error on fetching application definition: %w", err)
 	}
 
 	if applicationInstallation.Spec.Namespace.Name == "" && applicationDefinition.Spec.DefaultNamespace != nil {
