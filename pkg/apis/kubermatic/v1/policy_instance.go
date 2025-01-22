@@ -31,22 +31,22 @@ const (
 
 // Condition reasons for PolicyInstance.
 const (
-	// PolicyAppliedSuccessfully indicates the policy was successfully applied
+	// PolicyAppliedSuccessfully indicates the policy was successfully applied.
 	PolicyAppliedSuccessfully = "PolicyAppliedSuccessfully"
 
-	// PolicyApplicationFailed indicates the policy application failed
+	// PolicyApplicationFailed indicates the policy application failed.
 	PolicyApplicationFailed = "PolicyApplicationFailed"
 
-	// PolicyTemplateNotFound indicates the referenced template doesn't exist
+	// PolicyTemplateNotFound indicates the referenced template doesn't exist.
 	PolicyTemplateNotFound = "PolicyTemplateNotFound"
 )
 
 // Condition types for PolicyInstance.
 const (
-	// PolicyReady indicates if the policy has been successfully applied
+	// PolicyReady indicates if the policy has been successfully applied.
 	PolicyReadyCondition = "Ready"
 
-	// PolicyEnforced indicates if the policy is currently being enforced
+	// PolicyEnforced indicates if the policy is currently being enforced.
 	PolicyEnforcedCondition = "Enforced"
 )
 
