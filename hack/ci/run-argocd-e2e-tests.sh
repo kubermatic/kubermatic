@@ -117,4 +117,6 @@ validatePreReq() {
   fi
 }
 
+validatePreReq
+
 echodate "KKP mgmt via ArgoCD CI tests completed..."
