@@ -355,13 +355,20 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 
 	ipamOperator := map[string]any{
 		"clusterPoolIPv4PodCIDRList": cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDRs(),
-		"clusterPoolIPv4MaskSize":    *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4,
 	}
+
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		ipamOperator["clusterPoolIPv4MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+
 	if cluster.IsDualStack() {
 		values["ipv6"] = map[string]any{"enabled": true}
 		ipamOperator["clusterPoolIPv6PodCIDRList"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDRs()
-		ipamOperator["clusterPoolIPv6MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+		if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+			ipamOperator["clusterPoolIPv6MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+		}
 	}
+
 	values["ipam"] = map[string]any{"operator": ipamOperator}
 
 	// Override images if registry override is configured
