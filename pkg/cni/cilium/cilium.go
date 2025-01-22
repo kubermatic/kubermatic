@@ -430,6 +430,14 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 			fullPath:  "ipam.operator.clusterPoolIPv4PodCIDR",
 			pathParts: []string{"ipam", "operator", "clusterPoolIPv4PodCIDR"},
 		},
+		{
+			fullPath:  "ipam.operator.clusterPoolIPv4MaskSize",
+			pathParts: []string{"ipam", "operator", "clusterPoolIPv4MaskSize"},
+		},
+		{
+			fullPath:  "ipam.operator.clusterPoolIPv6MaskSize",
+			pathParts: []string{"ipam", "operator", "clusterPoolIPv6MaskSize"},
+		},
 	}
 	allErrs = append(allErrs, validateImmutableValues(newValues, oldValues, fieldPath, []string{
 		"cni",
