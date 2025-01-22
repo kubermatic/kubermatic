@@ -115,8 +115,8 @@ validatePreReq() {
     exit 1
   fi
 
-  if ! [ -x "$(command -v opentofu)" ]; then
-    echodate 'Error: opentofu is not installed.' >&2
+  if ! [ -x "$(command -v tofu)" ]; then
+    echodate 'Error: tofu is not installed.' >&2
     exit 1
   fi
 
@@ -132,19 +132,19 @@ validatePreReq() {
 
 createSeedClusters(){ 
   echo creating Seed Clusters
-#  cd kubeone-install/${MASTER} && opentofu init && opentofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
-  cd kubeone-install/${MASTER} && opentofu init && opentofu plan
+#  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+  cd kubeone-install/${MASTER} && tofu init && tofu plan
   if [ $? -ne 0 ]; then
-    echo opentofu install failed.
+    echo kubeone master cluster installation failed.
     exit 2
   fi
   cd ../..
 
   if [[ ${SEED} != false ]]; then
-    # cd kubeone-install/${SEED} && opentofu init && opentofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
-    cd kubeone-install/${SEED} && opentofu init && opentofu plan
+    # cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+    cd kubeone-install/${SEED} && tofu init && tofu plan
     if [ $? -ne 0 ]; then
-      echo opentofu install failed.
+      echo kubeone seed cluster installation failed.
       exit 3
     fi
     cd ../..
