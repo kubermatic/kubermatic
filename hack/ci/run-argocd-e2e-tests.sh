@@ -74,7 +74,6 @@ SEED_KUBECONFIG=./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig
 AWS_ACCESS_KEY_ID=${AWS_E2E_TESTS_KEY_ID}
 AWS_SECRET_ACCESS_KEY=${AWS_E2E_TESTS_SECRET}
 echodate "Path:" $PATH
-echodate "User:" `whoami`
 
 # LOGIC
 # validate that we have kubeone, kubectl, helm, git, sed, chainsaw binaries available
@@ -96,7 +95,7 @@ validatePreReq() {
   fi
 
 	mkdir -p ${KUBEONE_INSTALL_DIR}
-	curl -LO "https://github.com/kubermatic/kubeone/releases/download/v${K1_VERSION}/kubeone_${K1_VERSION}_linux_amd64.zip" && \
+	curl -sLO "https://github.com/kubermatic/kubeone/releases/download/v${K1_VERSION}/kubeone_${K1_VERSION}_linux_amd64.zip" && \
     unzip -qq kubeone_${K1_VERSION}_linux_amd64.zip -d kubeone_${K1_VERSION}_linux_amd64 && \
     mv kubeone_${K1_VERSION}_linux_amd64/kubeone ${KUBEONE_INSTALL_DIR} && rm -rf kubeone_${K1_VERSION}_linux_amd64 kubeone_${K1_VERSION}_linux_amd64.zip
 
@@ -122,7 +121,7 @@ validatePreReq() {
 
   cd /tmp
   curl -sL https://github.com/kyverno/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_linux_amd64.tar.gz | tar -xvz
-  mv chainsaw ~/.local/bin
+  mv chainsaw /usr/local/bin
 
   if ! [ -x "$(command -v chainsaw)" ]; then
     echodate 'Error: chainsaw testing tool is not installed.' >&2
