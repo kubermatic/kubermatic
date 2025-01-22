@@ -18,7 +18,7 @@
 ### couple of test Presets and Users and then runs the IPAM e2e tests.
 
 set -euo pipefail
-set -x
+#set -x
 cd $(dirname $0)/../..
 source hack/lib.sh
 
