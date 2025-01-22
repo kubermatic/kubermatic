@@ -381,6 +381,11 @@ spec:
       dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
+    # Applications contains configuration for default Application settings. This is an ee-only feature.
+    applications:
+      # Namespace is the namespace which is set as the default for applications installed via ui
+      # If left empty the default for the application installation namespace is the name of the resource itself
+      namespace: ""
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
@@ -454,7 +459,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.30.5
+    default: v1.31.1
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -526,6 +531,10 @@ spec:
         to: 1.31.*
       - from: 1.31.*
         to: 1.31.*
+      - from: 1.31.*
+        to: 1.32.*
+      - from: 1.32.*
+        to: 1.32.*
     # Versions lists the available versions.
     versions:
       - v1.29.0
@@ -535,6 +544,7 @@ spec:
       - v1.29.9
       - v1.30.5
       - v1.31.1
+      - v1.32.0
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

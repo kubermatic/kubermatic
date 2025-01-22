@@ -122,6 +122,8 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 		return "1.30.7", nil
 	case v131:
 		fallthrough
+	case v132:
+		fallthrough
 	default:
 		return "1.31.1", nil
 	}

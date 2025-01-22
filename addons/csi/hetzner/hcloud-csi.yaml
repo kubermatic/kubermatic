@@ -212,7 +212,7 @@ spec:
       initContainers:
       containers:
         - name: csi-node-driver-registrar
-          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.11.1" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.hetzner.cloud/socket
@@ -225,7 +225,7 @@ spec:
             limits: {}
             requests: {}
         - name: liveness-probe
-          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.13.1" }}
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.15.0" }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
           - mountPath: /run/csi
@@ -234,7 +234,7 @@ spec:
             limits: {}
             requests: {}
         - name: hcloud-csi-driver
-          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.9.0" }}
+          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.11.0" }}
           imagePullPolicy: IfNotPresent
           command: [/bin/hcloud-csi-driver-node]
           volumeMounts:
@@ -325,7 +325,7 @@ spec:
       initContainers:
       containers:
         - name: csi-attacher
-          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.6.1" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.8.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -337,7 +337,7 @@ spec:
             mountPath: /run/csi
 
         - name: csi-resizer
-          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.11.2" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.12.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -347,7 +347,7 @@ spec:
             mountPath: /run/csi
 
         - name: csi-provisioner
-          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.0.2" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.1.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -360,7 +360,7 @@ spec:
             mountPath: /run/csi
 
         - name: liveness-probe
-          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.13.1" }}
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.15.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -370,7 +370,7 @@ spec:
             name: socket-dir
 
         - name: hcloud-csi-driver
-          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.9.0" }}
+          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.11.0" }}
           imagePullPolicy: IfNotPresent
           command: [/bin/hcloud-csi-driver-controller]
           env:

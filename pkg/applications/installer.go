@@ -62,6 +62,9 @@ type ApplicationManager struct {
 
 	// Namespace where credentials secrets are stored.
 	SecretNamespace string
+
+	// ClusterName of the user-cluster
+	ClusterName string
 }
 
 func (a *ApplicationManager) GetAppCache() string {
@@ -85,7 +88,7 @@ func (a *ApplicationManager) DownloadSource(ctx context.Context, log *zap.Sugare
 
 // Apply creates the namespace where the application will be installed (if necessary) and installs the application.
 func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, appDefinition *appskubermaticv1.ApplicationDefinition, applicationInstallation *appskubermaticv1.ApplicationInstallation, appSourcePath string) (util.StatusUpdater, error) {
-	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return util.NoStatusUpdate, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
@@ -99,7 +102,7 @@ func (a *ApplicationManager) Apply(ctx context.Context, log *zap.SugaredLogger, 
 
 // Delete uninstalls the application where the application was installed if necessary.
 func (a *ApplicationManager) Delete(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error) {
-	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return util.NoStatusUpdate, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
@@ -147,7 +150,7 @@ func (a *ApplicationManager) reconcileNamespace(ctx context.Context, log *zap.Su
 
 // IsStuck determines if a release is stuck. Its main purpose is to detect inconsistent behavior in upstream Application libraries.
 func (a *ApplicationManager) IsStuck(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error) {
-	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return false, fmt.Errorf("failed to initialize template provider: %w", err)
 	}
@@ -157,7 +160,7 @@ func (a *ApplicationManager) IsStuck(ctx context.Context, log *zap.SugaredLogger
 
 // Rollback rolls an Application back to the previous release.
 func (a *ApplicationManager) Rollback(ctx context.Context, log *zap.SugaredLogger, seedClient ctrlruntimeclient.Client, userClient ctrlruntimeclient.Client, applicationInstallation *appskubermaticv1.ApplicationInstallation) error {
-	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
+	templateProvider, err := providers.NewTemplateProvider(ctx, seedClient, a.ClusterName, a.Kubeconfig, a.ApplicationCache, log, applicationInstallation, a.SecretNamespace)
 	if err != nil {
 		return fmt.Errorf("failed to initialize template provider: %w", err)
 	}

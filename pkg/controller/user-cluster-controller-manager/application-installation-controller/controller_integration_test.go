@@ -69,7 +69,7 @@ func TestController(t *testing.T) {
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
+					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app); err != nil {
 						return false
 					}
 					return equality.Semantic.DeepEqual(&def.Spec.Versions[0], app.Status.ApplicationVersion)
@@ -92,7 +92,7 @@ func TestController(t *testing.T) {
 
 				// Ensure application is not deleted.
 				if utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation should not have deen deleted")
@@ -114,7 +114,7 @@ func TestController(t *testing.T) {
 
 				// Ensure application is not deleted.
 				if utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation should not have deen deleted")
@@ -142,7 +142,7 @@ func TestController(t *testing.T) {
 
 				// Checking application Installation CR is removed.
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &appskubermaticv1.ApplicationInstallation{})
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation CR should have been deleted but was not")
@@ -184,7 +184,7 @@ func TestController(t *testing.T) {
 
 				// Checking application Installation CR is removed.
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &appskubermaticv1.ApplicationInstallation{})
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation CR should have been deleted but was not")
@@ -203,7 +203,7 @@ func TestController(t *testing.T) {
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
+					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app); err != nil {
 						return false
 					}
 					return equality.Semantic.DeepEqual(&def.Spec.Versions[0], app.Status.ApplicationVersion)
@@ -222,7 +222,7 @@ func TestController(t *testing.T) {
 				}
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
+					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app); err != nil {
 						return false
 					}
 					return equality.Semantic.DeepEqual(&def.Spec.Versions[1], app.Status.ApplicationVersion)
@@ -290,7 +290,7 @@ func expectStatusHasConditions(t *testing.T, ctx context.Context, client ctrlrun
 	app := &appskubermaticv1.ApplicationInstallation{}
 	var errReason string
 	if !utils.WaitFor(ctx, interval, timeout, func() bool {
-		if err := client.Get(ctx, types.NamespacedName{Name: appName, Namespace: applicationNamespace}, app); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Name: appName, Namespace: applicationNamespaceName}, app); err != nil {
 			errReason = err.Error()
 			return false
 		}
@@ -309,7 +309,7 @@ func expectStatusHasConditions(t *testing.T, ctx context.Context, client ctrlrun
 }
 
 func createApplicationDef(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, appDefName string) *appskubermaticv1.ApplicationDefinition {
-	if err := client.Create(ctx, genApplicationDefinition(appDefName)); err != nil {
+	if err := client.Create(ctx, genApplicationDefinition(appDefName, nil)); err != nil {
 		t.Fatalf("failed to create applicationDefinition: %s", err)
 	}
 
@@ -324,14 +324,14 @@ func createApplicationDef(t *testing.T, ctx context.Context, client ctrlruntimec
 
 func createApplicationInstallation(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, appInstallName string, appDefName string, version string) appskubermaticv1.ApplicationInstallation {
 	// Create applicationInstallation.
-	if err := client.Create(ctx, genApplicationInstallation(appInstallName, appDefName, version, 0, 1, 0)); err != nil {
+	if err := client.Create(ctx, genApplicationInstallation(appInstallName, &defaultApplicationNamespace, appDefName, version, 0, 1, 0)); err != nil {
 		t.Fatalf("failed to create applicationInstallation: %s", err)
 	}
 
 	// Wait for application to be created.
 	app := appskubermaticv1.ApplicationInstallation{}
 	if !utils.WaitFor(ctx, interval, 3*time.Second, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app) == nil
+		return client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app) == nil
 	}) {
 		t.Fatal("failed to create get applicationInstallation")
 	}
@@ -376,7 +376,7 @@ func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.Applicatio
 
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: applicationNamespace,
+			Name: applicationNamespaceName,
 		},
 	}
 	if err := client.Create(ctx, ns); err != nil {

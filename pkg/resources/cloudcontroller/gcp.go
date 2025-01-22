@@ -220,6 +220,8 @@ func GCPCCMVersion(version semver.Semver) string {
 		fallthrough
 	case v131:
 		fallthrough
+	case v132:
+		fallthrough
 	default:
 		return "v30.0.0"
 	}
