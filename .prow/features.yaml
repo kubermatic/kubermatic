@@ -317,6 +317,7 @@ presubmits:
       preset-e2e-ssh: "true"
       preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
+      preset-docker-push: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-7

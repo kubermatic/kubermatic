@@ -30,7 +30,7 @@ if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
 else
   E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
   E2E_SSH_PUBKEY="$(mktemp)"
-  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+  echodate "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
 fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
@@ -57,6 +57,8 @@ echodate "Running KKP mgmt via ArgoCD CI tests..."
 # To upgrade KKP, update the version of kkp here.
 #KKP_VERSION=v2.25.11
 KKP_VERSION=v2.26.2
+
+K1_VERSION=1.8.3
 ARGO_VERSION=5.36.10
 CHAINSAW_VERSION=0.2.12
 ENV=dev
@@ -66,44 +68,55 @@ SEED=dev-seed
 CLUSTER_PREFIX=argodemo
 
 INSTALL_DIR=./binaries/kubermatic/releases/${KKP_VERSION}
-# KUBEONE_INSTALL_DIR=./binaries/kubeone/releases/${K1_VERSION}
+KUBEONE_INSTALL_DIR=./binaries/kubeone/releases/${K1_VERSION}
 MASTER_KUBECONFIG=./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeconfig
 SEED_KUBECONFIG=./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig
 AWS_ACCESS_KEY_ID=${AWS_E2E_TESTS_KEY_ID}
 AWS_SECRET_ACCESS_KEY=${AWS_E2E_TESTS_SECRET}
-echo $PATH
+echodate "Path:" $PATH
+echodate "User:" `whoami`
 
 # LOGIC
 # validate that we have kubeone, kubectl, helm, git, sed, chainsaw binaries available
 # TODO: validate availability of ssh-agent?
 validatePreReq() {
-  echo validate Prerequisites.
+  echodate validate Prerequisites.
   if [[ -n "${AWS_ACCESS_KEY_ID-}" && -n "${AWS_SECRET_ACCESS_KEY-}" ]]; then
-    echo AWS credentials found! Proceeding.
+    echodate AWS credentials found! Proceeding.
   elif [[ -n "${AWS_PROFILE-}" ]]; then
-    echo AWS profile variable found! Proceeding.
+    echodate AWS profile variable found! Proceeding.
   else
-    echo No AWS credentials configured. You must export either combination of AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY OR AWS_PROFILE env variable. Exiting the script.
+    echodate No AWS credentials configured. You must export either combination of AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY OR AWS_PROFILE env variable. Exiting the script.
     exit 1
   fi
 
   if ! [ -x "$(command -v git)" ]; then
-    echo 'Error: git is not installed.' >&2
+    echodate 'Error: git is not installed.' >&2
     exit 1
   fi
 
-  if ! [ -x "$(command -v kubeone)" ]; then
-    echo 'Error: kubeone is not installed.' >&2
+	mkdir -p ${KUBEONE_INSTALL_DIR}
+	curl -LO "https://github.com/kubermatic/kubeone/releases/download/v${K1_VERSION}/kubeone_${K1_VERSION}_linux_amd64.zip" && \
+    unzip kubeone_${K1_VERSION}_linux_amd64.zip -d kubeone_${K1_VERSION}_linux_amd64 && \
+    mv kubeone_${K1_VERSION}_linux_amd64/kubeone ${KUBEONE_INSTALL_DIR} && rm -rf kubeone_${K1_VERSION}_linux_amd64 kubeone_${K1_VERSION}_linux_amd64.zip
+
+  if ! [ -x ${KUBEONE_INSTALL_DIR}/kubeone ]; then
+    echodate 'Error: kubeone is not installed.' >&2
     exit 1
   fi
 
   if ! [ -x "$(command -v helm)" ]; then
-    echo 'Error: helm is not installed.' >&2
+    echodate 'Error: helm is not installed.' >&2
     exit 1
   fi
 
   if ! [ -x "$(command -v sed)" ]; then
-    echo 'Error: sed is not installed.' >&2
+    echodate 'Error: sed is not installed.' >&2
+    exit 1
+  fi
+
+  if ! [ -x "$(command -v opentofu)" ]; then
+    echodate 'Error: opentofu is not installed.' >&2
     exit 1
   fi
 
@@ -112,11 +125,33 @@ validatePreReq() {
   mv chainsaw ~/.local/bin
 
   if ! [ -x "$(command -v chainsaw)" ]; then
-    echo 'Error: chainsaw testing tool is not installed.' >&2
+    echodate 'Error: chainsaw testing tool is not installed.' >&2
     exit 1
   fi
 }
 
+createSeedClusters(){ 
+  echo creating Seed Clusters
+#  cd kubeone-install/${MASTER} && opentofu init && opentofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+  cd kubeone-install/${MASTER} && opentofu init && opentofu plan
+  if [ $? -ne 0 ]; then
+    echo opentofu install failed.
+    exit 2
+  fi
+  cd ../..
+
+  if [[ ${SEED} != false ]]; then
+    # cd kubeone-install/${SEED} && opentofu init && opentofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+    cd kubeone-install/${SEED} && opentofu init && opentofu plan
+    if [ $? -ne 0 ]; then
+      echo opentofu install failed.
+      exit 3
+    fi
+    cd ../..
+  fi
+}
+
 validatePreReq
+createSeedClusters
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
