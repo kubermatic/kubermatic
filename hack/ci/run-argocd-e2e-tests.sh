@@ -97,7 +97,7 @@ validatePreReq() {
 
 	mkdir -p ${KUBEONE_INSTALL_DIR}
 	curl -LO "https://github.com/kubermatic/kubeone/releases/download/v${K1_VERSION}/kubeone_${K1_VERSION}_linux_amd64.zip" && \
-    unzip kubeone_${K1_VERSION}_linux_amd64.zip -d kubeone_${K1_VERSION}_linux_amd64 && \
+    unzip -qq kubeone_${K1_VERSION}_linux_amd64.zip -d kubeone_${K1_VERSION}_linux_amd64 && \
     mv kubeone_${K1_VERSION}_linux_amd64/kubeone ${KUBEONE_INSTALL_DIR} && rm -rf kubeone_${K1_VERSION}_linux_amd64 kubeone_${K1_VERSION}_linux_amd64.zip
 
   if ! [ -x ${KUBEONE_INSTALL_DIR}/kubeone ]; then
