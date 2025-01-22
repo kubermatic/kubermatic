@@ -139,10 +139,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if cluster.Status.ExtendedHealth.ApplicationController != kubermaticv1.HealthStatusUp {
-		r.log.Debug("Application Controller is not ready yet")
+	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
+	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
+		r.log.Debug("Application controller not healthy")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
+
 	ignoreDefaultApplications := false
 
 	// If the cluster has the initial application installations request annotation, we don't want to install the default applications as they will be
@@ -174,12 +176,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	if !cniReady {
 		r.log.Debug("CNI application is not ready yet")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-	}
-
-	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
-	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Debug("Application controller not healthy")
-		return nil, nil
 	}
 
 	// List all ApplicationDefinitions
