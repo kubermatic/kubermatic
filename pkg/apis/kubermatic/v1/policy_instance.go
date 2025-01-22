@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,15 +28,9 @@ const (
 
 	// PolicyInstanceKindName represents "Kind" defined in Kubernetes.
 	PolicyInstanceKindName = "PolicyInstance"
-
-	// PolicyInstanceScopeCluster is the cluster scope of the policy instance.
-	PolicyInstanceScopeCluster = "cluster"
-
-	// PolicyInstanceScopeNamespaced is the namespaced scope of the policy instance.
-	PolicyInstanceScopeNamespaced = "namespaced"
 )
 
-// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled",description="Whether the policy is applied (only relevant if not enforced)"
@@ -46,49 +42,51 @@ type PolicyInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec PolicyInstanceSpec `json:"spec,omitempty"`
+	Spec   PolicyInstanceSpec   `json:"spec,omitempty"`
+	Status PolicyInstanceStatus `json:"status,omitempty"`
 }
 
 // PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate.
 type PolicyInstanceSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
-	PolicyTemplateRef ObjectReference `json:"policyTemplateRef"`
+	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// Enabled determines whether we apply the policy
-	//
-	// If the referenced template is enforced, "enabled" is ignored (or disallowed)
-	// If the referenced template is not enforced, "enabled" determines whether we apply the policy
-	Enabled bool `json:"enabled,omitempty"`
+	// NamespacedPolicy is a boolean to indicate if the policy instance is namespaced
+	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
 
-	// Scope specifies the Kyverno Policy to be created.
+	// Scope specifies the scope of the policy.
+	// Can be one of: global, project, or cluster
 	//
-	// The scope can be "cluster" or "namespaced", by default it is "cluster"
-	// +kubebuilder:default=cluster
-	Scope string `json:"scope,omitempty"`
+	// +kubebuilder:validation:Enum=global;project;cluster
+	Scope string `json:"scope"`
 
 	// Target specifies which clusters/projects to apply the policy to
 	Target PolicyTargetSpec `json:"target,omitempty"`
 }
 
-// ObjectReference is a local reference to a PolicyTemplate.
-type ObjectReference struct {
-	// PolicyTemplateName is the name of the policy template.
-	PolicyTemplateName string `json:"policyTemplateName"`
-}
-
 // PolicyTargetSpec indicates how to select projects/clusters in Kubermatic.
 type PolicyTargetSpec struct {
-	// AllProjects indicates that the policy applies to all projects
-	AllProjects bool `json:"allProjects,omitempty"`
+	// Projects is a list of projects to apply the policy to
+	Projects ResourceSelector `json:"projects,omitempty"`
 
-	// ProjectSelector restricts the policy to projects matching these labels
-	ProjectSelector *metav1.LabelSelector `json:"projectSelector,omitempty"`
+	// Clusters is a list of clusters to apply the policy to
+	Clusters ResourceSelector `json:"clusters,omitempty"`
+}
 
-	// AllClusters indicates that the policy applies to all clusters
-	AllClusters bool `json:"allClusters,omitempty"`
+// ResourceSelector is a struct that contains the label selector, name, and selectAll fields.
+type ResourceSelector struct {
+	// LabelSelector is a label selector to select the resources (projects/clusters)
+	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
+	// Name is a list of names to select the resources (projects/clusters)
+	Name []string `json:"name,omitempty"`
+	// SelectAll is a boolean to select all the resources (projects/clusters) from cluster admins.
+	SelectAll bool `json:"selectAll,omitempty"`
+}
 
-	// ClusterSelector restricts the policy to clusters matching these labels
-	ClusterSelector *metav1.LabelSelector `json:"clusterSelector,omitempty"`
+// PolicyInstanceStatus is the status of the policy instance.
+type PolicyInstanceStatus struct {
+	// Conditions is a list of conditions for the policy instance.
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

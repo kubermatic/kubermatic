@@ -45,17 +45,37 @@ type PolicyTemplate struct {
 
 type PolicyTemplateSpec struct {
 	// Title is the title of the policy, specified as an annotation in the Kyverno policy
-	//
-	// +optional
-	Title string `json:"title,omitempty"`
+	Title string `json:"title"`
+
+	// Description is the description of the policy, specified as an annotation in the Kyverno policy
+	Description string `json:"description"`
+
 	// Category is the category of the policy, specified as an annotation in the Kyverno policy
 	//
 	// +optional
 	Category string `json:"category,omitempty"`
-	// Description is the description of the policy, specified as an annotation in the Kyverno policy
+
+	// Severity indicates the severity level of the policy
 	//
 	// +optional
-	Description string `json:"description,omitempty"`
+	Severity string `json:"severity,omitempty"`
+
+	// Scope specifies the scope of the policy.
+	// Can be one of: global, project, or cluster
+	//
+	// +kubebuilder:validation:Enum=global;project;cluster
+	Scope string `json:"scope"`
+
+	// ProjectID is the ID of the project for which the policy template is created
+	//
+	// Relevant only for project scoped policies
+	// +optional
+	ProjectID string `json:"projectID,omitempty"`
+
+	// Default determines whether we apply the policy (create policy instance)
+	//
+	// +optional
+	Default bool `json:"default,omitempty"`
 
 	// Enforced indicates whether this policy is mandatory
 	//
@@ -64,7 +84,7 @@ type PolicyTemplateSpec struct {
 	Enforced bool `json:"enforced"`
 
 	// KyvernoSpec is the Kyverno specification
-	KyvernoSpec kyvernov1.Spec `json:"kyvernoSpec,omitempty"`
+	kyvernov1.Spec `json:",inline"`
 }
 
 // +kubebuilder:object:generate=true
