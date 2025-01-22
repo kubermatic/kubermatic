@@ -20,13 +20,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -68,10 +71,11 @@ type reconciler struct {
 	userClient      ctrlruntimeclient.Client
 	userRecorder    record.EventRecorder
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
+	clusterName     string
 	appInstaller    applications.ApplicationInstaller
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, appInstaller applications.ApplicationInstaller) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, clusterName string, appInstaller applications.ApplicationInstaller) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
@@ -114,6 +118,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx, types.NamespacedName{Name: r.clusterName}, cluster); err != nil {
+		if apierrors.IsNotFound(err) {
+			r.log.Debug("cluster not found, returning")
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
+	}
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
 
 	if err := r.userClient.Get(ctx, request.NamespacedName, appInstallation); err != nil {
@@ -122,6 +134,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get applicationInstallation: %w", err)
+	}
+
+	cniReady, err := util.IsCNIApplicationReady(ctx, r.userClient, cluster)
+	if err != nil {
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to check if CNI application is ready: %w", err)
+	}
+	if !cniReady && appInstallation.Name != kubermaticv1.CNIPluginTypeCilium.String() {
+		r.log.Debug("CNI application is not ready yet")
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	err = r.reconcile(ctx, log, appInstallation)
