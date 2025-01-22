@@ -29,6 +29,27 @@ const (
 	PolicyInstanceKindName = "PolicyInstance"
 )
 
+// Condition reasons for PolicyInstance.
+const (
+	// PolicyAppliedSuccessfully indicates the policy was successfully applied
+	PolicyAppliedSuccessfully = "PolicyAppliedSuccessfully"
+
+	// PolicyApplicationFailed indicates the policy application failed
+	PolicyApplicationFailed = "PolicyApplicationFailed"
+
+	// PolicyTemplateNotFound indicates the referenced template doesn't exist
+	PolicyTemplateNotFound = "PolicyTemplateNotFound"
+)
+
+// Condition types for PolicyInstance.
+const (
+	// PolicyReady indicates if the policy has been successfully applied
+	PolicyReadyCondition = "Ready"
+
+	// PolicyEnforced indicates if the policy is currently being enforced
+	PolicyEnforcedCondition = "Enforced"
+)
+
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -84,7 +105,15 @@ type ResourceSelector struct {
 
 // PolicyInstanceStatus is the status of the policy instance.
 type PolicyInstanceStatus struct {
-	// Conditions is a list of conditions for the policy instance.
+	// ObservedGeneration is the generation observed by the controller.
+	//
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// Conditions represents the latest available observations of the policy instance's current state
+	// +optional
+	// +listType=map
+	// +listMapKey=type
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
