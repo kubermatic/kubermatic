@@ -33,7 +33,7 @@ const CanalCNILastUnspecifiedVersion = "v3.8"
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.28",
-		kubermaticv1.CNIPluginTypeCilium: "1.16.5",
+		kubermaticv1.CNIPluginTypeCilium: "1.16.6",
 	}
 )
 
@@ -53,7 +53,7 @@ var (
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.14.16",
 			"1.15.10",
-			"1.16.5",
+			"1.16.6",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
