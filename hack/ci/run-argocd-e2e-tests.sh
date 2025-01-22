@@ -66,7 +66,7 @@ SEED=dev-seed
 CLUSTER_PREFIX=argodemo
 
 INSTALL_DIR=./binaries/kubermatic/releases/${KKP_VERSION}
-KUBEONE_INSTALL_DIR=./binaries/kubeone/releases/${K1_VERSION}
+# KUBEONE_INSTALL_DIR=./binaries/kubeone/releases/${K1_VERSION}
 MASTER_KUBECONFIG=./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeconfig
 SEED_KUBECONFIG=./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig
 AWS_ACCESS_KEY_ID=${AWS_E2E_TESTS_KEY_ID}
