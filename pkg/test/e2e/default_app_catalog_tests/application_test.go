@@ -41,7 +41,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/metallb"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/nginx_ingress_controller"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/nvidia_gpu_operator"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/sealed_secrets"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/trivy"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/trivy_operator"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
@@ -104,8 +103,6 @@ func getChosenApplication() ApplicationInterface {
 		applicationStruct = &nginx_ingress_controller.DefaultNginxIngressController
 	case "nvidia_gpu_operator":
 		applicationStruct = &nvidia_gpu_operator.DefaultNvidiaGpuOperator
-	case "sealed-secrets":
-		applicationStruct = &sealed_secrets.DefaultSealedSecrets
 	case "trivy":
 		applicationStruct = &trivy.DefaultTrivy
 	case "trivy-operator":
