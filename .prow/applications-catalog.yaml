@@ -440,7 +440,7 @@ presubmits:
               memory: 18Gi
 
   - name: pre-kubermatic-appcatalog-trivy-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/trivy-operator-app.yaml"
+    run_if_changed: "(pkg/ee/default-application-catalog/trivy-operator-app.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
