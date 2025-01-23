@@ -71,7 +71,7 @@ spec:
                   description: Category is the category of the policy, specified as an annotation in the Kyverno policy
                   type: string
                 default:
-                  description: Default determines whether we apply the policy (create policy instance)
+                  description: Default determines whether we apply the policy (create policy binding)
                   type: boolean
                 description:
                   description: Description is the description of the policy, specified as an annotation in the Kyverno policy
@@ -87,7 +87,7 @@ spec:
                     Enforced indicates whether this policy is mandatory
 
                     If true, this policy is mandatory
-                    A PolicyInstance referencing it cannot disable it
+                    A PolicyBinding referencing it cannot disable it
                   type: boolean
                 failurePolicy:
                   description: Deprecated, use failurePolicy under the webhookConfiguration instead.
@@ -108,7 +108,7 @@ spec:
                   description: |-
                     ProjectID is the ID of the project for which the policy template is created
 
-                    Relevant only for project scoped policies
+                    Relevant only for project visibility policies
                   type: string
                 rules:
                   description: |-
@@ -4482,15 +4482,6 @@ spec:
                 schemaValidation:
                   description: Deprecated.
                   type: boolean
-                scope:
-                  description: |-
-                    Scope specifies the scope of the policy.
-                    Can be one of: global, project, or cluster
-                  enum:
-                    - global
-                    - project
-                    - cluster
-                  type: string
                 severity:
                   description: Severity indicates the severity level of the policy
                   type: string
@@ -4577,6 +4568,16 @@ spec:
                         type: array
                     type: object
                   type: array
+                visibility:
+                  description: |-
+                    Visibility specifies where the policy is visible.
+
+                    Can be one of: global, project, or cluster
+                  enum:
+                    - global
+                    - project
+                    - cluster
+                  type: string
                 webhookConfiguration:
                   description: WebhookConfiguration specifies the custom configuration for Kubernetes admission webhookconfiguration.
                   properties:
@@ -4645,8 +4646,8 @@ spec:
               required:
                 - description
                 - enforced
-                - scope
                 - title
+                - visibility
               type: object
           type: object
       served: true

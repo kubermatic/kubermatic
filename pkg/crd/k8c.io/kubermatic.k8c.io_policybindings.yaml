@@ -4,15 +4,15 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.1
-    kubermatic.k8c.io/location: master,seed
-  name: policyinstances.kubermatic.k8c.io
+    kubermatic.k8c.io/location: seed
+  name: policybindings.kubermatic.k8c.io
 spec:
   group: kubermatic.k8c.io
   names:
-    kind: PolicyInstance
-    listKind: PolicyInstanceList
-    plural: policyinstances
-    singular: policyinstance
+    kind: PolicyBinding
+    listKind: PolicyBindingList
+    plural: policybindings
+    singular: policybinding
   scope: Namespaced
   versions:
     - additionalPrinterColumns:
@@ -28,7 +28,7 @@ spec:
       schema:
         openAPIV3Schema:
           description: |-
-            PolicyInstance binds a PolicyTemplate to specific clusters/projects and
+            PolicyBinding binds a PolicyTemplate to specific clusters/projects and
             optionally enables or disables it (if the template is not enforced).
           properties:
             apiVersion:
@@ -49,10 +49,10 @@ spec:
             metadata:
               type: object
             spec:
-              description: PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate.
+              description: PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
               properties:
                 namespacedPolicy:
-                  description: NamespacedPolicy is a boolean to indicate if the policy instance is namespaced
+                  description: NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
                   type: boolean
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
@@ -227,10 +227,10 @@ spec:
                 - scope
               type: object
             status:
-              description: PolicyInstanceStatus is the status of the policy instance.
+              description: PolicyBindingStatus is the status of the policy binding.
               properties:
                 conditions:
-                  description: Conditions represents the latest available observations of the policy instance's current state
+                  description: Conditions represents the latest available observations of the policy binding's current state
                   items:
                     description: Condition contains details for one aspect of the current state of this API Resource.
                     properties:

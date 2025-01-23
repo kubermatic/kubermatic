@@ -60,19 +60,19 @@ type PolicyTemplateSpec struct {
 	// +optional
 	Severity string `json:"severity,omitempty"`
 
-	// Scope specifies the scope of the policy.
-	// Can be one of: global, project, or cluster
+	// Visibility specifies where the policy is visible.
 	//
+	// Can be one of: global, project, or cluster
 	// +kubebuilder:validation:Enum=global;project;cluster
-	Scope string `json:"scope"`
+	Visibility string `json:"visibility"`
 
 	// ProjectID is the ID of the project for which the policy template is created
 	//
-	// Relevant only for project scoped policies
+	// Relevant only for project visibility policies
 	// +optional
 	ProjectID string `json:"projectID,omitempty"`
 
-	// Default determines whether we apply the policy (create policy instance)
+	// Default determines whether we apply the policy (create policy binding)
 	//
 	// +optional
 	Default bool `json:"default,omitempty"`
@@ -80,7 +80,7 @@ type PolicyTemplateSpec struct {
 	// Enforced indicates whether this policy is mandatory
 	//
 	// If true, this policy is mandatory
-	// A PolicyInstance referencing it cannot disable it
+	// A PolicyBinding referencing it cannot disable it
 	Enforced bool `json:"enforced"`
 
 	// KyvernoSpec is the Kyverno specification

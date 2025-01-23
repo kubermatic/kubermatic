@@ -79,7 +79,7 @@ locationMap='{
   "verticalpodautoscalercheckpoints.autoscaling.k8s.io": "seed",
 
   "policytemplates.kubermatic.k8c.io": "master,seed",
-  "policyinstances.kubermatic.k8c.io": "master,seed"
+  "policybindings.kubermatic.k8c.io": "seed"
 }'
 
 failure=false

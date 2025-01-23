@@ -22,14 +22,14 @@ import (
 )
 
 const (
-	// PolicyInstanceResourceName represents "Resource" defined in Kubernetes.
-	PolicyInstanceResourceName = "policyinstances"
+	// PolicyBindingResourceName represents "Resource" defined in Kubernetes.
+	PolicyBindingResourceName = "policybindings"
 
-	// PolicyInstanceKindName represents "Kind" defined in Kubernetes.
-	PolicyInstanceKindName = "PolicyInstance"
+	// PolicyBindingKindName represents "Kind" defined in Kubernetes.
+	PolicyBindingKindName = "PolicyBinding"
 )
 
-// Condition reasons for PolicyInstance.
+// Condition reasons for PolicyBinding.
 const (
 	// PolicyAppliedSuccessfully indicates the policy was successfully applied.
 	PolicyAppliedSuccessfully = "PolicyAppliedSuccessfully"
@@ -41,7 +41,7 @@ const (
 	PolicyTemplateNotFound = "PolicyTemplateNotFound"
 )
 
-// Condition types for PolicyInstance.
+// Condition types for PolicyBinding.
 const (
 	// PolicyReady indicates if the policy has been successfully applied.
 	PolicyReadyCondition = "Ready"
@@ -56,22 +56,22 @@ const (
 // +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled",description="Whether the policy is applied (only relevant if not enforced)"
 // +kubebuilder:printcolumn:name="Scope",type=string,JSONPath=".spec.scope",description="cluster or namespace"
 
-// PolicyInstance binds a PolicyTemplate to specific clusters/projects and
+// PolicyBinding binds a PolicyTemplate to specific clusters/projects and
 // optionally enables or disables it (if the template is not enforced).
-type PolicyInstance struct {
+type PolicyBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PolicyInstanceSpec   `json:"spec,omitempty"`
-	Status PolicyInstanceStatus `json:"status,omitempty"`
+	Spec   PolicyBindingSpec   `json:"spec,omitempty"`
+	Status PolicyBindingStatus `json:"status,omitempty"`
 }
 
-// PolicyInstanceSpec describes how and where to apply the referenced PolicyTemplate.
-type PolicyInstanceSpec struct {
+// PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
+type PolicyBindingSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// NamespacedPolicy is a boolean to indicate if the policy instance is namespaced
+	// NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
 	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
 
 	// Scope specifies the scope of the policy.
@@ -103,14 +103,14 @@ type ResourceSelector struct {
 	SelectAll bool `json:"selectAll,omitempty"`
 }
 
-// PolicyInstanceStatus is the status of the policy instance.
-type PolicyInstanceStatus struct {
+// PolicyBindingStatus is the status of the policy binding.
+type PolicyBindingStatus struct {
 	// ObservedGeneration is the generation observed by the controller.
 	//
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
 
-	// Conditions represents the latest available observations of the policy instance's current state
+	// Conditions represents the latest available observations of the policy binding's current state
 	// +optional
 	// +listType=map
 	// +listMapKey=type
@@ -120,11 +120,11 @@ type PolicyInstanceStatus struct {
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
 
-// PolicyInstanceList is a list of PolicyInstance objects.
-type PolicyInstanceList struct {
+// PolicyBindingList is a list of PolicyBinding objects.
+type PolicyBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// Items refers to the list of PolicyInstance objects
-	Items []PolicyInstance `json:"items"`
+	// Items refers to the list of PolicyBinding objects
+	Items []PolicyBinding `json:"items"`
 }
