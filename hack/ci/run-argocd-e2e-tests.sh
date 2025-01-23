@@ -129,6 +129,10 @@ validatePreReq() {
   fi
 }
 
+checkoutTestRepo() {
+  git clone https://github.com/kubermatic-labs/kkp-using-argocd.git .
+}
+
 createSeedClusters(){ 
   echo creating Seed Clusters
 #  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
@@ -151,6 +155,7 @@ createSeedClusters(){
 }
 
 validatePreReq
+checkoutTestRepo
 createSeedClusters
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
