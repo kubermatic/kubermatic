@@ -46,7 +46,7 @@ func toOciUrl(s string) string {
 }
 
 // ApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
-// for installing Cilium CNI into KKP usr clusters.
+// for installing Cilium CNI into KKP user clusters.
 func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguration) reconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, reconciling.ApplicationDefinitionReconciler) {
 		return kubermaticv1.CNIPluginTypeCilium.String(), func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
@@ -277,6 +277,9 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 					"operator": map[string]any{
 						"replicas": 1,
 					},
+					"envoy": map[string]any{
+						"enabled": false,
+					},
 					"hubble": map[string]any{
 						"relay": map[string]any{
 							"enabled": true,
@@ -315,6 +318,9 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		"podSecurityContext": podSecurityContext,
 	}
 	values := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+	valuesEnvoy := map[string]any{
 		"podSecurityContext": podSecurityContext,
 	}
 
@@ -403,6 +409,7 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	uiSecContext["enabled"] = true
 
 	values["cni"] = valuesCni
+	values["envoy"] = valuesEnvoy
 	values["operator"] = valuesOperator
 	values["certgen"] = valuesCertGen
 	values["hubble"] = map[string]any{
@@ -425,10 +432,6 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 		{
 			fullPath:  "cni.chainingMode",
 			pathParts: []string{"cni", "chainingMode"},
-		},
-		{
-			fullPath:  "ipam.operator.clusterPoolIPv4PodCIDR",
-			pathParts: []string{"ipam", "operator", "clusterPoolIPv4PodCIDR"},
 		},
 		{
 			fullPath:  "ipam.operator.clusterPoolIPv4MaskSize",
@@ -486,6 +489,13 @@ func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *fie
 	allowedValues := map[string]bool{}
 
 	for _, v := range immutableValues {
+		// Check if the value in `oldValues` is non-empty and missing in `newValues`
+		if _, existsInOld := oldValues[v]; existsInOld {
+			if _, existsInNew := newValues[v]; !existsInNew || newValues[v] == nil || fmt.Sprint(newValues[v]) == "" {
+				allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
+				continue
+			}
+		}
 		for _, exclusion := range exclusions {
 			if strings.HasPrefix(exclusion.fullPath, v) {
 				if excludedKeyExists(newValues, exclusion.pathParts...) {
