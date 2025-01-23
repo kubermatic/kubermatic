@@ -130,7 +130,7 @@ validatePreReq() {
 }
 
 checkoutTestRepo() {
-  git clone https://github.com/kubermatic-labs/kkp-using-argocd.git .
+  git clone https://github.com/kubermatic-labs/kkp-using-argocd.git
 }
 
 createSeedClusters(){ 
@@ -156,6 +156,7 @@ createSeedClusters(){
 
 validatePreReq
 checkoutTestRepo
+cd kkp-using-argocd
 createSeedClusters
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
