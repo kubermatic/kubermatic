@@ -71,8 +71,8 @@ INSTALL_DIR=./binaries/kubermatic/releases/${KKP_VERSION}
 KUBEONE_INSTALL_DIR=./binaries/kubeone/releases/${K1_VERSION}
 MASTER_KUBECONFIG=./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeconfig
 SEED_KUBECONFIG=./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig
-AWS_ACCESS_KEY_ID=${AWS_E2E_TESTS_KEY_ID}
-AWS_SECRET_ACCESS_KEY=${AWS_E2E_TESTS_SECRET}
+export AWS_ACCESS_KEY_ID=${AWS_E2E_TESTS_KEY_ID}
+export AWS_SECRET_ACCESS_KEY=${AWS_E2E_TESTS_SECRET}
 echodate "Path:" $PATH
 
 # LOGIC
@@ -120,7 +120,7 @@ validatePreReq() {
   fi
 
   cd /tmp
-  curl -sL https://github.com/kyverno/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_linux_amd64.tar.gz | tar -xvz
+  curl -sL https://github.com/kyverno/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_linux_amd64.tar.gz | tar -xz
   mv chainsaw /usr/local/bin
 
   if ! [ -x "$(command -v chainsaw)" ]; then
