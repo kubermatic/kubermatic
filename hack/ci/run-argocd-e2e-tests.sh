@@ -136,6 +136,7 @@ checkoutTestRepo() {
 createSeedClusters(){ 
   echo creating Seed Clusters
 #  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+  export TF_LOG=DEBUG
   cd kubeone-install/${MASTER} && tofu init && tofu plan
   if [ $? -ne 0 ]; then
     echo kubeone master cluster installation failed.
