@@ -136,7 +136,7 @@ checkoutTestRepo() {
 createSeedClusters(){ 
   echo creating Seed Clusters
   # export TF_LOG=DEBUG
-  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
   if [ $? -ne 0 ]; then
     echo kubeone master cluster installation failed.
     exit 2
@@ -144,7 +144,7 @@ createSeedClusters(){
   cd ../..
 
   if [[ ${SEED} != false ]]; then
-  #  cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+  #  cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
     cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve
     if [ $? -ne 0 ]; then
       echo kubeone seed cluster installation failed.
@@ -207,7 +207,7 @@ cleanup() {
 	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
 	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
   cd kubeone-install/${MASTER}
-	#../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+	#../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
 	tofu init && tofu destroy -auto-approve
   cd ../..
 
@@ -217,7 +217,7 @@ cleanup() {
     # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
     # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
     cd kubeone-install/${SEED}
-    # ../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+    # ../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
     tofu init && tofu destroy -auto-approve
   fi
 }
