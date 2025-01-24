@@ -144,20 +144,44 @@ createSeedClusters(){
   fi
   cd ../..
 
-  # if [[ ${SEED} != false ]]; then
-  #   # cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
-  #   cd kubeone-install/${SEED} && tofu init && tofu plan
-  #   if [ $? -ne 0 ]; then
-  #     echo kubeone seed cluster installation failed.
-  #     exit 3
-  #   fi
-  #   cd ../..
-  # fi
+  if [[ ${SEED} != false ]]; then
+  #  cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+    cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve
+    if [ $? -ne 0 ]; then
+      echo kubeone seed cluster installation failed.
+      exit 3
+    fi
+    cd ../..
+  fi
+}
+
+# post validation, cleanup
+cleanup() {
+  echo cleanup all the cluster resources.
+  # first destroy master so that kubermatic-operator is gone otherwise it tries to recreate seed node-port-proxy LB
+	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
+	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
+	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
+  cd kubeone-install/${MASTER}
+	#../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+	tofu init && tofu destroy -auto-approve
+  cd ../..
+
+  if [[ ${SEED} != false ]]; then
+    # now destroy seed
+    # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
+    # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
+    # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
+    cd kubeone-install/${SEED}
+    # ../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+    tofu init && tofu destroy -auto-approve
+  fi
 }
 
 validatePreReq
 checkoutTestRepo
 cd kkp-using-argocd
 createSeedClusters
+cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
