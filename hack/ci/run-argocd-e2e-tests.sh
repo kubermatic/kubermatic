@@ -63,8 +63,8 @@ ARGO_VERSION=5.36.10
 CHAINSAW_VERSION=0.2.12
 ENV=dev
 MASTER=dev-master
-# SEED=false # - don't create extra seed. Any other value - name of the seed
-SEED=dev-seed
+SEED=false # - don't create extra seed. Any other value - name of the seed
+# SEED=dev-seed
 CLUSTER_PREFIX=argodemo
 
 INSTALL_DIR=./binaries/kubermatic/releases/${KKP_VERSION}
@@ -135,9 +135,8 @@ checkoutTestRepo() {
 
 createSeedClusters(){ 
   echo creating Seed Clusters
-#  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
   # export TF_LOG=DEBUG
-  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve
+  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
   if [ $? -ne 0 ]; then
     echo kubeone master cluster installation failed.
     exit 2
@@ -153,6 +152,51 @@ createSeedClusters(){
     fi
     cd ../..
   fi
+}
+
+# Validate kubeone clusters - apiserver availability, smoke test
+# TODO: do via chainsaw as well as check apiserver availability
+validateSeedClusters(){
+  echo validateSeedClusters: Not implemented.
+}
+
+# deploy argo and kkp argo apps
+deployArgoApps() {
+  echo Deploying ArgoCD and KKP ArgoCD Apps.
+  # TODO: variable for the ingress hostname
+	helm repo add dharapvj https://dharapvj.github.io/helm-charts/
+	helm repo add argo https://argoproj.github.io/argo-helm
+	helm repo update dharapvj
+  helm repo update argo
+  # master seed
+	KUBECONFIG=${MASTER_KUBECONFIG} helm upgrade --install argocd --version ${ARGO_VERSION} --namespace argocd --create-namespace argo/argo-cd -f values-argocd.yaml --set "server.ingress.hosts[0]=argocd.${CLUSTER_PREFIX}.lab.kubermatic.io" --set "server.ingress.tls[0].hosts[0]=argocd.${CLUSTER_PREFIX}.lab.kubermatic.io"
+	KUBECONFIG=${MASTER_KUBECONFIG} helm upgrade --install kkp-argo-apps --set kkpVersion=${KKP_VERSION} -f ./${ENV}/demo-master/argoapps-values.yaml dharapvj/argocd-apps
+
+  if [[ ${SEED} != false ]]; then
+    KUBECONFIG=${SEED_KUBECONFIG} helm upgrade --install argocd --version ${ARGO_VERSION} --namespace argocd --create-namespace argo/argo-cd -f values-argocd.yaml --set "server.ingress.hosts[0]=argocd.india.${CLUSTER_PREFIX}.lab.kubermatic.io" --set "server.ingress.tls[0].hosts[0]=argocd.india.${CLUSTER_PREFIX}.lab.kubermatic.io"
+    KUBECONFIG=${SEED_KUBECONFIG} helm upgrade --install kkp-argo-apps --set kkpVersion=${KKP_VERSION} -f ./${ENV}/india-seed/argoapps-values.yaml dharapvj/argocd-apps
+  fi
+}
+# download kkp release and run kkp installer
+installKKP(){
+  echo installing KKP on master seed.
+  if [ ! -d "${INSTALL_DIR}" ]; then
+    echo "$INSTALL_DIR does not exist. Downloading KKP release"
+    BIN_ARCH=linux-amd64
+    mkdir -p ${INSTALL_DIR}/
+    wget https://github.com/kubermatic/kubermatic/releases/download/${KKP_VERSION}/kubermatic-ee-${KKP_VERSION}-${BIN_ARCH}.tar.gz -O- | tar -xz --directory ${INSTALL_DIR}/
+  fi
+
+  # replace imagepullsecret
+  # FIXME: remove both echo lines
+  echo "${IMAGE_PULL_SECRET_DATA:12:12}"
+  export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
+  echo "${DECODE:12:12}"
+  yq e  '.spec.imagePullSecret = strenv(DECODE)'./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
+
+	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
+	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
+	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
 }
 
 # post validation, cleanup
@@ -182,6 +226,10 @@ validatePreReq
 checkoutTestRepo
 cd kkp-using-argocd
 createSeedClusters
-cleanup
+# TODO: store kubeconfig in s3 bucket
+validateSeedClusters
+deployArgoApps
+installKKP
+# cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
