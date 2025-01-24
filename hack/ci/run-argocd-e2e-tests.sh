@@ -122,7 +122,8 @@ validatePreReq() {
   cd /tmp
   curl -sL https://github.com/kyverno/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_linux_amd64.tar.gz | tar -xz
   mv chainsaw /usr/local/bin
-
+  cd -
+  
   if ! [ -x "$(command -v chainsaw)" ]; then
     echodate 'Error: chainsaw testing tool is not installed.' >&2
     exit 1
