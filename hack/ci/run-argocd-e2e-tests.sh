@@ -228,6 +228,7 @@ cleanup() {
 validatePreReq
 checkoutTestRepo
 cd kkp-using-argocd
+ssh-agent
 createSeedClusters
 # TODO: store kubeconfig in s3 bucket
 validateSeedClusters
