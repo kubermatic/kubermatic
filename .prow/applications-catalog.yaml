@@ -34,10 +34,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-cert-manager
     run_if_changed: "(pkg/ee/default-application-catalog/cert-manager-app.yaml)"
@@ -74,10 +74,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-falco
     run_if_changed: "(pkg/ee/default-application-catalog/falco-app.yaml)"
@@ -114,10 +114,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-flux
     run_if_changed: "(pkg/ee/default-application-catalog/flux2-app.yaml)"
@@ -154,10 +154,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-k8sgpt
     run_if_changed: "(pkg/ee/default-application-catalog/k8sgpt-app.yaml)"
@@ -194,10 +194,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kube-vip
     run_if_changed: "(pkg/ee/default-application-catalog/kube-vip-app.yaml)"
@@ -234,10 +234,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kubevirt
     run_if_changed: "(pkg/ee/default-application-catalog/kubevirt.yaml)"
@@ -274,10 +274,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-metallb
     run_if_changed: "(pkg/ee/default-application-catalog/metallb-app.yaml)"
@@ -314,10 +314,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-nginx-ingress-controller
     run_if_changed: "(pkg/ee/default-application-catalog/nginx-app.yaml)"
@@ -354,10 +354,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-nvidia-gpu-operator
     run_if_changed: "(pkg/ee/default-application-catalog/nvidia-gpu-operator-app.yaml)"
@@ -394,10 +394,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-trivy
     run_if_changed: "(pkg/ee/default-application-catalog/trivy-app.yaml)"
@@ -434,10 +434,10 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-trivy-operator
     run_if_changed: "(pkg/ee/default-application-catalog/trivy-operator-app.yaml)"
@@ -474,7 +474,7 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 14Gi
-              cpu: 4
+              memory: 4Gi
+              cpu: 2
             limits:
-              memory: 18Gi
+              memory: 6Gi
