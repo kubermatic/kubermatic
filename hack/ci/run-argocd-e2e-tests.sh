@@ -136,23 +136,23 @@ checkoutTestRepo() {
 createSeedClusters(){ 
   echo creating Seed Clusters
 #  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
-  export TF_LOG=DEBUG
-  cd kubeone-install/${MASTER} && tofu init && tofu plan
+  # export TF_LOG=DEBUG
+  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve
   if [ $? -ne 0 ]; then
     echo kubeone master cluster installation failed.
     exit 2
   fi
   cd ../..
 
-  if [[ ${SEED} != false ]]; then
-    # cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
-    cd kubeone-install/${SEED} && tofu init && tofu plan
-    if [ $? -ne 0 ]; then
-      echo kubeone seed cluster installation failed.
-      exit 3
-    fi
-    cd ../..
-  fi
+  # if [[ ${SEED} != false ]]; then
+  #   # cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&../../${KUBEONE_INSTALL_DIR}/kubeone apply -t . -m kubeone.yaml --auto-approve
+  #   cd kubeone-install/${SEED} && tofu init && tofu plan
+  #   if [ $? -ne 0 ]; then
+  #     echo kubeone seed cluster installation failed.
+  #     exit 3
+  #   fi
+  #   cd ../..
+  # fi
 }
 
 validatePreReq
