@@ -114,7 +114,7 @@ spec:
                         Name is the namespace to deploy the Application into.
                         Should be a valid lowercase RFC1123 domain name
                       maxLength: 63
-                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                      pattern: ^(|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)
                       type: string
                   required:
                     - create
@@ -141,7 +141,6 @@ spec:
                   type: string
               required:
                 - applicationRef
-                - namespace
               type: object
             status:
               description: ApplicationInstallationStatus denotes status information about an ApplicationInstallation.

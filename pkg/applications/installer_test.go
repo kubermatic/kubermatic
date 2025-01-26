@@ -211,7 +211,7 @@ func genApplicationInstallation(namespaceSpec appskubermaticv1.AppNamespaceSpec)
 			Namespace:    defaultNamespace,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: namespaceSpec,
+			Namespace: &namespaceSpec,
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    "applicationDef1",
 				Version: "1.0.0",

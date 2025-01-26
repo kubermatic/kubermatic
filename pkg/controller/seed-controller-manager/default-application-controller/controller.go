@@ -340,7 +340,7 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 			app.Annotations = annotations
 			app.Labels = application.Labels
 			app.Spec = appskubermaticv1.ApplicationInstallationSpec{
-				Namespace: *appNamespace,
+				Namespace: appNamespace,
 				ApplicationRef: appskubermaticv1.ApplicationRef{
 					Name:    application.Name,
 					Version: appVersion,

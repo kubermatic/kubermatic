@@ -325,7 +325,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				Name:    cluster.Spec.CNIPlugin.Type.String(),
 				Version: cluster.Spec.CNIPlugin.Version,
 			}
-			app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
+			app.Spec.Namespace = &appskubermaticv1.AppNamespaceSpec{
 				Name: cniPluginNamespace,
 			}
 			app.Spec.DeployOptions = &appskubermaticv1.DeployOptions{

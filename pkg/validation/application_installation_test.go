@@ -521,7 +521,7 @@ func getApplicationInstallation(name string, appName string, appVersion string, 
 			Labels:    labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name:   name,
 				Create: true,
 			},

@@ -136,7 +136,7 @@ func getApplicationInstallation(deployOpts *appskubermaticv1.DeployOptions, valu
 			Namespace: "kube-system",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name: "default",
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
