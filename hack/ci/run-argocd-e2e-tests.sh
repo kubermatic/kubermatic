@@ -22,18 +22,18 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
-  echodate "Getting default SSH pubkey for machines from Vault"
-  retry 5 vault_ci_login
-  E2E_SSH_PUBKEY="$(mktemp)"
-  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
-else
-  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
-  E2E_SSH_PUBKEY="$(mktemp)"
-  echodate "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
-fi
+# if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
+#   echodate "Getting default SSH pubkey for machines from Vault"
+#   retry 5 vault_ci_login
+#   E2E_SSH_PUBKEY="$(mktemp)"
+#   vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+# else
+#   E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
+#   E2E_SSH_PUBKEY="$(mktemp)"
+#   echodate "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+# fi
 
-echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
+# echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
