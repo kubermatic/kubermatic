@@ -314,7 +314,7 @@ presubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
-      preset-e2e-ssh: "true"
+      # preset-e2e-ssh: "true"
       preset-aws-e2e-kkp: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
