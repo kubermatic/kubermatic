@@ -200,13 +200,13 @@ installKKP(){
 
   # replace imagepullsecret
   # FIXME: remove both echo lines
-  echo "${IMAGE_PULL_SECRET_DATA:12:12}"
-  export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
-  echo "${DECODE:12:12}"
-  yq e  '.spec.imagePullSecret = strenv(DECODE)'./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
+  # echo "${IMAGE_PULL_SECRET_DATA:12:12}"
+  # export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
+  # echo "${DECODE:12:12}"
+  # yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
 
 	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
-	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
+	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig.yaml --helm-values ./${ENV}/demo-master/values.yaml \
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
 }
 
