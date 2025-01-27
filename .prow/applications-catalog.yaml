@@ -356,7 +356,7 @@ presubmits:
             - "--application-name"
             - "nginx_ingress_controller"
             - "--application-version"
-            - "4.12.0"
+            - "1.12.0"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
