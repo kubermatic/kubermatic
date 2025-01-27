@@ -36,7 +36,7 @@ presubmits:
             - "--application-name"
             - "argocd"
             - "--application-version"
-            - "v2.10.0"
+            - "v2.13.3"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -76,7 +76,7 @@ presubmits:
             - "--application-name"
             - "cert-manager"
             - "--application-version"
-            - "v1.14.1"
+            - "v1.16.3"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -116,7 +116,7 @@ presubmits:
             - "--application-name"
             - "falco"
             - "--application-version"
-            - "0.37.0"
+            - "0.39.2"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -156,7 +156,7 @@ presubmits:
             - "--application-name"
             - "flux"
             - "--application-version"
-            - "2.2.2"
+            - "2.4.0"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -196,7 +196,7 @@ presubmits:
             - "--application-name"
             - "k8sgpt"
             - "--application-version"
-            - "v0.3.26"
+            - "v0.3.48"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -236,7 +236,7 @@ presubmits:
             - "--application-name"
             - "kube-vip"
             - "--application-version"
-            - "v0.4.1"
+            - "v0.8.4"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -276,7 +276,7 @@ presubmits:
             - "--application-name"
             - "kubevirt"
             - "--application-version"
-            - "v1.1.0"
+            - "v1.4.0"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -316,7 +316,7 @@ presubmits:
             - "--application-name"
             - "metallb"
             - "--application-version"
-            - "v0.14.3"
+            - "v0.14.9"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -356,7 +356,7 @@ presubmits:
             - "--application-name"
             - "nginx_ingress_controller"
             - "--application-version"
-            - "1.9.6"
+            - "4.12.0"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -396,7 +396,7 @@ presubmits:
             - "--application-name"
             - "nvidia_gpu_operator"
             - "--application-version"
-            - "v23.9.1"
+            - "v24.9.1"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -436,7 +436,7 @@ presubmits:
             - "--application-name"
             - "trivy"
             - "--application-version"
-            - "0.37.2"
+            - "0.58.1"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
