@@ -107,6 +107,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&GroupProjectBindingList{},
 		&ClusterBackupStorageLocation{},
 		&ClusterBackupStorageLocationList{},
+		&PolicyTemplate{},
+		&PolicyTemplateList{},
+		&PolicyBinding{},
+		&PolicyBindingList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
