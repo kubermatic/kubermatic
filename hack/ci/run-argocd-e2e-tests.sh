@@ -130,6 +130,14 @@ validatePreReq() {
   fi
 }
 
+function generateSshKey() {
+  echo "Generating SSH key pair"
+  ssh-keygen -f ~/.ssh/id_rsa -N ''
+  chmod 400 ~/.ssh/id_rsa
+  eval `ssh-agent -s` && ssh-add ~/.ssh/id_rsa
+}
+
+
 checkoutTestRepo() {
   git clone https://github.com/kubermatic-labs/kkp-using-argocd.git
 }
@@ -228,7 +236,7 @@ cleanup() {
 validatePreReq
 checkoutTestRepo
 cd kkp-using-argocd
-ssh-agent
+generateSshKey
 createSeedClusters
 # TODO: store kubeconfig in s3 bucket
 validateSeedClusters
