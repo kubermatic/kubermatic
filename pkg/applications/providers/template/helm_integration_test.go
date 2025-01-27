@@ -361,7 +361,7 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, r
 			Name:      "app1",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name: testNs.Name,
 			},
 			Values:        runtime.RawExtension{},

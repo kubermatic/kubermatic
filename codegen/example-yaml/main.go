@@ -410,7 +410,7 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 			Name: "<<appInstallation-name>>",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name:        "my-namespace",
 				Create:      true,
 				Labels:      map[string]string{"env": "dev"},

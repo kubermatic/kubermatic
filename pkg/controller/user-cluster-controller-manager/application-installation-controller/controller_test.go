@@ -33,9 +33,7 @@ import (
 	kubermaticfake "k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -320,75 +318,6 @@ func TestMaxRetriesOnInstallation(t *testing.T) {
 	}
 }
 
-func TestSetAppNamespace(t *testing.T) {
-	testCases := []struct {
-		name            string
-		applicationName string
-		appNamespace    *appskubermaticv1.AppNamespaceSpec
-		seedClient      ctrlruntimeclient.Client
-		wantErr         error
-	}{
-		{
-			name:            "scenario 1: application namespace should be set to default value when a default value is configured",
-			applicationName: "applicationName",
-			appNamespace:    &applicationNamespace,
-			seedClient: kubermaticfake.
-				NewClientBuilder().
-				WithObjects(
-					genApplicationDefinition("app-def-1", &applicationNamespace),
-				).
-				Build(),
-			wantErr: nil,
-		},
-		{
-			name:            "scenario 2: application namespace should be set to application name when no default value is configured",
-			applicationName: applicationName,
-			appNamespace:    &appskubermaticv1.AppNamespaceSpec{},
-			seedClient: kubermaticfake.
-				NewClientBuilder().
-				WithObjects(
-					genApplicationDefinition("app-def-1", nil),
-				).
-				Build(),
-			wantErr: nil,
-		},
-		{
-			name:            "scenario 3: an error should be returned when the referenced application definition cannot be found",
-			applicationName: applicationName,
-			appNamespace:    &defaultApplicationNamespace,
-			seedClient: kubermaticfake.
-				NewClientBuilder().
-				WithObjects().
-				Build(),
-			wantErr: apierrors.NewNotFound(schema.ParseGroupResource("applicationdefinition.apps.k8c.io"), applicationName),
-		},
-	}
-
-	for _, test := range testCases {
-		t.Run(test.name, func(t *testing.T) {
-			application := *genApplicationInstallation("appInstallation-1", test.appNamespace, "app-def-1", "1.0.0", 0, 1, 0)
-			err := setAppNamespace(context.Background(), test.seedClient, &application)
-			// validate the result
-			if err != nil && test.wantErr == nil {
-				t.Fatalf("Unexpected error: %s", err.Error())
-			}
-			if test.wantErr != nil && err == nil {
-				t.Fatalf("Unexpected nil error. Expected: %s", test.wantErr.Error())
-			}
-
-			if test.wantErr != nil && err != nil {
-				if errors.Is(err, test.wantErr) {
-					t.Fatalf("Unexpected error, got: %s wanted: %s", err, test.wantErr)
-				}
-			}
-
-			if test.appNamespace != nil && application.Spec.Namespace.Name != test.appNamespace.Name {
-				t.Fatalf("Expected application namespace %s got instead %s", test.appNamespace.Name, application.Spec.Namespace.Name)
-			}
-		})
-	}
-}
-
 func genApplicationDefinition(name string, defaultAppNamespace *appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationDefinition {
 	return &appskubermaticv1.ApplicationDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -441,7 +370,7 @@ func genApplicationInstallation(name string, appNamespace *appskubermaticv1.AppN
 			Generation: generation,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: *appNamespace,
+			Namespace: appNamespace,
 
 			ApplicationRef: appskubermaticv1.ApplicationRef{
 				Name:    applicationDefName,
