@@ -18,6 +18,8 @@ type ClusterData struct {
 	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
 	// current cluster version.
 	MajorMinorVersion string
+	// AutoscalerVersion is the tag which should be used for the cluster autoscaler
+	AutoscalerVersion string
 }
 
 // ClusterAddress stores access and address information of a cluster.

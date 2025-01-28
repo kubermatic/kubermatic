@@ -84,6 +84,7 @@ func TestGetTemplateData(t *testing.T) {
 					},
 					Version:           "1.30.5",
 					MajorMinorVersion: "1.30",
+					AutoscalerVersion: "v1.30.3",
 				},
 			},
 		},

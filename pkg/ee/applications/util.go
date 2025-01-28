@@ -58,6 +58,8 @@ type ClusterData struct {
 	// MajorMinorVersion is a shortcut for common testing on "Major.Minor" on the
 	// current cluster version.
 	MajorMinorVersion string
+	// AutoscalerVersion is the tag which should be used for the cluster autoscaler
+	AutoscalerVersion string
 }
 
 var ErrBadTemplate = errors.New("failed to render template:")
@@ -75,6 +77,10 @@ func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 		clusterVersion = cluster.Spec.Version.Semver()
 	}
 	if clusterVersion != nil {
+		clusterAutoscalerVersion, err := getAutoscalerImageTag(fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse autoscaler version for cluster %q", clusterName)
+		}
 		return &TemplateData{
 			Cluster: ClusterData{
 				Name:              cluster.Name,
@@ -83,6 +89,7 @@ func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 				Address:           cluster.Status.Address,
 				Version:           fmt.Sprintf("%d.%d.%d", clusterVersion.Major(), clusterVersion.Minor(), clusterVersion.Patch()),
 				MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()),
+				AutoscalerVersion: clusterAutoscalerVersion,
 			},
 		}, nil
 	}
@@ -114,4 +121,18 @@ func RenderValueTemplate(applicationValues map[string]interface{}, templateData 
 		return nil, err
 	}
 	return parsedMap, nil
+}
+
+func getAutoscalerImageTag(majorMinorVersion string) (string, error) {
+	switch majorMinorVersion {
+	case "1.29":
+		return "v1.29.5", nil
+	case "1.30":
+		return "v1.30.3", nil
+	case "1.31":
+		return "v1.31.1", nil
+	case "1.32":
+		return "v1.32.0", nil
+	}
+	return "", fmt.Errorf("could not find cluster autoscaler tag for cluster minor-major version %v", majorMinorVersion)
 }
