@@ -46,7 +46,7 @@ func toOciUrl(s string) string {
 }
 
 // ApplicationDefinitionReconciler creates Cilium ApplicationDefinition managed by KKP to be used
-// for installing Cilium CNI into KKP usr clusters.
+// for installing Cilium CNI into KKP user clusters.
 func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguration) reconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, reconciling.ApplicationDefinitionReconciler) {
 		return kubermaticv1.CNIPluginTypeCilium.String(), func(app *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
@@ -251,6 +251,19 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 						},
 					},
 				},
+				{
+					Version: "1.16.6",
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								ChartName:    ciliumHelmChartName,
+								ChartVersion: "1.16.6",
+								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								Credentials:  credentials,
+							},
+						},
+					},
+				},
 			}
 
 			// to make it compatible with older cilium controller versions, convert any DefaultValues into DefaultValuesBlock
@@ -263,6 +276,9 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				defaultValues := map[string]any{
 					"operator": map[string]any{
 						"replicas": 1,
+					},
+					"envoy": map[string]any{
+						"enabled": false,
 					},
 					"hubble": map[string]any{
 						"relay": map[string]any{
@@ -304,6 +320,9 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	values := map[string]any{
 		"podSecurityContext": podSecurityContext,
 	}
+	valuesEnvoy := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
 
 	valuesOperator := map[string]any{
 		"securityContext": map[string]any{
@@ -342,13 +361,20 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 
 	ipamOperator := map[string]any{
 		"clusterPoolIPv4PodCIDRList": cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDRs(),
-		"clusterPoolIPv4MaskSize":    fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4),
 	}
+
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		ipamOperator["clusterPoolIPv4MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+
 	if cluster.IsDualStack() {
 		values["ipv6"] = map[string]any{"enabled": true}
 		ipamOperator["clusterPoolIPv6PodCIDRList"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDRs()
-		ipamOperator["clusterPoolIPv6MaskSize"] = fmt.Sprintf("%d", *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6)
+		if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+			ipamOperator["clusterPoolIPv6MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+		}
 	}
+
 	values["ipam"] = map[string]any{"operator": ipamOperator}
 
 	// Override images if registry override is configured
@@ -383,6 +409,7 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 	uiSecContext["enabled"] = true
 
 	values["cni"] = valuesCni
+	values["envoy"] = valuesEnvoy
 	values["operator"] = valuesOperator
 	values["certgen"] = valuesCertGen
 	values["hubble"] = map[string]any{
@@ -407,8 +434,12 @@ func ValidateValuesUpdate(newValues, oldValues map[string]any, fieldPath *field.
 			pathParts: []string{"cni", "chainingMode"},
 		},
 		{
-			fullPath:  "ipam.operator.clusterPoolIPv4PodCIDR",
-			pathParts: []string{"ipam", "operator", "clusterPoolIPv4PodCIDR"},
+			fullPath:  "ipam.operator.clusterPoolIPv4MaskSize",
+			pathParts: []string{"ipam", "operator", "clusterPoolIPv4MaskSize"},
+		},
+		{
+			fullPath:  "ipam.operator.clusterPoolIPv6MaskSize",
+			pathParts: []string{"ipam", "operator", "clusterPoolIPv6MaskSize"},
 		},
 	}
 	allErrs = append(allErrs, validateImmutableValues(newValues, oldValues, fieldPath, []string{
@@ -458,6 +489,13 @@ func validateImmutableValues(newValues, oldValues map[string]any, fieldPath *fie
 	allowedValues := map[string]bool{}
 
 	for _, v := range immutableValues {
+		// Check if the value in `oldValues` is non-empty and missing in `newValues`
+		if _, existsInOld := oldValues[v]; existsInOld {
+			if _, existsInNew := newValues[v]; !existsInNew || newValues[v] == nil || fmt.Sprint(newValues[v]) == "" {
+				allErrs = append(allErrs, field.Invalid(fieldPath.Child(v), newValues[v], "value is immutable"))
+				continue
+			}
+		}
 		for _, exclusion := range exclusions {
 			if strings.HasPrefix(exclusion.fullPath, v) {
 				if excludedKeyExists(newValues, exclusion.pathParts...) {
