@@ -234,6 +234,8 @@ generateNPushSeedKubeConfig() {
     sed -i "/kubeconfig: /s/: .*/: `echo $kubeconfig_b64`/" ${ENV}/demo-master/seed-kubeconfig-secret-india.yaml
   fi
   # automated git commit and push tag
+  git config --global user.email "ci@kubermatic.com"
+  git config --global user.name "Kubermatic CI Automation"
   git add ${ENV}/demo-master/seed-kubeconfig-secret-india.yaml ${ENV}/demo-master/seed-kubeconfig-secret-self.yaml
   git commit -m "Adding latest seed kubeconfigs so that Seed resources will reconcile correctly" || echo "ignore commit failure, proceed"
   git push origin main
