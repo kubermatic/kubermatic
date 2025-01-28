@@ -1062,6 +1062,11 @@ spec:
                                 required:
                                   - name
                                 type: object
+                              vmEvictionStrategy:
+                                description: |-
+                                  VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
+                                  value is External and the VM will be protected by a PDB.
+                                type: string
                             type: object
                           machineFlavorFilter:
                             description: 'Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.'
