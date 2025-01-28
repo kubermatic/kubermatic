@@ -217,7 +217,7 @@ installKKP(){
   ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
   set -x
 	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
-	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENsV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
+	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
   set +x
 }
