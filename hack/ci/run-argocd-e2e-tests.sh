@@ -135,16 +135,15 @@ validatePreReq() {
 	unzip -q awscliv2.zip
 	./aws/install
   rm -rf awscliv2.zip ./aws
-  # FIXME: remove
-  aws s3 ls
 }
 
-# function generateSshKey() {
-#   echo "Generating SSH key pair"
-#   ssh-keygen -f ~/.ssh/id_rsa -N ''
-#   chmod 400 ~/.ssh/id_rsa
-#   eval `ssh-agent -s` && ssh-add ~/.ssh/id_rsa
-# }
+function restoreSshKey() {
+  echo "Downloading SSH key pair from s3"
+  aws s3 cp s3://cluster-backup-e2e/kkp-argocd-test/ssh-keys/id_rsa ~/.ssh/id_rsa
+  aws s3 cp s3://cluster-backup-e2e/kkp-argocd-test/ssh-keys/id_rsa.pub ~/.ssh/id_rsa.pub
+  chmod 400 ~/.ssh/id_rsa
+  eval `ssh-agent -s` && ssh-add ~/.ssh/id_rsa
+}
 
 
 checkoutTestRepo() {
@@ -160,6 +159,7 @@ createSeedClusters(){
     echo kubeone master cluster installation failed.
     exit 2
   fi
+  aws s3 cp ${MASTER_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
   cd ../..
 
   if [[ ${SEED} != false ]]; then
@@ -170,6 +170,7 @@ createSeedClusters(){
       echo kubeone seed cluster installation failed.
       exit 3
     fi
+    aws s3 cp ${SEED_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
     cd ../..
   fi
 }
@@ -243,13 +244,13 @@ cleanup() {
 }
 
 validatePreReq
-# checkoutTestRepo
-# cd kkp-using-argocd
-# generateSshKey
-# createSeedClusters
-# # TODO: store kubeconfig in s3 bucket
-# validateSeedClusters
-# deployArgoApps
+checkoutTestRepo
+cd kkp-using-argocd
+restoreSshKey
+createSeedClusters
+# TODO: store kubeconfig in s3 bucket
+validateSeedClusters
+deployArgoApps
 # installKKP
 # cleanup
 
