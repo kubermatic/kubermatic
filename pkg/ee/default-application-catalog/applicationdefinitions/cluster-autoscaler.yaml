@@ -1,0 +1,92 @@
+#                Kubermatic Enterprise Read-Only License
+#                       Version 1.0 ("KERO-1.0”)
+#                   Copyright © 2025 Kubermatic GmbH
+#
+# 1.	You may only view, read and display for studying purposes the source
+#    code of the software licensed under this license, and, to the extent
+#    explicitly provided under this license, the binary code.
+# 2.	Any use of the software which exceeds the foregoing right, including,
+#    without limitation, its execution, compilation, copying, modification
+#    and distribution, is expressly prohibited.
+# 3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# END OF TERMS AND CONDITIONS
+
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: cluster-autoscaler
+spec:
+  description: Cluster autoscaler -  a component that automatically adjusts the size of a Kubernetes Cluster so that all pods have a place to run and there are no unneeded nodes.
+  displayName: Cluster autoscaler
+  defaultNamespace:
+    name: kube-system
+    create: false
+  method: helm
+  versions:
+    - template:
+        source:
+          helm:
+            chartName: cluster-autoscaler
+            chartVersion: 9.45.1
+            url: https://kubernetes.github.io/autoscaler
+      version: 1.32.0
+  defaultValuesBlock: |
+    cloudProvider: clusterapi
+    clusterAPIMode: incluster-incluster
+    autoDiscovery:
+      namespace: kube-system
+    image:
+      tag: '{{ .Cluster.AutoscalerVersion }}'
+    extraEnv:
+      CAPI_GROUP: cluster.k8s.io
+    rbac:
+      create: true
+      pspEnabled: false
+      clusterScoped: true
+      serviceAccount:
+        annotations: {}
+        create: true
+        name: "cluster-autoscaler-clusterapi-cluster-autoscaler"
+        automountServiceAccountToken: true
+    extraObjects:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata:
+        name: cluster-autoscaler-management
+        namespace: kube-system
+      rules:
+      - apiGroups:
+        - cluster.k8s.io
+        resources:
+        - machinedeployments
+        - machinedeployments/scale
+        - machines
+        - machinesets
+        verbs:
+        - get
+        - list
+        - update
+        - watch
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: cluster-autoscaler-clusterapi-cluser-autoscaler
+        namespace: kube-system
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: Role
+        name: cluster-autoscaler-management
+        namespace: kube-system
+      subjects:
+      - kind: ServiceAccount
+        name: cluster-autoscaler-clusterapi-cluster-autoscaler
+        namespace: kube-system
+  documentationURL: https://github.com/kubernetes/autoscaler
+  sourceURL: https://kubernetes.github.io/autoscaler

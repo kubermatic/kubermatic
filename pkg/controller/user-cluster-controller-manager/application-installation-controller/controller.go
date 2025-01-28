@@ -63,24 +63,26 @@ const (
 )
 
 type reconciler struct {
-	log             *zap.SugaredLogger
-	seedClient      ctrlruntimeclient.Client
-	userClient      ctrlruntimeclient.Client
-	userRecorder    record.EventRecorder
-	clusterIsPaused userclustercontrollermanager.IsPausedChecker
-	appInstaller    applications.ApplicationInstaller
+	log                  *zap.SugaredLogger
+	seedClient           ctrlruntimeclient.Client
+	userClient           ctrlruntimeclient.Client
+	userRecorder         record.EventRecorder
+	clusterIsPaused      userclustercontrollermanager.IsPausedChecker
+	appInstaller         applications.ApplicationInstaller
+	seedClusterNamespace string
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, appInstaller applications.ApplicationInstaller) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, seedClusterNamespace string, appInstaller applications.ApplicationInstaller) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:             log,
-		seedClient:      seedMgr.GetClient(),
-		userClient:      userMgr.GetClient(),
-		userRecorder:    userMgr.GetEventRecorderFor(controllerName),
-		clusterIsPaused: clusterIsPaused,
-		appInstaller:    appInstaller,
+		log:                  log,
+		seedClient:           seedMgr.GetClient(),
+		userClient:           userMgr.GetClient(),
+		userRecorder:         userMgr.GetEventRecorderFor(controllerName),
+		clusterIsPaused:      clusterIsPaused,
+		appInstaller:         appInstaller,
+		seedClusterNamespace: seedClusterNamespace,
 	}
 
 	_, err := builder.ControllerManagedBy(userMgr).
@@ -191,6 +193,11 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status with applicationVersion: %w", err)
 		}
+	}
+
+	// for addons migrated to ee default-application-catalog we need to purge resources before re-installing them via helm
+	if err := handleAddonCleanup(ctx, appInstallation.Name, r.seedClusterNamespace, r.seedClient, r.log); err != nil {
+		return err
 	}
 
 	// install application into the user-cluster
