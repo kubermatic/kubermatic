@@ -81,6 +81,16 @@ func RoleReconciler() (string, reconciling.RoleReconciler) {
 					"update",
 				},
 			},
+			{
+				APIGroups: []string{"kubermatic.k8c.io"},
+				Resources: []string{"addons"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"delete",
+				},
+			},
 		}
 		return r, nil
 	}
