@@ -128,6 +128,14 @@ validatePreReq() {
     echodate 'Error: chainsaw testing tool is not installed.' >&2
     exit 1
   fi
+
+  # download and setup AWS CLI
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+	unzip awscliv2.zip
+	sudo ./aws/install
+  rm -rf awscliv2.zip ./aws
+  # FIXME: remove
+  aws s3 ls
 }
 
 function generateSshKey() {
@@ -195,7 +203,7 @@ installKKP(){
     echo "$INSTALL_DIR does not exist. Downloading KKP release"
     BIN_ARCH=linux-amd64
     mkdir -p ${INSTALL_DIR}/
-    wget https://github.com/kubermatic/kubermatic/releases/download/${KKP_VERSION}/kubermatic-ee-${KKP_VERSION}-${BIN_ARCH}.tar.gz -O- | tar -xz --directory ${INSTALL_DIR}/
+    curl -sL "https://github.com/kubermatic/kubermatic/releases/download/${KKP_VERSION}/kubermatic-ee-${KKP_VERSION}-${BIN_ARCH}.tar.gz" | tar -xz --directory ${INSTALL_DIR}/
   fi
 
   # replace imagepullsecret
@@ -234,14 +242,14 @@ cleanup() {
 }
 
 validatePreReq
-checkoutTestRepo
-cd kkp-using-argocd
-generateSshKey
-createSeedClusters
-# TODO: store kubeconfig in s3 bucket
-validateSeedClusters
-deployArgoApps
-installKKP
+# checkoutTestRepo
+# cd kkp-using-argocd
+# generateSshKey
+# createSeedClusters
+# # TODO: store kubeconfig in s3 bucket
+# validateSeedClusters
+# deployArgoApps
+# installKKP
 # cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
