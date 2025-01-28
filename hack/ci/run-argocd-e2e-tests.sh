@@ -129,21 +129,22 @@ validatePreReq() {
     exit 1
   fi
 
+  # TODO: Review if we really need to save things once CI starts to work perfectly.
   # download and setup AWS CLI
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-	unzip awscliv2.zip
-	sudo ./aws/install
+  curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+	unzip -q awscliv2.zip
+	./aws/install
   rm -rf awscliv2.zip ./aws
   # FIXME: remove
   aws s3 ls
 }
 
-function generateSshKey() {
-  echo "Generating SSH key pair"
-  ssh-keygen -f ~/.ssh/id_rsa -N ''
-  chmod 400 ~/.ssh/id_rsa
-  eval `ssh-agent -s` && ssh-add ~/.ssh/id_rsa
-}
+# function generateSshKey() {
+#   echo "Generating SSH key pair"
+#   ssh-keygen -f ~/.ssh/id_rsa -N ''
+#   chmod 400 ~/.ssh/id_rsa
+#   eval `ssh-agent -s` && ssh-add ~/.ssh/id_rsa
+# }
 
 
 checkoutTestRepo() {
