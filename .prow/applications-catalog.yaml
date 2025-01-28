@@ -276,7 +276,7 @@ presubmits:
             - "--application-name"
             - "kubevirt"
             - "--application-version"
-            - "v1.4.0"
+            - "v1.1.0"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
