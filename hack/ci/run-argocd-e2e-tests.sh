@@ -209,29 +209,66 @@ installKKP(){
   fi
 
   # replace imagepullsecret
-  # FIXME: remove both echo lines
-  # echo "${IMAGE_PULL_SECRET_DATA:12:12}"
   export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
-  # echo "${DECODE:12:12}"
-  set -x
+  # set -x
   yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
-  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
-  ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
-  ls -ltr ${MASTER_KUBECONFIG}
+  # aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+  # ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
+  # ls -ltr ${MASTER_KUBECONFIG}
 	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
 	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
-  set +x
+  # set +x
 }
 
-temp() {
-  # replace imagepullsecret
-  # FIXME: remove both echo lines
-  echo "${IMAGE_PULL_SECRET_DATA:12:12}"
-  export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
-  echo "${DECODE:12:12}"
-  yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
-  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+# generate kubeconfig secret and make a git commit programatically and push tag
+generateNPushSeedKubeConfig() {
+  echo generating and pushing latest Seed Kubeconfig secrets.
+	local kubeconfig_b64=$(${INSTALL_DIR}/kubermatic-installer convert-kubeconfig ./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeconfig | base64 -w0)
+  # echo $kubeconfig_b64
+	sed -i "/kubeconfig: /s/: .*/: `echo $kubeconfig_b64`/" ${ENV}/demo-master/seed-kubeconfig-secret-self.yaml
+  # reset
+  kubeconfig_b64=""
+  if [[ ${SEED} != false ]]; then
+    kubeconfig_b64=$(${INSTALL_DIR}/kubermatic-installer convert-kubeconfig ./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig | base64 -w0)
+    sed -i "/kubeconfig: /s/: .*/: `echo $kubeconfig_b64`/" ${ENV}/demo-master/seed-kubeconfig-secret-india.yaml
+  fi
+  # automated git commit and push tag
+  git add ${ENV}/demo-master/seed-kubeconfig-secret-india.yaml ${ENV}/demo-master/seed-kubeconfig-secret-self.yaml
+  git commit -m "Adding latest seed kubeconfigs so that Seed resources will reconcile correctly" || echo "ignore commit failure, proceed"
+  git push origin main
+  git tag -f ${ENV}-kkp-${KKP_VERSION}
+	git push origin -f ${ENV}-kkp-${KKP_VERSION}
+}
+# TODO: validate installation? Create user clusters, access MLA links etc.
+# more the merrier
+validateDemoInstallation() {
+  echo Validating the Demo Installation.
+  echo sleeping for many minutes while restarting some services to get cert-manager based certs clearly created.
+  # sleep for completion of installation of all services!
+  #sleep 4m
+
+  # hack: need to work the DNS issues so that certs get created properly
+  KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart deploy -n kube-system coredns
+  #sleep 1m
+  KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart ds -n kube-system node-local-dns
+  #sleep 8m
+  KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart deploy -n cert-manager cert-manager
+  #sleep 6m
+  KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig chainsaw test tests/e2e/master-seed
+
+  if [[ ${SEED} != false ]]; then
+    echo now running e2e tests for seed
+    echo sleeping for many minutes while restarting some services to get cert-manager based certs clearly created.
+    # hack: need to work the DNS issues so that certs get created properly
+    KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig kubectl rollout restart deploy -n kube-system coredns
+    sleep 1m
+    KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig kubectl rollout restart ds -n kube-system node-local-dns
+    sleep 8m
+    KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig kubectl rollout restart deploy -n cert-manager cert-manager
+    sleep 6m
+    KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig chainsaw test tests/e2e/seed-india
+  fi
 }
 
 # post validation, cleanup
@@ -263,10 +300,11 @@ cd kkp-using-argocd
 # temp
 restoreSshKey
 createSeedClusters
-# # TODO: store kubeconfig in s3 bucket
 validateSeedClusters
-# deployArgoApps
+deployArgoApps
 installKKP
+generateNPushSeedKubeConfig
+validateDemoInstallation
 # cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
