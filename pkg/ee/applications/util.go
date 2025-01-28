@@ -28,12 +28,15 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,7 +65,41 @@ type ClusterData struct {
 	AutoscalerVersion string
 }
 
-var ErrBadTemplate = errors.New("failed to render template:")
+var (
+	ErrBadTemplate     = errors.New("failed to render template:")
+	ErrExistingAddon   = errors.New("addon is installed and enforced. Cannot continue with application installation.")
+	AddonEnforcedLabel = "addons.kubermatic.io/ensure"
+)
+
+// HandleAddonCleanup deletes all addon resources for the specified one to avoid problems when migrating to applications.
+func HandleAddonCleanup(ctx context.Context, applicationName string, seedClusterNamespace string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	existingAddon := &kubermaticv1.Addon{}
+
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: applicationName, Namespace: seedClusterNamespace}, existingAddon); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		// when we cannot found an addon anymore we expect no conflicting resources for the application
+		return nil
+	}
+
+	addonEnforcedLabel, labelFound := existingAddon.GetLabels()[AddonEnforcedLabel]
+	// we can suppress the error here because false is also correct for an empty string which is the case when no label is set
+	addonEnforcedLabelParsed, _ := strconv.ParseBool(addonEnforcedLabel)
+
+	// if the addon was found and the label to enforce the addon is set we cannot continue because we would have conflicting resources which are reconciled from addon and application for same workloads
+	if labelFound && addonEnforcedLabelParsed {
+		return ErrExistingAddon
+	}
+
+	if err := seedClient.Delete(ctx, existingAddon); err != nil {
+		return err
+	}
+
+	log.Infof("addon %s removed. Continue with application installation.", applicationName)
+
+	return nil
+}
 
 // GetTemplateData fetches the related cluster object by the given cluster namespace, parses pre defined values to a template data struct.
 func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, clusterName string) (*TemplateData, error) {
