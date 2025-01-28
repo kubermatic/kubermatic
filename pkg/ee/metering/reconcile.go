@@ -26,6 +26,7 @@ package metering
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 
@@ -124,7 +125,7 @@ func reconcileMeteringReportConfigurations(ctx context.Context, client ctrlrunti
 		return nil
 	}
 
-	mc, bucket, err := getS3DataFromSeed(ctx, seed, client)
+	mc, bucket, err := getS3DataFromSeed(ctx, seed, client, caBundle.Name)
 	if err != nil {
 		return err
 	}
@@ -231,7 +232,7 @@ func cleanupResource(ctx context.Context, client ctrlruntimeclient.Client, key t
 	return ctrlruntimeclient.IgnoreNotFound(client.Delete(ctx, obj))
 }
 
-func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client) (*minio.Client, string, error) {
+func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, caBundleName string) (*minio.Client, string, error) {
 	var s3secret corev1.Secret
 	if err := seedClient.Get(ctx, types.NamespacedName{Name: SecretName, Namespace: seed.Namespace}, &s3secret); err != nil {
 		return nil, "", err
@@ -241,7 +242,26 @@ func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient 
 	s3accessKeyID := string(s3secret.Data[AccessKey])
 	s3secretAccessKey := string(s3secret.Data[SecretKey])
 
-	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, nil)
+	// Fetch the ca-bundle
+	var caBundle corev1.ConfigMap
+	err := seedClient.Get(ctx, types.NamespacedName{Name: caBundleName, Namespace: seed.Namespace}, &caBundle)
+	if err != nil {
+		return nil, "", err
+	}
+
+	// Extract ca-bundle.pem from the ca-bundle configmap
+	caBundleData, ok := caBundle.Data[resources.CABundleConfigMapKey]
+	if !ok {
+		return nil, "", fmt.Errorf("configMap does not contain key %q", resources.CABundleConfigMapKey)
+	}
+
+	// Create cert pool and append CA bundle
+	caCertPool := x509.NewCertPool()
+	if ok := caCertPool.AppendCertsFromPEM([]byte(caBundleData)); !ok {
+		return nil, "", fmt.Errorf("failed to parse CA bundle")
+	}
+
+	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, caCertPool)
 	if err != nil {
 		return nil, "", err
 	}
