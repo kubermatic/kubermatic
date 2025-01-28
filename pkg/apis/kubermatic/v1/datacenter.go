@@ -26,6 +26,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "kubevirt.io/api/core/v1"
 )
 
 // +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
@@ -837,6 +838,10 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: indicates if region and zone labels from the cloud provider should be fetched.
 	CCMZoneAndRegionEnabled *bool `json:"ccmZoneAndRegionEnabled,omitempty"`
+
+	// VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
+	// value is External and the VM will be protected by a PDB.
+	VMEvictionStrategy v1.EvictionStrategy `json:"vmEvictionStrategy,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
