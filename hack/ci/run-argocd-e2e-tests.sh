@@ -220,6 +220,16 @@ installKKP(){
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
 }
 
+temp() {
+  # replace imagepullsecret
+  # FIXME: remove both echo lines
+  echo "${IMAGE_PULL_SECRET_DATA:12:12}"
+  export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
+  echo "${DECODE:12:12}"
+  yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
+  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+}
+
 # post validation, cleanup
 cleanup() {
   echo cleanup all the cluster resources.
@@ -243,15 +253,16 @@ cleanup() {
   fi
 }
 
-validatePreReq
-checkoutTestRepo
-cd kkp-using-argocd
-restoreSshKey
-createSeedClusters
-# TODO: store kubeconfig in s3 bucket
-validateSeedClusters
-deployArgoApps
-installKKP
+temp
+# validatePreReq
+# checkoutTestRepo
+# cd kkp-using-argocd
+# restoreSshKey
+# createSeedClusters
+# # TODO: store kubeconfig in s3 bucket
+# validateSeedClusters
+# deployArgoApps
+# installKKP
 # cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
