@@ -19,6 +19,8 @@ package v1
 import (
 	"strings"
 
+	v1 "kubevirt.io/api/core/v1"
+
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
@@ -26,7 +28,6 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "kubevirt.io/api/core/v1"
 )
 
 // +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
