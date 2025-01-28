@@ -91,11 +91,15 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 		if config.VirtualMachine.DNSConfig == nil {
 			config.VirtualMachine.DNSConfig = datacenter.DNSConfig.DeepCopy()
 		}
+
+		if config.VirtualMachine.EvictionStrategy == "" {
+			config.VirtualMachine.EvictionStrategy = string(datacenter.VMEvictionStrategy)
+		}
 	}
 
 	if cluster != nil {
 		kubeVirtInfraNamespace := cluster.Status.NamespaceName
-		if datacenter.NamespacedMode != nil && datacenter.NamespacedMode.Enabled {
+		if datacenter != nil && datacenter.NamespacedMode != nil && datacenter.NamespacedMode.Enabled {
 			kubeVirtInfraNamespace = datacenter.NamespacedMode.Namespace
 		}
 		config.ClusterName = types.ConfigVarString{Value: cluster.Name}
