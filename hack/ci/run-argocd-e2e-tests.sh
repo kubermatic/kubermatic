@@ -159,8 +159,8 @@ createSeedClusters(){
     echo kubeone master cluster installation failed.
     exit 2
   fi
-  aws s3 cp ${MASTER_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
   cd ../..
+  aws s3 cp ${MASTER_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
 
   if [[ ${SEED} != false ]]; then
   #  cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve \
@@ -170,8 +170,8 @@ createSeedClusters(){
       echo kubeone seed cluster installation failed.
       exit 3
     fi
-    aws s3 cp ${SEED_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
     cd ../..
+    aws s3 cp ${SEED_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
   fi
 }
 
