@@ -261,10 +261,10 @@ validatePreReq
 checkoutTestRepo
 cd kkp-using-argocd
 # temp
-# restoreSshKey
-# createSeedClusters
+restoreSshKey
+createSeedClusters
 # # TODO: store kubeconfig in s3 bucket
-# validateSeedClusters
+validateSeedClusters
 # deployArgoApps
 installKKP
 # cleanup
