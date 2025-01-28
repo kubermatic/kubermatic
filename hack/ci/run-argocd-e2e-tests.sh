@@ -213,9 +213,11 @@ installKKP(){
   # echo "${IMAGE_PULL_SECRET_DATA:12:12}"
   export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
   # echo "${DECODE:12:12}"
-  yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
-  ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
   set -x
+  yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
+  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+  ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
+  ls -ltr ${MASTER_KUBECONFIG}
 	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
 	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
