@@ -251,7 +251,7 @@ createSeedClusters
 # TODO: store kubeconfig in s3 bucket
 validateSeedClusters
 deployArgoApps
-# installKKP
+installKKP
 # cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
