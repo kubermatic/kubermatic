@@ -243,12 +243,13 @@ func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLo
 		if containsString(secret.Name, appName) && secret.Type == "helm.sh/release.v1" {
 			if status, exists := secret.Labels["status"]; exists && status == "deployed" {
 				log.Infof("secret %s in namespace %s is deployed\n", secret.Name, secret.Namespace)
-				return nil
+			} else {
+				return fmt.Errorf("secret %s in namespace %s is not deployed", secret.Name, secret.Namespace)
 			}
 		}
 	}
 
-	return errors.New("no helm release deployed")
+	return fmt.Errorf("no helm release deployed")
 }
 
 func containsString(name, search string) bool {
@@ -271,7 +272,7 @@ func createUserCluster(
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
-		WithTestName("argocd").
+		WithTestName("default application catalog test").
 		WithKonnectivity(true).
 		WithAnnotations(map[string]string{
 			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
