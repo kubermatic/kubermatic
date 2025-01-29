@@ -1,0 +1,119 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+groups:
+  - name: etcd
+    rules:
+    - alert: EtcdInsufficientMembers
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": insufficient members ({{ $value }}).'
+      expr: |
+        sum(up{job="etcd"} == bool 1) by (job) < ((count(up{job="etcd"}) by (job) + 1) / 2)
+      for: 15m
+      labels:
+        severity: critical
+
+    - alert: EtcdNoLeader
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": member {{ $labels.instance }} has no leader.'
+      expr: |
+        etcd_server_has_leader{job="etcd"} == 0
+      for: 15m
+      labels:
+        severity: critical
+
+    - alert: EtcdHighNumberOfLeaderChanges
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": instance {{ $labels.instance }} has seen {{ $value }} leader changes within the last hour.'
+      expr: |
+        rate(etcd_server_leader_changes_seen_total{job="etcd"}[15m]) > 3
+      for: 15m
+      labels:
+        severity: warning
+
+    - alert: EtcdGRPCRequestsSlow
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": gRPC requests to {{ $labels.grpc_method }} are taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+      expr: |
+        histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job="etcd", grpc_type="unary"}[5m])) by (job, instance, grpc_service, grpc_method, le))
+        > 0.15
+      for: 10m
+      labels:
+        severity: critical
+
+    - alert: EtcdMemberCommunicationSlow
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": member communication with {{ $labels.To }} is taking {{ $value }}s on etcd instance {{ $labels.instance }}.'
+      expr: |
+        histogram_quantile(0.99, rate(etcd_network_peer_round_trip_time_seconds_bucket{job="etcd"}[5m]))
+        > 0.15
+      for: 10m
+      labels:
+        severity: warning
+
+    - alert: EtcdHighNumberOfFailedProposals
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": {{ $value }} proposal failures within the last hour on etcd instance {{ $labels.instance }}.'
+      expr: |
+        rate(etcd_server_proposals_failed_total{job="etcd"}[15m]) > 5
+      for: 15m
+      labels:
+        severity: warning
+
+    - alert: EtcdHighFsyncDurations
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": 99th percentile fync durations are {{ $value }}s on etcd instance {{ $labels.instance }}.'
+      expr: |
+        histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket{job="etcd"}[5m]))
+        > 0.5
+      for: 10m
+      labels:
+        severity: warning
+
+    - alert: EtcdHighCommitDurations
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": 99th percentile commit durations {{ $value }}s on etcd instance {{ $labels.instance }}.'
+      expr: |
+        histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket{job="etcd"}[5m]))
+        > 0.25
+      for: 10m
+      labels:
+        severity: warning
+
+    - alert: EtcdDatabaseQuotaLowSpace
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": database size exceeds the defined quota on etcd instance {{ $labels.instance }}, please defrag or increase the quota as the writes to etcd will be disabled when it is full.'
+      expr: |
+        (last_over_time(etcd_mvcc_db_total_size_in_bytes[5m]) / last_over_time(etcd_server_quota_backend_bytes[5m]))*100 > 95
+      for: 10m
+      labels:
+        severity: critical
+
+    - alert: EtcdExcessiveDatabaseGrowth
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": Predicting running out of disk space in the next four hours, based on write observations within the past four hours on etcd instance {{ $labels.instance }}, please check as it might be disruptive.'
+      expr: |
+        predict_linear(etcd_mvcc_db_total_size_in_bytes[4h], 4*60*60) > etcd_server_quota_backend_bytes
+      for: 10m
+      labels:
+        severity: warning
+
+    - alert: EtcdDatabaseHighFragmentationRatio
+      annotations:
+        message: 'Etcd cluster "{{ $labels.job }}": database size in use on instance {{ $labels.instance }} is {{ $value | humanizePercentage }} of the actual allocated disk space, please run defragmentation (e.g. etcdctl defrag) to retrieve the unused fragmented disk space.'
+      expr: |
+        (last_over_time(etcd_mvcc_db_total_size_in_use_in_bytes[5m]) / last_over_time(etcd_mvcc_db_total_size_in_bytes[5m])) < 0.5 and etcd_mvcc_db_total_size_in_use_in_bytes > 104857600
+      for: 10m
+      labels:
+        severity: warning
