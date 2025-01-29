@@ -306,11 +306,11 @@ checkoutTestRepo
 cd kkp-using-argocd
 # temp
 createSeedClusters
-# validateSeedClusters
-# deployArgoApps
-# installKKP
-# generateNPushSeedKubeConfig
-# validateDemoInstallation
+validateSeedClusters
+deployArgoApps
+installKKP
+generateNPushSeedKubeConfig
+validateDemoInstallation
 cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
