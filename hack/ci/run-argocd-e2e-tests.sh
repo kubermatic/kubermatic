@@ -266,6 +266,7 @@ validateDemoInstallation() {
     echo now running e2e tests for seed
     echo sleeping for many minutes while restarting some services to get cert-manager based certs clearly created.
     # hack: need to work the DNS issues so that certs get created properly
+    KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig kubectl rollout restart sts -n argocd argocd-application-controller
     KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig kubectl rollout restart deploy -n kube-system coredns
     sleep 1m
     KUBECONFIG=$PWD/kubeone-install/${SEED}/argodemo-${SEED}-kubeconfig kubectl rollout restart ds -n kube-system node-local-dns
