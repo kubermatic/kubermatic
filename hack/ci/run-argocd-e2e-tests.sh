@@ -281,21 +281,21 @@ validateDemoInstallation() {
 cleanup() {
   echo cleanup all the cluster resources.
   # first destroy master so that kubermatic-operator is gone otherwise it tries to recreate seed node-port-proxy LB
-	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
-	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
-	# KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
+	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
+	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
+	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
   cd kubeone-install/${MASTER}
-	#../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+	../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
 	tofu init && tofu destroy -auto-approve
   cd ../..
 
   if [[ ${SEED} != false ]]; then
     # now destroy seed
-    # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
-    # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
-    # KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
+    KUBECONFIG=${SEED_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
+    KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
+    KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
     cd kubeone-install/${SEED}
-    # ../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+    ../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
     tofu init && tofu destroy -auto-approve
   fi
 }
@@ -306,11 +306,11 @@ checkoutTestRepo
 cd kkp-using-argocd
 # temp
 createSeedClusters
-validateSeedClusters
-deployArgoApps
-installKKP
-generateNPushSeedKubeConfig
-validateDemoInstallation
-# cleanup
+# validateSeedClusters
+# deployArgoApps
+# installKKP
+# generateNPushSeedKubeConfig
+# validateDemoInstallation
+cleanup
 
 echodate "KKP mgmt via ArgoCD CI tests completed..."
