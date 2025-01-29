@@ -147,6 +147,8 @@ function restoreSshKey() {
 
 
 checkoutTestRepo() {
+  echo "Cloning the argocd gitops Git Repo"
+  ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
   git clone git@github.com:kubermatic-labs/kkp-using-argocd.git
 }
 
