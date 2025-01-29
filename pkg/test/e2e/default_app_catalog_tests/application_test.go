@@ -181,6 +181,11 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	if err != nil {
 		t.Fatalf("Application observe test failed: %v", err)
 	}
+
+	err := isHelmReleaseDeployed(t, client, name, namespace)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
 }
 
 func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
@@ -223,6 +228,30 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 
 		return nil, nil
 	})
+}
+
+func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, appName, namespace string) error {
+	secrets := corev1.SecretList{}
+	err := client.List(ctx, &secrets, ctrlruntimeclient.InNamespace(namespace))
+	if err != nil {
+		log.Fatalf("failed to list secrets: %v", err)
+		return err
+	}
+
+	for _, secret := range secrets.Items {
+		if containsString(appName) && secret.Type == "helm.sh/release.v1" {
+			if status, exists := secret.Labels["status"]; exists && status == "deployed" {
+				log.Infof("secret %s in namespace %s is deployed\n", secret.Name, secret.Namespace)
+				return nil
+			}
+		}
+	}
+
+	return errors.New("no helm release deployed")
+}
+
+func containsString(name, search string) bool {
+	return strings.Contains(name, search)
 }
 
 // creates a usercluster on aws.
