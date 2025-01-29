@@ -222,6 +222,9 @@ spec:
           namespacedMode: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used
           providerNetwork: null
+          # VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
+          # value is External and the VM will be protected by a PDB.
+          vmEvictionStrategy: ""
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU

@@ -19,6 +19,8 @@ package v1
 import (
 	"strings"
 
+	v1 "kubevirt.io/api/core/v1"
+
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
@@ -837,6 +839,10 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: indicates if region and zone labels from the cloud provider should be fetched.
 	CCMZoneAndRegionEnabled *bool `json:"ccmZoneAndRegionEnabled,omitempty"`
+
+	// VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
+	// value is External and the VM will be protected by a PDB.
+	VMEvictionStrategy v1.EvictionStrategy `json:"vmEvictionStrategy,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
