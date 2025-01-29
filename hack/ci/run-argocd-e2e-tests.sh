@@ -285,7 +285,7 @@ cleanup() {
 	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
 	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
   cd kubeone-install/${MASTER}
-	../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+	../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t ./tf.json -m kubeone.yaml --auto-approve
 	tofu init && tofu destroy -auto-approve
   cd ../..
 
@@ -295,7 +295,7 @@ cleanup() {
     KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
     KUBECONFIG=${SEED_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
     cd kubeone-install/${SEED}
-    ../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t . -m kubeone.yaml --auto-approve
+    ../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t ./tf.json -m kubeone.yaml --auto-approve
     tofu init && tofu destroy -auto-approve
   fi
 }
