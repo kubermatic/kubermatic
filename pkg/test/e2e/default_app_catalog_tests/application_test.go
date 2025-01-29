@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -182,7 +183,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
-	err := isHelmReleaseDeployed(t, client, name, namespace)
+	err = isHelmReleaseDeployed(ctx, t, log, client, name, namespace)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
