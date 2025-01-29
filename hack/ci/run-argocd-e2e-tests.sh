@@ -63,8 +63,8 @@ ARGO_VERSION=5.36.10
 CHAINSAW_VERSION=0.2.12
 ENV=dev
 MASTER=dev-master
-SEED=false # - don't create extra seed. Any other value - name of the seed
-# SEED=dev-seed
+# SEED=false # - don't create extra seed. Any other value - name of the seed
+SEED=dev-seed
 CLUSTER_PREFIX=argodemo
 
 INSTALL_DIR=./binaries/kubermatic/releases/${KKP_VERSION}
@@ -214,10 +214,9 @@ installKKP(){
   export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
   # set -x
   yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
-  # FIXME: Temp debug remove later.
-  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
-  ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
-  ls -ltr ${MASTER_KUBECONFIG}
+  # aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+  # ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
+  # ls -ltr ${MASTER_KUBECONFIG}
 	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
 	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
@@ -251,9 +250,10 @@ validateDemoInstallation() {
   echo Validating the Demo Installation.
   echo sleeping for many minutes while restarting some services to get cert-manager based certs clearly created.
   # sleep for completion of installation of all services!
-  sleep 4m
+  sleep 10m
 
   # hack: need to work the DNS issues so that certs get created properly
+  KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart sts -n argocd argocd-application-controller
   KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart deploy -n kube-system coredns
   sleep 1m
   KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart ds -n kube-system node-local-dns
