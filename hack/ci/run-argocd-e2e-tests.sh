@@ -147,7 +147,7 @@ function restoreSshKey() {
 
 
 checkoutTestRepo() {
-  git clone https://github.com/kubermatic-labs/kkp-using-argocd.git
+  git clone git@github.com:kubermatic-labs/kkp-using-argocd.git
 }
 
 createSeedClusters(){ 
@@ -212,9 +212,10 @@ installKKP(){
   export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
   # set -x
   yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
-  # aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
-  # ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
-  # ls -ltr ${MASTER_KUBECONFIG}
+  # FIXME: Temp debug remove later.
+  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+  ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
+  ls -ltr ${MASTER_KUBECONFIG}
 	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
 	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
 	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
@@ -248,15 +249,15 @@ validateDemoInstallation() {
   echo Validating the Demo Installation.
   echo sleeping for many minutes while restarting some services to get cert-manager based certs clearly created.
   # sleep for completion of installation of all services!
-  #sleep 4m
+  sleep 4m
 
   # hack: need to work the DNS issues so that certs get created properly
   KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart deploy -n kube-system coredns
-  #sleep 1m
+  sleep 1m
   KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart ds -n kube-system node-local-dns
-  #sleep 8m
+  sleep 8m
   KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig kubectl rollout restart deploy -n cert-manager cert-manager
-  #sleep 6m
+  sleep 6m
   KUBECONFIG=$PWD/kubeone-install/${MASTER}/argodemo-${MASTER}-kubeconfig chainsaw test tests/e2e/master-seed
 
   if [[ ${SEED} != false ]]; then
@@ -297,10 +298,10 @@ cleanup() {
 }
 
 validatePreReq
+restoreSshKey
 checkoutTestRepo
 cd kkp-using-argocd
 # temp
-restoreSshKey
 createSeedClusters
 validateSeedClusters
 deployArgoApps
