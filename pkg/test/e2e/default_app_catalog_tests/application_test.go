@@ -239,7 +239,7 @@ func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLo
 	}
 
 	for _, secret := range secrets.Items {
-		if containsString(appName) && secret.Type == "helm.sh/release.v1" {
+		if containsString(secret.Name, appName) && secret.Type == "helm.sh/release.v1" {
 			if status, exists := secret.Labels["status"]; exists && status == "deployed" {
 				log.Infof("secret %s in namespace %s is deployed\n", secret.Name, secret.Namespace)
 				return nil
