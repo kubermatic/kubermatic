@@ -23,6 +23,7 @@ metadata:
   name: aikit
 spec:
   description: AIKit is a comprehensive platform to quickly get started to host, deploy, build and fine-tune large language models (LLMs).
+  displayName: AIKit
   method: helm
   versions:
     - template:
@@ -32,7 +33,7 @@ spec:
             chartVersion: 0.1.0
             url: https://sozercan.github.io/aikit/charts
       version: v0.16.0
-  defaultValues:
+  defaultValuesBlock:
     serviceMonitor:
       enabled: false
       additionalLabels: {}
@@ -48,8 +49,61 @@ spec:
       label:
         key: grafana_dashboard_aikit
         value: "1"
-    defaultValuesBlock: |
-      server:
-        service:
-          # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-          type: "LoadBalancer"
+  defaultValuesBlock: |
+    server:
+      service:
+        # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
+        type: "LoadBalancer"
+  documentationURL: https://sozercan.github.io/aikit/docs
+  sourceURL: https://github.com/sozercan/aikit
+  logo: |+
+    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
+    AAAASUVORK5CYII=
+  logoFormat: png
+    
