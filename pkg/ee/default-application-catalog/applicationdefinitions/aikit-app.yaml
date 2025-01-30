@@ -34,7 +34,7 @@ spec:
             chartVersion: 0.1.0
             url: https://sozercan.github.io/aikit/charts
       version: v0.16.0
-  defaultValuesBlock:
+  defaultValuesBlock: |
     serviceMonitor:
       enabled: false
       additionalLabels: {}
@@ -50,7 +50,6 @@ spec:
       label:
         key: grafana_dashboard_aikit
         value: "1"
-  defaultValuesBlock: |
     server:
       service:
         # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
