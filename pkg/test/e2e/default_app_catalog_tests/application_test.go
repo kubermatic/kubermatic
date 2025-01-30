@@ -239,10 +239,6 @@ func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLo
 		return err
 	}
 
-	if applicationName == "nvidia_gpu_operator" {
-		appName = "nvidia"
-	}
-
 	for _, secret := range secrets.Items {
 		if containsString(secret.Name, appName) && secret.Type == "helm.sh/release.v1" {
 			if status, exists := secret.Labels["status"]; exists && status == "deployed" {
