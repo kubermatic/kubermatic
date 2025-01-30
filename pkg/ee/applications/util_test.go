@@ -28,6 +28,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -40,6 +41,11 @@ import (
 
 var (
 	clusterNamespace = "test-cluster"
+	testObjectName   = "cluster-autoscaler"
+	testObjectMeta   = metav1.ObjectMeta{
+		Name:      testObjectName,
+		Namespace: clusterNamespace,
+	}
 )
 
 func TestGetTemplateData(t *testing.T) {
@@ -84,6 +90,7 @@ func TestGetTemplateData(t *testing.T) {
 					},
 					Version:           "1.30.5",
 					MajorMinorVersion: "1.30",
+					AutoscalerVersion: "v1.30.3",
 				},
 			},
 		},
@@ -175,6 +182,91 @@ func TestRenderValueTemplate(t *testing.T) {
 
 			if changes := diff.ObjectDiff(got, tt.want); changes != "" {
 				t.Fatalf("Got unexpected result. diff: %s", changes)
+			}
+		})
+	}
+}
+
+func TestHandleAddonCleanup(t *testing.T) {
+	tests := []struct {
+		name         string
+		appName      string
+		appNamespace string
+		seedClient   ctrlruntimeclient.Client
+		wantErr      error
+		wantAPIErr   error
+	}{
+		{
+			name:         "case 1: no error occurs when cleaning up the existing addon configured without reconciliation",
+			appName:      "cluster-autoscaler",
+			appNamespace: "test-app",
+			seedClient: fake.
+				NewClientBuilder().WithObjects(
+				&kubermaticv1.Addon{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      testObjectName,
+						Namespace: clusterNamespace,
+						Labels: map[string]string{
+							"kubermatic-addon": "cluster-autoscaler",
+						},
+					},
+				},
+			).Build(),
+			wantErr:    nil,
+			wantAPIErr: apierrors.NewNotFound(schema.GroupResource{Group: "kubermatic.k8c.io", Resource: "addons"}, "cluster-autoscaler"),
+		},
+		{
+			name:         "case 2: no error occurs when no addon needs to be cleaned up",
+			appName:      "cluster-autoscaler",
+			appNamespace: "test-app",
+			seedClient: fake.
+				NewClientBuilder().WithObjects().Build(),
+			wantErr:    nil,
+			wantAPIErr: apierrors.NewNotFound(schema.GroupResource{Group: "kubermatic.k8c.io", Resource: "addons"}, "cluster-autoscaler"),
+		},
+		{
+			name:         "case 3: an error occurs when cleaning up the existing addon configured with reconciliation",
+			appName:      "cluster-autoscaler",
+			appNamespace: "test-app",
+			seedClient: fake.
+				NewClientBuilder().WithObjects(
+				&kubermaticv1.Addon{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      testObjectName,
+						Namespace: clusterNamespace,
+						Labels: map[string]string{
+							"kubermatic-addon": "cluster-autoscaler",
+							AddonEnforcedLabel: "true",
+						},
+					},
+				},
+			).Build(),
+			wantErr:    ErrExistingAddon,
+			wantAPIErr: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := HandleAddonCleanup(context.Background(), tt.appName, clusterNamespace, tt.seedClient, kubermaticlog.Logger)
+			if err != nil && tt.wantErr == nil {
+				t.Fatalf("Got unexpected error. %v", err)
+			}
+			if err == nil && tt.wantErr != nil {
+				t.Fatalf("Got no error when one is expected. %v", tt.wantErr)
+			}
+
+			serviceAccount := &kubermaticv1.Addon{
+				ObjectMeta: testObjectMeta,
+			}
+			err = tt.seedClient.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(serviceAccount), serviceAccount)
+			if err != nil {
+				if compare := diff.StringDiff(tt.wantAPIErr.Error(), err.Error()); compare != "" {
+					t.Fatalf("Got unexpected when fetching addon resource. %v", err)
+				}
+			}
+
+			if err == nil && tt.wantAPIErr != nil {
+				t.Fatalf("Got no error when one is expected from kube apiserver. %v", tt.wantAPIErr)
 			}
 		})
 	}
