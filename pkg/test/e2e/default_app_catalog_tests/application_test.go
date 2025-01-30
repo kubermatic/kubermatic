@@ -272,7 +272,7 @@ func createUserCluster(
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
-		WithTestName("default application catalog test").
+		WithTestName("default-application-catalog-test").
 		WithKonnectivity(true).
 		WithAnnotations(map[string]string{
 			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
