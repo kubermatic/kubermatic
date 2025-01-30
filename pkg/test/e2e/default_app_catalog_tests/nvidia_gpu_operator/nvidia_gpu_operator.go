@@ -29,7 +29,7 @@ type NvidiaGpuOperator struct {
 
 var DefaultNvidiaGpuOperator = NvidiaGpuOperator{
 	Namespace: "nvidia-gpu-operator",
-	Name:      "",
+	Name:      "gpu-operator",
 }
 
 func (ngo *NvidiaGpuOperator) GetApplication(version string) ([]byte, error) {
