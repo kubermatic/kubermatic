@@ -239,12 +239,16 @@ func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLo
 		return err
 	}
 
+	if applicationName == "nvidia_gpu_operator" {
+		appName = "nvidia"
+	}
+
 	for _, secret := range secrets.Items {
 		if containsString(secret.Name, appName) && secret.Type == "helm.sh/release.v1" {
 			if status, exists := secret.Labels["status"]; exists && status == "deployed" {
-				log.Infof("secret %s in namespace %s is deployed\n", secret.Name, secret.Namespace)
+				log.Infof("secret %s in namespace %s, helm release is deployed\n", secret.Name, secret.Namespace)
 			} else {
-				return fmt.Errorf("secret %s in namespace %s is not deployed", secret.Name, secret.Namespace)
+				return fmt.Errorf("secret %s in namespace %s, helm release is not deployed", secret.Name, secret.Namespace)
 			}
 		}
 	}
