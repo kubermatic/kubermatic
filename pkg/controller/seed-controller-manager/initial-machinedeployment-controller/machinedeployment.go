@@ -64,8 +64,14 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 	md.Spec.Selector.MatchLabels = map[string]string{
 		"machine": fmt.Sprintf("md-%s-%s", cluster.Name, rand.String(10)),
 	}
+
 	md.Spec.Template.Labels = md.Spec.Selector.MatchLabels
-	md.Spec.Template.Spec.Labels = md.Spec.Template.Labels
+
+	// Merge MatchLabels with Template Spec Labels.
+	if md.Spec.Template.Spec.Labels == nil {
+		md.Spec.Template.Spec.Labels = make(map[string]string)
+	}
+	md.Spec.Template.Spec.Labels["machine"] = md.Spec.Template.Labels["machine"]
 
 	// Do not confuse the convenience labels with the labels inside the
 	// providerSpec, which ultimately get applied on the cloud provider resources.
