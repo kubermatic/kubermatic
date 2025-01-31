@@ -28,7 +28,7 @@ type NvidiaGpuOperator struct {
 }
 
 var DefaultNvidiaGpuOperator = NvidiaGpuOperator{
-	Namespace: "nvidia-gpu-operator",
+	Namespace: "gpu-operator",
 	Name:      "gpu-operator",
 }
 
