@@ -116,9 +116,3 @@ spec:
     w6/2IpE59zAwHsekr8hz3dec7sivG7fl+i8JEo6bQuILVD59JtN0c2YoV+/1ZhtNB9YS/5eZ/8fX
     AfA/lWU54yZCHtwAAAAASUVORK5CYII=
   logoFormat: png
-https://github:
-  com/kubermatic/kubermatic/pull/14067/files#diff-6b0cf7d8e60d29acbada0c68c0e451197fc03408a5fabbd312cd1a591fc58616:~:text=version%3A%202:
-    2:
-      2-,%2D%20template%3A,version%3A%202:
-        4:
-          0,-documentationURL%3A%20https:

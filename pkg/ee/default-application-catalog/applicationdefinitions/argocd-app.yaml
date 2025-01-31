@@ -47,7 +47,7 @@ spec:
             chartName: argo-cd
             chartVersion: 7.7.17
             url: https://argoproj.github.io/argo-helm
-      version: v2.13.3
+      version: v2.13.4
   defaultValuesBlock: |
     server:
       service:

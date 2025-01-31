@@ -44,10 +44,10 @@ spec:
   - template:
       source:
         helm:
-          chartName: flux2
-          chartVersion: 2.14.1
-          url: https://fluxcd-community.github.io/helm-charts
-    version: 2.4.0
+          chartName: falco
+          chartVersion: 4.19.0
+          url: https://falcosecurity.github.io/charts
+    version: 0.40.0
   documentationURL: https://falco.org/
   sourceURL: https://github.com/falcosecurity/charts
   logo: |+

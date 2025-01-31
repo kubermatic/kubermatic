@@ -38,9 +38,9 @@ spec:
       source:
         helm:
           chartName: kube-vip
-          chartVersion: 0.6.5
+          chartVersion: 0.6.6
           url: https://kube-vip.github.io/helm-charts
-    version: v0.8.4
+    version: v0.8.9
   documentationURL: https://kube-vip.io/
   sourceURL: https://github.com/kube-vip/helm-charts
   logo: |+
