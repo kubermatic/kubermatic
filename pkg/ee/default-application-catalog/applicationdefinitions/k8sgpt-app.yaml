@@ -40,7 +40,7 @@ spec:
             chartName: k8sgpt-operator
             chartVersion: 0.1.0
             url: https://charts.k8sgpt.ai/
-        version: v0.3.48
+      version: v0.3.48
   defaultValuesBlock: |
     serviceMonitor:
       enabled: false
