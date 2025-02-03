@@ -417,10 +417,22 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 		return false, nil
 	}
 
+	// if credentials for infrastructure management are set explicit we need to overwrite username and password with these
+	// to mount them properly to machine-controller and osm
+	vsphereUser := spec.Username
+	if spec.InfraManagementUser.Username != "" {
+		vsphereUser = spec.InfraManagementUser.Username
+	}
+
+	vspherePassword := spec.Password
+	if spec.InfraManagementUser.Password != "" {
+		vspherePassword = spec.InfraManagementUser.Password
+	}
+
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.VsphereUsername:                    []byte(spec.Username),
-		resources.VspherePassword:                    []byte(spec.Password),
+		resources.VsphereUsername:                    []byte(vsphereUser),
+		resources.VspherePassword:                    []byte(vspherePassword),
 		resources.VsphereInfraManagementUserUsername: []byte(spec.InfraManagementUser.Username),
 		resources.VsphereInfraManagementUserPassword: []byte(spec.InfraManagementUser.Password),
 	})
