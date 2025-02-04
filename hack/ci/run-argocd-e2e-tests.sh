@@ -93,9 +93,9 @@ validatePreReq() {
     exit 1
   fi
 
-	mkdir -p ${KUBEONE_INSTALL_DIR}
-	curl -sLO "https://github.com/kubermatic/kubeone/releases/download/v${K1_VERSION}/kubeone_${K1_VERSION}_linux_amd64.zip" && \
-    unzip -qq kubeone_${K1_VERSION}_linux_amd64.zip -d kubeone_${K1_VERSION}_linux_amd64 && \
+  mkdir -p ${KUBEONE_INSTALL_DIR}
+  curl -sLO "https://github.com/kubermatic/kubeone/releases/download/v${K1_VERSION}/kubeone_${K1_VERSION}_linux_amd64.zip" &&
+    unzip -qq kubeone_${K1_VERSION}_linux_amd64.zip -d kubeone_${K1_VERSION}_linux_amd64 &&
     mv kubeone_${K1_VERSION}_linux_amd64/kubeone ${KUBEONE_INSTALL_DIR} && rm -rf kubeone_${K1_VERSION}_linux_amd64 kubeone_${K1_VERSION}_linux_amd64.zip
 
   if ! [ -x ${KUBEONE_INSTALL_DIR}/kubeone ]; then
@@ -131,8 +131,8 @@ validatePreReq() {
   # TODO: Review if we really need to save things once CI starts to work perfectly.
   # download and setup AWS CLI
   curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-	unzip -q awscliv2.zip
-	./aws/install
+  unzip -q awscliv2.zip
+  ./aws/install
   rm -rf awscliv2.zip ./aws
 }
 
@@ -141,9 +141,8 @@ function restoreSshKey() {
   aws s3 cp s3://cluster-backup-e2e/kkp-argocd-test/ssh-keys/id_rsa ~/.ssh/id_rsa
   aws s3 cp s3://cluster-backup-e2e/kkp-argocd-test/ssh-keys/id_rsa.pub ~/.ssh/id_rsa.pub
   chmod 400 ~/.ssh/id_rsa
-  eval `ssh-agent -s` && ssh-add ~/.ssh/id_rsa
+  eval $(ssh-agent -s) && ssh-add ~/.ssh/id_rsa
 }
-
 
 checkoutTestRepo() {
   echodate "Cloning the argocd gitops Git Repo"
@@ -151,11 +150,11 @@ checkoutTestRepo() {
   git clone git@github.com:kubermatic-labs/kkp-using-argocd.git
 }
 
-createSeedClusters(){ 
+createSeedClusters() {
   echodate creating Seed Clusters
   # export TF_LOG=DEBUG
-  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve \
-    && tofu output -json > tf.json && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
+  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&
+    tofu output -json > tf.json && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
   if [ $? -ne 0 ]; then
     echodate kubeone master cluster installation failed.
     exit 2
@@ -164,8 +163,8 @@ createSeedClusters(){
   aws s3 cp ${MASTER_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
 
   if [[ ${SEED} != false ]]; then
-    cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve \
-      && tofu output -json > tf.json && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
+    cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&
+      tofu output -json > tf.json && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
     # cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve
     if [ $? -ne 0 ]; then
       echodate kubeone seed cluster installation failed.
@@ -178,7 +177,7 @@ createSeedClusters(){
 
 # Validate kubeone clusters - apiserver availability, smoke test
 # TODO: do via chainsaw as well as check apiserver availability
-validateSeedClusters(){
+validateSeedClusters() {
   echodate validateSeedClusters: Not implemented.
 }
 
@@ -186,13 +185,13 @@ validateSeedClusters(){
 deployArgoApps() {
   echodate Deploying ArgoCD and KKP ArgoCD Apps.
   # TODO: variable for the ingress hostname
-	helm repo add dharapvj https://dharapvj.github.io/helm-charts/
-	helm repo add argo https://argoproj.github.io/argo-helm
-	helm repo update dharapvj
+  helm repo add dharapvj https://dharapvj.github.io/helm-charts/
+  helm repo add argo https://argoproj.github.io/argo-helm
+  helm repo update dharapvj
   helm repo update argo
   # master seed
-	KUBECONFIG=${MASTER_KUBECONFIG} helm upgrade --install argocd --version ${ARGO_VERSION} --namespace argocd --create-namespace argo/argo-cd -f values-argocd.yaml --set "server.ingress.hosts[0]=argocd.${CLUSTER_PREFIX}.lab.kubermatic.io" --set "server.ingress.tls[0].hosts[0]=argocd.${CLUSTER_PREFIX}.lab.kubermatic.io"
-	KUBECONFIG=${MASTER_KUBECONFIG} helm upgrade --install kkp-argo-apps --set kkpVersion=${KKP_VERSION} -f ./${ENV}/demo-master/argoapps-values.yaml dharapvj/argocd-apps
+  KUBECONFIG=${MASTER_KUBECONFIG} helm upgrade --install argocd --version ${ARGO_VERSION} --namespace argocd --create-namespace argo/argo-cd -f values-argocd.yaml --set "server.ingress.hosts[0]=argocd.${CLUSTER_PREFIX}.lab.kubermatic.io" --set "server.ingress.tls[0].hosts[0]=argocd.${CLUSTER_PREFIX}.lab.kubermatic.io"
+  KUBECONFIG=${MASTER_KUBECONFIG} helm upgrade --install kkp-argo-apps --set kkpVersion=${KKP_VERSION} -f ./${ENV}/demo-master/argoapps-values.yaml dharapvj/argocd-apps
 
   if [[ ${SEED} != false ]]; then
     KUBECONFIG=${SEED_KUBECONFIG} helm upgrade --install argocd --version ${ARGO_VERSION} --namespace argocd --create-namespace argo/argo-cd -f values-argocd.yaml --set "server.ingress.hosts[0]=argocd.india.${CLUSTER_PREFIX}.lab.kubermatic.io" --set "server.ingress.tls[0].hosts[0]=argocd.india.${CLUSTER_PREFIX}.lab.kubermatic.io"
@@ -200,7 +199,7 @@ deployArgoApps() {
   fi
 }
 # download kkp release and run kkp installer
-installKKP(){
+installKKP() {
   echodate installing KKP on master seed.
   if [ ! -d "${INSTALL_DIR}" ]; then
     echodate "$INSTALL_DIR does not exist. Downloading KKP release"
@@ -216,23 +215,23 @@ installKKP(){
   aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
   # ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
   # ls -ltr ${MASTER_KUBECONFIG}
-	KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
-	  --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
-	  --skip-charts='cert-manager,nginx-ingress-controller,dex'
+  KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
+    --charts-directory ${INSTALL_DIR}/charts --config ./${ENV}/demo-master/k8cConfig2.yaml --helm-values ./${ENV}/demo-master/values.yaml \
+    --skip-charts='cert-manager,nginx-ingress-controller,dex'
   # set +x
 }
 
-# generate kubeconfig secret and make a git commit programatically and push tag
+# generate kubeconfig secret and make a git commit programmatically and push tag
 generateNPushSeedKubeConfig() {
   echodate generating and pushing latest Seed Kubeconfig secrets.
-	local kubeconfig_b64=$(${INSTALL_DIR}/kubermatic-installer convert-kubeconfig ./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeconfig | base64 -w0)
+  local kubeconfig_b64=$(${INSTALL_DIR}/kubermatic-installer convert-kubeconfig ./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeconfig | base64 -w0)
   # echodate $kubeconfig_b64
-	sed -i "/kubeconfig: /s/: .*/: `echo $kubeconfig_b64`/" ${ENV}/demo-master/seed-kubeconfig-secret-self.yaml
+  sed -i "/kubeconfig: /s/: .*/: $(echo $kubeconfig_b64)/" ${ENV}/demo-master/seed-kubeconfig-secret-self.yaml
   # reset
   kubeconfig_b64=""
   if [[ ${SEED} != false ]]; then
     kubeconfig_b64=$(${INSTALL_DIR}/kubermatic-installer convert-kubeconfig ./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig | base64 -w0)
-    sed -i "/kubeconfig: /s/: .*/: `echo $kubeconfig_b64`/" ${ENV}/demo-master/seed-kubeconfig-secret-india.yaml
+    sed -i "/kubeconfig: /s/: .*/: $(echo $kubeconfig_b64)/" ${ENV}/demo-master/seed-kubeconfig-secret-india.yaml
   fi
   # automated git commit and push tag
   git config --global user.email "ci@kubermatic.com"
@@ -241,7 +240,7 @@ generateNPushSeedKubeConfig() {
   git commit -m "Adding latest seed kubeconfigs so that Seed resources will reconcile correctly" || echodate "ignore commit failure, proceed"
   git push origin main
   git tag -f ${ENV}-kkp-${KKP_VERSION}
-	git push origin -f ${ENV}-kkp-${KKP_VERSION}
+  git push origin -f ${ENV}-kkp-${KKP_VERSION}
 }
 # TODO: validate installation? Create user clusters, access MLA links etc.
 # more the merrier
@@ -279,12 +278,12 @@ validateDemoInstallation() {
 cleanup() {
   echodate cleanup all the cluster resources.
   # first destroy master so that kubermatic-operator is gone otherwise it tries to recreate seed node-port-proxy LB
-	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
-	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
-	KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
+  KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete app -n argocd nginx-ingress-controller || true
+  KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n nginx-ingress-controller nginx-ingress-controller || true
+  KUBECONFIG=${MASTER_KUBECONFIG} kubectl delete svc -n kubermatic nodeport-proxy || true
   cd kubeone-install/${MASTER}
-	../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t ./tf.json -m kubeone.yaml --auto-approve
-	tofu init && tofu destroy -auto-approve
+  ../../../${KUBEONE_INSTALL_DIR}/kubeone reset -t ./tf.json -m kubeone.yaml --auto-approve
+  tofu init && tofu destroy -auto-approve
   cd ../..
 
   if [[ ${SEED} != false ]]; then
