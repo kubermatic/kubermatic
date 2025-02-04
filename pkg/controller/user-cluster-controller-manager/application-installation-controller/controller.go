@@ -18,6 +18,7 @@ package applicationinstallationcontroller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -27,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -147,6 +149,14 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 
 	if err := kuberneteshelper.TryAddFinalizer(ctx, r.userClient, appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
+	}
+
+	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
+	if err != nil {
+		return fmt.Errorf("failed to check if nodes are available: %w", err)
+	}
+	if !nodesAvailable {
+		return errors.New("waiting for nodes to be joined to be able to schedule workloads")
 	}
 
 	appHasBeenInstalled := appInstallation.Status.ApplicationVersion != nil
