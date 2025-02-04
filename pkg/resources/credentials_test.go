@@ -177,7 +177,7 @@ func TestGetVsphereCredentials(t *testing.T) {
 			name:    "valid spec with values - auth with infraManagementUser",
 			spec:    &kubermaticv1.VSphereCloudSpec{Username: "user", Password: "pass", InfraManagementUser: kubermaticv1.VSphereCredentials{Username: "infraUser", Password: "infraPass"}},
 			mock:    test.ShouldNotBeCalled,
-			want:    VSphereCredentials{Username: "infraUser", Password: "infraPass"},
+			want:    VSphereCredentials{Username: "user", Password: "pass"},
 			wantErr: false,
 		},
 		{
@@ -209,7 +209,7 @@ func TestGetVsphereCredentials(t *testing.T) {
 				},
 			},
 			mock:    test.DefaultOrOverride(map[string]interface{}{VsphereUsername: "user", VspherePassword: "pass", VsphereInfraManagementUserUsername: "infraUser", VsphereInfraManagementUserPassword: "infraPass"}),
-			want:    VSphereCredentials{Username: "infraUser", Password: "infraPass"},
+			want:    VSphereCredentials{Username: "user", Password: "pass"},
 			wantErr: false,
 		},
 	}
