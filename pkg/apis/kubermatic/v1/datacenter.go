@@ -895,6 +895,13 @@ type KubeVirtInfraStorageClass struct {
 	// Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
 	// to span multiple regions
 	Regions []string `json:"regions,omitempty"`
+	// VolumeProvisioner The **Provider** field specifies whether a storage class will be utilized by the Containerized
+	// Data Importer (CDI) to create VM disk images and/or by the KubeVirt CSI Driver to provision volumes in the
+	// infrastructure cluster. If no storage class in the seed object has this value set, the storage class will be used
+	// for both purposes: CDI will create VM disk images, and the CSI driver will provision and attach volumes in the user
+	// cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
+	// image creation.
+	VolumeProvisioner KubeVirtVolumeProvisioner `json:"volumeProvisioner,omitempty"`
 }
 
 // CustomNetworkPolicy contains a name and the Spec of a NetworkPolicy.
@@ -912,6 +919,15 @@ var (
 		providerconfig.OperatingSystemFlatcar:    nil,
 		providerconfig.OperatingSystemRockyLinux: nil,
 	}
+)
+
+// KubeVirtVolumeProvisioner represents what is the provisioner of the storage class volume, whether it will be the csi driver
+// and/or CDI for disk images.
+type KubeVirtVolumeProvisioner string
+
+const (
+	// KubeVirtCSIDriver indicates that the volume of a storage class will be provisioned by the KubeVirt CSI driver.
+	KubeVirtCSIDriver KubeVirtVolumeProvisioner = "kubevirt-csi-driver"
 )
 
 // KubeVirtImageSources represents KubeVirt image sources.
