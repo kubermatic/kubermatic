@@ -18,7 +18,6 @@ package applicationinstallationcontroller
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -156,7 +155,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		return fmt.Errorf("failed to check if nodes are available: %w", err)
 	}
 	if !nodesAvailable {
-		return errors.New("waiting for nodes to be joined to be able to schedule workloads")
+		r.log.Debug("waiting for nodes to be joined to be able to schedule workloads")
+		return nil
 	}
 
 	appHasBeenInstalled := appInstallation.Status.ApplicationVersion != nil
