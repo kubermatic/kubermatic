@@ -411,7 +411,23 @@ func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimecli
 
 func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
 	spec := cluster.Spec.Cloud.VSphere
+	// for existing clusters we need to fetch existing credential data to set infra user and password if empty
+	// this is caused by a bug fix related to credential separation
+	// see https://github.com/kubermatic/kubermatic/issues/13534 and https://github.com/kubermatic/kubermatic/issues/13995
+	// for further information
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
 
+	if val, _ := secretKeySelector(spec.CredentialsReference, resources.VsphereInfraManagementUserUsername); val == "" {
+		if val, _ := secretKeySelector(spec.CredentialsReference, resources.VsphereUsername); val != "" {
+			spec.Username = val
+		}
+	}
+
+	if val, _ := secretKeySelector(spec.CredentialsReference, resources.VsphereInfraManagementUserPassword); val == "" {
+		if val, _ := secretKeySelector(spec.CredentialsReference, resources.VspherePassword); val != "" {
+			spec.Password = val
+		}
+	}
 	// already migrated
 	if spec.Username == "" && spec.Password == "" && spec.InfraManagementUser.Username == "" && spec.InfraManagementUser.Password == "" {
 		return false, nil
@@ -419,22 +435,22 @@ func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 
 	// if credentials for infrastructure management are set explicit we need to overwrite username and password with these
 	// to mount them properly to machine-controller and osm
-	vsphereUser := spec.Username
+	vsphereInfraUser := spec.Username
 	if spec.InfraManagementUser.Username != "" {
-		vsphereUser = spec.InfraManagementUser.Username
+		vsphereInfraUser = spec.InfraManagementUser.Username
 	}
 
-	vspherePassword := spec.Password
+	vsphereInfraPassword := spec.Password
 	if spec.InfraManagementUser.Password != "" {
-		vspherePassword = spec.InfraManagementUser.Password
+		vsphereInfraPassword = spec.InfraManagementUser.Password
 	}
 
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.VsphereUsername:                    []byte(vsphereUser),
-		resources.VspherePassword:                    []byte(vspherePassword),
-		resources.VsphereInfraManagementUserUsername: []byte(spec.InfraManagementUser.Username),
-		resources.VsphereInfraManagementUserPassword: []byte(spec.InfraManagementUser.Password),
+		resources.VsphereUsername:                    []byte(spec.Username),
+		resources.VspherePassword:                    []byte(spec.Password),
+		resources.VsphereInfraManagementUserUsername: []byte(vsphereInfraUser),
+		resources.VsphereInfraManagementUserPassword: []byte(vsphereInfraPassword),
 	})
 	if err != nil {
 		return false, err

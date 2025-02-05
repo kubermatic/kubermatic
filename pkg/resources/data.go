@@ -802,8 +802,8 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereInfraManagementUserUsername)})
+		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VsphereInfraManagementUserPassword)})
 	}
 	if cluster.Spec.Cloud.Baremetal != nil {
 		if cluster.Spec.Cloud.Baremetal.Tinkerbell != nil {
