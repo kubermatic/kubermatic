@@ -54,7 +54,6 @@ const (
 func TestController(t *testing.T) {
 	applicationInstallerRecorder := fake.ApplicationInstallerRecorder{}
 	ctx, client := startTestEnvWithCleanup(t, &applicationInstallerRecorder)
-	_ = createNode(t, ctx, client)
 
 	tests := []struct {
 		name     string
@@ -66,6 +65,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-1"
 				appInstallName := "app-1"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
@@ -88,6 +88,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-2"
 				appInstallName := "app-2"
 
+				_ = createNode(t, ctx, client)
 				createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, "app-def-not-exist", "1.0.0")
 
@@ -110,6 +111,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-3"
 				appInstallName := "app-3"
 
+				_ = createNode(t, ctx, client)
 				createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0-not-exist")
 
@@ -132,6 +134,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-5"
 				appInstallName := "app-5"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
@@ -158,6 +161,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-4"
 				appInstallName := "app-4"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
@@ -197,9 +201,10 @@ func TestController(t *testing.T) {
 		{
 			name: "when app is updated, it should update app and update application.Status with new applicationVersion",
 			testFunc: func(t *testing.T) {
-				appDefName := "app-def-5"
-				appInstallName := "app-5"
+				appDefName := "app-def-6"
+				appInstallName := "app-6"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
@@ -233,6 +238,26 @@ func TestController(t *testing.T) {
 
 				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, app.Name, def.Spec.Versions[1])
 				expectStatusHasConditions(t, ctx, client, app.Name)
+			},
+		},
+		{
+			name: "when no node object is available no application event should be stored and therefore no helm release should be installed",
+			testFunc: func(t *testing.T) {
+				appDefName := "app-def-7"
+				appInstallName := "app-7"
+
+				_ = createApplicationDef(t, ctx, client, appDefName)
+				_ = createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
+
+				reason, found := applicationInstallerRecorder.DownloadEvents.Load(appInstallName)
+				if found {
+					t.Fatalf("found app download events but didn't expect one. %v", reason)
+				}
+
+				reason, found = applicationInstallerRecorder.ApplyEvents.Load(appInstallName)
+				if found {
+					t.Fatalf("found app apply events but didn't expect one. %v", reason)
+				}
 			},
 		},
 	}
@@ -342,7 +367,7 @@ func createApplicationInstallation(t *testing.T, ctx context.Context, client ctr
 func createNode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) corev1.Node {
 	// Create node.
 	if err := client.Create(ctx, genNode("application-test-node")); err != nil {
-		t.Fatalf("failed to create applicationInstallation: %s", err)
+		t.Fatalf("failed to create node: %s", err)
 	}
 
 	// Wait for node to be created.
@@ -352,6 +377,13 @@ func createNode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Clie
 	}) {
 		t.Fatal("failed to get node")
 	}
+
+	t.Cleanup(func() {
+		if err := client.Delete(ctx, &node); err != nil {
+			t.Fatalf("failed to cleanup test node: %v", err)
+		}
+	})
+
 	return node
 }
 
