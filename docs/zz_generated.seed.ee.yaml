@@ -215,6 +215,12 @@ spec:
               # Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
               # to span multiple regions
               regions: null
+              # VolumeProvisioner indicates whether this storage class will be used by the Containerized Data Importer to create the
+              # VM disk image and/or will be used by the KubeVirt CSI Driver to create volumes in the infra cluster. If this value
+              # isn't set for any storage class in the seed object, that storage class will be used by both, CDI to create disk
+              # images for the VMs or the CSI driver to create and attach volumes. If the value is set to csi-storage-target, the
+              # storage class cannot be used as a vm disk image by CDI.
+              volumeProvisioner: ""
               # VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
               # VolumeBindingImmediate is used.
               volumeBindingMode: null
