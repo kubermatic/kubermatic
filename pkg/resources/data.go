@@ -801,9 +801,20 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", ValueFrom: refTo(DigitaloceanToken)})
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(data.ctx, data.client)
+		spec := cluster.Spec.Cloud.VSphere
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereInfraManagementUserUsername)})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VsphereInfraManagementUserPassword)})
+		if val, _ := secretKeySelector(spec.CredentialsReference, VsphereInfraManagementUserUsername); val != "" {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereInfraManagementUserUsername)})
+		} else {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
+		}
+
+		if val, _ := secretKeySelector(spec.CredentialsReference, VsphereInfraManagementUserPassword); val != "" {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VsphereInfraManagementUserPassword)})
+		} else {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
+		}
 	}
 	if cluster.Spec.Cloud.Baremetal != nil {
 		if cluster.Spec.Cloud.Baremetal.Tinkerbell != nil {
