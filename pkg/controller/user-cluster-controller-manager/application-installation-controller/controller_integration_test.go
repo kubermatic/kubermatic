@@ -54,6 +54,7 @@ const (
 func TestController(t *testing.T) {
 	applicationInstallerRecorder := fake.ApplicationInstallerRecorder{}
 	ctx, client := startTestEnvWithCleanup(t, &applicationInstallerRecorder)
+	_ = createNode(t, ctx, client)
 
 	tests := []struct {
 		name     string
@@ -333,9 +334,25 @@ func createApplicationInstallation(t *testing.T, ctx context.Context, client ctr
 	if !utils.WaitFor(ctx, interval, 3*time.Second, func() bool {
 		return client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app) == nil
 	}) {
-		t.Fatal("failed to create get applicationInstallation")
+		t.Fatal("failed to get applicationInstallation")
 	}
 	return app
+}
+
+func createNode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) corev1.Node {
+	// Create node.
+	if err := client.Create(ctx, genNode("application-test-node")); err != nil {
+		t.Fatalf("failed to create applicationInstallation: %s", err)
+	}
+
+	// Wait for node to be created.
+	node := corev1.Node{}
+	if !utils.WaitFor(ctx, interval, 3*time.Second, func() bool {
+		return client.Get(ctx, types.NamespacedName{Name: "application-test-node"}, &node) == nil
+	}) {
+		t.Fatal("failed to get node")
+	}
+	return node
 }
 
 func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.ApplicationInstallerRecorder) (context.Context, ctrlruntimeclient.Client) {
