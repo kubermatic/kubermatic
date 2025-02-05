@@ -329,7 +329,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.19",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -392,7 +392,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.19",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: false,
@@ -424,7 +424,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "cilium",
-					Version: "v1.11",
+					Version: "1.16.6",
 				},
 			}.Build(),
 			wantAllowed: false,
@@ -456,7 +456,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "cilium",
-					Version: "v1.11",
+					Version: "1.16.6",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -489,7 +489,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.22",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: true,
