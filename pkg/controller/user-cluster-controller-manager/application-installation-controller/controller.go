@@ -64,7 +64,7 @@ const (
 	maxRetries = 5
 
 	// initialRequeueDuration is the time interval which is used until a node object to schedule workloads is registered in the cluster.
-	initialRequeueDuration = 15 * time.Second
+	initialRequeueDuration = 10 * time.Second
 )
 
 type reconciler struct {
@@ -121,6 +121,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check if nodes are available: %w", err)
+	}
+	if !nodesAvailable {
+		r.log.Debug("waiting for nodes to join the cluster to be able to install applications")
+		return reconcile.Result{RequeueAfter: initialRequeueDuration}, nil
+	}
+
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
 
 	if err := r.userClient.Get(ctx, request.NamespacedName, appInstallation); err != nil {
@@ -129,15 +138,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get applicationInstallation: %w", err)
-	}
-
-	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to check if nodes are available: %w", err)
-	}
-	if !nodesAvailable {
-		r.log.Debug("waiting for nodes to be joined to be able to schedule workloads")
-		return reconcile.Result{RequeueAfter: initialRequeueDuration}, nil
 	}
 
 	err = r.reconcile(ctx, log, appInstallation)
