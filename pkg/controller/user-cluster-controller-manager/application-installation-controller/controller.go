@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -61,6 +62,9 @@ const (
 
 	// maxRetries is the maximum number of retries on installation or upgrade failure.
 	maxRetries = 5
+
+	// initialRequeueDuration is the time interval which is used until a node object to schedule workloads is registered in the cluster.
+	initialRequeueDuration = 15 * time.Second
 )
 
 type reconciler struct {
@@ -127,6 +131,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get applicationInstallation: %w", err)
 	}
 
+	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check if nodes are available: %w", err)
+	}
+	if !nodesAvailable {
+		r.log.Debug("waiting for nodes to be joined to be able to schedule workloads")
+		return reconcile.Result{RequeueAfter: initialRequeueDuration}, nil
+	}
+
 	err = r.reconcile(ctx, log, appInstallation)
 	if err != nil {
 		r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, applicationInstallationReconcileFailedEvent, err.Error())
@@ -148,15 +161,6 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 
 	if err := kuberneteshelper.TryAddFinalizer(ctx, r.userClient, appInstallation, appskubermaticv1.ApplicationInstallationCleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
-	}
-
-	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
-	if err != nil {
-		return fmt.Errorf("failed to check if nodes are available: %w", err)
-	}
-	if !nodesAvailable {
-		r.log.Debug("waiting for nodes to be joined to be able to schedule workloads")
-		return nil
 	}
 
 	appHasBeenInstalled := appInstallation.Status.ApplicationVersion != nil
