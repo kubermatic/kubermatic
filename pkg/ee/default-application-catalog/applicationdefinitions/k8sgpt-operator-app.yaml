@@ -21,26 +21,19 @@
 apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
-  name: k8sgpt
+  name: k8sgpt-operator
 spec:
-  description: (Deprecated in favor of k8sgpt-operator application and will be removed in future KKP release) K8sGPT is a tool for scanning your Kubernetes clusters, diagnosing and triaging issues in simple English.
-  displayName: K8sGPT
+  description: K8sGPT Operator is designed to enable K8sGPT within a Kubernetes cluster. It will allow you to create a custom resource that defines the behaviour and scope of a managed K8sGPT workload.
+  displayName: K8sGPT Operator
   method: helm
   versions:
     - template:
         source:
           helm:
             chartName: k8sgpt-operator
-            chartVersion: 0.1.0
+            chartVersion: 0.2.6
             url: https://charts.k8sgpt.ai/
-      version: v0.3.26
-    - template:
-        source:
-          helm:
-            chartName: k8sgpt-operator
-            chartVersion: 0.1.0
-            url: https://charts.k8sgpt.ai/
-      version: v0.3.48
+      version: 0.0.26
   defaultValuesBlock: |
     serviceMonitor:
       enabled: false
@@ -57,8 +50,8 @@ spec:
       label:
         key: grafana_dashboard
         value: "1"
-  documentationURL: https://docs.k8sgpt.ai/
-  sourceURL: https://github.com/k8sgpt-ai/k8sgpt
+  documentationURL: https://docs.k8sgpt.ai/getting-started/in-cluster-operator/
+  sourceURL: https://github.com/k8sgpt-ai/k8sgpt-operator
   logo: |+
     iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACx
     jwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAABVuSURBVGhD5Vr5b1zXdf7e/maf4XBfREkWSUmU
