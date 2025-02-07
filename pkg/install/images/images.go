@@ -627,7 +627,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.MetricsServerKubeconfigSecretName,
 		resources.MachineControllerWebhookServingCertSecretName,
 		resources.InternalUserClusterAdminKubeconfigSecretName,
-		resources.ClusterAutoscalerKubeconfigSecretName,
 		resources.KubernetesDashboardKubeconfigSecretName,
 		metricsserver.ServingCertSecretName,
 		resources.UserSSHKeys,
