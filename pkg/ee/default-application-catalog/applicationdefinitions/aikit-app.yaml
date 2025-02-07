@@ -30,8 +30,8 @@ spec:
     - template:
         source:
           helm:
-            chartName: aikit/aikit
-            chartVersion: 0.1.0
+            chartName: aikit
+            chartVersion: 0.16.0
             url: https://sozercan.github.io/aikit/charts
       version: v0.16.0
   defaultValuesBlock: |
@@ -186,4 +186,3 @@ spec:
     ACV0RVh0ZGF0ZTptb2RpZnkAMjAyNS0wMS0zMFQwODozODoxMSswMTowMLBna4UAAAAASUVORK5C
     YII=
   logoFormat: png
-    
