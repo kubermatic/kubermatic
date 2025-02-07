@@ -2323,7 +2323,7 @@ spec:
                       format: int32
                       type: integer
                     applications:
-                      description: Applications contains configuration for default Application settings. This is an ee-only feature.
+                      description: Applications contains configuration for default Application settings.
                       properties:
                         namespace:
                           description: |-
