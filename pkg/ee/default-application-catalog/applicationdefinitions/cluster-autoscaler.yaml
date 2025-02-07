@@ -57,10 +57,9 @@ spec:
         automountServiceAccountToken: true
     extraObjects:
     - apiVersion: rbac.authorization.k8s.io/v1
-      kind: Role
+      kind: ClusterRole
       metadata:
         name: cluster-autoscaler-management
-        namespace: kube-system
       rules:
       - apiGroups:
         - cluster.k8s.io
@@ -75,15 +74,13 @@ spec:
         - update
         - watch
     - apiVersion: rbac.authorization.k8s.io/v1
-      kind: RoleBinding
+      kind: ClusterRoleBinding
       metadata:
         name: cluster-autoscaler-clusterapi-cluser-autoscaler
-        namespace: kube-system
       roleRef:
         apiGroup: rbac.authorization.k8s.io
-        kind: Role
+        kind: ClusterRole
         name: cluster-autoscaler-management
-        namespace: kube-system
       subjects:
       - kind: ServiceAccount
         name: cluster-autoscaler-clusterapi-cluster-autoscaler
