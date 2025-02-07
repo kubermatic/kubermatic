@@ -389,6 +389,14 @@ func genApplicationInstallation(name string, appNamespace *appskubermaticv1.AppN
 	}
 }
 
+func genNode(name string) *corev1.Node {
+	return &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+	}
+}
+
 func TestHasLimitedRetries(t *testing.T) {
 	tests := []struct {
 		name                 string

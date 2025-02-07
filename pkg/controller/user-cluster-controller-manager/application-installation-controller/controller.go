@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -27,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -60,6 +62,9 @@ const (
 
 	// maxRetries is the maximum number of retries on installation or upgrade failure.
 	maxRetries = 5
+
+	// initialRequeueDuration is the time interval which is used until a node object to schedule workloads is registered in the cluster.
+	initialRequeueDuration = 10 * time.Second
 )
 
 type reconciler struct {
@@ -114,6 +119,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 	if paused {
 		return reconcile.Result{}, nil
+	}
+
+	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check if nodes are available: %w", err)
+	}
+	if !nodesAvailable {
+		r.log.Debug("waiting for nodes to join the cluster to be able to install applications")
+		return reconcile.Result{RequeueAfter: initialRequeueDuration}, nil
 	}
 
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
