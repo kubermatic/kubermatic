@@ -26,8 +26,8 @@ const (
 	// PolicyTemplateResourceName represents "Resource" defined in Kubernetes.
 	PolicyTemplateResourceName = "policytemplates"
 
-	// PolicyTemplateKind represents "Kind" defined in Kubernetes.
-	PolicyTemplateKind = "PolicyTemplate"
+	// PolicyTemplateKindName represents "Kind" defined in Kubernetes.
+	PolicyTemplateKindName = "PolicyTemplate"
 )
 
 const (
@@ -38,7 +38,6 @@ const (
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".spec.enforced",description="Whether the policy is mandatory"
 
 // PolicyTemplate defines a reusable blueprint of a Kyverno policy.
 type PolicyTemplate struct {
@@ -48,6 +47,7 @@ type PolicyTemplate struct {
 	Spec PolicyTemplateSpec `json:"spec,omitempty"`
 }
 
+// PolicyTemplateSpec defines the desired state of a PolicyTemplate.
 type PolicyTemplateSpec struct {
 	// Title is the title of the policy, specified as an annotation in the Kyverno policy
 	Title string `json:"title"`
@@ -82,8 +82,8 @@ type PolicyTemplateSpec struct {
 	// +optional
 	Default bool `json:"default,omitempty"`
 
-	// KyvernoSpec is the Kyverno specification
-	kyvernov1.Spec `json:",inline"`
+	// KyvernoPolicySpec is the Kyverno specification
+	KyvernoPolicySpec kyvernov1.Spec `json:"kyvernoPolicySpec"`
 }
 
 // +kubebuilder:object:generate=true
