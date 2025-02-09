@@ -129,8 +129,7 @@ func generatePolicyTemplate(name string, deleted bool) *kubermaticv1.PolicyTempl
 			Title:       "test policy template",
 			Description: "test policy template description",
 			Visibility:  "project",
-			Enforced:    true,
-			Spec: kyvernov1.Spec{
+			KyvernoPolicySpec: kyvernov1.Spec{
 				Rules: []kyvernov1.Rule{
 					{
 						Name: "test-rule",
