@@ -554,6 +554,80 @@ func ReconcileKubermaticConfigurations(ctx context.Context, namedFactories []Nam
 	return nil
 }
 
+// PolicyBindingReconciler defines an interface to create/update PolicyBindings.
+type PolicyBindingReconciler = func(existing *kubermaticv1.PolicyBinding) (*kubermaticv1.PolicyBinding, error)
+
+// NamedPolicyBindingReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedPolicyBindingReconcilerFactory = func() (name string, reconciler PolicyBindingReconciler)
+
+// PolicyBindingObjectWrapper adds a wrapper so the PolicyBindingReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func PolicyBindingObjectWrapper(reconciler PolicyBindingReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*kubermaticv1.PolicyBinding))
+		}
+		return reconciler(&kubermaticv1.PolicyBinding{})
+	}
+}
+
+// ReconcilePolicyBindings will create and update the PolicyBindings coming from the passed PolicyBindingReconciler slice.
+func ReconcilePolicyBindings(ctx context.Context, namedFactories []NamedPolicyBindingReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := PolicyBindingObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.PolicyBinding{}, false); err != nil {
+			return fmt.Errorf("failed to ensure PolicyBinding %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// PolicyTemplateReconciler defines an interface to create/update PolicyTemplates.
+type PolicyTemplateReconciler = func(existing *kubermaticv1.PolicyTemplate) (*kubermaticv1.PolicyTemplate, error)
+
+// NamedPolicyTemplateReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedPolicyTemplateReconcilerFactory = func() (name string, reconciler PolicyTemplateReconciler)
+
+// PolicyTemplateObjectWrapper adds a wrapper so the PolicyTemplateReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func PolicyTemplateObjectWrapper(reconciler PolicyTemplateReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*kubermaticv1.PolicyTemplate))
+		}
+		return reconciler(&kubermaticv1.PolicyTemplate{})
+	}
+}
+
+// ReconcilePolicyTemplates will create and update the PolicyTemplates coming from the passed PolicyTemplateReconciler slice.
+func ReconcilePolicyTemplates(ctx context.Context, namedFactories []NamedPolicyTemplateReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := PolicyTemplateObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kubermaticv1.PolicyTemplate{}, false); err != nil {
+			return fmt.Errorf("failed to ensure PolicyTemplate %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // PresetReconciler defines an interface to create/update Presets.
 type PresetReconciler = func(existing *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 

@@ -34,6 +34,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/pod-security-admission/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -126,8 +127,8 @@ func generatePolicyTemplate(name string, deleted bool) *kubermaticv1.PolicyTempl
 		},
 		Spec: kubermaticv1.PolicyTemplateSpec{
 			Title:       "test policy template",
-			Description: "test policy template",
-			Visibility:  "cluster",
+			Description: "test policy template description",
+			Visibility:  "project",
 			Enforced:    true,
 			Spec: kyvernov1.Spec{
 				Rules: []kyvernov1.Rule{
@@ -137,13 +138,17 @@ func generatePolicyTemplate(name string, deleted bool) *kubermaticv1.PolicyTempl
 							Any: []kyvernov1.ResourceFilter{
 								{
 									ResourceDescription: kyvernov1.ResourceDescription{
-										Kinds: []string{"Pod"},
+										Kinds: []string{"v1/Pod"},
 									},
 								},
 							},
 						},
 						Validation: &kyvernov1.Validation{
 							Message: "test message",
+							PodSecurity: &kyvernov1.PodSecurity{
+								Level:   api.LevelBaseline,
+								Version: "latest",
+							},
 						},
 					},
 				},

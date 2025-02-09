@@ -30,6 +30,11 @@ const (
 	PolicyTemplateKind = "PolicyTemplate"
 )
 
+const (
+	// PolicyTemplateSeedCleanupFinalizer indicates that synced policy template on seed clusters need cleanup.
+	PolicyTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-policy-template"
+)
+
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -76,12 +81,6 @@ type PolicyTemplateSpec struct {
 	//
 	// +optional
 	Default bool `json:"default,omitempty"`
-
-	// Enforced indicates whether this policy is mandatory
-	//
-	// If true, this policy is mandatory
-	// A PolicyBinding referencing it cannot disable it
-	Enforced bool `json:"enforced"`
 
 	// KyvernoSpec is the Kyverno specification
 	kyvernov1.Spec `json:",inline"`

@@ -82,13 +82,6 @@ spec:
                     EmitWarning enables API response warnings for mutate policy rules or validate policy rules with validationFailureAction set to Audit.
                     Enabling this option will extend admission request processing times. The default value is "false".
                   type: boolean
-                enforced:
-                  description: |-
-                    Enforced indicates whether this policy is mandatory
-
-                    If true, this policy is mandatory
-                    A PolicyBinding referencing it cannot disable it
-                  type: boolean
                 failurePolicy:
                   description: Deprecated, use failurePolicy under the webhookConfiguration instead.
                   enum:
@@ -4645,7 +4638,6 @@ spec:
                   type: integer
               required:
                 - description
-                - enforced
                 - title
                 - visibility
               type: object
