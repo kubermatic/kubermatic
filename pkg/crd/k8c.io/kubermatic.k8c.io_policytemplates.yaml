@@ -50,7 +50,9 @@ spec:
                   description: Description is the description of the policy, specified as an annotation in the Kyverno policy
                   type: string
                 kyvernoPolicySpec:
-                  description: KyvernoPolicySpec is the Kyverno specification
+                  description: |-
+                    KyvernoPolicySpec is the Kyverno specification
+                    This field is immutable.
                   properties:
                     admission:
                       default: true
@@ -4614,6 +4616,9 @@ spec:
                       format: int32
                       type: integer
                   type: object
+                  x-kubernetes-validations:
+                    - message: Value is immutable
+                      rule: self == oldSelf
                 projectID:
                   description: |-
                     ProjectID is the ID of the project for which the policy template is created

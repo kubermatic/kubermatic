@@ -91,6 +91,10 @@ type PolicyTemplateSpec struct {
 	Default bool `json:"default,omitempty"`
 
 	// KyvernoPolicySpec is the Kyverno specification
+	// This field is immutable.
+	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
 	KyvernoPolicySpec kyvernov1.Spec `json:"kyvernoPolicySpec"`
 }
 
