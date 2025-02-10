@@ -125,8 +125,8 @@ validatePreReq() {
 
 function restoreSshKey() {
   echodate "Downloading SSH key pair from s3"
-  aws s3 cp s3://cluster-backup-e2e/kkp-argocd-test/ssh-keys/id_rsa ~/.ssh/id_rsa
-  aws s3 cp s3://cluster-backup-e2e/kkp-argocd-test/ssh-keys/id_rsa.pub ~/.ssh/id_rsa.pub
+  aws s3 cp s3://kubermatic-e2e-test-tf/kkp-argocd-test/ssh-keys/id_rsa ~/.ssh/id_rsa
+  aws s3 cp s3://kubermatic-e2e-test-tf/kkp-argocd-test/ssh-keys/id_rsa.pub ~/.ssh/id_rsa.pub
   chmod 400 ~/.ssh/id_rsa
   eval $(ssh-agent -s) && ssh-add ~/.ssh/id_rsa
 }
@@ -150,7 +150,7 @@ createSeedClusters() {
     exit 2
   fi
   cd ../..
-  aws s3 cp ${MASTER_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+  aws s3 cp ${MASTER_KUBECONFIG} s3://kubermatic-e2e-test-tf/kkp-argocd-test/kubeconfig/
 
   if [[ ${SEED} != false ]]; then
     cd kubeone-install/${SEED}
@@ -164,7 +164,7 @@ createSeedClusters() {
       exit 3
     fi
     cd ../..
-    aws s3 cp ${SEED_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+    aws s3 cp ${SEED_KUBECONFIG} s3://kubermatic-e2e-test-tf/kkp-argocd-test/kubeconfig/
   fi
 }
 
@@ -204,7 +204,7 @@ installKKP() {
   export DECODE=$(echo $IMAGE_PULL_SECRET_DATA | base64 -d)
   # set -x
   yq e '.spec.imagePullSecret = strenv(DECODE)' ./${ENV}/demo-master/k8cConfig.yaml > ./${ENV}/demo-master/k8cConfig2.yaml
-  aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
+  # aws s3 cp ./${ENV}/demo-master/k8cConfig2.yaml s3://kubermatic-e2e-test-tf/kkp-argocd-test/kubeconfig/
   # ls -ltr ./${ENV}/demo-master/k8cConfig2.yaml
   # ls -ltr ${MASTER_KUBECONFIG}
   KUBECONFIG=${MASTER_KUBECONFIG} ${INSTALL_DIR}/kubermatic-installer deploy \
