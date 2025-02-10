@@ -646,6 +646,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.VMwareCloudDirectorCSISecretName,
 		resources.KubeLBCCMKubeconfigSecretName,
 		resources.KubeLBManagerKubeconfigSecretName,
+		resources.FluentBitSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
@@ -678,8 +679,12 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	if enabled, exists := config.Spec.FeatureGates[kubermaticv1.ClusterFeatureEtcdLauncher]; exists && !enabled {
 		fakeCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = false
 	}
+	fakeCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
+		Enabled: true,
+	}
 
-	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
+	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil ||
+		fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil || fakeCluster.Spec.Cloud.Kubevirt != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
