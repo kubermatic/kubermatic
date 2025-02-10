@@ -343,7 +343,7 @@ spec:
       serviceAccountName: release-name-velero-server-upgrade-crds
       initContainers:
         - name: kubectl
-          image: "docker.io/bitnami/kubectl:1.31"
+          image: "docker.io/bitnami/kubectl:1.32"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh

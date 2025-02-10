@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-7
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -74,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-7
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -119,7 +119,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-7
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -147,7 +147,7 @@ presubmits:
               cpu: 3.5
             limits:
               memory: 6Gi
-  
+
   - name: pre-kubermatic-e2e-azure-ubuntu-1.32
     decorate: true
     run_if_changed: "(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
@@ -165,7 +165,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-7
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-8
           env:
             - name: KUBERMATIC_EDITION
               value: ee

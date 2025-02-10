@@ -44,7 +44,7 @@ const (
 
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
-	// We use it when clusters get exposed via a LoadBalancer, to allow re-using that LoadBalancer
+	// We use it when clusters get exposed via a LoadBalancer, to allow reusing that LoadBalancer
 	// for both the kube-apiserver and the openVPN server.
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 	DefaultExposeAnnotationKey                 = "nodeport-proxy.k8s.io/expose"
