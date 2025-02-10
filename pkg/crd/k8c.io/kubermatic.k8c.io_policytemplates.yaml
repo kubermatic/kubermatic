@@ -4630,11 +4630,10 @@ spec:
                   description: |-
                     Visibility specifies where the policy is visible.
 
-                    Can be one of: global, project, or cluster
+                    Can be one of: global, project
                   enum:
                     - global
                     - project
-                    - cluster
                   type: string
               required:
                 - description
