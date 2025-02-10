@@ -14,36 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This script sets up a local KKP installation in kind, deploys a
-### couple of test Presets and Users and then runs the IPAM e2e tests.
+### This script sets a multi-seed Kubermatic installation in AWS, deploys various applications on it via ArgoCD
+### and then runs validation e2e tests using chainsaw
 
 set -euo pipefail
 #set -x
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-# if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
-#   echodate "Getting default SSH pubkey for machines from Vault"
-#   retry 5 vault_ci_login
-#   E2E_SSH_PUBKEY="$(mktemp)"
-#   vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
-# else
-#   E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
-#   E2E_SSH_PUBKEY="$(mktemp)"
-#   echodate "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
-# fi
-
-# echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
-
 EXTRA_ARGS=""
-provider="${PROVIDER:-aws}"
+PROVIDER="${PROVIDER:-aws}"
 maxDuration=60 # in minutes
 
-if provider_disabled $provider; then
+if provider_disabled $PROVIDER; then
   exit 0
 fi
 
-if [[ $provider == "aws" ]]; then
+if [[ $PROVIDER == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}
     -aws-kkp-datacenter=aws-eu-west-1a"
@@ -72,7 +59,7 @@ MASTER_KUBECONFIG=./kubeone-install/${MASTER}/${CLUSTER_PREFIX}-${MASTER}-kubeco
 SEED_KUBECONFIG=./kubeone-install/${SEED}/${CLUSTER_PREFIX}-${SEED}-kubeconfig
 export AWS_ACCESS_KEY_ID=${AWS_E2E_TESTS_KEY_ID}
 export AWS_SECRET_ACCESS_KEY=${AWS_E2E_TESTS_SECRET}
-echodate "Path:" $PATH
+# echodate "Path:" $PATH
 
 # LOGIC
 # validate that we have kubeone, kubectl, helm, git, sed, chainsaw binaries available
@@ -153,8 +140,11 @@ checkoutTestRepo() {
 createSeedClusters() {
   echodate creating Seed Clusters
   # export TF_LOG=DEBUG
-  cd kubeone-install/${MASTER} && tofu init && tofu apply -auto-approve &&
-    tofu output -json > tf.json && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
+  cd kubeone-install/${MASTER}
+  tofu init
+  tofu apply -auto-approve
+  tofu output -json > tf.json
+  ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
   if [ $? -ne 0 ]; then
     echodate kubeone master cluster installation failed.
     exit 2
@@ -163,8 +153,11 @@ createSeedClusters() {
   aws s3 cp ${MASTER_KUBECONFIG} s3://cluster-backup-e2e/kkp-argocd-test/kubeconfig/
 
   if [[ ${SEED} != false ]]; then
-    cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve &&
-      tofu output -json > tf.json && ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
+    cd kubeone-install/${SEED}
+    tofu init
+    tofu apply -auto-approve
+    tofu output -json > tf.json
+    ../../../${KUBEONE_INSTALL_DIR}/kubeone apply -t ./tf.json -m kubeone.yaml --auto-approve
     # cd kubeone-install/${SEED} && tofu init && tofu apply -auto-approve
     if [ $? -ne 0 ]; then
       echodate kubeone seed cluster installation failed.
@@ -203,9 +196,8 @@ installKKP() {
   echodate installing KKP on master seed.
   if [ ! -d "${INSTALL_DIR}" ]; then
     echodate "$INSTALL_DIR does not exist. Downloading KKP release"
-    BIN_ARCH=linux-amd64
     mkdir -p ${INSTALL_DIR}/
-    curl -sL "https://github.com/kubermatic/kubermatic/releases/download/${KKP_VERSION}/kubermatic-ee-${KKP_VERSION}-${BIN_ARCH}.tar.gz" | tar -xz --directory ${INSTALL_DIR}/
+    curl -sL "https://github.com/kubermatic/kubermatic/releases/download/${KKP_VERSION}/kubermatic-ee-${KKP_VERSION}-linux-amd64.tar.gz" | tar -xz --directory ${INSTALL_DIR}/
   fi
 
   # replace imagepullsecret
