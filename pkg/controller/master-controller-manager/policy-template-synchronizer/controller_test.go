@@ -34,7 +34,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/pod-security-admission/api"
+	podsecurityapi "k8s.io/pod-security-admission/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -145,7 +145,7 @@ func generatePolicyTemplate(name string, deleted bool) *kubermaticv1.PolicyTempl
 						Validation: &kyvernov1.Validation{
 							Message: "test message",
 							PodSecurity: &kyvernov1.PodSecurity{
-								Level:   api.LevelBaseline,
+								Level:   podsecurityapi.LevelBaseline,
 								Version: "latest",
 							},
 						},

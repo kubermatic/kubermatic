@@ -53,6 +53,12 @@ func ValidatePolicyTemplate(ctx context.Context, client ctrlruntimeclient.Client
 		}
 	}
 
+	// Validate Rules are set and not empty
+	if len(template.Spec.KyvernoPolicySpec.Rules) == 0 {
+		allErrs = append(allErrs, field.Required(specPath.Child("kyvernoPolicySpec", "rules"),
+			"at least one rule must be specified in kyvernoPolicySpec.rules"))
+	}
+
 	return allErrs
 }
 

@@ -20,8 +20,10 @@ import (
 	"context"
 	"testing"
 
+	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
+	podsecurityapi "k8s.io/pod-security-admission/api"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -50,9 +52,10 @@ func TestValidatingWebhook(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Test Template",
-					Description: "Test Description",
-					Visibility:  "global",
+					Title:             "Test Template",
+					Description:       "Test Description",
+					Visibility:        "global",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			operation:   admissionv1.Create,
@@ -65,15 +68,33 @@ func TestValidatingWebhook(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Test Template",
-					Description: "Test Description",
-					Visibility:  "global",
-					ProjectID:   "test-project",
+					Title:             "Test Template",
+					Description:       "Test Description",
+					Visibility:        "global",
+					ProjectID:         "test-project",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			operation:   admissionv1.Create,
 			wantAllowed: false,
 			wantError:   "global visibility policy templates must not specify a ProjectID",
+		},
+		{
+			name: "invalid global template with no rules or empty kyvernoPolicySpec",
+			template: &kubermaticv1.PolicyTemplate{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-template",
+				},
+				Spec: kubermaticv1.PolicyTemplateSpec{
+					Title:             "Test Template",
+					Description:       "Test Description",
+					Visibility:        "global",
+					KyvernoPolicySpec: kyvernov1.Spec{},
+				},
+			},
+			operation:   admissionv1.Create,
+			wantAllowed: false,
+			wantError:   "at least one rule must be specified in kyvernoPolicySpec.rules",
 		},
 		{
 			name: "valid project template with project ID",
@@ -82,10 +103,11 @@ func TestValidatingWebhook(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Test Template",
-					Description: "Test Description",
-					Visibility:  "project",
-					ProjectID:   "test-project",
+					Title:             "Test Template",
+					Description:       "Test Description",
+					Visibility:        "project",
+					ProjectID:         "test-project",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			operation:   admissionv1.Create,
@@ -98,9 +120,10 @@ func TestValidatingWebhook(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Test Template",
-					Description: "Test Description",
-					Visibility:  "project",
+					Title:             "Test Template",
+					Description:       "Test Description",
+					Visibility:        "project",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			operation:   admissionv1.Create,
@@ -114,9 +137,10 @@ func TestValidatingWebhook(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Test Template",
-					Description: "Test Description",
-					Visibility:  "invalid",
+					Title:             "Test Template",
+					Description:       "Test Description",
+					Visibility:        "invalid",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			operation:   admissionv1.Create,
@@ -176,10 +200,11 @@ func TestValidatingWebhookUpdate(t *testing.T) {
 			Name: "test-template",
 		},
 		Spec: kubermaticv1.PolicyTemplateSpec{
-			Title:       "Test Template",
-			Description: "Test Description",
-			Visibility:  "project",
-			ProjectID:   "test-project",
+			Title:             "Test Template",
+			Description:       "Test Description",
+			Visibility:        "project",
+			ProjectID:         "test-project",
+			KyvernoPolicySpec: kyvernoPolicySpecTest(),
 		},
 	}
 
@@ -196,10 +221,11 @@ func TestValidatingWebhookUpdate(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Updated Title",
-					Description: "Updated Description",
-					Visibility:  "project",
-					ProjectID:   "test-project",
+					Title:             "Updated Title",
+					Description:       "Updated Description",
+					Visibility:        "project",
+					ProjectID:         "test-project",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			wantAllowed: true,
@@ -211,10 +237,11 @@ func TestValidatingWebhookUpdate(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Updated Title",
-					Description: "Updated Description",
-					Visibility:  "global",
-					ProjectID:   "test-project",
+					Title:             "Updated Title",
+					Description:       "Updated Description",
+					Visibility:        "global",
+					ProjectID:         "test-project",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			wantAllowed: false,
@@ -227,10 +254,11 @@ func TestValidatingWebhookUpdate(t *testing.T) {
 					Name: "test-template",
 				},
 				Spec: kubermaticv1.PolicyTemplateSpec{
-					Title:       "Updated Title",
-					Description: "Updated Description",
-					Visibility:  "project",
-					ProjectID:   "different-project",
+					Title:             "Updated Title",
+					Description:       "Updated Description",
+					Visibility:        "project",
+					ProjectID:         "different-project",
+					KyvernoPolicySpec: kyvernoPolicySpecTest(),
 				},
 			},
 			wantAllowed: false,
@@ -272,5 +300,31 @@ func TestValidatingWebhookUpdate(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func kyvernoPolicySpecTest() kyvernov1.Spec {
+	return kyvernov1.Spec{
+		Rules: []kyvernov1.Rule{
+			{
+				Name: "test-rule",
+				MatchResources: kyvernov1.MatchResources{
+					Any: []kyvernov1.ResourceFilter{
+						{
+							ResourceDescription: kyvernov1.ResourceDescription{
+								Kinds: []string{"v1/Pod"},
+							},
+						},
+					},
+				},
+				Validation: &kyvernov1.Validation{
+					Message: "test message",
+					PodSecurity: &kyvernov1.PodSecurity{
+						Level:   podsecurityapi.LevelBaseline,
+						Version: "latest",
+					},
+				},
+			},
+		},
 	}
 }
