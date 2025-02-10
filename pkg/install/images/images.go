@@ -204,7 +204,7 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 			// we only want to extract the addons folder and thus we skip
 			// everything else in the image archive.
 			if strings.HasPrefix(header.Name, "addons") {
-				if err = os.MkdirAll(path, 0755); err != nil {
+				if err = os.MkdirAll(path, 0o755); err != nil {
 					return err
 				}
 			}
@@ -283,7 +283,7 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 		return fmt.Errorf("failed to load manifest: %w", err)
 	}
 
-	var repositoryToRefToImage = make(map[string]map[name.Reference]remote.Taggable)
+	repositoryToRefToImage := make(map[string]map[name.Reference]remote.Taggable)
 	for _, descriptor := range indexManifest {
 		for _, tagStr := range descriptor.RepoTags {
 			repoTag, err := name.NewTag(tagStr)
