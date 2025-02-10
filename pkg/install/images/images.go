@@ -646,6 +646,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		resources.VMwareCloudDirectorCSISecretName,
 		resources.KubeLBCCMKubeconfigSecretName,
 		resources.KubeLBManagerKubeconfigSecretName,
+		resources.FluentBitSecretName,
 	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
