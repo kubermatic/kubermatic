@@ -44,6 +44,7 @@ import (
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	policieswebhook "k8c.io/kubermatic/v2/pkg/webhook/policies"
+	policybindingvalidation "k8c.io/kubermatic/v2/pkg/webhook/policybinding"
 	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
@@ -51,6 +52,7 @@ import (
 	usersshkeyvalidation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/validation"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 
+	policytemplate "k8c.io/kubermatic/v2/pkg/webhook/policytemplate"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
@@ -243,6 +245,22 @@ func main() {
 	// setup policies webhook
 
 	policieswebhook.NewAdmissionHandler(log, mgr.GetScheme()).SetupWebhookWithManager(mgr)
+
+	// /////////////////////////////////////////
+	// setup PolicyBinding webhook
+
+	policyBindingValidator := policybindingvalidation.NewValidator(log, mgr.GetClient(), mgr.GetScheme(), seedGetter, seedClientGetter)
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.PolicyBinding{}).WithValidator(policyBindingValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup PolicyBinding validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup PolicyTemplate webhook
+
+	policyTemplateValidator := policytemplate.NewValidator(log, mgr.GetClient(), mgr.GetScheme(), seedGetter, seedClientGetter)
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.PolicyTemplate{}).WithValidator(policyTemplateValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup PolicyTemplate validation webhook", zap.Error(err))
+	}
 
 	// /////////////////////////////////////////
 	// Here we go!
