@@ -98,6 +98,12 @@ const (
 	// the operator ignore them and not reconcile the seed components into
 	// the cluster. This should only be used during cluster migrations.
 	SkipReconcilingAnnotation = "kubermatic.k8c.io/skip-reconciling"
+
+	// PolicyBindingAdmissionWebhookName is the name of the validating webhook for PolicyBindings.
+	PolicyBindingAdmissionWebhookName = "policybinding-webhook"
+
+	// PolicyTemplateAdmissionWebhookName is the name of the validating webhook for PolicyTemplates.
+	PolicyTemplateAdmissionWebhookName = "policytemplate-webhook"
 )
 
 var (
