@@ -35,6 +35,14 @@ const (
 	PolicyTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-policy-template"
 )
 
+const (
+	// PolicyTemplateGlobalVisibility indicates that the policy is visible to all projects.
+	PolicyTemplateGlobalVisibility = "global"
+
+	// PolicyTemplateProjectVisibility indicates that the policy is visible to a specific project.
+	PolicyTemplateProjectVisibility = "project"
+)
+
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -67,8 +75,8 @@ type PolicyTemplateSpec struct {
 
 	// Visibility specifies where the policy is visible.
 	//
-	// Can be one of: global, project, or cluster
-	// +kubebuilder:validation:Enum=global;project;cluster
+	// Can be one of: global, project
+	// +kubebuilder:validation:Enum=global;project
 	Visibility string `json:"visibility"`
 
 	// ProjectID is the ID of the project for which the policy template is created

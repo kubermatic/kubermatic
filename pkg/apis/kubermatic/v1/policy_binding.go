@@ -71,13 +71,10 @@ type PolicyBindingSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
-	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
-
 	// Scope specifies the scope of the policy.
-	// Can be one of: global, project, or cluster
+	// Can be one of: global, project
 	//
-	// +kubebuilder:validation:Enum=global;project;cluster
+	// +kubebuilder:validation:Enum=global;project
 	Scope string `json:"scope"`
 
 	// Target specifies which clusters/projects to apply the policy to
