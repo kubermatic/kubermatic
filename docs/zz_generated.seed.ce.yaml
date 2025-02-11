@@ -119,6 +119,9 @@ spec:
         # Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
         # ignoring cluster-specific settings.
         enforcedAuditWebhookSettings: null
+        # External specifies that the cluster compute resources are managed completely by an external provider and KKP
+        # is only responsible for cluster control plane component.
+        external: {}
         # GCP configures a Google Cloud Platform (GCP) datacenter.
         gcp:
           # Region to use, for example "europe-west3", for a full list of regions see
