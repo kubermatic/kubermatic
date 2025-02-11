@@ -78,6 +78,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 )
 
@@ -358,7 +360,29 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 
 	log.Info("Copying image…")
 
-	return crane.Copy(image.Source, image.Destination, options...)
+	numTries := 0
+	backoff := wait.Backoff{
+		Steps:    10,
+		Duration: 500 * time.Millisecond,
+		Factor:   1.0,
+		Jitter:   0.1,
+	}
+
+	retriable := func(err error) bool {
+		numTries++
+		log.Info("Retrying…")
+
+		return numTries <= backoff.Steps
+	}
+
+	return retry.OnError(backoff, retriable, func() error {
+		err := crane.Copy(image.Source, image.Destination, options...)
+		if err != nil {
+			log.Error("Copying image:", err)
+		}
+
+		return err
+	})
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
