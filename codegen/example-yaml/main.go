@@ -167,6 +167,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						},
 						BringYourOwn:                   &kubermaticv1.DatacenterSpecBringYourOwn{},
 						Edge:                           &kubermaticv1.DatacenterSpecEdge{},
+						External:                       &kubermaticv1.DatacenterSpecExternal{},
 						RequiredEmails:                 []string{},
 						DefaultOperatingSystemProfiles: operatingSystemProfileList,
 						MachineFlavorFilter: &kubermaticv1.MachineFlavorFilter{

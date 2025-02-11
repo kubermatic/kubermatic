@@ -127,6 +127,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	if spec.Edge != nil {
 		clouds = append(clouds, kubermaticv1.EdgeCloudProvider)
 	}
+	if spec.External != nil {
+		clouds = append(clouds, kubermaticv1.ExternalCloudProvider)
+	}
 	if spec.Digitalocean != nil {
 		clouds = append(clouds, kubermaticv1.DigitaloceanCloudProvider)
 	}

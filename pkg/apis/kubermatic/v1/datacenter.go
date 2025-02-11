@@ -47,6 +47,7 @@ const (
 	BaremetalCloudProvider           ProviderType = "baremetal"
 	BringYourOwnCloudProvider        ProviderType = "bringyourown"
 	EdgeCloudProvider                ProviderType = "edge"
+	ExternalCloudProvider            ProviderType = "external"
 	DigitaloceanCloudProvider        ProviderType = "digitalocean"
 	EKSCloudProvider                 ProviderType = "eks"
 	GCPCloudProvider                 ProviderType = "gcp"
@@ -87,6 +88,7 @@ var (
 		PacketCloudProvider,
 		VMwareCloudDirectorCloudProvider,
 		VSphereCloudProvider,
+		EdgeCloudProvider,
 	}
 )
 
@@ -417,6 +419,9 @@ type DatacenterSpec struct {
 	// Edge contains settings for clusters using manually created
 	// nodes in edge envs.
 	Edge *DatacenterSpecEdge `json:"edge,omitempty"`
+	// External specifies that the cluster compute resources are managed completely by an external provider and KKP
+	// is only responsible for cluster control plane component.
+	External *DatacenterSpecExternal `json:"external,omitempty"`
 	// AWS configures an Amazon Web Services (AWS) datacenter.
 	AWS *DatacenterSpecAWS `json:"aws,omitempty"`
 	// Azure configures an Azure datacenter.
@@ -771,6 +776,10 @@ type DatacenterSpecBringYourOwn struct {
 
 // DatacenterSpecEdge describes a datacenter of edge nodes.
 type DatacenterSpecEdge struct {
+}
+
+// DatacenterSpecExternal describes a datacenter of external nodes.
+type DatacenterSpecExternal struct {
 }
 
 // DatacenterSpecPacket describes a Packet datacenter.
