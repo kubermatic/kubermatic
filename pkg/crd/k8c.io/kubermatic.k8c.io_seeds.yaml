@@ -286,6 +286,11 @@ spec:
                             required:
                               - auditWebhookConfig
                             type: object
+                          external:
+                            description: |-
+                              External specifies that the cluster compute resources are managed completely by an external provider and KKP
+                              is only responsible for cluster control plane component.
+                            type: object
                           fake:
                             description: DatacenterSpecFake describes a fake datacenter.
                             properties:
