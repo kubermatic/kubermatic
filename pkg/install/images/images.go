@@ -339,7 +339,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 	}
 
 	for index, image := range imageList {
-		if err := copyImage(ctx, log, image, userAgent); err != nil {
+		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
 			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
 		}
 	}
