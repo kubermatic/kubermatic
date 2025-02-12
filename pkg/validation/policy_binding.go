@@ -51,8 +51,7 @@ func ValidatePolicyBinding(ctx context.Context, client ctrlruntimeclient.Client,
 
 	// Validate template visibility and binding scope compatibility
 	switch binding.Spec.Scope {
-	case "global":
-		// Global bindings can ONLY use global templates
+	case kubermaticv1.PolicyBindingScopeGlobal:
 		if policyTemplate.Spec.Visibility != "global" {
 			allErrs = append(allErrs, field.Forbidden(specPath.Child("policyTemplateRef"),
 				"global scope policy bindings can only reference policy templates with global visibility"))
@@ -63,14 +62,13 @@ func ValidatePolicyBinding(ctx context.Context, client ctrlruntimeclient.Client,
 			allErrs = append(allErrs, err...)
 		}
 
-	case "project":
-		// Project bindings can ONLY use project templates
+	case kubermaticv1.PolicyBindingScopeProject:
 		if policyTemplate.Spec.Visibility != "project" {
 			allErrs = append(allErrs, field.Forbidden(specPath.Child("policyTemplateRef"),
 				"project scope policy bindings can only reference policy templates with project visibility"))
 		}
 
-		// Project templates MUST have a project ID
+		// Project templates should have a project ID
 		if policyTemplate.Spec.ProjectID == "" {
 			allErrs = append(allErrs, field.Required(specPath.Child("policyTemplateRef"),
 				"project-visible policy templates must specify a ProjectID"))

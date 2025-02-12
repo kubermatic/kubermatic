@@ -50,6 +50,15 @@ const (
 	PolicyEnforcedCondition = "Enforced"
 )
 
+// PolicyBindingScope is the scope of the policy binding.
+const (
+	// PolicyBindingScopeGlobal is the scope of the policy binding.
+	PolicyBindingScopeGlobal = "global"
+
+	// PolicyBindingScopeProject is the scope of the policy binding.
+	PolicyBindingScopeProject = "project"
+)
+
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

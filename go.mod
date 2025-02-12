@@ -120,7 +120,10 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // Pin prism-go-client to v0.4.0 as we have no way to test v0.5.1, as we don't have a working environment for Nutanix.
 replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/prism-go-client v0.4.0
 
-require github.com/kubeovn/kube-ovn v1.12.28
+require (
+	github.com/kubeovn/kube-ovn v1.12.28
+	k8s.io/pod-security-admission v0.31.0
+)
 
 require (
 	cel.dev/expr v0.16.0 // indirect
@@ -487,7 +490,6 @@ require (
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.30.0 // indirect
-	k8s.io/pod-security-admission v0.31.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect

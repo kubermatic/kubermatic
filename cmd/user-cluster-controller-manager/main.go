@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 	kvvmieviction "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/kubevirt-vmi-eviction"
+	kyvernopolicysyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/kyverno-policy-syncer"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
 	nodeversioncontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-version-controller"
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
@@ -111,6 +112,7 @@ type controllerRunOptions struct {
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
 	kubeVirtInfraNamespace            string
+	kyvernoPolicySyncer               bool // wip: temp
 
 	clusterBackup clusterBackupOptions
 }
@@ -169,6 +171,7 @@ func main() {
 	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
 	flag.StringVar(&runOp.kubeVirtInfraNamespace, "kv-infra-namespace", "", "Kubevirt infra namespace where workload will be deployed")
+	flag.BoolVar(&runOp.kyvernoPolicySyncer, "kyverno-policy-syncer", false, "Enable the Kyverno policy syncer controller")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -425,6 +428,15 @@ func main() {
 		log.Fatalw("Failed to add user Application Installation controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered Application Installation controller")
+
+	// Kyverno Policy Syncer
+	// wip: for testing flag
+	if runOp.kyvernoPolicySyncer {
+		if err := kyvernopolicysyncer.Add(rootCtx, log, seedMgr, mgr, runOp.clusterName, runOp.namespace, isPausedChecker); err != nil {
+			log.Fatalw("Failed to register kyverno-policy-syncer controller", zap.Error(err))
+		}
+		log.Info("Registered kyverno-policy-syncer controller")
+	}
 
 	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
