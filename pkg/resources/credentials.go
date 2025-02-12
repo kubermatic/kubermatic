@@ -699,38 +699,40 @@ func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {
 	var username, password string
 	var err error
 
-	if spec.InfraManagementUser.Username != "" {
-		username = spec.InfraManagementUser.Username
+	if spec.Username != "" {
+		username = spec.Username
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserUsername)
+		username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername)
 		if err != nil {
 			return VSphereCredentials{}, err
 		}
 	}
+
 	if username == "" {
-		if spec.Username != "" {
-			username = spec.Username
+		if spec.InfraManagementUser.Username != "" {
+			username = spec.InfraManagementUser.Username
 		} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-			username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername)
+			username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserUsername)
 			if err != nil {
 				return VSphereCredentials{}, err
 			}
 		}
 	}
 
-	if spec.InfraManagementUser.Password != "" {
-		password = spec.InfraManagementUser.Password
+	if spec.Password != "" {
+		password = spec.Password
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserPassword)
+		password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword)
 		if err != nil {
 			return VSphereCredentials{}, err
 		}
 	}
+
 	if password == "" {
-		if spec.Password != "" {
-			password = spec.Password
+		if spec.InfraManagementUser.Password != "" {
+			password = spec.InfraManagementUser.Password
 		} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-			password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword)
+			password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserPassword)
 			if err != nil {
 				return VSphereCredentials{}, err
 			}
