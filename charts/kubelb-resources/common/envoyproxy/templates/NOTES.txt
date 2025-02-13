@@ -1,3 +1,0 @@
-Thank you for installing Envoy Proxy! 🎉
-
-Your release is named: {{ .Release.Name }} and exists in namespace: {{ .Release.Namespace }}.
