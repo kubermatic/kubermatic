@@ -51,9 +51,6 @@ spec:
             spec:
               description: PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
               properties:
-                namespacedPolicy:
-                  description: NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
-                  type: boolean
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
                   properties:
@@ -100,11 +97,10 @@ spec:
                 scope:
                   description: |-
                     Scope specifies the scope of the policy.
-                    Can be one of: global, project, or cluster
+                    Can be one of: global, project
                   enum:
                     - global
                     - project
-                    - cluster
                   type: string
                 target:
                   description: Target specifies which clusters/projects to apply the policy to

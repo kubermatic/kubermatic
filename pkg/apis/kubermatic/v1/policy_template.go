@@ -26,14 +26,26 @@ const (
 	// PolicyTemplateResourceName represents "Resource" defined in Kubernetes.
 	PolicyTemplateResourceName = "policytemplates"
 
-	// PolicyTemplateKind represents "Kind" defined in Kubernetes.
-	PolicyTemplateKind = "PolicyTemplate"
+	// PolicyTemplateKindName represents "Kind" defined in Kubernetes.
+	PolicyTemplateKindName = "PolicyTemplate"
+)
+
+const (
+	// PolicyTemplateSeedCleanupFinalizer indicates that synced policy template on seed clusters need cleanup.
+	PolicyTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-policy-template"
+)
+
+const (
+	// PolicyTemplateGlobalVisibility indicates that the policy is visible to all projects.
+	PolicyTemplateGlobalVisibility = "global"
+
+	// PolicyTemplateProjectVisibility indicates that the policy is visible to a specific project.
+	PolicyTemplateProjectVisibility = "project"
 )
 
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".spec.enforced",description="Whether the policy is mandatory"
 
 // PolicyTemplate defines a reusable blueprint of a Kyverno policy.
 type PolicyTemplate struct {
@@ -43,6 +55,7 @@ type PolicyTemplate struct {
 	Spec PolicyTemplateSpec `json:"spec,omitempty"`
 }
 
+// PolicyTemplateSpec defines the desired state of a PolicyTemplate.
 type PolicyTemplateSpec struct {
 	// Title is the title of the policy, specified as an annotation in the Kyverno policy
 	Title string `json:"title"`
@@ -62,8 +75,8 @@ type PolicyTemplateSpec struct {
 
 	// Visibility specifies where the policy is visible.
 	//
-	// Can be one of: global, project, or cluster
-	// +kubebuilder:validation:Enum=global;project;cluster
+	// Can be one of: global, project
+	// +kubebuilder:validation:Enum=global;project
 	Visibility string `json:"visibility"`
 
 	// ProjectID is the ID of the project for which the policy template is created
@@ -77,14 +90,12 @@ type PolicyTemplateSpec struct {
 	// +optional
 	Default bool `json:"default,omitempty"`
 
-	// Enforced indicates whether this policy is mandatory
+	// KyvernoPolicySpec is the Kyverno specification
+	// This field is immutable.
 	//
-	// If true, this policy is mandatory
-	// A PolicyBinding referencing it cannot disable it
-	Enforced bool `json:"enforced"`
-
-	// KyvernoSpec is the Kyverno specification
-	kyvernov1.Spec `json:",inline"`
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="Value is immutable"
+	KyvernoPolicySpec kyvernov1.Spec `json:"kyvernoPolicySpec"`
 }
 
 // +kubebuilder:object:generate=true

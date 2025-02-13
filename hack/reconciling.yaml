@@ -39,6 +39,8 @@ resourceTypes:
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: GroupProjectBinding }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: IPAMAllocation }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: KubermaticConfiguration }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: PolicyBinding }
+  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: PolicyTemplate }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Preset }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Project }
   - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ResourceQuota }
@@ -54,6 +56,9 @@ resourceTypes:
 
   # gatekeeper/v1
   - { package: github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1, resourceName: ConstraintTemplate, importAlias: gatekeeperv1, apiVersionPrefix: Gatekeeper }
+
+  # kyverno/v1
+  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: ClusterPolicy, apiVersionPrefix: Kyverno }
 
   # osm/v1alpha1
   - { package: k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1, resourceName: OperatingSystemProfile }

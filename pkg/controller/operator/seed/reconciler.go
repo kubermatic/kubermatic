@@ -213,6 +213,8 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		common.PoliciesAdmissionWebhookName,
 		kubermaticseed.ClusterAdmissionWebhookName,
 		kubermaticseed.IPAMPoolAdmissionWebhookName,
+		common.PolicyBindingAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 	}
 
 	for _, name := range names {
@@ -686,6 +688,8 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, cfg, client),
+		common.PolicyBindingValidatingWebhookConfigurationReconciler(ctx, cfg, client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, validatingWebhookReconcilers, "", client); err != nil {
