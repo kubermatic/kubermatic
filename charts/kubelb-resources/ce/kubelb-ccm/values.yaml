@@ -9,7 +9,7 @@ imagePullSecrets: []
 kubelb:
   # Required to be configured.
   # -- Name of the tenant, must be unique against a load balancer cluster.
-  tenantName: null
+  tenantName: "kubermatic"
   # -- Name of the secret that contains kubeconfig for the loadbalancer cluster
   clusterSecretName: kubelb-cluster
 

@@ -13,14 +13,3 @@ version: v1.1.0
 # Application version to be deployed.
 appVersion: v1.1.0
 
-dependencies:
-  - name: external-dns
-    repository: oci://registry-1.docker.io/bitnamicharts
-    version: 8.3.3
-    alias: external-dns
-    condition: external-dns.enabled
-  - name: cert-manager
-    version: v1.15.1
-    repository: https://charts.jetstack.io
-    alias: cert-manager
-    condition: cert-manager.enabled

@@ -28,13 +28,6 @@ helm pull oci://quay.io/kubermatic/helm-charts/kubelb-manager-ee --version=v1.1.
 helm install kubelb-manager kubelb-manager --namespace kubelb -f values.yaml --create-namespace
 ```
 
-## Requirements
-
-| Repository | Name | Version |
-|------------|------|---------|
-| https://charts.jetstack.io | cert-manager(cert-manager) | v1.15.1 |
-| oci://registry-1.docker.io/bitnamicharts | external-dns(external-dns) | 8.3.3 |
-
 ## Values
 
 | Key | Type | Default | Description |
