@@ -1406,6 +1406,14 @@ type KubevirtCloudSpec struct {
 	VPCName string `json:"vpcName,omitempty"`
 	// SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
 	SubnetName string `json:"subnetName,omitempty"`
+	// CSIDriverOperator configures the kubevirt csi driver operator.
+	CSIDriverOperator *KubeVirtCSIDriverOperator `json:"csiDriverOperator,omitempty"`
+}
+
+// KubeVirtCSIDriverOperator contains the different configurations for the kubevirt csi driver operator in the user cluster.
+type KubeVirtCSIDriverOperator struct {
+	// OverwriteRegistry overwrite the images registry that the operator pulls.
+	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 }
 
 type PreAllocatedDataVolume struct {
