@@ -934,6 +934,13 @@ spec:
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
+                        csiDriverOperator:
+                          description: CSIDriverOperator configures the kubevirt csi driver operator.
+                          properties:
+                            overwriteRegistry:
+                              description: OverwriteRegistry overwrite the images registry that the operator pulls.
+                              type: string
+                          type: object
                         csiKubeconfig:
                           type: string
                         imageCloningEnabled:
