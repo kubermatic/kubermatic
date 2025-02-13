@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kubelb-ccm.fullname" . }}
+  labels:
+    {{- include "kubelb-ccm.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "kubelb-ccm.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "kubelb-ccm.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "kubelb-ccm.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: ccm
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --enable-leader-election={{ .Values.kubelb.enableLeaderElection }}
+            - --node-address-type={{ default "ExternalIP" .Values.kubelb.nodeAddressType }}
+            - --use-loadbalancer-class={{ default false .Values.kubelb.useLoadBalancerClass }}
+            {{ if .Values.kubelb.enableGatewayAPI -}}
+            - --enable-gateway-api=true
+            {{ end -}}
+            {{ if not .Values.kubelb.useGatewayClass -}}
+            - --use-gateway-class=false
+            {{ end -}}
+            {{ if not .Values.kubelb.useIngressClass -}}
+            - --use-ingress-class=false
+            {{ end -}}
+            {{ if .Values.kubelb.disableIngressController -}}
+            - --disable-ingress-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.disableGatewayController -}}
+            - --disable-gateway-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.disableHTTPRouteController -}}
+            - --disable-httproute-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.disableGRPCRouteController -}}
+            - --disable-grpcroute-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.disableTLSRouteController -}}
+            - --disable-tlsroute-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.disableTCPRouteController -}}
+            - --disable-tcproute-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.disableUDPRouteController -}}
+            - --disable-udproute-controller=true
+            {{ end -}}
+            {{ if .Values.kubelb.enableSecretSynchronizer -}}
+            - --enable-secret-synchronizer=true
+            {{ end -}}
+            - --cluster-name={{ required "A valid .Values.kubelb.tenantName to specify the tenant name is required!" .Values.kubelb.tenantName }}
+          env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /home/nonroot/.kube
+              name: kubelb-cluster
+          {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 8 }}
+          {{- end }}
+        - args:
+          - --secure-listen-address=0.0.0.0:8443
+          - --upstream=http://127.0.0.1:8080/
+          - --v=0
+          image: quay.io/brancz/kube-rbac-proxy:v0.16.0
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          name: kube-rbac-proxy
+          ports:
+          - protocol: TCP
+            containerPort: 8443
+            name: https
+      volumes:
+        - name: kubelb-cluster
+          secret:
+            secretName: "{{ default "kubelb-cluster" .Values.kubelb.clusterSecretName }}"
+      {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,45 @@
+{{- if .Values.rbac.enabled -}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubelb-ccm.fullname" . }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubelb-ccm.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kubelb-ccm.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+---
+{{- if .Values.rbac.allowProxyRole }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubelb-ccm.fullname" . }}-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubelb-ccm.fullname" . }}-proxy
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kubelb-ccm.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+---
+{{- if .Values.rbac.allowMetricsReaderRole }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kubelb-ccm.fullname" . }}-metrics-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kubelb-ccm.fullname" . }}-metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kubelb-ccm.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+{{- end }}

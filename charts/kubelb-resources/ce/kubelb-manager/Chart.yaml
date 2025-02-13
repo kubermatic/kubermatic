@@ -1,0 +1,14 @@
+apiVersion: v2
+name: kubelb-manager
+description: Helm chart for KubeLB Manager
+icon: https://raw.githubusercontent.com/kubermatic/kubelb/main/docs/kubelb-logo.png
+type: application
+maintainers:
+  - name: Kubermatic
+    email: support@kubermatic.com
+    url: https://kubermatic.com
+
+# Helm chart Version.
+version: v1.1.0
+# Application version to be deployed.
+appVersion: v1.1.0

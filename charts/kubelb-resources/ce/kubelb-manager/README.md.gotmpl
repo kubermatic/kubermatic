@@ -1,0 +1,27 @@
+# kubelb-manager
+
+Helm chart for KubeLB Manager. This is used to deploy the KubeLB CCM to a Kubernetes cluster. The CCM is responsible for propagating the load balancer configurations to the management cluster.
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Installing the chart
+
+### Pre-requisites
+
+* Create a namespace `kubelb` for the CCM to be deployed in.
+
+### Install helm chart
+
+Now, we can install the helm chart:
+
+```sh
+helm pull oci://quay.io/kubermatic/helm-charts/kubelb-manager --version={{ template "chart.version" . }} --untardir "kubelb-manager" --untar
+## Create and update values.yaml with the required values.
+helm install kubelb-manager kubelb-manager --namespace kubelb -f values.yaml --create-namespace
+```
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "chart.maintainersSection" . }}

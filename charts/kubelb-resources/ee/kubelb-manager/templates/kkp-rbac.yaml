@@ -1,0 +1,67 @@
+{{- if .Values.kkpintegration.rbac -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubelb-kkp
+  namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubelb-kkp
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  # Required to copy kubelb-ccm-kubeconfig secret for the tenant in the KKP seed cluster.
+  - secrets
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - kubelb.k8c.io
+  resources:
+  - tenants
+  - configs
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - delete
+  - patch
+- apiGroups:
+  - kubelb.k8c.io
+  resources:
+  - routes
+  - loadbalancers
+  - addresses
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubelb-kkp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubelb-kkp
+subjects:
+  - kind: ServiceAccount
+    name: kubelb-kkp
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubelb-kkp-token
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/service-account.name: kubelb-kkp
+type: kubernetes.io/service-account-token
+{{- end }}

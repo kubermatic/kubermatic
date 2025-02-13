@@ -1,0 +1,37 @@
+# kubelb-ccm
+
+Helm chart for KubeLB CCM. This is used to deploy the KubeLB CCM to a Kubernetes cluster. The CCM is responsible for propagating the load balancer configurations to the management cluster.
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Installing the chart
+
+### Pre-requisites
+
+* Create a namespace `kubelb` for the CCM to be deployed in.
+* The agent expects a `Secret` with a kubeconf file named `kubelb` to access the load balancer cluster. To create such run: `kubectl --namespace kubelb create secret generic kubelb-cluster --from-file=<path to kubelb kubeconf file>`. The name of secret cant be overridden using `.Values.kubelb.clusterSecretName`
+* Update the `tenantName` in the values.yaml to a unique identifier for the tenant. This is used to identify the tenant in the manager cluster. This can be any unique string that follows [lower case RFC 1123](https://www.rfc-editor.org/rfc/rfc1123).
+
+At this point a minimal values.yaml should look like this:
+
+```yaml
+kubelb:
+    clusterSecretName: kubelb-cluster
+    tenantName: <unique-identifier-for-tenant>
+```
+
+### Install helm chart
+
+Now, we can install the helm chart:
+
+```sh
+helm pull oci://quay.io/kubermatic/helm-charts/kubelb-ccm --version={{ template "chart.version" . }} --untardir "kubelb-ccm" --untar
+## Create and update values.yaml with the required values.
+helm install kubelb-ccm kubelb-ccm --namespace kubelb -f values.yaml --create-namespace
+```
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+{{ template "chart.maintainersSection" . }}

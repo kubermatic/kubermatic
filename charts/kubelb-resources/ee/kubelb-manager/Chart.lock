@@ -1,0 +1,9 @@
+dependencies:
+- name: external-dns
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 8.3.3
+- name: cert-manager
+  repository: https://charts.jetstack.io
+  version: v1.15.1
+digest: sha256:933c830e078562b054bcf5e2b3e5ed7ebda824b2029257448eb197311c885fe3
+generated: "2024-07-30T17:01:37.931012+05:00"

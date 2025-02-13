@@ -1,0 +1,117 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/kubermatic/kubelb-manager-ee
+  pullPolicy: IfNotPresent
+  tag: v1.1.0
+imagePullSecrets:
+  - name: kubermatic-quay.io
+
+kubelb:
+  enableLeaderElection: true
+  debug: true
+  ## -- Migrate Tenant namespace to Tenant CRDs
+  enableTenantMigration: true
+  # -- Set to true to skip the generation of the Config CR. Useful when the config CR needs to be managed manually.
+  skipConfigGeneration: false
+  # -- enableGatewayAPI specifies whether to enable the Gateway API and Gateway Controllers. By default Gateway API is disabled since without Gateway APIs installed the controller cannot start.
+  enableGatewayAPI: false
+  envoyProxy:
+    # -- Topology defines the deployment topology for Envoy Proxy. Valid values are: shared and global.
+    topology: shared
+    # -- The number of replicas for the Envoy Proxy deployment.
+    replicas: 3
+    # -- Deploy single pod per node.
+    singlePodPerNode: true
+    # -- Use DaemonSet for Envoy Proxy deployment instead of Deployment.
+    useDaemonset: false
+    nodeSelector: {}
+    tolerations: []
+    resources: {}
+    affinity: {}
+  # -- Allowed annotations that will be propagated from the LB resource to the LB service.
+  propagatedAnnotations: {}
+  # -- Propagate all annotations from the LB resource to the LB service.
+  propagateAllAnnotations: false
+
+# Create required resources for KKP integration.
+kkpintegration:
+  # -- Create RBAC for KKP integration.
+  rbac: false
+
+#################################################################################
+# External components that can be configured with this umbrella helm chart.
+#################################################################################
+
+# External-dns source : https://github.com/bitnami/charts/tree/main/bitnami/external-dns/
+external-dns:
+  # -- Enable External-DNS.
+  enabled: false
+
+## cert-managerr source : https://cert-manager.io/docs/installation/helm/
+cert-manager:
+  # -- Enable cert-manager.
+  enabled: false
+
+#################################################################################
+# Further configurations for the KubeLB Manager.
+#################################################################################
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podLabels: {}
+
+## RBAC
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+rbac:
+  enabled: true
+  allowProxyRole: true
+  allowMetricsReaderRole: true
+  allowLeaderElectionRole: true
+
+# Monitoring Configuration
+serviceMonitor:
+  enabled: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  runAsUser: 65532
+
+service:
+  type: ClusterIP
+  port: 8001
+  protocol: TCP
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

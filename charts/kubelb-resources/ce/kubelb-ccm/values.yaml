@@ -1,0 +1,105 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/kubermatic/kubelb-ccm
+  pullPolicy: IfNotPresent
+  tag: v1.1.0
+imagePullSecrets: []
+
+kubelb:
+  # Required to be configured.
+  # -- Name of the tenant, must be unique against a load balancer cluster.
+  tenantName: null
+  # -- Name of the secret that contains kubeconfig for the loadbalancer cluster
+  clusterSecretName: kubelb-cluster
+
+  # Important configurations.
+  # -- Address type to use for routing traffic to node ports. Values are ExternalIP, InternalIP.
+  nodeAddressType: ExternalIP
+  # -- useLoadBalancerClass specifies whether to target services of type LoadBalancer with `kubelb` load balancer class or all services of type LoadBalancer.
+  useLoadBalancerClass: false
+  # -- enableGatewayAPI specifies whether to enable the Gateway API and Gateway Controllers. By default Gateway API is disabled since without Gateway APIs installed the controller cannot start.
+  enableGatewayAPI: false
+  # -- Enable to automatically convert Secrets labelled with `kubelb.k8c.io/managed-by: kubelb` to Sync Secrets. This is used to sync secrets from tenants to the LB cluster in a controlled and secure way.
+  enableSecretSynchronizer: false
+
+  # -- Enable the leader election.
+  enableLeaderElection: true
+  # -- useIngressClass specifies whether to target resources with `kubelb` ingress class or all resources.
+  useIngressClass: true
+  # -- useGatewayClass specifies whether to target resources with `kubelb` gateway class or all resources.
+  useGatewayClass: true
+  # -- disableIngressController specifies whether to disable the Ingress Controller.
+  disableIngressController: false
+  # -- disableGatewayController specifies whether to disable the Gateway Controller.
+  disableGatewayController: false
+  # -- disableHTTPRouteController specifies whether to disable the HTTPRoute Controller.
+  disableHTTPRouteController: false
+  # -- disableGRPCRouteController specifies whether to disable the GRPCRoute Controller.
+  disableGRPCRouteController: false
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+#################################################################################
+# Further configurations for the KubeLB Manager.
+#################################################################################
+
+extraVolumes: []
+extraVolumeMounts: []
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podLabels: {}
+
+## RBAC
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+rbac:
+  enabled: true
+  allowProxyRole: true
+  allowMetricsReaderRole: true
+  allowLeaderElectionRole: true
+
+# Monitoring Configuration
+serviceMonitor:
+  enabled: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  runAsUser: 65532
+
+service:
+  type: ClusterIP
+  port: 8443
+  protocol: TCP
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,0 +1,5 @@
+Thank you for installing KubeLB CCM! 🎉
+
+Your release is named: {{ .Release.Name }} and exists in namespace: {{ .Release.Namespace }}.
+
+For more details, please check the official documentation at https://docs.kubermatic.com/kubelb

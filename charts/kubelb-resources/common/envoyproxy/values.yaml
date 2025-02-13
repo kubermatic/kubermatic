@@ -1,0 +1,54 @@
+replicaCount: 1
+
+image:
+  repository: envoyproxy/envoy
+  pullPolicy: IfNotPresent
+  tag: distroless-v1.31.0
+imagePullSecrets: []
+
+#################################################################################
+# Further configurations for the KubeLB Manager.
+#################################################################################
+
+nameOverride: ""
+fullnameOverride: ""
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  runAsUser: 65532
+
+service:
+  type: ClusterIP
+  port: 8001
+  protocol: TCP
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
