@@ -212,3 +212,72 @@ func TestValidateKubermaticConfigurationVersions(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateMirrorImages(t *testing.T) {
+	testcases := []struct {
+		name         string
+		mirrorImages []string
+		valid        bool
+	}{
+		{
+			name:         "valid single image",
+			mirrorImages: []string{"nginx:1.21.6"},
+			valid:        true,
+		},
+		{
+			name:         "valid multiple images",
+			mirrorImages: []string{"nginx:1.21.6", "quay.io/kubermatic/kubelb-manager-ee:v1.1.0"},
+			valid:        true,
+		},
+		{
+			name:         "invalid image format (missing tag)",
+			mirrorImages: []string{"nginx"},
+			valid:        false,
+		},
+		{
+			name:         "invalid image format (missing repository)",
+			mirrorImages: []string{":latest"},
+			valid:        false,
+		},
+		{
+			name:         "invalid image format (empty string)",
+			mirrorImages: []string{""},
+			valid:        false,
+		},
+		{
+			name:         "invalid image format (extra colon)",
+			mirrorImages: []string{"nginx:1.21.6:extra"},
+			valid:        false,
+		},
+		{
+			name:         "mixed valid and invalid images",
+			mirrorImages: []string{"nginx:1.21.6", "invalid-image"},
+			valid:        false,
+		},
+		{
+			name:         "empty mirrorImages list",
+			mirrorImages: []string{},
+			valid:        true,
+		},
+	}
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := &kubermaticv1.KubermaticConfigurationSpec{
+				MirrorImages: tt.mirrorImages,
+			}
+			version := semver.NewSemverOrDie("v1.11.1")
+			spec.Versions.Default = version
+			spec.Versions.Versions = append(spec.Versions.Versions, *version)
+			errs := ValidateKubermaticConfigurationSpec(spec)
+			if tt.valid {
+				if len(errs) > 0 {
+					t.Fatalf("Expected configuration to be valid, but got errors: %v", errs.ToAggregate())
+				}
+			} else {
+				if len(errs) == 0 {
+					t.Fatal("Expected configuration to be invalid, but it was accepted.")
+				}
+			}
+		})
+	}
+}

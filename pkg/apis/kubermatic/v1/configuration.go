@@ -130,6 +130,9 @@ type KubermaticConfigurationSpec struct {
 	// Proxy allows to configure Kubermatic to use proxies to talk to the
 	// world outside of its cluster.
 	Proxy KubermaticProxyConfiguration `json:"proxy,omitempty"`
+	// MirrorImages specifies the list of images to be mirrored during installation or update.
+	// Each entry should be in the format "repository:tag".
+	MirrorImages []string `json:"mirrorImages,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
