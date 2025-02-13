@@ -35,25 +35,10 @@ spec:
             url: https://sozercan.github.io/aikit/charts
       version: v0.16.0
   defaultValuesBlock: |
-    serviceMonitor:
-      enabled: false
-      additionalLabels: {}
-      # The namespace where Prometheus expects to find the serviceMonitor
-      # namespace: ""
-    grafanaDashboard:
-      enabled: false
-      # The namespace where Grafana expects to find the dashboard
-      # namespace: ""
-      folder:
-        annotation: grafana_folder
-        name: ai
-      label:
-        key: grafana_dashboard_aikit
-        value: "1"
-    server:
-      service:
-        # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-        type: "LoadBalancer"
+    service:
+      # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
+      type: "LoadBalancer"
+      port: 8080
   documentationURL: https://sozercan.github.io/aikit/docs
   sourceURL: https://github.com/sozercan/aikit
   logo: |+
