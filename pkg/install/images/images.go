@@ -78,6 +78,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 )
 
@@ -204,7 +206,7 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 			// we only want to extract the addons folder and thus we skip
 			// everything else in the image archive.
 			if strings.HasPrefix(header.Name, "addons") {
-				if err = os.MkdirAll(path, 0755); err != nil {
+				if err = os.MkdirAll(path, 0o755); err != nil {
 					return err
 				}
 			}
@@ -283,7 +285,7 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 		return fmt.Errorf("failed to load manifest: %w", err)
 	}
 
-	var repositoryToRefToImage = make(map[string]map[name.Reference]remote.Taggable)
+	repositoryToRefToImage := make(map[string]map[name.Reference]remote.Taggable)
 	for _, descriptor := range indexManifest {
 		for _, tagStr := range descriptor.RepoTags {
 			repoTag, err := name.NewTag(tagStr)
@@ -337,7 +339,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 	}
 
 	for index, image := range imageList {
-		if err := copyImage(ctx, log, image, userAgent); err != nil {
+		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
 			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
 		}
 	}
@@ -358,7 +360,29 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 
 	log.Info("Copying image…")
 
-	return crane.Copy(image.Source, image.Destination, options...)
+	numTries := 0
+	backoff := wait.Backoff{
+		Steps:    10,
+		Duration: 500 * time.Millisecond,
+		Factor:   1.0,
+		Jitter:   0.1,
+	}
+
+	retriable := func(err error) bool {
+		numTries++
+		log.Info("Retrying…")
+
+		return numTries <= backoff.Steps
+	}
+
+	return retry.OnError(backoff, retriable, func() error {
+		err := crane.Copy(image.Source, image.Destination, options...)
+		if err != nil {
+			log.Error("Copying image:", err)
+		}
+
+		return err
+	})
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
