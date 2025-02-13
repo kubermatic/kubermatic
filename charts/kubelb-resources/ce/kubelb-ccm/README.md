@@ -9,7 +9,7 @@ Helm chart for KubeLB CCM. This is used to deploy the KubeLB CCM to a Kubernetes
 ### Pre-requisites
 
 * Create a namespace `kubelb` for the CCM to be deployed in.
-* The agent expects a `Secret` with a kubeconf file named `kubelb` to access the load balancer cluster. To create such run: `kubectl --namespace kubelb create secret generic kubelb-cluster --from-file=<path to kubelb kubeconf file>`. The name of secret cant be overridden using `.Values.kubelb.clusterSecretName`
+* The agent expects a `Secret` with a kubeconf file named `kubelb` to access the load balancer cluster. To create such run: `kubectl --namespace kubelb create secret generic kubelb-cluster --from-file=<path to kubelb kubeconf file>`. The name of secret can't be overridden using `.Values.kubelb.clusterSecretName`
 * Update the `tenantName` in the values.yaml to a unique identifier for the tenant. This is used to identify the tenant in the manager cluster. This can be any unique string that follows [lower case RFC 1123](https://www.rfc-editor.org/rfc/rfc1123).
 
 At this point a minimal values.yaml should look like this:
