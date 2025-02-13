@@ -3,6 +3,62 @@
 - [v2.26.0](#v2260)
 - [v2.26.1](#v2261)
 - [v2.26.2](#v2262)
+- [v2.26.3](#v2263)
+- [v2.26.4](#v2264)
+
+## v2.26.4
+
+**GitHub release: [v2.26.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.4)**
+
+### Bugfixes
+
+- Fix Seed-MLA's Prometheus trying to scrape Kopia job Pods from Velero ([#14007](https://github.com/kubermatic/kubermatic/pull/14007))
+- Ignore reading the storage classes from the infra cluster and only roll out the ones from the seed object ([#14023](https://github.com/kubermatic/kubermatic/pull/14023))
+
+### Updates
+
+- Update OSM to 1.6.2 ([#14025](https://github.com/kubermatic/kubermatic/pull/14025))
+
+## v2.26.3
+
+**GitHub release: [v2.26.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.3)**
+
+### New Features
+
+- The download archives on GitHub now include the dependencies of all included Helm charts ([#13954](https://github.com/kubermatic/kubermatic/pull/13954))
+- Update KubeVirt-CSI-Driver-Operator version ([#13996](https://github.com/kubermatic/kubermatic/pull/13996))
+- KubeLB: enable gateway API and use load balancer class values will now be picked from the datacenter configuration during cluster creation ([#7055](https://github.com/kubermatic/dashboard/pull/7055))
+
+### Design
+
+- Add search field in options dropdown of autocomplete element ([#7069](https://github.com/kubermatic/dashboard/pull/7069))
+
+### Bugfixes
+
+- [EE] Fix ClusterBackupStorageLocation sync on remote seed clusters ([#13955](https://github.com/kubermatic/kubermatic/pull/13955))
+- [EE] Fix kubeLB cleanup not being performed when clusters are deleted ([#13960](https://github.com/kubermatic/kubermatic/pull/13960))
+- Disable `/metrics` endpoint in master/seed MLA and user cluster MLA charts for Grafana ([#13939](https://github.com/kubermatic/kubermatic/pull/13939))
+- Do not add `InTree*Unregister` feature gates to clusters on Kubernetes 1.30+ ([#13983](https://github.com/kubermatic/kubermatic/pull/13983))
+- Kubelb: rely only on cluster spec for `enable-gateway-api` and `use-loadbalancer-class` flags for KubeLB CCM ([#13947](https://github.com/kubermatic/kubermatic/pull/13947))
+- Mount correct `ca-bundle` ConfigMap in kubermatic-seed-controller-manager Deployment on dedicated master/seed environments ([#13938](https://github.com/kubermatic/kubermatic/pull/13938))
+- Remove redundant storage classes from OpenStack CSI addon ([#13920](https://github.com/kubermatic/kubermatic/pull/13920))
+- Remove storage classes filtration in KubeVirt Namespaced mode ([#13985](https://github.com/kubermatic/kubermatic/pull/13985))
+- The created RBAC Role for the csi-driver now grants get for VirtualMachineInstances ([#13967](https://github.com/kubermatic/kubermatic/pull/13967))
+- The rollback revision is now set explicit to the last deployed revision when a helm release managed by an application installation fails and a rollback is executed to avoid errors when the last deployed revision is not the current minus 1 and history limit is set to 1 ([#13953](https://github.com/kubermatic/kubermatic/pull/13953))
+- Fix an issue where selecting "Backup All Namespaces" in the create backup/schedule dialog for cluster backups caused new namespaces to be excluded ([#7037](https://github.com/kubermatic/dashboard/pull/7037))
+- Fix list images in kubevirt and tinkerbell ([#7049](https://github.com/kubermatic/dashboard/pull/7049))
+- Make `Domain` field optional when using application credentials for Openstack provider ([#7044](https://github.com/kubermatic/dashboard/pull/7044))
+
+### Updates
+
+- Update KubeVirt CSI Driver operator to v0.4.1 in KKP ([#14011](https://github.com/kubermatic/kubermatic/pull/14011))
+- Update MC version to [v.1.60.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.60.1) ([#14016](https://github.com/kubermatic/kubermatic/pull/14016))
+
+### Cleanup
+
+- CentOS removed as a supported operating system ([#13917](https://github.com/kubermatic/kubermatic/pull/13917))
+- Mark domain as optional field for OpenStack preset ([#13948](https://github.com/kubermatic/kubermatic/pull/13948))
+- Removal of CentOS as a supported OS since it has reached EOL ([#7039](https://github.com/kubermatic/dashboard/pull/7039))
 
 ## v2.26.2
 

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.5
     kubermatic.k8c.io/location: master,seed
   name: clusters.kubermatic.k8c.io
 spec:
@@ -1043,6 +1043,15 @@ spec:
                                 description: |-
                                   VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
                                   VolumeBindingImmediate is used.
+                                type: string
+                              volumeProvisioner:
+                                description: |-
+                                  VolumeProvisioner The **Provider** field specifies whether a storage class will be utilized by the Containerized
+                                  Data Importer (CDI) to create VM disk images and/or by the KubeVirt CSI Driver to provision volumes in the
+                                  infrastructure cluster. If no storage class in the seed object has this value set, the storage class will be used
+                                  for both purposes: CDI will create VM disk images, and the CSI driver will provision and attach volumes in the user
+                                  cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
+                                  image creation.
                                 type: string
                               zones:
                                 description: |-

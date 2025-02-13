@@ -329,7 +329,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.19",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -392,7 +392,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.19",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: false,
@@ -424,7 +424,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "cilium",
-					Version: "v1.11",
+					Version: "1.16.6",
 				},
 			}.Build(),
 			wantAllowed: false,
@@ -456,7 +456,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "cilium",
-					Version: "v1.11",
+					Version: "1.16.6",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -489,7 +489,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.22",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -526,34 +526,6 @@ func TestHandle(t *testing.T) {
 				},
 			}.Build(),
 			wantAllowed: false,
-		},
-		{
-			name: "Accept a cluster template create request with externalCloudProvider disabled",
-			op:   admissionv1.Create,
-			template: rawTemplateGen{
-				Name:      "foo",
-				Namespace: "kubermatic",
-				Labels: map[string]string{
-					kubermaticv1.ProjectIDLabelKey: project1.Name,
-					"scope":                        "project",
-				},
-				ExposeStrategy:        "NodePort",
-				ExternalCloudProvider: false,
-				Version:               semver.NewSemverOrDie("1.28.2"), // last version for which in-tree CCMs existed
-				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
-					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-					DNSDomain:                "cluster.local",
-					ProxyMode:                resources.IPVSProxyMode,
-					NodeLocalDNSCacheEnabled: ptr.To(true),
-				},
-				ComponentSettings: kubermaticv1.ComponentSettings{
-					Apiserver: kubermaticv1.APIServerSettings{
-						NodePortRange: "30000-32768",
-					},
-				},
-			}.Build(),
-			wantAllowed: true,
 		},
 		{
 			name: "Accept a cluster template create request with externalCloudProvider enabled",

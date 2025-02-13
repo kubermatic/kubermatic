@@ -64,7 +64,7 @@ type ApplicationInstallationList struct {
 
 type ApplicationInstallationSpec struct {
 	// Namespace describe the desired state of the namespace where application will be created.
-	Namespace AppNamespaceSpec `json:"namespace"`
+	Namespace *AppNamespaceSpec `json:"namespace,omitempty"`
 
 	// ApplicationRef is a reference to identify which Application should be deployed
 	ApplicationRef ApplicationRef `json:"applicationRef"`
@@ -120,7 +120,7 @@ type HelmDeployOptions struct {
 type AppNamespaceSpec struct {
 	// Name is the namespace to deploy the Application into.
 	// Should be a valid lowercase RFC1123 domain name
-	// +kubebuilder:validation:Pattern:=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +kubebuilder:validation:Pattern:=`^(|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)`
 	// +kubebuilder:validation:MaxLength:=63
 	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`

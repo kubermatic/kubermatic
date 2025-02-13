@@ -12,20 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if or .Values.seedSettings .Values.seedExtras }}
 ---
-apiVersion: v1
-kind: Namespace
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
 metadata:
-  name: kubermatic
-{{ end }}
+  name: kubermatic-config
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ArgoCD Project for all core KKP configurations
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  sourceRepos:
+  - '*'
+  destinations:
+  - namespace: kubermatic
+    server: https://kubernetes.default.svc
+  - namespace: mla
+    server: https://kubernetes.default.svc
+  - namespace: iap
+    server: https://kubernetes.default.svc
+  - namespace: argocd
+    server: https://kubernetes.default.svc
 
-{{ if or .Values.oauth }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: oauth
+{{ if .Values.oauth.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -51,14 +63,15 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: oauth
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.oauth.autoSync }}
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.nginx }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: nginx-ingress-controller
+{{ if .Values.nginx.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -86,16 +99,22 @@ spec:
     namespace: nginx-ingress-controller
   # nginx ingress app to be synced automatically so that we can access ArgoCD via it!
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+      - Retry=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  {{- if .Values.nginx.autoSync }}
     automated: {}
+  {{ end }}
 {{ end }}
 
 
-{{ if .Values.certManager }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: cert-manager
+{{ if .Values.certManager.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -124,12 +143,16 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: cert-manager
-  # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
   syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.certManager.autoSync }}
+  # cert-manager app to be synced automatically so that we get certificates issued for KKP dashboard and ArgoCD to start with
     automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if and .Values.seedSettings .Values.isMasterSeed}}
+{{ if and .Values.seedSettings.enable .Values.isMasterSeed }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -137,9 +160,7 @@ metadata:
   name: master-settings-{{ .Values.seed }}
   namespace: argocd
 spec:
-  # TODO: Create segregated projects - should be an option to use different project.
-  # project: kubermatic-config
-  project: default
+  project: kubermatic-config
   sources:
   - repoURL: '{{ .Values.repoURL }}'
     targetRevision: {{ template "git-tag-version" . }}
@@ -147,9 +168,15 @@ spec:
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kubermatic
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  {{- if .Values.seedSettings.autoSync }}
+    automated: {}
+  {{ end }}
 {{ end }}
 
-{{ if .Values.seedExtras }}
+{{ if .Values.seedExtras.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -157,18 +184,29 @@ metadata:
   name: seed-extras-{{ .Values.seed }}
   namespace: argocd
 spec:
-  # TODO: Create segregated projects
-  # project: kubermatic-config
-  project: default
+  project: kubermatic-config
   sources:
   - repoURL: '{{ .Values.repoURL }}'
     targetRevision: {{ template "git-tag-version" . }}
     path: '{{ .Values.environment }}'
     directory:
       recurse: true
-      exclude: 'values.yaml'
+      exclude: '{**/values.yaml,**/{{ .Values.userMlaValuesFileName }},**/k8cConfig.yaml}'
       include: '{common/*,{{ .Values.seed }}/*}'
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kubermatic
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    # sometimes things take time and hence we should control the retry params
+    retry:
+      limit: 100
+      backoff:
+        duration: "20s"
+        factor: 1
+        maxDuration: "3m0s"
+  {{- if .Values.seedExtras.autoSync }}
+    automated: {}
+  {{ end }}
 {{ end }}

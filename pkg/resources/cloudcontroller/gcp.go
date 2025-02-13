@@ -212,8 +212,6 @@ func GCPCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-provider-gcp/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v127:
-		return "v27.1.6"
 	case v128:
 		return "v28.2.1"
 	case v129:
@@ -221,6 +219,8 @@ func GCPCCMVersion(version semver.Semver) string {
 	case v130:
 		fallthrough
 	case v131:
+		fallthrough
+	case v132:
 		fallthrough
 	default:
 		return "v30.0.0"

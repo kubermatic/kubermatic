@@ -41,6 +41,13 @@ spec:
             chartVersion: 6.0.0
             url: https://argoproj.github.io/argo-helm
       version: v2.10.0
+    - template:
+        source:
+          helm:
+            chartName: argo-cd
+            chartVersion: 7.7.22
+            url: https://argoproj.github.io/argo-helm
+      version: v2.13.4
   defaultValuesBlock: |
     server:
       service:

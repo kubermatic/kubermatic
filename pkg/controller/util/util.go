@@ -244,3 +244,15 @@ func IsCNIApplicationReady(ctx context.Context, userClusterClient ctrlruntimecli
 	// Check if the application is deployed and status is updated with app version.
 	return cniApp != nil && cniApp.Status.ApplicationVersion != nil, nil
 }
+
+// NodesAvailable checks if any node object is already created.
+func NodesAvailable(ctx context.Context, userClusterClient ctrlruntimeclient.Client) (bool, error) {
+	nodeList := &corev1.NodeList{}
+	if err := userClusterClient.List(ctx, nodeList, &ctrlruntimeclient.ListOptions{}); err != nil {
+		return false, err
+	}
+	if len(nodeList.Items) < 1 {
+		return false, nil
+	}
+	return true, nil
+}

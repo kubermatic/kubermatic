@@ -46,6 +46,17 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, an
 }
 
 func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient.Client, spec *kubermaticv1.KubevirtCloudSpec, dc *kubermaticv1.DatacenterSpecKubevirt) error {
+	// TODO(mq): this function seems a bit out of place as there could be use cases where storage class exists in the cluster
+	// and doesn't exist in the infra cluster such local path provisioner. Thus should be removed in the future.
+
+	// If the Namespaced mode is enabled, kkp has no access on cluster-scoped resources such as storage classes. Thus,
+	// this function will fail to list storage classes which means it will fail to create the cluster.
+	if dc.NamespacedMode != nil && dc.NamespacedMode.Enabled {
+		// considering the storage classes in the dc object as the only canonical truth and skip filtering storage classes.
+		spec.StorageClasses = dc.InfraStorageClasses
+		return nil
+	}
+
 	infraStorageClassList, err := ListStorageClasses(ctx, client, nil)
 	if err != nil {
 		return err

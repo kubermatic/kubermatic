@@ -325,14 +325,14 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				Name:    cluster.Spec.CNIPlugin.Type.String(),
 				Version: cluster.Spec.CNIPlugin.Version,
 			}
-			app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
+			app.Spec.Namespace = &appskubermaticv1.AppNamespaceSpec{
 				Name: cniPluginNamespace,
 			}
 			app.Spec.DeployOptions = &appskubermaticv1.DeployOptions{
 				Helm: &appskubermaticv1.HelmDeployOptions{
-					// Use non-atomic deployment, as atomic (with fixed retries count) potentially brings more issues
-					// than benefit for CNI, e.g. during the cluster bring-up when the worker nodes join cluster too late.
-					Atomic: false,
+					// Use atomic deployment, as atomic (with fixed retries count) migitates breaking the etcd due to creating events
+					// when retrying on failure without a limit
+					Atomic: true,
 					Wait:   true,
 					Timeout: metav1.Duration{
 						Duration: 10 * time.Minute, // use longer timeout, as it may take some time for the CNI to be fully up

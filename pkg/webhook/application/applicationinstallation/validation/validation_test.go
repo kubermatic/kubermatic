@@ -171,7 +171,7 @@ func getApplicationInstallation(name string, appName string, appVersion string) 
 			Namespace: "kube-system",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name:   "default",
 				Create: true,
 			},

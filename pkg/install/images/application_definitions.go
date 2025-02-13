@@ -19,6 +19,7 @@ package images
 import (
 	"context"
 	"fmt"
+	"iter"
 	"os"
 	"path"
 	"time"
@@ -34,81 +35,122 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func GetImagesFromSystemApplicationDefinitions(logger logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, helmClient helm.Client, helmTimeout time.Duration, registryPrefix string) ([]string, error) {
+func GetImagesFromSystemApplicationDefinitions(
+	logger logrus.FieldLogger,
+	config *kubermaticv1.KubermaticConfiguration,
+	helmClient helm.Client,
+	helmTimeout time.Duration,
+	registryPrefix string,
+) ([]string, error) {
 	var images []string
 
-	var appDefReconcilers []reconciling.NamedApplicationDefinitionReconcilerFactory
-	appDefReconcilers = append(appDefReconcilers,
-		cilium.ApplicationDefinitionReconciler(config),
-	)
+	for sysApp, err := range SystemAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
+		if err != nil {
+			return nil, err
+		}
 
-	for _, createFunc := range appDefReconcilers {
-		appName, creator := createFunc()
-		appDef, err := creator(&appskubermaticv1.ApplicationDefinition{})
-		if err != nil {
-			return nil, err
-		}
-		appLog := logger.WithFields(logrus.Fields{"application-name": appName})
-		appDefImages, err := getImagesFromApplicationDefinition(appLog, helmClient, appDef, helmTimeout, registryPrefix)
-		if err != nil {
-			return nil, err
-		}
-		images = append(images, appDefImages...)
+		images = append(images, sysApp.WorkloadImages...)
 	}
 
 	return images, nil
 }
 
-func getImagesFromApplicationDefinition(logger logrus.FieldLogger, helmClient helm.Client, appDef *appskubermaticv1.ApplicationDefinition, helmTimeout time.Duration, registryPrefix string) ([]string, error) {
-	if appDef.Spec.Method != appskubermaticv1.HelmTemplateMethod {
-		// Only Helm ApplicationDefinitions are supported at the moment
-		logger.Debugf("Skipping the ApplicationDefinition as the method '%s' is not supported yet", appDef.Spec.Method)
-		return nil, nil
-	}
-	logger.Info("Retrieving images…")
+type SystemAppsHelmChart struct {
+	ChartArchive   string
+	WorkloadImages []string
+	appskubermaticv1.ApplicationVersion
+}
 
-	tmpDir, err := os.MkdirTemp("", "helm-charts")
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp dir: %w", err)
-	}
-	defer func() {
-		if err := os.RemoveAll(tmpDir); err != nil {
-			logger.Fatalf("Failed to remove temp dir: %v", err)
-		}
-	}()
-
-	// if DefaultValues is provided, use it as values file
-	valuesFile := ""
-	values, err := appDef.Spec.GetDefaultValues()
-	if err != nil {
-		return nil, err
-	}
-	if values != nil {
-		valuesFile = path.Join(tmpDir, "values.yaml")
-		err = os.WriteFile(valuesFile, values, 0644)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create values file: %w", err)
-		}
+func SystemAppsHelmCharts(
+	config *kubermaticv1.KubermaticConfiguration,
+	logger logrus.FieldLogger,
+	helmClient helm.Client,
+	helmTimeout time.Duration,
+	registryPrefix string,
+) iter.Seq2[*SystemAppsHelmChart, error] {
+	appDefReconcilers := []reconciling.NamedApplicationDefinitionReconcilerFactory{
+		cilium.ApplicationDefinitionReconciler(config),
 	}
 
-	var images []string
-	for _, appVer := range appDef.Spec.Versions {
-		appVerLog := logger.WithField("application-version", appVer.Version)
-		appVerLog.Debug("Downloading Helm chart…")
-		// pull the chart
-		chartPath, err := downloadAppSourceChart(&appVer.Template.Source, tmpDir, helmTimeout)
-		if err != nil {
-			return nil, fmt.Errorf("failed to pull app chart: %w", err)
-		}
-		// get images
-		chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, valuesFile, registryPrefix, "") // since we don't have the version constraints in AppDefs yet, we can leave kubeVersion parameter empty
-		if err != nil {
-			return nil, fmt.Errorf("failed to get images for chart: %w", err)
-		}
-		images = append(images, chartImages...)
-	}
+	return func(yield func(*SystemAppsHelmChart, error) bool) {
+		for _, createFunc := range appDefReconcilers {
+			appName, creator := createFunc()
+			appDef, err := creator(&appskubermaticv1.ApplicationDefinition{})
+			if err != nil {
+				yield(nil, err)
 
-	return images, nil
+				return
+			}
+			appLog := logger.WithFields(logrus.Fields{"application-name": appName})
+
+			if appDef.Spec.Method != appskubermaticv1.HelmTemplateMethod {
+				// Only Helm ApplicationDefinitions are supported at the moment
+				appLog.Debugf("Skipping the ApplicationDefinition as the method '%s' is not supported yet", appDef.Spec.Method)
+				break
+			}
+			appLog.Info("Retrieving images…")
+
+			tmpDir, err := os.MkdirTemp("", "helm-charts")
+			if err != nil {
+				yield(nil, fmt.Errorf("failed to create temp dir: %w", err))
+
+				return
+			}
+			defer func() {
+				if err := os.RemoveAll(tmpDir); err != nil {
+					appLog.Fatalf("Failed to remove temp dir: %v", err)
+				}
+			}()
+
+			// if DefaultValues is provided, use it as values file
+			valuesFile := ""
+			values, err := appDef.Spec.GetDefaultValues()
+			if err != nil {
+				yield(nil, err)
+
+				return
+			}
+			if values != nil {
+				valuesFile = path.Join(tmpDir, "values.yaml")
+				err = os.WriteFile(valuesFile, values, 0o644)
+				if err != nil {
+					yield(nil, fmt.Errorf("failed to create values file: %w", err))
+
+					return
+				}
+			}
+
+			for _, appVer := range appDef.Spec.Versions {
+				appVerLog := appLog.WithField("application-version", appVer.Version)
+				appVerLog.Debug("Downloading Helm chart…")
+				// pull the chart
+				chartPath, err := downloadAppSourceChart(&appVer.Template.Source, tmpDir, helmTimeout)
+				if err != nil {
+					yield(nil, fmt.Errorf("failed to pull app chart: %w", err))
+
+					return
+				}
+
+				// get images
+				chartImages, err := GetImagesForHelmChart(appVerLog, nil, helmClient, chartPath, valuesFile, registryPrefix, "") // since we don't have the version constraints in AppDefs yet, we can leave kubeVersion parameter empty
+				if err != nil {
+					yield(nil, fmt.Errorf("failed to get images for chart: %w", err))
+
+					return
+				}
+
+				sysChart := SystemAppsHelmChart{
+					ChartArchive:       chartPath,
+					WorkloadImages:     chartImages,
+					ApplicationVersion: appVer,
+				}
+
+				if !yield(&sysChart, nil) {
+					return
+				}
+			}
+		}
+	}
 }
 
 func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, directory string, timeout time.Duration) (chartPath string, err error) {
@@ -119,9 +161,11 @@ func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, direc
 	if err != nil {
 		return "", fmt.Errorf("failed to create app source provider: %w", err)
 	}
+
 	chartPath, err = sp.DownloadSource(directory)
 	if err != nil {
 		return "", fmt.Errorf("failed to download app source: %w", err)
 	}
+
 	return chartPath, nil
 }

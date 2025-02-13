@@ -84,6 +84,7 @@ type TemplateData struct {
 	versions                         kubermatic.Versions
 	caBundle                         CABundle
 	clusterBackupStorageLocation     *kubermaticv1.ClusterBackupStorageLocation
+	apiServerAlternateNames          *certutil.AltNames
 
 	supportsFailureDomainZoneAntiAffinity bool
 
@@ -248,6 +249,11 @@ func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository s
 
 func (td *TemplateDataBuilder) WithTunnelingAgentIP(tunnelingAgentIP string) *TemplateDataBuilder {
 	td.data.tunnelingAgentIP = tunnelingAgentIP
+	return td
+}
+
+func (td *TemplateDataBuilder) WithAPIServerAlternateNames(altNames *certutil.AltNames) *TemplateDataBuilder {
+	td.data.apiServerAlternateNames = altNames
 	return td
 }
 
@@ -474,51 +480,10 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	return service.Spec.Ports[0].NodePort, nil
 }
 
-// GetAPIServerAlternateNames returns the alternate names for the apiserver certificate from the corresponding services.
-// This method ensures that if multiple hostnames or IPs have been assigned to the API server service or front-loadbalancer service, then all
-// of them are included in the certificate.
-func (d *TemplateData) GetAPIServerAlternateNames() (*certutil.AltNames, error) {
-	// Get all the loadbalancer Ingresses from the API server service.
-	DNSNames := []string{}
-	IPs := []net.IP{}
-	service := &corev1.Service{}
-	if err := d.client.Get(d.ctx, types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: ApiserverServiceName}, service); err != nil {
-		return nil, fmt.Errorf("failed to get API server service: %w", err)
-	}
-
-	if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		for _, ingress := range service.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" {
-				IPs = append(IPs, net.ParseIP(ingress.IP))
-			}
-			if ingress.Hostname != "" {
-				DNSNames = append(DNSNames, ingress.Hostname)
-			}
-		}
-	}
-
-	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
-		service := &corev1.Service{}
-		if err := d.client.Get(d.ctx, types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: FrontLoadBalancerServiceName}, service); err != nil {
-			return nil, fmt.Errorf("failed to get front-loadbalancer service: %w", err)
-		}
-
-		if service.Spec.Type == corev1.ServiceTypeLoadBalancer {
-			for _, ingress := range service.Status.LoadBalancer.Ingress {
-				if ingress.IP != "" {
-					IPs = append(IPs, net.ParseIP(ingress.IP))
-				}
-				if ingress.Hostname != "" {
-					DNSNames = append(DNSNames, ingress.Hostname)
-				}
-			}
-		}
-	}
-
-	return &certutil.AltNames{
-		DNSNames: DNSNames,
-		IPs:      IPs,
-	}, nil
+// GetAPIServerAlternateNames returns the alternate names for the apiserver certificate from the
+// corresponding services in the cluster namespace.
+func (d *TemplateData) GetAPIServerAlternateNames() *certutil.AltNames {
+	return d.apiServerAlternateNames
 }
 
 // GetKonnectivityServerPort returns the nodeport of the external Konnectivity Server service.
@@ -760,8 +725,10 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster, version *semverl
 
 	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
-		// been migrated.
-		if cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue {
+		// been migrated. Both of these feature gates have already been removed in Kubernetes 1.30+.
+		migrationCompleted := cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted].Status == corev1.ConditionTrue
+
+		if migrationCompleted && cluster.Spec.Version.Semver().Minor() < 30 {
 			if cluster.Spec.Cloud.Openstack != nil {
 				featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
 			}
@@ -834,9 +801,20 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", ValueFrom: refTo(DigitaloceanToken)})
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(data.ctx, data.client)
+		spec := cluster.Spec.Cloud.VSphere
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
-		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
+		if val, _ := secretKeySelector(spec.CredentialsReference, VsphereInfraManagementUserUsername); val != "" {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereInfraManagementUserUsername)})
+		} else {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_USERNAME", ValueFrom: refTo(VsphereUsername)})
+		}
+
+		if val, _ := secretKeySelector(spec.CredentialsReference, VsphereInfraManagementUserPassword); val != "" {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VsphereInfraManagementUserPassword)})
+		} else {
+			vars = append(vars, corev1.EnvVar{Name: "VSPHERE_PASSWORD", ValueFrom: refTo(VspherePassword)})
+		}
 	}
 	if cluster.Spec.Cloud.Baremetal != nil {
 		if cluster.Spec.Cloud.Baremetal.Tinkerbell != nil {

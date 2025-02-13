@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cloudinitsettings"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	csimigration "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/csi-migration"
@@ -397,7 +396,6 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	// kube-system
 	creators := []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.KubeSystemRoleReconciler(),
-		clusterautoscaler.KubeSystemRoleReconciler(),
 		operatingsystemmanager.KubeSystemRoleReconciler(),
 	}
 
@@ -423,7 +421,6 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 	// default
 	creators = []reconciling.NamedRoleReconcilerFactory{
 		machinecontroller.EndpointReaderRoleReconciler(),
-		clusterautoscaler.DefaultRoleReconciler(),
 		operatingsystemmanager.DefaultRoleReconciler(),
 	}
 
@@ -471,7 +468,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		metricsserver.RolebindingAuthReaderReconciler(r.isKonnectivityEnabled),
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
-		clusterautoscaler.KubeSystemRoleBindingReconciler(),
 		operatingsystemmanager.KubeSystemRoleBindingReconciler(),
 	}
 
@@ -497,7 +493,6 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 	// Default
 	creators = []reconciling.NamedRoleBindingReconcilerFactory{
 		machinecontroller.DefaultRoleBindingReconciler(),
-		clusterautoscaler.DefaultRoleBindingReconciler(),
 		operatingsystemmanager.DefaultRoleBindingReconciler(),
 	}
 
@@ -544,7 +539,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		machinecontroller.ClusterRoleReconciler(),
 		dnatcontroller.ClusterRoleReconciler(),
 		metricsserver.ClusterRoleReconciler(),
-		clusterautoscaler.ClusterRoleReconciler(),
 		coredns.ClusterRoleReconciler(),
 		operatingsystemmanager.WebhookClusterRoleReconciler(),
 		operatingsystemmanager.ClusterRoleReconciler(),
@@ -584,7 +578,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		metricsserver.ClusterRoleBindingAuthDelegatorReconciler(r.isKonnectivityEnabled),
 		scheduler.ClusterRoleBindingAuthDelegatorReconciler(),
 		controllermanager.ClusterRoleBindingAuthDelegator(),
-		clusterautoscaler.ClusterRoleBindingReconciler(),
 		systembasicuser.ClusterRoleBinding,
 		cloudcontroller.ClusterRoleBindingReconciler(),
 		coredns.ClusterRoleBindingReconciler(),

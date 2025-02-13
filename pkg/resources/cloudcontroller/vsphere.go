@@ -129,8 +129,6 @@ func VSphereCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v127:
-		return "1.27.0"
 	case v128:
 		return "1.28.1"
 	case v129:
@@ -138,8 +136,10 @@ func VSphereCCMVersion(version semver.Semver) string {
 	case v130:
 		return "1.30.1"
 	case v131:
+		return "1.31.0"
+	case v132:
 		fallthrough
 	default:
-		return "1.31.0"
+		return "1.32.0"
 	}
 }

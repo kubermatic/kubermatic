@@ -261,6 +261,8 @@ type KubermaticUserClusterConfiguration struct {
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// SystemApplications contains configuration for system Applications (such as CNI).
 	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
+	// Applications contains configuration for default Application settings.
+	Applications ApplicationsConfiguration `json:"applications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
 	NodePortRange string `json:"nodePortRange,omitempty"`
@@ -352,6 +354,13 @@ type SystemApplicationsConfiguration struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
+}
+
+// ApplicationsConfiguration contains configuration for default Applications configuration settings.
+type ApplicationsConfiguration struct {
+	// Namespace is the namespace which is set as the default for applications installed via ui
+	// If left empty the default for the application installation namespace is the name of the resource itself
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {

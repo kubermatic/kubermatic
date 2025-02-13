@@ -126,8 +126,6 @@ func DigitaloceanCCMVersion(version semver.Semver) string {
 	// by replacing the `fallthrough` with a return statement.
 
 	switch version.MajorMinor() {
-	case v127: // 30 May 2023 – 27 July 2024
-		return "v0.1.54"
 	case v128: // 18 September 2023 – 27 November 2024
 		fallthrough
 	case v129: // 17 January 2024 – 27 March 2025
@@ -136,8 +134,10 @@ func DigitaloceanCCMVersion(version semver.Semver) string {
 		fallthrough
 	case v131: // 13 September 2024 – 27 November 2025
 		fallthrough
+	case v132: // (not supported yet)
+		fallthrough
 	default:
 		// This should always be the latest version.
-		return "v0.1.56"
+		return "v0.1.57"
 	}
 }

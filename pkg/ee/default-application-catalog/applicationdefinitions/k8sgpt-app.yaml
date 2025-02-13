@@ -23,7 +23,7 @@ kind: ApplicationDefinition
 metadata:
   name: k8sgpt
 spec:
-  description: K8sGPT is a tool for scanning your Kubernetes clusters, diagnosing and triaging issues in simple English.
+  description: (Deprecated in favor of k8sgpt-operator application and will be removed in future KKP release) K8sGPT is a tool for scanning your Kubernetes clusters, diagnosing and triaging issues in simple English.
   displayName: K8sGPT
   method: helm
   versions:
@@ -34,6 +34,13 @@ spec:
             chartVersion: 0.1.0
             url: https://charts.k8sgpt.ai/
       version: v0.3.26
+    - template:
+        source:
+          helm:
+            chartName: k8sgpt-operator
+            chartVersion: 0.1.0
+            url: https://charts.k8sgpt.ai/
+      version: v0.3.48
   defaultValuesBlock: |
     serviceMonitor:
       enabled: false

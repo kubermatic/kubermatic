@@ -271,7 +271,7 @@ func getGinkgoRuns(
 			"-progress",
 			fmt.Sprintf("-nodes=%d", run.parallelTests),
 			"-noColor=true",
-			"-flakeAttempts=2",
+			"-flakeAttempts=3",
 			fmt.Sprintf(`-focus=%s`, run.ginkgoFocus),
 			fmt.Sprintf(`-skip=%s`, run.ginkgoSkip),
 			path.Join(binRoot, "e2e.test"),

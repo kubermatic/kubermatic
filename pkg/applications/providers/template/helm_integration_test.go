@@ -85,6 +85,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application is created with no values, it should install app with default values",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "", nil)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
@@ -94,6 +95,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application is created with customCmData, it should install app with customCmData",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				customCmData := map[string]string{"hello": "world", "a": "b"}
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil)
 
@@ -105,6 +107,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application is created with custom versionLabel, it should install app into user cluster with custom versionLabel",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				// its check that scalar values overwrite default  scalar values
 				customVersionLabel := "1.2.3"
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.VersionLabelKey, customVersionLabel), "", nil)
@@ -116,6 +119,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application is is updated with customCmData, should update app with new data",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				customCmData := map[string]string{"hello": "world", "a": "b"}
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil)
 
@@ -133,6 +137,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application removed, it should uninstall app",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				customCmData := map[string]string{"hello": "world", "a": "b"}
 				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil)
 
@@ -174,6 +179,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				chartFullPath := createChartWithDependency(t, registryUrl)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "", nil)
 
 				app.Status.ApplicationVersion.Template.DependencyCredentials = &appskubermaticv1.DependencyCredentials{HelmCredentials: &appskubermaticv1.HelmCredentials{RegistryConfigFile: &corev1.SecretKeySelector{
@@ -203,6 +209,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				chartFullPath := createChartWithDependency(t, registryUrl)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "", nil)
 
 				template := HelmTemplate{
@@ -225,6 +232,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "application installation should fail when timeout is exceeded (timeout is defined at application Installation Level)",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
 
 				// Create an application that deploy a LB service that will never get public ip -> helm release will not be be successful.
@@ -237,6 +245,7 @@ func TestHelmProvider(t *testing.T) {
 					Log:             kubermaticlog.Logger,
 					SecretNamespace: "default",
 					SeedClient:      client,
+					ClusterName:     "cluster-default",
 				}
 
 				statusUpdater, err := template.InstallOrUpgrade(exampleV2ChartLoc, &appskubermaticv1.ApplicationDefinition{}, app)
@@ -262,6 +271,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "application installation should fail when timeout is exceeded (timeout is defined at applicationDefinition Level)",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
 
 				// Create an application that deploy a LB service that will never get public ip -> helm release will not be be successful.
@@ -274,6 +284,7 @@ func TestHelmProvider(t *testing.T) {
 					Log:             kubermaticlog.Logger,
 					SecretNamespace: "default",
 					SeedClient:      client,
+					ClusterName:     "cluster-default",
 				}
 
 				statusUpdater, err := template.InstallOrUpgrade(exampleV2ChartLoc, &appskubermaticv1.ApplicationDefinition{Spec: appskubermaticv1.ApplicationDefinitionSpec{DefaultDeployOptions: deployOpts}}, app)
@@ -300,6 +311,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: false, Timeout: metav1.Duration{Duration: 0}, Atomic: false, EnableDNS: true}}
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "", deployOpts)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, true)
@@ -309,6 +321,7 @@ func TestHelmProvider(t *testing.T) {
 			name: "when an application is created with valuesBlock, it is installed with values from valuesBlock",
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "key: value", nil)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
@@ -328,6 +341,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 		CacheDir:        t.TempDir(),
 		Log:             kubermaticlog.Logger,
 		SecretNamespace: "default",
+		ClusterName:     "cluster-default",
 		SeedClient:      client,
 	}
 
@@ -347,7 +361,7 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, r
 			Name:      "app1",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name: testNs.Name,
 			},
 			Values:        runtime.RawExtension{},
