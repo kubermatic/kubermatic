@@ -33,6 +33,12 @@ iap:
   # to override this
   replicas: 2
 
+  # avoid consent screen shown by Dex for applications secured via IAP. e.g. prometheus, grafana, etc
+  # Below setting will affect all deployments controlled by seed and user-cluster MLA IAP.
+  # But the consent is mandatorily required to proceed and hence showing one extra screen for it just a nuisance.
+  # If you want the consent to be shown.. set approval_prompt: force as override.
+  approval_prompt: none
+
   deployments:
     # alertmanager:
     #   name: alertmanager
