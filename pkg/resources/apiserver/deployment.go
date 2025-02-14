@@ -90,7 +90,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			auditWebhookBackendEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil
 
 			volumes := getVolumes(data, enableEncryptionConfiguration, auditLogEnabled, auditWebhookBackendEnabled)
-			volumeMounts := getVolumeMounts(data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditWebhookBackendEnabled)
+			volumeMounts := getVolumeMounts(data, data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditWebhookBackendEnabled)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
 			address := data.Cluster().Status.Address
@@ -323,7 +323,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--storage-backend", "etcd3",
 		"--enable-admission-plugins", strings.Join(sets.List(admissionPlugins), ","),
 		"--admission-control-config-file", "/etc/kubernetes/adm-control/admission-control.yaml",
-		"--authorization-mode", "Node,RBAC",
 		"--external-hostname", address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth",
@@ -343,6 +342,10 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--kubelet-client-certificate", "/etc/kubernetes/kubelet/kubelet-client.crt",
 		"--kubelet-client-key", "/etc/kubernetes/kubelet/kubelet-client.key",
+	}
+
+	if !cluster.Spec.IsAuthorizationConfigurationFileEnabled() {
+		flags = append(flags, "--authorization-mode", data.Cluster().Spec.GetAuthorizationModesString())
 	}
 
 	// the "bring-your-own" provider does not support automatic TLS rotation in kubelets yet,
@@ -479,6 +482,15 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			"/etc/kubernetes/encryption-configuration/encryption-configuration.yaml")
 	}
 
+	if cluster.Spec.IsWebhookAuthorizationEnabled() {
+		flags = append(flags, "--authorization-webhook-config-file", "/etc/kubernetes/authorization-webhook.yaml")
+		flags = append(flags, "--authorization-webhook-version", cluster.Spec.GetAuthorizationWebhookVersion())
+	}
+
+	if cluster.Spec.IsAuthorizationConfigurationFileEnabled() {
+		flags = append(flags, "--authorization-config", filepath.Join(cluster.Spec.GetAuthorizationConfigurationMountPath(), cluster.Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey))
+	}
+
 	return flags, nil
 }
 
@@ -498,7 +510,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(data *resources.TemplateData, isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -593,6 +605,23 @@ func getVolumeMounts(isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWeb
 		vms = append(vms, corev1.VolumeMount{
 			Name:      resources.AuditWebhookVolumeName,
 			MountPath: "/etc/kubernetes/audit/webhook",
+			ReadOnly:  true,
+		})
+	}
+
+	if data.Cluster().Spec.IsWebhookAuthorizationEnabled() {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.AuthorizationWebhookVolumeName,
+			MountPath: "/etc/kubernetes/authorization-webhook.yaml",
+			SubPath:   data.Cluster().Spec.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretKey,
+			ReadOnly:  true,
+		})
+	}
+
+	if data.Cluster().Spec.IsAuthorizationConfigurationFileEnabled() {
+		vms = append(vms, corev1.VolumeMount{
+			Name:      resources.AuthorizationConfigurationVolumeName,
+			MountPath: data.Cluster().Spec.GetAuthorizationConfigurationMountPath(),
 			ReadOnly:  true,
 		})
 	}
@@ -806,6 +835,28 @@ func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnable
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: data.Cluster().Spec.AuditLogging.WebhookBackend.AuditWebhookConfig.Name,
+				},
+			},
+		})
+	}
+
+	if data.Cluster().Spec.IsWebhookAuthorizationEnabled() {
+		vs = append(vs, corev1.Volume{
+			Name: resources.AuthorizationWebhookVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: data.Cluster().Spec.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretName,
+				},
+			},
+		})
+	}
+
+	if data.Cluster().Spec.IsAuthorizationConfigurationFileEnabled() {
+		vs = append(vs, corev1.Volume{
+			Name: resources.AuthorizationConfigurationVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: data.Cluster().Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretName,
 				},
 			},
 		})
