@@ -364,9 +364,9 @@ spec:
             - /manager
           args:
             - --leader-elect
-{{- if .Cluster.CSI.OverwriteRegistry }}
+{{- with .Cluster.CSI.OverwriteRegistry }}
             - --overwrite-registry
-            - .Cluster.CSI.OverwriteRegistry
+            - {{ . }}
 {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
