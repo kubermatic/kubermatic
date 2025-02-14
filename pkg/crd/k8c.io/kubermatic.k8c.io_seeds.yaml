@@ -424,6 +424,13 @@ spec:
                               ccmZoneAndRegionEnabled:
                                 description: 'Optional: indicates if region and zone labels from the cloud provider should be fetched.'
                                 type: boolean
+                              csiDriverOperator:
+                                description: CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
+                                properties:
+                                  overwriteRegistry:
+                                    description: OverwriteRegistry overwrite the images registry that the operator pulls.
+                                    type: string
+                                type: object
                               customNetworkPolicies:
                                 description: |-
                                   Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
