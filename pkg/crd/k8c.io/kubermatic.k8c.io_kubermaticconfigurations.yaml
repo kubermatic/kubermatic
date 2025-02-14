@@ -341,7 +341,7 @@ spec:
                   type: object
                 mirrorImages:
                   description: |-
-                    MirrorImages specifies the list of images to be mirrored during installation or update.
+                    MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
                     Each entry should be in the format "repository:tag".
                   items:
                     type: string
