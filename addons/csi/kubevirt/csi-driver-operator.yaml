@@ -358,12 +358,16 @@ spec:
         runAsNonRoot: true
       containers:
         - name: manager
-          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.4.1" }}
+          image: {{ Image "quay.io/kubermatic/kubevirt-csi-driver-operator:v0.4.2" }}
           imagePullPolicy: Always
           command:
             - /manager
           args:
             - --leader-elect
+{{- with .Cluster.CSI.OverwriteRegistry }}
+            - --overwrite-registry
+            - {{ . }}
+{{- end }}
           securityContext:
             allowPrivilegeEscalation: false
           livenessProbe:
