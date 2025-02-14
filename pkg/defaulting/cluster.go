@@ -96,6 +96,10 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// Enforce audit logging
 	if datacenter.Spec.EnforceAuditLogging {
+		if spec.AuditLogging != nil {
+			spec.AuditLogging.Enabled = true
+		}
+
 		spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
 			Enabled: true,
 		}
