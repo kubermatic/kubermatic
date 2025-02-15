@@ -34,6 +34,11 @@ import (
 func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}
 
+	// Validate the MirrorImages field
+	if err := ValidateMirrorImages(spec.MirrorImages); err != nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "mirrorImages"), spec.MirrorImages, err.Error()))
+	}
+
 	// general cloud spec logic
 	if errs := ValidateKubermaticVersioningConfiguration(spec.Versions, field.NewPath("spec", "versions")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
@@ -144,4 +149,20 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 	}
 
 	return allErrs
+}
+
+func ValidateMirrorImages(images []string) error {
+	for _, img := range images {
+		parts := strings.Split(img, ":")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid image format: %s. Expected format: 'repository:tag'", img)
+		}
+		repo := parts[0]
+		tag := parts[1]
+		if repo == "" || tag == "" {
+			return fmt.Errorf("invalid image format: %s. Repository and tag cannot be empty", img)
+		}
+	}
+
+	return nil
 }
