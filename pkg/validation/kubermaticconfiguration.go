@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/distribution/reference"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -153,16 +154,17 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 
 func ValidateMirrorImages(images []string) error {
 	for _, img := range images {
-		parts := strings.Split(img, ":")
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid image format: %s. Expected format: 'repository:tag'", img)
+		// Parse the image reference using distribution/reference
+		named, err := reference.ParseDockerRef(img)
+		if err != nil {
+			return fmt.Errorf("invalid image reference %q: %w", img, err)
 		}
-		repo := parts[0]
-		tag := parts[1]
-		if repo == "" || tag == "" {
-			return fmt.Errorf("invalid image format: %s. Repository and tag cannot be empty", img)
+
+		// Ensure the image is tagged
+		_, ok := named.(reference.NamedTagged)
+		if !ok {
+			return fmt.Errorf("image reference %q must include a tag", img)
 		}
 	}
-
 	return nil
 }
