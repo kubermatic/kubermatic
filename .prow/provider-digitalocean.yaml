@@ -101,6 +101,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-do-ubuntu-1.31
     decorate: true
+    run_if_changed: "(digitalocean.go|/digitalocean/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
