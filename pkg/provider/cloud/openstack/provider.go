@@ -629,8 +629,8 @@ func linkSubnetToRouter(ctx context.Context, netClient *gophercloud.ServiceClien
 		if err != nil {
 			return fmt.Errorf("failed to add RouterSubnetLinkCleanupFinalizer in the cluster spec: %w", err)
 		}
-
 	}
+
 	return nil
 }
 
