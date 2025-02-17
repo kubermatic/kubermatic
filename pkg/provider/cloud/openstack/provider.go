@@ -345,21 +345,11 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 }
 
 func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// first ensure we have our cleanup finalizer
-	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
-	}
-
-	securityGroups := splitString(cluster.Spec.Cloud.Openstack.SecurityGroups)
+	securityGroup := cluster.Spec.Cloud.Openstack.SecurityGroups
 
 	// automatically create and fill-in the default security group if none was specified
-	var updateRequired bool
-	if len(securityGroups) == 0 {
-		securityGroups = []string{resourceNamePrefix + cluster.Name}
-		updateRequired = true
+	if securityGroup == "" {
+		securityGroup = resourceNamePrefix + cluster.Name
 	}
 
 	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
@@ -374,38 +364,44 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 		NodePorts()
 
 	// for each security group, ensure that it exists
-	for _, sgName := range securityGroups {
-		err := validateSecurityGroupExists(netClient, sgName)
-		if err == nil {
-			continue // group exists
-		}
-		if !isNotFoundErr(err) {
+	err := validateSecurityGroupExists(netClient, securityGroup)
+
+	if err != nil {
+		if isNotFoundErr(err) {
+			// group does not yet exist, so we create it
+			req := securityGroupSpec{
+				name:           securityGroup,
+				ipv4Rules:      ipv4Network,
+				ipv6Rules:      ipv6Network,
+				lowPort:        lowPort,
+				highPort:       highPort,
+				nodePortsCIDRs: ipRanges,
+			}
+
+			_, err = ensureSecurityGroup(netClient, req)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create security group: %w", err)
+			}
+
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
+			})
+
+			if err != nil {
+				return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
+			}
+
+		} else {
 			return cluster, fmt.Errorf("failed to check security group: %w", err)
-		}
-
-		// group does not yet exist, so we create it
-		req := securityGroupSpec{
-			name:           sgName,
-			ipv4Rules:      ipv4Network,
-			ipv6Rules:      ipv6Network,
-			lowPort:        lowPort,
-			highPort:       highPort,
-			nodePortsCIDRs: ipRanges,
-		}
-
-		_, err = ensureSecurityGroup(netClient, req)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create security group: %w", err)
 		}
 	}
 
-	if updateRequired {
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.SecurityGroups = joinStrings(securityGroups)
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update security groups in cluster: %w", err)
-		}
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update security group in cluster: %w", err)
 	}
 
 	return cluster, nil
