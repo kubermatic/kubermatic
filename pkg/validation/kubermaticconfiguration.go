@@ -155,7 +155,7 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 func ValidateMirrorImages(images []string) error {
 	for _, img := range images {
 		// Parse the image reference using distribution/reference
-		named, err := reference.ParseDockerRef(img)
+		named, err := reference.Parse(img)
 		if err != nil {
 			return fmt.Errorf("invalid image reference %q: %w", img, err)
 		}
