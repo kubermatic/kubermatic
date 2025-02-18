@@ -8,6 +8,12 @@
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.27/installation/upgrading/). Consider tweaking `seedControllerManager.maximumParallelReconciles` to ensure user cluster reconciliations will not cause resource exhaustion on seed clusters. A [full upgrade guide is available from the official documentation](https://docs.kubermatic.com/kubermatic/v2.27/installation/upgrading/upgrade-from-2.26-to-2.27/).
 
+### Breaking Changes
+
+- Remove CentOS as a supported operating system, since it has reached EOL ([#13906](https://github.com/kubermatic/kubermatic/pull/13906))
+- VSphere credentials are now handled properly. For existing user cluster, this will change the credentials in machine-controller and OSM to `infraManagementUser` and  `infraManagementPassword` instead of `username` and `password` when specified. The latter one was always mounted to the before mentioned deployments in the past. ([#14087](https://github.com/kubermatic/kubermatic/pull/14087))
+
+
 ### ACTION REQUIRED
 
 - A regression in 2.26.0 started overriding the `floatingIPPool` fields of OpenStack clusters with the default external network. If you are using a floating IP pool that is not the default external network, you might have to update `Cluster` objects manually after upgrading KKP to set the correct floating IP pool again ([#13834](https://github.com/kubermatic/kubermatic/pull/13834))
@@ -39,11 +45,8 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 #### Azure
 
-- Add images field to DatacenterSpecAzure, allowing configuration of default OS images for Azure datacenters in Seeds ([#13924](https://github.com/kubermatic/kubermatic/pull/13924))
+- Add `images` field to DatacenterSpecAzure, allowing configuration of default OS images for Azure datacenters in Seeds ([#13924](https://github.com/kubermatic/kubermatic/pull/13924))
 
-#### DigitalOcean
-
-- Downgrade DigitalOcean CCM from 0.1.57 to 0.1.56 to work around machine-controller limitation ([#14149](https://github.com/kubermatic/kubermatic/pull/14149))
 
 #### GCP
 
@@ -55,12 +58,12 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add `VolumeProvisioner` field in the InfraStorageClasses for the KubeVirt provider in the seed, to indicate whether the storage class can be used by the CSI or the CDI ([#14111](https://github.com/kubermatic/kubermatic/pull/14111))
 - Support `CSIDriverOperator` field in the seed object to customize csi driver images in the KubeVirt user cluster ([#14147](https://github.com/kubermatic/kubermatic/pull/14147))
 - Support KubeVirt VMs LiveMigrate as an eviction strategy ([#14076](https://github.com/kubermatic/kubermatic/pull/14076))
-- Bump KubeVirt csi-driver-operator to support zone-aware topologies ([#13833](https://github.com/kubermatic/kubermatic/pull/13833))
 - Bump the new KubeVirt csi controller operator and add supports to infra storage class labels ([#13827](https://github.com/kubermatic/kubermatic/pull/13827))
 - Include KubeVirt CCM and Fluent-Bit images in the mirror-images command ([#14063](https://github.com/kubermatic/kubermatic/pull/14063))
 - Remove storage classes filtration in KubeVirt Namespaced mode ([#13985](https://github.com/kubermatic/kubermatic/pull/13985))
-- Bump KubeVirt CSI Driver operator to v0.4.1 in KKP ([#14011](https://github.com/kubermatic/kubermatic/pull/14011))
-- Add support for KubeVirt CSI driver operator images overwrite ([#14142](https://github.com/kubermatic/kubermatic/pull/14142))
+- Bump KubeVirt CSI Driver operator to v0.4.2 in KKP ([#13833](https://github.com/kubermatic/kubermatic/pull/13833), [#14011](https://github.com/kubermatic/kubermatic/pull/14011), [#14142](https://github.com/kubermatic/kubermatic/pull/14142))
+    * Bump KubeVirt csi-driver-operator to support zone-aware topologies
+    * Add support for KubeVirt csi driver operator images overwrite
 - Add support for KubeVirt provider network ([#13791](https://github.com/kubermatic/kubermatic/pull/13791))
 - Setup KubeVirt network controller in the seed-controller-manager ([#13858](https://github.com/kubermatic/kubermatic/pull/13858))
 - Support KubeVirt VolumeBindingMode in the tenant storage class ([#13821](https://github.com/kubermatic/kubermatic/pull/13821))
@@ -80,7 +83,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 #### VSphere
 
 - Default datastore validation is skipped, if datastore cluster is specified for the user clusters on vSphere ([#13708](https://github.com/kubermatic/kubermatic/pull/13708))
-- TBD ([#14087](https://github.com/kubermatic/kubermatic/pull/14087))
 - Update vSphere CSI Driver to v3.3.1, use official container images from registry.k8s.io again ([#13801](https://github.com/kubermatic/kubermatic/pull/13801))
 
 ### New Features
@@ -139,13 +141,12 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Updates
 
-- Bump machine-controller to [v1.61.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.0) ([#14092](https://github.com/kubermatic/kubermatic/pull/14092))
+- Bump MC to [v1.61.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.0), OSM to [1.6.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.0)  ([#13811](https://github.com/kubermatic/kubermatic/pull/13811), [#14092](https://github.com/kubermatic/kubermatic/pull/14092))  
+    * Add support for Ubuntu 24.04.
+    * Update machine-controller to v1.61.0
+    * Update operating-system-manager to v1.6.0
 - Update Konnectivity version tags to match corresponding Kubernetes cluster versions ([#13852](https://github.com/kubermatic/kubermatic/pull/13852))
 - Update the applications from the default application catalog to newer versions ([#14067](https://github.com/kubermatic/kubermatic/pull/14https://github.com/kubermatic/kubermatic/pull/14067))
-- Bump MC to 1.60.0, OSM to 1.6.0  ([#13811](https://github.com/kubermatic/kubermatic/pull/13811))
-    * Add support for Ubuntu 24.04.
-    * Update machine-controller to v1.60.0
-    * Update operating-system-manager to v1.6.0
 - [EE] The Applications in the Default Application Catalog now use the `defaultValuesBlock` instead of the `defaultValues` ([#13820](https://github.com/kubermatic/kubermatic/pull/13820))
 - Add support for Canal in 3.29 version, deprecating v3.26 ([#14051](https://github.com/kubermatic/kubermatic/pull/14051))
 - Add support for Cilium in 1.16.6 version, deprecating 1.13 version ([#14048](https://github.com/kubermatic/kubermatic/pull/14048))    
@@ -161,8 +162,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 - Remove redundant resources and code references for cluster-autoscaler ([#14114](https://github.com/kubermatic/kubermatic/pull/14114))
 - Set `METAL_` environment variables instead of `PACKET_` for machine-controller and KubeOne ([#13825](https://github.com/kubermatic/kubermatic/pull/13825))
-- Remove CentOS as a supported operating system, since it has reached EOL ([#13906](https://github.com/kubermatic/kubermatic/pull/13906))
-
 ### Deprecation
 
 - Add new `dex` Helm chart to replace the `oauth` Chart; the new chart uses the official upstream Dex chart, but is preconfigured for use in KKP ([#13486](https://github.com/kubermatic/kubermatic/pull/13486))
@@ -171,6 +170,10 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 
 ### Dashboard and API
+
+#### Breaking Changes
+
+- Remove CentOS as a supported operating system since it has reached EOL ([#7026](https://github.com/kubermatic/dashboard/pull/7026))
 
 #### Cloud Providers
 
@@ -234,8 +237,3 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update stylelint dependencies ([#6961](https://github.com/kubermatic/dashboard/pull/6961))
 - Update to Angular version 18 ([#6958](https://github.com/kubermatic/dashboard/pull/6958))
 - Bump Go to 1.23.6 ([#7147](https://github.com/kubermatic/dashboard/pull/7147))
-
-
-#### Cleanup
-
-- Remove CentOS as a supported operating system since it has reached EOL ([#7026](https://github.com/kubermatic/dashboard/pull/7026))
