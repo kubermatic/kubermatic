@@ -3052,6 +3052,22 @@ spec:
                     Optional: This can be used to override the DNS name used for this seed.
                     By default the seed name is used.
                   type: string
+                managementProxySettings:
+                  description: |-
+                    Optional: ManagementProxySettings can be used if the KubeAPI of the user clusters
+                    will not be directly available from kkp and a proxy in between should be used
+                  properties:
+                    proxyHost:
+                      description: 'Optional: If set, the proxy will be used'
+                      type: string
+                    proxyPort:
+                      description: 'Optional: the proxies port to be used'
+                      type: integer
+                    proxyProtocol:
+                      description: 'Optional: the protocol to use ("http", "https", and "socks5" schemes are supported)'
+                      type: string
+                      default: "http"
+                  type: object
               required:
                 - kubeconfig
               type: object
