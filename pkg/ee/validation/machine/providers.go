@@ -101,7 +101,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 
 	var quotaUsage *ResourceDetails
 	switch config.CloudProvider {
-	case types.CloudProviderFake:
+	case types.CloudProviderFake, types.CloudProviderExternal:
 		quotaUsage, err = getFakeQuotaRequest(config)
 	case types.CloudProviderAWS:
 		quotaUsage, err = getAWSResourceRequirements(ctx, userClient, config)
