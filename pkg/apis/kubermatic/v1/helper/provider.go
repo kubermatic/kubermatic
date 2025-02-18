@@ -177,3 +177,5 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	}
 	return string(clouds[0]), nil
 }
+
+// dummy
