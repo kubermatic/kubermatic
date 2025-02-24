@@ -402,6 +402,10 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
 			"useDigest":  false,
 		}
+		valuesEnvoy["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium-envoy", overwriteRegistry)),
+			"useDigest":  false,
+		}
 	}
 
 	uiSecContext := maps.Clone(podSecurityContext)
