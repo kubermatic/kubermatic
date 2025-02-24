@@ -26,7 +26,10 @@ TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
 
 APPLICATION_NAME=""
+APPLICATION_NAMESPACE=""
 APPLICATION_VERSION=""
+APP_LABEL_KEY=""
+NAMES=""
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -35,8 +38,20 @@ while [[ "$#" -gt 0 ]]; do
     APPLICATION_NAME="$2"
     shift 2
     ;;
+  --application-namespace)
+    APPLICATION_NAMESPACE="$2"
+    shift 2
+    ;;
   --application-version)
     APPLICATION_VERSION="$2"
+    shift 2
+    ;;
+  --app-label-key)
+    APP_LABEL_KEY="$2"
+    shift 2
+    ;;
+  --names)
+    NAMES="$2"
     shift 2
     ;;
   *)
@@ -85,6 +100,10 @@ go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
   -application-name "$APPLICATION_NAME" \
-  -application-version "$APPLICATION_VERSION"
+  -application-namespace "$APPLICATION_NAMESPACE" \
+  -application-version "$APPLICATION_VERSION" \
+  -app-label-key "$APP_LABEL_KEY" \
+  -names "$NAMES"
+
 
 echodate "Application $APPLICATION_NAME tests done."
