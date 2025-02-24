@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -23,6 +21,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 	"testing"
@@ -32,20 +31,7 @@ import (
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/argocd"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/cert_manager"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/falco"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/flux"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/k8sgpt"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/kube-vip"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/kubevirt"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/metallb"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/nginx_ingress_controller"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/nvidia_gpu_operator"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/trivy"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/default_app_catalog_tests/trivy_operator"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -62,10 +48,13 @@ import (
 )
 
 var (
-	applicationName    string
-	applicationVersion string
-	credentials        jig.AWSCredentials
-	logOptions         = utils.DefaultLogOptions
+	applicationName      string
+	applicationNamespace string
+	applicationVersion   string
+	key                  string
+	names                string
+	credentials          jig.AWSCredentials
+	logOptions           = utils.DefaultLogOptions
 )
 
 const (
@@ -74,48 +63,13 @@ const (
 
 func init() {
 	flag.StringVar(&applicationName, "application-name", "", "name of an application from the default app catalog")
+	flag.StringVar(&applicationNamespace, "application-namespace", "", "namespace of an application from the default app catalog")
 	flag.StringVar(&applicationVersion, "application-version", "", "version of an application from the default app catalog")
+	flag.StringVar(&key, "app-label-key", "", "a Kubernetes recommended label used for identifying the name of an application")
+	flag.StringVar(&names, "names", "", "names of the pods of an application from the default app catalog")
 	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
-}
-
-func getChosenApplication() ApplicationInterface {
-	// Parse the flags
-	flag.Parse()
-
-	var applicationStruct ApplicationInterface
-	switch applicationName {
-	case "argocd":
-		applicationStruct = &argocd.DefaultArgoCD
-	case "cert-manager":
-		applicationStruct = &cert_manager.DefaultCertManager
-	case "falco":
-		applicationStruct = &falco.DefaultFalco
-	case "flux":
-		applicationStruct = &flux.DefaultFlux
-	case "k8sgpt":
-		applicationStruct = &k8sgpt.DefaultK8sGpt
-	case "kube-vip":
-		applicationStruct = &kube_vip.DefaultKubeVip
-	case "kubevirt":
-		applicationStruct = &kubevirt.DefaultKubeVirt
-	case "metallb":
-		applicationStruct = &metallb.DefaultMetalLB
-	case "nginx_ingress_controller":
-		applicationStruct = &nginx_ingress_controller.DefaultNginxIngressController
-	case "nvidia_gpu_operator":
-		applicationStruct = &nvidia_gpu_operator.DefaultNvidiaGpuOperator
-	case "trivy":
-		applicationStruct = &trivy.DefaultTrivy
-	case "trivy-operator":
-		applicationStruct = &trivy_operator.DefaultTrivyOperator
-	default:
-		// Handle unknown applicationName if necessary
-		applicationStruct = nil
-	}
-
-	return applicationStruct
 }
 
 func TestClusters(t *testing.T) {
@@ -158,12 +112,26 @@ func TestClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	application := getChosenApplication()
-	name, namespace, key, names := application.FetchData()
-	log.Info("Waiting for pods to get ready...")
-	err := waitForPods(ctx, t, log, client, namespace, key, names)
+	application := appskubermaticv1.ApplicationInstallation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      applicationName,
+			Namespace: applicationNamespace,
+		},
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
+				Name:   applicationNamespace,
+				Create: true,
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name:    applicationName,
+				Version: applicationVersion,
+			},
+		},
+	}
+
+	err := client.Create(ctx, &application)
 	if err != nil {
-		t.Fatalf("pods never became ready: %v", err)
+		t.Fatalf("%v", err)
 	}
 
 	log.Info("Running tests...")
@@ -171,7 +139,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	log.Info("Checking for ApplicationInstallation...")
 	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
-		if err := client.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: name}, app); err != nil {
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationName}, app); err != nil {
 			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
 		}
 		if app.Status.ApplicationVersion == nil {
@@ -183,13 +151,27 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
-	err = isHelmReleaseDeployed(ctx, t, log, client, name, namespace)
+	log.Info("Checking if the helm release is deployed")
+	err = isHelmReleaseDeployed(ctx, log, client, applicationName, applicationNamespace)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
+
+	log.Info("Checking if all conditions are ok")
+	err = checkApplicationInstallationConditions(ctx, log, client)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	namesStrArray := strings.Split(names, ",")
+	log.Info("Waiting for pods to get ready...")
+	err = waitForPods(ctx, log, client, applicationNamespace, key, namesStrArray)
+	if err != nil {
+		t.Fatalf("pods never became ready: %v", err)
+	}
 }
 
-func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
+func waitForPods(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, namespace string, key string, names []string) error {
 	log = log.With("namespace", namespace)
 
 	r, err := labels.NewRequirement(key, selection.In, names)
@@ -231,7 +213,7 @@ func waitForPods(ctx context.Context, t *testing.T, log *zap.SugaredLogger, clie
 	})
 }
 
-func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client, appName, namespace string) error {
+func isHelmReleaseDeployed(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, appName, namespace string) error {
 	secrets := corev1.SecretList{}
 	err := client.List(ctx, &secrets, ctrlruntimeclient.InNamespace(namespace))
 	if err != nil {
@@ -252,6 +234,41 @@ func isHelmReleaseDeployed(ctx context.Context, t *testing.T, log *zap.SugaredLo
 	return fmt.Errorf("no helm release deployed")
 }
 
+func checkApplicationInstallationConditions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+	applicationInstallation := &appskubermaticv1.ApplicationInstallation{}
+	err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: applicationName, Namespace: applicationNamespace}, applicationInstallation)
+	if err != nil {
+		log.Fatalf("failed to get ApplicationInstallation: %v", err)
+		return err
+	}
+
+	// Check if all conditions are "Ready"
+	allConditionsReady := true
+	for _, condition := range applicationInstallation.Status.Conditions {
+		if condition.Status != "True" {
+			allConditionsReady = false
+			break
+		}
+	}
+
+	// Check if Helm release status is "deployed"
+	helmReleaseDeployed := applicationInstallation.Status.HelmRelease.Info.Status == "deployed"
+
+	if allConditionsReady && helmReleaseDeployed {
+		log.Infof("ApplicationInstallation %s in namespace %s is deployed and ready\n", applicationName, applicationNamespace)
+		return nil
+	}
+
+	if !allConditionsReady {
+		return fmt.Errorf("ApplicationInstallation %s in namespace %s, conditions are not ready", applicationName, applicationNamespace)
+	}
+	if !helmReleaseDeployed {
+		return fmt.Errorf("ApplicationInstallation %s in namespace %s, helm release is not deployed", applicationName, applicationNamespace)
+	}
+
+	return nil
+}
+
 func containsString(name, search string) bool {
 	return strings.Contains(name, search)
 }
@@ -263,20 +280,11 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	application := getChosenApplication()
-	appAnnotation, err := application.GetApplication(applicationVersion)
-	if err != nil {
-		return nil, nil, log, fmt.Errorf("failed to prepare test application: %w", err)
-	}
-
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("application-test").
-		WithKonnectivity(true).
-		WithAnnotations(map[string]string{
-			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
-		})
+		WithKonnectivity(true)
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)
