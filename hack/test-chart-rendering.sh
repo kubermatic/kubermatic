@@ -46,7 +46,7 @@ helm dependency build .
 echodate "Testing template commands"
 for valuesFile in test/*.yaml; do
   echodate "- evaluating ${valuesFile}... "
-  helm template . --values ${valuesFile} > ${valuesFile}.out
+  helm template --name-template ${chartname} . --values ${valuesFile} > ${valuesFile}.out
   helmOut=$?
 
   if ! git diff --quiet ${valuesFile}.out || [[ $helmOut -ne 0 ]]; then
