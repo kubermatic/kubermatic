@@ -24,7 +24,7 @@ keywords:
   - blackbox-exporter
 home: https://github.com/prometheus/blackbox_exporter
 sources:
-  - https://github.com/helm/charts/tree/master/stable/prometheus-blackbox-exporter
+  - https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-blackbox-exporter
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
