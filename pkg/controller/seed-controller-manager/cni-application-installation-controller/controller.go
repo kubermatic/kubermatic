@@ -365,6 +365,13 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				ipam := values["ipam"].(map[string]any)
 				operator := ipam["operator"].(map[string]any)
 				delete(operator, "clusterPoolIPv4PodCIDR")
+
+				// If not specified, set envoy.enabled to false
+				// https://github.com/cilium/cilium/commit/471f19a16593e1e9342c31bf3e26e5383737cb0a
+				envoy := values["envoy"].(map[string]any)
+				if _, ok := envoy["enabled"]; !ok {
+					envoy["enabled"] = false
+				}
 			}
 
 			// Set new values
