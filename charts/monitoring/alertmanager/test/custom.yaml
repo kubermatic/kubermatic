@@ -1,0 +1,12 @@
+alertmanager:
+  # block slack related errors
+  config:
+    receivers:
+    - name: blackhole
+    - name: default
+  nodeSelector:
+    workload: infra-mla
+  tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/infra-mla
+    operator: Exists

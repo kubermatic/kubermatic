@@ -29,6 +29,7 @@ relabel_configs:
   action: keep
 - source_labels: [__meta_kubernetes_endpoint_port_name]
   separator: ;
-  regex: web
+  # port name changed with upstream alertmanager chart
+  regex: http
   replacement: $1
   action: keep
