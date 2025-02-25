@@ -16,6 +16,8 @@
 # https://github.com/prometheus-community/helm-charts/blob/prometheus-blackbox-exporter-9.2.0/charts/prometheus-blackbox-exporter/values.yaml
 
 blackbox-exporter:
+  fullnameOverride: blackbox-exporter
+
   podAnnotations:
     prometheus.io/scrape: true
     prometheus.io/port: 9115
