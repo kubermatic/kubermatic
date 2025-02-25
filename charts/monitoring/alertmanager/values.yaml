@@ -46,7 +46,7 @@ alertmanager:
       slack_api_url: https://hooks.slack.com/services/YOUR_KEYS_HERE
     templates:
       - '/etc/alertmanager/*.tmpl'
-      # addded for kubermatic template
+      # added for kubermatic template
       - '/etc/alertmanager/templates/*.tmpl'
     route:
       receiver: default
