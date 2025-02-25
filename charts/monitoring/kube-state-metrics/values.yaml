@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kubeStateMetrics:
-  image:
-    repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
-    tag: v2.12.0
+kube-state-metrics:
+  fullnameOverride: kube-state-metrics
+
   # list of image pull secret references, e.g.
   # imagePullSecrets:
   #   - name: registry-k8s-io-pull-secret
@@ -28,6 +27,22 @@ kubeStateMetrics:
     limits:
       cpu: 2
       memory: 384Mi
+
+  # List of additional cli arguments to configure kube-state-metrics
+  # for example: --enable-gzip-encoding, --log-file, etc.
+  # all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/developer/cli-arguments.md
+  extraArgs:
+  - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance],persistentvolumeclaims=[excluded-from-alerts]
+
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8080'
+    fluentbit.io/parser: glog
+    cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
+
+  serviceAccount:
+    # If false then the user will opt out of automounting API credentials.
+    automountServiceAccountToken: false
 
   rbac:
     # Add permissions for CustomResources' apiGroups in Role/ClusterRole. Should be used in conjunction with Custom Resource State Metrics configuration
@@ -43,19 +58,8 @@ kubeStateMetrics:
     # Add ClusterRole permissions to list/watch the customResources defined in the config to rbac.extraRules
     config: {}
 
-  resizer:
-    image:
-      repository: registry.k8s.io/autoscaling/addon-resizer
-      tag: '1.8.16'
-    resources:
-      requests:
-        cpu: 50m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 48Mi
-
   nodeSelector: {}
+  
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -65,4 +69,66 @@ kubeStateMetrics:
               app: kube-state-metrics
           topologyKey: kubernetes.io/hostname
         weight: 100
+  
   tolerations: []
+
+  # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  podDisruptionBudget:
+    maxUnavailable: 1
+
+  volumes:
+  - name: tmp
+    emptyDir: {}
+
+  volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    enabled: false
+
+  selfMonitor:
+    enabled: true
+
+  # Enable vertical pod autoscaler support for kube-state-metrics
+  verticalPodAutoscaler:
+    enabled: false
+
+    # Recommender responsible for generating recommendation for the object.
+    # List should be empty (then the default recommender will generate the recommendation)
+    # or contain exactly one recommender.
+    # recommenders: []
+    # - name: custom-recommender-performance
+
+    # List of resources that the vertical pod autoscaler can control. Defaults to cpu and memory
+    controlledResources: []
+    # Specifies which resource values should be controlled: RequestsOnly or RequestsAndLimits.
+    # controlledValues: RequestsAndLimits
+
+    # Define the max allowed resources for the pod
+    maxAllowed: {}
+    # cpu: 200m
+    # memory: 100Mi
+    # Define the min allowed resources for the pod
+    minAllowed: {}
+    # cpu: 200m
+    # memory: 100Mi
+
+    # updatePolicy:
+      # Specifies minimal number of replicas which need to be alive for VPA Updater to attempt pod eviction
+      # minReplicas: 1
+      # Specifies whether recommended updates are applied when a Pod is started and whether recommended updates
+      # are applied during the life of a Pod. Possible values are "Off", "Initial", "Recreate", and "Auto".
+      # updateMode: Auto
