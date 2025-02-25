@@ -12,56 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-blackboxExporter:
-  image:
-    repository: quay.io/prometheus/blackbox-exporter
-    tag: v0.25.0
-    pullPolicy: IfNotPresent
-  # list of image pull secret references, e.g.
-  # imagePullSecrets:
-  #   - name: quay-io-pull-secret
-  #   - name: docker-io-pull-secret
-  imagePullSecrets: []
+blackbox-exporter:
+  podAnnotations:
+    prometheus.io/scrape: true
+    prometheus.io/port: 9115
 
-  containers:
-    blackboxExporter:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 24Mi
-        limits:
-          cpu: 250m
-          memory: 32Mi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 24Mi
+    limits:
+      cpu: 250m
+      memory: 32Mi
 
-  nodeSelector: {}
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app: blackbox-exporter
-          topologyKey: kubernetes.io/hostname
-        weight: 100
-  tolerations: []
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: blackbox-exporter
+            topologyKey: kubernetes.io/hostname
+          weight: 100
 
-  modules:
-    # A module that requires HTTPS and HTTP 2xx codes on its targets.
-    https_2xx:
-      prober: http
-      timeout: 5s
-      http:
-        method: GET
-        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-        fail_if_not_ssl: true
-        preferred_ip_protocol: "ip4"
-    # A module that requires HTTPS and HTTP 2xx codes on its targets but will skip tls verify.
-    https_2xx_skip_tls_verify:
-      prober: http
-      timeout: 5s
-      http:
-        method: GET
-        preferred_ip_protocol: "ip4"
-        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-        tls_config:
-          insecure_skip_verify: true
+  config:
+    modules:
+      # A module that requires HTTPS and HTTP 2xx codes on its targets.
+      https_2xx:
+        prober: http
+        timeout: 5s
+        http:
+          method: GET
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          fail_if_not_ssl: true
+          preferred_ip_protocol: "ip4"
+      # A module that requires HTTPS and HTTP 2xx codes on its targets but will skip tls verify.
+      https_2xx_skip_tls_verify:
+        prober: http
+        timeout: 5s
+        http:
+          method: GET
+          preferred_ip_protocol: "ip4"
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          tls_config:
+            insecure_skip_verify: true
