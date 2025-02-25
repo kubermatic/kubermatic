@@ -94,7 +94,7 @@ spec:
           allowInsecure: false
           catalog: "kubermatic"
           templates:
-            ubuntu: "machine-controller-ubuntu"
+            ubuntu: "ubuntu-2404-cloud-latest"
             flatcar: "machine-controller-flatcar"
     vsphere-ger:
       location: Hamburg
