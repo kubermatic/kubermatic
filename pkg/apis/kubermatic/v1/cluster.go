@@ -318,6 +318,9 @@ const (
 	// CNIPluginTypeCilium corresponds to Cilium CNI plugin.
 	CNIPluginTypeCilium CNIPluginType = "cilium"
 
+	// CNIPluginTypeCilium corresponds to KubeOVN CNI plugin.
+	CNIPluginTypeKubeOVN CNIPluginType = "kubeovn"
+
 	// CNIPluginTypeNone corresponds to no CNI plugin managed by KKP
 	// (cluster users are responsible for managing the CNI in the cluster themselves).
 	CNIPluginTypeNone CNIPluginType = "none"
