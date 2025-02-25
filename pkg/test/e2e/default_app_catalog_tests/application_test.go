@@ -112,6 +112,20 @@ func TestClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: applicationNamespace,
+		},
+	}
+
+	// Create the namespace in Kubernetes
+	err := client.Create(ctx, namespace)
+	if err != nil {
+		t.Fatalf("%v", err)
+	} else {
+		log.Infof("Namespace %s created", namespace.Name)
+	}
+
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationName,
@@ -129,7 +143,7 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		},
 	}
 
-	err := client.Create(ctx, &application)
+	err = client.Create(ctx, &application)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
