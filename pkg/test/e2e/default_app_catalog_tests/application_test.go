@@ -247,7 +247,7 @@ func isHelmReleaseDeployed(ctx context.Context, log *zap.SugaredLogger, client c
 		}
 	}
 
-	return fmt.Errorf("no helm release deployed")
+	return nil
 }
 
 func checkApplicationInstallationConditions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
