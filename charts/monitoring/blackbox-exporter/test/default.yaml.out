@@ -1,38 +1,41 @@
 ---
-# Source: blackbox-exporter/templates/deployment.yaml
-apiVersion: policy/v1
-
-kind: PodDisruptionBudget
+# Source: blackbox-exporter/charts/blackbox-exporter/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: blackbox-exporter
-spec:
-  maxUnavailable: 1
-  selector:
-    matchLabels:
-      app: blackbox-exporter
+  name: release-name-blackbox-exporter
+  namespace: default
+  labels:
+    helm.sh/chart: blackbox-exporter-9.2.0
+    app.kubernetes.io/name: blackbox-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/managed-by: Helm
 ---
-# Source: blackbox-exporter/templates/configmap.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: blackbox-exporter/charts/blackbox-exporter/templates/configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: blackbox-exporter-config
+  name: release-name-blackbox-exporter
+  namespace: default
+  labels:
+    helm.sh/chart: blackbox-exporter-9.2.0
+    app.kubernetes.io/name: blackbox-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/managed-by: Helm
 data:
-  config.yml: |
+  blackbox.yaml: |
     modules:
+      http_2xx:
+        http:
+          follow_redirects: true
+          preferred_ip_protocol: ip4
+          valid_http_versions:
+          - HTTP/1.1
+          - HTTP/2.0
+        prober: http
+        timeout: 5s
       https_2xx:
         http:
           fail_if_not_ssl: true
@@ -55,85 +58,93 @@ data:
         prober: http
         timeout: 5s
 ---
-# Source: blackbox-exporter/templates/service.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: blackbox-exporter/charts/blackbox-exporter/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
+  name: release-name-blackbox-exporter
+  namespace: default
   labels:
-    app: blackbox-exporter
-  name: blackbox-exporter
+    helm.sh/chart: blackbox-exporter-9.2.0
+    app.kubernetes.io/name: blackbox-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/managed-by: Helm
 spec:
+  type: ClusterIP
   ports:
-  - name: web
-    port: 9115
-    targetPort: web
+    - port: 9115
+      targetPort: http
+      protocol: TCP
+      name: http
+    
   selector:
-    app: blackbox-exporter
+    app.kubernetes.io/name: blackbox-exporter
+    app.kubernetes.io/instance: release-name
 ---
-# Source: blackbox-exporter/templates/deployment.yaml
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+# Source: blackbox-exporter/charts/blackbox-exporter/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: blackbox-exporter
+  name: release-name-blackbox-exporter
+  namespace: default
+  labels:
+    helm.sh/chart: blackbox-exporter-9.2.0
+    app.kubernetes.io/name: blackbox-exporter
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.25.0"
+    app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
-  strategy:
-    type: Recreate
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: blackbox-exporter
+      app.kubernetes.io/name: blackbox-exporter
+      app.kubernetes.io/instance: release-name
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
   template:
     metadata:
       labels:
-        app: blackbox-exporter
+        app.kubernetes.io/name: blackbox-exporter
+        app.kubernetes.io/instance: release-name
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9115"
-        kubermatic.io/chart: blackbox-exporter
-        checksum/config: 5f50130fbef085174222d6c1a718f7cfcdf7d6016d406c31fb33ad9f13c1160b
+        checksum/config: aed63c39ba6a0479ad8af916a0afd097e20c80b4d9e35cb665b0f2fa5c17ddb8
+        prometheus.io/port: 9115
+        prometheus.io/scrape: true
     spec:
+      automountServiceAccountToken: false
+      serviceAccountName: release-name-blackbox-exporter
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: blackbox-exporter
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      restartPolicy: Always
+      
       containers:
-      - name: exporter
-        image: 'quay.io/prometheus/blackbox-exporter:v0.25.0'
+      
+      - name: blackbox-exporter
+        image: quay.io/prometheus/blackbox-exporter:v0.25.0
         imagePullPolicy: IfNotPresent
-        ports:
-        - containerPort: 9115
-          name: web
-        livenessProbe:
-          httpGet:
-            path: /-/healthy
-            port: web
-        volumeMounts:
-        - name: config
-          mountPath: /etc/blackbox_exporter
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 1000
+          runAsNonRoot: true
+          runAsUser: 1000
+        args:
+        - "--config.file=/config/blackbox.yaml"
         resources:
           limits:
             cpu: 250m
@@ -141,20 +152,23 @@ spec:
           requests:
             cpu: 100m
             memory: 24Mi
+        ports:
+        - containerPort: 9115
+          name: http
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /-/healthy
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+        volumeMounts:
+        - mountPath: /config
+          name: config
+      hostNetwork: false
       volumes:
       - name: config
         configMap:
-          name: blackbox-exporter-config
-      nodeSelector:
-        {}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app: blackbox-exporter
-              topologyKey: kubernetes.io/hostname
-            weight: 100
-      tolerations:
-        []
+          name: release-name-blackbox-exporter
