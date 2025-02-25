@@ -267,20 +267,25 @@ func checkApplicationInstallationConditions(ctx context.Context, log *zap.Sugare
 		}
 	}
 
-	// Check if Helm release status is "deployed"
-	helmReleaseDeployed := applicationInstallation.Status.HelmRelease.Info.Status == "deployed"
-
-	if allConditionsReady && helmReleaseDeployed {
-		log.Infof("ApplicationInstallation %s in namespace %s is deployed and ready\n", applicationName, applicationNamespace)
-		return nil
-	}
-
 	if !allConditionsReady {
 		return fmt.Errorf("ApplicationInstallation %s in namespace %s, conditions are not ready", applicationName, applicationNamespace)
 	}
+
+	log.Info("all conditions ready")
+
+	// Check if Helm release status is "deployed"
+	helmReleaseDeployed := false
+	if applicationInstallation.Status.HelmRelease.Info.Status == "deployed" {
+		helmReleaseDeployed = true
+	}
+
 	if !helmReleaseDeployed {
 		return fmt.Errorf("ApplicationInstallation %s in namespace %s, helm release is not deployed", applicationName, applicationNamespace)
 	}
+
+	log.Info("helm release deployed")
+
+	log.Infof("ApplicationInstallation %s in namespace %s is deployed and ready\n", applicationName, applicationNamespace)
 
 	return nil
 }
