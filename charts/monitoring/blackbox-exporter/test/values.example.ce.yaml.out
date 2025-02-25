@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: release-name-blackbox-exporter
+  name: blackbox-exporter
   namespace: default
   labels:
     helm.sh/chart: blackbox-exporter-9.2.0
@@ -16,7 +16,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: release-name-blackbox-exporter
+  name: blackbox-exporter
   namespace: default
   labels:
     helm.sh/chart: blackbox-exporter-9.2.0
@@ -62,7 +62,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-blackbox-exporter
+  name: blackbox-exporter
   namespace: default
   labels:
     helm.sh/chart: blackbox-exporter-9.2.0
@@ -86,7 +86,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: release-name-blackbox-exporter
+  name: blackbox-exporter
   namespace: default
   labels:
     helm.sh/chart: blackbox-exporter-9.2.0
@@ -117,7 +117,7 @@ spec:
         prometheus.io/scrape: true
     spec:
       automountServiceAccountToken: false
-      serviceAccountName: release-name-blackbox-exporter
+      serviceAccountName: blackbox-exporter
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -171,4 +171,4 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: release-name-blackbox-exporter
+          name: blackbox-exporter
