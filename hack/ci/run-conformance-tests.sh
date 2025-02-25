@@ -108,7 +108,7 @@ elif [[ $provider == "vmwareclouddirector" ]]; then
     -vmware-cloud-director-password=${VCD_PASSWORD}
     -vmware-cloud-director-organization=O1060SM
     -vmware-cloud-director-vdc=O1060SM_GEO02_KUBERMATIC
-    -vmware-cloud-director-ovdc-networks=${VCD_OVDC_NETWORK}
+    -vmware-cloud-director-ovdc-networks=kubermatic-e2e-routed-network
     -vmware-cloud-director-kkp-datacenter=vmware-cloud-director-ger"
 fi
 
