@@ -36,6 +36,27 @@ data:
           - HTTP/2.0
         prober: http
         timeout: 5s
+      https_2xx:
+        http:
+          fail_if_not_ssl: true
+          method: GET
+          preferred_ip_protocol: ip4
+          valid_http_versions:
+          - HTTP/1.1
+          - HTTP/2.0
+        prober: http
+        timeout: 5s
+      https_2xx_skip_tls_verify:
+        http:
+          method: GET
+          preferred_ip_protocol: ip4
+          tls_config:
+            insecure_skip_verify: true
+          valid_http_versions:
+          - HTTP/1.1
+          - HTTP/2.0
+        prober: http
+        timeout: 5s
 ---
 # Source: blackbox-exporter/charts/blackbox-exporter/templates/service.yaml
 apiVersion: v1
@@ -91,10 +112,21 @@ spec:
         app.kubernetes.io/name: blackbox-exporter
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: f43e733459690a84886aec93596a01748c2f936776a534eeaeb9f084e62ebb91
+        checksum/config: aed63c39ba6a0479ad8af916a0afd097e20c80b4d9e35cb665b0f2fa5c17ddb8
+        prometheus.io/port: 9115
+        prometheus.io/scrape: true
     spec:
       automountServiceAccountToken: false
       serviceAccountName: release-name-blackbox-exporter
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: blackbox-exporter
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       restartPolicy: Always
       
       containers:
@@ -113,6 +145,13 @@ spec:
           runAsUser: 1000
         args:
         - "--config.file=/config/blackbox.yaml"
+        resources:
+          limits:
+            cpu: 250m
+            memory: 32Mi
+          requests:
+            cpu: 100m
+            memory: 24Mi
         ports:
         - containerPort: 9115
           name: http
