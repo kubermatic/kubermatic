@@ -82,6 +82,10 @@ func CompleteMachineDeployment(md *clusterv1alpha1.MachineDeployment, cluster *k
 		md.Spec.Template.Spec.Labels["system/project"] = projectID
 	}
 
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeKubeOVN {
+		md.Spec.Template.Spec.Labels["kube-ovn/role"] = "master"
+	}
+
 	// ensure a version is set; if one is set already, Validate() took care to ensure
 	// it's compatible
 	if md.Spec.Template.Spec.Versions.Kubelet == "" {

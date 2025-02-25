@@ -226,6 +226,12 @@ func getCNIApplicationInstallation(ctx context.Context, userClusterClient ctrlru
 			return nil, ctrlruntimeclient.IgnoreNotFound(err)
 		}
 		return app, nil
+	case kubermaticv1.CNIPluginTypeKubeOVN:
+		name := kubermaticv1.CNIPluginTypeKubeOVN.String()
+		if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, app); err != nil {
+			return nil, ctrlruntimeclient.IgnoreNotFound(err)
+		}
+		return app, nil
 	}
 
 	return nil, fmt.Errorf("unsupported CNI type: %s", cniType)
