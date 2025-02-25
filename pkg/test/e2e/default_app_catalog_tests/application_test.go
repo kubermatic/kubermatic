@@ -114,46 +114,46 @@ func TestClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	namespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: applicationNamespace,
-		},
-	}
-
-	// Create the namespace in Kubernetes
-	err := client.Create(ctx, namespace)
-	if err != nil {
-		t.Fatalf("%v", err)
-	} else {
-		log.Infof("Namespace %s created", namespace.Name)
-	}
-
-	application := appskubermaticv1.ApplicationInstallation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      applicationName,
-			Namespace: applicationNamespace,
-		},
-		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: &appskubermaticv1.AppNamespaceSpec{
-				Name:   applicationNamespace,
-				Create: true,
-			},
-			ApplicationRef: appskubermaticv1.ApplicationRef{
-				Name:    applicationName,
-				Version: applicationVersion,
-			},
-		},
-	}
-
-	err = client.Create(ctx, &application)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	//namespace := &corev1.Namespace{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name: applicationNamespace,
+	//	},
+	//}
+	//
+	//// Create the namespace in Kubernetes
+	//err := client.Create(ctx, namespace)
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//} else {
+	//	log.Infof("Namespace %s created", namespace.Name)
+	//}
+	//
+	//application := appskubermaticv1.ApplicationInstallation{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:      applicationName,
+	//		Namespace: applicationNamespace,
+	//	},
+	//	Spec: appskubermaticv1.ApplicationInstallationSpec{
+	//		Namespace: &appskubermaticv1.AppNamespaceSpec{
+	//			Name:   applicationNamespace,
+	//			Create: true,
+	//		},
+	//		ApplicationRef: appskubermaticv1.ApplicationRef{
+	//			Name:    applicationName,
+	//			Version: applicationVersion,
+	//		},
+	//	},
+	//}
+	//
+	//err = client.Create(ctx, &application)
+	//if err != nil {
+	//	t.Fatalf("%v", err)
+	//}
 
 	log.Info("Running tests...")
 
 	log.Info("Checking for ApplicationInstallation...")
-	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err := wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationName}, app); err != nil {
 			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
