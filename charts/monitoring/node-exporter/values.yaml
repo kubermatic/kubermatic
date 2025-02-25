@@ -12,33 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-nodeExporter:
-  image:
-    repository: quay.io/prometheus/node-exporter
-    tag: v1.7.0
+prometheus-node-exporter:
+  #image:
+  #  repository: quay.io/prometheus/node-exporter
+  #  tag: v1.7.0
   # list of image pull secret references, e.g.
   # imagePullSecrets:
   #   - name: quay-io-pull-secret
   imagePullSecrets: []
-  resources:
-    requests:
-      cpu: 50m
-      memory: 24Mi
-    limits:
-      cpu: 250m
-      memory: 48Mi
+  #resources:
+  #  requests:
+  #    cpu: 50m
+  #    memory: 24Mi
+  #  limits:
+  #    cpu: 250m
+  #    memory: 48Mi
 
-  rbacProxy:
-    image:
-      repository: quay.io/brancz/kube-rbac-proxy
-      tag: v0.14.1
-    resources:
-      requests:
-        cpu: 50m
-        memory: 24Mi
-      limits:
-        cpu: 100m
-        memory: 48Mi
+  #rbacProxy:
+  #  image:
+  #    repository: quay.io/brancz/kube-rbac-proxy
+  #    tag: v0.14.1
+  #  resources:
+  #    requests:
+  #      cpu: 50m
+  #      memory: 24Mi
+  #    limits:
+  #      cpu: 100m
+  #      memory: 48Mi
 
   nodeSelector: {}
   affinity: {}
@@ -47,3 +47,27 @@ nodeExporter:
     operator: Exists
   - effect: NoSchedule
     operator: Exists
+
+  serviceAccount:
+    name: node-exporter
+    
+  kubeRBACProxy:
+    enabled: true
+    port: 9100
+    portName: https
+    enableHostPort: true
+    
+  fullnameOverride: node-exporter
+  nameOverride: node-exporter
+
+  service:
+    clusterIP: None
+    servicePort: 9100
+    portName: https
+
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9100'
+  
+  commonLabels:
+    app: node-exporter
