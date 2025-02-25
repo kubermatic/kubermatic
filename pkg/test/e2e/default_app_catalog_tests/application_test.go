@@ -18,9 +18,11 @@ package default_app_catalog_applications_tests
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
@@ -294,11 +296,36 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
+	application := appskubermaticv1.ApplicationInstallation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      applicationName,
+			Namespace: applicationNamespace,
+		},
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
+				Name:   applicationNamespace,
+				Create: true,
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name:    applicationName,
+				Version: applicationVersion,
+			},
+		},
+	}
+
+	appAnnotation, err := json.Marshal(application)
+	if err != nil {
+		return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
+	}
+
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("application-test").
-		WithKonnectivity(true)
+		WithKonnectivity(true).
+		WithAnnotations(map[string]string{
+			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
+		})
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)
