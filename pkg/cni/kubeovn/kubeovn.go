@@ -29,8 +29,10 @@ import (
 )
 
 const (
-	kubeOVNHelmChartName = "kube-ovn"
-	kubeOVNImageRegistry = "docker.io/kubeovn/"
+	kubeOVNHelmChartName    = "kube-ovn"
+	kubeOVNImageRegistry    = "docker.io/kubeovn/"
+	KubeOVNMasterLabelKey   = "kube-ovn/role"
+	KubeOVNMasterLabelValue = "master"
 )
 
 func toOciUrl(s string) string {

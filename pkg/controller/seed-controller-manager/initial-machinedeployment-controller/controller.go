@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/cni/kubeovn"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -169,6 +170,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		return nil, fmt.Errorf("failed to unmarshal string as MachineDeployment: %w", err)
+	}
+
+	// when cni type is kube-ovn we will add labels to the initial machinedeployment for scheduling master components to the related nodes
+	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeKubeOVN {
+		mdLabels := machineDeployment.GetLabels()
+		if mdLabels == nil {
+			mdLabels = make(map[string]string, 0)
+		}
+		mdLabels[kubeovn.KubeOVNMasterLabelKey] = kubeovn.KubeOVNMasterLabelValue
 	}
 
 	if err := ValidateMachineDeployment(machineDeployment, cluster.Spec.Version.Semver()); err != nil {

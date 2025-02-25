@@ -303,7 +303,7 @@ type CNIPluginSettings struct {
 // +kubebuilder:validation:Enum=canal;cilium;none
 
 // CNIPluginType defines the type of CNI plugin installed.
-// Possible values are `canal`, `cilium` or `none`.
+// Possible values are `canal`, `cilium`, `kube-ovn` or `none`.
 type CNIPluginType string
 
 func (c CNIPluginType) String() string {
