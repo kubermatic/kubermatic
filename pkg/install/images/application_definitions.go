@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers"
 	"k8c.io/kubermatic/v2/pkg/cni/cilium"
+	"k8c.io/kubermatic/v2/pkg/cni/kubeovn"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -70,6 +71,7 @@ func SystemAppsHelmCharts(
 ) iter.Seq2[*SystemAppsHelmChart, error] {
 	appDefReconcilers := []reconciling.NamedApplicationDefinitionReconcilerFactory{
 		cilium.ApplicationDefinitionReconciler(config),
+		kubeovn.ApplicationDefinitionReconciler(config),
 	}
 
 	return func(yield func(*SystemAppsHelmChart, error) bool) {

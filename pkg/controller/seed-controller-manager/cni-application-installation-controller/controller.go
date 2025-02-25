@@ -32,6 +32,7 @@ import (
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/cni/cilium"
+	"k8c.io/kubermatic/v2/pkg/cni/kubeovn"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -388,8 +389,12 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 }
 
 func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
-	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
+	switch cluster.Spec.CNIPlugin.Type {
+	case kubermaticv1.CNIPluginTypeCilium:
 		return cilium.GetAppInstallOverrideValues(cluster, overwriteRegistry)
+	case kubermaticv1.CNIPluginTypeKubeOVN:
+		return kubeovn.GetAppInstallOverrideValues(cluster, overwriteRegistry)
+	default:
+		return nil
 	}
-	return nil
 }

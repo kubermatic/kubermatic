@@ -28,8 +28,9 @@ import (
 
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
-		kubermaticv1.CNIPluginTypeCanal:  "v3.29",
-		kubermaticv1.CNIPluginTypeCilium: "1.16.6",
+		kubermaticv1.CNIPluginTypeCanal:   "v3.29",
+		kubermaticv1.CNIPluginTypeCilium:  "1.16.6",
+		kubermaticv1.CNIPluginTypeKubeOVN: "1.13.3",
 	}
 )
 
@@ -39,6 +40,7 @@ var (
 		kubermaticv1.CNIPluginTypeCanal.String(),
 		kubermaticv1.CNIPluginTypeCilium.String(),
 		kubermaticv1.CNIPluginTypeNone.String(),
+		kubermaticv1.CNIPluginTypeCilium.String(),
 	)
 	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
 	// Only supported versions are available for selection in KKP UI.
@@ -51,7 +53,8 @@ var (
 			"1.15.10",
 			"1.16.6",
 		),
-		kubermaticv1.CNIPluginTypeNone: sets.New(""),
+		kubermaticv1.CNIPluginTypeNone:    sets.New(""),
+		kubermaticv1.CNIPluginTypeKubeOVN: sets.New("1.13.3"),
 	}
 	// deprecatedCNIPluginVersions contains a list of deprecated CNI versions for each CNI type.
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
@@ -174,5 +177,10 @@ func IsManagedByAppInfra(cniType kubermaticv1.CNIPluginType, cniVersion string) 
 			return true
 		}
 	}
+
+	if cniType == kubermaticv1.CNIPluginTypeKubeOVN {
+		return true
+	}
+
 	return false
 }

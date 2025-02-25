@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -66,12 +66,12 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				//  - introduced in pkg/cni/version.go with the version string exactly matching the Spec.Versions.Version here
 				//  - Helm chart is mirrored in Kubermatic OCI registry, use the script kubeovn-mirror-chart.sh
 				{
-					Version: "1.13.2",
+					Version: "1.13.3",
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    kubeOVNHelmChartName,
-								ChartVersion: "1.13.2",
+								ChartVersion: "1.13.3",
 								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
@@ -80,7 +80,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				},
 			}
 
-			// to make it compatible with older cilium controller versions, convert any DefaultValues into DefaultValuesBlock
+			// to make it compatible with older kube-ovn controller versions, convert any DefaultValues into DefaultValuesBlock
 			if err := convertDefaultValuesToDefaultValuesBlock(app); err != nil {
 				return app, fmt.Errorf("failed to convert DefaultValues into DefaultValuesBlock: %w", err)
 			}
@@ -102,7 +102,6 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 // GetAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
 // of the KubeOVN CNI managed by KKP.
 func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
-
 	return nil
 }
 
