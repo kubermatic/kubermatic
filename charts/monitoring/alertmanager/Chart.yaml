@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
+apiVersion: v2
 name: alertmanager
 version: 9.9.9-dev
 appVersion: v0.28.0
