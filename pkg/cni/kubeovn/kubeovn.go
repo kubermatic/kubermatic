@@ -18,6 +18,8 @@ package kubeovn
 
 import (
 	"fmt"
+	"math/big"
+	"net"
 	"strings"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
@@ -104,7 +106,38 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 // GetAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
 // of the KubeOVN CNI managed by KKP.
 func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
-	return nil
+	defaultValues := map[string]any{
+		"MASTER_NODES_LABELS": fmt.Sprintf("%s=%s", KubeOVNMasterLabelValue, KubeOVNMasterLabelValue),
+	}
+	_, ipnet, err := net.ParseCIDR(cluster.Spec.ClusterNetwork.Services.GetIPv4CIDR())
+	if err != nil {
+		return defaultValues
+	}
+
+	// for now we only support ipv4
+	ipInt := IP2BigInt(ipnet.IP.String())
+
+	ipv4Config := map[string]any{
+		"JOIN_CIDR":   "100.65.0.0/24",
+		"POD_CIDR":    cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
+		"POD_GATEWAY": BigInt2Ip(ipInt.Add(ipInt, big.NewInt(1))),
+		"SVC_CIDR":    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+	}
+	defaultValues["ipv4"] = ipv4Config
+	return defaultValues
+}
+
+func IP2BigInt(ipStr string) *big.Int {
+	ipBigInt := big.NewInt(0)
+	// for now we only support ipv4
+	ipBigInt.SetBytes(net.ParseIP(ipStr).To4())
+	return ipBigInt
+}
+
+func BigInt2Ip(ipInt *big.Int) string {
+	buf := make([]byte, 4)
+	ip := net.IP(ipInt.FillBytes(buf))
+	return ip.String()
 }
 
 // ValidateValuesUpdate validates the update operation on provided KubeOVN Helm values.
