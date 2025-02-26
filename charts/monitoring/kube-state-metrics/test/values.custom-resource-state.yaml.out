@@ -413,7 +413,7 @@ spec:
           - podAffinityTerm:
               labelSelector:
                 matchLabels:
-                  app: kube-state-metrics
+                  app.kubernetes.io/name: kube-state-metrics
               topologyKey: kubernetes.io/hostname
             weight: 100
       volumes:
