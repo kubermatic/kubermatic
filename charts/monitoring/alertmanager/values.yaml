@@ -17,6 +17,7 @@
 # Below are adjusted values to mimic existing KKP alertmanager setup
 
 alertmanager:
+  fullnameOverride: alertmanager
   replicaCount: 3
   resources:
     limits:

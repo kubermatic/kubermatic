@@ -3,7 +3,7 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: release-name-alertmanager
+  name: alertmanager
   labels:
     helm.sh/chart: alertmanager-1.15.0
     app.kubernetes.io/name: alertmanager
@@ -22,7 +22,7 @@ spec:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: release-name-alertmanager
+  name: alertmanager
   labels:
     helm.sh/chart: alertmanager-1.15.0
     app.kubernetes.io/name: alertmanager
@@ -36,7 +36,7 @@ automountServiceAccountToken: true
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: release-name-alertmanager
+  name: alertmanager
   labels:
     helm.sh/chart: alertmanager-1.15.0
     app.kubernetes.io/name: alertmanager
@@ -164,7 +164,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-alertmanager
+  name: alertmanager
   labels:
     helm.sh/chart: alertmanager-1.15.0
     app.kubernetes.io/name: alertmanager
@@ -187,7 +187,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: release-name-alertmanager-headless
+  name: alertmanager-headless
   labels:
     helm.sh/chart: alertmanager-1.15.0
     app.kubernetes.io/name: alertmanager
@@ -218,7 +218,7 @@ spec:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: release-name-alertmanager
+  name: alertmanager
   labels:
     helm.sh/chart: alertmanager-1.15.0
     app.kubernetes.io/name: alertmanager
@@ -234,7 +234,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: alertmanager
       app.kubernetes.io/instance: release-name
-  serviceName: release-name-alertmanager-headless
+  serviceName: alertmanager-headless
   template:
     metadata:
       labels:
@@ -243,7 +243,7 @@ spec:
       annotations:
     spec:
       automountServiceAccountToken: true
-      serviceAccountName: release-name-alertmanager
+      serviceAccountName: alertmanager
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -290,9 +290,9 @@ spec:
             - --config.file=/etc/alertmanager/alertmanager.yml
             - --cluster.advertise-address=[$(POD_IP)]:9094
             - --cluster.listen-address=0.0.0.0:9094
-            - --cluster.peer=release-name-alertmanager-0.release-name-alertmanager-headless:9094
-            - --cluster.peer=release-name-alertmanager-1.release-name-alertmanager-headless:9094
-            - --cluster.peer=release-name-alertmanager-2.release-name-alertmanager-headless:9094
+            - --cluster.peer=alertmanager-0.alertmanager-headless:9094
+            - --cluster.peer=alertmanager-1.alertmanager-headless:9094
+            - --cluster.peer=alertmanager-2.alertmanager-headless:9094
           ports:
             - name: http
               containerPort: 9093
@@ -329,7 +329,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: release-name-alertmanager
+            name: alertmanager
         - configMap:
             name: kubermatic-altermanager-templates
           name: templates
