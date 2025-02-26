@@ -558,7 +558,7 @@ func getAlertmanagerStatefulsets(
 	})
 
 	alertmanagerMatcher := ctrlruntimeclient.MatchingLabels{
-		"app": appName
+		"app": appName,
 	}
 	if err := kubeClient.List(ctx, statefulsetsList, ctrlruntimeclient.InNamespace(AlertManagerNamespace), alertmanagerMatcher); err != nil {
 		return nil, fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
