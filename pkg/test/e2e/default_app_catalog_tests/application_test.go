@@ -22,8 +22,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 	"testing"
@@ -301,24 +301,46 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	application := appskubermaticv1.ApplicationInstallation{
-		ObjectMeta: metav1.ObjectMeta{
+	//application := appskubermaticv1.ApplicationInstallation{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:      applicationName,
+	//		Namespace: applicationNamespace,
+	//	},
+	//	Spec: appskubermaticv1.ApplicationInstallationSpec{
+	//		Namespace: &appskubermaticv1.AppNamespaceSpec{
+	//			Name:   applicationNamespace,
+	//			Create: true,
+	//		},
+	//		ApplicationRef: appskubermaticv1.ApplicationRef{
+	//			Name:    applicationName,
+	//			Version: applicationVersion,
+	//		},
+	//	},
+	//}
+
+	//appAnnotation, err := json.Marshal(application)
+	//if err != nil {
+	//	return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
+	//}
+
+	application := apiv1.Application{
+		ObjectMeta: apiv1.ObjectMeta{
 			Name:      applicationName,
 			Namespace: applicationNamespace,
 		},
-		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: &appskubermaticv1.AppNamespaceSpec{
+		Spec: apiv1.ApplicationSpec{
+			Namespace: apiv1.NamespaceSpec{
 				Name:   applicationNamespace,
 				Create: true,
 			},
-			ApplicationRef: appskubermaticv1.ApplicationRef{
+			ApplicationRef: apiv1.ApplicationRef{
 				Name:    applicationName,
 				Version: applicationVersion,
 			},
 		},
 	}
-
-	appAnnotation, err := json.Marshal(application)
+	applications := []apiv1.Application{application}
+	appAnnotation, err := json.Marshal(applications)
 	if err != nil {
 		return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
 	}
