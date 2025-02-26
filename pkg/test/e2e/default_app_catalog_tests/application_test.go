@@ -324,6 +324,10 @@ func createUserCluster(
 	//	return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
 	//}
 
+	applicationRefName := applicationName
+	if applicationName == "gpu-operator" {
+		applicationRefName = "nvidia-gpu-operator"
+	}
 	application := apiv1.Application{
 		ObjectMeta: apiv1.ObjectMeta{
 			Name:      applicationName,
@@ -335,7 +339,7 @@ func createUserCluster(
 				Create: true,
 			},
 			ApplicationRef: apiv1.ApplicationRef{
-				Name:    applicationName,
+				Name:    applicationRefName,
 				Version: applicationVersion,
 			},
 		},
