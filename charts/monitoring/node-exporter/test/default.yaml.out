@@ -1,22 +1,21 @@
 ---
-# Source: node-exporter/charts/prometheus-node-exporter/templates/serviceaccount.yaml
+# Source: node-exporter/charts/node-exporter/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: node-exporter
   namespace: default
   labels:
-    helm.sh/chart: prometheus-node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.44.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "1.9.0"
-    app: node-exporter
 automountServiceAccountToken: false
 ---
-# Source: node-exporter/charts/prometheus-node-exporter/templates/rbac-configmap.yaml
+# Source: node-exporter/charts/node-exporter/templates/rbac-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -32,20 +31,19 @@ data:
         subresource: node-exporter
         name: node-exporter
 ---
-# Source: node-exporter/charts/prometheus-node-exporter/templates/clusterrole.yaml
+# Source: node-exporter/charts/node-exporter/templates/clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: node-exporter
   labels:
-    helm.sh/chart: prometheus-node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.44.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "1.9.0"
-    app: node-exporter
 rules:
   - apiGroups: [ "authentication.k8s.io" ]
     resources:
@@ -56,19 +54,18 @@ rules:
       - subjectaccessreviews
     verbs: [ "create" ]
 ---
-# Source: node-exporter/charts/prometheus-node-exporter/templates/clusterrolebinding.yaml
+# Source: node-exporter/charts/node-exporter/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    helm.sh/chart: prometheus-node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.44.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "1.9.0"
-    app: node-exporter
   name: node-exporter
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -79,21 +76,20 @@ subjects:
   name: node-exporter
   namespace: default
 ---
-# Source: node-exporter/charts/prometheus-node-exporter/templates/service.yaml
+# Source: node-exporter/charts/node-exporter/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: node-exporter
   namespace: default
   labels:
-    helm.sh/chart: prometheus-node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.44.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "1.9.0"
-    app: node-exporter
   annotations:
     prometheus.io/scrape: "true"
 spec:
@@ -108,21 +104,20 @@ spec:
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
 ---
-# Source: node-exporter/charts/prometheus-node-exporter/templates/daemonset.yaml
+# Source: node-exporter/charts/node-exporter/templates/daemonset.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: node-exporter
   namespace: default
   labels:
-    helm.sh/chart: prometheus-node-exporter-4.44.0
+    helm.sh/chart: node-exporter-4.44.0
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/component: metrics
     app.kubernetes.io/part-of: node-exporter
     app.kubernetes.io/name: node-exporter
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "1.9.0"
-    app: node-exporter
 spec:
   selector:
     matchLabels:
@@ -140,14 +135,13 @@ spec:
         prometheus.io/port: "9100"
         prometheus.io/scrape: "true"
       labels:
-        helm.sh/chart: prometheus-node-exporter-4.44.0
+        helm.sh/chart: node-exporter-4.44.0
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: metrics
         app.kubernetes.io/part-of: node-exporter
         app.kubernetes.io/name: node-exporter
         app.kubernetes.io/instance: release-name
         app.kubernetes.io/version: "1.9.0"
-        app: node-exporter
     spec:
       automountServiceAccountToken: true
       securityContext:

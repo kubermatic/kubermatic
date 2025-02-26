@@ -29,3 +29,4 @@ dependencies:
 - name: prometheus-node-exporter
   repository: https://prometheus-community.github.io/helm-charts
   version: 4.44.0
+  alias: node-exporter
