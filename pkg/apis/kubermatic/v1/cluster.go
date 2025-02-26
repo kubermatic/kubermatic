@@ -300,10 +300,10 @@ type CNIPluginSettings struct {
 	Version string `json:"version"`
 }
 
-// +kubebuilder:validation:Enum=canal;cilium;none
+// +kubebuilder:validation:Enum=canal;cilium;kubeovn;none
 
 // CNIPluginType defines the type of CNI plugin installed.
-// Possible values are `canal`, `cilium`, `kube-ovn` or `none`.
+// Possible values are `canal`, `cilium`, `kubeovn` or `none`.
 type CNIPluginType string
 
 func (c CNIPluginType) String() string {

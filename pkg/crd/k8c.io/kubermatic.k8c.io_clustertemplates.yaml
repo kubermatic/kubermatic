@@ -1698,6 +1698,7 @@ spec:
                       enum:
                         - canal
                         - cilium
+                        - kubeovn
                         - none
                       type: string
                     version:

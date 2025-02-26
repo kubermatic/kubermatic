@@ -72,12 +72,12 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				//  - introduced in pkg/cni/version.go with the version string exactly matching the Spec.Versions.Version here
 				//  - Helm chart is mirrored in Kubermatic OCI registry, use the script kubeovn-mirror-chart.sh
 				{
-					Version: "1.13.3",
+					Version: "v1.13.3",
 					Template: appskubermaticv1.ApplicationTemplate{
 						Source: appskubermaticv1.ApplicationSource{
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    kubeOVNHelmChartName,
-								ChartVersion: "1.13.3",
+								ChartVersion: "v1.13.3",
 								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
