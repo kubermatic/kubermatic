@@ -35,6 +35,8 @@ const (
 	kubeOVNImageRegistry    = "docker.io/kubeovn/"
 	KubeOVNMasterLabelKey   = "kube-ovn/role"
 	KubeOVNMasterLabelValue = "master"
+	joinNetworkv4CIDR       = "100.65.0.0/24"
+	joinNetworkv6CIDR       = "fd00:100:65::/112"
 )
 
 func toOciUrl(s string) string {
@@ -107,37 +109,30 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 // of the KubeOVN CNI managed by KKP.
 func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
 	defaultValues := map[string]any{
-		"MASTER_NODES_LABELS": fmt.Sprintf("%s=%s", KubeOVNMasterLabelValue, KubeOVNMasterLabelValue),
+		"MASTER_NODES_LABELS": fmt.Sprintf("%s=%s", KubeOVNMasterLabelKey, KubeOVNMasterLabelValue),
 	}
-	_, ipnet, err := net.ParseCIDR(cluster.Spec.ClusterNetwork.Services.GetIPv4CIDR())
-	if err != nil {
-		return defaultValues
-	}
-
-	// for now we only support ipv4
-	ipInt := IP2BigInt(ipnet.IP.String())
-
 	ipv4Config := map[string]any{
-		"JOIN_CIDR":   "100.65.0.0/24",
-		"POD_CIDR":    cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
-		"POD_GATEWAY": BigInt2Ip(ipInt.Add(ipInt, big.NewInt(1))),
-		"SVC_CIDR":    cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
+		"JOIN_CIDR":   joinNetworkv4CIDR,
+		"POD_CIDR":    cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(),
+		"POD_GATEWAY": getGatewayIP(cluster),
+		"SVC_CIDR":    cluster.Spec.ClusterNetwork.Services.GetIPv4CIDR(),
 	}
 	defaultValues["ipv4"] = ipv4Config
+
+	if cluster.IsDualStack() {
+		netSettings := defaultValues["networking"].(map[string]any)
+		netSettings["NET_STACK"] = "dual_stack"
+
+		dualStackConfig := map[string]any{
+			"JOIN_CIDR":   fmt.Sprintf("%s,%s", joinNetworkv4CIDR, joinNetworkv6CIDR),
+			"POD_CIDR":    fmt.Sprintf("%s,%s", cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR(), cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR()),
+			"POD_GATEWAY": getGatewayIP(cluster),
+			"SVC_CIDR":    fmt.Sprintf("%s,%s", cluster.Spec.ClusterNetwork.Services.GetIPv4CIDR(), cluster.Spec.ClusterNetwork.Services.GetIPv6CIDR()),
+		}
+		defaultValues["dual_stack"] = dualStackConfig
+	}
+
 	return defaultValues
-}
-
-func IP2BigInt(ipStr string) *big.Int {
-	ipBigInt := big.NewInt(0)
-	// for now we only support ipv4
-	ipBigInt.SetBytes(net.ParseIP(ipStr).To4())
-	return ipBigInt
-}
-
-func BigInt2Ip(ipInt *big.Int) string {
-	buf := make([]byte, 4)
-	ip := net.IP(ipInt.FillBytes(buf))
-	return ip.String()
 }
 
 // ValidateValuesUpdate validates the update operation on provided KubeOVN Helm values.
@@ -155,4 +150,30 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 		app.Spec.DefaultValues = nil
 	}
 	return nil
+}
+
+// GetGatewayIP returns the gateway IP for the given cluster.
+// Based on the implementation of kube-ovn itself.
+func getGatewayIP(cluster *kubermaticv1.Cluster) string {
+	_, ipv4net, _ := net.ParseCIDR(cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDR())
+	ipBigInt := big.NewInt(0)
+	ipBigInt.SetBytes(net.ParseIP(ipv4net.IP.String()).To4())
+	ipv4ip := BigInt2Ip(ipBigInt.Add(ipBigInt, big.NewInt(1)))
+
+	if cluster.IsDualStack() {
+		_, ipv6net, _ := net.ParseCIDR(cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDR())
+		ipBigInt.SetBytes(net.ParseIP(ipv6net.IP.String()).To16())
+		ipv6ip := BigInt2Ip(ipBigInt.Add(ipBigInt, big.NewInt(1)))
+		return fmt.Sprintf("%s,%s", ipv4ip, ipv6ip)
+	}
+	return ipv4ip
+}
+
+func BigInt2Ip(ipInt *big.Int) string {
+	buf := make([]byte, 4)
+	if len(ipInt.Bytes()) > 4 {
+		buf = make([]byte, 16)
+	}
+	ip := net.IP(ipInt.FillBytes(buf))
+	return ip.String()
 }
