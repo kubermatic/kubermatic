@@ -23,6 +23,7 @@ import (
 	"slices"
 	"time"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
