@@ -19,8 +19,8 @@ package provider
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	nutanix "k8c.io/machine-controller/pkg/cloudprovider/provider/nutanix/types"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 

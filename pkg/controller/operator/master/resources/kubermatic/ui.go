@@ -19,10 +19,10 @@ package kubermatic
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -54,11 +54,11 @@ func UIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, versions 
 				RunAsUser:    ptr.To[int64](65534),
 			}
 
-			tag := versions.UI
+			tag := versions.UIContainerTag
 			if cfg.Spec.UI.DockerTag != "" {
 				tag = cfg.Spec.UI.DockerTag
 			} else if cfg.Spec.UI.DockerTagSuffix != "" {
-				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.UI.DockerTagSuffix)
+				tag = fmt.Sprintf("%s-%s", tag, cfg.Spec.UI.DockerTagSuffix)
 			}
 
 			volumeMounts := []corev1.VolumeMount{

@@ -25,8 +25,8 @@ import (
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 type Auth struct {

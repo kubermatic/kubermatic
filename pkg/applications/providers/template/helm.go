@@ -25,9 +25,9 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
+	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -119,7 +119,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 					LastDeployed:  metav1.Time(helmRelease.Info.LastDeployed),
 					Deleted:       metav1.Time(helmRelease.Info.Deleted),
 					Description:   helmRelease.Info.Description,
-					Status:        helmRelease.Info.Status,
+					Status:        string(helmRelease.Info.Status),
 					Notes:         helmRelease.Info.Notes,
 				},
 			}
@@ -166,7 +166,7 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 					LastDeployed:  metav1.Time(uninstallReleaseResponse.Release.Info.LastDeployed),
 					Deleted:       metav1.Time(uninstallReleaseResponse.Release.Info.Deleted),
 					Description:   uninstallReleaseResponse.Release.Info.Description,
-					Status:        uninstallReleaseResponse.Release.Info.Status,
+					Status:        string(uninstallReleaseResponse.Release.Info.Status),
 					Notes:         uninstallReleaseResponse.Release.Info.Notes,
 				},
 			}

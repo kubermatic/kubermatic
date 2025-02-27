@@ -23,9 +23,9 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 type Alibaba struct {

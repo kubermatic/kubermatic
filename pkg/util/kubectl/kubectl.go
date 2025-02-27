@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/sdk/semver"
 )
 
 const (

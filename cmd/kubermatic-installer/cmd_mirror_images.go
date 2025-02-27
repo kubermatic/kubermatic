@@ -30,7 +30,6 @@ import (
 	"go.uber.org/zap"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
@@ -39,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -184,9 +184,9 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 	if addonsImage == "" {
 		suffix := kubermaticConfig.Spec.UserCluster.Addons.DockerTagSuffix
 
-		tag := options.Versions.Kubermatic
+		tag := options.Versions.KubermaticContainerTag
 		if suffix != "" {
-			tag = fmt.Sprintf("%s-%s", options.Versions.Kubermatic, suffix)
+			tag = fmt.Sprintf("%s-%s", tag, suffix)
 		}
 
 		addonsImage = kubermaticConfig.Spec.UserCluster.Addons.DockerRepository + ":" + tag
@@ -248,7 +248,7 @@ func CollectImageMatrix(
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
+		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.GitVersion)
 
 		if options.LoadFrom == "" {
 			kubermaticConfig, err := getKubermaticConfiguration(options)
@@ -357,7 +357,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				if err != nil {
 					return fmt.Errorf("failed to get current directory: %w", err)
 				}
-				options.ArchivePath = fmt.Sprintf("%s/kubermatic-v%s-images.tar.gz", currentPath, options.Versions.Kubermatic)
+				options.ArchivePath = fmt.Sprintf("%s/kubermatic-v%s-images.tar.gz", currentPath, options.Versions.GitVersion)
 			}
 
 			var verb string

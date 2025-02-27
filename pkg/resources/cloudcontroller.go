@@ -19,9 +19,9 @@ package resources
 import (
 	"net/url"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/sdk/semver"
 )
 
 // ExternalCloudControllerFeatureSupported checks if the cloud provider supports

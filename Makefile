@@ -30,8 +30,8 @@ KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
 UIDOCKERTAG ?= NA
 LDFLAGS += -extldflags '-static' \
   -X k8c.io/kubermatic/v2/pkg/version/kubermatic.gitVersion=$(GIT_VERSION) \
-  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.kubermaticDockerTag=$(KUBERMATICDOCKERTAG) \
-  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.uiDockerTag=$(UIDOCKERTAG)
+  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.kubermaticContainerTag=$(KUBERMATICDOCKERTAG) \
+  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.uiContainerTag=$(UIDOCKERTAG)
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
@@ -106,19 +106,15 @@ endif
 	done
 
 .PHONY: lint
-lint: lint-crds
+lint: lint-sdk
 	golangci-lint run \
 		--verbose \
 		--print-resources-usage \
 		./pkg/... ./cmd/... ./codegen/...
 
-.PHONY: lint-crds
-lint-crds:
-	@# we want tagliatelle to check only CRDs
-	golangci-lint run \
-		--verbose \
-		--config .golangci.apis.yml \
-		./pkg/apis/...
+.PHONY: lint-sdk
+lint-sdk:
+	make -C sdk lint
 
 .PHONY: shellcheck
 shellcheck:

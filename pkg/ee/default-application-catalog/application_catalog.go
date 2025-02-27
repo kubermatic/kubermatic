@@ -30,7 +30,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -38,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -66,7 +66,7 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 			Namespace: resources.KubermaticNamespace,
 		},
 	}
-	if err := util.WaitForDeploymentRollout(ctx, kubeClient, webhook, opt.Versions.Kubermatic, 5*time.Minute); err != nil {
+	if err := util.WaitForDeploymentRollout(ctx, kubeClient, webhook, opt.Versions.GitVersion, 5*time.Minute); err != nil {
 		return fmt.Errorf("failed waiting for webhook: %w", err)
 	}
 

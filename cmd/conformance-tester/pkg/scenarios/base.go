@@ -23,10 +23,10 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/sdk/semver"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/machine-controller/pkg/cloudprovider/util"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"

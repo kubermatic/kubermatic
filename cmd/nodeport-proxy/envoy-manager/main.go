@@ -60,7 +60,7 @@ func main() {
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
-	cli.Hello(log, "Envoy-Manager", logOpts.Debug, nil)
+	cli.Hello(log, "Envoy-Manager", nil)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

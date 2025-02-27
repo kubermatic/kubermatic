@@ -22,10 +22,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,7 +69,7 @@ func (d *Deletion) cleanupNamespace(ctx context.Context, log *zap.SugaredLogger,
 	// Removing the NamespaceName from the Cluster will make all other controllers
 	// instantly stop reconciling this one, without even checking its DeletionTimestamp.
 	if cluster.Status.NamespaceName != "" {
-		err = kubermaticv1helper.UpdateClusterStatus(ctx, d.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+		err = util.UpdateClusterStatus(ctx, d.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.NamespaceName = ""
 		})
 		if err != nil {

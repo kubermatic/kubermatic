@@ -44,7 +44,7 @@ export GODEBUG=gotypesalias=0
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd \
   object:headerFile=./hack/boilerplate/ce/boilerplate.go.txt \
-  paths=./pkg/apis/... \
+  paths=./sdk/apis/... \
   output:crd:dir=./$CRD_DIR
 
 annotation="kubermatic.k8c.io/location"

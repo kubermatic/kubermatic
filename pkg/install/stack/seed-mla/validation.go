@@ -24,9 +24,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func (m *Monitoring) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {

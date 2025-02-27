@@ -17,8 +17,8 @@ limitations under the License.
 package cluster
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 // GetVersionConditions returns a kubermaticv1.ConditionType list that should be used when checking

@@ -17,11 +17,11 @@ limitations under the License.
 package csi
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/nutanix"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vsphere"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

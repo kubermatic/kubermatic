@@ -24,10 +24,10 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,9 +37,6 @@ import (
 const (
 	// NameLabel is the label containing the application's name.
 	NameLabel = "app.kubernetes.io/name"
-
-	// VersionLabel is the label containing the application's version.
-	VersionLabel = resources.VersionLabel
 
 	// InstanceLabel is A unique name identifying the instance of an application.
 	InstanceLabel = "app.kubernetes.io/instance"
@@ -146,7 +143,7 @@ func CRDReconciler(crd *apiextensionsv1.CustomResourceDefinition, log *zap.Sugar
 		log = log.With("crd", crd.Name)
 
 		return crd.Name, func(obj *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
-			currentVersion := versions.KubermaticCommit
+			currentVersion := versions.GitVersion
 
 			if obj != nil {
 				existingVersion := obj.GetAnnotations()[resources.VersionLabel]
