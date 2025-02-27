@@ -25,8 +25,8 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/sdk/semver"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/apimachinery/pkg/util/sets"

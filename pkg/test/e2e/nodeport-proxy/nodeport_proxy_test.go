@@ -60,7 +60,7 @@ type testcase struct {
 }
 
 var (
-	versions   = kubermatic.NewDefaultVersions()
+	versions   = kubermatic.GetVersions()
 	logOptions = e2eutils.DefaultLogOptions
 	testcases  = []testcase{
 		{
@@ -121,7 +121,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&versions.Kubermatic, "kubermatic-tag", "latest", "Kubermatic image tag to be used for the tests")
+	flag.StringVar(&versions.KubermaticContainerTag, "kubermatic-tag", "latest", "Kubermatic image tag to be used for the tests")
 	logOptions.AddFlags(flag.CommandLine)
 }
 

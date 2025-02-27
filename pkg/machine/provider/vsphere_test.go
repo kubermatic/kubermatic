@@ -19,7 +19,7 @@ package provider
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	vsphere "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 )
