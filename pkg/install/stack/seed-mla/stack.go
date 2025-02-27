@@ -26,7 +26,6 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
