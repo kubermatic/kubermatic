@@ -22,7 +22,6 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -30,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -267,7 +267,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
-		versions:                kubermatic.NewFakeVersions(),
+		versions:                kubermatic.GetFakeVersions(),
 	}
 
 	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {

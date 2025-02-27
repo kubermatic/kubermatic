@@ -35,8 +35,8 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"

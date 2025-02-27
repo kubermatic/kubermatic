@@ -20,14 +20,14 @@ import (
 	"context"
 	"fmt"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -292,7 +292,7 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "webhook",
-					Image:   cfg.Spec.Webhook.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.Webhook.DockerRepository + ":" + versions.KubermaticContainerTag,
 					Command: []string{"kubermatic-webhook"},
 					Args:    args,
 					Env:     envVars,

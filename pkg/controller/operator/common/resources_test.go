@@ -96,7 +96,7 @@ func TestReconcilingCRDs(t *testing.T) {
 	}{
 		{
 			name:     "CRD doesn't exist yet, should be created",
-			versions: kubermaticversion.Versions{Kubermatic: "irrelevant-too", KubermaticCommit: "does-not-matter-in-this-case"},
+			versions: kubermaticversion.Versions{KubermaticContainerTag: "irrelevant-too", GitVersion: "does-not-matter-in-this-case"},
 			existing: nil,
 			expected: &apiextensionsv1.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{
@@ -112,7 +112,7 @@ func TestReconcilingCRDs(t *testing.T) {
 		},
 		{
 			name:     "upgrade existing v1 CRD to v2",
-			versions: kubermaticversion.Versions{Kubermatic: "v2.0.0", KubermaticCommit: "v2.0.0"},
+			versions: kubermaticversion.Versions{KubermaticContainerTag: "v2.0.0", GitVersion: "v2.0.0"},
 			existing: &apiextensionsv1.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: crdName,
@@ -138,7 +138,7 @@ func TestReconcilingCRDs(t *testing.T) {
 		},
 		{
 			name:     "do not downgrade a v3 CRD to v2",
-			versions: kubermaticversion.Versions{Kubermatic: "v2.0.0", KubermaticCommit: "v2.0.0"},
+			versions: kubermaticversion.Versions{KubermaticContainerTag: "v2.0.0", GitVersion: "v2.0.0"},
 			existing: &apiextensionsv1.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: crdName,
@@ -164,7 +164,7 @@ func TestReconcilingCRDs(t *testing.T) {
 		},
 		{
 			name:     "upgrade from non-tagged version to a newer tagged version",
-			versions: kubermaticversion.Versions{Kubermatic: "v2.26.0-beta.2", KubermaticCommit: "v2.26.0-beta.2"},
+			versions: kubermaticversion.Versions{KubermaticContainerTag: "v2.26.0-beta.2", GitVersion: "v2.26.0-beta.2"},
 			existing: &apiextensionsv1.CustomResourceDefinition{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: crdName,

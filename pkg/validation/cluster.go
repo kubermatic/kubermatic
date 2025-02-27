@@ -27,17 +27,17 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	clusterversion "k8c.io/kubermatic/v2/pkg/version/cluster"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/sdk/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"

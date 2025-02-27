@@ -85,7 +85,7 @@ func main() {
 	defer metrics.UpdateMetrics(log)
 
 	// say hello
-	cli.Hello(log, "Conformance Tests", true, nil)
+	cli.Hello(log, "Conformance Tests", nil)
 	log.Infow("Runner configuration",
 		"providers", sets.List(opts.Providers),
 		"operatingsystems", sets.List(opts.Distributions),

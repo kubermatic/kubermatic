@@ -25,11 +25,11 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	npptest "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy/test"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +69,7 @@ func (d *NodeportProxy) Setup(ctx context.Context) error {
 		return fmt.Errorf("failed to default seed: %w", err)
 	}
 
-	d.Log.Infow("Setting up nodeport-proxy…", "version", d.Versions.Kubermatic)
+	d.Log.Infow("Setting up nodeport-proxy…", "version", d.Versions.KubermaticContainerTag)
 	if err = npptest.Deploy(ctx, d.Client, d.Log, d.Namespace, cfg, seed, d.Versions, 5*time.Minute); err != nil {
 		if cleanuperr := npptest.Cleanup(ctx, d.Client, d.Log, cfg, 1*time.Minute); cleanuperr != nil {
 			d.Log.Errorw("Failed to cleanup", zap.Error(cleanuperr))

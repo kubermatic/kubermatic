@@ -26,10 +26,10 @@ import (
 
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -213,7 +213,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 
 	// In the future, this hack should not be required anymore, until then we sadly have
 	// to manually ensure that the owner email is set correctly
-	err := kubermaticv1helper.UpdateClusterStatus(ctx, c.opts.SeedClusterClient, cluster, func(c *kubermaticv1.Cluster) {
+	err := util.UpdateClusterStatus(ctx, c.opts.SeedClusterClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@kubermatic.com"
 	})
 	if err != nil {

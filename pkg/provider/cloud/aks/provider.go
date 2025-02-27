@@ -32,13 +32,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armsubscriptions"
 	semverlib "github.com/Masterminds/semver/v3"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	apiv1 "k8c.io/kubermatic/v2/sdk/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/sdk/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	ksemver "k8c.io/kubermatic/v2/sdk/semver"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"

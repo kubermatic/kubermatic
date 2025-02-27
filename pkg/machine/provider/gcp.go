@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	gce "k8c.io/machine-controller/pkg/cloudprovider/provider/gce/types"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 

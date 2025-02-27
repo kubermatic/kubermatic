@@ -24,16 +24,15 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	apiv1 "k8c.io/kubermatic/v2/sdk/api/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -106,7 +105,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
 		r.workerName,
