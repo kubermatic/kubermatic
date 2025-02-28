@@ -21,7 +21,7 @@ import (
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
 
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -692,7 +692,7 @@ type DatacenterSpecVSphere struct {
 	RootPath string `json:"rootPath,omitempty"`
 	// A list of VM templates to use for a given operating system. You must
 	// define at least one template.
-	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+	// See: https://github.com/kubermatic/machine-controller/blob/main/docs/vsphere.md#template-vms-preparation
 	Templates ImageList `json:"templates"`
 	// Optional: Infra management user is the user that will be used for everything
 	// except the cloud provider functionality, which will still use the credentials
