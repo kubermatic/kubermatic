@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	azure "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/azure"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 func TestAzureConfigBuilder(t *testing.T) {

@@ -27,9 +27,9 @@ import (
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/machine/operatingsystem"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	"k8c.io/machine-controller/pkg/cloudprovider/util"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	"k8c.io/machine-controller/sdk/net"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilrand "k8s.io/apimachinery/pkg/util/rand"
@@ -105,7 +105,7 @@ func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, re
 
 	networkConfig := &providerconfig.NetworkConfig{}
 	if s.dualstackEnabled {
-		networkConfig.IPFamily = util.IPFamilyIPv4IPv6
+		networkConfig.IPFamily = net.IPFamilyIPv4IPv6
 	}
 
 	providerSpec, err := machine.NewBuilder().

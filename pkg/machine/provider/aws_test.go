@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	aws "k8c.io/machine-controller/pkg/cloudprovider/provider/aws/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/aws"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 func TestAWSConfigBuilder(t *testing.T) {

@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	alibaba "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/alibaba"
 )
 
 func TestAlibabaConfigBuilder(t *testing.T) {

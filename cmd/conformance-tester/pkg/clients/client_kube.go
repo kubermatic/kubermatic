@@ -30,7 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
