@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
+apiVersion: v2
 name: alertmanager
 version: 9.9.9-dev
-appVersion: v0.27.0
+appVersion: v0.28.0
 description: Alertmanager for Kubermatic
 keywords:
   - kubermatic
@@ -28,3 +28,7 @@ sources:
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+- name: alertmanager
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 1.15.0

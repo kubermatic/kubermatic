@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ template "name" . }}
-type: Opaque
-data:
-  alertmanager.yaml: {{ toYaml .Values.alertmanager.config | b64enc | quote }}
-  kubermatic.tmpl: {{ .Files.Get "kubermatic.tmpl" | b64enc | quote }}
+alertmanager:
+  # block slack related errors
+  config:
+    receivers:
+    - name: blackhole
+    - name: default
+  nodeSelector:
+    workload: infra-mla
+  tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/infra-mla
+    operator: Exists
