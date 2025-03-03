@@ -272,35 +272,73 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 
 			// we want to allow overriding the default values, so reconcile them only if nil
 			if app.Spec.DefaultValuesBlock == "" || app.Spec.DefaultValuesBlock == "{}" {
-				defaultValues := map[string]any{
-					"operator": map[string]any{
-						"replicas": 1,
-					},
-					"envoy": map[string]any{
-						"enabled": false,
-					},
-					"hubble": map[string]any{
-						"relay": map[string]any{
-							"enabled": true,
-						},
-						"ui": map[string]any{
-							"enabled": true,
-						},
-						// cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
-						"tls": map[string]any{
-							"auto": map[string]any{
-								"method": "cronJob",
-							},
-						},
-					},
+				if err := setDefaultValues(app); err != nil {
+					return app, err
 				}
-				rawValues, err := yaml.Marshal(defaultValues)
-				if err != nil {
-					return app, fmt.Errorf("failed to marshall default CNI values: %w", err)
-				}
-				app.Spec.DefaultValuesBlock = string(rawValues)
+				return app, nil
 			}
+
+			defaultValues, err := app.Spec.GetParsedDefaultValues()
+			if err != nil {
+				return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
+			}
+
+			sanitizeValues(defaultValues)
+
+			rawValues, err := yaml.Marshal(defaultValues)
+			if err != nil {
+				return app, fmt.Errorf("failed to marshal CNI values: %w", err)
+			}
+
+			app.Spec.DefaultValuesBlock = string(rawValues)
+
 			return app, nil
+		}
+	}
+}
+
+// setDefaultValues sets the default values for the application.
+func setDefaultValues(app *appskubermaticv1.ApplicationDefinition) error {
+	defaultValues := map[string]any{
+		"operator": map[string]any{
+			"replicas": 1,
+		},
+		"envoy": map[string]any{
+			"enabled": false,
+		},
+		"hubble": map[string]any{
+			"relay": map[string]any{
+				"enabled": true,
+			},
+			"ui": map[string]any{
+				"enabled": true,
+			},
+			"tls": map[string]any{
+				"auto": map[string]any{
+					"method": "cronJob",
+				},
+			},
+		},
+	}
+	rawValues, err := yaml.Marshal(defaultValues)
+	if err != nil {
+		return fmt.Errorf("failed to marshal default CNI values: %w", err)
+	}
+	app.Spec.DefaultValuesBlock = string(rawValues)
+	return nil
+}
+
+func sanitizeValues(values map[string]any) {
+	// Remove deprecated values from the "ipam.operator" section
+	ipam := values["ipam"].(map[string]any)
+	operator := ipam["operator"].(map[string]any)
+	delete(operator, "clusterPoolIPv4PodCIDR")
+
+	// If not specified, set envoy.enabled to false
+	// https://github.com/cilium/cilium/commit/471f19a16593e1e9342c31bf3e26e5383737cb0a
+	if envoy, ok := values["envoy"].(map[string]any); ok {
+		if _, ok := envoy["enabled"]; !ok {
+			envoy["enabled"] = false
 		}
 	}
 }
