@@ -329,11 +329,6 @@ func setDefaultValues(app *appskubermaticv1.ApplicationDefinition) error {
 }
 
 func sanitizeValues(values map[string]any) {
-	// Remove deprecated values from the "ipam.operator" section
-	ipam := values["ipam"].(map[string]any)
-	operator := ipam["operator"].(map[string]any)
-	delete(operator, "clusterPoolIPv4PodCIDR")
-
 	// If not specified, set envoy.enabled to false
 	// https://github.com/cilium/cilium/commit/471f19a16593e1e9342c31bf3e26e5383737cb0a
 	if envoy, ok := values["envoy"].(map[string]any); ok {
