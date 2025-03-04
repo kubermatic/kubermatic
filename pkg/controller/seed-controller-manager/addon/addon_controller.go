@@ -349,12 +349,12 @@ func (r *Reconciler) garbageCollectAddon(ctx context.Context, log *zap.SugaredLo
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
+	requeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if all required resources exist: %w", err)
 	}
-	if reqeueAfter != nil {
-		return reqeueAfter, nil
+	if requeueAfter != nil {
+		return requeueAfter, nil
 	}
 
 	migration := migrations.RelevantMigrations(cluster, addon.Name)

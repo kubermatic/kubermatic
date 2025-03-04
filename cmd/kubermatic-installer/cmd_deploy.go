@@ -144,8 +144,8 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.RemoveOauthRelease, "remove-oauth-release", false, "when migrating to the new Dex Helm chart, delete the Helm release for the previous oauth chart after the upgrade")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
-	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of userCluster MLA Minio Bucket Lifecycle Manager")
-	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force reinstallation of mla-secrets Helm chart")
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
+	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force re-installation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 
 	wrapDeployFlags(cmd.PersistentFlags(), &opt)
@@ -217,7 +217,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 		}
 
-		// prepapre Kubernetes and Helm clients
+		// prepare Kubernetes and Helm clients
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(opt.KubeContext)
 		if err != nil {
 			return fmt.Errorf("failed to get config: %w", err)
