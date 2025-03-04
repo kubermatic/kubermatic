@@ -283,14 +283,15 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
 			}
 
-			sanitizeValues(defaultValues)
+			if defaultValues != nil {
+				sanitizeValues(defaultValues)
+				rawValues, err := yaml.Marshal(defaultValues)
+				if err != nil {
+					return app, fmt.Errorf("failed to marshal CNI values: %w", err)
+				}
 
-			rawValues, err := yaml.Marshal(defaultValues)
-			if err != nil {
-				return app, fmt.Errorf("failed to marshal CNI values: %w", err)
+				app.Spec.DefaultValuesBlock = string(rawValues)
 			}
-
-			app.Spec.DefaultValuesBlock = string(rawValues)
 
 			return app, nil
 		}
@@ -329,16 +330,15 @@ func setDefaultValues(app *appskubermaticv1.ApplicationDefinition) error {
 }
 
 func sanitizeValues(values map[string]any) {
-	// Remove deprecated values from the "ipam.operator" section
-	ipam := values["ipam"].(map[string]any)
-	operator := ipam["operator"].(map[string]any)
-	delete(operator, "clusterPoolIPv4PodCIDR")
-
 	// If not specified, set envoy.enabled to false
 	// https://github.com/cilium/cilium/commit/471f19a16593e1e9342c31bf3e26e5383737cb0a
 	if envoy, ok := values["envoy"].(map[string]any); ok {
 		if _, ok := envoy["enabled"]; !ok {
 			envoy["enabled"] = false
+		}
+	} else {
+		values["envoy"] = map[string]any{
+			"enabled": false,
 		}
 	}
 }
