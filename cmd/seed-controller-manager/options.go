@@ -97,6 +97,9 @@ type controllerRunOptions struct {
 
 	// disabledCollectors is a list of comma-separated collectors that should be disabled
 	disabledCollectors string
+	// konnectivityXfrChannelSize configures the channel size for data transfer between konnectivity-server and
+	// both Kubernetes API Server and konnectivity-agent.
+	konnectivityXfrChannelSize int
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -150,6 +153,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	flag.StringVar(&c.disabledCollectors, "disabled-collectors", "", "Disables metrics collectors in the seed. The value should be a comma-separated list of collector names.")
+	flag.IntVar(&c.konnectivityXfrChannelSize, "konnectivity-xfr-channel-size", 10, "Konnectivity channel size for data transfer between konnectivity-server and both Kubernetes API Server and konnectivity-agent.")
+
 	addFlags(flag.CommandLine)
 	flag.Parse()
 

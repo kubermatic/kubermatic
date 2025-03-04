@@ -286,6 +286,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
+		WithKonnectivityServerXfrChanSize(r.konnectivityServerXfrChanSize).
 		Build(), nil
 }
 

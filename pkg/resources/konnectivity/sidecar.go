@@ -76,6 +76,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
 			"--proxy-strategies=default",
 			fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
+			fmt.Sprintf("--xfr-channel-size=%d", data.GetKonnectivityServerXfrChanSize()),
 		},
 		Ports: []corev1.ContainerPort{
 			{

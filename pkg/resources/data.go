@@ -54,6 +54,9 @@ import (
 
 const (
 	CloudProviderExternalFlag = "external"
+
+	// defaultKonnectivityServerXfrChanSize is the default value for the --xfr-channel-size flag for Konnectivity Server.
+	defaultKonnectivityServerXfrChanSize = 10
 )
 
 type CABundle interface {
@@ -89,7 +92,9 @@ type TemplateData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 
 	userClusterMLAEnabled bool
-	isKonnectivityEnabled bool
+
+	isKonnectivityEnabled   bool
+	konnectivityXfrChanSize int
 
 	tunnelingAgentIP string
 
@@ -164,6 +169,11 @@ func (td *TemplateDataBuilder) WithUserClusterMLAEnabled(enabled bool) *Template
 
 func (td *TemplateDataBuilder) WithKonnectivityEnabled(enabled bool) *TemplateDataBuilder {
 	td.data.isKonnectivityEnabled = enabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKonnectivityServerXfrChanSize(size int) *TemplateDataBuilder {
+	td.data.konnectivityXfrChanSize = size
 	return td
 }
 
@@ -506,6 +516,14 @@ func (d *TemplateData) GetKonnectivityKeepAliveTime() string {
 		return t
 	}
 	return kubermaticv1.DefaultKonnectivityKeepaliveTime
+}
+
+func (d *TemplateData) GetKonnectivityServerXfrChanSize() int {
+	if d.konnectivityXfrChanSize == 0 {
+		return defaultKonnectivityServerXfrChanSize
+	}
+
+	return d.konnectivityXfrChanSize
 }
 
 func (d *TemplateData) GetTunnelingAgentIP() string {

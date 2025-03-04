@@ -172,6 +172,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 			EtcdLauncher:                 ctrlCtx.runOptions.featureGates.Enabled(features.EtcdLauncher),
 		},
 		ctrlCtx.versions,
+		ctrlCtx.runOptions.konnectivityXfrChannelSize,
 	)
 }
 

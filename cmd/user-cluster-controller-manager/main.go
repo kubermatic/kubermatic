@@ -107,6 +107,7 @@ type controllerRunOptions struct {
 	konnectivityServerHost            string
 	konnectivityServerPort            int
 	konnectivityKeepaliveTime         string
+	konnectivityXfrChannelSize        int
 	applicationCache                  string
 	kubeVirtVMIEvictionController     bool
 	kubeVirtInfraKubeconfig           string
@@ -165,6 +166,7 @@ func main() {
 	flag.StringVar(&runOp.konnectivityServerHost, "konnectivity-server-host", "", "Konnectivity Server host.")
 	flag.IntVar(&runOp.konnectivityServerPort, "konnectivity-server-port", 6443, "Konnectivity Server port.")
 	flag.StringVar(&runOp.konnectivityKeepaliveTime, "konnectivity-keepalive-time", "1m", "Konnectivity keepalive time.")
+	flag.IntVar(&runOp.konnectivityXfrChannelSize, "konnectivity-xfr-channel-size", 150, "Konnectivity channel size for transferring data between konnectivity agent and proxy server.")
 	flag.StringVar(&runOp.applicationCache, "application-cache", "", "Path to Application cache directory.")
 	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
@@ -333,6 +335,7 @@ func main() {
 		runOp.konnectivityServerHost,
 		runOp.konnectivityServerPort,
 		runOp.konnectivityKeepaliveTime,
+		runOp.konnectivityXfrChannelSize,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
 		log,
