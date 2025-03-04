@@ -63,6 +63,7 @@ type DeployOptions struct {
 	MLASkipMinioLifecycleMgr bool
 	MLAForceSecrets          bool
 	MLAIncludeIap            bool
+	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
 

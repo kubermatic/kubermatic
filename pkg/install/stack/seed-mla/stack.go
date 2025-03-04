@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"time"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -29,6 +31,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -292,6 +296,17 @@ func deployAlertManager(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
+	v28 := semverlib.MustParse("2.28.0")
+
+	if release != nil && release.Version.LessThan(v28) && !chart.Version.LessThan(v28) {
+		sublogger.Warn("Installation process will temporarily remove and then upgrade Alertmanager Statefulsets.")
+
+		err = upgradeAlertmanagerStatefulsets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to prepare Alertmanager for upgrade: %w", err)
+		}
+	}
+
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, AlertManagerNamespace, AlertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
@@ -425,7 +440,7 @@ func deployIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 }
 
 func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, LokiChartName) {
+	if slices.Contains(opt.SkipCharts, LokiChartName) || opt.MLASkipLogging {
 		logger.Info("⭕ Skipping Loki deployment.")
 		return nil
 	}
@@ -457,7 +472,7 @@ func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntim
 }
 
 func deployPromtail(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	if slices.Contains(opt.SkipCharts, PromtailChartName) {
+	if slices.Contains(opt.SkipCharts, PromtailChartName) || opt.MLASkipLogging {
 		logger.Info("⭕ Skipping Promtail deployment.")
 		return nil
 	}
@@ -486,4 +501,71 @@ func deployPromtail(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 	logger.Info("✅ Success.")
 
 	return nil
+}
+
+func upgradeAlertmanagerStatefulsets(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
+	// 1: find the old deployment
+	logger.Info("Backing up old alertmanager statefulset…")
+
+	statefulsetsList := &unstructured.UnstructuredList{}
+	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "StatefulSetList",
+		Version: "v1",
+	})
+
+	alertmanagerSts, err := getAlertmanagerStatefulsets(ctx, kubeClient, release, "alertmanager")
+	if err != nil {
+		return err
+	}
+
+	statefulsetsList.Items = append(statefulsetsList.Items, alertmanagerSts.Items...)
+
+	// 2: store the statefulset for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", AlertManagerReleaseName, backupTS)
+	logger.Infof("Attempting to store the statefulset in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, statefulsetsList.Items); err != nil {
+		return fmt.Errorf("failed to back up the statefulsets, it is not removed: %w", err)
+	}
+
+	// 3: delete the statefulset
+	logger.Info("Deleting the statefulset from the cluster")
+	for _, obj := range statefulsetsList.Items {
+		if err := kubeClient.Delete(ctx, &obj); err != nil {
+			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
+	}
+	return nil
+}
+
+func getAlertmanagerStatefulsets(
+	ctx context.Context,
+	kubeClient ctrlruntimeclient.Client,
+	release *helm.Release,
+	appName string,
+) (*unstructured.UnstructuredList, error) {
+	statefulsetsList := &unstructured.UnstructuredList{}
+	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "StatefulSetList",
+		Version: "v1",
+	})
+
+	alertmanagerMatcher := ctrlruntimeclient.MatchingLabels{
+		"app": appName,
+	}
+	if err := kubeClient.List(ctx, statefulsetsList, ctrlruntimeclient.InNamespace(AlertManagerNamespace), alertmanagerMatcher); err != nil {
+		return nil, fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
+	}
+	return statefulsetsList, nil
 }

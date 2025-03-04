@@ -83,6 +83,7 @@ type DeployOptions struct {
 	MLASkipMinioLifecycleMgr bool
 	MLAForceMLASecrets       bool
 	MLAIncludeIap            bool
+	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
 
@@ -147,6 +148,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
 	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force re-installation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
+	cmd.PersistentFlags().BoolVar(&opt.MLASkipLogging, "mla-skip-logging", false, "Skip logging stack installation")
 
 	wrapDeployFlags(cmd.PersistentFlags(), &opt)
 
@@ -212,6 +214,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt 
 			MLASkipMinioLifecycleMgr:           opt.MLASkipMinioLifecycleMgr,
 			MLAForceSecrets:                    opt.MLAForceMLASecrets,
 			MLAIncludeIap:                      opt.MLAIncludeIap,
+			MLASkipLogging:                     opt.MLASkipLogging,
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,

@@ -28,7 +28,6 @@ import (
 	"context"
 	"fmt"
 
-	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -39,6 +38,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -194,10 +194,23 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func processSubnet(ctx context.Context, kvInfraClient ctrlruntimeclient.Client, subnetName string) (string, string, error) {
-	subnet := &kubeovnv1.Subnet{}
-	if err := kvInfraClient.Get(ctx, types.NamespacedName{Name: subnetName}, subnet); err != nil {
+	subnetUS := &unstructured.Unstructured{}
+	subnetUS.SetAPIVersion("kubeovn.io/v1")
+	subnetUS.SetKind("Subnet")
+
+	if err := kvInfraClient.Get(ctx, types.NamespacedName{Name: subnetName}, subnetUS); err != nil {
 		return "", "", err
 	}
 
-	return subnet.Spec.Gateway, subnet.Spec.CIDRBlock, nil
+	gateway, _, err := unstructured.NestedString(subnetUS.Object, "spec", "gateway")
+	if err != nil {
+		return "", "", fmt.Errorf("invalid kubeovn Subnet: .spec.gateway is not a string: %w", err)
+	}
+
+	cidrBlock, _, err := unstructured.NestedString(subnetUS.Object, "spec", "cidrBlock")
+	if err != nil {
+		return "", "", fmt.Errorf("invalid kubeovn Subnet: .spec.cidrBlock is not a string: %w", err)
+	}
+
+	return gateway, cidrBlock, nil
 }

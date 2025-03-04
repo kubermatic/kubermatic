@@ -18,9 +18,8 @@ package cilium
 
 import (
 	"fmt"
+	"maps"
 	"strings"
-
-	"golang.org/x/exp/maps"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
@@ -401,6 +400,10 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		}
 		valuesCertGen["image"] = map[string]any{
 			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesEnvoy["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium-envoy", overwriteRegistry)),
 			"useDigest":  false,
 		}
 	}

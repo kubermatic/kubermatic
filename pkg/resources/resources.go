@@ -93,8 +93,6 @@ const (
 	UserClusterControllerDeploymentName = "usercluster-controller"
 	// UserClusterControllerContainerName is the name of the container within the usercluster-controller deployment.
 	UserClusterControllerContainerName = "usercluster-controller"
-	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment.
-	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
 	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment.
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
 	// KubeLBDeploymentName is the name of the KubeLB deployment.
@@ -180,9 +178,6 @@ const (
 	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
-	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
-	// the cluster-autoscaler.
-	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
@@ -303,8 +298,7 @@ const (
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert.
 	PrometheusCertUsername = "prometheus"
-	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert.
-	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
+
 	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert.
 	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
 	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert.
@@ -349,10 +343,6 @@ const (
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
 	// MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding.
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
-	// ClusterAutoscalerClusterRoleName is the name of the clusterrole for the cluster autoscaler.
-	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"
-	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA.
-	ClusterAutoscalerClusterRoleBindingName = "system:kubermatic-cluster-autoscaler"
 	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard.
 	KubernetesDashboardRoleName = "system:kubernetes-dashboard"
 	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard.

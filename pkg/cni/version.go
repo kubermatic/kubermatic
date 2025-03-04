@@ -26,10 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// CanalCNILastUnspecifiedVersion is the last Canal CNI version applied in KKP user-clusters
-// started in KKP before v2.18 release. If cluster.spec.cniPlugin is not set, it means Canal of this version.
-const CanalCNILastUnspecifiedVersion = "v3.8"
-
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.29",
@@ -61,7 +57,7 @@ var (
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
 	// by the validation webhook for backward compatibility.
 	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.19", "v3.20", "v3.21", "v3.22", "v3.23", "v3.24", "v3.25", "v3.26"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.21", "v3.22", "v3.23", "v3.24", "v3.25", "v3.26"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"v1.11",
 			"v1.12",

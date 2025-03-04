@@ -30,9 +30,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-var (
-	serializer = json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
-)
+var serializer = json.NewSerializerWithOptions(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, json.SerializerOptions{})
 
 func getImagesFromAddons(log logrus.FieldLogger, addons map[string]*addon.Addon, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}

@@ -77,6 +77,10 @@ func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clus
 		return err
 	}
 
+	if k.dc.CSIDriverOperator != nil {
+		spec.Cloud.Kubevirt.CSIDriverOperator = k.dc.CSIDriverOperator
+	}
+
 	return updateInfraStorageClassesInfo(ctx, client, spec.Cloud.Kubevirt, k.dc)
 }
 

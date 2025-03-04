@@ -77,9 +77,6 @@ data:
     receivers:
     - name: blackhole
     - name: default
-      slack_configs:
-      - channel: '#alerting'
-        send_resolved: true
     route:
       group_by:
       - alertname
@@ -244,6 +241,8 @@ spec:
     spec:
       automountServiceAccountToken: true
       serviceAccountName: alertmanager
+      nodeSelector:
+        workload: infra-mla
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -253,6 +252,10 @@ spec:
                 labelSelector:
                   matchExpressions:
                     - {key: app.kubernetes.io/name, operator: In, values: [alertmanager]}
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/infra-mla
+          operator: Exists
       securityContext:
         fsGroup: 65534
       containers:

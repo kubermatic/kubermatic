@@ -147,6 +147,9 @@ spec:
       requests:
         cpu: 200m
         memory: 128Mi
+  # MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer mirror-images` command.
+  # Each entry should be in the format "repository:tag".
+  mirrorImages: null
   # Proxy allows to configure Kubermatic to use proxies to talk to the
   # world outside of its cluster.
   proxy:
@@ -381,7 +384,7 @@ spec:
       dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
-    # Applications contains configuration for default Application settings. This is an ee-only feature.
+    # Applications contains configuration for default Application settings.
     applications:
       # Namespace is the namespace which is set as the default for applications installed via ui
       # If left empty the default for the application installation namespace is the name of the resource itself

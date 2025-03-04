@@ -88,6 +88,10 @@ func NewTemplateData(
 		csiOptions.CinderTopologyEnabled = cluster.Spec.Cloud.Openstack.CinderTopologyEnabled
 	}
 
+	if cluster.Spec.Cloud.Kubevirt != nil && cluster.Spec.Cloud.Kubevirt.CSIDriverOperator != nil {
+		csiOptions.OverwriteRegistry = cluster.Spec.Cloud.Kubevirt.CSIDriverOperator.OverwriteRegistry
+	}
+
 	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
 
 	var ipvs kubermaticv1.IPVSConfiguration
@@ -281,4 +285,7 @@ type CSIOptions struct {
 
 	// openstack
 	CinderTopologyEnabled bool
+
+	// kubevirt
+	OverwriteRegistry string
 }
