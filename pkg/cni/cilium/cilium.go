@@ -283,14 +283,15 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
 			}
 
-			sanitizeValues(defaultValues)
+			if defaultValues != nil {
+				sanitizeValues(defaultValues)
+				rawValues, err := yaml.Marshal(defaultValues)
+				if err != nil {
+					return app, fmt.Errorf("failed to marshal CNI values: %w", err)
+				}
 
-			rawValues, err := yaml.Marshal(defaultValues)
-			if err != nil {
-				return app, fmt.Errorf("failed to marshal CNI values: %w", err)
+				app.Spec.DefaultValuesBlock = string(rawValues)
 			}
-
-			app.Spec.DefaultValuesBlock = string(rawValues)
 
 			return app, nil
 		}
@@ -334,6 +335,10 @@ func sanitizeValues(values map[string]any) {
 	if envoy, ok := values["envoy"].(map[string]any); ok {
 		if _, ok := envoy["enabled"]; !ok {
 			envoy["enabled"] = false
+		}
+	} else {
+		values["envoy"] = map[string]any{
+			"enabled": false,
 		}
 	}
 }
