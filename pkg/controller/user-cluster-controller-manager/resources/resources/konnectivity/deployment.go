@@ -50,7 +50,7 @@ var (
 )
 
 // DeploymentReconciler returns function to reconcile konnectivity agents deployment in user cluster.
-func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kServerPort int, kKeepaliveTime string, kXfrChanSize int, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
@@ -91,7 +91,6 @@ func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kSer
 						// TODO rastislavs: use "--agent-identifiers=ipv4=$(HOST_IP)" with "--proxy-strategies=destHost,default"
 						// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
 						fmt.Sprintf("--keepalive-time=%s", kKeepaliveTime),
-						fmt.Sprintf("--xfr-channel-size=%d", kXfrChanSize),
 					},
 					Resources: corev1.ResourceRequirements{},
 					VolumeMounts: []corev1.VolumeMount{

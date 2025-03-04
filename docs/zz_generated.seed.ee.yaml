@@ -470,6 +470,8 @@ spec:
       zoneAntiAffinity: ""
     # KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
     konnectivityProxy:
+      # Args configures arguments (flags) for the Konnectivity deployments.
+      args: null
       # KeepaliveTime represents a duration of time to check if the transport is still alive.
       # The option is propagated to agents and server.
       # Defaults to 1m.

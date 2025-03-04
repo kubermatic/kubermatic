@@ -107,9 +107,6 @@ type Reconciler struct {
 
 	tunnelingAgentIP string
 	caBundle         *certificates.CABundle
-
-	// konnectivityServerXfrChanSize sets --xfr-channel-size flag in the konnectivity side-car deployment.
-	konnectivityServerXfrChanSize int
 }
 
 // Add creates a cluster controller.
@@ -142,7 +139,6 @@ func Add(
 
 	features Features,
 	versions kubermatic.Versions,
-	kSrvXfrChanSize int,
 ) error {
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
@@ -175,9 +171,8 @@ func Add(
 		tunnelingAgentIP: tunnelingAgentIP,
 		caBundle:         caBundle,
 
-		features:                      features,
-		versions:                      versions,
-		konnectivityServerXfrChanSize: kSrvXfrChanSize,
+		features: features,
+		versions: versions,
 	}
 
 	typesToWatch := []ctrlruntimeclient.Object{

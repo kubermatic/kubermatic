@@ -777,6 +777,8 @@ type KonnectivityProxySettings struct {
 	// The option is propagated to agents and server.
 	// Defaults to 1m.
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
+	// Args configures arguments (flags) for the Konnectivity deployments.
+	Args []string `json:"args,omitempty"`
 }
 
 type ControllerSettings struct {

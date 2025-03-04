@@ -54,9 +54,6 @@ import (
 
 const (
 	CloudProviderExternalFlag = "external"
-
-	// defaultKonnectivityServerXfrChanSize is the default value for the --xfr-channel-size flag for Konnectivity Server.
-	defaultKonnectivityServerXfrChanSize = 10
 )
 
 type CABundle interface {
@@ -92,9 +89,7 @@ type TemplateData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 
 	userClusterMLAEnabled bool
-
-	isKonnectivityEnabled   bool
-	konnectivityXfrChanSize int
+	isKonnectivityEnabled bool
 
 	tunnelingAgentIP string
 
@@ -169,11 +164,6 @@ func (td *TemplateDataBuilder) WithUserClusterMLAEnabled(enabled bool) *Template
 
 func (td *TemplateDataBuilder) WithKonnectivityEnabled(enabled bool) *TemplateDataBuilder {
 	td.data.isKonnectivityEnabled = enabled
-	return td
-}
-
-func (td *TemplateDataBuilder) WithKonnectivityServerXfrChanSize(size int) *TemplateDataBuilder {
-	td.data.konnectivityXfrChanSize = size
 	return td
 }
 
@@ -516,14 +506,6 @@ func (d *TemplateData) GetKonnectivityKeepAliveTime() string {
 		return t
 	}
 	return kubermaticv1.DefaultKonnectivityKeepaliveTime
-}
-
-func (d *TemplateData) GetKonnectivityServerXfrChanSize() int {
-	if d.konnectivityXfrChanSize == 0 {
-		return defaultKonnectivityServerXfrChanSize
-	}
-
-	return d.konnectivityXfrChanSize
 }
 
 func (d *TemplateData) GetTunnelingAgentIP() string {
@@ -893,4 +875,41 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	}
 
 	return vars, nil
+}
+
+func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
+	if d.Seed() == nil {
+		return nil, fmt.Errorf("invalid cluster template, seed cluster template is nil")
+	}
+
+	seed := d.Seed()
+
+	r := seed.Spec.DefaultComponentSettings.KonnectivityProxy.Args
+	if r != nil {
+		return r, nil
+	}
+
+	if seed.Spec.DefaultClusterTemplate == "" {
+		return r, nil
+	}
+
+	tpl := kubermaticv1.ClusterTemplate{}
+	key := types.NamespacedName{Namespace: seed.Namespace, Name: seed.Spec.DefaultClusterTemplate}
+	if err := d.client.Get(d.ctx, key, &tpl); err != nil {
+		return nil, fmt.Errorf("failed to get ClusterTemplate for konnectivity: %w", err)
+	}
+
+	if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
+		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
+	}
+
+	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+}
+
+func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
+	if d.Cluster() == nil {
+		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
+	}
+
+	return d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.Args, nil
 }
