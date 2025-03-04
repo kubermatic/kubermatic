@@ -19,8 +19,8 @@ package aws
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func reconcileRegionAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater, region string) (*kubermaticv1.Cluster, error) {

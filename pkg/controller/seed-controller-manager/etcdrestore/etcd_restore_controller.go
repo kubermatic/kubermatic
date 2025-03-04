@@ -26,12 +26,12 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -300,8 +300,8 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Info("Rebuilding Statefulset...")
 
 	if cluster.Spec.Pause {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-			kubermaticv1helper.SetClusterCondition(
+		if err := util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+			util.SetClusterCondition(
 				c,
 				r.versions,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,

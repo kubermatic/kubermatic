@@ -19,12 +19,12 @@ package kubermatic
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -245,11 +245,11 @@ func APIDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerNa
 				args = append(args, fmt.Sprintf("-worker-name=%s", workerName))
 			}
 
-			tag := versions.Kubermatic
+			tag := versions.KubermaticContainerTag
 			if cfg.Spec.API.DockerTag != "" {
 				tag = cfg.Spec.API.DockerTag
 			} else if cfg.Spec.API.DockerTagSuffix != "" {
-				tag = fmt.Sprintf("%s-%s", versions.Kubermatic, cfg.Spec.API.DockerTagSuffix)
+				tag = fmt.Sprintf("%s-%s", tag, cfg.Spec.API.DockerTagSuffix)
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes

@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"

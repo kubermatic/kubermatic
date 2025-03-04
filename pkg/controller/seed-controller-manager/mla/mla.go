@@ -26,9 +26,9 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"

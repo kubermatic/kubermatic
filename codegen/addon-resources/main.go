@@ -26,10 +26,10 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/sdk/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

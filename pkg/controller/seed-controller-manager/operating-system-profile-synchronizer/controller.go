@@ -22,9 +22,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

@@ -25,11 +25,11 @@ import (
 	regoschema "github.com/open-policy-agent/frameworks/constraint/pkg/client/drivers/rego/schema"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/core/templates"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
