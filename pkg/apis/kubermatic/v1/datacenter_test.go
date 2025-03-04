@@ -53,26 +53,56 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: NewProxyValue("dc-proxy"),
-							NoProxy:   NewProxyValue("dc-no-proxy"),
-						}}},
-						"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: NewProxyValue("dc-proxy"),
-							NoProxy:   NewProxyValue("dc-no-proxy"),
-						}}},
+						"a": {
+							Node: &NodeSettings{
+								ProxySettings: ProxySettings{
+									HTTPProxy: NewProxyValue("dc-proxy"),
+									NoProxy:   NewProxyValue("dc-no-proxy"),
+								},
+							},
+						},
+						"b": {
+							Node: &NodeSettings{
+								ProxySettings: ProxySettings{
+									HTTPProxy: NewProxyValue("dc-proxy"),
+									NoProxy:   NewProxyValue("dc-no-proxy"),
+								},
+							},
+						},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("dc-proxy"),
-					NoProxy:   NewProxyValue("dc-no-proxy"),
-				}}},
-				"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("dc-proxy"),
-					NoProxy:   NewProxyValue("dc-no-proxy"),
-				}}},
+				"a": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("dc-proxy"),
+							NoProxy:   NewProxyValue("dc-no-proxy"),
+						},
+					},
+				},
+				"b": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("dc-proxy"),
+							NoProxy:   NewProxyValue("dc-no-proxy"),
+						},
+					},
+				},
 			},
 		},
 		{
@@ -90,14 +120,36 @@ func TestSetSeedDefaults(t *testing.T) {
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("seed-proxy"),
-					NoProxy:   NewProxyValue("seed-no-proxy"),
-				}}},
-				"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("seed-proxy"),
-					NoProxy:   NewProxyValue("seed-no-proxy"),
-				}}},
+				"a": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("seed-proxy"),
+							NoProxy:   NewProxyValue("seed-no-proxy"),
+						},
+					},
+				},
+				"b": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("seed-proxy"),
+							NoProxy:   NewProxyValue("seed-no-proxy"),
+						},
+					},
+				},
 			},
 		},
 		{
@@ -109,24 +161,54 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-							NoProxy: NewProxyValue("dc-no-proxy"),
-						}}},
-						"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-							NoProxy: NewProxyValue("dc-no-proxy"),
-						}}},
+						"a": {
+							Node: &NodeSettings{
+								ProxySettings: ProxySettings{
+									NoProxy: NewProxyValue("dc-no-proxy"),
+								},
+							},
+						},
+						"b": {
+							Node: &NodeSettings{
+								ProxySettings: ProxySettings{
+									NoProxy: NewProxyValue("dc-no-proxy"),
+								},
+							},
+						},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("seed-proxy"),
-					NoProxy:   NewProxyValue("dc-no-proxy"),
-				}}},
-				"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("seed-proxy"),
-					NoProxy:   NewProxyValue("dc-no-proxy"),
-				}}},
+				"a": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("seed-proxy"),
+							NoProxy:   NewProxyValue("dc-no-proxy"),
+						},
+					},
+				},
+				"b": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("seed-proxy"),
+							NoProxy:   NewProxyValue("dc-no-proxy"),
+						},
+					},
+				},
 			},
 		},
 		{
@@ -138,24 +220,54 @@ func TestSetSeedDefaults(t *testing.T) {
 						NoProxy:   NewProxyValue("seed-no-proxy"),
 					},
 					Datacenters: map[string]Datacenter{
-						"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: NewProxyValue("dc-proxy"),
-						}}},
-						"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-							HTTPProxy: NewProxyValue("dc-proxy"),
-						}}},
+						"a": {
+							Node: &NodeSettings{
+								ProxySettings: ProxySettings{
+									HTTPProxy: NewProxyValue("dc-proxy"),
+								},
+							},
+						},
+						"b": {
+							Node: &NodeSettings{
+								ProxySettings: ProxySettings{
+									HTTPProxy: NewProxyValue("dc-proxy"),
+								},
+							},
+						},
 					},
 				},
 			},
 			expected: map[string]Datacenter{
-				"a": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("dc-proxy"),
-					NoProxy:   NewProxyValue("seed-no-proxy"),
-				}}},
-				"b": {Node: &NodeSettings{ProxySettings: ProxySettings{
-					HTTPProxy: NewProxyValue("dc-proxy"),
-					NoProxy:   NewProxyValue("seed-no-proxy"),
-				}}},
+				"a": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("dc-proxy"),
+							NoProxy:   NewProxyValue("seed-no-proxy"),
+						},
+					},
+				},
+				"b": {
+					Node: &NodeSettings{
+						ContainerdRegistryMirrors: &ContainerRuntimeContainerd{
+							Registries: map[string]ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"https://mirror.gcr.io"},
+								},
+							},
+						},
+						ProxySettings: ProxySettings{
+							HTTPProxy: NewProxyValue("dc-proxy"),
+							NoProxy:   NewProxyValue("seed-no-proxy"),
+						},
+					},
+				},
 			},
 		},
 	}
