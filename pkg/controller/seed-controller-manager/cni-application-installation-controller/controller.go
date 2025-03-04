@@ -360,13 +360,6 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				return app, fmt.Errorf("failed to merge CNI values: %w", err)
 			}
 
-			// Remove deprecated value from older installations
-			if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-				ipam := values["ipam"].(map[string]any)
-				operator := ipam["operator"].(map[string]any)
-				delete(operator, "clusterPoolIPv4PodCIDR")
-			}
-
 			// Set new values
 			rawValues, err := yaml.Marshal(values)
 			if err != nil {
