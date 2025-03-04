@@ -273,7 +273,7 @@ presubmits:
             - "--app-label-key"
             - "app.kubernetes.io/name"
             - "--names"
-            - "k8sgpt"
+            - "k8sgpt-operator"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
