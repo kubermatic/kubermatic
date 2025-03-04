@@ -399,6 +399,7 @@ metadata:
 spec:
   storageClasses:
 {{- range  .Cluster.KubeVirtInfraStorageClasses }}
+{{- if ne .VolumeProvisioner "infra-csi-driver" }}
    - infraStorageClassName: {{ .Name }}
      isDefaultClass: {{ .IsDefaultClass }}
 {{- if .VolumeBindingMode  }}
@@ -421,6 +422,7 @@ spec:
      labels:
 {{- range $key, $value := .Labels }}
        {{ $key }}: {{ $value }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

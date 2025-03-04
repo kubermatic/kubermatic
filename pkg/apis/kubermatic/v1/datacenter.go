@@ -931,6 +931,9 @@ type KubeVirtVolumeProvisioner string
 const (
 	// KubeVirtCSIDriver indicates that the volume of a storage class will be provisioned by the KubeVirt CSI driver.
 	KubeVirtCSIDriver KubeVirtVolumeProvisioner = "kubevirt-csi-driver"
+	// InfraCSIDriver indicates that the volume of a storage class will be provisioned volumes for the Virtual Machine
+	// disk images by the infra cluster CSI driver.
+	InfraCSIDriver KubeVirtVolumeProvisioner = "infra-csi-driver"
 )
 
 // KubeVirtImageSources represents KubeVirt image sources.
