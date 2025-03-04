@@ -167,6 +167,10 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
+	// this sleep is specifically needed for the cert-manager
+	time.Sleep(15 * time.Second)
+	time.Sleep(15 * time.Second)
+
 	log.Info("Checking if the helm release is deployed")
 	err = isHelmReleaseDeployed(ctx, log, client, applicationName, applicationNamespace)
 	if err != nil {
