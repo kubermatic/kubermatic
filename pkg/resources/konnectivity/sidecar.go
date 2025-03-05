@@ -29,16 +29,14 @@ import (
 )
 
 var (
-	defResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.KonnectivityServerContainer: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("10Mi"),
-				corev1.ResourceCPU:    resource.MustParse("10m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("200Mi"),
-				corev1.ResourceCPU:    resource.MustParse("2"),
-			},
+	defResources = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("10Mi"),
+			corev1.ResourceCPU:    resource.MustParse("10m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("200Mi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
 		},
 	}
 )
@@ -128,11 +126,19 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			SuccessThreshold:    1,
 			FailureThreshold:    3,
 		},
+		Resources: defResources,
 	}
 
-	kResourcesOverrides := resources.GetOverrides(data.Cluster().Spec.ComponentsOverride)
+	defaultResourceRequirements := map[string]*corev1.ResourceRequirements{
+		resources.KonnectivityServerContainer: &defResources,
+	}
 
-	err := resources.SetResourceRequirements([]corev1.Container{knpSrvContainer}, defResourceRequirements, kResourcesOverrides, nil)
+	err := resources.SetResourceRequirements(
+		[]corev1.Container{knpSrvContainer},
+		defaultResourceRequirements,
+		resources.GetOverrides(data.Cluster().Spec.ComponentsOverride),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 	}
