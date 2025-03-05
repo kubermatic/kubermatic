@@ -19,10 +19,11 @@ package images
 import (
 	"context"
 	"fmt"
-	"iter"
 	"os"
 	"path"
 	"time"
+
+	"iter"
 
 	"github.com/sirupsen/logrus"
 

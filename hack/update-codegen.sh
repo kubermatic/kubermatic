@@ -82,7 +82,10 @@ locationMap='{
   "clusterbackupstoragelocations.kubermatic.k8c.io": "master,seed",
 
   "verticalpodautoscalers.autoscaling.k8s.io": "seed",
-  "verticalpodautoscalercheckpoints.autoscaling.k8s.io": "seed"
+  "verticalpodautoscalercheckpoints.autoscaling.k8s.io": "seed",
+
+  "policytemplates.kubermatic.k8c.io": "master,seed",
+  "policybindings.kubermatic.k8c.io": "seed"
 }'
 
 failure=false
