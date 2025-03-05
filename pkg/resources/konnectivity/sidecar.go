@@ -29,14 +29,16 @@ import (
 )
 
 var (
-	defResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("10Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("200Mi"),
-			corev1.ResourceCPU:    resource.MustParse("2"),
+	defResourceRequirements = map[string]*corev1.ResourceRequirements{
+		resources.KonnectivityServerContainer: {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("10Mi"),
+				corev1.ResourceCPU:    resource.MustParse("10m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+				corev1.ResourceCPU:    resource.MustParse("2"),
+			},
 		},
 	}
 )
@@ -48,7 +50,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 		clusterVersion = data.Cluster().Spec.Version
 	}
 
-	return &corev1.Container{
+	knpSrvContainer := corev1.Container{
 		Name:            resources.KonnectivityServerContainer,
 		Image:           registry.Must(data.RewriteImage(fmt.Sprintf("%s/kas-network-proxy/proxy-server:%s", resources.RegistryK8S, NetworkProxyVersion(clusterVersion)))),
 		ImagePullPolicy: corev1.PullIfNotPresent,
@@ -126,8 +128,16 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 			SuccessThreshold:    1,
 			FailureThreshold:    3,
 		},
-		Resources: defResourceRequirements,
-	}, nil
+	}
+
+	kResourcesOverrides := resources.GetOverrides(data.Cluster().Spec.ComponentsOverride)
+
+	err := resources.SetResourceRequirements([]corev1.Container{knpSrvContainer}, defResourceRequirements, kResourcesOverrides, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set resource requirements: %w", err)
+	}
+
+	return &knpSrvContainer, nil
 }
 
 func NetworkProxyVersion(clusterVersion semver.Semver) string {
