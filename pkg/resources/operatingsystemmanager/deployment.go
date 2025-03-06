@@ -254,10 +254,17 @@ type clusterSpec struct {
 func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"-cluster-dns", cs.clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
 		"-namespace", "kube-system",
+	}
+
+	if cs != nil {
+		flags = append(flags, "-cluster-dns", cs.clusterDNSIP)
+
+		if cs.containerRuntime != "" {
+			flags = append(flags, "-container-runtime", cs.containerRuntime)
+		}
 	}
 
 	if extCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; extCloudProvider {
@@ -288,10 +295,6 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 
 	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {
 		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
-	}
-
-	if cs != nil && cs.containerRuntime != "" {
-		flags = append(flags, "-container-runtime", cs.containerRuntime)
 	}
 
 	return flags

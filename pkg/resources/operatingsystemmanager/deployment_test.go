@@ -1,12 +1,13 @@
 package operatingsystemmanager
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"reflect"
 	"testing"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 )
 
-// TestAppendProxyFlags tests the appendProxyFlags function with various inputs
+// TestAppendProxyFlags tests the appendProxyFlags function with various inputs.
 func TestAppendProxyFlags(t *testing.T) {
 	const (
 		sampleProxy        = "http://proxy.example.com"
