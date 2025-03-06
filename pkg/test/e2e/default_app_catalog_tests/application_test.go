@@ -18,12 +18,10 @@ package default_app_catalog_applications_tests
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 	"testing"
@@ -114,46 +112,56 @@ func TestClusters(t *testing.T) {
 
 //gocyclo:ignore
 func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	//namespace := &corev1.Namespace{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name: applicationNamespace,
-	//	},
-	//}
-	//
-	//// Create the namespace in Kubernetes
-	//err := client.Create(ctx, namespace)
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//} else {
-	//	log.Infof("Namespace %s created", namespace.Name)
-	//}
-	//
-	//application := appskubermaticv1.ApplicationInstallation{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      applicationName,
-	//		Namespace: applicationNamespace,
-	//	},
-	//	Spec: appskubermaticv1.ApplicationInstallationSpec{
-	//		Namespace: &appskubermaticv1.AppNamespaceSpec{
-	//			Name:   applicationNamespace,
-	//			Create: true,
-	//		},
-	//		ApplicationRef: appskubermaticv1.ApplicationRef{
-	//			Name:    applicationName,
-	//			Version: applicationVersion,
-	//		},
-	//	},
-	//}
-	//
-	//err = client.Create(ctx, &application)
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: applicationNamespace,
+		},
+	}
+
+	// Create the namespace in Kubernetes
+	err := client.Create(ctx, namespace)
+	if err != nil {
+		t.Fatalf("%v", err)
+	} else {
+		log.Infof("Namespace %s created", namespace.Name)
+	}
+
+	applicationRefName := applicationName
+	if applicationName == "gpu-operator" {
+		applicationRefName = "nvidia-gpu-operator"
+	}
+
+	application := appskubermaticv1.ApplicationInstallation{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      applicationName,
+			Namespace: applicationNamespace,
+		},
+		Spec: appskubermaticv1.ApplicationInstallationSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
+				Name:   applicationNamespace,
+				Create: true,
+			},
+			ApplicationRef: appskubermaticv1.ApplicationRef{
+				Name:    applicationRefName,
+				Version: applicationVersion,
+			},
+		},
+	}
+
+	log.Infof("Creating an ApplicationInstallation")
+
+	err = client.Create(ctx, &application)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	// wait for the ApplicationInstallation to be installed
+	time.Sleep(720 * time.Second)
 
 	log.Info("Running tests...")
 
 	log.Info("Checking for ApplicationInstallation...")
-	err := wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationName}, app); err != nil {
 			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
@@ -329,40 +337,41 @@ func createUserCluster(
 	//	return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
 	//}
 
-	applicationRefName := applicationName
-	if applicationName == "gpu-operator" {
-		applicationRefName = "nvidia-gpu-operator"
-	}
-	application := apiv1.Application{
-		ObjectMeta: apiv1.ObjectMeta{
-			Name:      applicationName,
-			Namespace: applicationNamespace,
-		},
-		Spec: apiv1.ApplicationSpec{
-			Namespace: apiv1.NamespaceSpec{
-				Name:   applicationNamespace,
-				Create: true,
-			},
-			ApplicationRef: apiv1.ApplicationRef{
-				Name:    applicationRefName,
-				Version: applicationVersion,
-			},
-		},
-	}
-	applications := []apiv1.Application{application}
-	appAnnotation, err := json.Marshal(applications)
-	if err != nil {
-		return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
-	}
+	// -----
+	//applicationRefName := applicationName
+	//if applicationName == "gpu-operator" {
+	//	applicationRefName = "nvidia-gpu-operator"
+	//}
+	//application := apiv1.Application{
+	//	ObjectMeta: apiv1.ObjectMeta{
+	//		Name:      applicationName,
+	//		Namespace: applicationNamespace,
+	//	},
+	//	Spec: apiv1.ApplicationSpec{
+	//		Namespace: apiv1.NamespaceSpec{
+	//			Name:   applicationNamespace,
+	//			Create: true,
+	//		},
+	//		ApplicationRef: apiv1.ApplicationRef{
+	//			Name:    applicationRefName,
+	//			Version: applicationVersion,
+	//		},
+	//	},
+	//}
+	//applications := []apiv1.Application{application}
+	//appAnnotation, err := json.Marshal(applications)
+	//if err != nil {
+	//	return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
+	//}
 
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("application-test").
-		WithKonnectivity(true).
-		WithAnnotations(map[string]string{
-			kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
-		})
+		WithKonnectivity(true)
+	//WithAnnotations(map[string]string{
+	//	kubermaticv1.InitialApplicationInstallationsRequestAnnotation: string(appAnnotation),
+	//})
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)

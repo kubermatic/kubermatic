@@ -180,7 +180,7 @@ presubmits:
             - "--app-label-key"
             - "app.kubernetes.io/name"
             - "--names"
-            - "cert-manager,cainjector,webhook"
+            - "cert-manager,startupapicheck,cainjector,webhook"
 
           env:
             - name: KUBERMATIC_EDITION
