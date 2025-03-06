@@ -441,6 +441,7 @@ type AuthorizationConfig struct {
 
 	AuthorizationConfigurationFile *AuthorizationConfigurationFile `json:"authorizationConfigurationFile,omitempty"`
 }
+
 type AuthorizationWebhookConfiguration struct {
 	// The secret containing the webhook configuration
 	SecretName string `json:"secretName"`
@@ -459,14 +460,6 @@ type AuthorizationConfigurationFile struct {
 	SecretMountPath string `json:"secretMountPath"`
 }
 
-func (c ClusterSpec) GetAuthorizationModesString() string {
-	if c.AuthorizationConfig != nil && c.AuthorizationConfig.EnabledModes != nil {
-		return strings.Join(c.AuthorizationConfig.EnabledModes, ",")
-	}
-
-	return "Node,RBAC"
-}
-
 func (c ClusterSpec) IsWebhookAuthorizationEnabled() bool {
 	if c.AuthorizationConfig == nil || c.AuthorizationConfig.EnabledModes == nil || c.AuthorizationConfig.AuthorizationWebhookConfiguration == nil {
 		return false
@@ -479,6 +472,7 @@ func (c ClusterSpec) IsWebhookAuthorizationEnabled() bool {
 	if len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretName) == 0 || len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretKey) == 0 {
 		return false
 	}
+
 	return true
 }
 
@@ -500,14 +494,6 @@ func (c ClusterSpec) IsAuthorizationConfigurationFileEnabled() bool {
 	}
 
 	return true
-}
-
-func (c ClusterSpec) GetAuthorizationConfigurationMountPath() string {
-	if c.AuthorizationConfig != nil && c.AuthorizationConfig.AuthorizationConfigurationFile != nil && len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretMountPath) > 0 {
-		return c.AuthorizationConfig.AuthorizationConfigurationFile.SecretMountPath
-	}
-
-	return "/etc/kubernetes/authorization-configs"
 }
 
 const (

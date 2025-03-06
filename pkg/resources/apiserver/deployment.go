@@ -345,7 +345,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	if !cluster.Spec.IsAuthorizationConfigurationFileEnabled() {
-		flags = append(flags, "--authorization-mode", data.Cluster().Spec.GetAuthorizationModesString())
+		flags = append(flags, "--authorization-mode", getAuthorizationModesString(data.Cluster().Spec.AuthorizationConfig))
 	}
 
 	// the "bring-your-own" provider does not support automatic TLS rotation in kubelets yet,
@@ -488,7 +488,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	if cluster.Spec.IsAuthorizationConfigurationFileEnabled() {
-		flags = append(flags, "--authorization-config", filepath.Join(cluster.Spec.GetAuthorizationConfigurationMountPath(), cluster.Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey))
+		flags = append(flags, "--authorization-config", filepath.Join(getAuthorizationConfigurationMountPath(data.Cluster().Spec.AuthorizationConfig), cluster.Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey))
 	}
 
 	return flags, nil
@@ -621,7 +621,7 @@ func getVolumeMounts(data *resources.TemplateData, isKonnectivityEnabled, isEncr
 	if data.Cluster().Spec.IsAuthorizationConfigurationFileEnabled() {
 		vms = append(vms, corev1.VolumeMount{
 			Name:      resources.AuthorizationConfigurationVolumeName,
-			MountPath: data.Cluster().Spec.GetAuthorizationConfigurationMountPath(),
+			MountPath: getAuthorizationConfigurationMountPath(data.Cluster().Spec.AuthorizationConfig),
 			ReadOnly:  true,
 		})
 	}
@@ -900,6 +900,22 @@ func GetEnvVars(data kubeAPIServerEnvData) ([]corev1.EnvVar, error) {
 	}
 
 	return append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Status.Address.InternalName)...), nil
+}
+
+func getAuthorizationModesString(authorizationConfig *kubermaticv1.AuthorizationConfig) string {
+	if authorizationConfig != nil && authorizationConfig.EnabledModes != nil {
+		return strings.Join(authorizationConfig.EnabledModes, ",")
+	}
+
+	return "Node,RBAC"
+}
+
+func getAuthorizationConfigurationMountPath(authorizationConfig *kubermaticv1.AuthorizationConfig) string {
+	if authorizationConfig != nil && authorizationConfig.AuthorizationConfigurationFile != nil && len(authorizationConfig.AuthorizationConfigurationFile.SecretMountPath) > 0 {
+		return authorizationConfig.AuthorizationConfigurationFile.SecretMountPath
+	}
+
+	return "/etc/kubernetes/authorization-configs"
 }
 
 func intPtr(n int32) *int32 {
