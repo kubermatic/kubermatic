@@ -142,8 +142,8 @@ func completeCloudProviderSpec(config *providerconfig.Config, cluster *kubermati
 	return nil
 }
 
-// Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
-// kubelet version if it wasn't specified.
+// ValidateMachineDeployment validates if the node deployment structure fulfills certain requirements.
+// It returns node deployment with updated kubelet version if it wasn't specified.
 func ValidateMachineDeployment(md *clusterv1alpha1.MachineDeployment, controlPlaneVersion *semverlib.Version) error {
 	if kubelet := md.Spec.Template.Spec.Versions.Kubelet; kubelet != "" {
 		kubeletVersion, err := semverlib.NewVersion(kubelet)

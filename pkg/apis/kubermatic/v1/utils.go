@@ -43,7 +43,7 @@ func (e ExposeStrategy) String() string {
 // ExposeStrategiesSet is a set of ExposeStrategies.
 type ExposeStrategiesSet map[ExposeStrategy]struct{}
 
-// NewByte creates a ExposeStrategiesSet from a list of values.
+// NewExposeStrategiesSet creates a ExposeStrategiesSet from a list of values.
 func NewExposeStrategiesSet(items ...ExposeStrategy) ExposeStrategiesSet {
 	es := ExposeStrategiesSet{}
 	for _, item := range items {

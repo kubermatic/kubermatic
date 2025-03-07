@@ -60,7 +60,7 @@ type TemplateProvider interface {
 	// Uninstall the application.
 	Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 
-	// Check if a release is stuck
+	// IsStuck checks if a release is stuck
 	IsStuck(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
 
 	// Rollback the Application to the previous release

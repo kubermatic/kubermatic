@@ -108,7 +108,7 @@ func main() {
 	}
 
 	// Create a manager, disable metrics as we have our own handler that exposes
-	// the metrics of both the ctrltuntime registry and the default registry
+	// the metrics of both the ctrlruntime registry and the default registry
 	rootCtx := signals.SetupSignalHandler()
 
 	mgr, err := manager.New(cfg, manager.Options{

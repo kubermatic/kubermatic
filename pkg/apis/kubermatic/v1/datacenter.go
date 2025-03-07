@@ -188,7 +188,7 @@ type SeedList struct {
 // +kubebuilder:printcolumn:JSONPath=".status.phase",name="Phase",type="string"
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
-// Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+// Seed is the type representing a Seed cluster. Seed clusters host the control planes
 // for KKP user clusters.
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -266,7 +266,7 @@ func (ss *SeedStatus) IsInitialized() bool {
 	return ss.Conditions[SeedConditionClusterInitialized].Status == corev1.ConditionTrue
 }
 
-// The spec for a seed cluster.
+// SeedSpec represents the spec for a seed cluster.
 type SeedSpec struct {
 	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
 	// For informational purposes in the Kubermatic dashboard only.
