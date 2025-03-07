@@ -20,6 +20,9 @@ metadata:
   name: iap-{{ .name }}-configmap
 data:
   config.toml: |
+{{- if eq $.Values.iap.approval_prompt "none"}}
+    approval_prompt = "none"
+{{- end }}
 {{- with .config }}
 {{ toToml . | indent 4 }}
 {{ end }}
