@@ -12,18 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CGO_ENABLED=0
-export GOFLAGS ?= -trimpath
+ARG BASE_IMAGE=docker.io/golang:1.23.2
+FROM $BASE_IMAGE AS builder
 
-KUBERMATIC_EDITION ?= ce
-DOCKER_REPO ?= "quay.io/kubermatic"
-LDFLAGS ?= -w -extldflags '-static'
-GOTOOLFLAGS ?= -ldflags '$(LDFLAGS)' -v
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
 
-.PHONY: build
-build:
-	go build $(GOTOOLFLAGS) -tags "$(KUBERMATIC_EDITION)" -o ./_build/user-ssh-keys-agent
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
 
-.PHONY: docker
-docker: build
-	docker build --tag $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) --label "org.opencontainers.image.version=$(TAG)" .
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make http-prober
+
+FROM docker.io/alpine:3.19
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/http-prober/Dockerfile"
+LABEL org.opencontainers.image.vendor="Kubermatic"
+LABEL org.opencontainers.image.authors="support@kubermatic.com"
+
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/

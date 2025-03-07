@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/distroless/static-debian12:nonroot
-LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/s3-exporter/Dockerfile"
+ARG BASE_IMAGE=docker.io/golang:1.23.6
+FROM $BASE_IMAGE AS builder
+
+ARG GOPROXY=
+ARG KUBERMATIC_EDITION=ce
+
+ENV GOPROXY=$GOPROXY
+ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
+
+WORKDIR /go/src/k8c.io/kubermatic
+COPY . .
+RUN make network-interface-manager
+
+FROM gcr.io/distroless/static-debian12
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/network-interface-manager/Dockerfile.multiarch"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-COPY ./_build/s3-exporter /usr/local/bin/
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
 
-ENTRYPOINT ["s3-exporter"]
+ENTRYPOINT ["network-interface-manager"]
