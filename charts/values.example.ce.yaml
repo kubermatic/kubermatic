@@ -81,3 +81,14 @@ telemetry:
   # This field is required and will print an error message when that entry is missing.
   # You can generate uuid using command `uuidgen` on your linux machine
   uuid: ""
+prometheus:
+  scraping:
+    # Master/seed etcd metrics scraping can be enabled by providing the etcd client cert & key, this is required for prometheus to scrape metrics using TLS.
+    etcd:
+      tls:
+        crt: |
+          -----BEGIN CERTIFICATE-----
+          -----END CERTIFICATE-----
+        key: |
+          -----BEGIN RSA PRIVATE KEY-----
+          -----END RSA PRIVATE KEY-----
