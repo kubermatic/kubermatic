@@ -2048,6 +2048,23 @@ spec:
                               format: int32
                               type: integer
                           type: object
+                        proxy:
+                          description: |-
+                            ProxySettings defines optional flags for OperatingSystemManager deployment to allow
+                            setting specific proxy configurations for specific user clusters.
+                          properties:
+                            httpProxy:
+                              description: 'Optional: If set, this proxy will be configured for both HTTP and HTTPS.'
+                              type: string
+                            noProxy:
+                              description: |-
+                                Optional: If set this will be set as NO_PROXY environment variable on the node;
+                                The value must be a comma-separated list of domains for which no proxy
+                                should be used, e.g. "*.example.com,internal.dev".
+                                Note that the in-cluster apiserver URL will be automatically prepended
+                                to this value.
+                              type: string
+                          type: object
                         replicas:
                           format: int32
                           type: integer

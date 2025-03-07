@@ -758,7 +758,7 @@ type ComponentSettings struct {
 	// UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
 	UserClusterController *ControllerSettings `json:"userClusterController,omitempty"`
 	// OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
-	OperatingSystemManager *ControllerSettings `json:"operatingSystemManager,omitempty"`
+	OperatingSystemManager *OSMControllerSettings `json:"operatingSystemManager,omitempty"`
 	// CoreDNS configures CoreDNS deployed as part of the cluster control plane.
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
 }
@@ -779,6 +779,13 @@ type KonnectivityProxySettings struct {
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
 	// Args configures arguments (flags) for the Konnectivity deployments.
 	Args []string `json:"args,omitempty"`
+}
+
+type OSMControllerSettings struct {
+	ControllerSettings `json:",inline"`
+	// ProxySettings defines optional flags for OperatingSystemManager deployment to allow
+	// setting specific proxy configurations for specific user clusters.
+	Proxy ProxySettings `json:"proxy,omitempty"`
 }
 
 type ControllerSettings struct {

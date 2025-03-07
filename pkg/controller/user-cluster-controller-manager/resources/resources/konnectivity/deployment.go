@@ -50,7 +50,14 @@ var (
 )
 
 // DeploymentReconciler returns function to reconcile konnectivity agents deployment in user cluster.
-func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(
+	clusterVersion semver.Semver,
+	kServerHost string,
+	kServerPort int,
+	kKeepaliveTime string,
+	imageRewriter registry.ImageRewriter,
+	kResourcesOverrides map[string]*corev1.ResourceRequirements,
+) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
@@ -144,7 +151,7 @@ func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kSer
 				},
 			}
 
-			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, nil, ds.Annotations)
+			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, kResourcesOverrides, ds.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

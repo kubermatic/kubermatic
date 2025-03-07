@@ -250,6 +250,8 @@ for buildTarget in $RELEASE_PLATFORMS; do
     _build/kubermatic-installer* \
     charts/backup \
     charts/cert-manager \
+    charts/dex \
+    charts/gitops \
     charts/iap \
     charts/kubermatic-operator \
     charts/local-kubevirt \
@@ -291,6 +293,8 @@ for buildTarget in $RELEASE_PLATFORMS; do
     _build/kubermatic-installer* \
     charts/backup \
     charts/cert-manager \
+    charts/dex \
+    charts/gitops \
     charts/iap \
     charts/kubermatic-operator \
     charts/local-kubevirt \
