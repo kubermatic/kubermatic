@@ -361,9 +361,6 @@ func (r *Reconciler) updatePolicyBindingCondition(ctx context.Context, policyBin
 	meta.SetStatusCondition(&policyBinding.Status.Conditions, readyCondition)
 	meta.SetStatusCondition(&policyBinding.Status.Conditions, enforcedCondition)
 
-	// Update observed generation
-	policyBinding.Status.ObservedGeneration = policyBinding.Generation
-
 	if err := r.seedClient.Status().Update(ctx, policyBinding); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to update policy binding status: %w", err)
 	}
