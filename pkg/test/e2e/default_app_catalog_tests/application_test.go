@@ -177,11 +177,6 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
-	// this sleep is specifically needed for the cert-manager
-	if applicationName == "cert-manager" {
-		time.Sleep(720 * time.Second)
-	}
-
 	log.Info("Checking if the helm release is deployed")
 	err = isHelmReleaseDeployed(ctx, log, client, applicationName, applicationNamespace)
 	if err != nil {
@@ -317,29 +312,6 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	//application := appskubermaticv1.ApplicationInstallation{
-	//	ObjectMeta: metav1.ObjectMeta{
-	//		Name:      applicationName,
-	//		Namespace: applicationNamespace,
-	//	},
-	//	Spec: appskubermaticv1.ApplicationInstallationSpec{
-	//		Namespace: &appskubermaticv1.AppNamespaceSpec{
-	//			Name:   applicationNamespace,
-	//			Create: true,
-	//		},
-	//		ApplicationRef: appskubermaticv1.ApplicationRef{
-	//			Name:    applicationName,
-	//			Version: applicationVersion,
-	//		},
-	//	},
-	//}
-
-	//appAnnotation, err := json.Marshal(application)
-	//if err != nil {
-	//	return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
-	//}
-
-	// -----
 	applicationRefName := applicationName
 	if applicationName == "gpu-operator" {
 		applicationRefName = "nvidia-gpu-operator"
