@@ -71,12 +71,25 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
+				{
+					Name: "kubeconfig",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+						},
+					},
+				},
 			}
 
 			volumeMounts := []corev1.VolumeMount{
 				{
 					Name:      "sigstore",
 					MountPath: "/.sigstore",
+				},
+				{
+					Name:      "kubeconfig",
+					MountPath: "/etc/kubernetes/kubeconfig",
+					ReadOnly:  true,
 				},
 			}
 
@@ -109,7 +122,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 				"--allowInsecureRegistry=false",
 				"--registryCredentialHelpers=default,google,amazon,azure,github",
 				"--enableReporting=validate,mutate,mutateExisting,imageVerify,generate",
-				// kubeconfig WIP
+				"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 			}
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{

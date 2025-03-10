@@ -39,6 +39,10 @@ import (
 	cleanupresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/cleanup-controller"
 	reportsresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
+	userclusteradmissionresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster/admission-controller"
+	userclusterbackgroundresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster/background-controller"
+	userclustercleanupresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster/cleanup-controller"
+	userclusterreportsresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster/reports-controller"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -262,6 +266,37 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", userClusterClient); err != nil {
 		return fmt.Errorf("failed to reconcile Kyverno CRDs: %w", err)
+	}
+
+	// Create/update ClusterRoles for all controllers
+	clusterRoleCreators := []reconciling.NamedClusterRoleReconcilerFactory{
+		userclusterreportsresources.ClusterRoleReconciler(),
+		userclusterreportsresources.CoreClusterRoleReconciler(),
+		userclustercleanupresources.ClusterRoleReconciler(),
+		userclustercleanupresources.CoreClusterRoleReconciler(),
+		userclusterbackgroundresources.ClusterRoleReconciler(),
+		userclusterbackgroundresources.CoreClusterRoleReconciler(),
+		userclusteradmissionresources.ClusterRoleReconciler(),
+		userclusteradmissionresources.CoreClusterRoleReconciler(),
+	}
+
+	if err := reconciling.ReconcileClusterRoles(ctx, clusterRoleCreators, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
+	}
+
+	// Create/update ClusterRoleBindings for all controllers
+	clusterRoleBindingCreators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
+		userclusterreportsresources.ClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+		userclusterreportsresources.ViewClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+		userclustercleanupresources.ClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+		userclusterbackgroundresources.ClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+		userclusterbackgroundresources.ViewClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+		userclusteradmissionresources.ClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+		userclusteradmissionresources.ViewClusterRoleBindingReconciler(cluster.Status.NamespaceName),
+	}
+
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, clusterRoleBindingCreators, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 
 	return nil

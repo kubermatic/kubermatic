@@ -111,11 +111,6 @@ type ResourceSelector struct {
 
 // PolicyBindingStatus is the status of the policy binding.
 type PolicyBindingStatus struct {
-	// ObservedGeneration is the generation observed by the controller.
-	//
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
 	// Conditions represents the latest available observations of the policy binding's current state
 	// +optional
 	// +listType=map
