@@ -360,6 +360,62 @@ func createUserCluster(
 			},
 		},
 	}
+
+	if applicationName == "cluster-autoscaler" {
+		valuesBlock := `
+cloudProvider: clusterapi
+clusterAPIMode: incluster-incluster
+autoDiscovery:
+  namespace: kube-system
+image:
+  # 'Cluster.AutoscalerVersion' is injected by KKP based on the Kubernetes version of the cluster.
+  tag: '{{ .Cluster.AutoscalerVersion }}'
+extraEnv:
+  CAPI_GROUP: cluster.k8s.io
+rbac:
+  create: true
+  pspEnabled: false
+  clusterScoped: true
+  serviceAccount:
+    annotations: {}
+    create: true
+    name: "cluster-autoscaler-clusterapi-cluster-autoscaler"
+    automountServiceAccountToken: true
+extraObjects:
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRole
+  metadata:
+    name: cluster-autoscaler-management
+  rules:
+  - apiGroups:
+    - cluster.k8s.io
+    resources:
+    - machinedeployments
+    - machinedeployments/scale
+    - machines
+    - machinesets
+    verbs:
+    - get
+    - list
+    - update
+    - watch
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: ClusterRoleBinding
+  metadata:
+    name: cluster-autoscaler-clusterapi-cluser-autoscaler
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: cluster-autoscaler-management
+  subjects:
+  - kind: ServiceAccount
+    name: cluster-autoscaler-clusterapi-cluster-autoscaler
+    # 'Release.Namespace' is injected by Helm.
+    namespace: '{{ "{{.Release.Namespace}}" }}'
+`
+		application.Spec.ValuesBlock = valuesBlock
+	}
+
 	applications := []apiv1.Application{application}
 	appAnnotation, err := json.Marshal(applications)
 	if err != nil {
