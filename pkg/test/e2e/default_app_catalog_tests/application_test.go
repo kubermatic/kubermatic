@@ -120,13 +120,13 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	}
 
 	// Create the namespace in Kubernetes
-	if namespace != "kube-system" {
+	if applicationNamespace != "kube-system" {
 		err := client.Create(ctx, namespace)
-	}
-	if err != nil {
-		t.Fatalf("%v", err)
-	} else {
-		log.Infof("Namespace %s created", namespace.Name)
+		if err != nil {
+			t.Fatalf("%v", err)
+		} else {
+			log.Infof("Namespace %s created", namespace.Name)
+		}
 	}
 
 	applicationRefName := applicationName
@@ -208,7 +208,7 @@ extraObjects:
 
 	log.Infof("Creating an ApplicationInstallation")
 
-	err = client.Create(ctx, &application)
+	err := client.Create(ctx, &application)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
