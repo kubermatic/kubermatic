@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -41,7 +43,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -210,8 +211,6 @@ extraObjects:
 		t.Fatalf("%v", err)
 	}
 
-	time.Sleep(860 * time.Second)
-
 	log.Info("Running tests...")
 
 	log.Info("Checking for ApplicationInstallation...")
@@ -230,22 +229,43 @@ extraObjects:
 	}
 
 	log.Info("Checking if the helm release is deployed")
-	err = isHelmReleaseDeployed(ctx, log, client, applicationName, applicationNamespace)
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		err = isHelmReleaseDeployed(ctx, log, client, applicationName, applicationNamespace)
+		if err != nil {
+			return fmt.Errorf("failed to verify that helm release is deployed: %w", err), nil
+		}
+
+		return nil, nil
+	})
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatalf("Application observe test failed: %v", err)
 	}
 
 	log.Info("Checking if all conditions are ok")
-	err = checkApplicationInstallationConditions(ctx, log, client)
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		err = checkApplicationInstallationConditions(ctx, log, client)
+		if err != nil {
+			return fmt.Errorf("failed to verify that all conditions are in healthy state: %w", err), nil
+		}
+
+		return nil, nil
+	})
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatalf("Application observe test failed: %v", err)
 	}
 
 	namesStrArray := strings.Split(names, ",")
 	log.Info("Waiting for pods to get ready...")
-	err = waitForPods(ctx, log, client, applicationNamespace, key, namesStrArray)
+	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		err = waitForPods(ctx, log, client, applicationNamespace, key, namesStrArray)
+		if err != nil {
+			return fmt.Errorf("failed to verify that all pods are ready: %w", err), nil
+		}
+
+		return nil, nil
+	})
 	if err != nil {
-		t.Fatalf("pods never became ready: %v", err)
+		t.Fatalf("Application observe test failed: %v", err)
 	}
 }
 
@@ -364,88 +384,6 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	//	applicationRefName := applicationName
-	//	if applicationName == "gpu-operator" {
-	//		applicationRefName = "nvidia-gpu-operator"
-	//	}
-	//	application := apiv1.Application{
-	//		ObjectMeta: apiv1.ObjectMeta{
-	//			Name:      applicationName,
-	//			Namespace: applicationNamespace,
-	//		},
-	//		Spec: apiv1.ApplicationSpec{
-	//			Namespace: apiv1.NamespaceSpec{
-	//				Name:   applicationNamespace,
-	//				Create: true,
-	//			},
-	//			ApplicationRef: apiv1.ApplicationRef{
-	//				Name:    applicationRefName,
-	//				Version: applicationVersion,
-	//			},
-	//		},
-	//	}
-	//
-	//	if applicationName == "cluster-autoscaler" {
-	//		valuesBlock := `
-	//cloudProvider: clusterapi
-	//clusterAPIMode: incluster-incluster
-	//autoDiscovery:
-	//  namespace: kube-system
-	//image:
-	//  # 'Cluster.AutoscalerVersion' is injected by KKP based on the Kubernetes version of the cluster.
-	//  tag: '{{ .Cluster.AutoscalerVersion }}'
-	//extraEnv:
-	//  CAPI_GROUP: cluster.k8s.io
-	//rbac:
-	//  create: true
-	//  pspEnabled: false
-	//  clusterScoped: true
-	//  serviceAccount:
-	//    annotations: {}
-	//    create: true
-	//    name: "cluster-autoscaler-clusterapi-cluster-autoscaler"
-	//    automountServiceAccountToken: true
-	//extraObjects:
-	//- apiVersion: rbac.authorization.k8s.io/v1
-	//  kind: ClusterRole
-	//  metadata:
-	//    name: cluster-autoscaler-management
-	//  rules:
-	//  - apiGroups:
-	//    - cluster.k8s.io
-	//    resources:
-	//    - machinedeployments
-	//    - machinedeployments/scale
-	//    - machines
-	//    - machinesets
-	//    verbs:
-	//    - get
-	//    - list
-	//    - update
-	//    - watch
-	//- apiVersion: rbac.authorization.k8s.io/v1
-	//  kind: ClusterRoleBinding
-	//  metadata:
-	//    name: cluster-autoscaler-clusterapi-cluser-autoscaler
-	//  roleRef:
-	//    apiGroup: rbac.authorization.k8s.io
-	//    kind: ClusterRole
-	//    name: cluster-autoscaler-management
-	//  subjects:
-	//  - kind: ServiceAccount
-	//    name: cluster-autoscaler-clusterapi-cluster-autoscaler
-	//    # 'Release.Namespace' is injected by Helm.
-	//    namespace: '{{ "{{.Release.Namespace}}" }}'
-	//`
-	//		application.Spec.ValuesBlock = valuesBlock
-	//	}
-	//
-	//	applications := []apiv1.Application{application}
-	//	appAnnotation, err := json.Marshal(applications)
-	//	if err != nil {
-	//		return nil, nil, log, fmt.Errorf("failed to setup an application: %w", err)
-	//	}
-
 	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
