@@ -56,6 +56,7 @@ import (
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
@@ -409,6 +410,11 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	}
 
 	images = append(images, addonImages...)
+	if backupImages, err := etcdBackupImages(config.Spec.SeedController); err != nil {
+		return nil, fmt.Errorf("failed to get images from etcd backups: %w", err)
+	} else {
+		images = append(images, backupImages...)
+	}
 
 	if registryPrefix != "" {
 		var filteredImages []string
@@ -419,6 +425,32 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 		}
 
 		images = filteredImages
+	}
+
+	return images, nil
+}
+
+func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfiguration) ([]string, error) {
+	var images []string
+
+	if configuration.BackupStoreContainer == "" {
+		configuration.BackupStoreContainer = defaulting.DefaultBackupStoreContainer
+	}
+
+	if image, err := kubernetes.ContainerFromString(configuration.BackupStoreContainer); err != nil {
+		return nil, fmt.Errorf("failed to get backup store image: %w", err)
+	} else {
+		images = append(images, image.Image)
+	}
+
+	if configuration.BackupDeleteContainer == "" {
+		configuration.BackupDeleteContainer = defaulting.DefaultBackupDeleteContainer
+	}
+
+	if image, err := kubernetes.ContainerFromString(configuration.BackupDeleteContainer); err != nil {
+		return nil, fmt.Errorf("failed to get backup delete image: %w", err)
+	} else {
+		images = append(images, image.Image)
 	}
 
 	return images, nil
@@ -977,6 +1009,8 @@ func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfi
 		versions = append(versions, &version.Version{
 			Version: v.Semver(),
 		})
+
+		return versions
 	}
 
 	return versions
