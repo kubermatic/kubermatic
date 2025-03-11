@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.23-node-20-7 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.23-node-20-9 containerize ./hack/update-codegen.sh
 
 sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"
@@ -35,6 +35,12 @@ $sed -i "s/Copyright YEAR/Copyright $currentYear/g" $reconcileHelpers
 CRD_DIR=pkg/crd/k8c.io
 
 echodate "Generating openAPI v3 CRDs"
+
+export GODEBUG=gotypesalias=0
+# see https://github.com/kubernetes-sigs/controller-tools/issues/1123
+# and https://github.com/kubernetes-sigs/controller-tools/pull/1122
+#
+# To fix this we will need to update controller-tools at least to v0.17.1+ which pull main kubernetes updates
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd \
   object:headerFile=./hack/boilerplate/ce/boilerplate.go.txt \

@@ -35,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/validation"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -60,9 +61,6 @@ type MirrorImagesOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
-
-	// TODO(embik): deprecated, remove with 2.23
-	DockerBinary string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -121,12 +119,10 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
 
-	cmd.PersistentFlags().StringVar(&opt.DockerBinary, "docker-binary", opt.DockerBinary, "deprecated: docker CLI compatible binary to use for pulling and pushing images (this flag has no effect anymore and will be removed in the future)")
-
 	return cmd
 }
 
-func getKubermaticConfiguration(logger *logrus.Logger, options *MirrorImagesOptions) (*kubermaticv1.KubermaticConfiguration, error) {
+func getKubermaticConfiguration(options *MirrorImagesOptions) (*kubermaticv1.KubermaticConfiguration, error) {
 	if !options.Archive && options.Registry == "" {
 		return nil, errors.New("no target registry was passed")
 	}
@@ -142,6 +138,15 @@ func getKubermaticConfiguration(logger *logrus.Logger, options *MirrorImagesOpti
 
 	if config == nil {
 		return nil, errors.New("please specify your KubermaticConfiguration via --config")
+	}
+
+	// Validate the MirrorImages field in the KubermaticConfiguration to ensure all images are properly formatted.
+	// Each image must follow the format "repository:tag". Validation errors will prevent further processing.
+	if len(config.Spec.MirrorImages) > 0 {
+		err := validation.ValidateMirrorImages(config.Spec.MirrorImages)
+		if err != nil {
+			return nil, fmt.Errorf("invalid mirrorImages configuration in KubermaticConfiguration: %w", err)
+		}
 	}
 
 	// if we pass the option to ignore repository overrides in the KubermaticConfiguration,
@@ -195,15 +200,11 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
-		if options.DockerBinary != "" {
-			logger.Warn("--docker-binary is deprecated and no longer has any effect; it will be removed with KKP 2.23")
-		}
-
 		ctx := cmd.Context()
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.Kubermatic)
 
 		if options.LoadFrom == "" {
-			kubermaticConfig, err := getKubermaticConfiguration(logger, options)
+			kubermaticConfig, err := getKubermaticConfiguration(options)
 			if err != nil {
 				return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 			}
@@ -287,6 +288,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				}
 			}
 
+			// Populate the imageSet with images specified in the KubermaticConfiguration's MirrorImages field.
+			// This ensures that all required images for mirroring are included in the set for further processing.
+			if len(kubermaticConfig.Spec.MirrorImages) > 0 {
+				imageSet.Insert(kubermaticConfig.Spec.MirrorImages...)
+			}
+
 			// error out early if there is no useful Helm binary
 			helmClient, err := helm.NewCLI(options.HelmBinary, "", "", options.HelmTimeout, logger)
 			if err != nil {
@@ -322,12 +329,26 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				imageSet.Insert(images...)
 			}
 
-			logger.Info("🚀 Rendering system Applications Helm charts…")
-			appImages, err := images.GetImagesFromSystemApplicationDefinitions(logger, kubermaticConfig, helmClient, options.HelmTimeout, options.RegistryPrefix)
-			if err != nil {
-				return fmt.Errorf("failed to get images for system Applications: %w", err)
+			copyKubermaticConfig := kubermaticConfig.DeepCopy()
+			// force using default repos
+			copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository = defaulting.DefaultSystemApplicationsHelmRepository
+
+			logger.Info("🚀 Getting images from system Applications Helm charts…")
+
+			for sysChart, err := range images.SystemAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+				if err != nil {
+					return err
+				}
+
+				chartImage := fmt.Sprintf("%s/%s:%s",
+					defaulting.DefaultSystemApplicationsHelmRepository,
+					sysChart.ApplicationVersion.Template.Source.Helm.ChartName,
+					sysChart.Version,
+				)
+
+				imageSet.Insert(chartImage)
+				imageSet.Insert(sysChart.WorkloadImages...)
 			}
-			imageSet.Insert(appImages...)
 
 			if options.Archive && options.ArchivePath == "" {
 				currentPath, err := os.Getwd()

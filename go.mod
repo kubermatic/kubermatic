@@ -1,8 +1,14 @@
 module k8c.io/kubermatic/v2
 
-go 1.22.8
+go 1.23.0
 
-toolchain go1.23.3
+toolchain go1.23.6
+
+// follow repository deprecation
+replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
+
+// Pin prism-go-client to v0.4.0 as we have no way to test v0.5.1, as we don't have a working environment for Nutanix.
+replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/prism-go-client v0.4.0
 
 require (
 	dario.cat/mergo v1.0.1
@@ -29,8 +35,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.7
 	github.com/aws/smithy-go v1.20.4
 	github.com/cert-manager/cert-manager v1.15.4
-	github.com/cilium/cilium v1.15.10
-	github.com/containerd/containerd v1.7.20
+	github.com/cilium/cilium v1.15.13
+	github.com/containerd/containerd v1.7.21
 	github.com/digitalocean/godo v1.124.0
 	github.com/distribution/distribution/v3 v3.0.0-beta.1
 	github.com/distribution/reference v0.6.0
@@ -39,7 +45,7 @@ require (
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/go-test/deep v1.1.1
-	github.com/gobuffalo/flect v1.0.2
+	github.com/gobuffalo/flect v1.0.3
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
@@ -75,10 +81,9 @@ require (
 	go.etcd.io/etcd/etcdutl/v3 v3.5.13
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.31.0
-	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/oauth2 v0.23.0
 	golang.org/x/sys v0.28.0
-	golang.org/x/tools v0.25.0
+	golang.org/x/tools v0.26.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/api v0.197.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1
@@ -94,12 +99,12 @@ require (
 	k8c.io/operating-system-manager v1.6.1-0.20241118134103-5db575f65108
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.31.2
-	k8s.io/apiextensions-apiserver v0.31.1
+	k8s.io/apiextensions-apiserver v0.31.2
 	k8s.io/apimachinery v0.31.2
 	k8s.io/apiserver v0.31.2
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
 	k8s.io/cli-runtime v0.31.2
-	k8s.io/client-go v1.5.2
+	k8s.io/client-go v0.31.2
 	k8s.io/code-generator v0.31.2
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-aggregator v0.31.1
@@ -110,20 +115,11 @@ require (
 	kubevirt.io/api v1.3.1
 	kubevirt.io/containerized-data-importer-api v1.60.3
 	sigs.k8s.io/controller-runtime v0.19.0
-	sigs.k8s.io/controller-tools v0.16.1
+	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/yaml v1.4.0
 )
 
-// follow repository deprecation
-replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
-
-// Pin prism-go-client to v0.4.0 as we have no way to test v0.5.1, as we don't have a working environment for Nutanix.
-replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/prism-go-client v0.4.0
-
-require (
-	github.com/kubeovn/kube-ovn v1.12.28
-	k8s.io/pod-security-admission v0.31.0
-)
+require k8s.io/pod-security-admission v0.31.0
 
 require (
 	cel.dev/expr v0.16.0 // indirect
@@ -153,6 +149,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/Microsoft/hcsshim v0.12.5 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/PaesslerAG/gval v1.2.2 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
@@ -210,6 +207,8 @@ require (
 	github.com/cncf/xds/go v0.0.0-20240723142845-024c85f92f20 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
+	github.com/containerd/cgroups/v3 v3.0.3 // indirect
+	github.com/containerd/continuity v0.4.3 // indirect
 	github.com/containerd/errdefs v0.1.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
@@ -241,7 +240,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
-	github.com/fatih/color v1.17.0 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
@@ -349,6 +348,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
+	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -361,12 +361,11 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/oleiade/reflections v1.1.0 // indirect
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
-	github.com/open-policy-agent/opa v0.67.1 // indirect
+	github.com/open-policy-agent/opa v0.68.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
-	github.com/ovn-org/libovsdb v0.7.0 // indirect
 	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -474,6 +473,7 @@ require (
 	go.uber.org/dig v1.17.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
@@ -489,7 +489,7 @@ require (
 	k8s.io/component-base v0.31.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/kube-openapi v0.30.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
@@ -498,40 +498,4 @@ require (
 	sigs.k8s.io/kustomize/kyaml v0.17.2 // indirect
 	sigs.k8s.io/release-utils v0.8.4 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-)
-
-replace (
-	github.com/mdlayher/arp => github.com/kubeovn/arp v0.0.0-20240218024213-d9612a263f68
-	github.com/openshift/client-go => github.com/openshift/client-go v0.0.1
-	github.com/ovn-org/libovsdb => github.com/kubeovn/libovsdb v0.0.0-20240814054845-978196448fb2
-	k8s.io/api => k8s.io/api v0.31.2
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.31.2
-	k8s.io/apimachinery => k8s.io/apimachinery v0.31.2
-	k8s.io/apiserver => k8s.io/apiserver v0.31.2
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.31.2
-	k8s.io/client-go => k8s.io/client-go v0.31.2
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.31.2
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.31.2
-	k8s.io/code-generator => k8s.io/code-generator v0.31.2
-	k8s.io/component-base => k8s.io/component-base v0.31.2
-	k8s.io/component-helpers => k8s.io/component-helpers v0.31.2
-	k8s.io/controller-manager => k8s.io/controller-manager v0.31.2
-	k8s.io/cri-api => k8s.io/cri-api v0.31.2
-	k8s.io/cri-client => k8s.io/cri-client v0.31.2
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.31.2
-	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.31.2
-	k8s.io/endpointslice => k8s.io/endpointslice v0.31.2
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.31.2
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.31.2
-	k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20240812233141-91dab695df6f
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.31.2
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.31.2
-	k8s.io/kubectl => k8s.io/kubectl v0.31.2
-	k8s.io/kubelet => k8s.io/kubelet v0.31.2
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.31.2
-	k8s.io/metrics => k8s.io/metrics v0.31.2
-	k8s.io/mount-utils => k8s.io/mount-utils v0.31.2
-	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.31.2
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.31.2
-	kubevirt.io/client-go => github.com/kubeovn/kubevirt-client-go v0.0.0-20240823060554-65405ba5499d
 )

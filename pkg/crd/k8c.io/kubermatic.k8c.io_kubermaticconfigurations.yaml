@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.5
     kubermatic.k8c.io/location: master,seed
   name: kubermaticconfigurations.kubermatic.k8c.io
 spec:
@@ -339,6 +339,13 @@ spec:
                           type: object
                       type: object
                   type: object
+                mirrorImages:
+                  description: |-
+                    MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
+                    Each entry should be in the format "repository:tag".
+                  items:
+                    type: string
+                  type: array
                 proxy:
                   description: |-
                     Proxy allows to configure Kubermatic to use proxies to talk to the
@@ -2323,7 +2330,7 @@ spec:
                       format: int32
                       type: integer
                     applications:
-                      description: Applications contains configuration for default Application settings. This is an ee-only feature.
+                      description: Applications contains configuration for default Application settings.
                       properties:
                         namespace:
                           description: |-

@@ -758,7 +758,7 @@ type ComponentSettings struct {
 	// UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
 	UserClusterController *ControllerSettings `json:"userClusterController,omitempty"`
 	// OperatingSystemManager configures operating-system-manager (the component generating node bootstrap scripts for machine-controller).
-	OperatingSystemManager *ControllerSettings `json:"operatingSystemManager,omitempty"`
+	OperatingSystemManager *OSMControllerSettings `json:"operatingSystemManager,omitempty"`
 	// CoreDNS configures CoreDNS deployed as part of the cluster control plane.
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
 }
@@ -777,6 +777,13 @@ type KonnectivityProxySettings struct {
 	// The option is propagated to agents and server.
 	// Defaults to 1m.
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
+}
+
+type OSMControllerSettings struct {
+	ControllerSettings `json:",inline"`
+	// ProxySettings defines optional flags for OperatingSystemManager deployment to allow
+	// setting specific proxy configurations for specific user clusters.
+	Proxy ProxySettings `json:"proxy,omitempty"`
 }
 
 type ControllerSettings struct {
@@ -1406,6 +1413,14 @@ type KubevirtCloudSpec struct {
 	VPCName string `json:"vpcName,omitempty"`
 	// SubnetName is the name of a subnet that is smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
 	SubnetName string `json:"subnetName,omitempty"`
+	// CSIDriverOperator configures the kubevirt csi driver operator.
+	CSIDriverOperator *KubeVirtCSIDriverOperator `json:"csiDriverOperator,omitempty"`
+}
+
+// KubeVirtCSIDriverOperator contains the different configurations for the kubevirt csi driver operator in the user cluster.
+type KubeVirtCSIDriverOperator struct {
+	// OverwriteRegistry overwrite the images registry that the operator pulls.
+	OverwriteRegistry string `json:"overwriteRegistry,omitempty"`
 }
 
 type PreAllocatedDataVolume struct {

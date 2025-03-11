@@ -150,6 +150,8 @@ spec:
         kubevirt:
           # Optional: indicates if region and zone labels from the cloud provider should be fetched.
           ccmZoneAndRegionEnabled: null
+          # CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
+          csiDriverOperator: null
           # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
           customNetworkPolicies:

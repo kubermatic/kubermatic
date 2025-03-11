@@ -330,9 +330,9 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 			app.Spec.DeployOptions = &appskubermaticv1.DeployOptions{
 				Helm: &appskubermaticv1.HelmDeployOptions{
-					// Use non-atomic deployment, as atomic (with fixed retries count) potentially brings more issues
-					// than benefit for CNI, e.g. during the cluster bring-up when the worker nodes join cluster too late.
-					Atomic: false,
+					// Use atomic deployment, as atomic (with fixed retries count) migitates breaking the etcd due to creating events
+					// when retrying on failure without a limit
+					Atomic: true,
 					Wait:   true,
 					Timeout: metav1.Duration{
 						Duration: 10 * time.Minute, // use longer timeout, as it may take some time for the CNI to be fully up
@@ -358,13 +358,6 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			overrideValues := getCNIOverrideValues(cluster, overwriteRegistry)
 			if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
 				return app, fmt.Errorf("failed to merge CNI values: %w", err)
-			}
-
-			// Remove deprecated value from older installations
-			if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-				ipam := values["ipam"].(map[string]any)
-				operator := ipam["operator"].(map[string]any)
-				delete(operator, "clusterPoolIPv4PodCIDR")
 			}
 
 			// Set new values

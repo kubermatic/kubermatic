@@ -846,6 +846,9 @@ type DatacenterSpecKubevirt struct {
 	// VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
 	// value is External and the VM will be protected by a PDB.
 	VMEvictionStrategy v1.EvictionStrategy `json:"vmEvictionStrategy,omitempty"`
+
+	// CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
+	CSIDriverOperator *KubeVirtCSIDriverOperator `json:"csiDriverOperator,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
@@ -928,6 +931,9 @@ type KubeVirtVolumeProvisioner string
 const (
 	// KubeVirtCSIDriver indicates that the volume of a storage class will be provisioned by the KubeVirt CSI driver.
 	KubeVirtCSIDriver KubeVirtVolumeProvisioner = "kubevirt-csi-driver"
+	// InfraCSIDriver indicates that the volume of a storage class will be provisioned volumes for the Virtual Machine
+	// disk images by the infra cluster CSI driver.
+	InfraCSIDriver KubeVirtVolumeProvisioner = "infra-csi-driver"
 )
 
 // KubeVirtImageSources represents KubeVirt image sources.

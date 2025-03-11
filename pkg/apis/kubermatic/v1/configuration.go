@@ -130,6 +130,9 @@ type KubermaticConfigurationSpec struct {
 	// Proxy allows to configure Kubermatic to use proxies to talk to the
 	// world outside of its cluster.
 	Proxy KubermaticProxyConfiguration `json:"proxy,omitempty"`
+	// MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
+	// Each entry should be in the format "repository:tag".
+	MirrorImages []string `json:"mirrorImages,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -261,7 +264,7 @@ type KubermaticUserClusterConfiguration struct {
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// SystemApplications contains configuration for system Applications (such as CNI).
 	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
-	// Applications contains configuration for default Application settings. This is an ee-only feature.
+	// Applications contains configuration for default Application settings.
 	Applications ApplicationsConfiguration `json:"applications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
 	// range of the seed cluster.
