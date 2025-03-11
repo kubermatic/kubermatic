@@ -2,6 +2,7 @@ package resources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -54,6 +55,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Args: []string{
 						"--clientRateLimitQPS=100",
 						"--clientRateLimitBurst=150",
+						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 					},
 					SecurityContext: &corev1.SecurityContext{
 						AllowPrivilegeEscalation: &[]bool{false}[0],
@@ -125,6 +127,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 							Name:      "tmp",
 							MountPath: "/tmp",
 						},
+						{
+							Name:      "kubeconfig",
+							MountPath: "/etc/kubernetes/kubeconfig",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -136,8 +143,15 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
+				{
+					Name: "kubeconfig",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+						},
+					},
+				},
 			}
-
 			return d, nil
 		}
 	}

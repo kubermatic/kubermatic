@@ -119,6 +119,14 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 					},
 				},
+				{
+					Name: "kubeconfig",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+						},
+					},
+				},
 			}
 
 			d.Spec.Template.Spec.Volumes = volumes
@@ -132,6 +140,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						"--loggingFormat=json",
 						"--metricsPort=8000",
 						"--webhookPort=9443",
+						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -157,6 +166,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						{
 							Name:      "config",
 							MountPath: "/etc/kyverno",
+						},
+						{
+							Name:      "kubeconfig",
+							MountPath: "/etc/kubernetes/kubeconfig",
+							ReadOnly:  true,
 						},
 					},
 					LivenessProbe: &corev1.Probe{
