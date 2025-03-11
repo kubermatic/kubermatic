@@ -210,6 +210,8 @@ extraObjects:
 		t.Fatalf("%v", err)
 	}
 
+	time.Sleep(860 * time.Second)
+
 	log.Info("Running tests...")
 
 	log.Info("Checking for ApplicationInstallation...")
