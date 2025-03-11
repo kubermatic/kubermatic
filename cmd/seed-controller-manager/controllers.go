@@ -43,7 +43,6 @@ import (
 	initialmachinedeployment "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initial-machinedeployment-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/ipam"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
-	kyvernopolicycontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kyverno-policy-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	operatingsystemmanagermigrator "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/operating-system-manager-migrator"
@@ -89,7 +88,6 @@ var AllControllers = map[string]controllerCreator{
 	defaultapplicationcontroller.ControllerName:             createDefaultApplicationController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
-	kyvernopolicycontroller.ControllerName:                  createKyvernoPolicyController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -506,16 +504,5 @@ func createApplicationSecretClusterController(ctrlCtx *controllerContext) error 
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
-	)
-}
-
-func createKyvernoPolicyController(ctrlCtx *controllerContext) error {
-	return kyvernopolicycontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.clientProvider,
-		ctrlCtx.versions,
 	)
 }
