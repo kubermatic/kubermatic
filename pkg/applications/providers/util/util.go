@@ -84,7 +84,10 @@ func HelmAuthFromCredentials(
 	source *appskubermaticv1.HelmSource,
 	credentials *appskubermaticv1.HelmCredentials,
 ) (helmclient.AuthSettings, error) {
-	auth := NewAuthSettingsFromHelmSource(source)
+	auth := helmclient.AuthSettings{}
+	if source != nil {
+		auth = NewAuthSettingsFromHelmSource(source)
+	}
 	if credentials != nil {
 		if credentials.Username != nil {
 			username, err := GetCredentialFromSecret(ctx, client, secretNamespace, credentials.Username.Name, credentials.Username.Key)
