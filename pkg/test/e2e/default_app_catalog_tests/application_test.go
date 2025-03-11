@@ -120,7 +120,9 @@ func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, 
 	}
 
 	// Create the namespace in Kubernetes
-	err := client.Create(ctx, namespace)
+	if namespace != "kube-system" {
+		err := client.Create(ctx, namespace)
+	}
 	if err != nil {
 		t.Fatalf("%v", err)
 	} else {
