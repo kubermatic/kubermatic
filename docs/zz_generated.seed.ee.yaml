@@ -24,7 +24,13 @@ spec:
       # not specified here.
       node:
         # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
-        containerdRegistryMirrors: null
+        containerdRegistryMirrors:
+          # A map of registries to use to render configs and mirrors for containerd registries
+          registries:
+            docker.io:
+              # List of registry mirrors to use
+              mirrors:
+                - mirror.gcr.io
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure
