@@ -105,5 +105,4 @@ go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e
   -app-label-key "$APP_LABEL_KEY" \
   -names "$NAMES"
 
-
 echodate "Application $APPLICATION_NAME tests done."
