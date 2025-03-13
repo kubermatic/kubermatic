@@ -50,6 +50,15 @@ const (
 	PolicyEnforcedCondition = "Enforced"
 )
 
+// PolicyBindingScope is the scope of the policy binding.
+const (
+	// PolicyBindingScopeGlobal is the scope of the policy binding.
+	PolicyBindingScopeGlobal = "global"
+
+	// PolicyBindingScopeProject is the scope of the policy binding.
+	PolicyBindingScopeProject = "project"
+)
+
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
@@ -71,13 +80,10 @@ type PolicyBindingSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
-	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
-
 	// Scope specifies the scope of the policy.
-	// Can be one of: global, project, or cluster
+	// Can be one of: global, project
 	//
-	// +kubebuilder:validation:Enum=global;project;cluster
+	// +kubebuilder:validation:Enum=global;project
 	Scope string `json:"scope"`
 
 	// Target specifies which clusters/projects to apply the policy to
@@ -105,11 +111,6 @@ type ResourceSelector struct {
 
 // PolicyBindingStatus is the status of the policy binding.
 type PolicyBindingStatus struct {
-	// ObservedGeneration is the generation observed by the controller.
-	//
-	// +optional
-	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
-
 	// Conditions represents the latest available observations of the policy binding's current state
 	// +optional
 	// +listType=map
