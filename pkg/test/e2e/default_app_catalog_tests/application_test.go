@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -23,22 +21,24 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/go-logr/zapr"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
@@ -112,21 +112,13 @@ func TestClusters(t *testing.T) {
 }
 
 //gocyclo:ignore
-func testUserCluster(ctx context.Context, t *testing.T, log *zap.SugaredLogger, client ctrlruntimeclient.Client) {
-	namespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: applicationNamespace,
-		},
-	}
+func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+	logger := log.NewLogrus()
+	sublogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
 	// Create the namespace in Kubernetes
-	if applicationNamespace != "kube-system" {
-		err := client.Create(ctx, namespace)
-		if err != nil {
-			t.Fatalf("%v", err)
-		} else {
-			log.Infof("Namespace %s created", namespace.Name)
-		}
+	if err := util.EnsureNamespace(ctx, sublogger, client, applicationNamespace); err != nil {
+		t.Fatalf("%v", err)
 	}
 
 	applicationRefName := applicationName
@@ -206,17 +198,17 @@ extraObjects:
 		application.Spec.ValuesBlock = valuesBlock
 	}
 
-	log.Infof("Creating an ApplicationInstallation")
+	tLogger.Infof("Creating an ApplicationInstallation")
 
 	err := client.Create(ctx, &application)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	log.Info("Running tests...")
+	tLogger.Info("Running tests...")
 
-	log.Info("Checking for ApplicationInstallation...")
-	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	tLogger.Info("Check if ApplicationInstallation exists")
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationName}, app); err != nil {
 			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
@@ -230,9 +222,9 @@ extraObjects:
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
-	log.Info("Checking if the helm release is deployed")
-	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
-		err = isHelmReleaseDeployed(ctx, log, client, applicationName, applicationNamespace)
+	tLogger.Info("Checking if the helm release is deployed")
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		err = isHelmReleaseDeployed(ctx, tLogger, client, applicationName, applicationNamespace)
 		if err != nil {
 			return fmt.Errorf("failed to verify that helm release is deployed: %w", err), nil
 		}
@@ -243,9 +235,9 @@ extraObjects:
 		t.Fatalf("Application observe test failed: %v", err)
 	}
 
-	log.Info("Checking if all conditions are ok")
-	err = wait.PollLog(ctx, log, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
-		err = checkApplicationInstallationConditions(ctx, log, client)
+	tLogger.Info("Checking if all conditions are ok")
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+		err = checkApplicationInstallationConditions(ctx, tLogger, client)
 		if err != nil {
 			return fmt.Errorf("failed to verify that all conditions are in healthy state: %w", err), nil
 		}
@@ -257,9 +249,9 @@ extraObjects:
 	}
 
 	namesStrArray := strings.Split(names, ",")
-	log.Info("Waiting for pods to get ready...")
-	err = wait.PollLog(ctx, log, 2*time.Second, 7*time.Minute, func(ctx context.Context) (error, error) {
-		err = waitForPods(ctx, log, client, applicationNamespace, key, namesStrArray)
+	tLogger.Info("Waiting for pods to get ready...")
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 7*time.Minute, func(ctx context.Context) (error, error) {
+		err = waitForPods(ctx, tLogger, client, applicationNamespace, key, namesStrArray)
 		if err != nil {
 			return fmt.Errorf("failed to verify that all pods are ready: %w", err), nil
 		}
@@ -322,9 +314,8 @@ func isHelmReleaseDeployed(ctx context.Context, log *zap.SugaredLogger, client c
 	}
 
 	for _, secret := range secrets.Items {
-		if containsString(secret.Name, appName) && secret.Type == "helm.sh/release.v1" {
-			if status, exists := secret.Labels["status"]; exists && status == "deployed" {
-				log.Infof("Exists: %s and status: %s", secret.Name, status)
+		if strings.Contains(secret.Name, appName) && secret.Type == "helm.sh/release.v1" {
+			if secret.Labels["status"] == "deployed" {
 				log.Infof("secret %s in namespace %s, helm release is deployed\n", secret.Name, secret.Namespace)
 			} else {
 				return fmt.Errorf("secret %s in namespace %s, helm release is not deployed", secret.Name, secret.Namespace)
@@ -373,10 +364,6 @@ func checkApplicationInstallationConditions(ctx context.Context, log *zap.Sugare
 	log.Infof("ApplicationInstallation %s in namespace %s is deployed and ready\n", applicationName, applicationNamespace)
 
 	return nil
-}
-
-func containsString(name, search string) bool {
-	return strings.Contains(name, search)
 }
 
 // creates a usercluster on aws.
