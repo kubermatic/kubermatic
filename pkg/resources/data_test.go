@@ -31,7 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetCSIMigrationFeatureGates(t *testing.T) {
@@ -483,14 +483,13 @@ func TestGetKonnectivityAgentArgs(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetKonnectivityServerArgs(t *testing.T) {
 	tests := []struct {
 		name           string
 		seed           *kubermaticv1.Seed
-		objects        []client.Object
+		objects        []ctrlruntimeclient.Object
 		expectedArgs   []string
 		expectedErrMsg string
 	}{
@@ -541,7 +540,7 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 					DefaultClusterTemplate: "test-template",
 				},
 			},
-			objects: []client.Object{
+			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-template",
@@ -593,7 +592,7 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 					DefaultClusterTemplate: "test-template",
 				},
 			},
-			objects: []client.Object{
+			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-template",
@@ -625,7 +624,7 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 					DefaultClusterTemplate: "test-template",
 				},
 			},
-			objects: []client.Object{
+			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-template",
@@ -660,7 +659,7 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 					DefaultClusterTemplate: "test-template",
 				},
 			},
-			objects: []client.Object{
+			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-template",
@@ -684,7 +683,7 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var objects []client.Object
+			var objects []ctrlruntimeclient.Object
 			if tt.seed != nil {
 				objects = append(objects, tt.seed)
 			}

@@ -1,9 +1,12 @@
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestKnpServerArgs(t *testing.T) {
@@ -56,7 +59,7 @@ func TestKnpServerArgs(t *testing.T) {
 		name              string
 		seed              *kubermaticv1.Seed
 		cluster           *kubermaticv1.Cluster
-		objects           []client.Object
+		objects           []ctrlruntimeclient.Object
 		serverCount       int32
 		expectedKeepAlive string
 		expectedArgs      []string
@@ -167,7 +170,7 @@ func TestKnpServerArgs(t *testing.T) {
 					},
 				},
 			},
-			objects: []client.Object{
+			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.ClusterTemplate{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-template",
@@ -247,7 +250,7 @@ func TestKnpServerArgs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var objects []client.Object
+			var objects []ctrlruntimeclient.Object
 			if tt.seed != nil {
 				objects = append(objects, tt.seed)
 			}
