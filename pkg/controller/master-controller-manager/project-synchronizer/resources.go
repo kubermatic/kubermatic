@@ -17,8 +17,8 @@ limitations under the License.
 package projectsynchronizer
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func projectReconcilerFactory(project *kubermaticv1.Project) reconciling.NamedProjectReconcilerFactory {

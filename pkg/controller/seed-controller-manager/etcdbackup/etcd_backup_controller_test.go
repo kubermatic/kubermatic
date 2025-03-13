@@ -27,7 +27,6 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -35,11 +34,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/sdk/semver"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -600,7 +600,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 				WithEtcdBackupStoreContainer(genStoreContainer()).
 				WithEtcdBackupDeleteContainer(genDeleteContainer()).
@@ -947,7 +947,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 				WithEtcdBackupStoreContainer(genStoreContainer()).
 				WithEtcdBackupDeleteContainer(genDeleteContainer()).
@@ -1234,7 +1234,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 				WithEtcdBackupStoreContainer(genStoreContainer()).
 				WithEtcdBackupDeleteContainer(genDeleteContainer()).
@@ -1556,7 +1556,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
 				WithEtcdBackupStoreContainer(genStoreContainer()).
 				WithEtcdBackupDeleteContainer(genDeleteContainer()).

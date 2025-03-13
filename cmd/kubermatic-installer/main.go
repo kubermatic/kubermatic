@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v2/pkg/log"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
@@ -44,12 +44,12 @@ var options = &Options{}
 
 func main() {
 	logger := log.NewLogrus()
-	versions := kubermaticversion.NewDefaultVersions()
+	versions := kubermatic.GetVersions()
 
 	rootCmd := &cobra.Command{
 		Use:           "kubermatic-installer",
 		Short:         "Installs and updates Kubermatic Kubernetes Platform",
-		Version:       versions.Kubermatic,
+		Version:       versions.GitVersion,
 		SilenceErrors: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if env := os.Getenv("KUBERMATIC_CHARTS_DIRECTORY"); env != "" {

@@ -23,12 +23,12 @@ import (
 	"flag"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	"k8s.io/utils/ptr"
 )
@@ -85,7 +85,7 @@ func TestExposeKubernetesApiserver(t *testing.T) {
 		Log:       logger,
 		Client:    seedClient,
 		Namespace: cluster.Status.NamespaceName,
-		Versions:  kubermatic.NewFakeVersions(),
+		Versions:  kubermatic.GetFakeVersions(),
 	}
 	if err := agentConfig.DeployAgentPod(ctx); err != nil {
 		t.Fatalf("Failed to deploy agent: %v", err)

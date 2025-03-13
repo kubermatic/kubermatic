@@ -45,8 +45,8 @@ import (
 	"helm.sh/helm/v3/pkg/repo"
 	"helm.sh/helm/v3/pkg/storage/driver"
 
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/sdk/apis/equality"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
