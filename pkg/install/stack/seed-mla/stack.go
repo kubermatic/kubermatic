@@ -203,6 +203,17 @@ func deployKubeStateMetrics(ctx context.Context, logger *logrus.Entry, kubeClien
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
+	v28 := semverlib.MustParse("2.28.0")
+
+	if release != nil && release.Version.LessThan(v28) && !chart.Version.LessThan(v28) {
+		sublogger.Warn("Installation process will temporarily remove and then upgrade the deployment set used by kube-state-metrics.")
+
+		err = upgradeKubeStateMetricsDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to prepare kube-state-metrics for upgrade: %w", err)
+		}
+	}
+
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, KubeStateMetricsNamespace, KubeStateMetricsReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
@@ -568,4 +579,51 @@ func getAlertmanagerStatefulsets(
 		return nil, fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
 	}
 	return statefulsetsList, nil
+}
+
+func upgradeKubeStateMetricsDeployment(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s…", release.Name, release.Version.String(), chart.Version.String())
+	// 1: find the old deployment
+	logger.Info("Backing up old kube-state-metrics deployment…")
+
+	deploymentsList := &unstructured.UnstructuredList{}
+	deploymentsList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "apps",
+		Kind:    "DeploymentList",
+		Version: "v1",
+	})
+
+	ksbMatcher := ctrlruntimeclient.MatchingLabels{
+		"app":                          KubeStateMetricsReleaseName,
+		"app.kubernetes.io/managed-by": "Helm",
+		"release":                      release.Name,
+	}
+	if err := kubeClient.List(ctx, deploymentsList, ctrlruntimeclient.InNamespace(KubeStateMetricsNamespace), ksbMatcher); err != nil {
+		return fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
+	}
+
+	// 2: store the deployment for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", KubeStateMetricsReleaseName, backupTS)
+	logger.Infof("Attempting to store the deployments in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, deploymentsList.Items); err != nil {
+		return fmt.Errorf("failed to back up the deployments, it is not removed: %w", err)
+	}
+
+	// 3: delete the deployment
+	logger.Info("Deleting the deployments from the cluster")
+	for _, obj := range deploymentsList.Items {
+		if err := kubeClient.Delete(ctx, &obj); err != nil {
+			return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
+	}
+	return nil
 }
