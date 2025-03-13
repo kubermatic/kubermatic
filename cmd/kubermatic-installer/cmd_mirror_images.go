@@ -248,7 +248,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 						versionLogger.Debug("Collecting images…")
 
-						// Collect images without & with Konnectivity, as Konnecctivity / OpenVPN can be switched in clusters
+						// Collect images without & with Konnectivity, as Konnectivity / OpenVPN can be switched in clusters
 						// at any time. Remove the non-Konnectivity option once OpenVPN option is finally removed.
 
 						imagesWithoutKonnectivity, err := images.GetImagesForVersion(

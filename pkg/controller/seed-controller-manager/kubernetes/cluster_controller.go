@@ -109,7 +109,7 @@ type Reconciler struct {
 	caBundle         *certificates.CABundle
 }
 
-// NewController creates a cluster controller.
+// Add creates a cluster controller.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,

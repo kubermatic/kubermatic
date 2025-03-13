@@ -38,7 +38,7 @@ spec:
       schema:
         openAPIV3Schema:
           description: |-
-            Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+            Seed is the type representing a Seed cluster. Seed clusters host the control planes
             for KKP user clusters.
           properties:
             apiVersion:
@@ -1883,6 +1883,11 @@ spec:
                     konnectivityProxy:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
                       properties:
+                        args:
+                          description: Args configures arguments (flags) for the Konnectivity deployments.
+                          items:
+                            type: string
+                          type: array
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
