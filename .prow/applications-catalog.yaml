@@ -15,7 +15,7 @@
 
 presubmits:
   - name: pre-kubermatic-appcatalog-aikit
-    run_if_changed: "(pkg/ee/default-application-catalog/argocd-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/aikit-app.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
