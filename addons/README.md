@@ -4,7 +4,8 @@ This directory contains all possible default addons.
 
 All addons will be built into a container image which the addon-controller (in the
 seed-controller-manager) uses to install addons. The container image should be freely accessible to
-let admins extend & modify it for their own purpose.
+let admins extend & modify it for their own purpose. The Dockerfile will ignore auxiliary files like
+Makefiles or Kustomizations, as they serve no purpose to KKP at runtime.
 
 ### Release / Development Cycle
 
