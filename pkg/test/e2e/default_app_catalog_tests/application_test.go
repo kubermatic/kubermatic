@@ -285,12 +285,7 @@ func waitForPods(ctx context.Context, log *zap.SugaredLogger, client ctrlruntime
 
 		unready := sets.New[string]()
 		for _, pod := range pods.Items {
-			ready := false
-			for _, c := range pod.Status.Conditions {
-				if c.Type == corev1.ContainersReady {
-					ready = c.Status == corev1.ConditionTrue
-				}
-			}
+			ready := podIsReadyOrCompleted(&pod)
 
 			if !ready {
 				unready.Insert(pod.Name)
@@ -303,6 +298,34 @@ func waitForPods(ctx context.Context, log *zap.SugaredLogger, client ctrlruntime
 
 		return nil, nil
 	})
+}
+
+func podIsReadyOrCompleted(pod *corev1.Pod) bool {
+	for _, cs := range pod.Status.ContainerStatuses {
+		if !containerIsReadyOrCompleted(cs) {
+			return false
+		}
+	}
+
+	for _, cs := range pod.Status.InitContainerStatuses {
+		if !containerIsReadyOrCompleted(cs) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func containerIsReadyOrCompleted(cs corev1.ContainerStatus) bool {
+	if cs.Ready {
+		return true
+	}
+
+	if cs.State.Terminated != nil && cs.State.Terminated.ExitCode == 0 {
+		return true
+	}
+
+	return false
 }
 
 func isHelmReleaseDeployed(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, appName, namespace string) error {
