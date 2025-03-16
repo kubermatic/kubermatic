@@ -97,6 +97,7 @@ echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 
 echodate "Running $APPLICATION_NAME tests..."
 
 pathToFile="pkg/ee/default-application-catalog/$APPLICATION_NAME-app.yaml"
+echodate "File path: $pathToFile"
 
 if [[ -s "$pathToFile" ]]; then
   versions=$(grep -oP '(?<=version:\s)(\S+)' "$pathToFile")
