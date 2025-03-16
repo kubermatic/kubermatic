@@ -94,15 +94,26 @@ fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
-echodate "Running $APPLICATION_NAME tests..."
+echodate "Running $APPLICATION_NAME tests...";
 
-go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/default_app_catalog_tests \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
-  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
-  -application-name "$APPLICATION_NAME" \
-  -application-namespace "$APPLICATION_NAMESPACE" \
-  -application-version "$APPLICATION_VERSION" \
-  -app-label-key "$APP_LABEL_KEY" \
-  -names "$NAMES"
+pathToFile="pkg/ee/default-application-catalog/$APPLICATION_NAME-app.yaml"
+
+if [[ -s "$pathToFile" ]]; then
+    versions=$(grep -oP '(?<=version:\s)(\S+)' "$pathToFile")
+
+    for version in $versions; do
+        echo "Processing version: $version"
+        go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/default_app_catalog_tests \
+          -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
+          -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
+          -application-name "$APPLICATION_NAME" \
+          -application-namespace "$APPLICATION_NAMESPACE" \
+          -application-version "$version" \
+          -app-label-key "$APP_LABEL_KEY" \
+          -names "$NAMES"
+    done
+else
+    echo "File is empty or does not exist."
+fi
 
 echodate "Application $APPLICATION_NAME tests done."
