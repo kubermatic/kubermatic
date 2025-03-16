@@ -430,7 +430,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kubevirt
-    run_if_changed: "(pkg/ee/default-application-catalog/kubevirt.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/kubevirt-app.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -587,15 +587,15 @@ presubmits:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
             - "--application-name"
-            - "gpu-operator"
+            - "nvidia-gpu-operator"
             - "--application-namespace"
-            - "gpu-operator"
+            - "nvidia-gpu-operator"
             - "--application-version"
             - "v24.9.1"
             - "--app-label-key"
             - "app.kubernetes.io/name"
             - "--names"
-            - "gpu-operator,node-feature-discovery"
+            - "nvidia-gpu-operator,node-feature-discovery"
           env:
             - name: KUBERMATIC_EDITION
               value: ee
