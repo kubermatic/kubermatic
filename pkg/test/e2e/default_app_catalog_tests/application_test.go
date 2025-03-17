@@ -132,7 +132,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 				Create: true,
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{
-				Name:    applicationRefName,
+				Name:    applicationName,
 				Version: applicationVersion,
 			},
 		},
