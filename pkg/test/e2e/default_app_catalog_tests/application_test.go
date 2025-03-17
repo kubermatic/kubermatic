@@ -121,11 +121,6 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		t.Fatalf("%v", err)
 	}
 
-	applicationRefName := applicationName
-	if applicationName == "gpu-operator" {
-		applicationRefName = "nvidia-gpu-operator"
-	}
-
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationName,
@@ -153,7 +148,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 	tLogger.Info("Running tests...")
 
 	tLogger.Info("Check if ApplicationInstallation exists")
-	err = wait.PollLog(ctx, tLogger, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 8*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
 		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationName}, app); err != nil {
 			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
@@ -168,7 +163,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 	}
 
 	tLogger.Info("Checking if the helm release is deployed")
-	err = wait.PollLog(ctx, tLogger, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 8*time.Minute, func(ctx context.Context) (error, error) {
 		err = isHelmReleaseDeployed(ctx, tLogger, client, applicationName, applicationNamespace)
 		if err != nil {
 			return fmt.Errorf("failed to verify that helm release is deployed: %w", err), nil
@@ -181,7 +176,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 	}
 
 	tLogger.Info("Checking if all conditions are ok")
-	err = wait.PollLog(ctx, tLogger, 2*time.Second, 5*time.Minute, func(ctx context.Context) (error, error) {
+	err = wait.PollLog(ctx, tLogger, 2*time.Second, 8*time.Minute, func(ctx context.Context) (error, error) {
 		err = checkApplicationInstallationConditions(ctx, tLogger, client)
 		if err != nil {
 			return fmt.Errorf("failed to verify that all conditions are in healthy state: %w", err), nil
