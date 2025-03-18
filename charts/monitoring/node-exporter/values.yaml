@@ -16,6 +16,13 @@ node-exporter:
   # Check master values.yaml which are the default values for Chart version 4.44.0
   # https://github.com/prometheus-community/helm-charts/blob/prometheus-node-exporter-4.44.0/charts/prometheus-node-exporter/values.yaml
   imagePullSecrets: []
+  resources:
+    requests:
+      cpu: 50m
+      memory: 24Mi
+    limits:
+      cpu: 250m
+      memory: 48Mi
 
   nodeSelector: {}
   affinity: {}
@@ -33,6 +40,13 @@ node-exporter:
     port: 9100
     portName: https
     enableHostPort: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 48Mi
     
   fullnameOverride: node-exporter
   nameOverride: node-exporter

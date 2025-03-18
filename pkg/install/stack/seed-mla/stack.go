@@ -663,7 +663,7 @@ func upgradeNodeExporterDaemonSets(
 		"app": NodeExporterReleaseName,
 	}
 	if err := kubeClient.List(ctx, daemonsetsList, ctrlruntimeclient.InNamespace(NodeExporterNamespace), nodeExporterMatcher); err != nil {
-		return fmt.Errorf("Error querying API for the existing DaemonSet object, aborting upgrade process.")
+		return fmt.Errorf("error querying API for the existing DaemonSet object, aborting upgrade process.")
 	}
 
 	// 2: store the daemonset for backup
