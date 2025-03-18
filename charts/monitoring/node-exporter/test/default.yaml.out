@@ -189,6 +189,13 @@ spec:
             periodSeconds: 10
             successThreshold: 1
             timeoutSeconds: 1
+          resources:
+            limits:
+              cpu: 250m
+              memory: 48Mi
+            requests:
+              cpu: 50m
+              memory: 24Mi
           volumeMounts:
             - name: proc
               mountPath: /host/proc
@@ -224,6 +231,13 @@ spec:
               path: healthz
             initialDelaySeconds: 5
             timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 100m
+              memory: 48Mi
+            requests:
+              cpu: 50m
+              memory: 24Mi
       hostNetwork: true
       hostPID: true
       hostIPC: false
