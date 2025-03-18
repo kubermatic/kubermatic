@@ -49,6 +49,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -58,10 +59,6 @@ import (
 
 const (
 	ControllerName = "kkp-kyverno-controller"
-
-	// ClusterConditionKyvernoControllerReconcilingSuccess indicates that the Kyverno controller has successfully reconciled the cluster
-	// TODO: will be moved
-	ClusterConditionKyvernoControllerReconcilingSuccess kubermaticv1.ClusterConditionType = "KyvernoControllerReconcilingSuccess"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -72,6 +69,8 @@ type UserClusterClientProvider interface {
 type reconciler struct {
 	ctrlruntimeclient.Client
 
+	workerName                    string
+	recorder                      record.EventRecorder
 	log                           *zap.SugaredLogger
 	userClusterConnectionProvider UserClusterClientProvider
 	versions                      kubermatic.Versions
@@ -80,6 +79,8 @@ type reconciler struct {
 func Add(mgr manager.Manager, log *zap.SugaredLogger, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, versions kubermatic.Versions) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
+		workerName:                    workerName,
+		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		log:                           log.Named(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		versions:                      versions,
@@ -118,10 +119,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
 		r.Client,
-		request.Namespace,
+		r.workerName,
 		cluster,
 		r.versions,
-		ClusterConditionKyvernoControllerReconcilingSuccess,
+		kubermaticv1.ClusterConditionKyvernoControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, cluster)
 		},
@@ -242,7 +243,6 @@ func (r *reconciler) ensureKyvernoResources(ctx context.Context, cluster *kuberm
 	if err := reconciling.ReconcileServices(ctx, serviceCreators, cluster.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
-
 	return nil
 }
 
