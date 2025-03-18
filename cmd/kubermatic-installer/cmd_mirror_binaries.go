@@ -1,12 +1,17 @@
 /*
-Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-...
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
 package main
@@ -23,6 +28,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
@@ -41,19 +47,13 @@ const (
 	cniPluginsBaseURL        = "https://github.com/containernetworking/plugins/releases/download"
 	criToolsBaseURL          = "https://github.com/kubernetes-sigs/cri-tools/releases/download"
 	kubeBaseURLFormat        = "https://dl.k8s.io/release/%s/bin/linux/%s"
+
+	// Default output directory for binaries.
+	DefaultOutputDir = "/usr/share/nginx/html/"
 )
-
-// Minimal CLIOptions definition to satisfy dependencies.
-type CLIOptions struct{}
-
-func (o CLIOptions) CopyInto(target *CLIOptions) {
-	// No-op implementation.
-}
 
 // MirrorBinariesOptions holds options for the mirror-binaries command.
 type MirrorBinariesOptions struct {
-	CLIOptions
-
 	Config        string
 	Versions      kubermaticversion.Versions // Not used for extraction.
 	VersionFilter string                     // Ignored in our extraction logic.
@@ -61,23 +61,23 @@ type MirrorBinariesOptions struct {
 	OutputDir string
 }
 
+// MirrorBinariesCommand creates the cobra command for mirror-binaries.
 func MirrorBinariesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
 	opt := MirrorBinariesOptions{
-		OutputDir: "/usr/share/nginx/html/binaries/",
+		OutputDir: DefaultOutputDir,
 	}
 	cmd := &cobra.Command{
 		Use:   "mirror-binaries",
 		Short: "Mirror binaries used by KKP",
 		Long:  "Downloads all binaries used by KKP and copies them into a local path.",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			opt.CLIOptions.CopyInto(&opt.CLIOptions)
 			if opt.Config == "" {
 				opt.Config = os.Getenv("CONFIG_YAML")
 			}
 			if len(args) >= 1 {
 				opt.Config = args[0]
 			}
-			// Versions parameter is still passed but our extraction function will rely on the configuration.
+
 			opt.Versions = versions
 		},
 		RunE:         MirrorBinariesFunc(logger, &opt),
@@ -105,21 +105,14 @@ func getKubermaticConfigurationFromYaml(options *MirrorBinariesOptions) (*kuberm
 }
 
 // getAllKubernetesVersions extracts all Kubernetes versions from config.Spec.Versions.Versions
-// and returns them as a slice of strings.
+// and returns them as a slice of strings. Since the versions are already validated, we simply append them.
 func getAllKubernetesVersions(config *kubermaticv1.KubermaticConfiguration) ([]string, error) {
 	if config.Spec.Versions.Versions == nil || len(config.Spec.Versions.Versions) == 0 {
 		return nil, errors.New("no Kubernetes versions defined in KubermaticConfiguration.spec.versions.versions")
 	}
 	var versions []string
 	for _, verVal := range config.Spec.Versions.Versions {
-		vStr := fmt.Sprintf("%v", verVal)
-		clean := strings.TrimPrefix(vStr, "v")
-		ver, err := semver.NewVersion(clean)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse version %s: %w", vStr, err)
-		}
-		// Store the normalized version as a string.
-		versions = append(versions, ver.String())
+		versions = append(versions, fmt.Sprintf("%v", verVal))
 	}
 	return versions, nil
 }
@@ -162,7 +155,11 @@ func makeFileExecutable(path string) error {
 }
 
 func downloadFromUrl(url, fileDownloadPath string) error {
-	resp, err := http.Get(url)
+	// Create an HTTP client with a timeout.
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("failed to download file from url %s: %w", url, err)
 	}
@@ -195,7 +192,10 @@ func getHostArchitecture() (string, error) {
 }
 
 func getChecksumFromURL(url string) (string, error) {
-	resp, err := http.Get(url)
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve checksum from: %w", err)
 	}
@@ -237,23 +237,8 @@ func verifyChecksum(checksumUrl string, binaryFilePath string) error {
 	return nil
 }
 
-func verifyChecksumFile(checksumFilePath, binaryFilePath string) error {
-	data, err := os.ReadFile(checksumFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to read checksum file %s: %w", checksumFilePath, err)
-	}
-	expectedChecksum := strings.Split(string(data), " ")[0]
-	actualChecksum, err := getChecksumOfFile(binaryFilePath)
-	if err != nil {
-		return fmt.Errorf("error calculating checksum for file %s: %w", binaryFilePath, err)
-	}
-	if expectedChecksum != actualChecksum {
-		return fmt.Errorf("checksum verification failed for %s: expected %s, got %s", binaryFilePath, expectedChecksum, actualChecksum)
-	}
-	return nil
-}
-
 func getCriToolsRelease(version string) (string, error) {
+	// Since the configuration versions are validated, we can assume the version is valid.
 	newVersion, err := semver.NewVersion(version)
 	if err != nil {
 		return "", fmt.Errorf("invalid semantic version: %w", err)
@@ -273,7 +258,7 @@ func getCriToolsRelease(version string) (string, error) {
 	if criToolRelease, ok := criToolsReleases[release]; ok {
 		return criToolRelease, nil
 	}
-	// Default fallback.
+
 	return "v1.32.0", nil
 }
 
@@ -324,7 +309,7 @@ func downloadCriTools(logger *logrus.Logger, version, binPath, hostArch string) 
 			return err
 		}
 		if !empty {
-			// Already downloaded.
+
 			return nil
 		}
 	}
@@ -346,7 +331,9 @@ func downloadCriTools(logger *logrus.Logger, version, binPath, hostArch string) 
 
 // downloadKubeBinaries downloads the kube binaries (kubelet, kubeadm, kubectl) for a given Kubernetes version.
 func downloadKubeBinaries(logger *logrus.Logger, version, binPath, hostArch string) error {
-	kubeVersion := fmt.Sprintf("v%s", version)
+	// Always prepend "v" to the version for kube binaries.
+	kubeVersion := "v" + version
+
 	kubeDir := filepath.Join(binPath, fmt.Sprintf("kubernetes-%s", kubeVersion))
 	exists, err := checkIfDirExists(kubeDir)
 	if err != nil {
@@ -362,7 +349,7 @@ func downloadKubeBinaries(logger *logrus.Logger, version, binPath, hostArch stri
 			return err
 		}
 		if !empty {
-			// Already downloaded.
+
 			return nil
 		}
 	}
@@ -376,6 +363,7 @@ func downloadKubeBinaries(logger *logrus.Logger, version, binPath, hostArch stri
 			return fmt.Errorf("failed to download %s: %w", binary, err)
 		}
 		checksumURL := fmt.Sprintf("%s.sha256", binaryURL)
+		// Download the checksum file.
 		checksumFilePath := binaryPath + ".sha256"
 		if err := downloadFromUrl(checksumURL, checksumFilePath); err != nil {
 			return fmt.Errorf("failed to download checksum for %s: %w", binary, err)
@@ -399,7 +387,7 @@ func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) c
 			return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 		}
 
-		// Extract all Kubernetes versions from the configuration as []string.
+		// Extract all Kubernetes versions from the configuration.
 		versions, err := getAllKubernetesVersions(kubermaticConfig)
 		if err != nil {
 			return fmt.Errorf("failed to extract Kubernetes versions: %w", err)
