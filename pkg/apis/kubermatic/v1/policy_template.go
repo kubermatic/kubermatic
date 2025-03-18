@@ -17,9 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -84,7 +83,7 @@ type PolicyTemplateSpec struct {
 	Enforced bool `json:"enforced"`
 
 	// KyvernoSpec is the Kyverno specification
-	kyvernov1.Spec `json:",inline"`
+	KyvernoPolicySpec *runtime.RawExtension `json:"kyvernoPolicySpec,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
