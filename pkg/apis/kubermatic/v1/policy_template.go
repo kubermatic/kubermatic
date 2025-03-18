@@ -83,7 +83,7 @@ type PolicyTemplateSpec struct {
 	Enforced bool `json:"enforced"`
 
 	// KyvernoSpec is the Kyverno specification
-	KyvernoPolicySpec *runtime.RawExtension `json:"kyvernoPolicySpec,omitempty"`
+	KyvernoPolicySpec runtime.RawExtension `json:"kyvernoPolicySpec"`
 }
 
 // +kubebuilder:object:generate=true

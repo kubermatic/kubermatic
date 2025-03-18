@@ -89,6 +89,7 @@ spec:
               required:
                 - description
                 - enforced
+                - kyvernoPolicySpec
                 - title
                 - visibility
               type: object
