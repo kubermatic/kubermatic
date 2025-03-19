@@ -32,6 +32,8 @@ echodate "Building user-ssh-keys-agent..."
 start_docker_daemon_ci
 docker buildx create --use
 
+# TODO: Do we still need this script and its Prowjob?
+
 docker buildx build \
   --platform "$ARCHITECTURES" \
   --build-arg "GOPROXY=${GOPROXY:-}" \
