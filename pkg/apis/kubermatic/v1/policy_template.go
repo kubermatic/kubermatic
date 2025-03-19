@@ -17,9 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -83,8 +82,33 @@ type PolicyTemplateSpec struct {
 	// A PolicyBinding referencing it cannot disable it
 	Enforced bool `json:"enforced"`
 
-	// KyvernoSpec is the Kyverno specification
-	kyvernov1.Spec `json:",inline"`
+	// PolicySpec is the policy spec of the Kyverno Policy we want to apply on the cluster.
+	//
+	// The structure of this spec should follow the rules defined in Kyverno
+	// [Writing Policies Docs](https://kyverno.io/docs/writing-policies/).
+	//
+	// For example, a simple policy spec could be defined as:
+	//
+	//    policySpec:
+	//      validationFailureAction: Audit
+	//      background: true
+	//      rules:
+	//      - name: check-for-labels
+	//        match:
+	//          any:
+	//          - resources:
+	//              kinds:
+	//              - Pod
+	//        validate:
+	//          message: "The label `app.kubernetes.io/name` is required."
+	//          pattern:
+	//            metadata:
+	//              labels:
+	//                app.kubernetes.io/name: "?*"
+	//
+	// There are also further examples of Kyverno policies in the
+	// [Kyverno Policies Examples](https://kyverno.io/policies/).
+	PolicySpec runtime.RawExtension `json:"policySpec"`
 }
 
 // +kubebuilder:object:generate=true
