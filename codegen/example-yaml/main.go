@@ -56,7 +56,7 @@ func main() {
 	target := flag.Arg(1)
 
 	if _, err := os.Stat(target); err != nil {
-		if err := os.MkdirAll(target, 0755); err != nil {
+		if err := os.MkdirAll(target, 0o755); err != nil {
 			log.Fatalf("Failed to create target directory %s: %v", target, err)
 		}
 	}
@@ -156,6 +156,13 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
 						RegistryMirrors:    []string{},
+						ContainerdRegistryMirrors: &kubermaticv1.ContainerRuntimeContainerd{
+							Registries: map[string]kubermaticv1.ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"mirror.gcr.io"},
+								},
+							},
+						},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
@@ -222,10 +229,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 									},
 								},
 							},
-							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
-								Name:           "rook-ceph-block",
-								IsDefaultClass: ptr.To(true),
-							},
+							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{
+								{
+									Name:           "rook-ceph-block",
+									IsDefaultClass: ptr.To(true),
+								},
 							},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},

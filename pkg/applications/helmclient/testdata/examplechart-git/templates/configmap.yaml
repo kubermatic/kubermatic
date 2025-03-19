@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,15 @@
 # limitations under the License.
 
 apiVersion: v1
-kind: ServiceAccount
+kind: ConfigMap
 metadata:
+  name: testcm
   labels:
-    app.kubernetes.io/component: exporter
-    app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: '{{ .Values.kubeStateMetrics.image.tag }}'
-  name: kube-state-metrics
-automountServiceAccountToken: false
+    enableDNSLabel: {{ getHostByName "kubermatic.com"  | quote }}
+{{ if .Values.versionLabel }}
+    versionLabel: {{ .Values.versionLabel | quote}}
+{{ end }}
+data:
+{{ if .Values.cmData }}
+{{ toYaml .Values.cmData | nindent 2 }}
+{{ end }}

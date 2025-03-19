@@ -43,6 +43,11 @@ var (
 
 // ProxySidecar returns container that runs konnectivity proxy server as a sidecar in apiserver pods.
 func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Container, error) {
+	args, err := knpServerArgs(data, serverCount)
+	if err != nil {
+		return nil, err
+	}
+
 	clusterVersion := data.Cluster().Status.Versions.ControlPlane
 	if clusterVersion == "" {
 		clusterVersion = data.Cluster().Spec.Version
@@ -55,28 +60,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 		Command: []string{
 			"/proxy-server",
 		},
-		Args: []string{
-			"--logtostderr=true",
-			"-v=3",
-			fmt.Sprintf("--cluster-key=/etc/kubernetes/pki/%s.key", resources.KonnectivityProxyTLSSecretName),
-			fmt.Sprintf("--cluster-cert=/etc/kubernetes/pki/%s.crt", resources.KonnectivityProxyTLSSecretName),
-			"--uds-name=/etc/kubernetes/konnectivity-server/konnectivity-server.socket",
-			fmt.Sprintf("--kubeconfig=/etc/kubernetes/kubeconfig/%s", resources.KonnectivityServerConf),
-			fmt.Sprintf("--server-count=%d", serverCount),
-			"--mode=grpc",
-			"--server-port=0",
-			"--agent-port=8132",
-			"--admin-port=8133",
-			"--health-port=8134",
-			"--agent-namespace=kube-system",
-			fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),
-			"--delete-existing-uds-file=true",
-			"--authentication-audience=system:konnectivity-server",
-			// TODO rastislavs: switch to "--proxy-strategies=destHost,default" with "--agent-identifiers=ipv4=$(HOST_IP)"
-			// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
-			"--proxy-strategies=default",
-			fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
-		},
+		Args: args,
 		Ports: []corev1.ContainerPort{
 			{
 				Name:          "agentport",
@@ -133,7 +117,7 @@ func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Cont
 		resources.KonnectivityServerContainer: &defResources,
 	}
 
-	err := resources.SetResourceRequirements(
+	err = resources.SetResourceRequirements(
 		[]corev1.Container{knpSrvContainer},
 		defaultResourceRequirements,
 		resources.GetOverrides(data.Cluster().Spec.ComponentsOverride),
@@ -162,4 +146,41 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	default:
 		return "v0.31.0"
 	}
+}
+
+func knpServerArgs(data *resources.TemplateData, serverCount int32) ([]string, error) {
+	kSrvArgs, err := data.GetKonnectivityServerArgs()
+	if err != nil {
+		return nil, err
+	}
+
+	args := []string{
+		"--logtostderr=true",
+		"-v=3",
+		fmt.Sprintf("--cluster-key=/etc/kubernetes/pki/%s.key", resources.KonnectivityProxyTLSSecretName),
+		fmt.Sprintf("--cluster-cert=/etc/kubernetes/pki/%s.crt", resources.KonnectivityProxyTLSSecretName),
+		"--uds-name=/etc/kubernetes/konnectivity-server/konnectivity-server.socket",
+		fmt.Sprintf("--kubeconfig=/etc/kubernetes/kubeconfig/%s", resources.KonnectivityServerConf),
+		fmt.Sprintf("--server-count=%d", serverCount),
+		"--mode=grpc",
+		"--server-port=0",
+		"--agent-port=8132",
+		"--admin-port=8133",
+		"--health-port=8134",
+		"--agent-namespace=kube-system",
+		fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),
+		"--delete-existing-uds-file=true",
+		"--authentication-audience=system:konnectivity-server",
+		// TODO rastislavs: switch to "--proxy-strategies=destHost,default" with "--agent-identifiers=ipv4=$(HOST_IP)"
+		// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
+		"--proxy-strategies=default",
+		fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
+	}
+
+	if kSrvArgs == nil {
+		return args, nil
+	}
+
+	args = append(args, kSrvArgs...)
+	return args, nil
 }

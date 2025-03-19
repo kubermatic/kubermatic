@@ -1,6 +1,26 @@
 # Kubermatic 2.27
 
 - [v2.27.0](#v2270)
+- [v2.27.1](#v2271)
+
+## v2.27.1
+
+**GitHub release: [v2.27.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.1)**
+
+### New Features
+
+- Support `infra-csi-driver` as a `volumeProvisioner` for the KubeVirt CSI Driver ([#14199](https://github.com/kubermatic/kubermatic/pull/14199))
+
+### Bugfixes
+
+- Add dex and gitops charts to the CI release pipeline for inclusion in the release tar ([#14192](https://github.com/kubermatic/kubermatic/pull/14192))
+- Apply override registry configuration to cilium-envoy images ([#14164](https://github.com/kubermatic/kubermatic/pull/14164))
+- Include the etcd backup restore and delete images in the kubermatic-installer mirror-images command ([#14220](https://github.com/kubermatic/kubermatic/pull/14220))
+
+### Updates
+
+- Disable cilium-envoy daemonset, if it was not specified in the chart values ([#14203](https://github.com/kubermatic/kubermatic/pull/14203))
+- Update KubeVirt CSI Driver Operator to v0.4.3 ([#14178](https://github.com/kubermatic/kubermatic/pull/14178))
 
 ## v2.27.0
 

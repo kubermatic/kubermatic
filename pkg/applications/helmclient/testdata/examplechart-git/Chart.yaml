@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,17 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-{{- if .Values.kubeStateMetrics.customResourceState.enabled }}
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kube-state-metrics-customresourcestate-config
-  labels:
-    app.kubernetes.io/component: exporter
-    app.kubernetes.io/name: kube-state-metrics
-    app.kubernetes.io/version: '{{ .Values.kubeStateMetrics.image.tag }}'
-data:
-  config.yaml: |
-    {{- toYaml .Values.kubeStateMetrics.customResourceState.config | nindent 4 }}
-{{- end }}
+description: This chart just deployed a configmap. The values allow to setup configmap's data and label.
+name: examplechart
+version: 0.1.0
