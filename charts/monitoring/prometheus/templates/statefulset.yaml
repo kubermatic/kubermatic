@@ -114,6 +114,11 @@ spec:
           mountPath: /var/prometheus/data
           readOnly: false
           subPath: prometheus-db
+        {{- if and .Values.prometheus.scraping.etcd.tls.crt .Values.prometheus.scraping.etcd.tls.key }}
+        - name: etcd-certs
+          mountPath: /etc/prometheus/etcd-certs/
+          readOnly: false
+        {{- end }}
         {{- if .Values.prometheus.volumes }}
         {{- range .Values.prometheus.volumes }}
         - name: {{ .name }}
@@ -190,6 +195,11 @@ spec:
       - name: rules
         configMap:
           name: '{{ template "name" . }}-rules'
+      {{- if and .Values.prometheus.scraping.etcd.tls.crt .Values.prometheus.scraping.etcd.tls.key }}
+      - name: etcd-certs
+        secret:
+          secretName: '{{ template "name" . }}-etcd-certs'
+      {{- end }}
       {{- if .Values.prometheus.volumes }}
       {{- range .Values.prometheus.volumes }}
       - name: {{ .name }}
