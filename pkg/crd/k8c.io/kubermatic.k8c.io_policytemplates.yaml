@@ -44,15 +44,9 @@ spec:
               type: object
             spec:
               properties:
-                category:
-                  description: Category is the category of the policy, specified as an annotation in the Kyverno policy
-                  type: string
                 default:
                   description: Default determines whether we apply the policy (create policy binding)
                   type: boolean
-                description:
-                  description: Description is the description of the policy, specified as an annotation in the Kyverno policy
-                  type: string
                 enforced:
                   description: |-
                     Enforced indicates whether this policy is mandatory
@@ -74,12 +68,6 @@ spec:
 
                     Relevant only for project visibility policies
                   type: string
-                severity:
-                  description: Severity indicates the severity level of the policy
-                  type: string
-                title:
-                  description: Title is the title of the policy, specified as an annotation in the Kyverno policy
-                  type: string
                 visibility:
                   description: |-
                     Visibility specifies where the policy is visible.
@@ -91,10 +79,8 @@ spec:
                     - cluster
                   type: string
               required:
-                - description
                 - enforced
                 - policy
-                - title
                 - visibility
               type: object
           type: object

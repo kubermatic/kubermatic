@@ -43,22 +43,6 @@ type PolicyTemplate struct {
 }
 
 type PolicyTemplateSpec struct {
-	// Title is the title of the policy, specified as an annotation in the Kyverno policy
-	Title string `json:"title"`
-
-	// Description is the description of the policy, specified as an annotation in the Kyverno policy
-	Description string `json:"description"`
-
-	// Category is the category of the policy, specified as an annotation in the Kyverno policy
-	//
-	// +optional
-	Category string `json:"category,omitempty"`
-
-	// Severity indicates the severity level of the policy
-	//
-	// +optional
-	Severity string `json:"severity,omitempty"`
-
 	// Visibility specifies where the policy is visible.
 	//
 	// Can be one of: global, project, or cluster
