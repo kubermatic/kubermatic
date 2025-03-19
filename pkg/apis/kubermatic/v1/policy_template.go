@@ -82,8 +82,12 @@ type PolicyTemplateSpec struct {
 	// A PolicyBinding referencing it cannot disable it
 	Enforced bool `json:"enforced"`
 
-	// KyvernoSpec is the Kyverno specification
-	KyvernoPolicySpec runtime.RawExtension `json:"kyvernoPolicySpec"`
+	// Policy is the policy we want to apply on the cluster
+	//
+	// The Policy field contains a Kubernetes resource as a raw extension.
+	// +kubebuilder:validation:XEmbeddedResource
+	// +kubebuilder:validation:XPreserveUnknownFields
+	Policy runtime.RawExtension `json:"policy"`
 }
 
 // +kubebuilder:object:generate=true

@@ -60,9 +60,13 @@ spec:
                     If true, this policy is mandatory
                     A PolicyBinding referencing it cannot disable it
                   type: boolean
-                kyvernoPolicySpec:
-                  description: KyvernoSpec is the Kyverno specification
+                policy:
+                  description: |-
+                    Policy is the policy we want to apply on the cluster
+
+                    The Policy field contains a Kubernetes resource as a raw extension.
                   type: object
+                  x-kubernetes-embedded-resource: true
                   x-kubernetes-preserve-unknown-fields: true
                 projectID:
                   description: |-
@@ -89,7 +93,7 @@ spec:
               required:
                 - description
                 - enforced
-                - kyvernoPolicySpec
+                - policy
                 - title
                 - visibility
               type: object
