@@ -293,7 +293,7 @@ func isHelmReleaseDeployed(ctx context.Context, log *zap.SugaredLogger, client c
 
 func checkApplicationInstallationConditions(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
 	applicationInstallation := &appskubermaticv1.ApplicationInstallation{}
-	err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: applicationName, Namespace: applicationNamespace}, applicationInstallation)
+	err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: applicationInstallationName, Namespace: applicationNamespace}, applicationInstallation)
 	if err != nil {
 		log.Fatalf("failed to get ApplicationInstallation: %v", err)
 		return err
