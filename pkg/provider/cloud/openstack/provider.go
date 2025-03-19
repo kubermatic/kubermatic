@@ -627,7 +627,7 @@ func linkSubnetToRouter(ctx context.Context, netClient *gophercloud.ServiceClien
 			kubernetes.AddFinalizer(cluster, finalizer)
 		})
 		if err != nil {
-			return fmt.Errorf("failed to add RouterSubnetLinkCleanupFinalizer in the cluster spec: %w", err)
+			return fmt.Errorf("failed to add %s in the cluster spec: %w", finalizer, err)
 		}
 	}
 
