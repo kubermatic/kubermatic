@@ -364,8 +364,8 @@ func downloadCniPlugins(ctx context.Context, logger *logrus.Logger, binPath, hos
 // MirrorBinariesFunc is the main function for the mirror-binaries command.
 func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
+		logger.Info("🚀 Starting mirroring the binaries")
+		ctx := context.Background()
 
 		kubermaticConfig, err := getKubermaticConfigurationFromYaml(options)
 		if err != nil {
@@ -386,7 +386,6 @@ func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) c
 		}
 
 		binPath := options.OutputDir
-		logger.Info("🚀 Starting mirroring the binaries")
 
 		logger.Debugf("🚀 Starting CNI plugins download...")
 		if err := downloadCniPlugins(ctx, logger, binPath, hostArch); err != nil {
