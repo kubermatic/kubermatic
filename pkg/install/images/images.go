@@ -1009,8 +1009,6 @@ func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfi
 		versions = append(versions, &version.Version{
 			Version: v.Semver(),
 		})
-
-		return versions
 	}
 
 	return versions
