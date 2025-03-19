@@ -18,6 +18,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -30,22 +31,25 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/install/images"
+	"k8c.io/kubermatic/v2/pkg/version"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 // Constants for default values and base URLs.
 const (
-	defaultCNIPluginsVersion = "v1.5.1"
-	cniPluginsBaseURL        = "https://github.com/containernetworking/plugins/releases/download"
-	criToolsBaseURL          = "https://github.com/kubernetes-sigs/cri-tools/releases/download"
-	kubeBaseURLFormat        = "https://dl.k8s.io/release/%s/bin/linux/%s"
+	DefaultCNIPluginsVersion = "v1.5.1"
+	CNIPluginsBaseURL        = "https://github.com/containernetworking/plugins/releases/download"
+	CRIToolsBaseURL          = "https://github.com/kubernetes-sigs/cri-tools/releases/download"
+	KubeBaseURLFormat        = "https://dl.k8s.io"
+	KubeBinaryPath           = "release/%s/bin/linux/%s"
 
 	// Default output directory for binaries.
 	DefaultOutputDir = "/usr/share/nginx/html/"
@@ -103,62 +107,19 @@ func getKubermaticConfigurationFromYaml(options *MirrorBinariesOptions) (*kuberm
 	return kubermaticConfig, nil
 }
 
-// getAllKubernetesVersions extracts all Kubernetes versions from config.Spec.Versions.Versions
-// and returns them as a slice of strings. Since the versions are already validated, we simply append them.
-func getAllKubernetesVersions(config *kubermaticv1.KubermaticConfiguration) ([]string, error) {
-	if config.Spec.Versions.Versions == nil || len(config.Spec.Versions.Versions) == 0 {
-		return nil, errors.New("no Kubernetes versions defined in KubermaticConfiguration.spec.versions.versions")
-	}
-	var versions []string
-	for _, verVal := range config.Spec.Versions.Versions {
-		versions = append(versions, fmt.Sprintf("%v", verVal))
-	}
-	return versions, nil
-}
-
-func checkIfDirExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, fmt.Errorf("%w", err)
-	}
-	return true, nil
-}
-
-func createDir(path string) error {
-	if err := os.MkdirAll(path, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", path, err)
-	}
-	return nil
-}
-
-func checkIfDirEmpty(path string) (bool, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return false, fmt.Errorf("%w", err)
-	}
-	return len(entries) == 0, nil
-}
-
-func makeFileExecutable(path string) error {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return fmt.Errorf("failed to get file info: %w", err)
-	}
-	newPermissions := fileInfo.Mode() | 0111
-	if err := os.Chmod(path, newPermissions); err != nil {
-		return fmt.Errorf("failed to set execute permissions: %w", err)
-	}
-	return nil
-}
-
-func downloadFromUrl(url, fileDownloadPath string) error {
+func downloadFromUrl(ctx context.Context, url, fileDownloadPath string) error {
 	// Create an HTTP client with a timeout.
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	resp, err := client.Get(url)
+
+	// Create a request with the provided context
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for %s: %w", url, err)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to download file from url %s: %w", url, err)
 	}
@@ -190,11 +151,17 @@ func getHostArchitecture() (string, error) {
 	return arch, nil
 }
 
-func getChecksumFromURL(url string) (string, error) {
+func getChecksumFromURL(ctx context.Context, url string) (string, error) {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	resp, err := client.Get(url)
+	// Create a request with the provided context
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request for %s: %w", url, err)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve checksum from: %w", err)
 	}
@@ -221,8 +188,8 @@ func getChecksumOfFile(path string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func verifyChecksum(checksumUrl string, binaryFilePath string) error {
-	expectedChecksum, err := getChecksumFromURL(checksumUrl)
+func verifyChecksum(ctx context.Context, checksumUrl string, binaryFilePath string) error {
+	expectedChecksum, err := getChecksumFromURL(ctx, checksumUrl)
 	if err != nil {
 		return fmt.Errorf("error getting checksum from url %s: %w", checksumUrl, err)
 	}
@@ -236,13 +203,8 @@ func verifyChecksum(checksumUrl string, binaryFilePath string) error {
 	return nil
 }
 
-func getCriToolsRelease(version string) (string, error) {
-	// Since the configuration versions are validated, we can assume the version is valid.
-	newVersion, err := semver.NewVersion(version)
-	if err != nil {
-		return "", fmt.Errorf("invalid semantic version: %w", err)
-	}
-	release := fmt.Sprintf("%d.%d", newVersion.Major(), newVersion.Minor())
+func getCriToolsRelease(version semverlib.Version) (string, error) {
+	release := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 	var criToolsReleases = map[string]string{
 		"1.32": "v1.32.0",
 		"1.31": "v1.31.1",
@@ -261,136 +223,161 @@ func getCriToolsRelease(version string) (string, error) {
 	return "v1.32.0", nil
 }
 
-// downloadCniPlugins downloads the CNI plugins tarball and verifies its checksum.
-func downloadCniPlugins(logger *logrus.Logger, binPath, hostArch string) error {
-	cniPluginsVersion := os.Getenv("CNI_VERSION")
-	if cniPluginsVersion == "" {
-		cniPluginsVersion = defaultCNIPluginsVersion
-	}
-	cniPluginsDir := filepath.Join(binPath, "containernetworking", "plugins", "releases", "download", cniPluginsVersion)
-	if err := createDir(cniPluginsDir); err != nil {
-		return fmt.Errorf("failed to create CNI plugins directory: %w", err)
-	}
-	logger.Debugf("⏳ Downloading CNI plugins %s...", cniPluginsVersion)
-	cniPluginsFileName := fmt.Sprintf("cni-plugins-linux-%s-%s.tgz", hostArch, cniPluginsVersion)
-	cniPluginsUrl := fmt.Sprintf("%s/%s/%s", cniPluginsBaseURL, cniPluginsVersion, cniPluginsFileName)
-	cniPluginsFilePath := filepath.Join(cniPluginsDir, cniPluginsFileName)
-	if err := downloadFromUrl(cniPluginsUrl, cniPluginsFilePath); err != nil {
-		return fmt.Errorf("failed to download CNI plugins tarball (%s): %w", cniPluginsVersion, err)
-	}
-	cniPluginsChecksumFileName := fmt.Sprintf("%s.sha256", cniPluginsFileName)
-	cniPluginsChecksumUrl := fmt.Sprintf("%s/%s/%s", cniPluginsBaseURL, cniPluginsVersion, cniPluginsChecksumFileName)
-	if err := verifyChecksum(cniPluginsChecksumUrl, cniPluginsFilePath); err != nil {
-		return fmt.Errorf("failed to verify CNI plugins tarball checksum (%s): %w", cniPluginsVersion, err)
-	}
-	logger.Debugf("✔ Downloaded CNI plugins tarball %s.", cniPluginsVersion)
-	return nil
-}
-
-// downloadCriTools downloads the CRI tools tarball for the given Kubernetes version.
-func downloadCriTools(logger *logrus.Logger, version, binPath, hostArch string) error {
+// downloadCriTools downloads the CRI tools tarball and its checksum for the given Kubernetes version.
+func downloadCriTools(ctx context.Context, logger *logrus.Logger, version semverlib.Version, binPath, hostArch string) error {
 	criToolsRelease, err := getCriToolsRelease(version)
 	if err != nil {
 		return fmt.Errorf("failed to get CRI tools release for Kubernetes version %s: %w", version, err)
 	}
-	criToolsDir := filepath.Join(binPath, "kubernetes-sigs", "cri-tools", "releases", "download", criToolsRelease)
-	exists, err := checkIfDirExists(criToolsDir)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		if err := createDir(criToolsDir); err != nil {
-			return fmt.Errorf("failed to create CRI tools directory: %w", err)
-		}
-	} else {
-		empty, err := checkIfDirEmpty(criToolsDir)
-		if err != nil {
-			return err
-		}
-		if !empty {
 
-			return nil
-		}
+	criToolsDir := filepath.Join(binPath, "kubernetes-sigs", "cri-tools", "releases", "download", criToolsRelease)
+
+	// Ensure the directory exists and is empty
+	if err := ensureCleanDir(criToolsDir); err != nil {
+		return fmt.Errorf("failed to prepare CRI tools directory: %w", err)
 	}
+
 	logger.Debugf("⏳ Downloading CRI tools %s...", criToolsRelease)
+
 	criToolsFileName := fmt.Sprintf("crictl-%s-linux-%s.tar.gz", criToolsRelease, hostArch)
-	criToolsUrl := fmt.Sprintf("%s/%s/%s", criToolsBaseURL, criToolsRelease, criToolsFileName)
+	criToolsURL := fmt.Sprintf("%s/%s/%s", CRIToolsBaseURL, criToolsRelease, criToolsFileName)
 	criToolsFilePath := filepath.Join(criToolsDir, criToolsFileName)
-	if err := downloadFromUrl(criToolsUrl, criToolsFilePath); err != nil {
+
+	// Download tarball
+	if err := downloadFromUrl(ctx, criToolsURL, criToolsFilePath); err != nil {
 		return fmt.Errorf("failed to download CRI tools tarball (%s): %w", criToolsRelease, err)
 	}
-	criToolsChecksumFileName := fmt.Sprintf("%s.sha256", criToolsFileName)
-	criToolsChecksumUrl := fmt.Sprintf("%s/%s/%s", criToolsBaseURL, criToolsRelease, criToolsChecksumFileName)
-	if err := verifyChecksum(criToolsChecksumUrl, criToolsFilePath); err != nil {
+
+	// Download and save checksum file
+	checksumFileName := criToolsFileName + ".sha256"
+	checksumURL := fmt.Sprintf("%s/%s/%s", CRIToolsBaseURL, criToolsRelease, checksumFileName)
+	checksumFilePath := filepath.Join(criToolsDir, checksumFileName)
+
+	if err := downloadFromUrl(ctx, checksumURL, checksumFilePath); err != nil {
+		return fmt.Errorf("failed to download CRI tools checksum file (%s): %w", criToolsRelease, err)
+	}
+
+	// Verify checksum
+	if err := verifyChecksum(ctx, checksumURL, criToolsFilePath); err != nil {
 		return fmt.Errorf("failed to verify CRI tools tarball checksum (%s): %w", criToolsRelease, err)
 	}
-	logger.Debugf("✔ Downloaded CRI tools tarball %s.", criToolsRelease)
+
+	logger.Debugf("✔ Successfully downloaded CRI tools %s.", criToolsRelease)
 	return nil
 }
 
 // downloadKubeBinaries downloads the kube binaries (kubelet, kubeadm, kubectl) for a given Kubernetes version.
-func downloadKubeBinaries(logger *logrus.Logger, version, binPath, hostArch string) error {
-	// Always prepend "v" to the version for kube binaries.
-	kubeVersion := "v" + version
+func downloadKubeBinaries(ctx context.Context, logger *logrus.Logger, version *version.Version, binPath, hostArch string) error {
+	kubeVersion := fmt.Sprintf("v%s", version.Version.String())
+	versionPath := fmt.Sprintf(KubeBinaryPath, kubeVersion, hostArch)
+	kubeDir := filepath.Join(binPath, versionPath)
+	kubeBaseURL := fmt.Sprintf("%s/%s", KubeBaseURLFormat, versionPath)
 
-	kubeDir := filepath.Join(binPath, fmt.Sprintf("kubernetes-%s", kubeVersion))
-	exists, err := checkIfDirExists(kubeDir)
-	if err != nil {
-		return err
+	// Ensure kubeDir exists and is empty
+	if err := ensureCleanDir(kubeDir); err != nil {
+		return fmt.Errorf("failed to prepare kube directory: %w", err)
 	}
-	if !exists {
-		if err := createDir(kubeDir); err != nil {
-			return fmt.Errorf("failed to create kube directory: %w", err)
-		}
-	} else {
-		empty, err := checkIfDirEmpty(kubeDir)
-		if err != nil {
-			return err
-		}
-		if !empty {
 
-			return nil
-		}
-	}
-	logger.Debugf("⏳ Downloading kube binaries %s...", kubeVersion)
-	kubeBaseUrl := fmt.Sprintf(kubeBaseURLFormat, kubeVersion, hostArch)
+	logger.Debugf("⏳ Downloading Kubernetes binaries for version %s...", kubeVersion)
+
 	binaries := []string{"kubelet", "kubeadm", "kubectl"}
 	for _, binary := range binaries {
-		binaryURL := fmt.Sprintf("%s/%s", kubeBaseUrl, binary)
-		binaryPath := filepath.Join(kubeDir, binary)
-		if err := downloadFromUrl(binaryURL, binaryPath); err != nil {
-			return fmt.Errorf("failed to download %s: %w", binary, err)
-		}
-		checksumURL := fmt.Sprintf("%s.sha256", binaryURL)
-		// Download the checksum file.
-		checksumFilePath := binaryPath + ".sha256"
-		if err := downloadFromUrl(checksumURL, checksumFilePath); err != nil {
-			return fmt.Errorf("failed to download checksum for %s: %w", binary, err)
-		}
-		if err := verifyChecksum(checksumURL, binaryPath); err != nil {
-			return fmt.Errorf("failed to verify %s checksum: %w", binary, err)
-		}
-		if err := makeFileExecutable(binaryPath); err != nil {
-			return fmt.Errorf("failed to make %s executable: %w", binary, err)
+		if err := downloadAndVerifyBinary(ctx, binary, kubeBaseURL, kubeDir); err != nil {
+			return err
 		}
 	}
-	logger.Debugf("✔ Downloaded kube binaries %s.", kubeVersion)
+
+	logger.Debugf("✔ Successfully downloaded Kubernetes binaries for version %s.", kubeVersion)
+	return nil
+}
+
+// downloadAndVerifyBinary downloads a binary, its checksum, verifies it, and makes it executable.
+func downloadAndVerifyBinary(ctx context.Context, binary, baseURL, targetDir string) error {
+	binaryURL := fmt.Sprintf("%s/%s", baseURL, binary)
+	binaryPath := filepath.Join(targetDir, binary)
+
+	if err := downloadFromUrl(ctx, binaryURL, binaryPath); err != nil {
+		return fmt.Errorf("failed to download %s: %w", binary, err)
+	}
+
+	checksumURL := fmt.Sprintf("%s.sha256", binaryURL)
+	checksumPath := binaryPath + ".sha256"
+
+	if err := downloadFromUrl(ctx, checksumURL, checksumPath); err != nil {
+		return fmt.Errorf("failed to download checksum for %s: %w", binary, err)
+	}
+
+	if err := verifyChecksum(ctx, checksumURL, binaryPath); err != nil {
+		return fmt.Errorf("failed to verify checksum for %s: %w", binary, err)
+	}
+
+	return nil
+}
+
+// downloadCniPlugins downloads the CNI plugins tarball and its checksum, then verifies the integrity.
+func downloadCniPlugins(ctx context.Context, logger *logrus.Logger, binPath, hostArch string) error {
+	// Get the CNI plugins version from the environment or use default
+	cniPluginsVersion := os.Getenv("CNI_VERSION")
+	if cniPluginsVersion == "" {
+		cniPluginsVersion = DefaultCNIPluginsVersion
+	}
+
+	// Define the target directory
+	cniPluginsDir := filepath.Join(binPath, "containernetworking", "plugins", "releases", "download", cniPluginsVersion)
+
+	// Ensure the directory exists
+	if err := ensureCleanDir(cniPluginsDir); err != nil {
+		return fmt.Errorf("failed to prepare CNI plugins directory: %w", err)
+	}
+
+	logger.Debugf("⏳ Downloading CNI plugins version %s...", cniPluginsVersion)
+
+	// Define file names and URLs
+	cniPluginsFileName := fmt.Sprintf("cni-plugins-linux-%s-%s.tgz", hostArch, cniPluginsVersion)
+	cniPluginsURL := fmt.Sprintf("%s/%s/%s", CNIPluginsBaseURL, cniPluginsVersion, cniPluginsFileName)
+	cniPluginsFilePath := filepath.Join(cniPluginsDir, cniPluginsFileName)
+
+	// Download CNI plugins tarball
+	if err := downloadFromUrl(ctx, cniPluginsURL, cniPluginsFilePath); err != nil {
+		return fmt.Errorf("failed to download CNI plugins tarball (%s): %w", cniPluginsVersion, err)
+	}
+
+	// Define checksum file paths
+	checksumFileName := cniPluginsFileName + ".sha256"
+	checksumURL := fmt.Sprintf("%s/%s/%s", CNIPluginsBaseURL, cniPluginsVersion, checksumFileName)
+	checksumFilePath := filepath.Join(cniPluginsDir, checksumFileName)
+
+	// Download and save checksum file
+	if err := downloadFromUrl(ctx, checksumURL, checksumFilePath); err != nil {
+		return fmt.Errorf("failed to download CNI plugins checksum file (%s): %w", cniPluginsVersion, err)
+	}
+
+	// Verify checksum using the downloaded checksum file
+	if err := verifyChecksum(ctx, checksumURL, cniPluginsFilePath); err != nil {
+		return fmt.Errorf("failed to verify CNI plugins tarball checksum (%s): %w", cniPluginsVersion, err)
+	}
+
+	logger.Debugf("✔ Successfully downloaded CNI plugins version %s.", cniPluginsVersion)
 	return nil
 }
 
 // MirrorBinariesFunc is the main function for the mirror-binaries command.
 func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
 		kubermaticConfig, err := getKubermaticConfigurationFromYaml(options)
 		if err != nil {
 			return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 		}
 
 		// Extract all Kubernetes versions from the configuration.
-		versions, err := getAllKubernetesVersions(kubermaticConfig)
+		versions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
 		if err != nil {
-			return fmt.Errorf("failed to extract Kubernetes versions: %w", err)
+			return fmt.Errorf("failed to load versions: %w", err)
 		}
+
 		logger.Debugf("Found %d Kubernetes version(s) in the configuration.", len(versions))
 
 		hostArch, err := getHostArchitecture()
@@ -399,29 +386,39 @@ func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) c
 		}
 
 		binPath := options.OutputDir
+		logger.Info("🚀 Starting mirroring the binaries")
 
 		logger.Debugf("🚀 Starting CNI plugins download...")
-		if err := downloadCniPlugins(logger, binPath, hostArch); err != nil {
+		if err := downloadCniPlugins(ctx, logger, binPath, hostArch); err != nil {
 			return fmt.Errorf("failed to download CNI plugins: %w", err)
 		}
 		logger.Infof("✅ CNI plugins download complete.")
 
 		logger.Debugf("🚀 Starting CRI tools download for all available Kubernetes versions...")
 		for _, version := range versions {
-			if err := downloadCriTools(logger, version, binPath, hostArch); err != nil {
-				return fmt.Errorf("failed to download CRI tools for Kubernetes version %s: %w", version, err)
+			if err := downloadCriTools(ctx, logger, *version.Version, binPath, hostArch); err != nil {
+				return fmt.Errorf("failed to download CRI tools for Kubernetes version %s: %w", version.Version, err)
 			}
 		}
 		logger.Infof("✅ CRI tools download complete for all available Kubernetes versions.")
 
 		logger.Debugf("🚀 Starting kube binaries download for all available Kubernetes versions...")
 		for _, version := range versions {
-			if err := downloadKubeBinaries(logger, version, binPath, hostArch); err != nil {
-				return fmt.Errorf("failed to download kube binaries for Kubernetes version %s: %w", version, err)
+			if err := downloadKubeBinaries(ctx, logger, version, binPath, hostArch); err != nil {
+				return fmt.Errorf("failed to download kube binaries for Kubernetes version %s: %w", version.Version, err)
 			}
 		}
 		logger.Infof("✅ Kube binaries download complete for all available Kubernetes versions.")
+		logger.Info("✅ Finished loading images.")
 
 		return nil
 	})
+}
+
+// Ensure clean directory.
+func ensureCleanDir(dir string) error {
+	if err := os.RemoveAll(dir); err != nil {
+		return fmt.Errorf("failed to clean directory %s: %w", dir, err)
+	}
+	return os.MkdirAll(dir, 0755)
 }
