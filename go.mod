@@ -119,6 +119,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require k8s.io/pod-security-admission v0.31.0
+
 require (
 	cel.dev/expr v0.16.0 // indirect
 	cloud.google.com/go/auth v0.9.4 // indirect
@@ -488,7 +490,6 @@ require (
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
-	k8s.io/pod-security-admission v0.31.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect
