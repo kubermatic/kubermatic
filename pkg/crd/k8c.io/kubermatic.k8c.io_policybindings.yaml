@@ -51,9 +51,6 @@ spec:
             spec:
               description: PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
               properties:
-                namespacedPolicy:
-                  description: NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
-                  type: boolean
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
                   properties:
