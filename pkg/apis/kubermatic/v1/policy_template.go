@@ -43,6 +43,22 @@ type PolicyTemplate struct {
 }
 
 type PolicyTemplateSpec struct {
+	// Title is the title of the policy, specified as an annotation in the Kyverno policy
+	Title string `json:"title"`
+
+	// Description is the description of the policy, specified as an annotation in the Kyverno policy
+	Description string `json:"description"`
+
+	// Category is the category of the policy, specified as an annotation in the Kyverno policy
+	//
+	// +optional
+	Category string `json:"category,omitempty"`
+
+	// Severity indicates the severity level of the policy
+	//
+	// +optional
+	Severity string `json:"severity,omitempty"`
+
 	// Visibility specifies where the policy is visible.
 	//
 	// Can be one of: global, project, or cluster
@@ -66,12 +82,33 @@ type PolicyTemplateSpec struct {
 	// A PolicyBinding referencing it cannot disable it
 	Enforced bool `json:"enforced"`
 
-	// Policy is the policy we want to apply on the cluster
+	// PolicySpec is the policy spec of the Kyverno Policy we want to apply on the cluster.
 	//
-	// The Policy field contains a Kubernetes resource as a raw extension.
-	// +kubebuilder:validation:XEmbeddedResource
-	// +kubebuilder:validation:XPreserveUnknownFields
-	Policy runtime.RawExtension `json:"policy"`
+	// The structure of this spec should follow the rules defined in Kyverno
+	// [Writing Policies Docs](https://kyverno.io/docs/writing-policies/).
+	//
+	// For example, a simple policy spec could be defined as:
+	//
+	//    policySpec:
+	//      validationFailureAction: Audit
+	//      background: true
+	//      rules:
+	//      - name: check-for-labels
+	//        match:
+	//          any:
+	//          - resources:
+	//              kinds:
+	//              - Pod
+	//        validate:
+	//          message: "The label `app.kubernetes.io/name` is required."
+	//          pattern:
+	//            metadata:
+	//              labels:
+	//                app.kubernetes.io/name: "?*"
+	//
+	// There are also further examples of Kyverno policies in the
+	// [Kyverno Policies Examples](https://kyverno.io/policies/).
+	PolicySpec runtime.RawExtension `json:"policySpec"`
 }
 
 // +kubebuilder:object:generate=true
