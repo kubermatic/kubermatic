@@ -49,13 +49,14 @@ import (
 )
 
 var (
-	applicationName      string
-	applicationNamespace string
-	applicationVersion   string
-	key                  string
-	names                string
-	credentials          jig.AWSCredentials
-	logOptions           = utils.DefaultLogOptions
+	applicationInstallationName string
+	applicationName             string
+	applicationNamespace        string
+	applicationVersion          string
+	key                         string
+	names                       string
+	credentials                 jig.AWSCredentials
+	logOptions                  = utils.DefaultLogOptions
 )
 
 const (
@@ -63,6 +64,7 @@ const (
 )
 
 func init() {
+	flag.StringVar(&applicationInstallationName, "application-installation-name", "", "name of the ApplicationInstallation object")
 	flag.StringVar(&applicationName, "application-name", "", "name of an application from the default app catalog")
 	flag.StringVar(&applicationNamespace, "application-namespace", "", "namespace of an application from the default app catalog")
 	flag.StringVar(&applicationVersion, "application-version", "", "version of an application from the default app catalog")
@@ -123,7 +125,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      applicationName,
+			Name:      applicationInstallationName,
 			Namespace: applicationNamespace,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
@@ -150,7 +152,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 	tLogger.Info("Check if ApplicationInstallation exists")
 	err = wait.PollLog(ctx, tLogger, 2*time.Second, 8*time.Minute, func(ctx context.Context) (error, error) {
 		app := &appskubermaticv1.ApplicationInstallation{}
-		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationName}, app); err != nil {
+		if err := client.Get(context.Background(), types.NamespacedName{Namespace: applicationNamespace, Name: applicationInstallationName}, app); err != nil {
 			return fmt.Errorf("failed to get ApplicationInstallation in user cluster: %w", err), nil
 		}
 		if app.Status.ApplicationVersion == nil {
@@ -164,7 +166,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 
 	tLogger.Info("Checking if the helm release is deployed")
 	err = wait.PollLog(ctx, tLogger, 2*time.Second, 8*time.Minute, func(ctx context.Context) (error, error) {
-		err = isHelmReleaseDeployed(ctx, tLogger, client, applicationName, applicationNamespace)
+		err = isHelmReleaseDeployed(ctx, tLogger, client, applicationInstallationName, applicationNamespace)
 		if err != nil {
 			return fmt.Errorf("failed to verify that helm release is deployed: %w", err), nil
 		}

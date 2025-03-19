@@ -25,6 +25,7 @@ source hack/lib.sh
 TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
 
+APPLICATION_INSTALLATION_NAME=""
 APPLICATION_NAME=""
 APPLICATION_NAMESPACE=""
 APPLICATION_VERSION=""
@@ -34,6 +35,10 @@ NAMES=""
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
+  --application-installation-name)
+    APPLICATION_INSTALLATION_NAME="$2"
+    shift 2
+    ;;
   --application-name)
     APPLICATION_NAME="$2"
     shift 2
@@ -107,6 +112,7 @@ if [[ -s "$pathToFile" ]]; then
     go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/default_app_catalog_tests \
       -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
       -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
+      -application-installation-name "$APPLICATION_INSTALLATION_NAME" \
       -application-name "$APPLICATION_NAME" \
       -application-namespace "$APPLICATION_NAMESPACE" \
       -application-version "$version" \

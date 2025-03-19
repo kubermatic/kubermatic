@@ -33,6 +33,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "aikit"
             - "--application-name"
             - "aikit"
             - "--application-namespace"
@@ -79,6 +81,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "argocd"
             - "--application-name"
             - "argocd"
             - "--application-namespace"
@@ -125,6 +129,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "cluster-autoscaler"
             - "--application-name"
             - "cluster-autoscaler"
             - "--application-namespace"
@@ -171,6 +177,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "cert-manager"
             - "--application-name"
             - "cert-manager"
             - "--application-namespace"
@@ -218,6 +226,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "falco"
             - "--application-name"
             - "falco"
             - "--application-namespace"
@@ -264,6 +274,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "flux"
             - "--application-name"
             - "flux2"
             - "--application-namespace"
@@ -310,6 +322,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "k8sgpt"
             - "--application-name"
             - "k8sgpt"
             - "--application-namespace"
@@ -356,6 +370,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "k8sgpt-operator"
             - "--application-name"
             - "k8sgpt-operator"
             - "--application-namespace"
@@ -402,6 +418,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "kube-vip"
             - "--application-name"
             - "kube-vip"
             - "--application-namespace"
@@ -448,6 +466,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "kubevirt"
             - "--application-name"
             - "kubevirt"
             - "--application-namespace"
@@ -494,6 +514,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "metallb"
             - "--application-name"
             - "metallb"
             - "--application-namespace"
@@ -540,6 +562,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "nginx"
             - "--application-name"
             - "nginx"
             - "--application-namespace"
@@ -586,6 +610,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "gpu-operator"
             - "--application-name"
             - "nvidia-gpu-operator"
             - "--application-namespace"
@@ -632,6 +658,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "trivy"
             - "--application-name"
             - "trivy"
             - "--application-namespace"
@@ -678,6 +706,8 @@ presubmits:
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           args:
+            - "--application-installation-name"
+            - "trivy-operator"
             - "--application-name"
             - "trivy-operator"
             - "--application-namespace"
