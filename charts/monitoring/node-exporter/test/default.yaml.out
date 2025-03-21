@@ -159,7 +159,7 @@ spec:
             - --path.sysfs=/host/sys
             - --path.rootfs=/host/root
             - --path.udev.data=/host/root/run/udev/data
-            - --web.listen-address=[$(HOST_IP)]:9100
+            - --web.listen-address=[$(HOST_IP)]:8100
           securityContext:
             readOnlyRootFilesystem: true
           env:
@@ -171,7 +171,7 @@ spec:
               host: 127.0.0.1
               httpHeaders:
               path: /
-              port: 9100
+              port: 8100
               scheme: HTTP
             initialDelaySeconds: 0
             periodSeconds: 10
@@ -183,7 +183,7 @@ spec:
               host: 127.0.0.1
               httpHeaders:
               path: /
-              port: 9100
+              port: 8100
               scheme: HTTP
             initialDelaySeconds: 0
             periodSeconds: 10
@@ -210,7 +210,7 @@ spec:
         - name: kube-rbac-proxy
           args:
             - --secure-listen-address=:9100
-            - --upstream=http://127.0.0.1:9100/
+            - --upstream=http://127.0.0.1:8100/
             - --proxy-endpoints-port=8888
             - --config-file=/etc/kube-rbac-proxy-config/config-file.yaml
           volumeMounts:

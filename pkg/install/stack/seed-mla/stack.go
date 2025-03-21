@@ -660,7 +660,7 @@ func upgradeNodeExporterDaemonSets(
 	})
 
 	nodeExporterMatcher := ctrlruntimeclient.MatchingLabels{
-		"app": NodeExporterReleaseName,
+		"app.kubernetes.io/name": NodeExporterReleaseName,
 	}
 	if err := kubeClient.List(ctx, daemonsetsList, ctrlruntimeclient.InNamespace(NodeExporterNamespace), nodeExporterMatcher); err != nil {
 		return fmt.Errorf("error querying API for the existing DaemonSet object, aborting upgrade process.")

@@ -37,7 +37,6 @@ node-exporter:
     
   kubeRBACProxy:
     enabled: true
-    port: 9100
     portName: https
     enableHostPort: true
     resources:
