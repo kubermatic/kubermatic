@@ -123,6 +123,10 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		t.Fatalf("%v", err)
 	}
 
+	if applicationName == "cert-manager" {
+		valuesBlock := `installCRDs: true`
+	}
+
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationInstallationName,
