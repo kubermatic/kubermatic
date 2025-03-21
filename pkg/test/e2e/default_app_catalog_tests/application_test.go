@@ -338,8 +338,7 @@ func createUserCluster(
 	log *zap.SugaredLogger,
 	masterClient ctrlruntimeclient.Client,
 ) (ctrlruntimeclient.Client, func(), *zap.SugaredLogger, error) {
-	instanceType := "t3.xlarge"
-	testJig := jig.NewAWSClusterWithCustomInstanceType(masterClient, log, credentials, 2, nil, &instanceType)
+	testJig := jig.NewAWSCluster(masterClient, log, credentials, 2, nil)
 	testJig.ProjectJig.WithHumanReadableName(projectName)
 	testJig.ClusterJig.
 		WithTestName("application-test").
