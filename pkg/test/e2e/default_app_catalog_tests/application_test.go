@@ -162,7 +162,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 	}
 	if applicationName == "falco" {
 		valuesBlock := `driver:
-  kind: ebpf`
+  kind: gvisor`
 		application = appskubermaticv1.ApplicationInstallation{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      applicationInstallationName,
