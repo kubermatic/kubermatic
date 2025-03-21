@@ -43,6 +43,15 @@ type KubermaticSetting struct {
 // allowedOperatingSystems defines a map of operating systems that can be used for the machines.
 type allowedOperatingSystems map[providerconfig.OperatingSystem]bool
 
+type ClusterBackupOptions struct {
+	// DefaultChecksumAlgorithm allows setting a default checksum algorithm used by Velero for uploading objects to S3.
+	// If the value is set as empty string "", no checksum will be calculated and attached to
+	// the request headers.
+	//
+	// Optional
+	DefaultChecksumAlgorithm *string `json:"defaultChecksumAlgorithm,omitempty"`
+}
+
 type SettingSpec struct {
 	// CustomLinks are additional links that can be shown the dashboard's footer.
 	CustomLinks CustomLinks `json:"customLinks"`
@@ -134,6 +143,8 @@ type SettingSpec struct {
 
 	// The announcement feature allows administrators to broadcast important messages to all users.
 	Announcements map[string]Announcement `json:"announcements,omitempty"`
+
+	ClusterBackupOptions *ClusterBackupOptions `json:"clusterBackupOptions,omitempty"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
