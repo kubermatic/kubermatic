@@ -33,7 +33,7 @@ import (
 	applicationinstallationmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/mutation"
 	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
 	machinevalidation "k8c.io/kubermatic/v2/pkg/webhook/machine/validation"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"

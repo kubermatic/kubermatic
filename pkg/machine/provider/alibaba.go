@@ -21,7 +21,7 @@ import (
 	"strconv"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	alibaba "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
+	alibaba "k8c.io/machine-controller/sdk/cloudprovider/alibaba"
 )
 
 const (
