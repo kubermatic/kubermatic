@@ -162,44 +162,6 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	}
 }
 
-func NewAWSClusterWithCustomInstanceType(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AWSCredentials, replicas int, spotMaxPriceUSD *string, customInstanceType *string) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
-	clusterJig := NewClusterJig(client, log).
-		WithHumanReadableName("e2e test cluster").
-		WithSSHKeyAgent(false).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.AWSCloudProvider),
-			AWS: &kubermaticv1.AWSCloudSpec{
-				AccessKeyID:     credentials.AccessKeyID,
-				SecretAccessKey: credentials.SecretAccessKey,
-			},
-		})
-
-	if len(*customInstanceType) == 0 {
-		defaultInstanceType := "t3.medium"
-		customInstanceType = &defaultInstanceType
-	}
-
-	awsConfig := provider.NewAWSConfig().WithInstanceType(*customInstanceType)
-	if spotMaxPriceUSD != nil {
-		awsConfig.WithSpotInstanceMaxPrice(*spotMaxPriceUSD)
-	}
-
-	machineJig := NewMachineJig(client, log, nil).
-		WithClusterJig(clusterJig).
-		WithReplicas(replicas).
-		AddSSHPublicKey(SSHPublicKey()).
-		WithCloudProviderSpec(awsConfig.Build())
-
-	return &TestJig{
-		ProjectJig: projectJig,
-		ClusterJig: clusterJig,
-		MachineJig: machineJig,
-	}
-}
-
 func NewAzureCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials AzureCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 
