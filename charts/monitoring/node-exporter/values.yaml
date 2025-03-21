@@ -12,13 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-nodeExporter:
-  image:
-    repository: quay.io/prometheus/node-exporter
-    tag: v1.7.0
-  # list of image pull secret references, e.g.
-  # imagePullSecrets:
-  #   - name: quay-io-pull-secret
+node-exporter:
+  # Check master values.yaml which are the default values for Chart version 4.44.0
+  # https://github.com/prometheus-community/helm-charts/blob/prometheus-node-exporter-4.44.0/charts/prometheus-node-exporter/values.yaml
   imagePullSecrets: []
   resources:
     requests:
@@ -28,18 +24,6 @@ nodeExporter:
       cpu: 250m
       memory: 48Mi
 
-  rbacProxy:
-    image:
-      repository: quay.io/brancz/kube-rbac-proxy
-      tag: v0.14.1
-    resources:
-      requests:
-        cpu: 50m
-        memory: 24Mi
-      limits:
-        cpu: 100m
-        memory: 48Mi
-
   nodeSelector: {}
   affinity: {}
   tolerations:
@@ -47,3 +31,30 @@ nodeExporter:
     operator: Exists
   - effect: NoSchedule
     operator: Exists
+
+  serviceAccount:
+    name: node-exporter
+    
+  kubeRBACProxy:
+    enabled: true
+    portName: https
+    enableHostPort: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 24Mi
+      limits:
+        cpu: 100m
+        memory: 48Mi
+    
+  fullnameOverride: node-exporter
+  nameOverride: node-exporter
+
+  service:
+    clusterIP: None
+    servicePort: 9100
+    portName: https
+
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9100'
