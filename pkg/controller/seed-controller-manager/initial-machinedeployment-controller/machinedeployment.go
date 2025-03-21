@@ -25,8 +25,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

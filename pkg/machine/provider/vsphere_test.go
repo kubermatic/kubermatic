@@ -20,8 +20,8 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	vsphere "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	vsphere "k8c.io/machine-controller/sdk/cloudprovider/vsphere"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 func TestVSphereConfigBuilder(t *testing.T) {

@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	hetzner "k8c.io/machine-controller/pkg/cloudprovider/provider/hetzner/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	hetzner "k8c.io/machine-controller/sdk/cloudprovider/hetzner"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 type hetznerConfig struct {

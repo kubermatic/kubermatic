@@ -41,22 +41,21 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	alibabatypes "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
-	anexiatypes "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
-	awstypes "k8c.io/machine-controller/pkg/cloudprovider/provider/aws/types"
-	azuretypes "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
-	digitaloceantypes "k8c.io/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
-	equinixtypes "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
-	gcptypes "k8c.io/machine-controller/pkg/cloudprovider/provider/gce/types"
-	hetznertypes "k8c.io/machine-controller/pkg/cloudprovider/provider/hetzner/types"
-	kubevirttypes "k8c.io/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
-	nutanixtypes "k8c.io/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	openstacktypes "k8c.io/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	vmwareclouddirectortypes "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	vspheretypes "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	"k8c.io/machine-controller/pkg/providerconfig"
-	"k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	alibabatypes "k8c.io/machine-controller/sdk/cloudprovider/alibaba"
+	anexiatypes "k8c.io/machine-controller/sdk/cloudprovider/anexia"
+	awstypes "k8c.io/machine-controller/sdk/cloudprovider/aws"
+	azuretypes "k8c.io/machine-controller/sdk/cloudprovider/azure"
+	digitaloceantypes "k8c.io/machine-controller/sdk/cloudprovider/digitalocean"
+	equinixtypes "k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
+	gcptypes "k8c.io/machine-controller/sdk/cloudprovider/gce"
+	hetznertypes "k8c.io/machine-controller/sdk/cloudprovider/hetzner"
+	kubevirttypes "k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
+	nutanixtypes "k8c.io/machine-controller/sdk/cloudprovider/nutanix"
+	openstacktypes "k8c.io/machine-controller/sdk/cloudprovider/openstack"
+	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	vspheretypes "k8c.io/machine-controller/sdk/cloudprovider/vsphere"
+	types "k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -139,7 +138,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 }
 
 func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := awstypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting aws raw config: %w", err)
@@ -164,7 +163,7 @@ func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 }
 
 func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("error getting gcp raw config: %w", err)
@@ -201,7 +200,7 @@ func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 }
 
 func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := azuretypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get azure raw config: %w", err)
@@ -264,7 +263,7 @@ func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimecli
 }
 
 func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	configVarResolver := types.NewConfigVarResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kubevirt raw config: %w", err)
@@ -351,7 +350,7 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 
 func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := openstacktypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get openstack raw config: %w", err)
@@ -425,7 +424,7 @@ func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntim
 }
 
 // Get the Project name from config or env var. If not defined fallback to tenant name.
-func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+func getProjectNameOrTenantName(configVarResolver *types.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
 	projectName, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectName, envOSProjectName)
 	if err == nil && len(projectName) > 0 {
 		return projectName, nil
@@ -436,7 +435,7 @@ func getProjectNameOrTenantName(configVarResolver *providerconfig.ConfigVarResol
 }
 
 // Get the Project id from config or env var. If not defined fallback to tenant id.
-func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
+func getProjectIDOrTenantID(configVarResolver *types.ConfigVarResolver, rawConfig *openstacktypes.RawConfig) (string, error) {
 	projectID, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.ProjectID, envOSProjectID)
 	if err == nil && len(projectID) > 0 {
 		return projectID, nil
@@ -452,7 +451,7 @@ func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimec
 		return nil, fmt.Errorf("failed to get alibaba raw config: %w", err)
 	}
 
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 	instanceType, err := configVarResolver.GetConfigVarStringValue(rawConfig.InstanceType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the value of alibaba \"instanceType\" field: %w", err)
@@ -498,7 +497,7 @@ func getHetznerResourceRequirements(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hetzner raw config: %w", err)
 	}
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 
 	serverTypeName, err := configVarResolver.GetConfigVarStringValue(rawConfig.ServerType)
 	if err != nil {
@@ -552,7 +551,7 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 	if err != nil {
 		return nil, fmt.Errorf("failed to get digitalOcean raw config: %w", err)
 	}
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
+	configVarResolver := types.NewConfigVarResolver(ctx, userClient)
 
 	token, err := configVarResolver.GetConfigVarStringValueOrEnv(rawConfig.Token, envDOToken)
 	if err != nil {
@@ -625,7 +624,7 @@ func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimecl
 }
 
 func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
-	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
+	configVarResolver := types.NewConfigVarResolver(ctx, client)
 	rawConfig, err := equinixtypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get packet raw config: %w", err)

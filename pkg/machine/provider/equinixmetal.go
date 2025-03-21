@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	equinixmetal "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	equinixmetal "k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 type equinixmetalConfig struct {

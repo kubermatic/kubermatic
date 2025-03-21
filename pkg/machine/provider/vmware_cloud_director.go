@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	vmwareclouddirector "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	vmwareclouddirector "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/utils/ptr"
 )

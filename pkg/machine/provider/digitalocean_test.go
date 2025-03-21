@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	digitalocean "k8c.io/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
+	digitalocean "k8c.io/machine-controller/sdk/cloudprovider/digitalocean"
 )
 
 func TestDigitaloceanConfigBuilder(t *testing.T) {

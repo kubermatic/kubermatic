@@ -21,8 +21,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	nutanixprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/nutanix"
-	nutanix "k8c.io/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	nutanix "k8c.io/machine-controller/sdk/cloudprovider/nutanix"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/utils/ptr"
 )
