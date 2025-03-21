@@ -80,16 +80,19 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	}
 	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
-	// check the actual status of the machineController components only if the API server is healthy
-	// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
-	mcHealthStatus := kubermaticv1.HealthStatusDown
-	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
-		mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+	// MachineController is not deployed/supported on Edge clusters.
+	if cluster.Spec.Cloud.Edge == nil {
+		// check the actual status of the machineController components only if the API server is healthy
+		// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
+		mcHealthStatus := kubermaticv1.HealthStatusDown
+		if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+			mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+			}
 		}
+		extendedHealth.MachineController = kubermaticv1helper.GetHealthStatus(mcHealthStatus, cluster, r.versions)
 	}
-	extendedHealth.MachineController = kubermaticv1helper.GetHealthStatus(mcHealthStatus, cluster, r.versions)
 
 	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
 	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {

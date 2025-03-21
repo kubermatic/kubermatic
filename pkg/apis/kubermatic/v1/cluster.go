@@ -1551,7 +1551,9 @@ func (h *ExtendedClusterHealth) ControlPlaneHealthy() bool {
 // crucial for cluster functioning.
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.ControlPlaneHealthy() &&
-		h.MachineController == HealthStatusUp &&
+		// MachineController is not deployed/supported on Edge clusters and the health status is empty. For all the other
+		// providers, the health status is set to "down" when Cluster Health is initialized so it's never empty.
+		(h.MachineController == HealthStatusUp || h.MachineController == "") &&
 		h.CloudProviderInfrastructure == HealthStatusUp &&
 		h.UserClusterControllerManager == HealthStatusUp
 }
