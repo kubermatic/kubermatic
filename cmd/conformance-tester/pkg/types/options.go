@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	providerconfig "k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"

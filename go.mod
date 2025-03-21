@@ -94,8 +94,7 @@ require (
 	helm.sh/helm/v3 v3.14.3
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
-	k8c.io/machine-controller v1.61.0
-	k8c.io/operating-system-manager v1.6.1-0.20241118134103-5db575f65108
+	k8c.io/operating-system-manager v1.6.1-0.20250319150447-d4fb655fcfaa
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.31.2
 	k8s.io/apiextensions-apiserver v0.31.2
@@ -117,6 +116,8 @@ require (
 	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/yaml v1.4.0
 )
+
+require k8c.io/machine-controller/sdk v0.0.0-20250314150330-99a4aa5532ca
 
 require (
 	cel.dev/expr v0.16.0 // indirect
@@ -303,7 +304,6 @@ require (
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
-	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/peterhellberg/link v1.2.0 // indirect
@@ -396,7 +396,6 @@ require (
 	gotest.tools/v3 v3.5.1 // indirect
 	k8s.io/component-base v0.31.2 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240826214909-a7b603a56eb7 // indirect
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20240903163716-9e1beecbcb38 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect

@@ -29,8 +29,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	vmwareclouddirectortypes "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	"k8c.io/machine-controller/pkg/providerconfig/types"
+	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	types "k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
