@@ -1,9 +1,12 @@
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -238,13 +241,9 @@ func downloadCRITools(ctx context.Context, logger *logrus.Logger, version semver
 	checksumURL := fmt.Sprintf("%s/%s/%s", CRIToolsBaseURL, criToolsRelease, checksumFileName)
 	checksumFilePath := filepath.Join(criToolsDir, checksumFileName)
 
-	if err := downloadFromUrl(ctx, checksumURL, checksumFilePath); err != nil {
-		return fmt.Errorf("failed to download CRI tools checksum file (%s): %w", criToolsRelease, err)
-	}
-
-	// Verify checksum
-	if err := verifyChecksum(ctx, checksumURL, criToolsFilePath); err != nil {
-		return fmt.Errorf("failed to verify CRI tools tarball checksum (%s): %w", criToolsRelease, err)
+	// Doownload and verify checksum
+	if err := downloadAndVerifyChecksum(ctx, checksumURL, checksumFilePath, criToolsFilePath); err != nil {
+		return err
 	}
 
 	logger.Debugf("✔ Successfully downloaded CRI tools %s.", criToolsRelease)
@@ -288,12 +287,9 @@ func downloadAndVerifyBinary(ctx context.Context, binary, baseURL, targetDir str
 	checksumURL := binaryURL + SHA256Exentsion
 	checksumPath := binaryPath + SHA256Exentsion
 
-	if err := downloadFromUrl(ctx, checksumURL, checksumPath); err != nil {
-		return fmt.Errorf("failed to download checksum for %s: %w", binary, err)
-	}
-
-	if err := verifyChecksum(ctx, checksumURL, binaryPath); err != nil {
-		return fmt.Errorf("failed to verify checksum for %s: %w", binary, err)
+	// Doownload and verify checksum
+	if err := downloadAndVerifyChecksum(ctx, checksumURL, checksumPath, binaryPath); err != nil {
+		return err
 	}
 
 	return nil
@@ -332,14 +328,9 @@ func downloadCNIPlugins(ctx context.Context, logger *logrus.Logger, binPath, hos
 	checksumURL := fmt.Sprintf("%s/%s/%s", CNIPluginsBaseURL, cniPluginsVersion, checksumFileName)
 	checksumFilePath := filepath.Join(cniPluginsDir, checksumFileName)
 
-	// Download and save checksum file
-	if err := downloadFromUrl(ctx, checksumURL, checksumFilePath); err != nil {
-		return fmt.Errorf("failed to download CNI plugins checksum file (%s): %w", cniPluginsVersion, err)
-	}
-
-	// Verify checksum using the downloaded checksum file
-	if err := verifyChecksum(ctx, checksumURL, cniPluginsFilePath); err != nil {
-		return fmt.Errorf("failed to verify CNI plugins tarball checksum (%s): %w", cniPluginsVersion, err)
+	// Download and Verify checksum
+	if err := downloadAndVerifyChecksum(ctx, checksumURL, checksumFilePath, cniPluginsFilePath); err != nil {
+		return err
 	}
 
 	logger.Debugf("✔ Successfully downloaded CNI plugins version %s.", cniPluginsVersion)
@@ -414,6 +405,19 @@ func ensureCleanDir(dir string) error {
 	} else if err != nil {
 		// Some other error occurred while checking the directory
 		return fmt.Errorf("failed to check directory %s: %w", dir, err)
+	}
+
+	return nil
+}
+
+// downloadAndVerifyChecksum downloads the checksum from the specified URL and verifies the file's integrity.
+func downloadAndVerifyChecksum(ctx context.Context, checksumURL, checksumPath, filePath string) error {
+	if err := downloadFromUrl(ctx, checksumURL, checksumPath); err != nil {
+		return fmt.Errorf("failed to download checksum: %w", err)
+	}
+
+	if err := verifyChecksum(ctx, checksumURL, filePath); err != nil {
+		return fmt.Errorf("failed to verify checksum for %s: %w", filePath, err)
 	}
 
 	return nil
