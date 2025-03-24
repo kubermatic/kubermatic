@@ -18,9 +18,13 @@ package openstack
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
+	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+	"github.com/gophercloud/gophercloud/pagination"
 )
 
 const (
@@ -32,6 +36,37 @@ const (
 
 	resourceNamePrefix = "kubernetes-"
 )
+
+func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflavors.Flavor, error) {
+	computeClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Availability: gophercloud.AvailabilityPublic, Region: region})
+	if err != nil {
+		// this is special case for services that span only one region.
+		if isEndpointNotFoundErr(err) {
+			computeClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
+		}
+	}
+
+	var allFlavors []osflavors.Flavor
+	pager := osflavors.ListDetail(computeClient, osflavors.ListOpts{})
+	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+		flavors, err := osflavors.ExtractFlavors(page)
+		if err != nil {
+			return false, err
+		}
+		allFlavors = append(allFlavors, flavors...)
+		return true, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return allFlavors, nil
+}
 
 func isNotFoundErr(err error) bool {
 	var errNotFound gophercloud.ErrDefault404

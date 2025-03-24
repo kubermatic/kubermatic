@@ -28,6 +28,7 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
@@ -36,8 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/machine-controller/sdk/providerconfig"
-
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -117,7 +116,7 @@ func (os *Provider) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 }
 
 func (os *Provider) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
-	return false
+	return true
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
@@ -128,7 +127,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.SecurityGroups != "" {
-		if err := validateSecurityGroupsExist(netClient, splitString(spec.Openstack.SecurityGroups)); err != nil {
+		if err := validateSecurityGroupExists(netClient, spec.Openstack.SecurityGroups); err != nil {
 			return err
 		}
 	}
@@ -347,13 +346,11 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 		return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
 	}
 
-	securityGroups := splitString(cluster.Spec.Cloud.Openstack.SecurityGroups)
+	securityGroup := cluster.Spec.Cloud.Openstack.SecurityGroups
 
 	// automatically create and fill-in the default security group if none was specified
-	var updateRequired bool
-	if len(securityGroups) == 0 {
-		securityGroups = []string{resourceNamePrefix + cluster.Name}
-		updateRequired = true
+	if securityGroup == "" {
+		securityGroup = resourceNamePrefix + cluster.Name
 	}
 
 	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
@@ -368,38 +365,35 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 		NodePorts()
 
 	// for each security group, ensure that it exists
-	for _, sgName := range securityGroups {
-		err := validateSecurityGroupExists(netClient, sgName)
-		if err == nil {
-			continue // group exists
-		}
-		if !isNotFoundErr(err) {
+	err = validateSecurityGroupExists(netClient, securityGroup)
+
+	if err != nil {
+		if isNotFoundErr(err) {
+			// group does not yet exist, so we create it
+			req := securityGroupSpec{
+				name:           securityGroup,
+				ipv4Rules:      ipv4Network,
+				ipv6Rules:      ipv6Network,
+				lowPort:        lowPort,
+				highPort:       highPort,
+				nodePortsCIDRs: ipRanges,
+			}
+
+			_, err = ensureSecurityGroup(netClient, req)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create security group: %w", err)
+			}
+		} else {
 			return cluster, fmt.Errorf("failed to check security group: %w", err)
-		}
-
-		// group does not yet exist, so we create it
-		req := securityGroupSpec{
-			name:           sgName,
-			ipv4Rules:      ipv4Network,
-			ipv6Rules:      ipv6Network,
-			lowPort:        lowPort,
-			highPort:       highPort,
-			nodePortsCIDRs: ipRanges,
-		}
-
-		_, err = ensureSecurityGroup(netClient, req)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create security group: %w", err)
 		}
 	}
 
-	if updateRequired {
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.SecurityGroups = joinStrings(securityGroups)
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update security groups in cluster: %w", err)
-		}
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update security group in cluster: %w", err)
 	}
 
 	return cluster, nil
@@ -630,11 +624,10 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 	}
 
 	if kubernetes.HasFinalizer(cluster, SecurityGroupCleanupFinalizer) {
-		for _, g := range splitString(cluster.Spec.Cloud.Openstack.SecurityGroups) {
-			if err := deleteSecurityGroup(netClient, g); err != nil {
-				if !isNotFoundErr(err) {
-					return nil, fmt.Errorf("failed to delete security group %q: %w", g, err)
-				}
+		sg := cluster.Spec.Cloud.Openstack.SecurityGroups
+		if err := deleteSecurityGroup(netClient, sg); err != nil {
+			if !isNotFoundErr(err) {
+				return nil, fmt.Errorf("failed to delete security group %q: %w", sg, err)
 			}
 		}
 	}
@@ -787,7 +780,7 @@ func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 	}
 
 	if oldSpec.Openstack.SecurityGroups != "" && oldSpec.Openstack.SecurityGroups != newSpec.Openstack.SecurityGroups {
-		return fmt.Errorf("updating OpenStack security groups is not supported (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
+		return fmt.Errorf("updating OpenStack security group is not supported (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
 	}
 
 	return nil
@@ -927,19 +920,42 @@ func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *
 	return value, nil
 }
 
-func splitString(s string) []string {
-	items := sets.New[string]()
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
+func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+	flavors, err := getFlavors(authClient, region)
+	if err != nil {
+		return nil, err
+	}
 
-	for _, part := range strings.Split(s, ",") {
-		part = strings.TrimSpace(part)
-		if part != "" {
-			items.Insert(part)
+	return flavors, nil
+}
+
+func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region string, caBundle *x509.CertPool, flavorName string) (*provider.NodeCapacity, error) {
+	flavors, err := GetFlavors(authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, flavor := range flavors {
+		if strings.EqualFold(flavor.Name, flavorName) {
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(flavor.VCPUs)
+
+			if err := capacity.WithMemory(flavor.RAM, "M"); err != nil {
+				return nil, fmt.Errorf("failed to parse memory size: %w", err)
+			}
+
+			if err := capacity.WithStorage(flavor.Disk, "G"); err != nil {
+				return nil, fmt.Errorf("failed to parse disk size: %w", err)
+			}
+
+			return capacity, nil
 		}
 	}
 
-	return sets.List(items)
-}
-
-func joinStrings(values []string) string {
-	return strings.Join(values, ",")
+	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
 }
