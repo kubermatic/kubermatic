@@ -17,7 +17,9 @@ limitations under the License.
 package openstack
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gophercloud/gophercloud"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
@@ -110,4 +112,15 @@ func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 		return res.Err
 	}
 	return res.ExtractErr()
+}
+
+func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {
+	matchString := fmt.Sprintf("Router already has a port on subnet %s", subnetID)
+
+	var gopherCloud400Err gophercloud.ErrDefault400
+	if !errors.As(err, &gopherCloud400Err) || !strings.Contains(string(gopherCloud400Err.Body), matchString) {
+		return err
+	}
+
+	return nil
 }

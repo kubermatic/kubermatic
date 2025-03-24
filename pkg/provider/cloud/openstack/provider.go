@@ -28,12 +28,6 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
-	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
-	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
-	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
-	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
-	ossubnetpools "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
-	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
@@ -715,97 +709,6 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 	return cluster, nil
 }
 
-// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
-func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
-	authClient, err := getAuthClient(authURL, credentials, caBundle)
-	if err != nil {
-		return nil, err
-	}
-	flavors, err := getFlavors(authClient, region)
-	if err != nil {
-		return nil, err
-	}
-
-	return flavors, nil
-}
-
-// GetTenants lists all available tenents for the given CloudSpec.DatacenterName.
-func GetTenants(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osprojects.Project, error) {
-	authClient, err := getAuthClient(authURL, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	tenants, err := getTenants(authClient, region)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get tenants for region %s: %w", region, err)
-	}
-
-	return tenants, nil
-}
-
-// GetNetworks lists all available networks for the given CloudSpec.DatacenterName.
-func GetNetworks(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
-	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	networks, err := getAllNetworks(authClient, osnetworks.ListOpts{})
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get networks: %w", err)
-	}
-
-	return networks, nil
-}
-
-// GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName.
-func GetSecurityGroups(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
-	netClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	page, err := ossecuritygroups.List(netClient, ossecuritygroups.ListOpts{}).AllPages()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list security groups: %w", err)
-	}
-	secGroups, err := ossecuritygroups.ExtractGroups(page)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract security groups: %w", err)
-	}
-	return secGroups, nil
-}
-
-// GetAvailabilityZones lists availability zones for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
-func GetAvailabilityZones(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osavailabilityzones.AvailabilityZone, error) {
-	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, err
-	}
-	availabilityZones, err := getAvailabilityZones(computeClient)
-	if err != nil {
-		return nil, err
-	}
-
-	return availabilityZones, nil
-}
-
-// GetSubnetPools lists all available subnet pools.
-func GetSubnetPools(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, ipVersion int, caBundle *x509.CertPool) ([]ossubnetpools.SubnetPool, error) {
-	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	subnetPools, err := getAllSubnetPools(authClient, ossubnetpools.ListOpts{IPVersion: ipVersion})
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get subnet pools: %w", err)
-	}
-
-	return subnetPools, nil
-}
-
 func getAuthClient(authURL string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ProviderClient, error) {
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint:            authURL,
@@ -859,42 +762,6 @@ func getNetClient(ctx context.Context, authURL, region string, credentials *reso
 	serviceClient.Context = ctx
 
 	return serviceClient, err
-}
-
-func getComputeClient(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
-	authClient, err := getAuthClient(authURL, credentials, caBundle)
-	if err != nil {
-		return nil, err
-	}
-
-	serviceClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Region: region})
-	if err != nil {
-		// this is special case for services that span only one region.
-		if isEndpointNotFoundErr(err) {
-			serviceClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-	return serviceClient, err
-}
-
-// GetSubnets list all available subnet ids for a given CloudSpec.
-func GetSubnets(ctx context.Context, authURL, region, networkID string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
-	serviceClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	subnets, err := getSubnetForNetwork(serviceClient, networkID)
-	if err != nil {
-		return nil, err
-	}
-
-	return subnets, nil
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
@@ -1058,53 +925,6 @@ func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *
 		}
 	}
 	return value, nil
-}
-
-func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {
-	matchString := fmt.Sprintf("Router already has a port on subnet %s", subnetID)
-
-	var gopherCloud400Err gophercloud.ErrDefault400
-	if !errors.As(err, &gopherCloud400Err) || !strings.Contains(string(gopherCloud400Err.Body), matchString) {
-		return err
-	}
-
-	return nil
-}
-
-func ValidateCredentials(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) error {
-	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
-	if err != nil {
-		return err
-	}
-	_, err = getAvailabilityZones(computeClient)
-
-	return err
-}
-
-func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region string, caBundle *x509.CertPool, flavorName string) (*provider.NodeCapacity, error) {
-	flavors, err := GetFlavors(authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, flavor := range flavors {
-		if strings.EqualFold(flavor.Name, flavorName) {
-			capacity := provider.NewNodeCapacity()
-			capacity.WithCPUCount(flavor.VCPUs)
-
-			if err := capacity.WithMemory(flavor.RAM, "M"); err != nil {
-				return nil, fmt.Errorf("failed to parse memory size: %w", err)
-			}
-
-			if err := capacity.WithStorage(flavor.Disk, "G"); err != nil {
-				return nil, fmt.Errorf("failed to parse disk size: %w", err)
-			}
-
-			return capacity, nil
-		}
-	}
-
-	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
 }
 
 func splitString(s string) []string {
