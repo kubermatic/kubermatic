@@ -24,9 +24,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
@@ -918,4 +920,44 @@ func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *
 		}
 	}
 	return value, nil
+}
+
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
+func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+	flavors, err := getFlavors(authClient, region)
+	if err != nil {
+		return nil, err
+	}
+
+	return flavors, nil
+}
+
+func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region string, caBundle *x509.CertPool, flavorName string) (*provider.NodeCapacity, error) {
+	flavors, err := GetFlavors(authURL, region, credentials, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, flavor := range flavors {
+		if strings.EqualFold(flavor.Name, flavorName) {
+			capacity := provider.NewNodeCapacity()
+			capacity.WithCPUCount(flavor.VCPUs)
+
+			if err := capacity.WithMemory(flavor.RAM, "M"); err != nil {
+				return nil, fmt.Errorf("failed to parse memory size: %w", err)
+			}
+
+			if err := capacity.WithStorage(flavor.Disk, "G"); err != nil {
+				return nil, fmt.Errorf("failed to parse disk size: %w", err)
+			}
+
+			return capacity, nil
+		}
+	}
+
+	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
 }
