@@ -45,8 +45,6 @@ type allowedOperatingSystems map[providerconfig.OperatingSystem]bool
 
 type ClusterBackupOptions struct {
 	// DefaultChecksumAlgorithm allows setting a default checksum algorithm used by Velero for uploading objects to S3.
-	// If the value is set as empty string "", no checksum will be calculated and attached to
-	// the request headers.
 	//
 	// Optional
 	DefaultChecksumAlgorithm *string `json:"defaultChecksumAlgorithm,omitempty"`
