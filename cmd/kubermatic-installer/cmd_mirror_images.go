@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
 	"path/filepath"
 	"strings"
 	"time"
@@ -32,9 +33,11 @@ import (
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -223,27 +226,6 @@ func CollectImageMatrix(
 				})
 
 				versionLogger.Debug("Collecting images…")
-
-				// Collect images without & with Konnectivity, as Konnectivity / OpenVPN can be switched in clusters
-				// at any time. Remove the non-Konnectivity option once OpenVPN option is finally removed.
-
-				imagesWithoutKonnectivity, err := images.GetImagesForVersion(
-					versionLogger,
-					clusterVersion,
-					cloudSpec,
-					cniPlugin,
-					false,
-					kubermaticConfig,
-					allAddons,
-					versions,
-					caBundle,
-					registryPrefix,
-				)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get images: %w", err)
-				}
-				imageList = append(imageList, imagesWithoutKonnectivity...)
-
 				imagesWithKonnectivity, err := images.GetImagesForVersion(
 					versionLogger,
 					clusterVersion,
@@ -383,7 +365,6 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 			var verb string
 			var count, fullCount int
-			var failedImages []string
 			if options.Archive {
 				logger.WithField("archive-path", options.ArchivePath).Info("🚀 Archiving images…")
 				count, fullCount, err = images.ArchiveImages(ctx, logger, options.ArchivePath, options.DryRun, sets.List(imageSet))
@@ -396,15 +377,9 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				}
 			} else {
 				logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
-				count, fullCount, failedImages, err = images.CopyImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
+				count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
 				if err != nil {
-					// Format failed images into a clean list
-					errorMsg := fmt.Sprintf("Failed to mirror all images: %s\nFailed images:\n", err)
-					for _, img := range failedImages {
-						errorMsg += fmt.Sprintf("  - %s\n", img)
-					}
-					errorMsg += "Please check the logs for more details or retry the failed images"
-					return errors.New(errorMsg)
+					return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", count, fullCount, err)
 				}
 
 				verb = "mirroring"

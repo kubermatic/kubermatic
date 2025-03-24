@@ -328,30 +328,31 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 	return nil
 }
 
-func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, []string, error) {
+func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
 	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
 	if err != nil {
-		return 0, 0, nil, fmt.Errorf("failed to generate list of images: %w", err)
+		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
 	}
 
 	if dryRun {
-		return 0, len(imageList), nil, nil
+		return 0, len(imageList), nil
 	}
+
 	var failedImages []string
 
 	for index, image := range imageList {
 		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
 			log.Errorf("Failed to copy image: %v", err)
-			failedImages = append(failedImages, image.Source)
+			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
 	}
 
 	successCount := len(imageList) - len(failedImages)
 	if len(failedImages) > 0 {
-		return successCount, len(imageList), failedImages, fmt.Errorf("%d/%d images could not be copied due to various reasons", len(failedImages), len(imageList))
+		return successCount, len(imageList), fmt.Errorf("failed images:\n%s", strings.Join(failedImages, "\n"))
 	}
 
-	return successCount, len(imageList), failedImages, nil
+	return successCount, len(imageList), nil
 }
 
 func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
