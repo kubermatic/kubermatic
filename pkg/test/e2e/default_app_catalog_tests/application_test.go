@@ -160,27 +160,27 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 			},
 		}
 	}
-	if applicationName == "falco" {
-		valuesBlock := `driver:
-  kind: modernEbpf`
-		application = appskubermaticv1.ApplicationInstallation{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      applicationInstallationName,
-				Namespace: applicationNamespace,
-			},
-			Spec: appskubermaticv1.ApplicationInstallationSpec{
-				Namespace: &appskubermaticv1.AppNamespaceSpec{
-					Name:   applicationNamespace,
-					Create: true,
-				},
-				ApplicationRef: appskubermaticv1.ApplicationRef{
-					Name:    applicationName,
-					Version: applicationVersion,
-				},
-				ValuesBlock: valuesBlock,
-			},
-		}
-	}
+	//if applicationName == "falco" {
+	//	valuesBlock := `driver:
+	//kind: modernEbpf`
+	//	application = appskubermaticv1.ApplicationInstallation{
+	//		ObjectMeta: metav1.ObjectMeta{
+	//			Name:      applicationInstallationName,
+	//			Namespace: applicationNamespace,
+	//		},
+	//		Spec: appskubermaticv1.ApplicationInstallationSpec{
+	//			Namespace: &appskubermaticv1.AppNamespaceSpec{
+	//				Name:   applicationNamespace,
+	//				Create: true,
+	//			},
+	//			ApplicationRef: appskubermaticv1.ApplicationRef{
+	//				Name:    applicationName,
+	//				Version: applicationVersion,
+	//			},
+	//			ValuesBlock: valuesBlock,
+	//		},
+	//	}
+	//}
 
 	tLogger.Infof("Creating an ApplicationInstallation")
 
@@ -385,7 +385,8 @@ func createUserCluster(
 	testJig.ClusterJig.
 		WithTestName("application-test").
 		WithKonnectivity(true).
-		WithAnnotations(map[string]string{})
+		WithAnnotations(map[string]string{}).
+		WithProxyMode("ebpf")
 
 	cleanup := func() {
 		testJig.Cleanup(ctx, t, true)
