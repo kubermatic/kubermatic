@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
 	"path/filepath"
 	"strings"
 	"time"
@@ -32,9 +33,11 @@ import (
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -56,6 +59,7 @@ type MirrorImagesOptions struct {
 	ArchivePath               string
 	LoadFrom                  string
 	DryRun                    bool
+	ListImagesOnly            bool
 
 	AddonsPath  string
 	AddonsImage string
@@ -113,7 +117,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides in the referenced KubermaticConfiguration to reuse a configuration that already specifies overrides (note that custom tags will still be observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
-
+	cmd.PersistentFlags().BoolVar(&opt.ListImagesOnly, "list-images-only", false, "If set, only list the images without performing any other actions.")
 	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
 
@@ -350,6 +354,17 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 				imageSet.Insert(chartImage)
 				imageSet.Insert(sysChart.WorkloadImages...)
+			}
+
+			// Log all collected images if ListOnly is enabled
+			if options.ListImagesOnly {
+				var imageList string
+				for _, image := range sets.List(imageSet) {
+					imageList += fmt.Sprintf("  - %s\n", image)
+				}
+				logger.Info("📋 Listing all collected images:\n", imageList)
+				logger.Info("✅ Finished listing images.")
+				return nil
 			}
 
 			if options.Archive && options.ArchivePath == "" {
