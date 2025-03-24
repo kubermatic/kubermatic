@@ -51,7 +51,7 @@ func NewExternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
 }
 
 // NewExternalWithProxy provides the same client connection provider
-// as NewExternal but with support to use a Proxy
+// as NewExternal but with support to use a Proxy.
 func NewExternalWithProxy(seedClient ctrlruntimeclient.Client, proxy string) (*Provider, error) {
 	return &Provider{
 		seedClient:         seedClient,

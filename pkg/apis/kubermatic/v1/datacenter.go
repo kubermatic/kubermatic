@@ -318,7 +318,7 @@ type SeedSpec struct {
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
-	// Optional: ManagementProxySettings can be used if the KubeAPI of the user clusters
+	// ManagementProxySettings can be used if the KubeAPI of the user clusters
 	// will not be directly available from kkp and a proxy in between should be used
 	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
 }
@@ -1182,11 +1182,11 @@ type KubeLBDatacenterSettings struct {
 }
 
 type ManagementProxySettings struct {
-	// Optional: If set, the proxy will be used
+	// If set, the proxy will be used
 	ProxyHost string `json:"proxyHost,omitempty"`
-	// Optional: the proxies port to be used
+	// the proxies port to be used
 	ProxyPort *int32 `json:"proxyPort,omitempty"`
-	// Optional: the protocol to use ("http", "https", and "socks5" schemes are supported)
+	// the protocol to use ("http", "https", and "socks5" schemes are supported)
 	ProxyProtocol string `json:"proxyProtocol,omitempty"`
 }
 
