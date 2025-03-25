@@ -189,6 +189,37 @@ type HelmRelease struct {
 	Info *HelmReleaseInfo `json:"info,omitempty"`
 }
 
+// HelmReleaseStatus is the status of a Helm release. This type mirrors
+// helm/pkg/release/v1.Status, but was copied here to avoid a very costly dependency.
+// Since this field is only used in the status of an App, no user should ever
+// have to set it manually.
+//
+// +kubebuilder:validation:Enum=unknown;deployed;uninstalled;superseded;failed;uninstalling;pending-install;pending-upgrade;pending-rollback
+type HelmReleaseStatus string
+
+// Describe the status of a release
+// NOTE: Make sure to update cmd/helm/status.go when adding or modifying any of these statuses.
+const (
+	// HelmReleaseStatusUnknown indicates that a release is in an uncertain state.
+	HelmReleaseStatusUnknown HelmReleaseStatus = "unknown"
+	// HelmReleaseStatusDeployed indicates that the release has been pushed to Kubernetes.
+	HelmReleaseStatusDeployed HelmReleaseStatus = "deployed"
+	// HelmReleaseStatusUninstalled indicates that a release has been uninstalled from Kubernetes.
+	HelmReleaseStatusUninstalled HelmReleaseStatus = "uninstalled"
+	// HelmReleaseStatusSuperseded indicates that this release object is outdated and a newer one exists.
+	HelmReleaseStatusSuperseded HelmReleaseStatus = "superseded"
+	// HelmReleaseStatusFailed indicates that the release was not successfully deployed.
+	HelmReleaseStatusFailed HelmReleaseStatus = "failed"
+	// HelmReleaseStatusUninstalling indicates that an uninstall operation is underway.
+	HelmReleaseStatusUninstalling HelmReleaseStatus = "uninstalling"
+	// HelmReleaseStatusPendingInstall indicates that an install operation is underway.
+	HelmReleaseStatusPendingInstall HelmReleaseStatus = "pending-install"
+	// HelmReleaseStatusPendingUpgrade indicates that an upgrade operation is underway.
+	HelmReleaseStatusPendingUpgrade HelmReleaseStatus = "pending-upgrade"
+	// HelmReleaseStatusPendingRollback indicates that a rollback operation is underway.
+	HelmReleaseStatusPendingRollback HelmReleaseStatus = "pending-rollback"
+)
+
 // HelmReleaseInfo describes release information.
 // tech note: we can not use release.Info from Helm because the underlying type used for time has no json tag.
 type HelmReleaseInfo struct {
@@ -205,7 +236,7 @@ type HelmReleaseInfo struct {
 	Description string `json:"description,omitempty"`
 
 	// Status is the current state of the release.
-	Status string `json:"status,omitempty"`
+	Status HelmReleaseStatus `json:"status,omitempty"`
 
 	// Notes is  the rendered templates/NOTES.txt if available.
 	Notes string `json:"notes,omitempty"`
