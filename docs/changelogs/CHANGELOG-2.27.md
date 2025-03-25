@@ -2,6 +2,25 @@
 
 - [v2.27.0](#v2270)
 - [v2.27.1](#v2271)
+- [v2.27.2](#v2272)
+
+## v2.27.2
+
+**GitHub release: [v2.27.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.2)
+
+### Bugfixes
+
+- Edge Provider: Fix a bug where clusters were stuck in `creating` phase due to wrongfully waiting for Machine Controller's health status ([#14257](https://github.com/kubermatic/kubermatic/pull/14257))
+- Fix a bug that prevents configuring `resources` in KNP deployments ([#14205](https://github.com/kubermatic/kubermatic/pull/14205))
+- Fix a Go panic when using git-source in Applications ([#14230](https://github.com/kubermatic/kubermatic/pull/14230))
+- Fix an issue where the CBSL status was not updating due to the missing cluster-backup-storage-controller in the master controller manager ([#14256](https://github.com/kubermatic/kubermatic/pull/14256))
+- Fix mirroring the images of a single Kubernetes version ([#14252](https://github.com/kubermatic/kubermatic/pull/14252))
+- It is now possible to configure the sidecar configuration for a given cluster while the auditLogging field is enabled at the Seed level. Previously, if the auditLogging field was enabled at the Seed level, it would override the same field at the Cluster level, resulting in the removal of the sidecar configuration ([#14145](https://github.com/kubermatic/kubermatic/pull/14145))
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7217](https://github.com/kubermatic/dashboard/pull/7217))
+
+### Updates
+
+- Security: Update nginx-ingress-controller to 1.11.5, fixing CVE-2025-1097, CVE-2025-1098, CVE-2025-1974, CVE-2025-24513, CVE-2025-24514 ([#14274](https://github.com/kubermatic/kubermatic/pull/14274))
 
 ## v2.27.1
 
