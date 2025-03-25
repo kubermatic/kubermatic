@@ -6,6 +6,23 @@
 - [v2.26.3](#v2263)
 - [v2.26.4](#v2264)
 - [v2.26.5](#v2265)
+- [v2.26.6](#v2266)
+
+## [v2.26.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.6)
+
+### Breaking Changes
+
+- VSphere credentials are now handled properly. For existing usercluster this will change the credentials in machine-controller and osm to `infraManagementUser` and  `infraManagementPassword` instead of `username` and `password` when specified. The latter one was always mounted to the before mentioned depl- Edge Provider: Fix a bug where clusters were stuck in `creating` phase due to wrongfully waiting for Machine Controller's health status ([#14257](https://github.com/kubermatic/kubermatic/pull/14257))
+
+### Bugfixes
+
+- Fix a Go panic when using git-source in Applications ([#14231](https://github.com/kubermatic/kubermatic/pull/14231))
+- Fix an issue where the CBSL status was not updating due to the missing cluster-backup-storage-controller in the master controller manager ([#14255](https://github.com/kubermatic/kubermatic/pull/14255))
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7217](https://github.com/kubermatic/dashboard/pull/7217)) 
+
+### Updates
+
+- Security: Update nginx-ingress-controller to 1.11.5, fixing CVE-2025-1097, CVE-2025-1098, CVE-2025-1974, CVE-2025-24513, CVE-2025-24514 ([#14275](https://github.com/kubermatic/kubermatic/pull/14275))
 
 ## v2.26.5
 
