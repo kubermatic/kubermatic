@@ -26,9 +26,9 @@ import (
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vapi/tags"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 // Folder represents a vsphere folder.

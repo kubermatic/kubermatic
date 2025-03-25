@@ -19,6 +19,7 @@ package cloudconfig
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/aws"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/azure"
@@ -27,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vmwareclouddirector"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig/vsphere"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	"k8c.io/reconciler/pkg/reconciling"
 

@@ -29,11 +29,11 @@ import (
 
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

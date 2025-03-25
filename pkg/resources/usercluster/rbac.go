@@ -19,8 +19,8 @@ package usercluster
 import (
 	"fmt"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

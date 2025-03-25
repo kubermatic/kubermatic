@@ -21,8 +21,8 @@ package seedconstraintsynchronizer
 import (
 	"context"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	eeutil "k8c.io/kubermatic/v2/pkg/ee/constraint-controller"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func (r *reconciler) filterClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {

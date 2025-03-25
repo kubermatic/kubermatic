@@ -23,6 +23,7 @@ import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
@@ -41,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	crdutil "k8c.io/kubermatic/v2/pkg/util/crd"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"

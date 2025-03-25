@@ -25,6 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -34,7 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"

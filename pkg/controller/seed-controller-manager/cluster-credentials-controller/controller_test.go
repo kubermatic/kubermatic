@@ -20,12 +20,12 @@ import (
 	"context"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"

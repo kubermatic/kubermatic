@@ -24,10 +24,10 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

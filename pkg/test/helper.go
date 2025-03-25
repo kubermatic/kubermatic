@@ -29,11 +29,11 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/sdk/semver"
 )
 
 func CompareOutput(t *testing.T, name, output string, update bool, suffix string) {

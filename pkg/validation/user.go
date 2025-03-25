@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1/helper"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

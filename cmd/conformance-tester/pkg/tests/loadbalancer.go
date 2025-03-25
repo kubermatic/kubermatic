@@ -28,9 +28,9 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

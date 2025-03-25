@@ -21,10 +21,10 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

@@ -26,6 +26,8 @@ import (
 	"dario.cat/mergo"
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/cni/cilium"
@@ -33,8 +35,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

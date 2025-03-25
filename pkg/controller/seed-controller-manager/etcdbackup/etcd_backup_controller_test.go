@@ -27,6 +27,8 @@ import (
 
 	"github.com/go-test/deep"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -38,8 +40,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/sdk/semver"
 
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"

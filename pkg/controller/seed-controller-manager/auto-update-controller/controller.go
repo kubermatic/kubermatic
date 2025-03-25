@@ -22,13 +22,13 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/sdk/semver"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"

@@ -29,8 +29,8 @@ import (
 	"errors"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	resourcequotadefaultcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/default-quota-controller"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

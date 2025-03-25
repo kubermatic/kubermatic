@@ -30,12 +30,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

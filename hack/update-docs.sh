@@ -34,7 +34,7 @@ go mod vendor
 sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"
 
-KKPV1=vendor/k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1
+KKPV1=vendor/k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1
 
 # remove omitempty tags from structs so that genyaml will not skip fields
 $sed -i "s/,omitempty/,$dummy/g" $KKPV1/*.go vendor/k8s.io/api/core/v1/*.go

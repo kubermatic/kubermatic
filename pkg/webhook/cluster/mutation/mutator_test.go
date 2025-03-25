@@ -23,6 +23,8 @@ import (
 
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -30,8 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/sdk/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

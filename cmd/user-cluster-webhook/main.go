@@ -24,14 +24,14 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	applicationinstallationmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/mutation"
 	applicationinstallationvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationinstallation/validation"
 	machinevalidation "k8c.io/kubermatic/v2/pkg/webhook/machine/validation"
-	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"

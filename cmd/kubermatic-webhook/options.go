@@ -24,13 +24,13 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/webhook"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	"k8s.io/klog/v2"
 )

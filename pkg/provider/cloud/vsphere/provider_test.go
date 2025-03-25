@@ -23,9 +23,9 @@ import (
 
 	"github.com/vmware/govmomi/simulator"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 )
 

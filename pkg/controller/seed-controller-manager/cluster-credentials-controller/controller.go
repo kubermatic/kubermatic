@@ -22,14 +22,14 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	"k8c.io/kubermatic/v2/sdk/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"

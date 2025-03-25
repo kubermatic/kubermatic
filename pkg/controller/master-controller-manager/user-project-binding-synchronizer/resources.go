@@ -17,8 +17,8 @@ limitations under the License.
 package userprojectbindingsynchronizer
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func userProjectBindingReconcilerFactory(userProjectBinding *kubermaticv1.UserProjectBinding) reconciling.NamedUserProjectBindingReconcilerFactory {

@@ -30,8 +30,8 @@ import (
 	gogitssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"golang.org/x/crypto/ssh"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
-	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

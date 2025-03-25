@@ -17,7 +17,7 @@ limitations under the License.
 package helper
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 )

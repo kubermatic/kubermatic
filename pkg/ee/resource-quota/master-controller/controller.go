@@ -30,9 +30,9 @@ import (
 
 	"go.uber.org/zap"
 
+	k8cequality "k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
-	k8cequality "k8c.io/kubermatic/v2/sdk/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

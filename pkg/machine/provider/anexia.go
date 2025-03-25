@@ -19,7 +19,7 @@ package provider
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	anexiaprovider "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia"
 	anexia "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"

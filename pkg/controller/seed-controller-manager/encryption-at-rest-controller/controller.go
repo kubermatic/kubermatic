@@ -25,6 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
@@ -32,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"k8c.io/kubermatic/v2/sdk/semver"
+	"k8c.io/kubermatic/sdk/v2/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -21,8 +21,8 @@ package constrainttemplatecontroller
 import (
 	"context"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	eeutil "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func (r *reconciler) getClustersForConstraintTemplate(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ClusterList, error) {
