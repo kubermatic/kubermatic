@@ -140,26 +140,26 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		},
 	}
 
-	if applicationName == "cert-manager" {
-		valuesBlock := `installCRDs: true`
-		application = appskubermaticv1.ApplicationInstallation{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      applicationInstallationName,
-				Namespace: applicationNamespace,
-			},
-			Spec: appskubermaticv1.ApplicationInstallationSpec{
-				Namespace: &appskubermaticv1.AppNamespaceSpec{
-					Name:   applicationNamespace,
-					Create: true,
-				},
-				ApplicationRef: appskubermaticv1.ApplicationRef{
-					Name:    applicationName,
-					Version: applicationVersion,
-				},
-				ValuesBlock: valuesBlock,
-			},
-		}
-	}
+	//if applicationName == "cert-manager" {
+	//	valuesBlock := `installCRDs: true`
+	//	application = appskubermaticv1.ApplicationInstallation{
+	//		ObjectMeta: metav1.ObjectMeta{
+	//			Name:      applicationInstallationName,
+	//			Namespace: applicationNamespace,
+	//		},
+	//		Spec: appskubermaticv1.ApplicationInstallationSpec{
+	//			Namespace: &appskubermaticv1.AppNamespaceSpec{
+	//				Name:   applicationNamespace,
+	//				Create: true,
+	//			},
+	//			ApplicationRef: appskubermaticv1.ApplicationRef{
+	//				Name:    applicationName,
+	//				Version: applicationVersion,
+	//			},
+	//			ValuesBlock: valuesBlock,
+	//		},
+	//	}
+	//}
 	if applicationName == "falco" {
 		valuesBlock := `
 falco:
