@@ -32,11 +32,9 @@ import (
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources"
-
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -250,6 +248,27 @@ func CollectImageMatrix(
 	return imageList, nil
 }
 
+// listImagesOnly logs all collected images or saves them to a file if specified.
+func listImagesOnly(imageSet sets.Set[string], logger *logrus.Logger, outputFile string) error {
+	var imageList string
+	for _, image := range sets.List(imageSet) {
+		imageList += fmt.Sprintf("  - %s\n", image)
+	}
+
+	if outputFile != "" {
+		logger.Info("📋 Saving collected images to file:", outputFile)
+		err := os.WriteFile(outputFile, []byte(imageList), 0o644)
+		if err != nil {
+			return fmt.Errorf("❌ Failed to save image list to file: %w", err)
+		}
+	} else {
+		logger.Info("📋 Listing all collected images:\n" + imageList)
+	}
+
+	logger.Info("✅ Finished listing images.")
+
+	return nil
+}
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		if options.OutputFile != "" && !options.ListImagesOnly {
@@ -363,24 +382,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 			// Log or save all collected images if ListImagesOnly is enabled
 			if options.ListImagesOnly {
-				var imageList string
-				for _, image := range sets.List(imageSet) {
-					imageList += fmt.Sprintf("  - %s\n", image)
-				}
-
-				// If --output-file is specified, save to file; otherwise, log to console
-				if options.OutputFile != "" {
-					logger.Info("📋 Saving collected images to file: ", options.OutputFile)
-					err := os.WriteFile(options.OutputFile, []byte(imageList), 0o644)
-					if err != nil {
-						return fmt.Errorf("failed to save image list to file: %w", err)
-					}
-				} else {
-					logger.Info("📋 Listing all collected images:\n", imageList)
-				}
-
-				logger.Info("✅ Finished listing images.")
-				return nil
+				return listImagesOnly(imageSet, logger, options.OutputFile)
 			}
 
 			if options.Archive && options.ArchivePath == "" {
