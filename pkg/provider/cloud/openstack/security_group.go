@@ -43,15 +43,6 @@ func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygrou
 	return secGroups, nil
 }
 
-func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
-	for _, sg := range securityGroups {
-		if err := validateSecurityGroupExists(netClient, sg); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func validateSecurityGroupExists(netClient *gophercloud.ServiceClient, securityGroup string) error {
 	results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: securityGroup})
 	if err != nil {
