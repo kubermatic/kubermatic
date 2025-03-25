@@ -87,7 +87,7 @@ func main() {
 	})
 
 	rootCmd.PersistentFlags().BoolVarP(&options.Verbose, "verbose", "v", options.Verbose, "enable more verbose output")
-	rootCmd.PersistentFlags().VarP(&options.LogFormat, "output", "o", fmt.Sprintf("write logs in a specific output format. supported formats: %s", log.AvailableLogrusFormats.String()))
+	rootCmd.PersistentFlags().Var(&options.LogFormat, "log-format", fmt.Sprintf("write logs in a specific output format. supported formats: %s", log.AvailableLogrusFormats.String()))
 	rootCmd.PersistentFlags().StringVar(&options.ChartsDirectory, "charts-directory", "", "filesystem path to the Kubermatic Helm charts (defaults to charts/)")
 
 	addCommands(rootCmd, logger, versions)
