@@ -34,8 +34,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v2/pkg/version"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -198,6 +200,51 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 	return tempDir, nil
 }
 
+// CollectImageMatrix aggregates images for all cluster versions, cloud providers, and CNI plugins,
+// including both Konnectivity and non-Konnectivity configurations.
+func CollectImageMatrix(
+	logger logrus.FieldLogger,
+	clusterVersions []*version.Version,
+	kubermaticConfig *kubermaticv1.KubermaticConfiguration,
+	allAddons map[string]*addonutil.Addon,
+	versions kubermaticversion.Versions,
+	caBundle resources.CABundle,
+	registryPrefix string,
+) ([]string, error) {
+	var imageList []string
+	for _, clusterVersion := range clusterVersions {
+		for _, cloudSpec := range images.GetCloudSpecs() {
+			for _, cniPlugin := range images.GetCNIPlugins() {
+				versionLogger := logger.WithFields(logrus.Fields{
+					"version":     clusterVersion.Version.String(),
+					"provider":    cloudSpec.ProviderName,
+					"cni-plugin":  string(cniPlugin.Type),
+					"cni-version": cniPlugin.Version,
+				})
+
+				versionLogger.Debug("Collecting images…")
+				imagesWithKonnectivity, err := images.GetImagesForVersion(
+					versionLogger,
+					clusterVersion,
+					cloudSpec,
+					cniPlugin,
+					true,
+					kubermaticConfig,
+					allAddons,
+					versions,
+					caBundle,
+					registryPrefix,
+				)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get images: %w", err)
+				}
+				imageList = append(imageList, imagesWithKonnectivity...)
+			}
+		}
+	}
+	return imageList, nil
+}
+
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -236,57 +283,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 			// Using a set here for deduplication
 			imageSet := sets.New[string]()
-			for _, clusterVersion := range clusterVersions {
-				for _, cloudSpec := range images.GetCloudSpecs() {
-					for _, cniPlugin := range images.GetCNIPlugins() {
-						versionLogger := logger.WithFields(logrus.Fields{
-							"version":     clusterVersion.Version.String(),
-							"provider":    cloudSpec.ProviderName,
-							"cni-plugin":  string(cniPlugin.Type),
-							"cni-version": cniPlugin.Version,
-						})
 
-						versionLogger.Debug("Collecting images…")
-
-						// Collect images without & with Konnectivity, as Konnecctivity / OpenVPN can be switched in clusters
-						// at any time. Remove the non-Konnectivity option once OpenVPN option is finally removed.
-
-						imagesWithoutKonnectivity, err := images.GetImagesForVersion(
-							versionLogger,
-							clusterVersion,
-							cloudSpec,
-							cniPlugin,
-							false,
-							kubermaticConfig,
-							allAddons,
-							versions,
-							caBundle,
-							options.RegistryPrefix,
-						)
-						if err != nil {
-							return fmt.Errorf("failed to get images: %w", err)
-						}
-						imageSet.Insert(imagesWithoutKonnectivity...)
-
-						imagesWithKonnectivity, err := images.GetImagesForVersion(
-							versionLogger,
-							clusterVersion,
-							cloudSpec,
-							cniPlugin,
-							true,
-							kubermaticConfig,
-							allAddons,
-							versions,
-							caBundle,
-							options.RegistryPrefix,
-						)
-						if err != nil {
-							return fmt.Errorf("failed to get images: %w", err)
-						}
-						imageSet.Insert(imagesWithKonnectivity...)
-					}
-				}
+			imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix)
+			if err != nil {
+				return err
 			}
+			imageSet.Insert(imageList...)
 
 			// Populate the imageSet with images specified in the KubermaticConfiguration's MirrorImages field.
 			// This ensures that all required images for mirroring are included in the set for further processing.
