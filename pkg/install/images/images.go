@@ -60,6 +60,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
+	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -338,13 +339,21 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 		return 0, len(imageList), nil
 	}
 
+	var failedImages []string
+
 	for index, image := range imageList {
 		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
-			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+			log.Errorf("Failed to copy image: %v", err)
+			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
 	}
 
-	return len(imageList), len(imageList), nil
+	successCount := len(imageList) - len(failedImages)
+	if len(failedImages) > 0 {
+		return successCount, len(imageList), fmt.Errorf("failed images:\n%s", strings.Join(failedImages, "\n"))
+	}
+
+	return successCount, len(imageList), nil
 }
 
 func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
@@ -362,7 +371,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 
 	numTries := 0
 	backoff := wait.Backoff{
-		Steps:    10,
+		Steps:    3,
 		Duration: 500 * time.Millisecond,
 		Factor:   1.0,
 		Jitter:   0.1,
@@ -557,49 +566,150 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 
 func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, seed *kubermaticv1.Seed) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
-	mockObjects := []runtime.Object{
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.ApiserverServiceName,
-				Namespace: mockNamespaceName,
-			},
-			Spec: corev1.ServiceSpec{
-				Ports:     []corev1.ServicePort{{NodePort: 99}},
-				ClusterIP: "192.0.2.10",
-			},
+	caBundleConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.CABundleConfigMapName,
+			Namespace: mockNamespaceName,
 		},
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNServerServiceName,
-				Namespace: mockNamespaceName,
-			},
-			Spec: corev1.ServiceSpec{
-				Ports:     []corev1.ServicePort{{NodePort: 96}},
-				ClusterIP: "192.0.2.2",
-			},
+	}
+	prometheusConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.PrometheusConfigConfigMapName,
+			Namespace: mockNamespaceName,
 		},
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.DNSResolverServiceName,
-				Namespace: mockNamespaceName,
-			},
-			Spec: corev1.ServiceSpec{
-				Ports:     []corev1.ServicePort{{NodePort: 98}},
-				ClusterIP: "192.0.2.11",
-			},
+	}
+	dnsResolverConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.DNSResolverConfigMapName,
+			Namespace: mockNamespaceName,
 		},
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.KonnectivityProxyServiceName,
-				Namespace: mockNamespaceName,
-			},
-			Spec: corev1.ServiceSpec{
-				Ports:     []corev1.ServicePort{{Name: "secure", Port: 443, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(8132)}},
-				ClusterIP: "192.0.2.20",
-			},
+	}
+	openvpnClientConfigsConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.OpenVPNClientConfigsConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	auditConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.AuditConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	admissionControlConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.AdmissionControlConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	konnectivityKubeApiserverEgressConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.KonnectivityKubeApiserverEgress,
+			Namespace: mockNamespaceName,
+		},
+	}
+	configMapList := &corev1.ConfigMapList{
+		Items: []corev1.ConfigMap{
+			caBundleConfigMap,
+			prometheusConfigMap,
+			dnsResolverConfigMap,
+			openvpnClientConfigsConfigMap,
+			auditConfigMap,
+			admissionControlConfigMap,
+			konnectivityKubeApiserverEgressConfigMap,
+		},
+	}
+	apiServerService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.ApiserverServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 99}},
+			ClusterIP: "192.0.2.10",
+		},
+	}
+	openvpnserverService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.OpenVPNServerServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 96}},
+			ClusterIP: "192.0.2.2",
+		},
+	}
+	dnsService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.DNSResolverServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{NodePort: 98}},
+			ClusterIP: "192.0.2.11",
+		},
+	}
+	konnectivityService := corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.KonnectivityProxyServiceName,
+			Namespace: mockNamespaceName,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{{Name: "secure", Port: 443, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(8132)}},
+			ClusterIP: "192.0.2.20",
 		},
 	}
 
+	serviceList := &corev1.ServiceList{
+		Items: []corev1.Service{
+			apiServerService,
+			openvpnserverService,
+			dnsService,
+			konnectivityService,
+		},
+	}
+	secretList := createNamedSecrets([]string{
+		resources.CloudConfigSeedSecretName,
+		resources.CASecretName,
+		resources.TokensSecretName,
+		resources.ApiserverTLSSecretName,
+		resources.KubeletClientCertificatesSecretName,
+		resources.ServiceAccountKeySecretName,
+		resources.ApiserverEtcdClientCertificateSecretName,
+		resources.ApiserverFrontProxyClientCertificateSecretName,
+		resources.EtcdTLSCertificateSecretName,
+		resources.MachineControllerKubeconfigSecretName,
+		resources.ControllerManagerKubeconfigSecretName,
+		resources.SchedulerKubeconfigSecretName,
+		resources.KubeStateMetricsKubeconfigSecretName,
+		resources.OpenVPNCASecretName,
+		resources.OpenVPNServerCertificatesSecretName,
+		resources.OpenVPNClientCertificatesSecretName,
+		resources.FrontProxyCASecretName,
+		resources.KubeletDnatControllerKubeconfigSecretName,
+		resources.PrometheusApiserverClientCertificateSecretName,
+		resources.MetricsServerKubeconfigSecretName,
+		resources.MachineControllerWebhookServingCertSecretName,
+		resources.InternalUserClusterAdminKubeconfigSecretName,
+		resources.KubernetesDashboardKubeconfigSecretName,
+		metricsserver.ServingCertSecretName,
+		resources.UserSSHKeys,
+		resources.AdminKubeconfigSecretName,
+		resources.GatekeeperWebhookServerCertSecretName,
+		resources.OperatingSystemManagerKubeconfigSecretName,
+		resources.KonnectivityKubeconfigSecretName,
+		resources.KonnectivityProxyTLSSecretName,
+		resources.OperatingSystemManagerWebhookKubeconfigSecretName,
+		resources.OperatingSystemManagerWebhookServingCertSecretName,
+		resources.KubeVirtCSISecretName,
+		resources.KubeVirtInfraSecretName,
+		resources.GoogleServiceAccountSecretName,
+		resources.VMwareCloudDirectorCSIKubeconfigSecretName,
+		resources.CSICloudConfigSecretName,
+		resources.VMwareCloudDirectorCSISecretName,
+		resources.KubeLBCCMKubeconfigSecretName,
+		resources.KubeLBManagerKubeconfigSecretName,
+	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
 			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
@@ -612,12 +722,12 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
 		},
 	}
+	objects := []runtime.Object{configMapList, secretList, serviceList}
 
 	clusterSemver, err := ksemver.NewSemver(clusterVersion.Version.String())
 	if err != nil {
 		return nil, err
 	}
-
 	fakeCluster := &kubermaticv1.Cluster{}
 	fakeCluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: "project"}
 	fakeCluster.Spec.Cloud = cloudSpec
@@ -635,7 +745,8 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		Enabled: true,
 	}
 
-	if cloudSpec.Openstack != nil || cloudSpec.Hetzner != nil || cloudSpec.Azure != nil || cloudSpec.VSphere != nil || cloudSpec.Anexia != nil || cloudSpec.Kubevirt != nil {
+	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil ||
+		fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil || fakeCluster.Spec.Cloud.Kubevirt != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
@@ -653,7 +764,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Status.Versions.ControllerManager = *clusterSemver
 	fakeCluster.Status.Versions.Scheduler = *clusterSemver
 
-	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(mockObjects...).Build()
+	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 
 	meteringConfig := &kubermaticv1.MeteringConfiguration{
 		RetentionDays:    defaulting.DefaultMeteringRetentionDays,
@@ -681,6 +792,20 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithCABundle(caBundle).
 		WithKonnectivityEnabled(konnectivityEnabled).
 		Build(), nil
+}
+
+func createNamedSecrets(secretNames []string) *corev1.SecretList {
+	secretList := corev1.SecretList{}
+	for _, secretName := range secretNames {
+		secret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: mockNamespaceName,
+			},
+		}
+		secretList.Items = append(secretList.Items, secret)
+	}
+	return &secretList
 }
 
 func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, versionFilter string) ([]*version.Version, error) {
@@ -892,6 +1017,8 @@ func getVersionsFromKubermaticConfiguration(config *kubermaticv1.KubermaticConfi
 		versions = append(versions, &version.Version{
 			Version: v.Semver(),
 		})
+
+		return versions
 	}
 
 	return versions
