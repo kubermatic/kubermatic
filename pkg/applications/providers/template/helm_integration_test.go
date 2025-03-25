@@ -269,7 +269,7 @@ func TestHelmProvider(t *testing.T) {
 					t.Fatal("app.Status.HelmRelease should not be nil")
 				}
 
-				if app.Status.HelmRelease.Info.Status != string(release.StatusFailed) {
+				if app.Status.HelmRelease.Info.Status != appskubermaticv1.HelmReleaseStatus(release.StatusFailed) {
 					t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, app.Status.HelmRelease.Info.Status)
 				}
 			},
@@ -308,7 +308,7 @@ func TestHelmProvider(t *testing.T) {
 					t.Fatal("app.Status.HelmRelease should not be nil")
 				}
 
-				if app.Status.HelmRelease.Info.Status != string(release.StatusFailed) {
+				if app.Status.HelmRelease.Info.Status != appskubermaticv1.HelmReleaseStatus(release.StatusFailed) {
 					t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, app.Status.HelmRelease.Info.Status)
 				}
 			},

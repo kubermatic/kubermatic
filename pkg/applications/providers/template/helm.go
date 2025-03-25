@@ -119,7 +119,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 					LastDeployed:  metav1.Time(helmRelease.Info.LastDeployed),
 					Deleted:       metav1.Time(helmRelease.Info.Deleted),
 					Description:   helmRelease.Info.Description,
-					Status:        string(helmRelease.Info.Status),
+					Status:        appskubermaticv1.HelmReleaseStatus(helmRelease.Info.Status),
 					Notes:         helmRelease.Info.Notes,
 				},
 			}
@@ -166,7 +166,7 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 					LastDeployed:  metav1.Time(uninstallReleaseResponse.Release.Info.LastDeployed),
 					Deleted:       metav1.Time(uninstallReleaseResponse.Release.Info.Deleted),
 					Description:   uninstallReleaseResponse.Release.Info.Description,
-					Status:        string(uninstallReleaseResponse.Release.Info.Status),
+					Status:        appskubermaticv1.HelmReleaseStatus(uninstallReleaseResponse.Release.Info.Status),
 					Notes:         uninstallReleaseResponse.Release.Info.Notes,
 				},
 			}
