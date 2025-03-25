@@ -383,11 +383,9 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 			if err != nil {
 				return nil, fmt.Errorf("failed to create security group: %w", err)
 			}
-
 		} else {
 			return cluster, fmt.Errorf("failed to check security group: %w", err)
 		}
-
 	}
 
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {

@@ -23,7 +23,6 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
-	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/pagination"
 )
@@ -80,18 +79,4 @@ func isEndpointNotFoundErr(err error) bool {
 	// left side of the || to catch any error returned as pointer to struct (current case of gophercloud)
 	// right side of the || to catch any error returned as struct (in case...)
 	return errors.As(err, &endpointNotFoundErr) || errors.As(err, &gophercloud.ErrEndpointNotFound{})
-}
-
-func getAvailabilityZones(computeClient *gophercloud.ServiceClient) ([]osavailabilityzones.AvailabilityZone, error) {
-	allPages, err := osavailabilityzones.List(computeClient).AllPages()
-	if err != nil {
-		return nil, err
-	}
-
-	availabilityZones, err := osavailabilityzones.ExtractAvailabilityZones(allPages)
-	if err != nil {
-		return nil, err
-	}
-
-	return availabilityZones, nil
 }
