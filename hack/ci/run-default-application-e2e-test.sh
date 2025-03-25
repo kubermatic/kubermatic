@@ -28,7 +28,6 @@ echodate "Attempting to pre-warm Go build cache"
 APPLICATION_INSTALLATION_NAME=""
 APPLICATION_NAME=""
 APPLICATION_NAMESPACE=""
-APPLICATION_VERSION=""
 APP_LABEL_KEY=""
 NAMES=""
 
@@ -45,10 +44,6 @@ while [[ "$#" -gt 0 ]]; do
     ;;
   --application-namespace)
     APPLICATION_NAMESPACE="$2"
-    shift 2
-    ;;
-  --application-version)
-    APPLICATION_VERSION="$2"
     shift 2
     ;;
   --app-label-key)
@@ -105,7 +100,12 @@ pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATI
 echodate "File path: $pathToFile"
 
 if [[ -s "$pathToFile" ]]; then
-  versions=$(grep -oP '(?<=version:\s)(\S+)' "$pathToFile")
+  versions=$(awk '/version:/ {print $2}' "$pathToFile")
+
+  # Extract the defaultValuesBlock using sed (this will capture everything after 'defaultValuesBlock:' until 'documentationURL')
+  defaultValuesBlock=$(sed -n '/defaultValuesBlock:/,/documentationURL/p' "$pathToFile")
+
+  echo "Processing default values block: $defaultValuesBlock"
 
   for version in $versions; do
     echo "Processing version: $version"
@@ -117,7 +117,8 @@ if [[ -s "$pathToFile" ]]; then
       -application-namespace "$APPLICATION_NAMESPACE" \
       -application-version "$version" \
       -app-label-key "$APP_LABEL_KEY" \
-      -names "$NAMES"
+      -names "$NAMES" \
+      -default-values-block "$defaultValuesBlock"
   done
 else
   echo "File is empty or does not exist."

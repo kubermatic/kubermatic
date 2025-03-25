@@ -55,6 +55,7 @@ var (
 	applicationVersion          string
 	key                         string
 	names                       string
+	defaultValuesBlock          string
 	credentials                 jig.AWSCredentials
 	logOptions                  = utils.DefaultLogOptions
 )
@@ -70,6 +71,7 @@ func init() {
 	flag.StringVar(&applicationVersion, "application-version", "", "version of an application from the default app catalog")
 	flag.StringVar(&key, "app-label-key", "", "a Kubernetes recommended label used for identifying the name of an application")
 	flag.StringVar(&names, "names", "", "names of the pods of an application from the default app catalog")
+	flag.StringVar(&defaultValuesBlock, "default-values-block", "", "default values block of an application from the default app catalog")
 	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
@@ -137,6 +139,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 				Name:    applicationName,
 				Version: applicationVersion,
 			},
+			ValuesBlock: defaultValuesBlock,
 		},
 	}
 
@@ -160,33 +163,33 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 	//		},
 	//	}
 	//}
-	if applicationName == "falco" {
-		valuesBlock := `
-falco:
-  driver:
-    enabled: true
-    driverType: "ebpf"
-  ebpfDriver:
-    enabled: true
-    program: "probe"`
-		application = appskubermaticv1.ApplicationInstallation{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      applicationInstallationName,
-				Namespace: applicationNamespace,
-			},
-			Spec: appskubermaticv1.ApplicationInstallationSpec{
-				Namespace: &appskubermaticv1.AppNamespaceSpec{
-					Name:   applicationNamespace,
-					Create: true,
-				},
-				ApplicationRef: appskubermaticv1.ApplicationRef{
-					Name:    applicationName,
-					Version: applicationVersion,
-				},
-				ValuesBlock: valuesBlock,
-			},
-		}
-	}
+	//	if applicationName == "falco" {
+	//		valuesBlock := `
+	//falco:
+	//  driver:
+	//    enabled: true
+	//    driverType: "ebpf"
+	//  ebpfDriver:
+	//    enabled: true
+	//    program: "probe"`
+	//		application = appskubermaticv1.ApplicationInstallation{
+	//			ObjectMeta: metav1.ObjectMeta{
+	//				Name:      applicationInstallationName,
+	//				Namespace: applicationNamespace,
+	//			},
+	//			Spec: appskubermaticv1.ApplicationInstallationSpec{
+	//				Namespace: &appskubermaticv1.AppNamespaceSpec{
+	//					Name:   applicationNamespace,
+	//					Create: true,
+	//				},
+	//				ApplicationRef: appskubermaticv1.ApplicationRef{
+	//					Name:    applicationName,
+	//					Version: applicationVersion,
+	//				},
+	//				ValuesBlock: valuesBlock,
+	//			},
+	//		}
+	//	}
 
 	tLogger.Infof("Creating an ApplicationInstallation")
 
