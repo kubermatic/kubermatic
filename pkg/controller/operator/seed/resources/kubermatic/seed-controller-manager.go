@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -191,12 +191,12 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createAddonsInitContainer(cfg.Spec.UserCluster.Addons, sharedAddonVolume, versions.Kubermatic),
+				createAddonsInitContainer(cfg.Spec.UserCluster.Addons, sharedAddonVolume, versions.KubermaticContainerTag),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
-					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.SeedController.DockerRepository + ":" + versions.KubermaticContainerTag,
 					Command: []string{"seed-controller-manager"},
 					Args:    args,
 					Env:     common.SeedProxyEnvironmentVars(seed.Spec.ProxySettings),

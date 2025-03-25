@@ -30,16 +30,16 @@ import (
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon/migrations"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/sdk/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/sdk/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -252,7 +252,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		addon,
 		kubermaticv1.AddonReconciledSuccessfully,
 		func(ctx context.Context) (*reconcile.Result, error) {
-			return kubermaticv1helper.ClusterReconcileWrapper(
+			return util.ClusterReconcileWrapper(
 				ctx,
 				r.Client,
 				r.workerName,
@@ -305,7 +305,7 @@ func (r *Reconciler) addonReconcileWrapper(
 	}
 
 	errs := []error{err}
-	err = kubermaticv1helper.UpdateAddonStatus(ctx, r.Client, addon, func(a *kubermaticv1.Addon) {
+	err = util.UpdateAddonStatus(ctx, r.Client, addon, func(a *kubermaticv1.Addon) {
 		r.setAddonCondition(a, conditionType, reconcilingStatus)
 		a.Status.Phase = getAddonPhase(a)
 	})
@@ -642,7 +642,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to create command: %w", err)
 	}
 
-	ver := r.versions.KubermaticCommit
+	ver := r.versions.GitVersion
 	lastSuccess := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
 
 	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
@@ -781,7 +781,7 @@ func (r *Reconciler) setAddonCondition(a *kubermaticv1.Addon, condType kubermati
 	condition.LastHeartbeatTime = now
 
 	if status == corev1.ConditionTrue {
-		condition.KubermaticVersion = r.versions.KubermaticCommit
+		condition.KubermaticVersion = r.versions.GitVersion
 	}
 
 	if a.Status.Conditions == nil {
@@ -802,7 +802,7 @@ func (r *Reconciler) csiAddonInUseStatus(ctx context.Context, cluster *kubermati
 	status, reason := r.checkCSIAddonInUse(ctx, cluster)
 	csiAddonInUse := kubermaticv1.ClusterCondition{
 		Status:            status,
-		KubermaticVersion: r.versions.Kubermatic,
+		KubermaticVersion: r.versions.GitVersion,
 		LastHeartbeatTime: metav1.Now(),
 		Reason:            reason,
 	}

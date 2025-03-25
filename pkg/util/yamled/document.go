@@ -23,7 +23,7 @@ import (
 
 	yaml "gopkg.in/yaml.v3"
 
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
+	"k8c.io/kubermatic/v2/sdk/apis/equality"
 )
 
 type Document struct {

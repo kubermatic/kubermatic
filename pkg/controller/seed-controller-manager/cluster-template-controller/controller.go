@@ -23,11 +23,11 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilcluster "k8c.io/kubermatic/v2/pkg/util/cluster"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -209,7 +209,7 @@ func (r *reconciler) createCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return fmt.Errorf("failed to create cluster: %w", err)
 	}
 
-	if err := helper.UpdateClusterStatus(ctx, r.seedClient, newCluster, func(c *kubermaticv1.Cluster) {
+	if err := util.UpdateClusterStatus(ctx, r.seedClient, newCluster, func(c *kubermaticv1.Cluster) {
 		c.Status = *newStatus
 	}); err != nil {
 		return fmt.Errorf("failed to set cluster status: %w", err)

@@ -20,13 +20,13 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -317,7 +317,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			if err := fc.Create(ctx, tc.kcmDeploymentConfig.Create(td)); err != nil {
 				t.Fatalf("error occurred while creating KCM deployment: %v", err)
 			}
-			creators := GetDeploymentReconcilers(td, false, kubermatic.NewFakeVersions())
+			creators := GetDeploymentReconcilers(td, false, kubermatic.GetFakeVersions())
 			var ccmDeploymentFound bool
 			for _, c := range creators {
 				name, _ := c()

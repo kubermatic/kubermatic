@@ -22,7 +22,6 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni/cilium"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -32,6 +31,7 @@ import (
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling/modifier"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -343,7 +343,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	modifiers := []reconciling.ObjectModifier{
 		modifier.Ownership(config, common.OperatorName, r.scheme),
 		modifier.RelatedRevisionsLabels(ctx, r.Client),
-		modifier.VersionLabel(r.versions.Kubermatic),
+		modifier.VersionLabel(r.versions.GitVersion),
 	}
 
 	// add the image pull secret wrapper only when an image pull secret is provided

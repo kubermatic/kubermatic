@@ -19,7 +19,7 @@ package defaultapplicationcontroller
 import (
 	"testing"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/apps.kubermatic/v1"
 )
 
 var (

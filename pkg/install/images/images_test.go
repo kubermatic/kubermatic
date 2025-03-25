@@ -25,12 +25,12 @@ import (
 	"go.uber.org/zap"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -50,7 +50,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		t.Fatalf("failed to determine versions: %v", err)
 	}
 
-	kubermaticVersions := kubermatic.NewFakeVersions()
+	kubermaticVersions := kubermatic.GetFakeVersions()
 	clusterVersions := getLatestMinorVersions(config)
 
 	caBundle, err := certificates.NewCABundleFromFile("../../../charts/kubermatic-operator/static/ca-bundle.pem")
