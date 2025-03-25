@@ -22,9 +22,9 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"

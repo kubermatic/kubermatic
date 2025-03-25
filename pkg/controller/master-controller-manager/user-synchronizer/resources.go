@@ -17,8 +17,8 @@ limitations under the License.
 package usersynchronizer
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 func userReconcilerFactory(user *kubermaticv1.User) reconciling.NamedUserReconcilerFactory {

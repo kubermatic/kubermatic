@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"k8c.io/kubermatic/v2/sdk/semver"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"

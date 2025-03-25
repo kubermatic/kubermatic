@@ -10,7 +10,7 @@ replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-2022081
 // Pin prism-go-client to v0.4.0 as we have no way to test v0.5.1, as we don't have a working environment for Nutanix.
 replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cloud-native/prism-go-client v0.4.0
 
-replace k8c.io/kubermatic/v2/sdk => ./sdk
+replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 require (
 	dario.cat/mergo v1.0.1
@@ -96,7 +96,7 @@ require (
 	helm.sh/helm/v3 v3.14.3
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
-	k8c.io/kubermatic/v2/sdk v0.0.0-00010101000000-000000000000
+	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
 	k8c.io/machine-controller v1.61.0
 	k8c.io/operating-system-manager v1.6.1-0.20241118134103-5db575f65108
 	k8c.io/reconciler v0.5.0

@@ -23,7 +23,7 @@ package v1
 import (
 	"encoding/json"
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
-	"k8c.io/kubermatic/v2/sdk/semver"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/machine-controller/pkg/providerconfig/types"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"

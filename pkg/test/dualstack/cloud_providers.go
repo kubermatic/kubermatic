@@ -24,8 +24,8 @@ import (
 
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 	alibabatypes "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	awstypes "k8c.io/machine-controller/pkg/cloudprovider/provider/aws/types"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"

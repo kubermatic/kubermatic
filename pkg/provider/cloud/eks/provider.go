@@ -30,14 +30,14 @@ import (
 	ekstypes "github.com/aws/aws-sdk-go-v2/service/eks/types"
 	"github.com/aws/smithy-go"
 
+	apiv1 "k8c.io/kubermatic/sdk/v2/api/v1"
+	apiv2 "k8c.io/kubermatic/sdk/v2/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	awsprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/eks/authenticator"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-	apiv1 "k8c.io/kubermatic/v2/sdk/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/sdk/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/utils/ptr"

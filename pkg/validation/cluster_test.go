@@ -27,11 +27,11 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
 
+	apiv1 "k8c.io/kubermatic/sdk/v2/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
-	apiv1 "k8c.io/kubermatic/v2/sdk/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/sdk/semver"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"

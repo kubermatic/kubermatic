@@ -1,4 +1,4 @@
-module k8c.io/kubermatic/v2/sdk
+module k8c.io/kubermatic/sdk/v2
 
 go 1.22.3
 

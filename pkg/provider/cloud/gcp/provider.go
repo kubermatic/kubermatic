@@ -31,12 +31,12 @@ import (
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 
+	apiv1 "k8c.io/kubermatic/sdk/v2/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	apiv1 "k8c.io/kubermatic/v2/sdk/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
 )
 
 const (

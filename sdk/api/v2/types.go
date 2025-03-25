@@ -19,7 +19,7 @@ package v2
 import (
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/sdk/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
 // Constraint represents a gatekeeper Constraint

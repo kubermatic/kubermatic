@@ -19,7 +19,7 @@ package v1
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/sdk/semver"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
