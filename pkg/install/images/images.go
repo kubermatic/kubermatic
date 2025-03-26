@@ -339,13 +339,21 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 		return 0, len(imageList), nil
 	}
 
+	var failedImages []string
+
 	for index, image := range imageList {
 		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
-			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+			log.Errorf("Failed to copy image: %v", err)
+			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
 	}
 
-	return len(imageList), len(imageList), nil
+	successCount := len(imageList) - len(failedImages)
+	if len(failedImages) > 0 {
+		return successCount, len(imageList), fmt.Errorf("failed images:\n%s", strings.Join(failedImages, "\n"))
+	}
+
+	return successCount, len(imageList), nil
 }
 
 func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
@@ -363,7 +371,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 
 	numTries := 0
 	backoff := wait.Backoff{
-		Steps:    10,
+		Steps:    3,
 		Duration: 500 * time.Millisecond,
 		Factor:   1.0,
 		Jitter:   0.1,
