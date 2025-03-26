@@ -120,8 +120,6 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-require k8c.io/machine-controller v1.61.0
-
 require (
 	cel.dev/expr v0.16.0 // indirect
 	cloud.google.com/go/auth v0.9.4 // indirect
