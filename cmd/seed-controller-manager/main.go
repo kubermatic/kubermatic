@@ -32,8 +32,8 @@ import (
 	"go.uber.org/zap"
 
 	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -94,8 +94,8 @@ func main() {
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
 
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
+	versions := kubermatic.GetVersions()
+	cli.Hello(log, "Seed Controller-Manager", &versions)
 
 	electionName := controllerName + "-leader-election"
 	if options.workerName != "" {

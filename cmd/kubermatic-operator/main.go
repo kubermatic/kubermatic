@@ -24,7 +24,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
 	seedinit "k8c.io/kubermatic/v2/pkg/controller/operator/seed-init"
@@ -32,6 +32,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -86,8 +87,10 @@ func main() {
 		log.Fatal("-namespace is a mandatory flag")
 	}
 
-	v := kubermatic.NewDefaultVersions()
-	log.With("kubermatic", v.Kubermatic, "ui", v.UI).Infof("Moin, moin, I'm the Kubermatic %s Operator and these are the versions I work with.", v.KubermaticEdition)
+	versions := kubermatic.GetVersions()
+	helloLog := log.With("kubermatic-tag", versions.KubermaticContainerTag, "ui-tag", versions.UIContainerTag, "edition")
+
+	cli.Hello(helloLog, "Kubermatic Operator", &versions)
 
 	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
 		BaseContext: func() context.Context {

@@ -28,7 +28,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	applicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/application-installation-controller"
@@ -179,8 +179,8 @@ func main() {
 	kubermaticlog.Logger = log
 	reconciling.Configure(log)
 
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
+	versions := kubermatic.GetVersions()
+	cli.Hello(log, "User-Cluster Controller-Manager", &versions)
 
 	kubeconfigFlag := flag.Lookup("kubeconfig")
 	if kubeconfigFlag == nil { // Should not be possible.

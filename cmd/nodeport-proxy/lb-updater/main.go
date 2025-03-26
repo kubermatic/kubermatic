@@ -81,7 +81,7 @@ func main() {
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
-	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug, nil)
+	cli.Hello(log, "LoadBalancer Updater", nil)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

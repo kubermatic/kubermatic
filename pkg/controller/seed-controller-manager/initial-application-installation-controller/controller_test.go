@@ -25,9 +25,9 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/sdk/v2/api/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -311,7 +311,7 @@ func TestReconcile(t *testing.T) {
 				Client:   seedClient,
 				recorder: &record.FakeRecorder{},
 				log:      log,
-				versions: kubermatic.NewFakeVersions(),
+				versions: kubermatic.GetFakeVersions(),
 
 				userClusterConnectionProvider: newFakeClientProvider(userClusterClient),
 

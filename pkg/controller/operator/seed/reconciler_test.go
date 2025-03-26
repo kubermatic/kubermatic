@@ -25,7 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -462,9 +462,9 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 
 	masterRecorder := record.NewFakeRecorder(999)
 
-	versions := kubermatic.NewDefaultVersions()
-	versions.Kubermatic = "latest"
-	versions.UI = "latest"
+	versions := kubermatic.GetVersions()
+	versions.KubermaticContainerTag = "latest"
+	versions.UIContainerTag = "latest"
 
 	seedsGetter := func() (map[string]*kubermaticv1.Seed, error) {
 		return masterSeeds, nil

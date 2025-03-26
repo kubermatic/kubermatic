@@ -23,10 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -803,7 +803,7 @@ func TestReconcile(t *testing.T) {
 				Client:       fake.NewClientBuilder().WithObjects(cluster).Build(),
 				configGetter: configGetter,
 				log:          zap.NewNop().Sugar(),
-				versions:     kubermatic.NewFakeVersions(),
+				versions:     kubermatic.GetFakeVersions(),
 				recorder:     record.NewFakeRecorder(10),
 				cpChecker: func(_ context.Context, _ ctrlruntimeclient.Client, _ *zap.SugaredLogger, _ *kubermaticv1.Cluster) (*controlPlaneStatus, error) {
 					return &tt.currentStatus, nil

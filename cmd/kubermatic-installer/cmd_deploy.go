@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -39,9 +39,8 @@ import (
 	userclustermla "k8c.io/kubermatic/v2/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -90,7 +89,7 @@ type DeployOptions struct {
 	SkipCharts []string
 }
 
-func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
+func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.Command {
 	opt := DeployOptions{
 		HelmTimeout:        5 * time.Minute,
 		HelmBinary:         "helm",
@@ -157,14 +156,11 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *
 	return cmd
 }
 
-func DeployFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt *DeployOptions) cobraFuncE {
+func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *DeployOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		fields := logrus.Fields{
-			"version": versions.Kubermatic,
-			"edition": edition.KubermaticEdition,
-		}
-		if opt.Verbose {
-			fields["git"] = versions.KubermaticCommit
+			"version": versions.GitVersion,
+			"edition": versions.KubermaticEdition,
 		}
 
 		helmClient, err := setupHelmClient(logger, opt)

@@ -24,14 +24,13 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	applicationdefinitionmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/mutation"
 	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
@@ -85,8 +84,7 @@ func main() {
 	reconciling.Configure(log)
 
 	// say hello
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "Webhook", options.log.Debug, &versions)
+	cli.Hello(log, "Webhook", nil)
 
 	// /////////////////////////////////////////
 	// get kubeconfig

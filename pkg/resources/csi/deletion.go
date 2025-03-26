@@ -17,7 +17,7 @@ limitations under the License.
 package csi
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/nutanix"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"

@@ -40,7 +40,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/vmware-tanzu/velero/pkg/plugin/framework"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
 )
