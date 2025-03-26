@@ -823,6 +823,10 @@ type DatacenterSpecKubevirt struct {
 	// Defaults to true.
 	EnableDefaultNetworkPolicies *bool `json:"enableDefaultNetworkPolicies,omitempty"`
 
+	// Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
+	// Defaults to false.
+	EnableDedicatedCPUs bool `json:"enableDedicatedCpus,omitempty"`
+
 	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
 	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
 	CustomNetworkPolicies []CustomNetworkPolicy `json:"customNetworkPolicies,omitempty"`
