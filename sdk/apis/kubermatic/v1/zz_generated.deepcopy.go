@@ -24,7 +24,7 @@ import (
 	"encoding/json"
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
-	"k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,7 +89,7 @@ func (in *AWSCloudSpec) DeepCopyInto(out *AWSCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.NodePortsAllowedIPRanges != nil {
@@ -532,7 +532,7 @@ func (in *AlibabaCloudSpec) DeepCopyInto(out *AlibabaCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -641,7 +641,7 @@ func (in *AnexiaCloudSpec) DeepCopyInto(out *AnexiaCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -875,7 +875,7 @@ func (in *AzureCloudSpec) DeepCopyInto(out *AzureCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.NodePortsAllowedIPRanges != nil {
@@ -986,7 +986,7 @@ func (in *BaremetalCloudSpec) DeepCopyInto(out *BaremetalCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.Tinkerbell != nil {
@@ -2787,7 +2787,7 @@ func (in *DigitaloceanCloudSpec) DeepCopyInto(out *DigitaloceanCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -3340,7 +3340,7 @@ func (in *ExternalClusterAKSCloudSpec) DeepCopyInto(out *ExternalClusterAKSCloud
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -3430,7 +3430,7 @@ func (in *ExternalClusterEKSCloudSpec) DeepCopyInto(out *ExternalClusterEKSCloud
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.SubnetIDs != nil {
@@ -3460,7 +3460,7 @@ func (in *ExternalClusterGKECloudSpec) DeepCopyInto(out *ExternalClusterGKECloud
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -3480,17 +3480,17 @@ func (in *ExternalClusterKubeOneCloudSpec) DeepCopyInto(out *ExternalClusterKube
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.SSHReference != nil {
 		in, out := &in.SSHReference, &out.SSHReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.ManifestReference != nil {
 		in, out := &in.ManifestReference, &out.ManifestReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -3613,7 +3613,7 @@ func (in *ExternalClusterSpec) DeepCopyInto(out *ExternalClusterSpec) {
 	*out = *in
 	if in.KubeconfigReference != nil {
 		in, out := &in.KubeconfigReference, &out.KubeconfigReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	out.Version = in.Version.DeepCopy()
@@ -3699,7 +3699,7 @@ func (in *GCPCloudSpec) DeepCopyInto(out *GCPCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.NodePortsAllowedIPRanges != nil {
@@ -3844,7 +3844,7 @@ func (in *HetznerCloudSpec) DeepCopyInto(out *HetznerCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -4257,7 +4257,7 @@ func (in *KubeVirtHTTPSource) DeepCopyInto(out *KubeVirtHTTPSource) {
 	*out = *in
 	if in.OperatingSystems != nil {
 		in, out := &in.OperatingSystems, &out.OperatingSystems
-		*out = make(map[types.OperatingSystem]OSVersions, len(*in))
+		*out = make(map[providerconfig.OperatingSystem]OSVersions, len(*in))
 		for key, val := range *in {
 			var outVal map[string]string
 			if val == nil {
@@ -4906,7 +4906,7 @@ func (in *KubevirtCloudSpec) DeepCopyInto(out *KubevirtCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.PreAllocatedDataVolumes != nil {
@@ -5479,7 +5479,7 @@ func (in *NutanixCloudSpec) DeepCopyInto(out *NutanixCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.CSI != nil {
@@ -5668,7 +5668,7 @@ func (in *OpenstackCloudSpec) DeepCopyInto(out *OpenstackCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.NodePortsAllowedIPRanges != nil {
@@ -5775,7 +5775,7 @@ func (in *PacketCloudSpec) DeepCopyInto(out *PacketCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 }
@@ -7112,7 +7112,7 @@ func (in *TinkerbellHTTPSource) DeepCopyInto(out *TinkerbellHTTPSource) {
 	*out = *in
 	if in.OperatingSystems != nil {
 		in, out := &in.OperatingSystems, &out.OperatingSystems
-		*out = make(map[types.OperatingSystem]OSVersions, len(*in))
+		*out = make(map[providerconfig.OperatingSystem]OSVersions, len(*in))
 		for key, val := range *in {
 			var outVal map[string]string
 			if val == nil {
@@ -7420,7 +7420,7 @@ func (in *UserSpec) DeepCopyInto(out *UserSpec) {
 	}
 	if in.InvalidTokensReference != nil {
 		in, out := &in.InvalidTokensReference, &out.InvalidTokensReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.ReadAnnouncements != nil {
@@ -7497,7 +7497,7 @@ func (in *VMwareCloudDirectorCloudSpec) DeepCopyInto(out *VMwareCloudDirectorClo
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.OVDCNetworks != nil {
@@ -7588,7 +7588,7 @@ func (in *VSphereCloudSpec) DeepCopyInto(out *VSphereCloudSpec) {
 	*out = *in
 	if in.CredentialsReference != nil {
 		in, out := &in.CredentialsReference, &out.CredentialsReference
-		*out = new(types.GlobalSecretKeySelector)
+		*out = new(providerconfig.GlobalSecretKeySelector)
 		**out = **in
 	}
 	if in.Networks != nil {

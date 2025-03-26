@@ -26,7 +26,7 @@ import (
 	apiv2 "k8c.io/kubermatic/sdk/v2/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/sdk/v2/semver"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

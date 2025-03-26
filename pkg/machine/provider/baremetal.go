@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	baremetal "k8c.io/machine-controller/pkg/cloudprovider/provider/baremetal/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/baremetal"
 )
 
 type baremetalConfig struct {

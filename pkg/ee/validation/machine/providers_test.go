@@ -29,8 +29,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	vmwareclouddirectortypes "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	"k8c.io/machine-controller/pkg/providerconfig/types"
+	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,21 +43,21 @@ type MockCtrlRuntimeClient struct {
 func TestGetVMwareCloudDirectorResourceRequirements(t *testing.T) {
 	testCases := []struct {
 		name        string
-		config      *types.Config
+		config      *providerconfig.Config
 		expectedErr bool
 	}{
 		{
 			name: "valid VMware configuration",
-			config: &types.Config{
-				CloudProvider:     types.CloudProviderVMwareCloudDirector,
+			config: &providerconfig.Config{
+				CloudProvider:     providerconfig.CloudProviderVMwareCloudDirector,
 				CloudProviderSpec: genFakeVMWareSpec(4, 2048, 20),
 			},
 			expectedErr: false,
 		},
 		{
 			name: "Should fail with DiskSize not defined",
-			config: &types.Config{
-				CloudProvider:     types.CloudProviderVMwareCloudDirector,
+			config: &providerconfig.Config{
+				CloudProvider:     providerconfig.CloudProviderVMwareCloudDirector,
 				CloudProviderSpec: genFakeVMWareSpec(4, 2048, 0),
 			},
 			expectedErr: true,

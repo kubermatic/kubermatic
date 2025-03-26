@@ -20,8 +20,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	vsphere "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/vsphere"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/utils/ptr"
 )

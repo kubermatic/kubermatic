@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/sdk/v2/semver"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

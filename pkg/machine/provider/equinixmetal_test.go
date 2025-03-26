@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	equinixmetal "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
 )
 
 func TestEquinixMetalConfigBuilder(t *testing.T) {

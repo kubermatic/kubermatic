@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	anexia "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
+	"k8c.io/machine-controller/sdk/cloudprovider/anexia"
 )
 
 func TestAnexiaConfigBuilder(t *testing.T) {
