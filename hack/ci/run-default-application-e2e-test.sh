@@ -103,7 +103,7 @@ if [[ -s "$pathToFile" ]]; then
   versions=$(awk '/version:/ {print $2}' "$pathToFile")
 
   # Extract the defaultValuesBlock using sed (this will capture everything after 'defaultValuesBlock:' until 'documentationURL')
-  defaultValuesBlock=$(sed -n '/defaultValuesBlock:/,/documentationURL/p' "$pathToFile")
+  defaultValuesBlock=$(sed -n '/defaultValuesBlock:/,/documentationURL:/ { /defaultValuesBlock:/!p }' "$pathToFile")
 
   echo "Processing default values block: $defaultValuesBlock"
 
