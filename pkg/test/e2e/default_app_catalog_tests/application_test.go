@@ -1,3 +1,5 @@
+//go:build e2e
+
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -78,7 +80,7 @@ func init() {
 }
 
 func TestClusters(t *testing.T) {
-	if applicationName == "" || applicationVersion == "" {
+	if applicationName == "" || applicationVersion == "" || applicationInstallationName == "" || applicationNamespace == "" || key == "" || names == "" {
 		return
 	}
 
@@ -142,54 +144,6 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 			ValuesBlock: defaultValuesBlock,
 		},
 	}
-
-	//if applicationName == "cert-manager" {
-	//	valuesBlock := `installCRDs: true`
-	//	application = appskubermaticv1.ApplicationInstallation{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:      applicationInstallationName,
-	//			Namespace: applicationNamespace,
-	//		},
-	//		Spec: appskubermaticv1.ApplicationInstallationSpec{
-	//			Namespace: &appskubermaticv1.AppNamespaceSpec{
-	//				Name:   applicationNamespace,
-	//				Create: true,
-	//			},
-	//			ApplicationRef: appskubermaticv1.ApplicationRef{
-	//				Name:    applicationName,
-	//				Version: applicationVersion,
-	//			},
-	//			ValuesBlock: valuesBlock,
-	//		},
-	//	}
-	//}
-	//	if applicationName == "falco" {
-	//		valuesBlock := `
-	//falco:
-	//  driver:
-	//    enabled: true
-	//    driverType: "ebpf"
-	//  ebpfDriver:
-	//    enabled: true
-	//    program: "probe"`
-	//		application = appskubermaticv1.ApplicationInstallation{
-	//			ObjectMeta: metav1.ObjectMeta{
-	//				Name:      applicationInstallationName,
-	//				Namespace: applicationNamespace,
-	//			},
-	//			Spec: appskubermaticv1.ApplicationInstallationSpec{
-	//				Namespace: &appskubermaticv1.AppNamespaceSpec{
-	//					Name:   applicationNamespace,
-	//					Create: true,
-	//				},
-	//				ApplicationRef: appskubermaticv1.ApplicationRef{
-	//					Name:    applicationName,
-	//					Version: applicationVersion,
-	//				},
-	//				ValuesBlock: valuesBlock,
-	//			},
-	//		}
-	//	}
 
 	tLogger.Infof("Creating an ApplicationInstallation")
 
