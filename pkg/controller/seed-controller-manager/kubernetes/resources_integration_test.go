@@ -22,7 +22,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -267,7 +267,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 		caBundle:                caBundle,
 		userClusterConnProvider: new(testUserClusterConnectionProvider),
-		versions:                kubermatic.NewFakeVersions(),
+		versions:                kubermatic.GetFakeVersions(),
 	}
 
 	if _, err := r.ensureResourcesAreDeployed(ctx, testCluster, namespace); err != nil {

@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"strconv"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	basenodeportproxy "k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -78,7 +79,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:    "copy-envoy-config",
-					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
+					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.KubermaticContainerTag,
 					Command: []string{"/bin/cp"},
 					Args:    []string{"/envoy.yaml", "/etc/envoy/envoy.yaml"},
 					VolumeMounts: []corev1.VolumeMount{
@@ -101,7 +102,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "envoy-manager",
-					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.Kubermatic,
+					Image:   seed.Spec.NodeportProxy.EnvoyManager.DockerRepository + ":" + versions.KubermaticContainerTag,
 					Command: []string{"/envoy-manager"},
 					Args:    args,
 					Ports: []corev1.ContainerPort{
@@ -122,7 +123,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 
 				{
 					Name:    "envoy",
-					Image:   seed.Spec.NodeportProxy.Envoy.DockerRepository + ":" + versions.Envoy,
+					Image:   seed.Spec.NodeportProxy.Envoy.DockerRepository + ":" + basenodeportproxy.EnvoyVersion,
 					Command: []string{"/usr/local/bin/envoy"},
 					Args: []string{
 						"-c",
@@ -234,7 +235,7 @@ func UpdaterDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "lb-updater",
-					Image:   seed.Spec.NodeportProxy.Updater.DockerRepository + ":" + versions.Kubermatic,
+					Image:   seed.Spec.NodeportProxy.Updater.DockerRepository + ":" + versions.KubermaticContainerTag,
 					Command: []string{"/lb-updater"},
 					Args:    args,
 					Env: []corev1.EnvVar{

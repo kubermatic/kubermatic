@@ -31,9 +31,9 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	k8cequality "k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -169,7 +169,7 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 		"memory", localUsage.Memory.String(),
 		"storage", localUsage.Storage.String())
 
-	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+	return util.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 		rq.Status.LocalUsage = *localUsage
 	})
 }

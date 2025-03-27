@@ -19,8 +19,8 @@ package operatingsystem
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"

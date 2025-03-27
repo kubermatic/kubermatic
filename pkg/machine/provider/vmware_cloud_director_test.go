@@ -19,9 +19,9 @@ package provider
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	vmwareclouddirector "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 func TestVMwareCloudDirectorConfigBuilder(t *testing.T) {

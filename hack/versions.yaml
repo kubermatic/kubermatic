@@ -176,8 +176,9 @@ products:
   - name: Envoy
     source: https://github.com/envoyproxy/envoy/
     occurrences:
-      - goFunction:
-          function: getEnvoyAgentVersion
+      - goConstant:
+          package: k8c.io/kubermatic/v2/pkg/resources/nodeportproxy
+          constant: EnvoyVersion
       - helmChart:
           directory: charts/mla/alertmanager-proxy
           valuePath: alertmanagerProxy.proxy.image.tag

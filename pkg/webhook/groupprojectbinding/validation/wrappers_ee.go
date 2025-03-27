@@ -22,7 +22,7 @@ import (
 	"context"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	eegroupprojectbindingvalidation "k8c.io/kubermatic/v2/pkg/ee/validation/groupprojectbinding"
 
 	"k8s.io/apimachinery/pkg/runtime"

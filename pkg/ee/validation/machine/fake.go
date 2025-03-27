@@ -28,7 +28,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 )

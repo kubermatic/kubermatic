@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	"k8c.io/machine-controller/pkg/cloudprovider/util"
+	"k8c.io/machine-controller/sdk/net"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -105,10 +105,10 @@ func TestExistingCluster(t *testing.T) {
 		t.Fatalf("failed to create usercluster client: %s", err)
 	}
 
-	testUserCluster(t, ctx, log, userclusterClient, util.IPFamily(ipFamily), skipNodes, skipHostNetworkPods, skipEgressConnectivity)
+	testUserCluster(t, ctx, log, userclusterClient, net.IPFamily(ipFamily), skipNodes, skipHostNetworkPods, skipEgressConnectivity)
 }
 
-func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipFamily util.IPFamily, skipNodes, skipHostNetworkPods, skipEgressConnectivity bool) {
+func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, userclusterClient ctrlruntimeclient.Client, ipFamily net.IPFamily, skipNodes, skipHostNetworkPods, skipEgressConnectivity bool) {
 	log.Infow("Testing cluster", "ipfamily", ipFamily)
 
 	// get events from user-cluster for debugging
@@ -197,7 +197,7 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 
 		switch *svc.Spec.IPFamilyPolicy {
 		case corev1.IPFamilyPolicySingleStack:
-			if ipFamily == util.IPFamilyIPv4IPv6 {
+			if ipFamily == net.IPFamilyIPv4IPv6 {
 				svcLog.Infof("Skipping %q test because IP family policy is %q", ipFamily, *svc.Spec.IPFamilyPolicy)
 				continue
 			}
@@ -220,11 +220,11 @@ func testUserCluster(t *testing.T, ctx context.Context, log *zap.SugaredLogger, 
 		log.Info("Skipping validation of egress connectivity")
 	} else {
 		switch ipFamily {
-		case util.IPFamilyIPv4, util.IPFamilyUnspecified:
+		case net.IPFamilyIPv4, net.IPFamilyUnspecified:
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
-		case util.IPFamilyIPv6:
+		case net.IPFamilyIPv6:
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
-		case util.IPFamilyIPv4IPv6:
+		case net.IPFamilyIPv4IPv6:
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 4, nNodes)
 			validateEgressConnectivity(t, ctx, log, userclusterClient, 6, nNodes)
 		}
@@ -264,13 +264,13 @@ func validateEgressConnectivity(t *testing.T, ctx context.Context, log *zap.Suga
 	}
 }
 
-func validate(t *testing.T, name string, ipFamily util.IPFamily, addrs []string) {
+func validate(t *testing.T, name string, ipFamily net.IPFamily, addrs []string) {
 	if !all(ipFamily, addrs) {
 		t.Errorf("not all addresses in %s are in IP family %q for %s", addrs, ipFamily, name)
 	}
 }
 
-func all(ipFamily util.IPFamily, addrs []string) bool {
+func all(ipFamily net.IPFamily, addrs []string) bool {
 	// We convert all the IPs to CIDR notation so that we can simply use CIDR
 	// validation functions everywhere instead of checking which function
 	// to use every time.
@@ -282,19 +282,19 @@ func all(ipFamily util.IPFamily, addrs []string) bool {
 	}
 
 	switch ipFamily {
-	case util.IPFamilyIPv4, util.IPFamilyUnspecified:
+	case net.IPFamilyIPv4, net.IPFamilyUnspecified:
 		for _, addr := range addrs {
 			if !netutils.IsIPv4CIDRString(addr) {
 				return false
 			}
 		}
-	case util.IPFamilyIPv6:
+	case net.IPFamilyIPv6:
 		for _, addr := range addrs {
 			if !netutils.IsIPv6CIDRString(addr) {
 				return false
 			}
 		}
-	case util.IPFamilyIPv4IPv6:
+	case net.IPFamilyIPv4IPv6:
 		ok, err := netutils.IsDualStackCIDRStrings(addrs)
 		return err == nil && ok
 	default:

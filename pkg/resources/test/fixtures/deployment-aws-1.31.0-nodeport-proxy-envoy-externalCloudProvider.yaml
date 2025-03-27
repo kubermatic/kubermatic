@@ -77,7 +77,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: docker.io/envoyproxy/envoy-distroless:v1.17.1
+        image: docker.io/envoyproxy/envoy-distroless:v1.26.1
         lifecycle:
           preStop:
             exec:

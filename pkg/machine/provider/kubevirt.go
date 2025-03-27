@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubevirt "k8c.io/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
-	"k8c.io/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 type kubevirtConfig struct {
@@ -70,7 +70,7 @@ func (b *kubevirtConfig) WithDNSPolicy(dnsPolicy string) *kubevirtConfig {
 }
 
 func (b *kubevirtConfig) WithClusterName(clusterName string) *kubevirtConfig {
-	b.ClusterName = types.ConfigVarString{Value: clusterName}
+	b.ClusterName = providerconfig.ConfigVarString{Value: clusterName}
 	return b
 }
 
@@ -102,7 +102,7 @@ func CompleteKubevirtProviderSpec(config *kubevirt.RawConfig, cluster *kubermati
 		if datacenter != nil && datacenter.NamespacedMode != nil && datacenter.NamespacedMode.Enabled {
 			kubeVirtInfraNamespace = datacenter.NamespacedMode.Namespace
 		}
-		config.ClusterName = types.ConfigVarString{Value: cluster.Name}
+		config.ClusterName = providerconfig.ConfigVarString{Value: cluster.Name}
 		config.VirtualMachine.Template.PrimaryDisk.OsImage.Value = extractKubeVirtOsImageURLOrDataVolumeNsName(kubeVirtInfraNamespace, config.VirtualMachine.Template.PrimaryDisk.OsImage.Value)
 	}
 

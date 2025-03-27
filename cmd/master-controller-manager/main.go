@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/collectors"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -88,7 +88,7 @@ type controllerContext struct {
 
 func main() {
 	ctrlCtx := &controllerContext{
-		versions: kubermatic.NewDefaultVersions(),
+		versions: kubermatic.GetVersions(),
 	}
 	runOpts := controllerRunOptions{featureGates: features.FeatureGate{}}
 	klog.InitFlags(nil)
@@ -120,7 +120,7 @@ func main() {
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
-	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
+	cli.Hello(log, "Master Controller-Manager", &ctrlCtx.versions)
 
 	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)

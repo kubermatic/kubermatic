@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -65,7 +65,7 @@ func Add(
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
-		versions:   kubermatic.NewDefaultVersions(),
+		versions:   kubermatic.GetVersions(),
 	}
 
 	bldr := builder.ControllerManagedBy(mgr).

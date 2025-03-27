@@ -30,8 +30,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -133,7 +133,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, reso
 
 		// ensure status
 		globalUsage := resourceQuota.Status.GlobalUsage.DeepCopy()
-		return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+		return util.UpdateResourceQuotaStatus(ctx, seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 			rq.Status.GlobalUsage = *globalUsage
 		})
 	})

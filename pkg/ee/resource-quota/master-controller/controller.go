@@ -30,9 +30,9 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	k8cequality "k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -161,7 +161,7 @@ func (r *reconciler) ensureGlobalUsage(ctx context.Context, log *zap.SugaredLogg
 		"memory", globalUsage.Memory.String(),
 		"storage", globalUsage.Storage.String())
 
-	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.masterClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+	return util.UpdateResourceQuotaStatus(ctx, r.masterClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 		rq.Status.GlobalUsage = *globalUsage
 	})
 }

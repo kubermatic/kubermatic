@@ -21,7 +21,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
@@ -47,6 +47,8 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	logger.Debug("Applying defaults to Seed")
 
 	seedCopy := seed.DeepCopy()
+
+	seedCopy.SetDefaults()
 
 	if seedCopy.Spec.ExposeStrategy == "" {
 		seedCopy.Spec.ExposeStrategy = config.Spec.ExposeStrategy

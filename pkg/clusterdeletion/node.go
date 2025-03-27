@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	eviction "k8c.io/machine-controller/pkg/node/eviction/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	nodetypes "k8c.io/machine-controller/sdk/node"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -52,7 +52,7 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	// If we delete a cluster, we should disable the eviction on the nodes
 	for _, node := range nodes.Items {
-		if node.Annotations[eviction.SkipEvictionAnnotationKey] == "true" {
+		if node.Annotations[nodetypes.SkipEvictionAnnotationKey] == "true" {
 			continue
 		}
 
@@ -60,9 +60,9 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 		if node.Annotations == nil {
 			node.Annotations = map[string]string{}
 		}
-		node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
+		node.Annotations[nodetypes.SkipEvictionAnnotationKey] = "true"
 		if err := userClusterClient.Patch(ctx, &node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
-			return fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %w", eviction.SkipEvictionAnnotationKey, node.Name, err)
+			return fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %w", nodetypes.SkipEvictionAnnotationKey, node.Name, err)
 		}
 	}
 

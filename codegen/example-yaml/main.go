@@ -28,11 +28,11 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -62,12 +62,12 @@ func main() {
 	}
 
 	// find all .go files in kubermatic/v1
-	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/kubermatic/v1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
-	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/apps.kubermatic/v1/*.go"))
+	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find appsKubermatic go files: %v", err)
 	}

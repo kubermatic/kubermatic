@@ -24,10 +24,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -70,7 +70,7 @@ func NewClusterJig(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *Clu
 	jig := &ClusterJig{
 		client:      client,
 		log:         log,
-		versions:    kubermatic.NewFakeVersions(),
+		versions:    kubermatic.GetFakeVersions(),
 		spec:        &kubermaticv1.ClusterSpec{},
 		annotations: map[string]string{},
 		labels:      map[string]string{},

@@ -24,13 +24,12 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	"k8c.io/machine-controller/pkg/apis/cluster/common"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	"k8c.io/machine-controller/sdk/apis/cluster/common"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -122,7 +121,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// update cluster condition
-	if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	if err := controllerutil.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		conditionType := kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted
 		newStatus := corev1.ConditionFalse
 		reason := kubermaticv1.ReasonClusterCCMMigrationInProgress
@@ -134,7 +133,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			message = "external CCM/CSI migration completed"
 		}
 
-		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, newStatus, reason, message)
+		controllerutil.SetClusterCondition(c, r.versions, conditionType, newStatus, reason, message)
 	}); err != nil {
 		return fmt.Errorf("failed to update cluster: %w", err)
 	}

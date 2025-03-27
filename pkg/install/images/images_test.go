@@ -24,8 +24,8 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
@@ -50,7 +50,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 		t.Fatalf("failed to determine versions: %v", err)
 	}
 
-	kubermaticVersions := kubermatic.NewFakeVersions()
+	kubermaticVersions := kubermatic.GetFakeVersions()
 	clusterVersions := getLatestMinorVersions(config)
 
 	caBundle, err := certificates.NewCABundleFromFile("../../../charts/kubermatic-operator/static/ca-bundle.pem")

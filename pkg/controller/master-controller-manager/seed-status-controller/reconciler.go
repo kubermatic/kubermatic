@@ -23,9 +23,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -97,12 +97,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) error {
 	if seed.DeletionTimestamp != nil {
-		return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
+		return util.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
 			s.Status.Phase = kubermaticv1.SeedTerminatingPhase
 		})
 	}
 
-	return kubermaticv1helper.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
+	return util.UpdateSeedStatus(ctx, r, seed, func(s *kubermaticv1.Seed) {
 		r.updateKubeconfigValidCondition(ctx, log, s)
 		r.updateVersions(ctx, log, s)
 		r.updateClusters(ctx, log, s)
@@ -119,7 +119,7 @@ func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *za
 	client, err := r.seedClientGetter(seed)
 	if err != nil {
 		log.Debugw("failed to create client for seed", zap.Error(err))
-		kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedKubeconfigUnavailableReason, err.Error())
+		util.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedKubeconfigUnavailableReason, err.Error())
 
 		return
 	}
@@ -131,16 +131,16 @@ func (r *Reconciler) updateKubeconfigValidCondition(ctx context.Context, log *za
 	key := types.NamespacedName{Name: seed.Namespace}
 	if err := client.Get(ctx, key, &ns); err != nil {
 		log.Errorw("Failed to retrieve KKP namespace", "namespace", seed.Namespace, zap.Error(err))
-		kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedKubeconfigInvalidReason, err.Error())
+		util.SetSeedCondition(seed, cond, corev1.ConditionFalse, SeedKubeconfigInvalidReason, err.Error())
 		return
 	}
 
 	// mark kubeconfig as working
-	kubermaticv1helper.SetSeedCondition(seed, cond, corev1.ConditionTrue, SeedKubeconfigValidReason, "")
+	util.SetSeedCondition(seed, cond, corev1.ConditionTrue, SeedKubeconfigValidReason, "")
 }
 
 func (r *Reconciler) updateVersions(ctx context.Context, log *zap.SugaredLogger, seed *kubermaticv1.Seed) {
-	seed.SetKubermaticVersion(r.versions)
+	seed.Status.Versions.Kubermatic = r.versions.GitVersion
 
 	kubeconfig, err := r.seedKubeconfigGetter(seed)
 	if err != nil {

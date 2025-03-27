@@ -21,9 +21,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update-controller"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -96,7 +96,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	// if this cluster was never fully reconciled (yet), it is in Creating phase
-	if !kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
+	if !util.IsClusterInitialized(cluster, r.versions) {
 		return r.setClusterPhase(ctx, cluster, kubermaticv1.ClusterCreating)
 	}
 
@@ -113,7 +113,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 }
 
 func (r *Reconciler) setClusterPhase(ctx context.Context, cluster *kubermaticv1.Cluster, phase kubermaticv1.ClusterPhase) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.Phase = phase
 	})
 }

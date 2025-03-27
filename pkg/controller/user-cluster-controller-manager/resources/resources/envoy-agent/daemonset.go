@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -127,7 +128,7 @@ func DaemonSetReconciler(agentIP net.IP, versions kubermatic.Versions, configHas
 }
 
 func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter registry.ImageRewriter) ([]corev1.Container, error) {
-	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic)))
+	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.KubermaticContainerTag)))
 	// TODO: we are creating and configuring the a dummy interface
 	// using init containers. This approach is good enough for the tech preview
 	// but it is definitely not production ready. This should be replaced with
@@ -160,11 +161,11 @@ func getInitContainers(ip net.IP, versions kubermatic.Versions, imageRewriter re
 }
 
 func getContainers(versions kubermatic.Versions, imageRewriter registry.ImageRewriter, ip net.IP) ([]corev1.Container, error) {
-	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.Kubermatic)))
+	image := registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, resources.EnvoyAgentDeviceSetupImage, versions.KubermaticContainerTag)))
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, versions.Envoy))),
+			Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", envoyImageName, nodeportproxy.EnvoyVersion))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of

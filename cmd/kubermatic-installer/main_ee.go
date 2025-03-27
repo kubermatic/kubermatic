@@ -28,12 +28,12 @@ import (
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermaticversion.Versions) {
+func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermatic.Versions) {
 	cmd.AddCommand(
 		ConvertKubeconfigCommand(logger),
 		DeployCommand(logger, versions),

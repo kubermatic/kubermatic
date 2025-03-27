@@ -25,7 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
 func assertTagExistence(t *testing.T, ctx context.Context, client *ec2.Client, cluster *kubermaticv1.Cluster, vpc *ec2types.Vpc, expected bool) {

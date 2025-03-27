@@ -15,6 +15,19 @@
 - [v2.25.12](#v22512)
 - [v2.25.13](#v22513)
 - [v2.25.14](#v22514)
+- [v2.25.15](#v22515)
+
+## v2.25.15
+
+**GitHub release: [v2.25.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.15)**
+
+### Bugfixes
+
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7221](https://github.com/kubermatic/dashboard/pull/7221))
+
+### Updates
+
+- Security: Update nginx-ingress-controller to 1.11.5, fixing CVE-2025-1097, CVE-2025-1098, CVE-2025-1974, CVE-2025-24513, CVE-2025-24514 ([#14276](https://github.com/kubermatic/kubermatic/pull/14276))
 
 ## v2.25.14
 

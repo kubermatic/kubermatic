@@ -22,7 +22,7 @@ import (
 
 	"github.com/containerd/containerd/remotes/docker"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"

@@ -28,29 +28,29 @@ resourceTypes:
   - { package: k8s.io/kube-aggregator/pkg/apis/apiregistration/v1, resourceName: APIService }
 
   # kubermatic/v1
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Addon }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: AddonConfig }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Cluster }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ClusterBackupStorageLocation }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ClusterTemplate }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Constraint }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ConstraintTemplate }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: EtcdBackupConfig }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: GroupProjectBinding }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: IPAMAllocation }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: KubermaticConfiguration }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Preset }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Project }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: ResourceQuota }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: RuleGroup }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: Seed }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: User }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: UserProjectBinding }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1, resourceName: UserSSHKey }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Addon }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: AddonConfig }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Cluster }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: ClusterBackupStorageLocation }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: ClusterTemplate }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Constraint }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: ConstraintTemplate }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: EtcdBackupConfig }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: GroupProjectBinding }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: IPAMAllocation }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: KubermaticConfiguration }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Preset }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Project }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: ResourceQuota }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: RuleGroup }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Seed }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: User }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: UserProjectBinding }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: UserSSHKey }
 
   # appskubermatic/v1
-  - { package: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1, resourceName: ApplicationDefinition }
-  - { package: k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1, resourceName: ApplicationInstallation }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1, resourceName: ApplicationDefinition }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1, resourceName: ApplicationInstallation }
 
   # gatekeeper/v1
   - { package: github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1, resourceName: ConstraintTemplate, importAlias: gatekeeperv1, apiVersionPrefix: Gatekeeper }

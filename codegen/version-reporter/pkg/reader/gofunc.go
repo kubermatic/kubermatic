@@ -19,14 +19,13 @@ package reader
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 type versionProviderFunc func(clusterVersion semver.Semver) (string, error)
@@ -53,9 +52,6 @@ var versionProviderFuncs = map[string]versionProviderFunc{
 		return konnectivity.NetworkProxyVersion(clusterVersion), nil
 	},
 	"callKubernetesDashboardVersion": kubernetesdashboard.DashboardVersion,
-	"getEnvoyAgentVersion": func(clusterVersion semver.Semver) (string, error) {
-		return kubermatic.NewDefaultVersions().Envoy, nil
-	},
 }
 
 func CallGoFunction(function string) (map[string]string, error) {

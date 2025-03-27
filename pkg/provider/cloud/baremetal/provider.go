@@ -21,7 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/client-go/tools/clientcmd"

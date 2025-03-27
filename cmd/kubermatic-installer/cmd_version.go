@@ -27,8 +27,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/util/edition"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 type VersionOptions struct {
@@ -37,7 +36,7 @@ type VersionOptions struct {
 	Short bool
 }
 
-func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
+func VersionCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.Command {
 	opt := VersionOptions{}
 
 	cmd := &cobra.Command{
@@ -55,12 +54,12 @@ func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) 
 	return cmd
 }
 
-func VersionFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt *VersionOptions) cobraFuncE {
+func VersionFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *VersionOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
-		name := fmt.Sprintf("Kubermatic %s Installer", edition.KubermaticEdition)
+		name := fmt.Sprintf("Kubermatic %s Installer", versions.KubermaticEdition)
 
 		if opt.Short {
-			fmt.Printf("%s %s\n", name, versions.Kubermatic)
+			fmt.Printf("%s %s\n", name, versions.GitVersion)
 			return nil
 		}
 
@@ -73,11 +72,11 @@ func VersionFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt
 		versionWidth := len("Version")
 		appVersionWidth := len("App Version")
 
-		if l := len(versions.KubermaticCommit); l > versionWidth {
+		if l := len(versions.GitVersion); l > versionWidth {
 			versionWidth = l
 		}
 
-		if l := len(versions.Kubermatic); l > appVersionWidth {
+		if l := len(versions.GitVersion); l > appVersionWidth {
 			appVersionWidth = l
 		}
 
@@ -99,7 +98,7 @@ func VersionFunc(logger *logrus.Logger, versions kubermaticversion.Versions, opt
 
 		fmt.Printf(format, "Component", "Version", "App Version")
 		fmt.Printf("%s-+-%s-+-%s-\n", strings.Repeat("-", nameWidth), strings.Repeat("-", versionWidth), strings.Repeat("-", appVersionWidth))
-		fmt.Printf(format, name, versions.KubermaticCommit, versions.Kubermatic)
+		fmt.Printf(format, name, versions.GitVersion, versions.GitVersion)
 
 		for _, chart := range charts {
 			fmt.Printf(format, chart.Name, chart.Version, chart.AppVersion)

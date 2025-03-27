@@ -29,16 +29,16 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -319,11 +319,11 @@ func (d *TemplateData) EtcdBackupDestination() *kubermaticv1.BackupDestination {
 }
 
 func (d *TemplateData) EtcdLauncherTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) NodePortProxyTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 // UserClusterMLAEnabled returns userClusterMLAEnabled.
@@ -543,7 +543,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) DNATControllerImage() string {
@@ -559,7 +559,7 @@ func (d *TemplateData) BackupSchedule() time.Duration {
 }
 
 func (d *TemplateData) DNATControllerTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {

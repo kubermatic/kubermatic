@@ -16,16 +16,14 @@ limitations under the License.
 
 package kubermatic
 
-import (
-	"k8c.io/kubermatic/v2/pkg/util/edition"
-)
+import "k8c.io/kubermatic/v2/pkg/util/edition"
 
 // These variables get fed by ldflags during compilation.
 var (
 	// gitVersion is a magic variable containing the git commit identifier
 	// (usually the output of `git describe`, i.e. not necessarily a
 	// static tag name); for a tagged KKP release, this value is identical
-	// to kubermaticDockerTag, for untagged builds this is the `git describe`
+	// to kubermaticContainerTag, for untagged builds this is the `git describe`
 	// output.
 	// Importantly, this value will only ever go up, even for untagged builds,
 	// but is not monotone (gaps can occur, this can go from v2.20.0-1234-d6aef3
@@ -35,41 +33,38 @@ var (
 	// visible from the main branch.
 	gitVersion string
 
-	// kubermaticDockerTag is a magic variable containing the tag / git commit hash
-	// of the kubermatic Docker image to deploy. For tagged releases this is
+	// kubermaticContainerTag is a magic variable containing the tag of the
+	// kubermatic container image to deploy. For tagged releases this is
 	// identical to gitVersion, but for nightly builds, this is identical to the
-	// gitVersion.
-	kubermaticDockerTag string
+	// git HEAD hash that was built.
+	kubermaticContainerTag string
 
-	// uiDockerTag is a magic variable containing the tag / git commit hash
-	// of the dashboard Docker image to deploy.
-	uiDockerTag string
+	// uiContainerTag is a magic variable containing the tag of the dashboard
+	// container image to deploy.
+	uiContainerTag string
 )
 
 type Versions struct {
-	KubermaticCommit  string
-	Kubermatic        string
-	UI                string
-	Envoy             string
-	KubermaticEdition edition.Type
+	GitVersion             string
+	KubermaticContainerTag string
+	UIContainerTag         string
+	KubermaticEdition      edition.Type
 }
 
-func NewDefaultVersions() Versions {
+func GetVersions() Versions {
 	return Versions{
-		KubermaticCommit:  gitVersion,
-		Kubermatic:        kubermaticDockerTag,
-		UI:                uiDockerTag,
-		Envoy:             "v1.26.1",
-		KubermaticEdition: edition.KubermaticEdition,
+		GitVersion:             gitVersion,
+		KubermaticContainerTag: kubermaticContainerTag,
+		UIContainerTag:         uiContainerTag,
+		KubermaticEdition:      edition.KubermaticEdition,
 	}
 }
 
-func NewFakeVersions() Versions {
+func GetFakeVersions() Versions {
 	return Versions{
-		KubermaticCommit:  "v0.0.0-420-test",
-		Kubermatic:        "v0.0.0-test",
-		UI:                "v1.1.1-test",
-		Envoy:             "v1.17.1",
-		KubermaticEdition: edition.KubermaticEdition,
+		GitVersion:             "v0.0.0-420-test",
+		KubermaticContainerTag: "v0.0.0-test",
+		UIContainerTag:         "v1.1.1-test",
+		KubermaticEdition:      edition.KubermaticEdition,
 	}
 }

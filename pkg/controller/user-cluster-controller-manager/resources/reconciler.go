@@ -23,9 +23,9 @@ import (
 	"net"
 	"strings"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
@@ -56,12 +56,12 @@ import (
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -1216,7 +1216,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 		}
 	}
 
-	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		if r.opaIntegration {
 			c.Status.ExtendedHealth.GatekeeperController = &ctrlGatekeeperHealth
 			c.Status.ExtendedHealth.GatekeeperAudit = &auditGatekeeperHealth
@@ -1422,7 +1422,7 @@ func (r *reconciler) cleanUpOPAHealthStatus(ctx context.Context, errC error) err
 	down := kubermaticv1.HealthStatusDown
 
 	// Ensure that health status in Cluster CR is removed
-	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.GatekeeperAudit = nil
 		c.Status.ExtendedHealth.GatekeeperController = nil
 		if errC != nil && !apierrors.IsNotFound(errC) {
@@ -1441,7 +1441,7 @@ func (r *reconciler) cleanUpMLAHealthStatus(ctx context.Context, logging, monito
 	down := kubermaticv1.HealthStatusDown
 
 	// Ensure that health status in Cluster CR is removed
-	return helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		if !r.userClusterMLA.Logging && logging {
 			c.Status.ExtendedHealth.Logging = nil
 			if errC != nil && !apierrors.IsNotFound(errC) {
