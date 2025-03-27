@@ -319,10 +319,3 @@ func encryptionJobFinishedSuccessfully(ctx context.Context, logger *zap.SugaredL
 
 	return nil
 }
-
-func disableEAR(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
-	cc := cluster.DeepCopy()
-	cluster.Spec.EncryptionConfiguration = &kubermaticv1.EncryptionConfiguration{Enabled: false}
-
-	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(cc))
-}
