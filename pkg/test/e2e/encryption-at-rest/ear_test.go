@@ -80,7 +80,7 @@ func TestEncryptionAtRest(t *testing.T) {
 	}
 
 	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
-	testJig.ClusterJig.WithTestName("encryption_at_rest")
+	testJig.ClusterJig.WithTestName("encryption-at-rest")
 
 	logger.Info("setting up the cluster")
 
