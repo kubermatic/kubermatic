@@ -82,16 +82,17 @@ func TestEncryptionAtRest(t *testing.T) {
 	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	testJig.ClusterJig.WithTestName("encryption_at_rest")
 
-	userClient, err := testJig.ClusterClient(ctx)
-	if err != nil {
-		t.Fatalf("failed to create user cluster client: %v", err)
-	}
-
 	logger.Info("setting up the cluster")
+
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	defer testJig.Cleanup(ctx, t, true)
 	if err != nil {
 		t.Fatalf("failed to setup test environment: %v", err)
+	}
+
+	userClient, err := testJig.ClusterClient(ctx)
+	if err != nil {
+		t.Fatalf("failed to create user cluster client: %v", err)
 	}
 
 	logger.Info("creating a dummy secret for testing encryption-at-rest")
