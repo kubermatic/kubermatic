@@ -74,13 +74,18 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("Failed to get credentials: %v", err)
 	}
 
-	client, config, err := utils.GetClients()
+	seedClient, config, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
-	testJig := jig.NewAWSCluster(client, logger, credentials, 1, nil)
-	testJig.ClusterJig.WithTestName("opa")
+	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
+	testJig.ClusterJig.WithTestName("encryption_at_rest")
+
+	userClient, err := testJig.ClusterClient(ctx)
+	if err != nil {
+		t.Fatalf("failed to create user cluster client: %v", err)
+	}
 
 	logger.Info("setting up the cluster")
 	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
@@ -100,12 +105,12 @@ func TestEncryptionAtRest(t *testing.T) {
 		},
 	}
 
-	err = client.Create(ctx, &secret)
+	err = userClient.Create(ctx, &secret)
 	if err != nil {
 		t.Fatalf("failed to create secret: %v", err)
 	}
 
-	err = enableEAR(ctx, logger, client, cluster)
+	err = enableEAR(ctx, logger, seedClient, cluster)
 	if err != nil {
 		t.Fatalf("failed to enable encryption-at-rest: %v", err)
 	}
@@ -115,12 +120,12 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("Cluster did not get healthy after enabling encryption-at-rest: %v", err)
 	}
 
-	err = ensureApiServerUpdated(ctx, logger, client, cluster)
+	err = ensureApiServerUpdated(ctx, logger, seedClient, cluster)
 	if err != nil {
 		t.Fatalf("User cluster API server does not contain configurations for encryption-at-rest")
 	}
 
-	err = encryptionJobFinishedSuccessfully(ctx, logger, client)
+	err = encryptionJobFinishedSuccessfully(ctx, logger, seedClient)
 	if err != nil {
 		t.Fatalf("data-encryption Job failed to run, err: %v", err)
 	}
