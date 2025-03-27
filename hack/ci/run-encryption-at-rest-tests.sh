@@ -22,6 +22,7 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
 
 beforeGocache=$(nowms)
@@ -54,7 +55,7 @@ source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Running encryption-at-rest tests..."
 
-go_test encryption_at_rest -timeout 120m -v ./pkg/test/e2e/encryption-at-rest \
+go_test encryption_at_rest -timeout 120m -tags e2e -v ./pkg/test/e2e/encryption-at-rest \
   -kubeconfig "$KUBECONFIG" \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
