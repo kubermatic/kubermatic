@@ -36,6 +36,8 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
+INSTALLER_FLAGS=${INSTALLER_FLAGS:-}
+
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
 export SEED_NAME=kubermatic
@@ -171,7 +173,8 @@ TEST_NAME="Install KKP into kind"
 ./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$HELM_VALUES_FILE"
+  --helm-values "$HELM_VALUES_FILE" \
+  "$INSTALLER_FLAGS"
 
 # TODO: The installer should wait for everything to finish reconciling.
 echodate "Waiting for Kubermatic Operator to deploy Master components..."
