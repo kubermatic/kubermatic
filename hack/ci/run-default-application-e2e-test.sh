@@ -100,10 +100,10 @@ pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATI
 echodate "File path: $pathToFile"
 
 if [[ -s "$pathToFile" ]]; then
-  versions=$(yq eval '.version' "$pathToFile")
+  versions=$(yq eval '.spec.versions[0].version' "$pathToFile")
 
   # Extract the defaultValuesBlock using sed (this will capture everything after 'defaultValuesBlock:' until 'documentationURL')
-  defaultValuesBlock=$(yq eval '.defaultValuesBlock' "$pathToFile")
+  defaultValuesBlock=$(yq eval '.spec.defaultValuesBlock' "$pathToFile")
 
   echo "Processing default values block: $defaultValuesBlock"
 
