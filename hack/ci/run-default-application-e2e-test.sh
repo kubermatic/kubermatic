@@ -100,10 +100,10 @@ pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATI
 echodate "File path: $pathToFile"
 
 if [[ -s "$pathToFile" ]]; then
-  versions=$(awk '/version:/ {print $2}' "$pathToFile")
+  versions=$(yq eval '.version' "$pathToFile")
 
   # Extract the defaultValuesBlock using sed (this will capture everything after 'defaultValuesBlock:' until 'documentationURL')
-  defaultValuesBlock=$(sed -n '/defaultValuesBlock:/,/documentationURL:/ { /defaultValuesBlock:/!p }' "$pathToFile")
+  defaultValuesBlock=$(yq eval '.defaultValuesBlock' "$pathToFile")
 
   echo "Processing default values block: $defaultValuesBlock"
 
