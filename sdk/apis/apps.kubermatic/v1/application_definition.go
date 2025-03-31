@@ -18,7 +18,7 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -300,7 +300,7 @@ type ApplicationDefinitionList struct {
 // Will return nil if none of the fields are set.
 func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
 	if ad.DefaultValues != nil && len(ad.DefaultValues.Raw) > 0 && ad.DefaultValuesBlock != "" {
-		return nil, fmt.Errorf("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
+		return nil, errors.New("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously, please delete one of them")
 	}
 	if ad.DefaultValues != nil && len(ad.DefaultValues.Raw) > 0 {
 		return ad.DefaultValues.Raw, nil
@@ -316,7 +316,7 @@ func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
 func (ai *ApplicationDefinitionSpec) GetParsedDefaultValues() (map[string]interface{}, error) {
 	values := make(map[string]interface{})
 	if !isEmptyRawExtension(ai.DefaultValues) && ai.DefaultValuesBlock != "" {
-		return nil, fmt.Errorf("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously. Please delete one of them.")
+		return nil, errors.New("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously, please delete one of them")
 	}
 	if !isEmptyRawExtension(ai.DefaultValues) {
 		err := json.Unmarshal(ai.DefaultValues.Raw, &values)
