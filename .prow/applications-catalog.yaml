@@ -1,0 +1,690 @@
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+presubmits:
+  - name: pre-kubermatic-appcatalog-aikit
+    run_if_changed: "(pkg/ee/default-application-catalog/aikit-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "aikit"
+            - name: APPLICATION_NAME
+              value: "aikit"
+            - name: APPLICATION_NAMESPACE
+              value: "aikit"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "aikit"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-argocd
+    run_if_changed: "(pkg/ee/default-application-catalog/argocd-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "argocd"
+            - name: APPLICATION_NAME
+              value: "argocd"
+            - name: APPLICATION_NAMESPACE
+              value: "argocd"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "argocd-application-controller,argocd-applicationset-controller,argocd-dex-server,argocd-notifications-controller,argocd-redis,argocd-repo-server,argocd-server"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-cluster-autoscaler
+    run_if_changed: "(pkg/ee/default-application-catalog/cluster-autoscaler.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "cluster-autoscaler"
+            - name: APPLICATION_NAME
+              value: "cluster-autoscaler"
+            - name: APPLICATION_NAMESPACE
+              value: "kube-system"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "clusterapi-cluster-autoscaler"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-cert-manager
+    run_if_changed: "(pkg/ee/default-application-catalog/cert-manager-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "cert-manager"
+            - name: APPLICATION_NAME
+              value: "cert-manager"
+            - name: APPLICATION_NAMESPACE
+              value: "cert-manager"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "cert-manager,startupapicheck,cainjector,webhook"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-falco
+    run_if_changed: "(pkg/ee/default-application-catalog/falco-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "falco"
+            - name: APPLICATION_NAME
+              value: "falco"
+            - name: APPLICATION_NAMESPACE
+              value: "falco"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "falco"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-flux
+    run_if_changed: "(pkg/ee/default-application-catalog/flux2-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "flux"
+            - name: APPLICATION_NAME
+              value: "flux2"
+            - name: APPLICATION_NAMESPACE
+              value: "flux2"
+            - name: APP_LABEL_KEY
+              value: "app"
+            - name: NAMES
+              value: "helm-controller,image-automation-controller,image-reflector-controller,kustomize-controller,notification-controller,source-controller"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-k8sgpt
+    run_if_changed: "(pkg/ee/default-application-catalog/k8sgpt-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "k8sgpt"
+            - name: APPLICATION_NAME
+              value: "k8sgpt"
+            - name: APPLICATION_NAMESPACE
+              value: "k8sgpt"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "k8sgpt-operator"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-k8sgpt-operator
+    run_if_changed: "(pkg/ee/default-application-catalog/k8sgpt-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "k8sgpt-operator"
+            - name: APPLICATION_NAME
+              value: "k8sgpt-operator"
+            - name: APPLICATION_NAMESPACE
+              value: "k8sgpt-operator"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "k8sgpt-operator"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-kube-vip
+    run_if_changed: "(pkg/ee/default-application-catalog/kube-vip-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "k8sgpt-operator"
+            - name: APPLICATION_NAME
+              value: "k8sgpt-operator"
+            - name: APPLICATION_NAMESPACE
+              value: "k8sgpt-operator"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "k8sgpt-operator"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-kubevirt
+    run_if_changed: "(pkg/ee/default-application-catalog/kubevirt-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "kubevirt"
+            - name: APPLICATION_NAME
+              value: "kubevirt"
+            - name: APPLICATION_NAMESPACE
+              value: "kubevirt"
+            - name: APP_LABEL_KEY
+              value: "name"
+            - name: NAMES
+              value: "cdi-operator,virt-operator"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-metallb
+    run_if_changed: "(pkg/ee/default-application-catalog/metallb-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "metallb"
+            - name: APPLICATION_NAME
+              value: "metallb"
+            - name: APPLICATION_NAMESPACE
+              value: "metallb"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "metallb"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-nginx-ingress-controller
+    run_if_changed: "(pkg/ee/default-application-catalog/nginx-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "nginx"
+            - name: APPLICATION_NAME
+              value: "nginx"
+            - name: APPLICATION_NAMESPACE
+              value: "nginx"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "ingress-nginx"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-nvidia-gpu-operator
+    run_if_changed: "(pkg/ee/default-application-catalog/nvidia-gpu-operator-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "gpu-operator"
+            - name: APPLICATION_NAME
+              value: "nvidia-gpu-operator"
+            - name: APPLICATION_NAMESPACE
+              value: "nvidia-gpu-operator"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "nvidia-gpu-operator,node-feature-discovery"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-trivy
+    run_if_changed: "(pkg/ee/default-application-catalog/trivy-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "trivy"
+            - name: APPLICATION_NAME
+              value: "trivy"
+            - name: APPLICATION_NAMESPACE
+              value: "trivy"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "trivy"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-trivy-operator
+    run_if_changed: "(pkg/ee/default-application-catalog/trivy-operator-app.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+          command:
+            - "./hack/ci/run-default-application-e2e-test.sh"
+          env:
+            - name: APPLICATION_INSTALLATION_NAME
+              value: "trivy-operator"
+            - name: APPLICATION_NAME
+              value: "trivy-operator"
+            - name: APPLICATION_NAMESPACE
+              value: "trivy-operator"
+            - name: APP_LABEL_KEY
+              value: "app.kubernetes.io/name"
+            - name: NAMES
+              value: "trivy-operator"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
