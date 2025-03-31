@@ -113,8 +113,8 @@ spec:
         app.kubernetes.io/instance: release-name
       annotations:
         checksum/config: aed63c39ba6a0479ad8af916a0afd097e20c80b4d9e35cb665b0f2fa5c17ddb8
-        prometheus.io/port: 9115
-        prometheus.io/scrape: true
+        prometheus.io/port: "9115"
+        prometheus.io/scrape: "true"
     spec:
       automountServiceAccountToken: false
       serviceAccountName: blackbox-exporter
