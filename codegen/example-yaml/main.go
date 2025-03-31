@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -40,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/ptr"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 func main() {
