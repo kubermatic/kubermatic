@@ -955,6 +955,11 @@ spec:
                                   - Default
                                   - None
                                 type: string
+                              enableDedicatedCpus:
+                                description: |-
+                                  Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
+                                  Defaults to false.
+                                type: boolean
                               enableDefaultNetworkPolicies:
                                 description: |-
                                   Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
