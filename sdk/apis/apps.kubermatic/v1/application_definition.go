@@ -313,15 +313,15 @@ func (ad *ApplicationDefinitionSpec) GetDefaultValues() ([]byte, error) {
 
 // GetParsedDefaultValues parses the values either from the DefaultValues or DefaultValuesBlock field.
 // Will return an error if both fields are set.
-func (ai *ApplicationDefinitionSpec) GetParsedDefaultValues() (map[string]interface{}, error) {
+func (ad *ApplicationDefinitionSpec) GetParsedDefaultValues() (map[string]interface{}, error) {
 	values := make(map[string]interface{})
-	if !isEmptyRawExtension(ai.DefaultValues) && ai.DefaultValuesBlock != "" {
+	if !isEmptyRawExtension(ad.DefaultValues) && ad.DefaultValuesBlock != "" {
 		return nil, errors.New("the fields DefaultValues and DefaultValuesBlock cannot be used simultaneously, please delete one of them")
 	}
-	if !isEmptyRawExtension(ai.DefaultValues) {
-		err := json.Unmarshal(ai.DefaultValues.Raw, &values)
+	if !isEmptyRawExtension(ad.DefaultValues) {
+		err := json.Unmarshal(ad.DefaultValues.Raw, &values)
 		return values, err
 	}
-	err := yaml.Unmarshal([]byte(ai.DefaultValuesBlock), &values)
+	err := yaml.Unmarshal([]byte(ad.DefaultValuesBlock), &values)
 	return values, err
 }
