@@ -254,13 +254,15 @@ type VMwareCloudDirector struct {
 }
 
 func (s VMwareCloudDirector) IsValid() bool {
-	return ((len(s.Username) > 0 &&
-		len(s.Password) > 0) ||
-		len(s.APIToken) > 0) &&
+	hasAnyNet := len(s.OVDCNetwork) > 0 || len(s.OVDCNetworks) > 0
+	hasBothNets := len(s.OVDCNetwork) > 0 && len(s.OVDCNetworks) > 0
+	hasCredentials := len(s.Username) > 0 && len(s.Password) > 0
+
+	return true &&
+		(hasCredentials || len(s.APIToken) > 0) &&
 		len(s.VDC) > 0 &&
 		len(s.Organization) > 0 &&
-		(len(s.OVDCNetwork) > 0 || len(s.OVDCNetworks) > 0) &&
-		!(len(s.OVDCNetwork) > 0 && len(s.OVDCNetworks) > 0)
+		hasAnyNet && !hasBothNets
 }
 
 type Baremetal struct {

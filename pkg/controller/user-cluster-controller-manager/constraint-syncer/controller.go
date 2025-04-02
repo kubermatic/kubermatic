@@ -45,7 +45,7 @@ const (
 	spec                 = "spec"
 	parametersField      = "parameters"
 	matchField           = "match"
-	rawJsonField         = "rawJSON"
+	rawJSONField         = "rawJSON"
 	enforcementAction    = "enforcementAction"
 )
 
@@ -151,17 +151,17 @@ func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconcilin
 				}
 
 				// To keep backwards compatibility for Constraints that still use rawJSON. Support for this should be removed for 2.19
-				if rawJson, ok := params[rawJsonField]; ok {
-					var rawJsonParams map[string]interface{}
-					rawJson, ok := rawJson.(string)
+				if rawJSON, ok := params[rawJSONField]; ok {
+					var rawJSONParams map[string]interface{}
+					rawJSON, ok := rawJSON.(string)
 					if !ok {
 						return nil, fmt.Errorf("error converting raw json parameters")
 					}
-					err := json.Unmarshal([]byte(rawJson), &rawJsonParams)
+					err := json.Unmarshal([]byte(rawJSON), &rawJSONParams)
 					if err != nil {
 						return nil, fmt.Errorf("error unmarshalling raw json parameters: %w", err)
 					}
-					params = rawJsonParams
+					params = rawJSONParams
 				}
 
 				if err := unstructured.SetNestedField(u.Object, params, spec, parametersField); err != nil {

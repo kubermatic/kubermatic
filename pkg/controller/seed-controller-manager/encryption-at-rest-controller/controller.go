@@ -133,14 +133,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// replicate the predicate from above to make sure that reconcile loops triggered by apiserver and secret
 	// do not run unexpected reconciles.
-	if !(cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()) {
+	if !cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		return reconcile.Result{}, nil
 	}
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := controllerutil.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -228,7 +228,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	switch cluster.Status.Encryption.Phase {
 	case kubermaticv1.ClusterEncryptionPhasePending:
-		isUpdated, err := isApiserverUpdated(ctx, r.Client, cluster)
+		isUpdated, err := isApiserverUpdated(ctx, r, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
@@ -238,12 +238,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 
-		keyHint, resourceList, err := getActiveConfiguration(ctx, r.Client, cluster)
+		keyHint, resourceList, err := getActiveConfiguration(ctx, r, cluster)
 		if err != nil {
 			return &reconcile.Result{}, err
 		}
 
-		if err := controllerutil.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+		if err := controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			if c.Status.Encryption.ActiveKey != keyHint || !isEqualSlice(c.Status.Encryption.EncryptedResources, resourceList) {
 				// the active key as per the parsed EncryptionConfiguration has changed; we need to re-run encryption
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded
@@ -259,7 +259,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
-		return r.encryptData(ctx, r.Client, log, cluster)
+		return r.encryptData(ctx, r, log, cluster)
 
 	case kubermaticv1.ClusterEncryptionPhaseActive:
 		// get a key hint as defined in the ClusterSpec to compare to the current status.
@@ -276,7 +276,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			}
 
 			log.Debugf("configured key %q != %q, moving cluster to EncryptionPhase 'Pending'", configuredKey, cluster.Status.Encryption.ActiveKey)
-			if err := controllerutil.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			if err := controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhasePending
 			}); err != nil {
 				return &reconcile.Result{}, err
@@ -286,7 +286,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		// encryption is set to "identity", thus secrets are unencrypted, and encryption is longer wished.
 		// This means we can fully reset the encryption status
 		if cluster.Status.Encryption.ActiveKey == encryptionresources.IdentityKey && !cluster.IsEncryptionEnabled() {
-			if err := controllerutil.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			if err := controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.Encryption = nil
 				controllerutil.SetClusterCondition(
 					cluster,
@@ -319,7 +319,7 @@ func (r *Reconciler) validateSecretRef(ctx context.Context, cluster *kubermaticv
 
 	for _, key := range cluster.Spec.EncryptionConfiguration.Secretbox.Keys {
 		if key.SecretRef != nil {
-			v, err := getSecretKeyValue(ctx, r.Client, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
+			v, err := getSecretKeyValue(ctx, r, key.SecretRef, fmt.Sprintf("cluster-%s", cluster.Name))
 			if err != nil {
 				return &reconcile.Result{}, err
 			} else {
@@ -335,7 +335,7 @@ func (r *Reconciler) validateSecretRef(ctx context.Context, cluster *kubermaticv
 
 func (r *Reconciler) setInitializedCondition(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// set the encryption initialized condition (should only happen once on every cluster)
-	if err := controllerutil.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+	if err := controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		if cluster.Status.Encryption == nil {
 			cluster.Status.Encryption = &kubermaticv1.ClusterEncryptionStatus{
 				Phase:              kubermaticv1.ClusterEncryptionPhasePending,

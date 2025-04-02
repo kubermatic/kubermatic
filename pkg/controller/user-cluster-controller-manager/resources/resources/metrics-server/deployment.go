@@ -85,7 +85,7 @@ func DeploymentReconciler(imageRewriter registry.ImageRewriter) reconciling.Name
 					MaxSurge:       &sptr,
 				},
 			}
-			dep.Spec.Template.ObjectMeta.Labels = resources.BaseAppLabels(resources.MetricsServerDeploymentName, nil)
+			dep.Spec.Template.Labels = resources.BaseAppLabels(resources.MetricsServerDeploymentName, nil)
 
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes

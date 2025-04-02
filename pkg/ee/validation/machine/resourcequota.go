@@ -70,16 +70,16 @@ func ValidateQuota(ctx context.Context,
 
 	// add requested resources to current usage and compare
 	combinedUsage := NewResourceDetails(currentCPU, currentMem, currentStorage)
-	combinedUsage.Cpu().Add(*machineResourceUsage.Cpu())
+	combinedUsage.CPU().Add(*machineResourceUsage.CPU())
 	combinedUsage.Memory().Add(*machineResourceUsage.Memory())
 	combinedUsage.Storage().Add(*machineResourceUsage.Storage())
 
 	quota := resourceQuota.Spec.Quota
-	if quota.CPU != nil && quota.CPU.Cmp(*combinedUsage.Cpu()) < 0 {
+	if quota.CPU != nil && quota.CPU.Cmp(*combinedUsage.CPU()) < 0 {
 		log.Debugw("requested CPU would exceed current quota", "request",
-			machineResourceUsage.Cpu(), "quota", quota.CPU, "used", currentCPU.String())
+			machineResourceUsage.CPU(), "quota", quota.CPU, "used", currentCPU.String())
 		return fmt.Errorf("requested CPU %q would exceed current quota (quota/used %q/%q)",
-			machineResourceUsage.Cpu(), quota.CPU, currentCPU.String())
+			machineResourceUsage.CPU(), quota.CPU, currentCPU.String())
 	}
 
 	if quota.Memory != nil && quota.Memory.Cmp(*combinedUsage.Memory()) < 0 {
@@ -133,7 +133,7 @@ func NewResourceDetailsFromCapacity(capacity *provider.NodeCapacity) (*ResourceD
 	}, nil
 }
 
-func (r *ResourceDetails) Cpu() *resource.Quantity {
+func (r *ResourceDetails) CPU() *resource.Quantity {
 	return &r.cpu
 }
 

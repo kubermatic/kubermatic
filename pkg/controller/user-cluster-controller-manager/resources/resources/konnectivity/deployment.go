@@ -62,7 +62,7 @@ func DeploymentReconciler(
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
-			ds.Spec.Template.ObjectMeta.Labels = labels
+			ds.Spec.Template.Labels = labels
 
 			replicas := int32(2)
 			ds.Spec.Replicas = &replicas

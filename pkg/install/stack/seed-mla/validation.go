@@ -29,13 +29,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func (m *Monitoring) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*MonitoringStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	failures := []error{}
 
 	return failures
 }
 
-func (*Monitoring) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
+func (*MonitoringStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
 	helmFailures := validateHelmValues(helmValues, opt)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)

@@ -51,14 +51,11 @@ func (m *csiVsphereMigration) PreApply(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to get CSIDriver: %w", err)
 	}
 
-	recreate := false
-	if len(driver.Spec.VolumeLifecycleModes) > 1 || (len(driver.Spec.VolumeLifecycleModes) == 1 && driver.Spec.VolumeLifecycleModes[0] != storagev1.VolumeLifecyclePersistent) {
-		recreate = true
-	}
-
-	if driver.Spec.PodInfoOnMount == nil || *driver.Spec.PodInfoOnMount {
-		recreate = true
-	}
+	recreate := false ||
+		len(driver.Spec.VolumeLifecycleModes) > 1 ||
+		(len(driver.Spec.VolumeLifecycleModes) == 1 && driver.Spec.VolumeLifecycleModes[0] != storagev1.VolumeLifecyclePersistent) ||
+		driver.Spec.PodInfoOnMount == nil ||
+		*driver.Spec.PodInfoOnMount
 
 	if recreate {
 		log.Info("Deleting vSphere CSIDriver to allow upgrade")

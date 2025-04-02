@@ -145,7 +145,7 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 	// Add a wrapping here so we can emit an event on error
 	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -391,7 +391,7 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	}
 
 	if alertmanager.Spec.ConfigSecret.Name == "" {
-		if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, alertmanager, func() error {
+		if _, err := controllerruntime.CreateOrUpdate(ctx, r, alertmanager, func() error {
 			alertmanager.Spec.ConfigSecret.Name = resources.DefaultAlertmanagerConfigSecretName
 			return nil
 		}); err != nil {
@@ -414,7 +414,7 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	}
 
 	if secret.Data == nil || len(secret.Data[resources.AlertmanagerConfigSecretKey]) == 0 {
-		if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, secret, func() error {
+		if _, err := controllerruntime.CreateOrUpdate(ctx, r, secret, func() error {
 			secret.Data = map[string][]byte{
 				resources.AlertmanagerConfigSecretKey: configuration,
 			}
@@ -479,7 +479,7 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 
 	// Update alertmanager config status in Alertmanager CR
 	if oldAlertmanager.Status.ConfigStatus != alertmanager.Status.ConfigStatus {
-		if err := r.Client.Status().Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
+		if err := r.Status().Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
 			return fmt.Errorf("error patching alertmanager config status: %w", err)
 		}
 	}

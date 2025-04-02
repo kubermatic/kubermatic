@@ -27,7 +27,7 @@ import (
 func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcilerFactory {
 	return func() (string, reconciling.ClusterRoleBindingReconciler) {
 		return resources.KonnectivityClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.ObjectMeta.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
+			crb.Labels = resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,

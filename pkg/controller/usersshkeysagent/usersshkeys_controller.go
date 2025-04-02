@@ -99,7 +99,7 @@ func Add(
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.Debug("Processing")
 
-	secret, err := r.fetchUserSSHKeySecret(ctx, request.NamespacedName.Namespace)
+	secret, err := r.fetchUserSSHKeySecret(ctx, request.Namespace)
 	if err != nil || secret == nil {
 		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %w", err)
 	}

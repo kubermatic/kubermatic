@@ -374,7 +374,7 @@ func initialMemberList(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 				members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 			}
 
-			if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
+			if _, ok := pod.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
 				members = append(
 					members,
 					fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace),

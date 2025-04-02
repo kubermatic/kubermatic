@@ -165,7 +165,7 @@ func checkIfAddrExists(link *netlink.Dummy, ifAddr string) error {
 	}
 	for _, addr := range addrs {
 		err = errors.New("address not present")
-		if addr.IPNet.IP.String() == ifAddr {
+		if addr.IP.String() == ifAddr {
 			err = nil
 			break
 		}

@@ -35,7 +35,7 @@ const (
 	CiliumSeedApiserverAllow = "cilium-seed-apiserver-allow"
 )
 
-func SeedApiServerRule() *api.Rule {
+func SeedApiserverRule() *api.Rule {
 	egressRule := []api.EgressRule{
 		{
 			EgressCommonRule: api.EgressCommonRule{

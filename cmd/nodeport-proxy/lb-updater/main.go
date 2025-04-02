@@ -140,7 +140,7 @@ type LBUpdater struct {
 }
 
 func (u *LBUpdater) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	err := u.syncLB(ctx, request.NamespacedName.String())
+	err := u.syncLB(ctx, request.String())
 	if err != nil {
 		u.log.Errorw("Error syncing LoadBalancer", zap.Error(err))
 	}
@@ -243,10 +243,9 @@ func (u *LBUpdater) syncLB(ctx context.Context, s string) error {
 	buf.WriteString("======================\n")
 	buf.WriteString("Updated LB Ports:\n")
 	for _, p := range lb.Spec.Ports {
-		buf.WriteString(fmt.Sprintf("Name: %s\n", p.Name))
-		buf.WriteString(fmt.Sprintf("Port: %d\n", p.Port))
-		buf.WriteString(fmt.Sprintf("NodePort: %d\n", p.NodePort))
-		buf.WriteString("\n")
+		fmt.Fprintf(buf, "Name: %s\n", p.Name)
+		fmt.Fprintf(buf, "Port: %d\n", p.Port)
+		fmt.Fprintf(buf, "NodePort: %d\n\n", p.NodePort)
 	}
 	buf.WriteString("======================\n")
 	u.log.Debug(buf.String())

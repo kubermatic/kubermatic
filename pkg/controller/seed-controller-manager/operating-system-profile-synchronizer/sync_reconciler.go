@@ -93,7 +93,7 @@ func addSyncReconciler(
 }
 
 func (r *syncReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("operatingsystemprofile", request.NamespacedName.String())
+	log := r.log.With("operatingsystemprofile", request.String())
 	log.Debug("Reconciling")
 
 	cosp := &unstructured.Unstructured{}

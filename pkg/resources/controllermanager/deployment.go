@@ -286,7 +286,7 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 	flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 
 	// Apply leader election settings
-	if lds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+	if lds := cluster.Spec.ComponentsOverride.ControllerManager.LeaseDurationSeconds; lds != nil {
 		flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
 	}
 	if rds := cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {

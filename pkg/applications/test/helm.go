@@ -126,17 +126,17 @@ func PackageChart(t *testing.T, chartDir string, destDir string) (string, int64)
 	return archivePath, expectedChartInfo.Size()
 }
 
-// StartHttpRegistryWithCleanup starts a Helm http registry and uploads charts archives matching
+// StartHTTPRegistryWithCleanup starts a Helm http registry and uploads charts archives matching
 // glob and returns the registry URL.
-func StartHttpRegistryWithCleanup(t *testing.T, glob string) string {
+func StartHTTPRegistryWithCleanup(t *testing.T, glob string) string {
 	u, _ := startRegistryWithCleanup(t, glob, false)
 	return u
 }
 
-// StartHttpsRegistryWithCleanup is the same as StartHttpRegistryWithCleanup, but starts a TLS
+// StartHTTPSRegistryWithCleanup is the same as StartHttpRegistryWithCleanup, but starts a TLS
 // server instead. Any package calling this must provide a "testdata" directory with the Helm
 // test PKI.
-func StartHttpsRegistryWithCleanup(t *testing.T, glob string) (string, *PKI) {
+func StartHTTPSRegistryWithCleanup(t *testing.T, glob string) (string, *PKI) {
 	return startRegistryWithCleanup(t, glob, true)
 }
 
@@ -160,18 +160,18 @@ func startRegistryWithCleanup(t *testing.T, glob string, secure bool) (string, *
 	return srv.URL(), pki
 }
 
-// StartHttpRegistryWithAuthAndCleanup starts a Helm http registry with basic auth enabled and
+// StartHTTPRegistryWithAuthAndCleanup starts a Helm http registry with basic auth enabled and
 // uploads charts archives matching glob and returns the registry URL.
 // the basic auth is hardcoded to Username: "username", Password: "password".
-func StartHttpRegistryWithAuthAndCleanup(t *testing.T, glob string) string {
+func StartHTTPRegistryWithAuthAndCleanup(t *testing.T, glob string) string {
 	u, _ := startRegistryWithAuthAndCleanup(t, glob, false)
 	return u
 }
 
-// StartHttpsRegistryWithAuthAndCleanup is the same as StartHttpRegistryWithAuthAndCleanup, but
+// StartHTTPSRegistryWithAuthAndCleanup is the same as StartHttpRegistryWithAuthAndCleanup, but
 // starts a TLS server instead. Any package calling this must provide a "testdata" directory with
 // the Helm test PKI.
-func StartHttpsRegistryWithAuthAndCleanup(t *testing.T, glob string) (string, *PKI) {
+func StartHTTPSRegistryWithAuthAndCleanup(t *testing.T, glob string) (string, *PKI) {
 	return startRegistryWithAuthAndCleanup(t, glob, true)
 }
 
@@ -243,9 +243,9 @@ func StartSecureOciRegistry(t *testing.T, glob string) (string, *PKI) {
 // returns the registry URL and registryConfigFile.
 // registryConfigFile contains the credentials of the registry.
 func StartOciRegistryWithAuth(t *testing.T, glob string) (string, string) {
-	ociRegistryUrl, registryConfigFile, _ := newOciRegistry(t, glob, true, false)
+	ociRegistryURL, registryConfigFile, _ := newOciRegistry(t, glob, true, false)
 
-	return ociRegistryUrl, registryConfigFile
+	return ociRegistryURL, registryConfigFile
 }
 
 // StartOciRegistryWithAuth start an oci registry with authentication, uploads charts archives matching glob,
@@ -330,7 +330,7 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool, secure bool) (st
 	config.Storage = map[string]configuration.Parameters{"inmemory": map[string]interface{}{}}
 
 	fullHost := net.JoinHostPort(registryHostname, strconv.Itoa(port))
-	ociRegistryUrl := fmt.Sprintf("oci://%s/helm-charts", fullHost)
+	ociRegistryURL := fmt.Sprintf("oci://%s/helm-charts", fullHost)
 
 	ctx := context.Background()
 
@@ -361,7 +361,7 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool, secure bool) (st
 	}
 
 	// ensure registry is listening
-	waitForRegistry(t, ctx, &httpClient, ociRegistryUrl, secure)
+	waitForRegistry(t, ctx, &httpClient, ociRegistryURL, secure)
 
 	// preload registry
 	if glob != "" {
@@ -402,14 +402,14 @@ func newOciRegistry(t *testing.T, glob string, enableAuth bool, secure bool) (st
 			t.Fatalf("failed to upload chart, invalid blob: %s", err)
 		}
 		for i := range files {
-			err = chartUploader.UploadTo(files[i], ociRegistryUrl)
+			err = chartUploader.UploadTo(files[i], ociRegistryURL)
 			if err != nil {
 				t.Fatalf("can not push chart '%s' to oci registry: %s", files[i], err)
 			}
 		}
 	}
 
-	return ociRegistryUrl, registryConfigFile, pki
+	return ociRegistryURL, registryConfigFile, pki
 }
 
 func waitForRegistry(t *testing.T, ctx context.Context, httpClient *http.Client, url string, secure bool) {

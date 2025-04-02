@@ -196,7 +196,7 @@ func (r *ruleGroupSyncController) syncClusterNS(
 			log.Debugw("cluster have mla disabled, skipping", "cluster", cluster.Name)
 			continue
 		}
-		if err := action(r.Client, ruleGroup, &cluster); err != nil {
+		if err := action(r, ruleGroup, &cluster); err != nil {
 			return fmt.Errorf("failed to sync rulegroup for cluster %s: %w", cluster.Name, err)
 		}
 	}

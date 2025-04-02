@@ -55,7 +55,7 @@ func AgentDaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.
 			labels := map[string]string{"app.kubernetes.io/name": AgentDaemonSetName}
 
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
-			ds.Spec.Template.ObjectMeta.Labels = labels
+			ds.Spec.Template.Labels = labels
 
 			// The agent should only run on Flatcar nodes
 			ds.Spec.Template.Spec.NodeSelector = map[string]string{nodelabelerapi.DistributionLabelKey: nodelabelerapi.FlatcarLabelValue}

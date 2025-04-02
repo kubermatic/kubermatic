@@ -89,10 +89,10 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	//
 	// Attributes we check:
 	// - Subnet CIDR
-	if !(subnet.Properties != nil &&
-		reflect.DeepEqual(subnet.Properties.AddressPrefix, target.Properties.AddressPrefix) &&
-		reflect.DeepEqual(subnet.Properties.AddressPrefixes, target.Properties.AddressPrefixes) &&
-		reflect.DeepEqual(subnet.Properties.RouteTable, target.Properties.RouteTable)) {
+	if subnet.Properties == nil ||
+		!reflect.DeepEqual(subnet.Properties.AddressPrefix, target.Properties.AddressPrefix) ||
+		!reflect.DeepEqual(subnet.Properties.AddressPrefixes, target.Properties.AddressPrefixes) ||
+		!reflect.DeepEqual(subnet.Properties.RouteTable, target.Properties.RouteTable) {
 		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}

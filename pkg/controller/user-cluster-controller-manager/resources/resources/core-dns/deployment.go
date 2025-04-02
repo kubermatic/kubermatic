@@ -92,9 +92,9 @@ func DeploymentReconciler(kubernetesVersion *semverlib.Version, cluster *kuberma
 				}
 			}
 
-			if dep.Spec.Template.ObjectMeta.Labels == nil {
+			if dep.Spec.Template.Labels == nil {
 				// has to be the same as the selector
-				dep.Spec.Template.ObjectMeta.Labels = dep.Spec.Selector.MatchLabels
+				dep.Spec.Template.Labels = dep.Spec.Selector.MatchLabels
 			}
 
 			iptr := intstr.FromInt(1)

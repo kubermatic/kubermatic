@@ -59,7 +59,7 @@ func TestNewDeploySettings(t *testing.T) {
 		wait      bool
 		timeout   time.Duration
 		atomic    bool
-		enableDns bool
+		enableDNS bool
 		want      *DeployOpts
 		wantErr   bool
 	}{
@@ -68,7 +68,7 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      false,
 			timeout:   0,
 			atomic:    false,
-			enableDns: false,
+			enableDNS: false,
 			want: &DeployOpts{
 				wait:      false,
 				timeout:   0,
@@ -82,7 +82,7 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      true,
 			timeout:   10 * time.Second,
 			atomic:    false,
-			enableDns: false,
+			enableDNS: false,
 			want: &DeployOpts{
 				wait:      true,
 				timeout:   10 * time.Second,
@@ -96,7 +96,7 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      true,
 			timeout:   10 * time.Second,
 			atomic:    true,
-			enableDns: false,
+			enableDNS: false,
 			want: &DeployOpts{
 				wait:      true,
 				timeout:   10 * time.Second,
@@ -110,7 +110,7 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      true,
 			timeout:   10 * time.Second,
 			atomic:    true,
-			enableDns: true,
+			enableDNS: true,
 			want: &DeployOpts{
 				wait:      true,
 				timeout:   10 * time.Second,
@@ -124,7 +124,7 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      false,
 			timeout:   0,
 			atomic:    false,
-			enableDns: true,
+			enableDNS: true,
 			want: &DeployOpts{
 				wait:      false,
 				timeout:   0,
@@ -138,7 +138,7 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      true,
 			timeout:   0,
 			atomic:    false,
-			enableDns: false,
+			enableDNS: false,
 			want:      nil,
 			wantErr:   true,
 		},
@@ -147,14 +147,14 @@ func TestNewDeploySettings(t *testing.T) {
 			wait:      false,
 			timeout:   10 * time.Second,
 			atomic:    true,
-			enableDns: false,
+			enableDNS: false,
 			want:      nil,
 			wantErr:   true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewDeployOpts(tt.wait, tt.timeout, tt.atomic, tt.enableDns)
+			got, err := NewDeployOpts(tt.wait, tt.timeout, tt.atomic, tt.enableDNS)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("NewDeployOpts() error = %v, wantErr %v", err, tt.wantErr)
 			}

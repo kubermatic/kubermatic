@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+version: "2"
 run:
   # concurrency=1 lowers memory usage a bit
   concurrency: 1
   modules-download-mode: readonly
-  timeout: 30m
   build-tags:
     - ce
     - cloud
@@ -30,6 +30,7 @@ run:
     - logout
 
 linters:
+  default: none
   enable:
     - asciicheck
     - bidichk
@@ -45,8 +46,6 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - gosimple
     - govet
     - importas
     - ineffassign
@@ -57,98 +56,119 @@ linters:
     - nosprintfhostport
     - predeclared
     - promlinter
-    - revive
     - staticcheck
-    - tenv
     - unconvert
     - unused
     - usestdlibvars
     - wastedassign
     - whitespace
-  disable-all: true
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: io/ioutil
+              desc: https://go.dev/doc/go1.16#ioutil
+            - pkg: github.com/ghodss/yaml
+              desc: use sigs.k8s.io/yaml instead
+    goconst:
+      min-occurrences: 5
+    govet:
+      enable:
+        - nilness # find tautologies / impossible conditions
+    importas:
+      alias:
+        # KKP
+        - pkg: k8c.io/kubermatic/sdk/v2/api/v1
+          alias: apiv1
+        - pkg: k8c.io/kubermatic/sdk/v2/api/v2
+          alias: apiv2
+        - pkg: k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1
+          alias: appskubermaticv1
+        - pkg: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1
+          alias: kubermaticv1
+        - pkg: k8c.io/kubermatic/v2/pkg/util/errors
+          alias: utilerrors
+        # Kubernetes
+        - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
+          alias: $1$2
+        - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
+          alias: metav1
+        - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+          alias: apiextensionsv1
+        - pkg: k8s.io/apimachinery/pkg/api/errors
+          alias: apierrors
+        - pkg: k8s.io/apimachinery/pkg/util/errors
+          alias: kerrors
+        # Controller Runtime
+        - pkg: sigs.k8s.io/controller-runtime/pkg/client
+          alias: ctrlruntimeclient
+        # Misc
+        - pkg: k8c.io/machine-controller/pkg/apis/cluster/v1alpha1
+          alias: clusterv1alpha1
+        - pkg: github.com/Masterminds/semver/v3
+          alias: semverlib
+        - pkg: github.com/vmware-tanzu/velero/pkg/apis/velero/v1
+          alias: velerov1
+      no-unaliased: true
+    staticcheck:
+      checks:
+        - all
+        # disable "error strings should not be capitalized":
+        # but often errors start with k8s kinds and it's annoying to rephrase every error
+        - '-ST1005'
+  exclusions:
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    # NOTE: Do not use commas in the exclude patterns, or else the regex will be
+    # split and you will be sad: https://github.com/golangci/golangci-lint/issues/665
+    rules:
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `main` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `DefaultConfiguration` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `\(\*Azure\)\.CleanUpCloudProvider` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `\(\*[rR]econciler\)\.reconcile` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `initTestEndpoint` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `\(\*Provider\)\.InitializeCloudProvider` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.ensureResourcesAreDeployed` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `TestKonnectivity` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `validateOpenStackCloudSpec` is high
+      - path: (.+)\.go$
+        text: cyclomatic complexity [0-9]+ of func `\(\*ModifiersBuilder\)\.Build` is high
+      # gocritic
+      - path: (.+)\.go$
+        text: singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
+      - linters:
+          - goconst
+        path: (.+)_test\.go
+    paths:
+      - zz_generated.*.go
+      # This package was forked from upstream (in #9826)
+      # and we want to keep it as close to upstream as possible.
+      - pkg/provider/cloud/eks/authenticator
 
-# NOTE: Do not use commas in the exclude patterns, or else the regex will be
-# split and you will be sad: https://github.com/golangci/golangci-lint/issues/665
 issues:
-  exclude-files:
-    - zz_generated.*.go
-  exclude-dirs:
-    # This package was forked from upstream (in #9826)
-    # and we want to keep it as close to upstream as possible.
-    - pkg/provider/cloud/eks/authenticator
-
   # defaults to 3, which often needlessly hides issues and forces
   # to re-run the linter across the entire repo many times
-  max-same-issues: 50
-  exclude:
-  # gocyclo
-  - cyclomatic complexity [0-9]+ of func `main` is high
-  - cyclomatic complexity [0-9]+ of func `DefaultConfiguration` is high
-  - cyclomatic complexity [0-9]+ of func `\(\*Azure\)\.CleanUpCloudProvider` is high
-  - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.reconcile` is high
-  - cyclomatic complexity [0-9]+ of func `initTestEndpoint` is high
-  - cyclomatic complexity [0-9]+ of func `\(\*Provider\)\.InitializeCloudProvider` is high
-  - cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.ensureResourcesAreDeployed` is high
-  - cyclomatic complexity [0-9]+ of func `TestKonnectivity` is high
-  - cyclomatic complexity [0-9]+ of func `validateOpenStackCloudSpec` is high
-  - cyclomatic complexity [0-9]+ of func `\(\*ModifiersBuilder\)\.Build` is high
-  # gocritic
-  - singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
+  max-same-issues: 0
 
-linters-settings:
-  revive:
-    rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant
-      - name: duplicated-imports
-        severity: warning
-
-  depguard:
-    rules:
-      main:
-        deny:
-          - { pkg: io/ioutil, desc: https://go.dev/doc/go1.16#ioutil }
-          - { pkg: github.com/ghodss/yaml, desc: use sigs.k8s.io/yaml instead }
-
-  govet:
-    enable:
-      - nilness # find tautologies / impossible conditions
-
-  goconst:
-    min-occurrences: 5
-    ignore-tests: true
-
-  importas:
-    no-unaliased: true
-    alias:
-      # KKP
-      - pkg: k8c.io/kubermatic/sdk/v2/api/v1
-        alias: apiv1
-      - pkg: k8c.io/kubermatic/sdk/v2/api/v2
-        alias: apiv2
-      - pkg: k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1
-        alias: appskubermaticv1
-      - pkg: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1
-        alias: kubermaticv1
-      - pkg: k8c.io/kubermatic/v2/pkg/util/errors
-        alias: utilerrors
-      # Kubernetes
-      - pkg: k8s.io/api/(\w+)/(v[\w\d]+)
-        alias: $1$2
-      - pkg: k8s.io/apimachinery/pkg/apis/meta/v1
-        alias: metav1
-      - pkg: k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
-        alias: apiextensionsv1
-      - pkg: k8s.io/apimachinery/pkg/api/errors
-        alias: apierrors
-      - pkg: k8s.io/apimachinery/pkg/util/errors
-        alias: kerrors
-      # Controller Runtime
-      - pkg: sigs.k8s.io/controller-runtime/pkg/client
-        alias: ctrlruntimeclient
-      # Misc
-      - pkg: k8c.io/machine-controller/pkg/apis/cluster/v1alpha1
-        alias: clusterv1alpha1
-      - pkg: github.com/Masterminds/semver/v3
-        alias: semverlib
-      - pkg: github.com/vmware-tanzu/velero/pkg/apis/velero/v1
-        alias: velerov1
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    paths:
+      - zz_generated.*.go
+      # This package was forked from upstream (in #9826)
+      # and we want to keep it as close to upstream as possible.
+      - pkg/provider/cloud/eks/authenticator

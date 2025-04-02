@@ -45,8 +45,8 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 
 	// ensure that a ClusterTemplate has a project reference
 	if scope == kubermaticv1.ProjectClusterTemplateScope {
-		projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
-		if !ok || projectId == "" {
+		projectID, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
+		if !ok || projectID == "" {
 			allErrs = append(allErrs, field.Required(
 				parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
 				fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),

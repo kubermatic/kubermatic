@@ -78,19 +78,19 @@ const (
 	MLAIAPNamespace   = UserClusterMLANamespace
 )
 
-type UserClusterMLA struct{}
+type UserClusterMLAStack struct{}
 
 func NewStack() stack.Stack {
-	return &UserClusterMLA{}
+	return &UserClusterMLAStack{}
 }
 
-var _ stack.Stack = &UserClusterMLA{}
+var _ stack.Stack = &UserClusterMLAStack{}
 
-func (*UserClusterMLA) Name() string {
+func (*UserClusterMLAStack) Name() string {
 	return "KKP User Cluster MLA"
 }
 
-func (s *UserClusterMLA) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+func (s *UserClusterMLAStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployMLASecrets(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy MLA Secrets: %w", err)
 	}

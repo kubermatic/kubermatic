@@ -664,10 +664,8 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 
 			var targetPort int32
 
-			if port.Name == "" {
-				// port.Name is optional if there is only one port
-				targetPort = epPort.Port
-			} else if port.Name == epPort.Name {
+			// port.Name is optional if there is only one port
+			if port.Name == "" || port.Name == epPort.Name {
 				targetPort = epPort.Port
 			}
 

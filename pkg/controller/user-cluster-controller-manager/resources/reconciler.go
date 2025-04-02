@@ -309,7 +309,7 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 		metricsserver.APIServiceReconciler(caCert),
 	}
 
-	if err := kkpreconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {
+	if err := kkpreconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r); err != nil {
 		return fmt.Errorf("failed to reconcile APIServices: %w", err)
 	}
 
@@ -331,7 +331,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		creators = append(creators, usersshkeys.ServiceAccountReconciler())
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
@@ -340,7 +340,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			kubernetesdashboard.ServiceAccountReconciler(),
 		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -348,7 +348,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	cloudInitSAReconciler := []reconciling.NamedServiceAccountReconcilerFactory{
 		cloudinitsettings.ServiceAccountReconciler(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, cloudInitSAReconciler, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, cloudInitSAReconciler, resources.CloudInitSettingsNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile cloud-init-getter in the namespace %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
@@ -357,7 +357,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 		creators = []reconciling.NamedServiceAccountReconcilerFactory{
 			gatekeeper.ServiceAccountReconciler(),
 		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -367,7 +367,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 			konnectivity.ServiceAccountReconciler(),
 			metricsserver.ServiceAccountReconciler(), // required only if metrics-server is running in user cluster
 		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", metav1.NamespaceSystem, err)
 		}
 	}
@@ -385,7 +385,7 @@ func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcil
 	}
 
 	if len(creators) != 0 {
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.UserClusterMLANamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
@@ -403,7 +403,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		creators = append(creators, usersshkeys.RoleReconciler())
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
@@ -414,7 +414,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		operatingsystemmanager.KubePublicRoleReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespacePublic, r); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", metav1.NamespacePublic, err)
 	}
 
@@ -424,7 +424,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		operatingsystemmanager.DefaultRoleReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceDefault, r); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", metav1.NamespaceDefault, err)
 	}
 
@@ -434,7 +434,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 			kubernetesdashboard.RoleReconciler(),
 		}
 
-		if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -444,7 +444,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		operatingsystemmanager.CloudInitSettingsRoleReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoles(ctx, cloudInitRoleReconciler, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, cloudInitRoleReconciler, resources.CloudInitSettingsNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile cloud-init-getter role in the namespace %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
@@ -453,7 +453,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 		creators = []reconciling.NamedRoleReconcilerFactory{
 			gatekeeper.RoleReconciler(),
 		}
-		if err := reconciling.ReconcileRoles(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileRoles(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Roles in the namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -475,7 +475,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		creators = append(creators, usersshkeys.RoleBindingReconciler())
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-system Namespace: %w", err)
 	}
 
@@ -486,7 +486,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		operatingsystemmanager.KubePublicRoleBindingReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespacePublic, r); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-public Namespace: %w", err)
 	}
 
@@ -496,7 +496,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		operatingsystemmanager.DefaultRoleBindingReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceDefault, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceDefault, r); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %w", err)
 	}
 
@@ -505,7 +505,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		creators = []reconciling.NamedRoleBindingReconcilerFactory{
 			kubernetesdashboard.RoleBindingReconciler(),
 		}
-		if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -515,7 +515,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		operatingsystemmanager.CloudInitSettingsRoleBindingReconciler(),
 	}
 
-	if err := reconciling.ReconcileRoleBindings(ctx, cloudInitRoleBindingReconciler, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, cloudInitRoleBindingReconciler, resources.CloudInitSettingsNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile cloud-init-getter RoleBindings in the namespace: %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
@@ -524,7 +524,7 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context, data reconcileDa
 		creators = []reconciling.NamedRoleBindingReconcilerFactory{
 			gatekeeper.RoleBindingReconciler(),
 		}
-		if err := reconciling.ReconcileRoleBindings(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileRoleBindings(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile RoleBindings in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -559,7 +559,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 		creators = append(creators, mlamonitoringagent.ClusterRoleReconciler())
 	}
 
-	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoles: %w", err)
 	}
 	return nil
@@ -605,7 +605,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reco
 		creators = append(creators, konnectivity.ClusterRoleBindingReconciler())
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %w", err)
 	}
 	return nil
@@ -642,7 +642,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 		}
 	}
 
-	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
+	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %w", err)
 	}
 
@@ -663,7 +663,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 		creators = append(creators, gatekeeper.MutatingWebhookConfigurationReconciler(r.opaWebhookTimeout))
 	}
 
-	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile MutatingWebhookConfigurations: %w", err)
 	}
 	return nil
@@ -692,7 +692,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
 	}
 
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %w", err)
 	}
 	return nil
@@ -710,7 +710,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 		creatorsKubeSystem = append(creatorsKubeSystem, metricsserver.ExternalNameServiceReconciler(r.namespace))
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %w", err)
 	}
 
@@ -719,7 +719,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 		creators := []reconciling.NamedServiceReconcilerFactory{
 			kubernetesdashboard.ServiceReconciler(data.ipFamily),
 		}
-		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Services in namespace %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -729,7 +729,7 @@ func (r *reconciler) reconcileServices(ctx context.Context, data reconcileData) 
 		creators := []reconciling.NamedServiceReconcilerFactory{
 			gatekeeper.ServiceReconciler(),
 		}
-		if err := reconciling.ReconcileServices(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileServices(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Services in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -744,13 +744,13 @@ func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData)
 	epReconcilers := []reconciling.NamedEndpointsReconcilerFactory{
 		kubernetesresources.EndpointsReconciler(data.k8sServiceEndpointAddress, data.k8sServiceEndpointPort),
 	}
-	if err := reconciling.ReconcileEndpoints(ctx, epReconcilers, metav1.NamespaceDefault, r.Client); err != nil {
+	if err := reconciling.ReconcileEndpoints(ctx, epReconcilers, metav1.NamespaceDefault, r); err != nil {
 		return fmt.Errorf("failed to reconcile Endpoints: %w", err)
 	}
 	epSliceReconcilers := []reconciling.NamedEndpointSliceReconcilerFactory{
 		kubernetesresources.EndpointSliceReconciler(data.k8sServiceEndpointAddress, data.k8sServiceEndpointPort),
 	}
-	if err := reconciling.ReconcileEndpointSlices(ctx, epSliceReconcilers, metav1.NamespaceDefault, r.Client); err != nil {
+	if err := reconciling.ReconcileEndpointSlices(ctx, epSliceReconcilers, metav1.NamespaceDefault, r); err != nil {
 		return fmt.Errorf("failed to reconcile EndpointSlices: %w", err)
 	}
 	return nil
@@ -761,7 +761,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		machinecontroller.ClusterInfoConfigMapReconciler(r.clusterURL.String(), data.caCert.Cert),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespacePublic, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespacePublic, r); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-public namespace: %w", err)
 	}
 
@@ -815,7 +815,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		}
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %w", err)
 	}
 
@@ -834,7 +834,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				HAClusterIdentifier: r.clusterName,
 			}),
 		}
-		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile ConfigMap in namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
@@ -880,7 +880,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = append(creators, usersshkeys.SecretReconciler(data.userSSHKeys))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in kube-system Namespace: %w", err)
 	}
 
@@ -891,7 +891,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 			kubernetesdashboard.CsrfTokenSecretReconciler(),
 		}
 
-		if err := reconciling.ReconcileSecrets(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		if err := reconciling.ReconcileSecrets(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -901,7 +901,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = []reconciling.NamedSecretReconcilerFactory{
 			gatekeeper.SecretReconciler(),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -910,7 +910,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = []reconciling.NamedSecretReconcilerFactory{
 			mlamonitoringagent.ClientCertificateReconciler(data.mlaGatewayCACert),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
@@ -924,7 +924,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 			}),
 			mlaloggingagent.ClientCertificateReconciler(data.mlaGatewayCACert),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
@@ -933,7 +933,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		cloudinitsettings.SecretReconciler(),
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, creators, resources.CloudInitSettingsNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", resources.CloudInitSettingsNamespace, err)
 	}
 
@@ -959,7 +959,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
 	}
 
@@ -967,7 +967,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		dsReconcilers = []reconciling.NamedDaemonSetReconcilerFactory{
 			mlaloggingagent.DaemonSetReconciler(data.loggingRequirements, r.imageRewriter),
 		}
-		if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.UserClusterMLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, resources.UserClusterMLANamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %w", err)
 		}
 	}
@@ -990,7 +990,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData
 		creators = append(creators, mla.NamespaceReconciler)
 	}
 
-	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %w", err)
 	}
 
@@ -1019,7 +1019,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			kubernetesdashboard.DeploymentReconciler(r.imageRewriter),
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, kubernetesdashboard.Namespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", kubernetesdashboard.Namespace, err)
 		}
 	}
@@ -1028,7 +1028,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		coredns.DeploymentReconciler(r.clusterSemVer, data.cluster, r.imageRewriter),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, kubeSystemReconcilers, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, kubeSystemReconcilers, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
 	}
 
@@ -1039,7 +1039,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 			gatekeeper.AuditDeploymentReconciler(r.imageRewriter, data.gatekeeperAuditRequirements),
 		}
 
-		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -1048,7 +1048,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
 			mlamonitoringagent.DeploymentReconciler(data.monitoringRequirements, data.monitoringReplicas, r.imageRewriter),
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", resources.UserClusterMLANamespace, err)
 		}
 	}
@@ -1060,7 +1060,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 			konnectivity.DeploymentReconciler(data.clusterVersion, r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.imageRewriter, konnectivityResources),
 			metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", metav1.NamespaceSystem, err)
 		}
 	}
@@ -1071,19 +1071,19 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
 	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		kubesystem.DefaultNetworkPolicyReconciler(),
-		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()),
+		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceAPIIP.String()),
 	}
 
 	if r.userSSHKeyAgent {
 		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
-			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()))
+			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceAPIIP.String()))
 	}
 
 	if r.isKonnectivityEnabled {
 		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, metricsserver.NetworkPolicyReconciler(), konnectivity.NetworkPolicyReconciler())
 	}
 
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)
 	}
 
@@ -1099,7 +1099,7 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 		creators = []reconciling.NamedPodDisruptionBudgetReconcilerFactory{
 			gatekeeper.PodDisruptionBudgetReconciler(),
 		}
-		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+		if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, resources.GatekeeperNamespace, r); err != nil {
 			return fmt.Errorf("failed to reconcile PodDisruptionBudgets in namespace %s: %w", resources.GatekeeperNamespace, err)
 		}
 	}
@@ -1109,7 +1109,7 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 			metricsserver.PodDisruptionBudgetReconciler(),
 		)
 	}
-	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, metav1.NamespaceSystem, r); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %w", err)
 	}
 	return nil
@@ -1134,7 +1134,7 @@ type reconcileData struct {
 	gatekeeperAuditRequirements *corev1.ResourceRequirements
 	monitoringReplicas          *int32
 	ipFamily                    kubermaticv1.IPFamily
-	k8sServiceApiIP             *net.IP
+	k8sServiceAPIIP             *net.IP
 	k8sServiceEndpointAddress   string
 	k8sServiceEndpointPort      int32
 	reconcileK8sSvcEndpoints    bool
@@ -1148,7 +1148,7 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 	}
 
 	for _, resource := range resources {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if errC := r.cleanUpOPAHealthStatus(ctx, err); errC != nil {
 			return fmt.Errorf("failed to update OPA health status in cluster: %w", errC)
 		}
@@ -1161,7 +1161,7 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 }
 
 func (r *reconciler) ensureOPAExperimentalMutationWebhookIsRemoved(ctx context.Context) error {
-	if err := r.Client.Delete(ctx, &admissionregistrationv1.MutatingWebhookConfiguration{
+	if err := r.Delete(ctx, &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resources.GatekeeperMutatingWebhookConfigurationName,
 		}}); err != nil && !apierrors.IsNotFound(err) {
@@ -1234,7 +1234,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 
 func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
 	ctlrHealth, err = resources.HealthyDeployment(ctx,
-		r.Client,
+		r,
 		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperControllerDeploymentName},
 		1)
 	if err != nil {
@@ -1243,7 +1243,7 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kuberm
 	}
 
 	auditHealth, err = resources.HealthyDeployment(ctx,
-		r.Client,
+		r,
 		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperAuditDeploymentName},
 		1)
 	if err != nil {
@@ -1255,7 +1255,7 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (ctlrHealth kuberm
 
 func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kubermaticv1.HealthStatus, err error) {
 	health, err = resources.HealthyDeployment(ctx,
-		r.Client,
+		r,
 		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.MLAMonitoringAgentDeploymentName},
 		1)
 	if err != nil {
@@ -1268,7 +1268,7 @@ func (r *reconciler) getMLAMonitoringHealth(ctx context.Context) (health kuberma
 
 func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.HealthStatus, error) {
 	loggingHealth, err := resources.HealthyDaemonSet(ctx,
-		r.Client,
+		r,
 		types.NamespacedName{Namespace: resources.UserClusterMLANamespace, Name: resources.MLALoggingAgentDaemonSetName},
 		1)
 	if err != nil {
@@ -1279,7 +1279,7 @@ func (r *reconciler) getMLALoggingHealth(ctx context.Context) (kubermaticv1.Heal
 
 func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
 	for _, resource := range mlaloggingagent.ResourcesOnDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, false, err); errC != nil {
 			return fmt.Errorf("failed to update mla logging health status in cluster: %w", errC)
 		}
@@ -1292,7 +1292,7 @@ func (r *reconciler) ensureLoggingAgentIsRemoved(ctx context.Context) error {
 
 func (r *reconciler) ensureLegacyPromtailIsRemoved(ctx context.Context) error {
 	for _, resource := range mlaloggingagent.LegacyResourcesOnDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure promtail is removed/not present: %w", err)
 		}
@@ -1302,7 +1302,7 @@ func (r *reconciler) ensureLegacyPromtailIsRemoved(ctx context.Context) error {
 
 func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Context) error {
 	for _, resource := range mlamonitoringagent.ResourcesOnDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, false, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla monitoring health status in cluster: %w", errC)
 		}
@@ -1315,7 +1315,7 @@ func (r *reconciler) ensureUserClusterMonitoringAgentIsRemoved(ctx context.Conte
 
 func (r *reconciler) ensureLegacyPrometheusIsRemoved(ctx context.Context) error {
 	for _, resource := range mlamonitoringagent.LegacyResourcesOnDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure user cluster monitoring agent is removed/not present: %w", err)
 		}
@@ -1325,7 +1325,7 @@ func (r *reconciler) ensureLegacyPrometheusIsRemoved(ctx context.Context) error 
 
 func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 	for _, resource := range mla.ResourcesOnDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if errC := r.cleanUpMLAHealthStatus(ctx, true, true, err); errC != nil {
 			return fmt.Errorf("failed to update mla health status in cluster: %w", errC)
 		}
@@ -1338,7 +1338,7 @@ func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 
 func (r *reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context) error {
 	for _, resource := range cloudcontroller.ResourcesForDeletion(metav1.NamespaceSystem) {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure CSI driver resources are removed/not present: %w", err)
 		}
@@ -1348,7 +1348,7 @@ func (r *reconciler) ensureCSIDriverResourcesAreRemoved(ctx context.Context) err
 
 func (r *reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context) error {
 	for _, resource := range openvpn.ResourcesForDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure OpenVPN resources are removed/not present: %w", err)
 		}
@@ -1358,13 +1358,13 @@ func (r *reconciler) ensureOpenVPNSetupIsRemoved(ctx context.Context) error {
 
 func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error {
 	for _, resource := range konnectivity.ResourcesForDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Konnectivity resources are removed/not present: %w", err)
 		}
 	}
 	for _, resource := range metricsserver.UserClusterResourcesForDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure metrics-server resources are removed/not present: %w", err)
 		}
@@ -1374,7 +1374,7 @@ func (r *reconciler) ensureKonnectivitySetupIsRemoved(ctx context.Context) error
 
 func (r *reconciler) ensureKubernetesDashboardResourcesAreRemoved(ctx context.Context) error {
 	for _, resource := range kubernetesdashboard.ResourcesForDeletion() {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure Kubernetes Dashboard resources are removed/not present: %w", err)
 		}
@@ -1404,7 +1404,7 @@ func (r *reconciler) getUserClusterMonitoringAgentCustomScrapeConfigs(ctx contex
 
 func (r *reconciler) getEnvoyAgentConfigHash(ctx context.Context) (string, error) {
 	cm := corev1.ConfigMap{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: resources.EnvoyAgentConfigMapName, Namespace: metav1.NamespaceSystem}, &cm)
+	err := r.Get(ctx, types.NamespacedName{Name: resources.EnvoyAgentConfigMapName, Namespace: metav1.NamespaceSystem}, &cm)
 	if err != nil {
 		return "", fmt.Errorf("failed to get envoy-agent configmap: %w", err)
 	}

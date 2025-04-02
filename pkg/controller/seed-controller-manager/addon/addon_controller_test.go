@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -230,6 +231,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	ctx := context.Background()
 
 	controller := &Reconciler{
+		Client:             fake.NewClientBuilder().Build(),
 		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(ctx, log, testAddon, cluster, addonObj)
@@ -289,6 +291,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
+		Client:             fake.NewClientBuilder().Build(),
 		overwriteRegistry:  "bar.io",
 		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
@@ -333,6 +336,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
 	controller := &Reconciler{
+		Client:             fake.NewClientBuilder().Build(),
 		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
@@ -382,6 +386,7 @@ func TestController_getAddonManifests(t *testing.T) {
 	}
 
 	controller := &Reconciler{
+		Client:             fake.NewClientBuilder().Build(),
 		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 	manifests, err := controller.getAddonManifests(context.Background(), log, testAddon, cluster, addonObj)
@@ -408,6 +413,7 @@ func TestController_getAddonManifests(t *testing.T) {
 
 func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 	controller := &Reconciler{
+		Client:             fake.NewClientBuilder().Build(),
 		kubeconfigProvider: &fakeKubeconfigProvider{},
 	}
 
@@ -470,6 +476,7 @@ func TestHugeManifest(t *testing.T) {
 	}
 
 	r := &Reconciler{
+		Client:             fake.NewClientBuilder().Build(),
 		kubeconfigProvider: &fakeKubeconfigProvider{},
 		addons:             allAddons,
 	}

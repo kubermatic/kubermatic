@@ -36,7 +36,7 @@ const (
 	ciliumImageRegistry = "quay.io/cilium/"
 )
 
-func toOciUrl(s string) string {
+func toOCIURL(s string) string {
 	if strings.Contains(s, "://") {
 		return s
 	}
@@ -75,7 +75,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.0",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -88,7 +88,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.3",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -101,7 +101,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.4",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -114,7 +114,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.6",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -127,7 +127,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.7",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -140,7 +140,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.8",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -153,7 +153,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.14",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -166,7 +166,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.1",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -179,7 +179,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.2",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -192,7 +192,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.3",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -205,7 +205,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.9",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -218,7 +218,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.16",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -231,7 +231,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.3",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -244,7 +244,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.10",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -257,7 +257,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.16.6",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},

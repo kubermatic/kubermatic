@@ -39,7 +39,7 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, an
 	res := apiv2.StorageClassList{}
 	for _, sc := range storageClassList.Items {
 		if annotationFilter == nil || annotationFilter(sc.Annotations) {
-			res = append(res, apiv2.StorageClass{Name: sc.ObjectMeta.Name})
+			res = append(res, apiv2.StorageClass{Name: sc.Name})
 		}
 	}
 	return res, nil

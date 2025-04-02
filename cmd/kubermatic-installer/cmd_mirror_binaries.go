@@ -112,7 +112,7 @@ func getKubermaticConfigurationFromYaml(options *MirrorBinariesOptions) (*kuberm
 	return kubermaticConfig, nil
 }
 
-func downloadFromUrl(ctx context.Context, url, fileDownloadPath string) error {
+func downloadFromURL(ctx context.Context, url, fileDownloadPath string) error {
 	// Create a request with the provided context
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -185,10 +185,10 @@ func getChecksumOfFile(path string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func verifyChecksum(ctx context.Context, checksumUrl string, binaryFilePath string) error {
-	expectedChecksum, err := getChecksumFromURL(ctx, checksumUrl)
+func verifyChecksum(ctx context.Context, checksumURL string, binaryFilePath string) error {
+	expectedChecksum, err := getChecksumFromURL(ctx, checksumURL)
 	if err != nil {
-		return fmt.Errorf("error getting checksum from url %s: %w", checksumUrl, err)
+		return fmt.Errorf("error getting checksum from url %s: %w", checksumURL, err)
 	}
 	actualChecksum, err := getChecksumOfFile(binaryFilePath)
 	if err != nil {
@@ -232,7 +232,7 @@ func downloadCRITools(ctx context.Context, logger *logrus.Logger, version semver
 	criToolsFilePath := filepath.Join(criToolsDir, criToolsFileName)
 
 	// Download tarball
-	if err := downloadFromUrl(ctx, criToolsURL, criToolsFilePath); err != nil {
+	if err := downloadFromURL(ctx, criToolsURL, criToolsFilePath); err != nil {
 		return fmt.Errorf("failed to download CRI tools tarball (%s): %w", criToolsRelease, err)
 	}
 
@@ -280,7 +280,7 @@ func downloadAndVerifyBinary(ctx context.Context, binary, baseURL, targetDir str
 	binaryURL := fmt.Sprintf("%s/%s", baseURL, binary)
 	binaryPath := filepath.Join(targetDir, binary)
 
-	if err := downloadFromUrl(ctx, binaryURL, binaryPath); err != nil {
+	if err := downloadFromURL(ctx, binaryURL, binaryPath); err != nil {
 		return fmt.Errorf("failed to download %s: %w", binary, err)
 	}
 
@@ -319,7 +319,7 @@ func downloadCNIPlugins(ctx context.Context, logger *logrus.Logger, binPath, hos
 	cniPluginsFilePath := filepath.Join(cniPluginsDir, cniPluginsFileName)
 
 	// Download CNI plugins tarball
-	if err := downloadFromUrl(ctx, cniPluginsURL, cniPluginsFilePath); err != nil {
+	if err := downloadFromURL(ctx, cniPluginsURL, cniPluginsFilePath); err != nil {
 		return fmt.Errorf("failed to download CNI plugins tarball (%s): %w", cniPluginsVersion, err)
 	}
 
@@ -412,7 +412,7 @@ func ensureCleanDir(dir string) error {
 
 // downloadAndVerifyChecksum downloads the checksum from the specified URL and verifies the file's integrity.
 func downloadAndVerifyChecksum(ctx context.Context, checksumURL, checksumPath, filePath string) error {
-	if err := downloadFromUrl(ctx, checksumURL, checksumPath); err != nil {
+	if err := downloadFromURL(ctx, checksumURL, checksumPath); err != nil {
 		return fmt.Errorf("failed to download checksum: %w", err)
 	}
 

@@ -55,7 +55,7 @@ func (r *reconciler) handleKubeLBCleanup(ctx context.Context, cluster *kubermati
 
 func (r *reconciler) ensureKubeLBSeedClusterResourcesAreRemoved(ctx context.Context, namespace string) error {
 	for _, resource := range kubelbseedresources.ResourcesForDeletion(namespace) {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure kubeLB resources are removed/not present on seed cluster: %w", err)
 		}

@@ -48,9 +48,9 @@ import (
 const (
 	// This controller syncs the kubermatic constraints to constraint on the user cluster.
 	ControllerName = "kkp-constraint-synchronizer"
-	Key            = "default"
-	AddAction      = "add"
-	RemoveAction   = "remove"
+	key            = "default"
+	addAction      = "add"
+	removeAction   = "remove"
 
 	// cleanupFinalizer indicates that kubermatic constraints on the user cluster namespace need cleanup.
 	cleanupFinalizer = "kubermatic.k8c.io/cleanup-kubermatic-usercluster-ns-default-constraints"
@@ -127,7 +127,7 @@ func Add(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.Constraint{}, builder.WithPredicates(kubermaticpred.ByNamespace(namespace))).
-		Watches(&kubermaticv1.Constraint{}, constraintHandler, builder.WithPredicates(ByLabel(Key), withEventFilter())).
+		Watches(&kubermaticv1.Constraint{}, constraintHandler, builder.WithPredicates(ByLabel(key), withEventFilter())).
 		Watches(&kubermaticv1.Cluster{}, clusterHandler, builder.WithPredicates(workerlabel.Predicate(workerName), opaPredicate())).
 		Build(reconciler)
 
@@ -170,9 +170,9 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func addLabel(constraint *kubermaticv1.Constraint) *kubermaticv1.Constraint {
 	if constraint.Labels != nil {
-		constraint.Labels[Key] = constraint.Name
+		constraint.Labels[key] = constraint.Name
 	} else {
-		constraint.Labels = map[string]string{Key: constraint.Name}
+		constraint.Labels = map[string]string{key: constraint.Name}
 	}
 	return constraint
 }
@@ -191,9 +191,10 @@ func constraintReconcilerFactory(constraint *kubermaticv1.Constraint) reconcilin
 func (r *reconciler) patchFinalizer(ctx context.Context, constraint *kubermaticv1.Constraint, action string) error {
 	oldconstraint := constraint.DeepCopy()
 
-	if action == AddAction {
+	switch action {
+	case addAction:
 		kuberneteshelper.AddFinalizer(constraint, cleanupFinalizer)
-	} else if action == RemoveAction {
+	case removeAction:
 		kuberneteshelper.RemoveFinalizer(constraint, cleanupFinalizer)
 	}
 
@@ -225,7 +226,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 			return err
 		}
 
-		if err := r.patchFinalizer(ctx, constraint, RemoveAction); err != nil {
+		if err := r.patchFinalizer(ctx, constraint, removeAction); err != nil {
 			return err
 		}
 
@@ -234,7 +235,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 
 	// constraint initialization
 	if !kuberneteshelper.HasFinalizer(constraint, cleanupFinalizer) {
-		if err := r.patchFinalizer(ctx, constraint, AddAction); err != nil {
+		if err := r.patchFinalizer(ctx, constraint, addAction); err != nil {
 			return err
 		}
 	}

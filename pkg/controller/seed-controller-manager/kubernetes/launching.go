@@ -50,7 +50,7 @@ func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Clu
 
 func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
 	statefulSet := &appsv1.StatefulSet{}
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
+	err := r.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
 
 	if err != nil {
 		// if the StatefulSet for etcd doesn't exist yet, a new one can be deployed with strict TLS peers
@@ -64,7 +64,7 @@ func (r *Reconciler) etcdUseStrictTLS(ctx context.Context, c *kubermaticv1.Clust
 	pods := &corev1.PodList{}
 	labelSet := etcd.GetBasePodLabels(c)
 
-	err = r.Client.List(ctx, pods, &ctrlruntimeclient.ListOptions{
+	err = r.List(ctx, pods, &ctrlruntimeclient.ListOptions{
 		Namespace:     c.Status.NamespaceName,
 		LabelSelector: labels.SelectorFromSet(labelSet),
 	})

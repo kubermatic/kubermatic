@@ -1660,7 +1660,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{
-				etcdbackup.GenSecretEnvVar(etcdbackup.AccessKeyIdEnvVarKey, etcdbackup.AccessKeyIdEnvVarKey, genDefaultBackupDestination()),
+				etcdbackup.GenSecretEnvVar(etcdbackup.AccessKeyIDEnvVarKey, etcdbackup.AccessKeyIDEnvVarKey, genDefaultBackupDestination()),
 				etcdbackup.GenSecretEnvVar(etcdbackup.SecretAccessKeyEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey, genDefaultBackupDestination()),
 				{
 					Name:  etcdbackup.BucketNameEnvVarKey,

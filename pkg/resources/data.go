@@ -108,6 +108,7 @@ func NewTemplateDataBuilder() *TemplateDataBuilder {
 }
 
 func (td *TemplateDataBuilder) WithContext(ctx context.Context) *TemplateDataBuilder {
+	//nolint:fatcontext // tracked via https://github.com/kubermatic/kubermatic/issues/13563
 	td.data.ctx = ctx
 	return td
 }
@@ -749,9 +750,9 @@ func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfigu
 	return d.config
 }
 
-func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
-	cluster := data.Cluster()
-	dc := data.DC()
+func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
+	cluster := d.Cluster()
+	dc := d.DC()
 
 	refTo := func(key string) *corev1.EnvVarSource {
 		return &corev1.EnvVarSource{
@@ -801,7 +802,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", ValueFrom: refTo(DigitaloceanToken)})
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(data.ctx, data.client)
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)
 		spec := cluster.Spec.Cloud.VSphere
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
 		if val, _ := secretKeySelector(spec.CredentialsReference, VsphereInfraManagementUserUsername); val != "" {
@@ -865,7 +866,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(d.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	if cluster.Spec.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {

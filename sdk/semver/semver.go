@@ -144,6 +144,6 @@ func (s Semver) DeepCopy() Semver {
 	return *NewSemverOrDie(s.String())
 }
 
-func (in *Semver) DeepCopyInto(out *Semver) {
-	*out = in.DeepCopy()
+func (s *Semver) DeepCopyInto(out *Semver) {
+	*out = s.DeepCopy()
 }

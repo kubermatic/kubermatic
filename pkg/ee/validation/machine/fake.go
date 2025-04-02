@@ -38,7 +38,7 @@ func getFakeQuotaRequest(config *providerconfig.Config) (*ResourceDetails, error
 	if err := json.Unmarshal(config.CloudProviderSpec.Raw, spec); err != nil {
 		return nil, fmt.Errorf("error unmarshalling fake raw config: %w", err)
 	}
-	cpu, err := resource.ParseQuantity(spec.Cpu)
+	cpu, err := resource.ParseQuantity(spec.CPU)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing quantity: %w", err)
 	}
@@ -57,7 +57,7 @@ func getFakeQuotaRequest(config *providerconfig.Config) (*ResourceDetails, error
 }
 
 type FakeProviderSpec struct {
-	Cpu     string `json:"cpu"`
+	CPU     string `json:"cpu"`
 	Memory  string `json:"memory"`
 	Storage string `json:"storage"`
 }

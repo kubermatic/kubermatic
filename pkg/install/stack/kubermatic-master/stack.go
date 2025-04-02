@@ -381,7 +381,7 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 			if ip == "" {
 				ip = ingress.IP
 			}
-			if isPublicIp(ingress.IP) {
+			if isPublicIP(ingress.IP) {
 				ip = ingress.IP
 			}
 		}

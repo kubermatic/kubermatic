@@ -368,7 +368,7 @@ func TestSync(t *testing.T) {
 			}
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
-			s, _ := c.cache.GetSnapshot(c.EnvoyNodeName)
+			s, _ := c.cache.GetSnapshot(c.options.EnvoyNodeName)
 
 			for name, res := range s.GetResources(envoyresourcev3.ClusterType) {
 				gotClusters[name] = res.(*envoyclusterv3.Cluster)
@@ -593,8 +593,8 @@ func TestNewEndpointHandler(t *testing.T) {
 				Build()
 
 			handler := (&Reconciler{
-				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
-				Client:  client,
+				options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
+				client:  client,
 				log:     log,
 			}).newEndpointHandler()
 

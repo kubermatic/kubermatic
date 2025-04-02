@@ -70,7 +70,8 @@ func Add(
 	log = log.Named(ControllerName)
 
 	reconciler := &Reconciler{
-		Client:       mgr.GetClient(),
+		Client: mgr.GetClient(),
+
 		workerName:   workerName,
 		log:          log,
 		recorder:     mgr.GetEventRecorderFor(ControllerName),
@@ -138,7 +139,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add a wrapping here so we can emit an event on error
 	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -162,7 +163,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// List IPAM Pools
 	ipamPoolList := &kubermaticv1.IPAMPoolList{}
-	err := r.Client.List(ctx, ipamPoolList)
+	err := r.List(ctx, ipamPoolList)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list IPAM pools: %w", err)
 	}
@@ -174,7 +175,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		dcIPAMPoolCfg, isClusterDCConfigured := ipamPool.Spec.Datacenters[clusterDC]
 
 		ipamAllocation := &kubermaticv1.IPAMAllocation{}
-		err = r.Client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: ipamPool.Name}, ipamAllocation)
+		err = r.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: ipamPool.Name}, ipamAllocation)
 		if err == nil {
 			if !isClusterDCConfigured {
 				// There is an allocation for a datacenter that is not present
@@ -226,7 +227,7 @@ func (r *Reconciler) compileCurrentAllocationsForPoolInDatacenter(ctx context.Co
 
 	// List all IPAM allocations
 	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	err := r.Client.List(ctx, ipamAllocationList)
+	err := r.List(ctx, ipamAllocationList)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
 	}
@@ -271,7 +272,7 @@ func (r *Reconciler) ensureIPAMAllocation(ctx context.Context, cluster *kubermat
 		IPAMAllocationReconciler(ipamAllocation, cluster, ipamPool, dcIPAMPoolCfg, dcIPAMPoolUsageMap),
 	}
 
-	if err := reconciling.ReconcileIPAMAllocations(ctx, creators, cluster.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileIPAMAllocations(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure IPAM Pool Allocation for IPAM Pool %s in cluster %s: %w", ipamPool.Name, cluster.Name, err)
 	}
 	return nil

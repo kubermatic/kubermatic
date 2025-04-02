@@ -187,7 +187,7 @@ func StartTestEnvWithCleanup(t *testing.T, crdPath string) (context.Context, ctr
 }
 
 // CheckConfigMap asserts that configMap deployed by helm chart has been created/ updated with the desired data and labels.
-func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, expectedData map[string]string, expectedVersionLabel string, enableDns bool) {
+func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, ns *corev1.Namespace, expectedData map[string]string, expectedVersionLabel string, enableDNS bool) {
 	t.Helper()
 
 	cm := &corev1.ConfigMap{}
@@ -195,7 +195,7 @@ func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 	if !utils.WaitFor(ctx, time.Second*1, time.Second*10, func() bool {
 		errorGetCm = client.Get(ctx, types.NamespacedName{Namespace: ns.Name, Name: ConfigmapName}, cm)
 		// if config map has not been  updated
-		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels[VersionLabelKey] != expectedVersionLabel || !isExpectedDnsValue(cm.Labels[EnableDNSLabelKey], enableDns) {
+		if errorGetCm != nil || !diff.SemanticallyEqual(expectedData, cm.Data) || cm.Labels[VersionLabelKey] != expectedVersionLabel || !isExpectedDNSValue(cm.Labels[EnableDNSLabelKey], enableDNS) {
 			return false
 		}
 		return true
@@ -212,8 +212,8 @@ func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 		if cm.Labels[VersionLabelKey] != expectedVersionLabel {
 			t.Errorf("ConfigMap versionLabel has invalid value. expected '%s', got '%s'", expectedVersionLabel, cm.Labels[VersionLabelKey])
 		}
-		if !isExpectedDnsValue(cm.Labels[EnableDNSLabelKey], enableDns) {
-			if enableDns {
+		if !isExpectedDNSValue(cm.Labels[EnableDNSLabelKey], enableDNS) {
+			if enableDNS {
 				t.Errorf("ConfigMap label '%s' should not be empty as enableDns is enabled", EnableDNSLabelKey)
 			}
 			t.Errorf("ConfigMap label '%s' should be empty as enableDns is disabled", EnableDNSLabelKey)
@@ -221,8 +221,8 @@ func CheckConfigMap(t *testing.T, ctx context.Context, client ctrlruntimeclient.
 	}
 }
 
-func isExpectedDnsValue(value string, enableDns bool) bool {
-	if enableDns {
+func isExpectedDNSValue(value string, enableDNS bool) bool {
+	if enableDNS {
 		// is enableDns the value should be equal to the ip of the hostname but to make test more resilient we just check is not empty.
 		return len(value) > 0
 	}

@@ -90,12 +90,12 @@ func (s *section) AddBoolKey(key string, value bool) {
 }
 
 func (s *section) render(out io.Writer) error {
-	if _, err := out.Write([]byte(fmt.Sprintf("[%s]\n", s.name))); err != nil {
+	if _, err := fmt.Fprintf(out, "[%s]\n", s.name); err != nil {
 		return err
 	}
 
 	for _, pair := range s.pairs {
-		if _, err := out.Write([]byte(pair.String() + "\n")); err != nil {
+		if _, err := fmt.Fprintf(out, "%s\n", pair.String()); err != nil {
 			return err
 		}
 	}

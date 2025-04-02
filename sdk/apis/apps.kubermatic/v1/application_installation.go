@@ -18,7 +18,7 @@ package v1
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -321,7 +321,7 @@ func (appInstallation *ApplicationInstallation) SetReadyCondition(installErr err
 func (ai *ApplicationInstallationSpec) GetParsedValues() (map[string]interface{}, error) {
 	values := make(map[string]interface{})
 	if len(ai.Values.Raw) > 0 && string(ai.Values.Raw) != "{}" && ai.ValuesBlock != "" {
-		return nil, fmt.Errorf("the fields Values and ValuesBlock cannot be used simultaneously. Please delete one of them.")
+		return nil, errors.New("the fields Values and ValuesBlock cannot be used simultaneously, please delete one of them")
 	}
 	if len(ai.Values.Raw) > 0 && string(ai.Values.Raw) != "{}" {
 		err := json.Unmarshal(ai.Values.Raw, &values)

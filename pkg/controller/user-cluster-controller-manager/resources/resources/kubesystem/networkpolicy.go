@@ -34,8 +34,8 @@ const NodeLocalDNSCacheAddress = "169.254.20.10"
 func DefaultNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		dnsPort := intstr.FromInt(53)
-		protoUdp := corev1.ProtocolUDP
-		protoTcp := corev1.ProtocolTCP
+		protoUDP := corev1.ProtocolUDP
+		protoTCP := corev1.ProtocolTCP
 
 		return "default-deny", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			// dns access to node local dns cache
@@ -50,11 +50,11 @@ func DefaultNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFa
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 								Port:     &dnsPort,
 							},
 							{
-								Protocol: &protoUdp,
+								Protocol: &protoUDP,
 								Port:     &dnsPort,
 							},
 						},
@@ -69,11 +69,11 @@ func DefaultNetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFa
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 								Port:     &dnsPort,
 							},
 							{
-								Protocol: &protoUdp,
+								Protocol: &protoUDP,
 								Port:     &dnsPort,
 							},
 						},

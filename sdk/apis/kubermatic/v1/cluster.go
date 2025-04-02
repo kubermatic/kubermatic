@@ -1608,70 +1608,70 @@ func NewBytes(b64 string) Bytes {
 	return Bytes(bs)
 }
 
-func (cluster *Cluster) GetSecretName() string {
+func (c *Cluster) GetSecretName() string {
 	// new clusters might not have a name yet (if the user used GenerateName),
 	// so we must be careful when constructing the Secret name
-	clusterName := cluster.Name
+	clusterName := c.Name
 	if clusterName == "" {
 		clusterName = rand.String(5)
 
-		if cluster.GenerateName != "" {
-			clusterName = fmt.Sprintf("%s-%s", strings.TrimSuffix(cluster.GenerateName, "-"), clusterName)
+		if c.GenerateName != "" {
+			clusterName = fmt.Sprintf("%s-%s", strings.TrimSuffix(c.GenerateName, "-"), clusterName)
 		}
 	}
 
-	if cluster.Spec.Cloud.AWS != nil {
+	if c.Spec.Cloud.AWS != nil {
 		return fmt.Sprintf("%s-aws-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Azure != nil {
+	if c.Spec.Cloud.Azure != nil {
 		return fmt.Sprintf("%s-azure-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Baremetal != nil {
+	if c.Spec.Cloud.Baremetal != nil {
 		return fmt.Sprintf("%s-baremetal-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Digitalocean != nil {
+	if c.Spec.Cloud.Digitalocean != nil {
 		return fmt.Sprintf("%s-digitalocean-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.GCP != nil {
+	if c.Spec.Cloud.GCP != nil {
 		return fmt.Sprintf("%s-gcp-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Hetzner != nil {
+	if c.Spec.Cloud.Hetzner != nil {
 		return fmt.Sprintf("%s-hetzner-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Openstack != nil {
+	if c.Spec.Cloud.Openstack != nil {
 		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Packet != nil {
+	if c.Spec.Cloud.Packet != nil {
 		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Kubevirt != nil {
+	if c.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.VSphere != nil {
+	if c.Spec.Cloud.VSphere != nil {
 		return fmt.Sprintf("%s-vsphere-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Alibaba != nil {
+	if c.Spec.Cloud.Alibaba != nil {
 		return fmt.Sprintf("%s-alibaba-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Anexia != nil {
+	if c.Spec.Cloud.Anexia != nil {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.Nutanix != nil {
+	if c.Spec.Cloud.Nutanix != nil {
 		return fmt.Sprintf("%s-nutanix-%s", CredentialPrefix, clusterName)
 	}
-	if cluster.Spec.Cloud.VMwareCloudDirector != nil {
+	if c.Spec.Cloud.VMwareCloudDirector != nil {
 		return fmt.Sprintf("%s-vmware-cloud-director-%s", CredentialPrefix, clusterName)
 	}
 	return ""
 }
 
 // IsEncryptionConfigurationEnabled returns whether encryption-at-rest is configured on this cluster.
-func (cluster *Cluster) IsEncryptionEnabled() bool {
-	return cluster.Spec.Features[ClusterFeatureEncryptionAtRest] && cluster.Spec.EncryptionConfiguration != nil && cluster.Spec.EncryptionConfiguration.Enabled
+func (c *Cluster) IsEncryptionEnabled() bool {
+	return c.Spec.Features[ClusterFeatureEncryptionAtRest] && c.Spec.EncryptionConfiguration != nil && c.Spec.EncryptionConfiguration.Enabled
 }
 
 // IsEncryptionActive returns whether encryption-at-rest is active on this cluster. This can still be
 // the case when encryption configuration has been disabled, as encrypted resources require a decryption.
-func (cluster *Cluster) IsEncryptionActive() bool {
-	return cluster.Status.HasConditionValue(ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
+func (c *Cluster) IsEncryptionActive() bool {
+	return c.Status.HasConditionValue(ClusterConditionEncryptionInitialized, corev1.ConditionTrue)
 }

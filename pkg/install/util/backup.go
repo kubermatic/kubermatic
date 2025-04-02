@@ -62,7 +62,7 @@ func DumpResources(ctx context.Context, filename string, objects []unstructured.
 	encoder := yaml.NewEncoder(f)
 	encoder.SetIndent(2)
 
-	if _, err := f.WriteString(fmt.Sprintf("# This backup was created %s.\n", time.Now().Format(time.UnixDate))); err != nil {
+	if _, err := fmt.Fprintf(f, "# This backup was created %s.\n", time.Now().Format(time.UnixDate)); err != nil {
 		return fmt.Errorf("failed to write date: %w", err)
 	}
 

@@ -33,7 +33,7 @@ func NetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 		return "metrics-server", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			metricsPort := intstr.FromInt(9153)
 			httpsPort := intstr.FromInt(servingPort)
-			protoTcp := corev1.ProtocolTCP
+			protoTCP := corev1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PodSelector: metav1.LabelSelector{
@@ -58,7 +58,7 @@ func NetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
 								Port:     &metricsPort,
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 							},
 						},
 					},
@@ -73,7 +73,7 @@ func NetworkPolicyReconciler() reconciling.NamedNetworkPolicyReconcilerFactory {
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
 								Port:     &httpsPort,
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 							},
 						},
 					},

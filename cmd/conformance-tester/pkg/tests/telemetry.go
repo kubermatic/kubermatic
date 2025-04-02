@@ -107,7 +107,7 @@ func getLatestTelemetryPod(ctx context.Context, client ctrlruntimeclient.Client,
 	)
 
 	for i, pod := range podList.Items {
-		if pod.Status.Phase == corev1.PodSucceeded && pod.CreationTimestamp.Time.After(latest) {
+		if pod.Status.Phase == corev1.PodSucceeded && pod.CreationTimestamp.After(latest) {
 			latestPod = &podList.Items[i]
 			latest = pod.CreationTimestamp.Time
 		}
