@@ -139,7 +139,7 @@ linters:
       - path: (.+)\.go$
         text: cyclomatic complexity [0-9]+ of func `\(\*Azure\)\.CleanUpCloudProvider` is high
       - path: (.+)\.go$
-        text: cyclomatic complexity [0-9]+ of func `\(\*Reconciler\)\.reconcile` is high
+        text: cyclomatic complexity [0-9]+ of func `\(\*[rR]econciler\)\.reconcile` is high
       - path: (.+)\.go$
         text: cyclomatic complexity [0-9]+ of func `initTestEndpoint` is high
       - path: (.+)\.go$
