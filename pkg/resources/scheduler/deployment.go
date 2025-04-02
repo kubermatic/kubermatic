@@ -72,7 +72,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 
 			// Apply leader election settings
-			if lds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+			if lds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds; lds != nil {
 				flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
 			}
 			if rds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {

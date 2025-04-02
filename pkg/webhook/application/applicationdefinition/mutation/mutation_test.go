@@ -129,8 +129,8 @@ func TestHandle(t *testing.T) {
 				decoder: admission.NewDecoder(testScheme),
 			}
 			res := handler.Handle(context.Background(), tt.req)
-			if res.AdmissionResponse.Result != nil && (res.AdmissionResponse.Result.Code == http.StatusInternalServerError || res.AdmissionResponse.Result.Code == http.StatusBadRequest) {
-				t.Fatalf("Request failed: %v", res.AdmissionResponse.Result.Message)
+			if res.Result != nil && (res.Result.Code == http.StatusInternalServerError || res.Result.Code == http.StatusBadRequest) {
+				t.Fatalf("Request failed: %v", res.Result.Message)
 			}
 
 			a := map[string]jsonpatch.JsonPatchOperation{}

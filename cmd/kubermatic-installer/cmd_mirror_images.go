@@ -344,7 +344,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 				chartImage := fmt.Sprintf("%s/%s:%s",
 					defaulting.DefaultSystemApplicationsHelmRepository,
-					sysChart.ApplicationVersion.Template.Source.Helm.ChartName,
+					sysChart.Template.Source.Helm.ChartName,
 					sysChart.Version,
 				)
 

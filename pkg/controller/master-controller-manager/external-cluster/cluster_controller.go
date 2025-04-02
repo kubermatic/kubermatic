@@ -89,7 +89,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check external cluster pause status: %w", err)
 	}
@@ -136,11 +136,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	cloud := cluster.Spec.CloudSpec
-	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, r)
 
 	if cloud.ProviderName == kubermaticv1.ExternalClusterBringYourOwnProvider {
 		if cluster.Spec.KubeconfigReference != nil {
-			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer); err != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.ExternalClusterKubeconfigCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add kubeconfig secret finalizer: %w", err)
 			}
 		}
@@ -150,7 +150,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if cloud.GKE != nil {
 		log.Debug("Reconciling GKE cluster")
 		if cloud.GKE.CredentialsReference != nil {
-			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
@@ -200,7 +200,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if cloud.EKS != nil {
 		log.Debug("Reconciling EKS cluster")
 		if cloud.EKS.CredentialsReference != nil {
-			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
@@ -247,7 +247,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if cloud.AKS != nil {
 		log.Debug("Reconciling AKS cluster")
 		if cloud.AKS.CredentialsReference != nil {
-			if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
+			if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, kubermaticv1.CredentialsSecretsCleanupFinalizer); err != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to add credential secret finalizer: %w", err)
 			}
 		}
@@ -360,7 +360,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, condition kubermaticv1.Ex
 
 func (r *Reconciler) ensureGKEKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetGKECredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetGKECredentials(ctx, r, cluster)
 	if err != nil {
 		return err
 	}
@@ -374,7 +374,7 @@ func (r *Reconciler) ensureGKEKubeconfig(ctx context.Context, cluster *kubermati
 
 func (r *Reconciler) ensureEKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetEKSCredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetEKSCredentials(ctx, r, cluster)
 	if err != nil {
 		return err
 	}
@@ -388,7 +388,7 @@ func (r *Reconciler) ensureEKSKubeconfig(ctx context.Context, cluster *kubermati
 
 func (r *Reconciler) ensureAKSKubeconfig(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	cloud := cluster.Spec.CloudSpec
-	cred, err := resources.GetAKSCredentials(ctx, r.Client, cluster)
+	cred, err := resources.GetAKSCredentials(ctx, r, cluster)
 	if err != nil {
 		return err
 	}

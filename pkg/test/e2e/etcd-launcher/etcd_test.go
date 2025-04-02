@@ -710,7 +710,7 @@ func deleteEtcdPVC(ctx context.Context, client ctrlruntimeclient.Client, cluster
 	// created of the PVC resource.
 	return wait.PollUntilContextTimeout(ctx, 2*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, &pvc); err == nil {
-			if oldPvc.ObjectMeta.CreationTimestamp.Before(&pvc.ObjectMeta.CreationTimestamp) {
+			if oldPvc.CreationTimestamp.Before(&pvc.CreationTimestamp) {
 				return true, nil
 			}
 		}

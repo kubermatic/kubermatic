@@ -60,8 +60,8 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 			if ds.Spec.Selector == nil {
 				ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			}
-			if ds.Spec.Template.ObjectMeta.Labels == nil {
-				ds.Spec.Template.ObjectMeta.Labels = labels
+			if ds.Spec.Template.Labels == nil {
+				ds.Spec.Template.Labels = labels
 			}
 
 			ds.Spec.Template.Spec.ServiceAccountName = resources.NodeLocalDNSServiceAccountName

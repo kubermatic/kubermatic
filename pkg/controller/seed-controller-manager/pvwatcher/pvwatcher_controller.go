@@ -47,10 +47,11 @@ const (
 )
 
 type Reconciler struct {
+	ctrlruntimeclient.Client
+
 	log        *zap.SugaredLogger
 	workerName string
-	ctrlruntimeclient.Client
-	recorder record.EventRecorder
+	recorder   record.EventRecorder
 }
 
 // add the controller.
@@ -62,9 +63,9 @@ func Add(
 ) error {
 	log = log.Named(ControllerName)
 	reconciler := &Reconciler{
+		Client:     mgr.GetClient(),
 		log:        log,
 		workerName: workerName,
-		Client:     mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 	}
 

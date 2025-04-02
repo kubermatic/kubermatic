@@ -130,7 +130,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("cluster", request.NamespacedName.Name)
+	log := r.log.With("cluster", request.Name)
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
@@ -149,7 +149,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add a wrapping here, so we can emit an event on error
 	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -254,13 +254,13 @@ func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster 
 			},
 		}
 		// trigger addon uninstall
-		err := r.Client.Delete(ctx, cniAddon)
+		err := r.Delete(ctx, cniAddon)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return 0, fmt.Errorf("failed to delete CNI addon %s: %w", cniAddon.GetName(), err)
 		}
 
 		// check addon has been uninstalled
-		err = r.Client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cniAddon), cniAddon)
+		err = r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cniAddon), cniAddon)
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return 0, fmt.Errorf("failed to check CNI addon %s has been uninstalled: %w", cniAddon.GetName(), err)
@@ -291,7 +291,7 @@ func (r *Reconciler) removeCNIValuesAnnotation(ctx context.Context, cluster *kub
 
 func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster) (map[string]any, error) {
 	appDef := &appskubermaticv1.ApplicationDefinition{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
 		return nil, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 

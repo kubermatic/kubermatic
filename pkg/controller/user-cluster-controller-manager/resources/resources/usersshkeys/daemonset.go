@@ -54,7 +54,7 @@ func DaemonSetReconciler(versions kubermatic.Versions, imageRewriter registry.Im
 
 			labels := map[string]string{"app": "user-ssh-keys-agent"}
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
-			ds.Spec.Template.ObjectMeta.Labels = labels
+			ds.Spec.Template.Labels = labels
 
 			ds.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 

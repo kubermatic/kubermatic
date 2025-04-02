@@ -821,7 +821,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				newCluster := &kubermaticv1.Cluster{}
-				err := rec.Client.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(cluster), newCluster)
+				err := rec.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(cluster), newCluster)
 				if err != nil {
 					t.Fatalf("Failed to find cluster: %v", err)
 				}

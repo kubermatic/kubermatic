@@ -78,9 +78,9 @@ func (o Options) IsTunnelingEnabled() bool {
 func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, opts Options) (*Reconciler, envoycachev3.SnapshotCache, error) {
 	cache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
 	r := Reconciler{
+		options: opts,
+		client:  client,
 		log:     log,
-		Client:  client,
-		Options: opts,
 		cache:   cache,
 	}
 	s, err := newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")
@@ -88,19 +88,17 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 		return nil, nil, fmt.Errorf("failed to build snapshot: %w", err)
 	}
 
-	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
+	if err := r.cache.SetSnapshot(ctx, r.options.EnvoyNodeName, s); err != nil {
 		return nil, nil, fmt.Errorf("failed to set initial Envoy cache snapshot: %w", err)
 	}
 	return &r, cache, nil
 }
 
 type Reconciler struct {
-	log *zap.SugaredLogger
-
-	ctrlruntimeclient.Client
-	Options
-
-	cache envoycachev3.SnapshotCache
+	client  ctrlruntimeclient.Client
+	log     *zap.SugaredLogger
+	options Options
+	cache   envoycachev3.SnapshotCache
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrlruntime.Request) (ctrlruntime.Result, error) {
@@ -112,9 +110,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrlruntime.Request) (ct
 
 func (r *Reconciler) sync(ctx context.Context) error {
 	services := corev1.ServiceList{}
-	if err := r.List(ctx, &services,
-		ctrlruntimeclient.InNamespace(r.Namespace),
-		ctrlruntimeclient.MatchingFields{r.ExposeAnnotationKey: "true"},
+	if err := r.client.List(ctx, &services,
+		ctrlruntimeclient.InNamespace(r.options.Namespace),
+		ctrlruntimeclient.MatchingFields{r.options.ExposeAnnotationKey: "true"},
 	); err != nil {
 		return fmt.Errorf("failed to list services: %w", err)
 	}
@@ -128,15 +126,15 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	// based on "expose" timestamp.
 	SortServicesByCreationTimestamp(services.Items)
 
-	sb := newSnapshotBuilder(r.log, portHostMappingFromAnnotation, r.Options)
+	sb := newSnapshotBuilder(r.log, portHostMappingFromAnnotation, r.options)
 	for _, service := range services.Items {
 		svcKey := ServiceKey(&service)
 
-		ets := extractExposeTypes(&service, r.ExposeAnnotationKey)
+		ets := extractExposeTypes(&service, r.options.ExposeAnnotationKey)
 
 		// Get associated endpoints
 		eps := corev1.Endpoints{}
-		if err := r.Get(ctx, types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
+		if err := r.client.Get(ctx, types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -147,14 +145,14 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	}
 
 	// Get current snapshot
-	currSnapshot, err := r.cache.GetSnapshot(r.EnvoyNodeName)
+	currSnapshot, err := r.cache.GetSnapshot(r.options.EnvoyNodeName)
 	if err != nil {
 		r.log.Debugf("setting first snapshot: %v", err)
 		s, err := sb.build("0.0.0")
 		if err != nil {
 			return fmt.Errorf("failed to build the first snapshot: %w", err)
 		}
-		if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, s); err != nil {
+		if err := r.cache.SetSnapshot(ctx, r.options.EnvoyNodeName, s); err != nil {
 			return fmt.Errorf("failed to set a new Envoy cache snapshot: %w", err)
 		}
 		return nil
@@ -187,7 +185,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 		return fmt.Errorf("new Envoy config snapshot is not consistent: %w", err)
 	}
 
-	if err := r.cache.SetSnapshot(ctx, r.EnvoyNodeName, newSnapshot); err != nil {
+	if err := r.cache.SetSnapshot(ctx, r.options.EnvoyNodeName, newSnapshot); err != nil {
 		return fmt.Errorf("failed to set a new Envoy cache snapshot: %w", err)
 	}
 
@@ -195,9 +193,9 @@ func (r *Reconciler) sync(ctx context.Context) error {
 }
 
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw ctrlruntimeclient.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.options.ExposeAnnotationKey, func(raw ctrlruntimeclient.Object) []string {
 		svc := raw.(*corev1.Service)
-		if isExposed(svc, r.ExposeAnnotationKey) {
+		if isExposed(svc, r.options.ExposeAnnotationKey) {
 			return []string{"true"}
 		}
 		return nil
@@ -207,7 +205,7 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manag
 	return ctrlruntime.NewControllerManagedBy(mgr).
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
-		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
+		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.options.ExposeAnnotationKey, log: r.log})).
 		Watches(&corev1.Endpoints{}, handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler())).
 		Complete(r)
 }
@@ -220,7 +218,7 @@ func (r *Reconciler) newEndpointHandler() handler.MapFunc {
 		}
 		// Get the service associated to the Endpoints
 		svc := corev1.Service{}
-		if err := r.Client.Get(ctx, svcName, &svc); err != nil {
+		if err := r.client.Get(ctx, svcName, &svc); err != nil {
 			// Avoid enqueuing events for endpoints that do not have an associated
 			// service (e.g. leader election).
 			if !apierrors.IsNotFound(err) {
@@ -230,7 +228,7 @@ func (r *Reconciler) newEndpointHandler() handler.MapFunc {
 		}
 
 		// Avoid enqueuing events for services that are not exposed.
-		if !isExposed(&svc, r.ExposeAnnotationKey) {
+		if !isExposed(&svc, r.options.ExposeAnnotationKey) {
 			return nil
 		}
 		return []ctrlruntime.Request{{NamespacedName: svcName}}

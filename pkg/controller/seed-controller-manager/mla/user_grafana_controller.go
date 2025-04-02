@@ -93,8 +93,8 @@ func newUserGrafanaReconciler(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.User{}, builder.WithPredicates(serviceAccountPredicate)).
-		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler.Client))).
-		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler.Client))).
+		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler))).
+		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler))).
 		Build(reconciler)
 
 	return err
@@ -317,7 +317,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		projectMap[project.Name] = project.DeepCopy()
 	}
 	if !user.Spec.IsAdmin {
-		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
+		projectRoles, err := getProjectRolesForUser(ctx, r, user)
 		if err != nil {
 			return fmt.Errorf("error getting project roles for user %q: %w", user.Name, err)
 		}

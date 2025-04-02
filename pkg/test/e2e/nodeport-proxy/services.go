@@ -105,7 +105,7 @@ func (j *ServiceJig) newNamespaceTemplate() *corev1.Namespace {
 		},
 	}
 	if j.Namespace == "" {
-		ns.ObjectMeta.GenerateName = "np-proxy-test-"
+		ns.GenerateName = "np-proxy-test-"
 	}
 	return ns
 }

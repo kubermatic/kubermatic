@@ -288,7 +288,7 @@ func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, clust
 func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
 	// check the etcd
 	statefulSet := &appsv1.StatefulSet{}
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
+	err := r.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
 
 	if err != nil {
 		// if the StatefulSet for etcd doesn't exist yet, there's nothing to worry about

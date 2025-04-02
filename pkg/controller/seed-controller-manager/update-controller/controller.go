@@ -70,8 +70,7 @@ type Reconciler struct {
 // Add creates a new update controller.
 func Add(mgr manager.Manager, numWorkers int, workerName string, configGetter provider.KubermaticConfigurationGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
-		Client: mgr.GetClient(),
-
+		Client:       mgr.GetClient(),
 		workerName:   workerName,
 		configGetter: configGetter,
 		recorder:     mgr.GetEventRecorderFor(ControllerName),
@@ -119,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	// Add a wrapping here so we can emit an event on error
 	result, err := controllerutil.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,

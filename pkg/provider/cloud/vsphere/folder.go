@@ -124,7 +124,7 @@ func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, u
 		if !strings.HasPrefix(folderRef.InventoryPath, rootPath+"/") && folderRef.InventoryPath != rootPath {
 			continue
 		}
-		folder := Folder{Path: folderRef.Common.InventoryPath}
+		folder := Folder{Path: folderRef.InventoryPath}
 		folders = append(folders, folder)
 	}
 

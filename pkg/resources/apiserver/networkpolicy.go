@@ -73,7 +73,7 @@ func EctdAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicy
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "etcd",
-										"cluster":             c.ObjectMeta.Name,
+										"cluster":             c.Name,
 									},
 								},
 							},
@@ -144,7 +144,7 @@ func OpenVPNServerAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetw
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "openvpn-server",
-										"cluster":             c.ObjectMeta.Name,
+										"cluster":             c.Name,
 									},
 								},
 							},

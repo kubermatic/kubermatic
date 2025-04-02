@@ -61,7 +61,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 			Labels: map[string]string{
 				resources.AppLabelKey:  AppLabelValue,
 				ClusterLabelKey:        cluster.Name,
-				SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
+				SecretRevisionLabelKey: secret.ResourceVersion,
 			},
 		},
 		Spec: batchv1.JobSpec{

@@ -244,12 +244,12 @@ func TestHandle(t *testing.T) {
 				},
 			}
 			res := handler.Handle(context.Background(), tt.req)
-			if res.AdmissionResponse.Result != nil && res.AdmissionResponse.Result.Code == http.StatusInternalServerError {
+			if res.Result != nil && res.Result.Code == http.StatusInternalServerError {
 				if tt.wantError {
 					return
 				}
 
-				t.Fatalf("Request failed: %v", res.AdmissionResponse.Result.Message)
+				t.Fatalf("Request failed: %v", res.Result.Message)
 			}
 
 			a := map[string]jsonpatch.JsonPatchOperation{}

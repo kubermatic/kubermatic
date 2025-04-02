@@ -140,7 +140,7 @@ type LBUpdater struct {
 }
 
 func (u *LBUpdater) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	err := u.syncLB(ctx, request.NamespacedName.String())
+	err := u.syncLB(ctx, request.String())
 	if err != nil {
 		u.log.Errorw("Error syncing LoadBalancer", zap.Error(err))
 	}

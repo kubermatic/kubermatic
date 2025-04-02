@@ -178,7 +178,7 @@ func withEventFilter() predicate.Predicate {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check kubeone external cluster pause status: %w", err)
 	}
@@ -245,7 +245,7 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 	finalizersToAddList := finalizersToAdd.UnsortedList()
 
 	if len(finalizersToAddList) > 0 {
-		if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, finalizersToAddList...); err != nil {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, externalCluster, finalizersToAddList...); err != nil {
 			return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
 		}
 	}
@@ -448,7 +448,7 @@ func (r *reconciler) importAction(
 		}
 	} else if externalCluster.Spec.KubeconfigReference != nil && externalCluster.Status.Condition.Phase == kubermaticv1.ExternalClusterPhaseRunning {
 		// checking if cluster is accessible using client
-		clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+		clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r)
 		if err != nil {
 			return err
 		}
@@ -606,7 +606,7 @@ func (r *reconciler) upgradeAction(
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 	kubeOneNamespaceName := externalCluster.GetKubeOneNamespaceName()
 
-	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r)
 	if err != nil {
 		return err
 	}
@@ -782,7 +782,7 @@ func (r *reconciler) migrateAction(
 ) error {
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 
-	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r)
 	if err != nil {
 		return err
 	}
