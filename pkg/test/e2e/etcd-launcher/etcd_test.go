@@ -110,7 +110,7 @@ func TestBackup(t *testing.T) {
 	logger.Info("created test namespace")
 
 	// create etcd backup that will be restored later
-	err, backup := createBackup(ctx, logger, client, cluster)
+	backup, err := createBackup(ctx, logger, client, cluster)
 	if err != nil {
 		t.Fatalf("failed to create etcd backup: %v", err)
 	}
@@ -239,7 +239,7 @@ func TestRecovery(t *testing.T) {
 	}
 }
 
-func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
+func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
 	log.Info("creating backup of etcd data...")
 	backup := &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -260,14 +260,14 @@ func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntim
 	}
 
 	if err := client.Create(ctx, backup); err != nil {
-		return fmt.Errorf("failed to create EtcdBackupConfig: %w", err), nil
+		return nil, fmt.Errorf("failed to create EtcdBackupConfig: %w", err)
 	}
 
 	if err := waitForEtcdBackup(ctx, log, client, backup); err != nil {
-		return fmt.Errorf("failed to wait for etcd backup finishing: %w (%v)", err, backup.Status), nil
+		return nil, fmt.Errorf("failed to wait for etcd backup finishing: %w (%v)", err, backup.Status)
 	}
 
-	return nil, backup
+	return backup, nil
 }
 
 func restoreBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, backup *kubermaticv1.EtcdBackupConfig) error {
