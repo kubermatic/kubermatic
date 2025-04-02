@@ -108,6 +108,7 @@ func NewTemplateDataBuilder() *TemplateDataBuilder {
 }
 
 func (td *TemplateDataBuilder) WithContext(ctx context.Context) *TemplateDataBuilder {
+	//nolint:fatcontext // tracked via https://github.com/kubermatic/kubermatic/issues/13563
 	td.data.ctx = ctx
 	return td
 }
