@@ -56,7 +56,6 @@ linters:
     - nosprintfhostport
     - predeclared
     - promlinter
-    - revive
     - staticcheck
     - unconvert
     - unused
@@ -112,11 +111,6 @@ linters:
         - pkg: github.com/vmware-tanzu/velero/pkg/apis/velero/v1
           alias: velerov1
       no-unaliased: true
-    revive:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#add-constant
-      rules:
-        - name: duplicated-imports
-          severity: warning
     staticcheck:
       checks:
         - all
