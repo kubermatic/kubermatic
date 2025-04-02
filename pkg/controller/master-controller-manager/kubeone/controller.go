@@ -1012,14 +1012,14 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 		},
 	)
 
-	switch {
-	case action == ImportAction:
+	switch action {
+	case ImportAction:
 		kubeoneJobName = KubeOneImportJob
 		kubeoneCMName = KubeOneImportConfigMap
-	case action == UpgradeControlPlaneAction:
+	case UpgradeControlPlaneAction:
 		kubeoneJobName = KubeOneUpgradeJob
 		kubeoneCMName = KubeOneUpgradeConfigMap
-	case action == MigrateContainerRuntimeAction:
+	case MigrateContainerRuntimeAction:
 		kubeoneJobName = KubeOneMigrateJob
 		kubeoneCMName = KubeOneMigrateConfigMap
 	}
@@ -1408,14 +1408,14 @@ func generateConfigMap(namespace, action string) *corev1.ConfigMap {
 	var name, scriptToRun string
 	scriptToRun = resources.KubeOneScript
 
-	switch {
-	case action == ImportAction:
+	switch action {
+	case ImportAction:
 		name = KubeOneImportConfigMap
 		scriptToRun += "kubeone kubeconfig --manifest kubeonemanifest/manifest 2> /dev/null"
-	case action == UpgradeControlPlaneAction:
+	case UpgradeControlPlaneAction:
 		name = KubeOneUpgradeConfigMap
 		scriptToRun += "kubeone apply --manifest kubeonemanifest/manifest -y --log-format json"
-	case action == MigrateContainerRuntimeAction:
+	case MigrateContainerRuntimeAction:
 		name = KubeOneMigrateConfigMap
 		scriptToRun += "kubeone migrate to-containerd --manifest kubeonemanifest/manifest --log-format json"
 	}
@@ -1548,18 +1548,18 @@ func getPodLogs(ctx context.Context, pod *corev1.Pod) (string, error) {
 
 func determineExitCode(exitCode int32) kubermaticv1.ExternalClusterPhase {
 	var phaseError kubermaticv1.ExternalClusterPhase
-	switch {
-	case exitCode == fail.RuntimeErrorExitCode:
+	switch exitCode {
+	case fail.RuntimeErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseRuntimeError
-	case exitCode == fail.EtcdErrorExitCode:
+	case fail.EtcdErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseEtcdError
-	case exitCode == fail.KubeClientErrorExitCode:
+	case fail.KubeClientErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseKubeClientError
-	case exitCode == fail.SSHErrorExitCode:
+	case fail.SSHErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseSSHError
-	case exitCode == fail.ConnectionErrorExitCode:
+	case fail.ConnectionErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseConnectionError
-	case exitCode == fail.ConfigErrorExitCode:
+	case fail.ConfigErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseConfigError
 	default:
 		phaseError = kubermaticv1.ExternalClusterPhaseError
