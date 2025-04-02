@@ -42,7 +42,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	var errs []error
 
 	// validation can only happen if KKP was already installed, otherwise the resource types
