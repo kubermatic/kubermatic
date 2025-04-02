@@ -147,6 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
+	//nolint:staticcheck
 	ignoreDefaultApplications := false
 
 	// If the cluster has the initial application installations request annotation, we don't want to install the default applications as they will be

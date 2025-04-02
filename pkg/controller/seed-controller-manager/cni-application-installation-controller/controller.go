@@ -201,10 +201,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	if err := r.parseCNIValuesAnnotation(cluster, initialValues); err != nil {
 		return &reconcile.Result{}, err
 	}
-	removeAnnotation := false
-	if len(initialValues) > 0 {
-		removeAnnotation = true
-	}
+	removeAnnotation := len(initialValues) > 0
 
 	// If initial values were not loaded from the annotation, use the default values from the ApplicationDefinition
 	if len(initialValues) == 0 {
