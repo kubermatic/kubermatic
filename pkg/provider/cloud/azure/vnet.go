@@ -75,8 +75,7 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	//
 	// Attributes we check:
 	// - Address space CIDR
-	if !(vnet.Properties != nil && vnet.Properties.AddressSpace != nil &&
-		reflect.DeepEqual(vnet.Properties.AddressSpace.AddressPrefixes, target.Properties.AddressSpace.AddressPrefixes)) {
+	if vnet.Properties == nil || vnet.Properties.AddressSpace == nil || !reflect.DeepEqual(vnet.Properties.AddressSpace.AddressPrefixes, target.Properties.AddressSpace.AddressPrefixes) {
 		if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}

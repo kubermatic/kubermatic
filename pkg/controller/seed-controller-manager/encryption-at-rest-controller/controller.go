@@ -133,7 +133,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// replicate the predicate from above to make sure that reconcile loops triggered by apiserver and secret
 	// do not run unexpected reconciles.
-	if !(cluster.IsEncryptionEnabled() || cluster.IsEncryptionActive()) {
+	if !cluster.IsEncryptionEnabled() && !cluster.IsEncryptionActive() {
 		return reconcile.Result{}, nil
 	}
 

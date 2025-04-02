@@ -56,7 +56,7 @@ func EncryptionConfigurationSecretReconciler(data encryptionData) reconciling.Na
 			secret.Name = resources.EncryptionConfigurationSecretName
 
 			// return empty secret if no config and no condition is set.
-			if !(data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()) {
+			if !data.Cluster().IsEncryptionEnabled() && !data.Cluster().IsEncryptionActive() {
 				return secret, nil
 			}
 

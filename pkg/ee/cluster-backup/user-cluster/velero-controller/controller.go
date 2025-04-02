@@ -385,7 +385,7 @@ func (r *reconciler) removeManagedObject(ctx context.Context, resource ctrlrunti
 	}
 
 	if isManagedBackupResource(resource) {
-		if err := r.userClient.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
+		if err := r.userClient.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 			return fmt.Errorf("failed to delete user-cluster resource: %w", err)
 		}
 	}
