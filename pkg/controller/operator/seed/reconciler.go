@@ -598,7 +598,7 @@ func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *ku
 
 	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow}}
 	if _, err := controllerutil.CreateOrUpdate(ctx, client, netpol, func() error {
-		netpol.Spec = networkpolicy.SeedApiServerRule()
+		netpol.Spec = networkpolicy.SeedApiserverRule()
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to reconcile CiliumClusterwideNetworkPolicies: %w", err)

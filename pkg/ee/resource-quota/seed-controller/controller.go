@@ -121,14 +121,14 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 		return nil
 	}
 
-	projectIdReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{resourceQuota.Spec.Subject.Name})
+	projectIDReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{resourceQuota.Spec.Subject.Name})
 	if err != nil {
 		return fmt.Errorf("error creating project id req: %w", err)
 	}
 
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList,
-		&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectIdReq)}); err != nil {
+		&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectIDReq)}); err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
@@ -205,13 +205,13 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 		var requests []reconcile.Request
 
 		clusterLabels := a.GetLabels()
-		projectId, ok := clusterLabels[kubermaticv1.ProjectIDLabelKey]
+		projectID, ok := clusterLabels[kubermaticv1.ProjectIDLabelKey]
 		if !ok {
 			log.Debugw("cluster does not have `project-id` label, skipping", "cluster", a.GetName())
 			return requests
 		}
 
-		subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectId})
+		subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectID})
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("error creating subject name req: %w", err))
 			return requests

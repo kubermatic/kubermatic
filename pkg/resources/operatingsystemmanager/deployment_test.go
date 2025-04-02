@@ -69,7 +69,7 @@ func TestAppendProxyFlags(t *testing.T) {
 				},
 			},
 			cluster: nil,
-			want:    []string{"-flag1", "value1", flagHttpProxy, sampleProxy},
+			want:    []string{"-flag1", "value1", flagHTTPProxy, sampleProxy},
 		},
 		{
 			name:  "empty flags with valid node settings should add proxy flags",
@@ -80,7 +80,7 @@ func TestAppendProxyFlags(t *testing.T) {
 				},
 			},
 			cluster: &kubermaticv1.Cluster{},
-			want:    []string{flagHttpProxy, sampleProxy},
+			want:    []string{flagHTTPProxy, sampleProxy},
 		},
 		{
 			name:  "cluster settings should override nodeSettings",
@@ -104,7 +104,7 @@ func TestAppendProxyFlags(t *testing.T) {
 			},
 			want: []string{
 				"-flag1", "value1",
-				flagHttpProxy, sampleProxyAnother,
+				flagHTTPProxy, sampleProxyAnother,
 				flagNoProxy, noProxy,
 			},
 		},
@@ -132,7 +132,7 @@ func TestAppendProxyFlags(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{},
 			want: []string{
 				"-flag1", "value1",
-				flagHttpProxy, sampleProxy,
+				flagHTTPProxy, sampleProxy,
 				flagNoProxy, noProxy,
 			},
 		},
@@ -154,7 +154,7 @@ func TestAppendProxyFlags(t *testing.T) {
 			},
 			want: []string{
 				"-flag1", "value1",
-				flagHttpProxy, sampleProxy,
+				flagHTTPProxy, sampleProxy,
 				flagNoProxy, noProxy,
 			},
 		},

@@ -194,10 +194,10 @@ func (c *clusterBackupCollector) getS3Client(ctx context.Context, destination *k
 		return nil, fmt.Errorf("failed to retrieve credentials secret: %w", err)
 	}
 
-	accessKey := string(creds.Data[etcdbackup.AccessKeyIdEnvVarKey])
+	accessKey := string(creds.Data[etcdbackup.AccessKeyIDEnvVarKey])
 	secretKey := string(creds.Data[etcdbackup.SecretAccessKeyEnvVarKey])
 	if accessKey == "" || secretKey == "" {
-		return nil, fmt.Errorf("backup credentials do not contain %q or %q keys", etcdbackup.AccessKeyIdEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey)
+		return nil, fmt.Errorf("backup credentials do not contain %q or %q keys", etcdbackup.AccessKeyIDEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey)
 	}
 
 	return s3.NewClient(destination.Endpoint, accessKey, secretKey, c.caBundle.CertPool())

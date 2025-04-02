@@ -1071,12 +1071,12 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 func (r *reconciler) reconcileNetworkPolicies(ctx context.Context, data reconcileData) error {
 	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
 		kubesystem.DefaultNetworkPolicyReconciler(),
-		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()),
+		coredns.KubeDNSNetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceAPIIP.String()),
 	}
 
 	if r.userSSHKeyAgent {
 		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories,
-			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceApiIP.String()))
+			usersshkeys.NetworkPolicyReconciler(data.k8sServiceEndpointAddress, int(data.k8sServiceEndpointPort), data.k8sServiceAPIIP.String()))
 	}
 
 	if r.isKonnectivityEnabled {
@@ -1134,7 +1134,7 @@ type reconcileData struct {
 	gatekeeperAuditRequirements *corev1.ResourceRequirements
 	monitoringReplicas          *int32
 	ipFamily                    kubermaticv1.IPFamily
-	k8sServiceApiIP             *net.IP
+	k8sServiceAPIIP             *net.IP
 	k8sServiceEndpointAddress   string
 	k8sServiceEndpointPort      int32
 	reconcileK8sSvcEndpoints    bool

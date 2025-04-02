@@ -315,7 +315,7 @@ func TestGetNextApiServerVersion(t *testing.T) {
 				},
 			}
 
-			nextVersion, err := getNextApiServerVersion(context.Background(), config, cluster)
+			nextVersion, err := getNextApiserverVersion(context.Background(), config, cluster)
 			if err != nil {
 				if !tt.expectedErr {
 					t.Fatalf("Expected next version %s, but got error: %v", tt.expected.String(), err)

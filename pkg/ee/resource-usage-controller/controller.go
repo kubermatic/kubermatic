@@ -123,7 +123,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			return fmt.Errorf("error getting machine resource usage for machine %q: %w", machine.Name, err)
 		}
 
-		resourceUsage.CPU.Add(*resourceDetails.Cpu())
+		resourceUsage.CPU.Add(*resourceDetails.CPU())
 		resourceUsage.Memory.Add(*resourceDetails.Memory())
 		resourceUsage.Storage.Add(*resourceDetails.Storage())
 	}

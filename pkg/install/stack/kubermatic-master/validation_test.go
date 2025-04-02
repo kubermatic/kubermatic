@@ -130,7 +130,7 @@ func Test_isPublicIp(t *testing.T) {
 	}
 
 	for ip, want := range testCases {
-		if got := isPublicIp(ip); got != want {
+		if got := isPublicIP(ip); got != want {
 			t.Errorf("isPublicIp(%s) = %v , want: %v", ip, got, want)
 		}
 	}

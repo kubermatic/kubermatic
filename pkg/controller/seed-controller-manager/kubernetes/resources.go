@@ -755,7 +755,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			return fmt.Errorf("failed to fetch Kubernetes API service IP list: %w", err)
 		}
 
-		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.SeedApiServerAllowReconciler(apiIPs))
+		namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.SeedApiserverAllowReconciler(apiIPs))
 
 		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, c.Status.NamespaceName, r); err != nil {
 			return fmt.Errorf("failed to ensure Network Policies: %w", err)

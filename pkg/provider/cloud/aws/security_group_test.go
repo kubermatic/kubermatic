@@ -96,7 +96,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 				expectedPerm.UserIdGroupPairs[i].UserId = nil
 			}
 
-			if compareIpPermissions(perm, expectedPerm) {
+			if compareIPPermissions(perm, expectedPerm) {
 				found = true
 				break
 			}
@@ -112,7 +112,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	}
 }
 
-func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermission) bool {
+func compareIPPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermission) bool {
 	if ptr.Deref[int32](perm1.FromPort, -1) != ptr.Deref[int32](perm2.FromPort, -1) {
 		return false
 	}

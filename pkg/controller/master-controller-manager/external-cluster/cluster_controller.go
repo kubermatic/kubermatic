@@ -112,10 +112,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	result, err := r.reconcile(ctx, log.With("provider", cluster.Spec.CloudSpec.ProviderName), cluster)
 	if err != nil {
 		switch {
-		case isHttpError(err, http.StatusNotFound):
+		case isHTTPError(err, http.StatusNotFound):
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
 			err = nil
-		case isHttpError(err, http.StatusForbidden):
+		case isHTTPError(err, http.StatusForbidden):
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
 			err = nil
 		default:
@@ -156,7 +156,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 		condition, err := gke.GetClusterStatus(ctx, secretKeySelector, cloud.GKE)
 		if err != nil {
-			if isHttpError(err, http.StatusNotFound) {
+			if isHTTPError(err, http.StatusNotFound) {
 				condition := &kubermaticv1.ExternalClusterCondition{
 					Phase:   kubermaticv1.ExternalClusterPhaseError,
 					Message: err.Error(),
@@ -206,7 +206,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 		condition, err := eks.GetClusterStatus(ctx, secretKeySelector, cloud.EKS)
 		if err != nil {
-			if isHttpError(err, http.StatusNotFound) {
+			if isHTTPError(err, http.StatusNotFound) {
 				condition := &kubermaticv1.ExternalClusterCondition{
 					Phase:   kubermaticv1.ExternalClusterPhaseError,
 					Message: err.Error(),
@@ -253,7 +253,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 		condition, err := aks.GetClusterStatus(ctx, secretKeySelector, cloud.AKS)
 		if err != nil {
-			if isHttpError(err, http.StatusNotFound) {
+			if isHTTPError(err, http.StatusNotFound) {
 				condition := &kubermaticv1.ExternalClusterCondition{
 					Phase:   kubermaticv1.ExternalClusterPhaseError,
 					Message: err.Error(),
@@ -447,7 +447,7 @@ func kubeconfigSecretReconcilerFactory(cluster *kubermaticv1.ExternalCluster, se
 	}
 }
 
-func isHttpError(err error, status int) bool {
+func isHTTPError(err error, status int) bool {
 	var httpError utilerrors.HTTPError
 	if errors.As(err, &httpError) {
 		if httpError.StatusCode() == status {

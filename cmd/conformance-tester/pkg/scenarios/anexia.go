@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	nodeCpu      = 2
+	nodeCPU      = 2
 	nodeDiskSize = 60
 	nodeMemory   = 2048
 )
@@ -40,7 +40,7 @@ type anexiaScenario struct {
 }
 
 func (s *anexiaScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](
+	return sets.New(
 		providerconfig.OperatingSystemFlatcar,
 	)
 }
@@ -71,7 +71,7 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewAnexiaConfig().
-		WithCPUs(nodeCpu).
+		WithCPUs(nodeCPU).
 		WithMemory(nodeMemory).
 		AddDisk(nodeDiskSize, "ENT6").
 		WithTemplateID(secrets.Anexia.TemplateID).

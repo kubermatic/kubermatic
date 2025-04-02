@@ -708,15 +708,15 @@ func TestDownloadChart(t *testing.T) {
 	chartArchiveV1Name := path.Base(chartArchiveV1Path)
 	chartArchiveV2Name := path.Base(chartArchiveV2Path)
 
-	httpRegistryUrl := test.StartHttpRegistryWithCleanup(t, chartGlobPath)
-	httpRegistryWithAuthUrl := test.StartHttpRegistryWithAuthAndCleanup(t, chartGlobPath)
+	httpRegistryURL := test.StartHTTPRegistryWithCleanup(t, chartGlobPath)
+	httpRegistryWithAuthURL := test.StartHTTPRegistryWithAuthAndCleanup(t, chartGlobPath)
 
-	ociRegistryUrl := test.StartOciRegistry(t, chartGlobPath)
-	ociregistryWithAuthUrl, registryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
+	ociRegistryURL := test.StartOciRegistry(t, chartGlobPath)
+	ociregistryWithAuthURL, registryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	testCases := []struct {
 		name                string
-		repoUrl             string
+		repoURL             string
 		chartName           string
 		chartVersion        string
 		auth                AuthSettings
@@ -726,7 +726,7 @@ func TestDownloadChart(t *testing.T) {
 	}{
 		{
 			name:                "Download from HTTP repository should be successful",
-			repoUrl:             httpRegistryUrl,
+			repoURL:             httpRegistryURL,
 			chartName:           "examplechart",
 			chartVersion:        "0.1.0",
 			auth:                AuthSettings{},
@@ -736,7 +736,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:                "Download from HTTP repository with empty version should get the latest version",
-			repoUrl:             httpRegistryUrl,
+			repoURL:             httpRegistryURL,
 			chartName:           "examplechart",
 			chartVersion:        "",
 			auth:                AuthSettings{},
@@ -746,7 +746,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:                "Download from HTTP repository with auth should be successful",
-			repoUrl:             httpRegistryWithAuthUrl,
+			repoURL:             httpRegistryWithAuthURL,
 			chartName:           "examplechart",
 			chartVersion:        "0.1.0",
 			auth:                AuthSettings{Username: "username", Password: "password"},
@@ -756,7 +756,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:              "Download from HTTP repository should fail when chart does not exist",
-			repoUrl:           httpRegistryUrl,
+			repoURL:           httpRegistryURL,
 			chartName:         "chartthatdoesnotexist",
 			chartVersion:      "0.1.0",
 			auth:              AuthSettings{},
@@ -765,7 +765,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:              "Download from HTTP repository should fail when version is not a semversion",
-			repoUrl:           httpRegistryUrl,
+			repoURL:           httpRegistryURL,
 			chartName:         "examplechart",
 			chartVersion:      "notSemver",
 			auth:              AuthSettings{},
@@ -775,7 +775,7 @@ func TestDownloadChart(t *testing.T) {
 
 		{
 			name:                "Download from OCI repository should be successful",
-			repoUrl:             ociRegistryUrl,
+			repoURL:             ociRegistryURL,
 			chartName:           "examplechart",
 			chartVersion:        "0.1.0",
 			auth:                AuthSettings{PlainHTTP: true},
@@ -785,7 +785,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:                "Download from OCI repository with empty version should get the latest version",
-			repoUrl:             ociRegistryUrl,
+			repoURL:             ociRegistryURL,
 			chartName:           "examplechart",
 			chartVersion:        "",
 			auth:                AuthSettings{PlainHTTP: true},
@@ -795,7 +795,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:                "Download from OCI repository with auth should be successful",
-			repoUrl:             ociregistryWithAuthUrl,
+			repoURL:             ociregistryWithAuthURL,
 			chartName:           "examplechart",
 			chartVersion:        "0.1.0",
 			auth:                AuthSettings{RegistryConfigFile: registryConfigFile, PlainHTTP: true},
@@ -805,7 +805,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:              "Download from OCI repository should fail when chart does not exist",
-			repoUrl:           ociRegistryUrl,
+			repoURL:           ociRegistryURL,
 			chartName:         "chartthatdoesnotexist",
 			chartVersion:      "0.1.0",
 			auth:              AuthSettings{PlainHTTP: true},
@@ -814,7 +814,7 @@ func TestDownloadChart(t *testing.T) {
 		},
 		{
 			name:              "Download from OCI repository should fail when version is not a semversion",
-			repoUrl:           ociRegistryUrl,
+			repoURL:           ociRegistryURL,
 			chartName:         "examplechart",
 			chartVersion:      "notSemver",
 			auth:              AuthSettings{PlainHTTP: true},
@@ -836,7 +836,7 @@ func TestDownloadChart(t *testing.T) {
 					t.Fatalf("can not init helm Client: %s", err)
 				}
 
-				chartLoc, err := helmClient.DownloadChart(tc.repoUrl, tc.chartName, tc.chartVersion, downloadDest, tc.auth)
+				chartLoc, err := helmClient.DownloadChart(tc.repoURL, tc.chartName, tc.chartVersion, downloadDest, tc.auth)
 
 				if (err != nil) != tc.wantErr {
 					t.Fatalf("DownloadChart() error = %v, wantErr %v", err, tc.wantErr)
@@ -876,15 +876,15 @@ func TestBuildDependencies(t *testing.T) {
 	test.PackageChart(t, "testdata/examplechart", chartArchiveDir)
 	test.PackageChart(t, "testdata/examplechart2", chartArchiveDir)
 
-	httpRegistryUrl := test.StartHttpRegistryWithCleanup(t, chartGlobPath)
-	httpRegistryWithAuthUrl := test.StartHttpRegistryWithAuthAndCleanup(t, chartGlobPath)
+	httpRegistryURL := test.StartHTTPRegistryWithCleanup(t, chartGlobPath)
+	httpRegistryWithAuthURL := test.StartHTTPRegistryWithAuthAndCleanup(t, chartGlobPath)
 
-	httpsRegistryUrl, httpsRegistryPKI := test.StartHttpsRegistryWithCleanup(t, chartGlobPath)
+	httpsRegistryURL, httpsRegistryPKI := test.StartHTTPSRegistryWithCleanup(t, chartGlobPath)
 
-	ociPlainRegistryUrl := test.StartOciRegistry(t, chartGlobPath)
-	ociPlainRegistryWithAuthUrl, plainRegistryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
+	ociPlainRegistryURL := test.StartOciRegistry(t, chartGlobPath)
+	ociPlainRegistryWithAuthURL, plainRegistryConfigFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
-	ociSecureRegistryUrl, ociSecurePKI := test.StartSecureOciRegistry(t, chartGlobPath)
+	ociSecureRegistryURL, ociSecurePKI := test.StartSecureOciRegistry(t, chartGlobPath)
 
 	const fileDepChartName = "filedepchart"
 	const fileDepChartVersion = "2.3.4"
@@ -904,28 +904,28 @@ func TestBuildDependencies(t *testing.T) {
 		},
 		{
 			name:         "http dependencies with Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryURL}},
 			hasLockFile:  true,
 			auth:         AuthSettings{},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependencies without Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      false,
 		},
 		{
 			name:         "oci dependencies with Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryURL}},
 			hasLockFile:  true,
 			auth:         AuthSettings{PlainHTTP: true},
 			wantErr:      false,
 		},
 		{
 			name:         "oci dependencies without Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{PlainHTTP: true},
 			wantErr:      false,
@@ -946,70 +946,70 @@ func TestBuildDependencies(t *testing.T) {
 		},
 		{
 			name:         "http and oci dependencies with Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}, {Name: "examplechart2", Version: "0.1.0", Repository: ociPlainRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryURL}, {Name: "examplechart2", Version: "0.1.0", Repository: ociPlainRegistryURL}},
 			hasLockFile:  true,
 			auth:         AuthSettings{PlainHTTP: true},
 			wantErr:      false,
 		},
 		{
 			name:         "http and oci dependencies without Chat.lock file",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryUrl}, {Name: "examplechart2", Version: "0.1.0", Repository: ociPlainRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryURL}, {Name: "examplechart2", Version: "0.1.0", Repository: ociPlainRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{PlainHTTP: true},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependencies with Chat.lock file and auth",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryWithAuthUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryWithAuthURL}},
 			hasLockFile:  true,
 			auth:         AuthSettings{Username: "username", Password: "password"},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependencies without Chat.lock file and auth",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryWithAuthUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpRegistryWithAuthURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{Username: "username", Password: "password"},
 			wantErr:      false,
 		},
 		{
 			name:         "oci dependencies with Chat.lock file and auth",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryWithAuthUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryWithAuthURL}},
 			hasLockFile:  true,
 			auth:         AuthSettings{PlainHTTP: true, RegistryConfigFile: plainRegistryConfigFile},
 			wantErr:      false,
 		},
 		{
 			name:         "oci dependencies without Chat.lock file and auth",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryWithAuthUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociPlainRegistryWithAuthURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{PlainHTTP: true, RegistryConfigFile: plainRegistryConfigFile},
 			wantErr:      false,
 		},
 		{
 			name:         "http dependency with empty version should fail",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: httpRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: httpRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      true,
 		},
 		{
 			name:         "oci dependency with empty version should fail",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: ociPlainRegistryWithAuthUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: ociPlainRegistryWithAuthURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{PlainHTTP: true},
 			wantErr:      true,
 		},
 		{
 			name:         "http dependency with non semver should fail",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: httpRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: httpRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      true,
 		},
 		{
 			name:         "oci dependency with non semver should fail",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: ociPlainRegistryWithAuthUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "", Repository: ociPlainRegistryWithAuthURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{PlainHTTP: true},
 			wantErr:      true,
@@ -1017,28 +1017,28 @@ func TestBuildDependencies(t *testing.T) {
 
 		{
 			name:         "secure oci registry with a valid certificate",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{CAFile: ociSecurePKI.CAFile},
 			wantErr:      false,
 		},
 		{
 			name:         "secure oci registry without a valid certificate",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      true,
 		},
 		{
 			name:         "secure oci registry without a valid certificate, but ignoring it",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{Insecure: true},
 			wantErr:      false,
 		},
 		{
 			name:         "secure oci registry failing to try plain HTTP",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: ociSecureRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{CAFile: ociSecurePKI.CAFile, PlainHTTP: true},
 			wantErr:      true,
@@ -1046,21 +1046,21 @@ func TestBuildDependencies(t *testing.T) {
 
 		{
 			name:         "HTTPS registry with a valid certificate",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpsRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpsRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{CAFile: httpsRegistryPKI.CAFile},
 			wantErr:      false,
 		},
 		{
 			name:         "HTTPS registry without a valid certificate",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpsRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpsRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{},
 			wantErr:      true,
 		},
 		{
 			name:         "HTTPS registry without a valid certificate, but ignoring it",
-			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpsRegistryUrl}},
+			dependencies: []*chart.Dependency{{Name: "examplechart", Version: "0.1.0", Repository: httpsRegistryURL}},
 			hasLockFile:  false,
 			auth:         AuthSettings{Insecure: true},
 			wantErr:      false,
