@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resource_usage_controller
+package resourceusagecontroller
 
 import (
 	"context"
