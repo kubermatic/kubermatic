@@ -90,7 +90,7 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 				{
 					Name:            "node-cache",
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:%s", resources.RegistryK8S, version))),
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args: []string{
 						"-localip",
 						kubesystem.NodeLocalDNSCacheAddress,
