@@ -47,7 +47,7 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	useNewDexChart, _ := opt.HelmValues.GetBool(yamled.Path{"useNewDexChart"})
 	if !useNewDexChart {
 		logger.Warn("Consider migrating to the new Dex Helm chart by setting useNewDexChart.")
-		logger.Warn("Please see the migration guide at https://docs.kubermatic.com/kubermatic/main/installation/upgrading/upgrade-from-2.25-to-2.26/#dex-240")
+		logger.Warn("Please see the migration guide at https://docs.kubermatic.com/kubermatic/v2.27/installation/upgrading/upgrade-from-2.26-to-2.27/#dex-v242")
 		logger.Warn("for more information.")
 
 		chartName = LegacyDexChartName
