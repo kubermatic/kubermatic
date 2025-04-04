@@ -16,6 +16,9 @@
 
 ### Contains commonly used functions for the other scripts.
 
+# This should be set by a prow preset.
+export DOWNLOAD_PROXY=nginx.xrstf.svc.cluster.local
+
 # Required for signal propagation to work so
 # the cleanup trap gets executed when a script
 # receives a SIGINT
@@ -593,4 +596,29 @@ provider_disabled() {
 
   echodate "\$$disableEnv is set, tests will be disabled. Apply the label $labelName to this PR to forcefully enable them."
   return 0
+}
+
+# This is an alias for curl, but will in the CI system rewrite the
+# request to allow it to pass through an in-cluster caching proxy.
+# The proxy is not a regular proxy (due to TLS limitations), but a
+# simply plain-HTTP reverse proxy, so a request to GitHub would
+# go plain HTTP between this script and the proxy, and HTTPS between
+# the proxy and GitHub.
+download_archive() {
+  local url="$1"
+  shift
+
+  domain="$(echo "$url" | sed -E 's#^https?://([^/]+)/.*#\1#')"
+  proxiedDomains="github.com,codeberg.org,dl.k8s.io"
+
+  if [[ -z "${PROW_JOB_ID:-}" ]] || [[ -z "${DOWNLOAD_PROXY:-}" ]] || ! echo "$proxiedDomains" | grep -w -q "$domain"; then
+    # do nothing special when running outside of the CI environment
+    # or when using a domain we do not proxy internally
+    curl "$url" "$@"
+  else
+    # determine target domain
+    echodate "Note: Proxying request to $domain through download proxy." >&2
+    url="$(echo "$url" | sed -E "s#https?://$domain/#http://$DOWNLOAD_PROXY/#")"
+    curl --header "Host: $domain" "$url" "$@"
+  fi
 }

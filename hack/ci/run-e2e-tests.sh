@@ -23,6 +23,31 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+TEST_NAME="Download kube-test binaries"
+echodate "Downloading kube-test binaries..."
+
+echodate "Kubernetes release: $RELEASES_TO_TEST"
+
+KUBE_VERSION="$(download_archive https://dl.k8s.io/release/stable-$RELEASES_TO_TEST.txt -Ls)"
+echodate "Kubernetes version: $KUBE_VERSION"
+
+TMP_DIR="/tmp/k8s"
+DIRECTORY="/opt/kube-test/$RELEASES_TO_TEST"
+
+rm -rf -- "$DIRECTORY"
+mkdir -p "$TMP_DIR" "$DIRECTORY"
+
+DIRECTORY="$DIRECTORY/platforms/$(go env GOOS)/$(go env GOARCH)"
+mkdir -p "$DIRECTORY"
+
+TEST_BINARIES=kubernetes-test-$(go env GOOS)-$(go env GOARCH).tar.gz
+download_archive "https://dl.k8s.io/$KUBE_VERSION/$TEST_BINARIES" -Lo "$TMP_DIR/$TEST_BINARIES"
+tar -zxf "$TMP_DIR/$TEST_BINARIES" -C "$TMP_DIR"
+mv $TMP_DIR/kubernetes/test/bin/* "$DIRECTORY/"
+rm -rf -- "$TMP_DIR"
+
+echodate "Done downloading Kubernetes test binaries."
+
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 
