@@ -179,6 +179,9 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+          # Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
+          # Defaults to false.
+          enableDedicatedCpus: false
           # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
           # Defaults to true.
           enableDefaultNetworkPolicies: true
