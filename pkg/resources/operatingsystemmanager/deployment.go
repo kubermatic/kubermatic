@@ -301,7 +301,7 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 }
 
 const (
-	flagHttpProxy = "-node-http-proxy"
+	flagHTTPProxy = "-node-http-proxy"
 	flagNoProxy   = "-node-no-proxy"
 )
 
@@ -316,7 +316,7 @@ func appendProxyFlags(flags []string, nodeSettings *kubermaticv1.NodeSettings, c
 	flagsMap := make(map[string]string)
 	if nodeSettings != nil {
 		if httpProxy := nodeSettings.HTTPProxy; !httpProxy.Empty() {
-			flagsMap[flagHttpProxy] = nodeSettings.HTTPProxy.String()
+			flagsMap[flagHTTPProxy] = nodeSettings.HTTPProxy.String()
 		}
 		if noProxy := nodeSettings.NoProxy; !noProxy.Empty() {
 			flagsMap[flagNoProxy] = nodeSettings.NoProxy.String()
@@ -327,7 +327,7 @@ func appendProxyFlags(flags []string, nodeSettings *kubermaticv1.NodeSettings, c
 		osm := cluster.Spec.ComponentsOverride.OperatingSystemManager
 		if osm != nil {
 			if httpProxy := osm.Proxy.HTTPProxy; httpProxy != nil && !httpProxy.Empty() {
-				flagsMap[flagHttpProxy] = httpProxy.String()
+				flagsMap[flagHTTPProxy] = httpProxy.String()
 			}
 
 			if noProxy := osm.Proxy.NoProxy; noProxy != nil && !noProxy.Empty() {

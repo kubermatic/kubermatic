@@ -82,7 +82,7 @@ func TestHelmProvider(t *testing.T) {
 	chartDir := t.TempDir()
 	chartGlobPath := path.Join(chartDir, "*.tgz")
 	test.PackageChart(t, "../../helmclient/testdata/examplechart2", chartDir)
-	registryUrl, regCredFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
+	registryURL, regCredFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	tests := []struct {
 		name     string
@@ -184,7 +184,7 @@ func TestHelmProvider(t *testing.T) {
 		{
 			name: "application installation should be successful when dependency requires credentials that are provided",
 			testFunc: func(t *testing.T) {
-				chartFullPath := createChartWithDependency(t, registryUrl)
+				chartFullPath := createChartWithDependency(t, registryURL)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "", nil, helm)
@@ -214,7 +214,7 @@ func TestHelmProvider(t *testing.T) {
 		{
 			name: "application installation should fail when dependency requires credentials that are not provided",
 			testFunc: func(t *testing.T) {
-				chartFullPath := createChartWithDependency(t, registryUrl)
+				chartFullPath := createChartWithDependency(t, registryURL)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
 				app := createApplicationInstallation(testNs, nil, "", nil, helm)
@@ -314,7 +314,7 @@ func TestHelmProvider(t *testing.T) {
 			},
 		},
 		{
-			name: "when an application is created with no values and enableDns=true, it should install app with default values and dns should be resolved",
+			name: "when an application is created with no values and enableDNS=true, it should install app with default values and dns should be resolved",
 			testFunc: func(t *testing.T) {
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: false, Timeout: metav1.Duration{Duration: 0}, Atomic: false, EnableDNS: true}}
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
@@ -351,7 +351,7 @@ func TestHelmProvider(t *testing.T) {
 	}
 }
 
-func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int, enableDns bool) {
+func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNS *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int, enableDNS bool) {
 	template := HelmTemplate{
 		Ctx:             context.Background(),
 		Kubeconfig:      kubeconfigPath,
@@ -368,7 +368,7 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 	}
 	statusUpdater(&app.Status)
 
-	test.CheckConfigMap(t, ctx, client, testNs, expectedData, expectedVersionLabel, enableDns)
+	test.CheckConfigMap(t, ctx, client, testNS, expectedData, expectedVersionLabel, enableDNS)
 	assertStatusIsUpdated(t, app, statusUpdater, expectedVersion)
 }
 func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, rawValuesBlock string, deployOpts *appskubermaticv1.DeployOptions, source Source) *appskubermaticv1.ApplicationInstallation {
@@ -487,7 +487,7 @@ func createCredentialSecret(t *testing.T, ctx context.Context, client ctrlruntim
 
 // createChartWithDependency takes testdata/examplechart as base and adds examplechart2 as a dependency. The full path to the chart directory is returned.
 // The dependency is stored on the helm registry accessible by registryUrl.
-func createChartWithDependency(t *testing.T, registryUrl string) string {
+func createChartWithDependency(t *testing.T, registryURL string) string {
 	// copy exampleChart  and add examplechart2 as dependency
 	chartFullPath := path.Join(t.TempDir(), "chartWithDependencies")
 	if err := test.CopyDir("../../helmclient/testdata/examplechart", chartFullPath); err != nil {
@@ -498,7 +498,7 @@ func createChartWithDependency(t *testing.T, registryUrl string) string {
 	if err != nil {
 		t.Fatalf("failed to load chart: %s", err)
 	}
-	chartToInstall.Metadata.Dependencies = []*chart.Dependency{{Name: "examplechart2", Version: "0.1.0", Repository: registryUrl}}
+	chartToInstall.Metadata.Dependencies = []*chart.Dependency{{Name: "examplechart2", Version: "0.1.0", Repository: registryURL}}
 	// Save the chart file.
 	out, err := yaml.Marshal(chartToInstall.Metadata)
 	if err != nil {

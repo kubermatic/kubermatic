@@ -18,28 +18,26 @@
 # root's .golangci.yml and once with the SDK's config file.
 #
 
+version: "2"
 run:
-  timeout: 10m
   modules-download-mode: readonly
-
 linters:
+  default: none
   enable:
     - depguard
     - tagliatelle
-  disable-all: true
-
-linters-settings:
-  tagliatelle:
-    case:
+  settings:
+    depguard:
       rules:
-        json: goCamel
-        yaml: goCamel
-  depguard:
-    rules:
-      noControllerRuntime:
-        deny:
-          - { pkg: sigs.k8s.io/controller-runtime, desc: no dependency on controller-runtime allowed }
-
-issues:
-  exclude-files:
-    - zz_generated.*.go
+        noControllerRuntime:
+          deny:
+            - pkg: sigs.k8s.io/controller-runtime
+              desc: no dependency on controller-runtime allowed
+    tagliatelle:
+      case:
+        rules:
+          json: goCamel
+          yaml: goCamel
+  exclusions:
+    paths:
+      - zz_generated.*.go

@@ -70,8 +70,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	//
 	// Attributes we check:
 	// - defined security rules
-	if !(securityGroup.Properties != nil && securityGroup.Properties.SecurityRules != nil &&
-		compareSecurityRules(securityGroup.Properties.SecurityRules, target.Properties.SecurityRules)) {
+	if securityGroup.Properties == nil || securityGroup.Properties.SecurityRules == nil || !compareSecurityRules(securityGroup.Properties.SecurityRules, target.Properties.SecurityRules) {
 		if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return cluster, err
 		}

@@ -348,7 +348,7 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 }
 
 func (r *reconciler) setupNetworkingData(cluster *kubermaticv1.Cluster, data *reconcileData) (err error) {
-	data.k8sServiceApiIP, err = resources.InClusterApiserverIP(cluster)
+	data.k8sServiceAPIIP, err = resources.InClusterApiserverIP(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
 	}

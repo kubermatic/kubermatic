@@ -88,7 +88,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 	// filter out any Flatcar nodes that are already being deleted
 	var nodes []corev1.Node
 	for _, node := range nodeList.Items {
-		if node.ObjectMeta.DeletionTimestamp == nil {
+		if node.DeletionTimestamp == nil {
 			nodes = append(nodes, node)
 		}
 	}
@@ -107,7 +107,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconc
 }
 
 func (r *Reconciler) cleanupUpdateOperatorResources(ctx context.Context) error {
-	return resources.EnsureAllDeleted(ctx, r.Client, operatorNamespace)
+	return resources.EnsureAllDeleted(ctx, r, operatorNamespace)
 }
 
 // reconcileUpdateOperatorResources deploys the FlatcarUpdateOperator
@@ -117,14 +117,14 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorServiceAccountReconciler(),
 		resources.AgentServiceAccountReconciler(),
 	}
-	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, operatorNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, saReconcilers, operatorNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile the ServiceAccounts: %w", err)
 	}
 
 	roleReconcilers := []reconciling.NamedRoleReconcilerFactory{
 		resources.OperatorRoleReconciler(),
 	}
-	if err := reconciling.ReconcileRoles(ctx, roleReconcilers, operatorNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileRoles(ctx, roleReconcilers, operatorNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile the Roles: %w", err)
 	}
 
@@ -132,7 +132,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorRoleBindingReconciler(operatorNamespace),
 		resources.AgentRoleBindingReconciler(operatorNamespace),
 	}
-	if err := reconciling.ReconcileRoleBindings(ctx, rbReconcilers, operatorNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileRoleBindings(ctx, rbReconcilers, operatorNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile the RoleBindings: %w", err)
 	}
 
@@ -140,7 +140,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorClusterRoleReconciler(),
 		resources.AgentClusterRoleReconciler(),
 	}
-	if err := reconciling.ReconcileClusterRoles(ctx, crReconcilers, metav1.NamespaceNone, r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoles(ctx, crReconcilers, metav1.NamespaceNone, r); err != nil {
 		return fmt.Errorf("failed to reconcile the ClusterRoles: %w", err)
 	}
 
@@ -148,21 +148,21 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 		resources.OperatorClusterRoleBindingReconciler(operatorNamespace),
 		resources.AgentClusterRoleBindingReconciler(operatorNamespace),
 	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbReconcilers, metav1.NamespaceNone, r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, crbReconcilers, metav1.NamespaceNone, r); err != nil {
 		return fmt.Errorf("failed to reconcile the ClusterRoleBindings: %w", err)
 	}
 
 	depReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
 		resources.OperatorDeploymentReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry), r.updateWindow),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, depReconcilers, operatorNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, depReconcilers, operatorNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile the Deployments: %w", err)
 	}
 
 	dsReconcilers := []reconciling.NamedDaemonSetReconcilerFactory{
 		resources.AgentDaemonSetReconciler(registry.GetImageRewriterFunc(r.overwriteRegistry)),
 	}
-	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, operatorNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, operatorNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile the DaemonSets: %w", err)
 	}
 

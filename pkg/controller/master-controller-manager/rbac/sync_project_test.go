@@ -103,8 +103,8 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			err = masterClient.List(ctx, &projectList)
 			assert.NoError(t, err)
 
-			projectList.Items[0].ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
+			projectList.Items[0].ResourceVersion = ""
+			test.expectedProject.ResourceVersion = ""
 
 			assert.Len(t, projectList.Items, 1)
 			assert.Equal(t, projectList.Items[0], *test.expectedProject)

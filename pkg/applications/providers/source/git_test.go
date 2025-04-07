@@ -55,11 +55,11 @@ func TestDownloadGitSource(t *testing.T) {
 	fatalOnErr(err, "failed to create temporary directory for git server", t)
 
 	repoInfo := createGitRepository(t, gitServerDir)
-	privateKey, publicKey := generateSSHkey(t)
+	privateKey, publicKey := generateSSHKey(t)
 
 	sshRemote := "ssh://git@" + newGitSSHServer(gitServerDir, publicKey, t) + repoInfo.Name
-	httpRemote := newGitHttpServer(gitServerDir, "", "", t) + repoInfo.Name
-	httpWithAuthRemote := newGitHttpServer(gitServerDir, "user", "pass", t) + repoInfo.Name
+	httpRemote := newGitHTTPServer(gitServerDir, "", "", t) + repoInfo.Name
+	httpWithAuthRemote := newGitHTTPServer(gitServerDir, "user", "pass", t) + repoInfo.Name
 
 	secretName := "git-cred"
 	passwordCredentials := appskubermaticv1.GitCredentials{
@@ -426,8 +426,8 @@ func checkOnlyOneCommit(repository *git.Repository, t *testing.T) {
 	}
 }
 
-// generateSSHkey a private and public ssh key and returned it in that order.
-func generateSSHkey(t *testing.T) (string, string) {
+// generateSSHKey a private and public ssh key and returned it in that order.
+func generateSSHKey(t *testing.T) (string, string) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	fatalOnErr(err, "failed to genetate client private key", t)
 
@@ -440,7 +440,7 @@ func generateSSHkey(t *testing.T) (string, string) {
 	return privateKeyPEM, pubKey
 }
 
-func newGitHttpServer(repoPath string, user string, password string, t *testing.T) string {
+func newGitHTTPServer(repoPath string, user string, password string, t *testing.T) string {
 	service := gitkit.New(gitkit.Config{
 		Dir:        repoPath,
 		AutoCreate: false,

@@ -43,6 +43,6 @@ var Semantic = conversion.EqualitiesOrDie(
 		return false
 	},
 	func(a, b time.Time) bool {
-		return a.UTC() == b.UTC()
+		return a.Equal(b)
 	},
 )

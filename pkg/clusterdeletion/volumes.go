@@ -143,7 +143,7 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, log *zap.SugaredLogg
 
 func podUsesPV(p *corev1.Pod) bool {
 	for _, volume := range p.Spec.Volumes {
-		if volume.VolumeSource.PersistentVolumeClaim != nil {
+		if volume.PersistentVolumeClaim != nil {
 			return true
 		}
 	}

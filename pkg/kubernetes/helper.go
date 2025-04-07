@@ -464,7 +464,7 @@ func GetNodeGroupReadyCount(nodes *corev1.NodeList, providerNodeLabel, providerN
 }
 
 func GetVersion(client *kubernetes.Clientset) (*ksemver.Semver, error) {
-	version, err := client.DiscoveryClient.ServerVersion()
+	version, err := client.ServerVersion()
 	if err != nil {
 		return nil, err
 	}

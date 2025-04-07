@@ -88,19 +88,19 @@ const (
 	PromtailNamespace   = LoggingNamespace
 )
 
-type Monitoring struct{}
+type MonitoringStack struct{}
 
 func NewStack() stack.Stack {
-	return &Monitoring{}
+	return &MonitoringStack{}
 }
 
-var _ stack.Stack = &Monitoring{}
+var _ stack.Stack = &MonitoringStack{}
 
-func (*Monitoring) Name() string {
+func (*MonitoringStack) Name() string {
 	return "KKP Seed MLA Stack"
 }
 
-func (s *Monitoring) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+func (s *MonitoringStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployNodeExporter(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Node Exporter: %w", err)
 	}

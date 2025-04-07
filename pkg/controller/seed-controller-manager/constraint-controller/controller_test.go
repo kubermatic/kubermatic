@@ -143,9 +143,9 @@ func genConstraint(name, namespace, kind string, label, deleted bool) *kubermati
 	constraint := generator.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
-			constraint.Labels[Key] = constraint.Name
+			constraint.Labels[key] = constraint.Name
 		} else {
-			constraint.Labels = map[string]string{Key: constraint.Name}
+			constraint.Labels = map[string]string{key: constraint.Name}
 		}
 	}
 	if deleted {

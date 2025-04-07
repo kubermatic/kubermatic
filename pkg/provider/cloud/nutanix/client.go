@@ -259,10 +259,10 @@ func ParseNutanixError(err error) (*ErrorResponse, error) {
 	// Nutanix errors are prefixed with various strings, sometimes "error: ",
 	// sometimes "status: 404 Not Found, error-response: "; we therefore trim
 	// everything up to the first opening bracket
-	errJsonString := strings.TrimLeftFunc(err.Error(), func(r rune) bool { return r != '{' })
+	errJSONString := strings.TrimLeftFunc(err.Error(), func(r rune) bool { return r != '{' })
 
 	var resp ErrorResponse
-	if parseErr := json.Unmarshal([]byte(errJsonString), &resp); parseErr != nil {
+	if parseErr := json.Unmarshal([]byte(errJSONString), &resp); parseErr != nil {
 		return nil, fmt.Errorf("failed to parse '%w': %w", err, parseErr)
 	}
 

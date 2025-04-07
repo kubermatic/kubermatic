@@ -130,8 +130,8 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			updatedProject.ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
+			updatedProject.ResourceVersion = ""
+			test.expectedProject.ResourceVersion = ""
 
 			if !diff.SemanticallyEqual(test.expectedProject, updatedProject) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))
@@ -205,8 +205,8 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			updatedProject.ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
+			updatedProject.ResourceVersion = ""
+			test.expectedProject.ResourceVersion = ""
 
 			if !diff.SemanticallyEqual(test.expectedProject, updatedProject) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))
