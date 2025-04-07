@@ -416,15 +416,20 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// during updates lacks behind the apiserver by one minor version; this is so that
 	// also external components like the kubernetes dashboard or external ccms wait for
 	// the new apiserver to be ready; etcd however is different and gets updated together
-	// with the apiserver;
+	// with the apiserver.
 	// As of now, all supported Kubernetes versions use the same etcd release, but the
 	// comment above is left as a reminder in case future versions switches will be needed
 	// again.
+	//
+	// See the SupportedEtcdVersion variable in
+	// https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/constants/constants.go
+	// for an overview.
+
 	// if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
 	// 	return "v3.4.3"
 	// }
 
-	return "v3.5.9"
+	return "v3.5.17"
 }
 
 func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {
