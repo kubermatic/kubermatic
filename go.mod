@@ -1,8 +1,8 @@
 module k8c.io/kubermatic/v2
 
-go 1.21
+go 1.22
 
-toolchain go1.21.5
+toolchain go1.22.12
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.0
@@ -66,10 +66,10 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.21.0
 	github.com/vmware/govmomi v0.34.2
 	go.anx.io/go-anxcloud v0.6.2
-	go.etcd.io/etcd/api/v3 v3.5.10
-	go.etcd.io/etcd/client/pkg/v3 v3.5.10
-	go.etcd.io/etcd/client/v3 v3.5.10
-	go.etcd.io/etcd/etcdutl/v3 v3.5.9
+	go.etcd.io/etcd/api/v3 v3.5.17
+	go.etcd.io/etcd/client/pkg/v3 v3.5.17
+	go.etcd.io/etcd/client/v3 v3.5.17
+	go.etcd.io/etcd/etcdutl/v3 v3.5.17
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
@@ -216,7 +216,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/gomodule/redigo v1.8.5 // indirect
 	github.com/google/btree v1.0.1 // indirect
 	github.com/google/cel-go v0.17.7 // indirect
@@ -333,11 +333,11 @@ require (
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
-	go.etcd.io/bbolt v1.3.8 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.10 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.10 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.10 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.10 // indirect
+	go.etcd.io/bbolt v1.3.11 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.17 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.17 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.17 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.17 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.1 // indirect
