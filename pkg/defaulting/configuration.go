@@ -225,13 +225,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.29
-			newSemver("v1.29.0"),
-			newSemver("v1.29.1"),
-			newSemver("v1.29.2"),
-			newSemver("v1.29.4"),
-			newSemver("v1.29.9"),
-			newSemver("v1.29.13"),
 			// Kubernetes 1.30
 			newSemver("v1.30.5"),
 			newSemver("v1.30.9"),
@@ -245,18 +238,6 @@ var (
 			newSemver("v1.32.3"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.28 =======
-			{
-				// Allow to next minor release
-				From: "1.28.*",
-				To:   "1.29.*",
-			},
-			// ======= 1.29 =======
-			{
-				// Allow to change to any patch version
-				From: "1.29.*",
-				To:   "1.29.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.29.*",
@@ -292,15 +273,9 @@ var (
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
-			// In-tree cloud providers have been fully removed in Kubernetes 1.29.
+			// In-tree cloud providers have been fully removed in Kubernetes 1.30.
 			// Thus, no in-tree provider is available anymore, and no cluster with in-tree CCM
 			// can be upgraded to 1.29.
-			{
-				Provider:  "",
-				Version:   ">= 1.29.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
 			{
 				Provider:  "",
 				Version:   ">= 1.29.0",
