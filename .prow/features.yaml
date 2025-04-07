@@ -310,7 +310,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-encryption-at-rest-e2e
-    run_if_changed: "(pkg/controller/seed-controller-manager/encryption-at-rest-controller/|pkg/test/e2e/encryption-at-rest/)"
+    run_if_changed: "(pkg/resources/apiserver)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
