@@ -345,14 +345,6 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 }
 
 func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// first ensure we have our cleanup finalizer
-	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
-	}
-
 	securityGroups := splitString(cluster.Spec.Cloud.Openstack.SecurityGroups)
 
 	// automatically create and fill-in the default security group if none was specified
@@ -397,9 +389,16 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 		if err != nil {
 			return nil, fmt.Errorf("failed to create security group: %w", err)
 		}
+		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
+		}
 	}
 
 	if updateRequired {
+		var err error
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SecurityGroups = joinStrings(securityGroups)
 		})
