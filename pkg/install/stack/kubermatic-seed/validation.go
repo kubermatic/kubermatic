@@ -36,7 +36,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (m *SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	failures := []error{}
 
 	if err := ValidateMinioCompatibility(ctx, opt); err != nil {

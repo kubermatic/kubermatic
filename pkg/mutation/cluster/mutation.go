@@ -117,10 +117,10 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 }
 
 func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
-	if cluster.ObjectMeta.Annotations == nil {
-		cluster.ObjectMeta.Annotations = map[string]string{}
+	if cluster.Annotations == nil {
+		cluster.Annotations = map[string]string{}
 	}
 
-	cluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
-	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
+	cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
+	cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
 }

@@ -534,7 +534,7 @@ func TestReconcile(t *testing.T) {
 
 			// fetch potentially updated cluster object
 			newCluster := &kubermaticv1.Cluster{}
-			if err := r.Client.Get(ctx, nName, newCluster); err != nil {
+			if err := r.Get(ctx, nName, newCluster); err != nil {
 				t.Fatalf("Cluster object in seed cluster could not be found anymore: %v", err)
 			}
 

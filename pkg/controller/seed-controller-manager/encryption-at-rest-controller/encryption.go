@@ -55,7 +55,7 @@ func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cl
 
 	if err := r.List(ctx, &jobList, ctrlruntimeclient.MatchingLabels{
 		encryptionresources.ClusterLabelKey:        cluster.Name,
-		encryptionresources.SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
+		encryptionresources.SecretRevisionLabelKey: secret.ResourceVersion,
 	}); err != nil {
 		return &reconcile.Result{}, err
 	}

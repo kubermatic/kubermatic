@@ -45,7 +45,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 	b := address.NewModifiersBuilder(log)
 	modifiers, err := b.
 		Cluster(cluster).
-		Client(r.Client).
+		Client(r).
 		ExternalURL(r.externalURL).
 		Seed(seed).
 		Build(ctx)

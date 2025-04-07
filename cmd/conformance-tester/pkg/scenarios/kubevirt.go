@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	kubevirtImageHttpServerSvc = "http://image-repo.kube-system.svc/images"
+	kubevirtImageHTTPServerSvc = "http://image-repo.kube-system.svc/images"
 	kubevirtCPUs               = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
@@ -43,7 +43,7 @@ type kubevirtScenario struct {
 }
 
 func (s *kubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](
+	return sets.New(
 		providerconfig.OperatingSystemUbuntu,
 		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
@@ -104,7 +104,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 func (s *kubevirtScenario) getOSImage() (string, error) {
 	switch s.operatingSystem {
 	case providerconfig.OperatingSystemUbuntu:
-		return kubevirtImageHttpServerSvc + "/ubuntu-22.04.img", nil
+		return kubevirtImageHTTPServerSvc + "/ubuntu-22.04.img", nil
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)
 	}

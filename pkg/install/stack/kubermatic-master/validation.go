@@ -42,7 +42,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	var errs []error
 
 	// validation can only happen if KKP was already installed, otherwise the resource types
@@ -387,8 +387,8 @@ func randomString() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// isPublicIp validates whether ip provided is public.
-func isPublicIp(ipAddress string) bool {
+// isPublicIP validates whether ip provided is public.
+func isPublicIP(ipAddress string) bool {
 	ipAddr := net.ParseIP(ipAddress)
 	return ipAddr != nil && !ipAddr.IsPrivate()
 }

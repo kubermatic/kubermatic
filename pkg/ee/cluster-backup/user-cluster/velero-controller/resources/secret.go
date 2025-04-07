@@ -39,13 +39,13 @@ import (
 func SecretReconciler(credentials *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
 		return CloudCredentialsSecretName, func(cm *corev1.Secret) (*corev1.Secret, error) {
-			awsAccessKeyId := credentials.Data[aws.AccessKeyIDKeyName]
+			awsAccessKeyID := credentials.Data[aws.AccessKeyIDKeyName]
 			awsSecretAccessKey := credentials.Data[aws.SecretAccessKeyName]
-			if awsAccessKeyId == nil || awsSecretAccessKey == nil {
+			if awsAccessKeyID == nil || awsSecretAccessKey == nil {
 				return nil, fmt.Errorf("backup destination credentials secret is not set correctly: [%s] and [%s] can't be empty", aws.AccessKeyIDKeyName, aws.SecretAccessKeyName)
 			}
 
-			cloudCredsFile, err := getVeleroCloudCredentials(awsAccessKeyId, awsSecretAccessKey)
+			cloudCredsFile, err := getVeleroCloudCredentials(awsAccessKeyID, awsSecretAccessKey)
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate Velero cloud-credentials file: %w", err)
 			}
@@ -58,18 +58,18 @@ func SecretReconciler(credentials *corev1.Secret) reconciling.NamedSecretReconci
 }
 
 var credentialsTemplate string = `[default]
-aws_access_key_id = {{ .awsAccessKeyId }}
+aws_access_key_id = {{ .awsAccessKeyID }}
 aws_secret_access_key = {{ .awsSecretAccessKey }}
 `
 
-func getVeleroCloudCredentials(awsAccessKeyId, awsSecretAccessKey []byte) ([]byte, error) {
+func getVeleroCloudCredentials(awsAccessKeyID, awsSecretAccessKey []byte) ([]byte, error) {
 	t, err := template.New("cloud-credentials").Parse(credentialsTemplate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse credentials file template: %w", err)
 	}
 	var buff bytes.Buffer
 	if err := t.Execute(&buff, map[string]interface{}{
-		"awsAccessKeyId":     string(awsAccessKeyId),
+		"awsAccessKeyID":     string(awsAccessKeyID),
 		"awsSecretAccessKey": string(awsSecretAccessKey),
 	}); err != nil {
 		return nil, fmt.Errorf("failed to execute credentials file template: %w", err)

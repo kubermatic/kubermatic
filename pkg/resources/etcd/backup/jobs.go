@@ -38,7 +38,7 @@ const (
 	// will write the backup to.
 	SharedVolumeName = "etcd-backup"
 	// clusterEnvVarKey defines the environment variable key for the cluster name.
-	AccessKeyIdEnvVarKey = "ACCESS_KEY_ID"
+	AccessKeyIDEnvVarKey = "ACCESS_KEY_ID"
 	// SecretAccessKeyEnvVarKey defines the environment variable key for the backup credentials secret access key.
 	SecretAccessKeyEnvVarKey = "SECRET_ACCESS_KEY"
 	// bucketNameEnvVarKey defines the environment variable key for the backup bucket name.
@@ -80,7 +80,7 @@ func BackupJob(data etcdBackupData, config *kubermaticv1.EtcdBackupConfig, statu
 
 	// If destination is set, we need to set the credentials and backup bucket details to match the destination
 	if data.EtcdBackupDestination() != nil {
-		storeContainer.Env = setEnvVar(storeContainer.Env, GenSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, data.EtcdBackupDestination()))
+		storeContainer.Env = setEnvVar(storeContainer.Env, GenSecretEnvVar(AccessKeyIDEnvVarKey, AccessKeyIDEnvVarKey, data.EtcdBackupDestination()))
 		storeContainer.Env = setEnvVar(storeContainer.Env, GenSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, data.EtcdBackupDestination()))
 		storeContainer.Env = setEnvVar(storeContainer.Env, corev1.EnvVar{
 			Name:  BucketNameEnvVarKey,
@@ -217,7 +217,7 @@ func BackupDeleteJob(data etcdBackupData, config *kubermaticv1.EtcdBackupConfig,
 
 	// If destination is set, we need to set the credentials and backup bucket details to match the destination
 	if data.EtcdBackupDestination() != nil {
-		deleteContainer.Env = setEnvVar(deleteContainer.Env, GenSecretEnvVar(AccessKeyIdEnvVarKey, AccessKeyIdEnvVarKey, data.EtcdBackupDestination()))
+		deleteContainer.Env = setEnvVar(deleteContainer.Env, GenSecretEnvVar(AccessKeyIDEnvVarKey, AccessKeyIDEnvVarKey, data.EtcdBackupDestination()))
 		deleteContainer.Env = setEnvVar(deleteContainer.Env, GenSecretEnvVar(SecretAccessKeyEnvVarKey, SecretAccessKeyEnvVarKey, data.EtcdBackupDestination()))
 		deleteContainer.Env = setEnvVar(deleteContainer.Env, corev1.EnvVar{
 			Name:  BucketNameEnvVarKey,

@@ -71,7 +71,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(controllerName).
 		For(&kubermaticv1.UserProjectBinding{}).
-		Watches(&kubermaticv1.User{}, enqueueUserProjectBindingsForUser(r.Client, r.log)).
+		Watches(&kubermaticv1.User{}, enqueueUserProjectBindingsForUser(r, r.log)).
 		Build(r)
 
 	return err

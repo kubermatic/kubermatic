@@ -331,8 +331,6 @@ func (r *runner) enableEAR(ctx context.Context, cluster *kubermaticv1.Cluster) e
 				return fmt.Errorf("failed to get cluster: %w", err), nil
 			}
 
-			r.logger.Infof("cluster status: %+v", c.Status)
-
 			if c.Status.Encryption == nil {
 				r.logger.Info("cluster.status.encryption is still nil, retrying...")
 
@@ -393,8 +391,6 @@ func (r *runner) disableEAR(ctx context.Context, cluster *kubermaticv1.Cluster) 
 			if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(c), c); err != nil {
 				return fmt.Errorf("failed to get cluster: %w", err), nil
 			}
-
-			r.logger.Infof("cluster status: %+v", c.Status)
 
 			if c.Status.Encryption != nil {
 				return fmt.Errorf("cluster.status.encryption is not nil"), nil

@@ -29,6 +29,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 // DenyAllPolicyReconciler returns a func to create/update the apiserver
@@ -73,7 +74,7 @@ func EctdAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicy
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "etcd",
-										"cluster":             c.ObjectMeta.Name,
+										"cluster":             c.Name,
 									},
 								},
 							},
@@ -92,8 +93,6 @@ func DNSAllowReconciler(c *kubermaticv1.Cluster, data *resources.TemplateData) r
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicyDNSAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			dnsPort := intstr.FromInt(53)
-			protoUdp := corev1.ProtocolUDP
-			protoTcp := corev1.ProtocolTCP
 
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
@@ -108,11 +107,11 @@ func DNSAllowReconciler(c *kubermaticv1.Cluster, data *resources.TemplateData) r
 					{
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
-								Protocol: &protoUdp,
+								Protocol: ptr.To(corev1.ProtocolUDP),
 								Port:     &dnsPort,
 							},
 							{
-								Protocol: &protoTcp,
+								Protocol: ptr.To(corev1.ProtocolTCP),
 								Port:     &dnsPort,
 							},
 						},
@@ -144,7 +143,7 @@ func OpenVPNServerAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNetw
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "openvpn-server",
-										"cluster":             c.ObjectMeta.Name,
+										"cluster":             c.Name,
 									},
 								},
 							},
@@ -364,7 +363,7 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) rec
 	}
 }
 
-func SeedApiServerAllowReconciler(endpoints []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
+func SeedApiserverAllowReconciler(endpoints []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		return resources.NetworkPolicySeedApiserverAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{

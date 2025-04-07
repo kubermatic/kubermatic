@@ -317,7 +317,7 @@ type EKSKubernetesNetworkConfigResponse struct {
 	// IP family is always ipv4, unless you have a 1.21 or later cluster running
 	// version 1.10.1 or later of the Amazon VPC CNI add-on and specified ipv6 when
 	// you created the cluster.
-	IpFamily string `json:"ipFamily,omitempty"`
+	IpFamily string `json:"ipFamily,omitempty"` //nolint:staticcheck
 
 	// The CIDR block that Kubernetes pod and service IP addresses are assigned
 	// from. Kubernetes assigns addresses from an IPv4 CIDR block assigned to a
@@ -360,7 +360,7 @@ type AKSClusterStatus struct {
 
 type VpcConfigRequest struct {
 	// The VPC associated with your cluster.
-	VpcId *string `json:"vpcId,omitempty"` //nolint:tagliatelle
+	VpcId *string `json:"vpcId,omitempty"` //nolint:tagliatelle,staticcheck
 
 	// Specify one or more security groups for the cross-account elastic network
 	// interfaces that Amazon EKS creates to use to allow communication between

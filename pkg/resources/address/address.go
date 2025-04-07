@@ -211,7 +211,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	}
 
 	// Port
-	var port int32 = service.Spec.Ports[0].TargetPort.IntVal
+	var port = service.Spec.Ports[0].TargetPort.IntVal
 	if m.cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
 		port = service.Spec.Ports[0].NodePort
 	}

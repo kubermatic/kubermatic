@@ -135,7 +135,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	outerService := getServiceFromServiceList(outerServices, request.NamespacedName)
 	if outerService == nil {
 		var err error
-		outerService, err = r.createOuterService(ctx, request.NamespacedName.String())
+		outerService, err = r.createOuterService(ctx, request.String())
 		if err != nil {
 			return fmt.Errorf("failed to create service in outer cluster: %w", err)
 		}

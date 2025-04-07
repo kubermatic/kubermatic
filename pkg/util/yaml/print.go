@@ -19,9 +19,8 @@ package yaml
 import (
 	"io"
 
-	yaml3 "gopkg.in/yaml.v3"
-
 	"k8s.io/test-infra/pkg/genyaml"
+	yaml3 "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 // Encode takes a runtime object and creates a YAML encoded version in the
