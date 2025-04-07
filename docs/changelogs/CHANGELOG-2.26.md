@@ -5,6 +5,52 @@
 - [v2.26.2](#v2262)
 - [v2.26.3](#v2263)
 - [v2.26.4](#v2264)
+- [v2.26.5](#v2265)
+- [v2.26.6](#v2266)
+
+## v2.26.6
+
+**GitHub release: [v2.26.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.6)**
+
+### Breaking Changes
+
+- VSphere credentials are now handled properly. For existing usercluster this will change the credentials in machine-controller and osm to `infraManagementUser` and  `infraManagementPassword` instead of `username` and `password` when specified. The latter one was always mounted to the before mentioned depl- Edge Provider: Fix a bug where clusters were stuck in `creating` phase due to wrongfully waiting for Machine Controller's health status ([#14257](https://github.com/kubermatic/kubermatic/pull/14257))
+
+### Bugfixes
+
+- Fix a Go panic when using git-source in Applications ([#14231](https://github.com/kubermatic/kubermatic/pull/14231))
+- Fix an issue where the CBSL status was not updating due to the missing cluster-backup-storage-controller in the master controller manager ([#14255](https://github.com/kubermatic/kubermatic/pull/14255))
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7217](https://github.com/kubermatic/dashboard/pull/7217)) 
+
+### Updates
+
+- Security: Update nginx-ingress-controller to 1.11.5, fixing CVE-2025-1097, CVE-2025-1098, CVE-2025-1974, CVE-2025-24513, CVE-2025-24514 ([#14275](https://github.com/kubermatic/kubermatic/pull/14275))
+
+## v2.26.5
+
+**GitHub release: [v2.26.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.5)**
+
+### Supported Kubernetes versions
+
+- Add 1.31.5/1.30.9/1.29.13 to the list of supported Kubernetes releases ([#14069](https://github.com/kubermatic/kubermatic/pull/14069))
+
+### New Features
+
+- Add KubeVirt DS in the charts repo to generate images for the mirrored images command ([#14064](https://github.com/kubermatic/kubermatic/pull/14064))
+
+### Bugfixes
+
+- Fix a bug where ca-bundle was not being used to communicate to minio for metering ([#14072](https://github.com/kubermatic/kubermatic/pull/14072))
+- Fix node label overwriting issue with the initial Machine Deployment ([#14033](https://github.com/kubermatic/kubermatic/pull/14033))
+- Include KubeVirt CCM and Fluent-Bit images in the mirror-images command ([#14063](https://github.com/kubermatic/kubermatic/pull/14063))
+- Fix datacenter creation for Edge provider ([#7165](https://github.com/kubermatic/dashboard/pull/7165))
+- Fix wrong GCP machine deployment values in Edit Machine Deployment dialog ([#7169](https://github.com/kubermatic/dashboard/pull/7169))
+- In the cluster backup feature, fix the issue with restoring a backup that includes all namespaces and add the option to restore all namespaces from a backup ([#7168](https://github.com/kubermatic/dashboard/pull/7168))
+- VSphere: fix a bug where updating replicas of machine deployments was causing machine rotation ([#7130](https://github.com/kubermatic/dashboard/pull/7130))
+
+### Updates
+
+- Update go-git to 5.13.0 [CVE-2025-21613, CVE-2025-21614] ([#14151](https://github.com/kubermatic/kubermatic/pull/14151))
 
 ## v2.26.4
 

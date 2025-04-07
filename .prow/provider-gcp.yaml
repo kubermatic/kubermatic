@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -73,7 +73,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -117,7 +117,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -160,7 +160,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -204,7 +204,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -247,7 +247,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -286,7 +286,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           command:
             - "./hack/ci/run-offline-test.sh"
           # docker-in-docker needs privileged mode

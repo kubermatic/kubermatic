@@ -23,8 +23,8 @@ import (
 	"dario.cat/mergo"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -96,9 +96,10 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// Enforce audit logging
 	if datacenter.Spec.EnforceAuditLogging {
-		spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: true,
+		if spec.AuditLogging == nil {
+			spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
 		}
+		spec.AuditLogging.Enabled = true
 	}
 
 	// Enforce audit webhook backend

@@ -38,7 +38,7 @@ spec:
       schema:
         openAPIV3Schema:
           description: |-
-            Seed is the type representing a Seed cluster. Seed clusters host the the control planes
+            Seed is the type representing a Seed cluster. Seed clusters host the control planes
             for KKP user clusters.
           properties:
             apiVersion:
@@ -424,6 +424,13 @@ spec:
                               ccmZoneAndRegionEnabled:
                                 description: 'Optional: indicates if region and zone labels from the cloud provider should be fetched.'
                                 type: boolean
+                              csiDriverOperator:
+                                description: CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
+                                properties:
+                                  overwriteRegistry:
+                                    description: OverwriteRegistry overwrite the images registry that the operator pulls.
+                                    type: string
+                                type: object
                               customNetworkPolicies:
                                 description: |-
                                   Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
@@ -948,6 +955,11 @@ spec:
                                   - Default
                                   - None
                                 type: string
+                              enableDedicatedCpus:
+                                description: |-
+                                  Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
+                                  Defaults to false.
+                                type: boolean
                               enableDefaultNetworkPolicies:
                                 description: |-
                                   Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
@@ -1358,7 +1370,7 @@ spec:
                                 description: |-
                                   A list of VM templates to use for a given operating system. You must
                                   define at least one template.
-                                  See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+                                  See: https://github.com/kubermatic/machine-controller/blob/main/docs/vsphere.md#template-vms-preparation
                                 type: object
                             required:
                               - cluster
@@ -1876,6 +1888,11 @@ spec:
                     konnectivityProxy:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
                       properties:
+                        args:
+                          description: Args configures arguments (flags) for the Konnectivity deployments.
+                          items:
+                            type: string
+                          type: array
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
@@ -2035,6 +2052,23 @@ spec:
                                 should wait between tries of actions.
                               format: int32
                               type: integer
+                          type: object
+                        proxy:
+                          description: |-
+                            ProxySettings defines optional flags for OperatingSystemManager deployment to allow
+                            setting specific proxy configurations for specific user clusters.
+                          properties:
+                            httpProxy:
+                              description: 'Optional: If set, this proxy will be configured for both HTTP and HTTPS.'
+                              type: string
+                            noProxy:
+                              description: |-
+                                Optional: If set this will be set as NO_PROXY environment variable on the node;
+                                The value must be a comma-separated list of domains for which no proxy
+                                should be used, e.g. "*.example.com,internal.dev".
+                                Note that the in-cluster apiserver URL will be automatically prepended
+                                to this value.
+                              type: string
                           type: object
                         replicas:
                           format: int32

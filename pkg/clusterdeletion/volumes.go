@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -143,7 +143,7 @@ func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, log *zap.SugaredLogg
 
 func podUsesPV(p *corev1.Pod) bool {
 	for _, volume := range p.Spec.Volumes {
-		if volume.VolumeSource.PersistentVolumeClaim != nil {
+		if volume.PersistentVolumeClaim != nil {
 			return true
 		}
 	}

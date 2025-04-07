@@ -26,7 +26,7 @@ import (
 	"github.com/vmware/govmomi/object"
 	"github.com/vmware/govmomi/vapi/tags"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
@@ -124,7 +124,7 @@ func GetVMFolders(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, u
 		if !strings.HasPrefix(folderRef.InventoryPath, rootPath+"/") && folderRef.InventoryPath != rootPath {
 			continue
 		}
-		folder := Folder{Path: folderRef.Common.InventoryPath}
+		folder := Folder{Path: folderRef.InventoryPath}
 		folders = append(folders, folder)
 	}
 

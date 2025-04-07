@@ -33,7 +33,7 @@ import (
 	authv3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
 	typeV3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -167,8 +167,8 @@ func (s *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 	}, nil
 }
 
-func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterID string) (authorized bool, reason string, err error) {
-	isAdmin, err := a.isAdminUser(ctx, userEmail)
+func (s *authorizationServer) authorize(ctx context.Context, userEmail, clusterID string) (authorized bool, reason string, err error) {
+	isAdmin, err := s.isAdminUser(ctx, userEmail)
 	if err != nil {
 		return false, "", fmt.Errorf("checking if user is admin: %w", err)
 	}
@@ -177,7 +177,7 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 	}
 
 	cluster := &kubermaticv1.Cluster{}
-	if err := a.client.Get(ctx, types.NamespacedName{Name: clusterID}, cluster); err != nil {
+	if err := s.client.Get(ctx, types.NamespacedName{Name: clusterID}, cluster); err != nil {
 		return false, "", fmt.Errorf("getting cluster: %w", err)
 	}
 
@@ -187,7 +187,7 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 	}
 
 	allMembers := &kubermaticv1.UserProjectBindingList{}
-	if err := a.client.List(ctx, allMembers); err != nil {
+	if err := s.client.List(ctx, allMembers); err != nil {
 		return false, "", fmt.Errorf("listing userProjectBinding: %w", err)
 	}
 
@@ -199,7 +199,7 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 
 	// authorize through group project bindings
 	allGroupBindings := &kubermaticv1.GroupProjectBindingList{}
-	if err := a.client.List(ctx, allGroupBindings, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
+	if err := s.client.List(ctx, allGroupBindings, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: projectID}); err != nil {
 		return false, "", fmt.Errorf("listing groupProjectBinding: %w", err)
 	}
 
@@ -210,7 +210,7 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 		}
 
 		allUsers := &kubermaticv1.UserList{}
-		if err := a.client.List(ctx, allUsers); err != nil {
+		if err := s.client.List(ctx, allUsers); err != nil {
 			return false, "", fmt.Errorf("listing users: %w", err)
 		}
 

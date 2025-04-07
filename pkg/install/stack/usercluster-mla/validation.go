@@ -27,7 +27,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/util/podexec"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -37,7 +37,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (m *UserClusterMLA) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*UserClusterMLAStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	failures := []error{}
 
 	if err := ValidateMinioCompatibility(ctx, opt); err != nil {
@@ -136,7 +136,7 @@ func ValidateMinioCompatibility(ctx context.Context, opt stack.DeployOptions) er
 	return nil
 }
 
-func (*UserClusterMLA) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
+func (*UserClusterMLAStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) (*kubermaticv1.KubermaticConfiguration, *yamled.Document, []error) {
 	helmFailures := validateHelmValues(helmValues, opt)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)

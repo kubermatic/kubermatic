@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.23-node-20-9 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.24-node-20-3 containerize ./hack/update-codegen.sh
 
 sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"
@@ -44,49 +44,51 @@ export GODEBUG=gotypesalias=0
 go run sigs.k8s.io/controller-tools/cmd/controller-gen \
   crd \
   object:headerFile=./hack/boilerplate/ce/boilerplate.go.txt \
-  paths=./pkg/apis/... \
+  paths=./sdk/apis/... \
   output:crd:dir=./$CRD_DIR
 
 annotation="kubermatic.k8c.io/location"
-locationMap='{
-  "applicationdefinitions.apps.kubermatic.k8c.io": "master,seed",
-  "applicationinstallations.apps.kubermatic.k8c.io": "usercluster",
-  "addonconfigs.kubermatic.k8c.io": "master",
-  "addons.kubermatic.k8c.io": "master,seed",
-  "admissionplugins.kubermatic.k8c.io": "master",
-  "alertmanagers.kubermatic.k8c.io": "master,seed",
-  "allowedregistries.kubermatic.k8c.io": "master",
-  "clusters.kubermatic.k8c.io": "master,seed",
-  "clustertemplateinstances.kubermatic.k8c.io": "master,seed",
-  "clustertemplates.kubermatic.k8c.io": "master,seed",
-  "constraints.kubermatic.k8c.io": "master,seed",
-  "constrainttemplates.kubermatic.k8c.io": "master,seed",
-  "customoperatingsystemprofiles.operatingsystemmanager.k8c.io": "master,seed",
-  "etcdbackupconfigs.kubermatic.k8c.io": "master,seed",
-  "etcdrestores.kubermatic.k8c.io": "master,seed",
-  "externalclusters.kubermatic.k8c.io": "master",
-  "groupprojectbindings.kubermatic.k8c.io": "master,seed",
-  "ipamallocations.kubermatic.k8c.io": "master,seed",
-  "ipampools.kubermatic.k8c.io": "master,seed",
-  "kubermaticconfigurations.kubermatic.k8c.io": "master,seed",
-  "kubermaticsettings.kubermatic.k8c.io": "master",
-  "mlaadminsettings.kubermatic.k8c.io": "master,seed",
-  "presets.kubermatic.k8c.io": "master,seed",
-  "projects.kubermatic.k8c.io": "master,seed",
-  "resourcequotas.kubermatic.k8c.io": "master,seed",
-  "rulegroups.kubermatic.k8c.io": "master,seed",
-  "seeds.kubermatic.k8c.io": "master,seed",
-  "userprojectbindings.kubermatic.k8c.io": "master,seed",
-  "usersshkeys.kubermatic.k8c.io": "master,seed",
-  "users.kubermatic.k8c.io": "master,seed",
-  "clusterbackupstoragelocations.kubermatic.k8c.io": "master,seed",
+declare -A locationMap=(
+  ["applicationdefinitions.apps.kubermatic.k8c.io"]="master,seed"
+  ["applicationinstallations.apps.kubermatic.k8c.io"]="usercluster"
+  ["addonconfigs.kubermatic.k8c.io"]="master"
+  ["addons.kubermatic.k8c.io"]="master,seed"
+  ["admissionplugins.kubermatic.k8c.io"]="master"
+  ["alertmanagers.kubermatic.k8c.io"]="master,seed"
+  ["allowedregistries.kubermatic.k8c.io"]="master"
+  ["clusters.kubermatic.k8c.io"]="master,seed"
+  ["clustertemplateinstances.kubermatic.k8c.io"]="master,seed"
+  ["clustertemplates.kubermatic.k8c.io"]="master,seed"
+  ["constraints.kubermatic.k8c.io"]="master,seed"
+  ["constrainttemplates.kubermatic.k8c.io"]="master,seed"
+  ["customoperatingsystemprofiles.operatingsystemmanager.k8c.io"]="master,seed"
+  ["etcdbackupconfigs.kubermatic.k8c.io"]="master,seed"
+  ["etcdrestores.kubermatic.k8c.io"]="master,seed"
+  ["externalclusters.kubermatic.k8c.io"]="master"
+  ["groupprojectbindings.kubermatic.k8c.io"]="master,seed"
+  ["ipamallocations.kubermatic.k8c.io"]="master,seed"
+  ["ipampools.kubermatic.k8c.io"]="master,seed"
+  ["kubermaticconfigurations.kubermatic.k8c.io"]="master,seed"
+  ["kubermaticsettings.kubermatic.k8c.io"]="master"
+  ["mlaadminsettings.kubermatic.k8c.io"]="master,seed"
+  ["presets.kubermatic.k8c.io"]="master,seed"
+  ["projects.kubermatic.k8c.io"]="master,seed"
+  ["resourcequotas.kubermatic.k8c.io"]="master,seed"
+  ["rulegroups.kubermatic.k8c.io"]="master,seed"
+  ["seeds.kubermatic.k8c.io"]="master,seed"
+  ["userprojectbindings.kubermatic.k8c.io"]="master,seed"
+  ["usersshkeys.kubermatic.k8c.io"]="master,seed"
+  ["users.kubermatic.k8c.io"]="master,seed"
+  ["clusterbackupstoragelocations.kubermatic.k8c.io"]="master,seed"
 
-  "verticalpodautoscalers.autoscaling.k8s.io": "seed",
-  "verticalpodautoscalercheckpoints.autoscaling.k8s.io": "seed",
+  ["verticalpodautoscalers.autoscaling.k8s.io"]="seed"
+  ["verticalpodautoscalercheckpoints.autoscaling.k8s.io"]="seed"
 
-  "policytemplates.kubermatic.k8c.io": "master,seed",
-  "policybindings.kubermatic.k8c.io": "seed"
-}'
+  ["policytemplates.kubermatic.k8c.io"]="master,seed"
+  # PolicyBindings will be deployed on master clusters although they are primarily used on seed clusters.
+  # This is because the KKP API (running on master) sets up caching rules for PolicyBindings.
+  ["policybindings.kubermatic.k8c.io"]="master,seed"
+)
 
 failure=false
 echodate "Annotating CRDs"
@@ -94,7 +96,7 @@ echodate "Annotating CRDs"
 cleanup_dir() {
   for filename in $1/*.yaml; do
     crdName="$(yq '.metadata.name' "$filename")"
-    location="$(echo "$locationMap" | jq -r -c --arg key "$crdName" '.[$key]')"
+    location="${locationMap[$crdName]}"
 
     if [ "$location" == "null" ]; then
       echodate "Error: No location defined for CRD $crdName"

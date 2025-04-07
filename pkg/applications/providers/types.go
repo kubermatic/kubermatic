@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/source"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
@@ -60,7 +60,7 @@ type TemplateProvider interface {
 	// Uninstall the application.
 	Uninstall(applicationInstallation *appskubermaticv1.ApplicationInstallation) (util.StatusUpdater, error)
 
-	// Check if a release is stuck
+	// IsStuck checks if a release is stuck
 	IsStuck(applicationInstallation *appskubermaticv1.ApplicationInstallation) (bool, error)
 
 	// Rollback the Application to the previous release

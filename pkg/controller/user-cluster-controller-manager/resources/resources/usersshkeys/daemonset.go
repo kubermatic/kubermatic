@@ -54,7 +54,7 @@ func DaemonSetReconciler(versions kubermatic.Versions, imageRewriter registry.Im
 
 			labels := map[string]string{"app": "user-ssh-keys-agent"}
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
-			ds.Spec.Template.ObjectMeta.Labels = labels
+			ds.Spec.Template.Labels = labels
 
 			ds.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
@@ -62,7 +62,7 @@ func DaemonSetReconciler(versions kubermatic.Versions, imageRewriter registry.Im
 				{
 					Name:            daemonSetName,
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, dockerImage, versions.Kubermatic))),
+					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/%s:%s", resources.RegistryQuay, dockerImage, versions.KubermaticContainerTag))),
 					Command:         []string{fmt.Sprintf("/usr/local/bin/%v", daemonSetName)},
 					VolumeMounts: []corev1.VolumeMount{
 						{

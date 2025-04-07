@@ -25,11 +25,11 @@ import (
 
 	"github.com/onsi/ginkgo/reporters"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -235,20 +235,20 @@ func (sr *ScenarioResult) MatchesScenario(scenario scenarios.Scenario) bool {
 		scenario.ClusterVersion() == sr.KubernetesVersion
 }
 
-func (r *ScenarioResult) PrintJUnitDetails() {
-	if r.report == nil {
+func (sr *ScenarioResult) PrintJUnitDetails() {
+	if sr.report == nil {
 		return
 	}
 
 	const separator = "============================================================="
 
 	fmt.Println(separator)
-	fmt.Printf("Test results for: %s\n", r.report.Name)
+	fmt.Printf("Test results for: %s\n", sr.report.Name)
 
 	// Only print details errors in case we have a testcase which failed.
 	// Printing everything which has an error will print the errors from retried tests as for each attempt a TestCase entry exists.
-	if r.report.Failures > 0 || r.report.Errors > 0 {
-		for _, t := range r.report.TestCases {
+	if sr.report.Failures > 0 || sr.report.Errors > 0 {
+		for _, t := range sr.report.TestCases {
 			if t.FailureMessage == nil {
 				continue
 			}
@@ -259,8 +259,8 @@ func (r *ScenarioResult) PrintJUnitDetails() {
 	}
 
 	fmt.Println("----------------------------")
-	fmt.Printf("Passed: %d\n", r.report.Tests-r.report.Failures)
-	fmt.Printf("Failed: %d\n", r.report.Failures)
+	fmt.Printf("Passed: %d\n", sr.report.Tests-sr.report.Failures)
+	fmt.Printf("Failed: %d\n", sr.report.Failures)
 	fmt.Println(separator)
 }
 

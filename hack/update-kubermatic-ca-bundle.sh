@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.23.6 containerize ./hack/update-kubermatic-ca-bundle.sh
-
 echodate "Updating CA bundle..."
 curl -Lo charts/kubermatic-operator/static/ca-bundle.pem https://curl.se/ca/cacert.pem
 echodate "Done."

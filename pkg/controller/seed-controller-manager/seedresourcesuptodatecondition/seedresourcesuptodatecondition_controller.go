@@ -22,8 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -115,7 +114,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return err
 	}
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r.client, cluster, func(c *kubermaticv1.Cluster) {
+	return controllerutil.UpdateClusterStatus(ctx, r.client, cluster, func(c *kubermaticv1.Cluster) {
 		conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
 		value := corev1.ConditionFalse
 		message := "Some control plane components did not finish updating"
@@ -125,7 +124,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			message = "All control plane components are up to date"
 		}
 
-		kubermaticv1helper.SetClusterCondition(c, r.versions, conditionType, value, kubermaticv1.ReasonClusterUpdateSuccessful, message)
+		controllerutil.SetClusterCondition(c, r.versions, conditionType, value, kubermaticv1.ReasonClusterUpdateSuccessful, message)
 	})
 }
 

@@ -39,7 +39,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/osm-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","kube-system"]}'
+        - '{"command":"/usr/local/bin/osm-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","kube-system","-cluster-dns","169.254.20.10"]}'
         command:
         - /http-prober-bin/http-prober
         env:

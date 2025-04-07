@@ -29,9 +29,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -45,7 +43,6 @@ import (
 var scheme = runtime.NewScheme()
 
 func init() {
-	utilruntime.Must(kubeovnv1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 }
 

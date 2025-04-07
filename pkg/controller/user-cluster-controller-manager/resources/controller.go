@@ -28,7 +28,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
@@ -348,7 +348,7 @@ func (r *reconciler) mlaReconcileData(ctx context.Context) (monitoring, logging 
 }
 
 func (r *reconciler) setupNetworkingData(cluster *kubermaticv1.Cluster, data *reconcileData) (err error) {
-	data.k8sServiceApiIP, err = resources.InClusterApiserverIP(cluster)
+	data.k8sServiceAPIIP, err = resources.InClusterApiserverIP(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Cluster Apiserver IP: %w", err)
 	}

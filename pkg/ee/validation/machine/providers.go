@@ -41,22 +41,21 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	alibabatypes "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
-	anexiatypes "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
-	awstypes "k8c.io/machine-controller/pkg/cloudprovider/provider/aws/types"
-	azuretypes "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
-	digitaloceantypes "k8c.io/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
-	equinixtypes "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
-	gcptypes "k8c.io/machine-controller/pkg/cloudprovider/provider/gce/types"
-	hetznertypes "k8c.io/machine-controller/pkg/cloudprovider/provider/hetzner/types"
-	kubevirttypes "k8c.io/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
-	nutanixtypes "k8c.io/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	openstacktypes "k8c.io/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	vmwareclouddirectortypes "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	vspheretypes "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	"k8c.io/machine-controller/pkg/providerconfig"
-	"k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	alibabatypes "k8c.io/machine-controller/sdk/cloudprovider/alibaba"
+	anexiatypes "k8c.io/machine-controller/sdk/cloudprovider/anexia"
+	awstypes "k8c.io/machine-controller/sdk/cloudprovider/aws"
+	azuretypes "k8c.io/machine-controller/sdk/cloudprovider/azure"
+	digitaloceantypes "k8c.io/machine-controller/sdk/cloudprovider/digitalocean"
+	equinixtypes "k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
+	gcptypes "k8c.io/machine-controller/sdk/cloudprovider/gce"
+	hetznertypes "k8c.io/machine-controller/sdk/cloudprovider/hetzner"
+	kubevirttypes "k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
+	nutanixtypes "k8c.io/machine-controller/sdk/cloudprovider/nutanix"
+	openstacktypes "k8c.io/machine-controller/sdk/cloudprovider/openstack"
+	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	vspheretypes "k8c.io/machine-controller/sdk/cloudprovider/vsphere"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,40 +93,40 @@ const (
 )
 
 func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.Client, machine *clusterv1alpha1.Machine, caBundle *certificates.CABundle) (*ResourceDetails, error) {
-	config, err := types.GetConfig(machine.Spec.ProviderSpec)
+	config, err := providerconfig.GetConfig(machine.Spec.ProviderSpec)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read machine.spec.providerSpec: %w", err)
 	}
 
 	var quotaUsage *ResourceDetails
 	switch config.CloudProvider {
-	case types.CloudProviderFake:
+	case providerconfig.CloudProviderFake, providerconfig.CloudProviderExternal:
 		quotaUsage, err = getFakeQuotaRequest(config)
-	case types.CloudProviderAWS:
+	case providerconfig.CloudProviderAWS:
 		quotaUsage, err = getAWSResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderGoogle:
+	case providerconfig.CloudProviderGoogle:
 		quotaUsage, err = getGCPResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderAzure:
+	case providerconfig.CloudProviderAzure:
 		quotaUsage, err = getAzureResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderKubeVirt:
+	case providerconfig.CloudProviderKubeVirt:
 		quotaUsage, err = getKubeVirtResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderVsphere:
+	case providerconfig.CloudProviderVsphere:
 		quotaUsage, err = getVsphereResourceRequirements(config)
-	case types.CloudProviderOpenstack:
+	case providerconfig.CloudProviderOpenstack:
 		quotaUsage, err = getOpenstackResourceRequirements(ctx, userClient, config, caBundle)
-	case types.CloudProviderAlibaba:
+	case providerconfig.CloudProviderAlibaba:
 		quotaUsage, err = getAlibabaResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderHetzner:
+	case providerconfig.CloudProviderHetzner:
 		quotaUsage, err = getHetznerResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderNutanix:
+	case providerconfig.CloudProviderNutanix:
 		quotaUsage, err = getNutanixResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderDigitalocean:
+	case providerconfig.CloudProviderDigitalocean:
 		quotaUsage, err = getDigitalOceanResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderVMwareCloudDirector:
+	case providerconfig.CloudProviderVMwareCloudDirector:
 		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderAnexia:
+	case providerconfig.CloudProviderAnexia:
 		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
-	case types.CloudProviderEquinixMetal, types.CloudProviderPacket:
+	case providerconfig.CloudProviderEquinixMetal, providerconfig.CloudProviderPacket:
 		// Name Packet has been replaced at some point by Equinix Metal.
 		// We are in the process of migration to the new name, meaning that both names appear in our sourcecode.
 		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
@@ -138,7 +137,7 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 	return quotaUsage, err
 }
 
-func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := awstypes.GetConfig(*config)
 	if err != nil {
@@ -163,7 +162,7 @@ func getAWSResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 	return NewResourceDetailsFromCapacity(instanceSize)
 }
 
-func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := gcptypes.GetConfig(*config)
 	if err != nil {
@@ -200,7 +199,7 @@ func getGCPResourceRequirements(ctx context.Context, userClient ctrlruntimeclien
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := azuretypes.GetConfig(*config)
 	if err != nil {
@@ -263,7 +262,7 @@ func getAzureResourceRequirements(ctx context.Context, userClient ctrlruntimecli
 	return NewResourceDetailsFromCapacity(vmSize)
 }
 
-func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := kubevirttypes.GetConfig(*config)
 	if err != nil {
@@ -328,7 +327,7 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, error) {
+func getVsphereResourceRequirements(config *providerconfig.Config) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	rawConfig, err := vspheretypes.GetConfig(*config)
 	if err != nil {
@@ -349,7 +348,7 @@ func getVsphereResourceRequirements(config *types.Config) (*ResourceDetails, err
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
+func getOpenstackResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config, caBundle *certificates.CABundle) (*ResourceDetails, error) {
 	// extract storage and image info from provider config
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, userClient)
 	rawConfig, err := openstacktypes.GetConfig(*config)
@@ -446,7 +445,7 @@ func getProjectIDOrTenantID(configVarResolver *providerconfig.ConfigVarResolver,
 	return configVarResolver.GetConfigVarStringValue(rawConfig.TenantID)
 }
 
-func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	rawConfig, err := alibabatypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get alibaba raw config: %w", err)
@@ -492,7 +491,7 @@ func getAlibabaResourceRequirements(ctx context.Context, userClient ctrlruntimec
 
 func getHetznerResourceRequirements(ctx context.Context,
 	userClient ctrlruntimeclient.Client,
-	config *types.Config,
+	config *providerconfig.Config,
 ) (*ResourceDetails, error) {
 	rawConfig, err := hetznertypes.GetConfig(*config)
 	if err != nil {
@@ -517,7 +516,7 @@ func getHetznerResourceRequirements(ctx context.Context,
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	rawConfig, err := nutanixtypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nutanix raw config: %w", err)
@@ -547,7 +546,7 @@ func getNutanixResourceRequirements(ctx context.Context, userClient ctrlruntimec
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	rawConfig, err := digitaloceantypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get digitalOcean raw config: %w", err)
@@ -571,7 +570,7 @@ func getDigitalOceanResourceRequirements(ctx context.Context, userClient ctrlrun
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	rawConfig, err := vmwareclouddirectortypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get VMware Cloud Director raw config: %w", err)
@@ -603,7 +602,7 @@ func getVMwareCloudDirectorResourceRequirements(ctx context.Context, userClient 
 	return NewResourceDetailsFromCapacity(capacity)
 }
 
-func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	rawConfig, err := anexiatypes.GetConfig(*config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anexia raw config: %w", err)
@@ -624,7 +623,7 @@ func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimecl
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
 }
 
-func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *types.Config) (*ResourceDetails, error) {
+func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
 	configVarResolver := providerconfig.NewConfigVarResolver(ctx, client)
 	rawConfig, err := equinixtypes.GetConfig(*config)
 	if err != nil {

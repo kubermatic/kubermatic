@@ -23,8 +23,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -55,7 +55,7 @@ func (r *Reconciler) encryptData(ctx context.Context, client ctrlruntimeclient.C
 
 	if err := r.List(ctx, &jobList, ctrlruntimeclient.MatchingLabels{
 		encryptionresources.ClusterLabelKey:        cluster.Name,
-		encryptionresources.SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
+		encryptionresources.SecretRevisionLabelKey: secret.ResourceVersion,
 	}); err != nil {
 		return &reconcile.Result{}, err
 	}
@@ -103,7 +103,7 @@ func (r *Reconciler) encryptData(ctx context.Context, client ctrlruntimeclient.C
 	} else {
 		job := jobList.Items[0]
 		if job.Status.Succeeded == 1 {
-			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			if err := util.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseActive
 				cluster.Status.Encryption.EncryptedResources = resourceList
 				cluster.Status.Encryption.ActiveKey = key
@@ -113,7 +113,7 @@ func (r *Reconciler) encryptData(ctx context.Context, client ctrlruntimeclient.C
 
 			return &reconcile.Result{}, nil
 		} else if job.Status.Failed > 0 {
-			if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
+			if err := util.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
 				cluster.Status.Encryption.Phase = kubermaticv1.ClusterEncryptionPhaseFailed
 			}); err != nil {
 				return &reconcile.Result{}, err

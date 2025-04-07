@@ -934,6 +934,13 @@ spec:
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
+                        csiDriverOperator:
+                          description: CSIDriverOperator configures the kubevirt csi driver operator.
+                          properties:
+                            overwriteRegistry:
+                              description: OverwriteRegistry overwrite the images registry that the operator pulls.
+                              type: string
+                          type: object
                         csiKubeconfig:
                           type: string
                         imageCloningEnabled:
@@ -2199,6 +2206,11 @@ spec:
                     konnectivityProxy:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
                       properties:
+                        args:
+                          description: Args configures arguments (flags) for the Konnectivity deployments.
+                          items:
+                            type: string
+                          type: array
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
@@ -2358,6 +2370,23 @@ spec:
                                 should wait between tries of actions.
                               format: int32
                               type: integer
+                          type: object
+                        proxy:
+                          description: |-
+                            ProxySettings defines optional flags for OperatingSystemManager deployment to allow
+                            setting specific proxy configurations for specific user clusters.
+                          properties:
+                            httpProxy:
+                              description: 'Optional: If set, this proxy will be configured for both HTTP and HTTPS.'
+                              type: string
+                            noProxy:
+                              description: |-
+                                Optional: If set this will be set as NO_PROXY environment variable on the node;
+                                The value must be a comma-separated list of domains for which no proxy
+                                should be used, e.g. "*.example.com,internal.dev".
+                                Note that the in-cluster apiserver URL will be automatically prepended
+                                to this value.
+                              type: string
                           type: object
                         replicas:
                           format: int32

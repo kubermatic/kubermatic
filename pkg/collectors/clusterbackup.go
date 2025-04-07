@@ -26,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
@@ -194,10 +194,10 @@ func (c *clusterBackupCollector) getS3Client(ctx context.Context, destination *k
 		return nil, fmt.Errorf("failed to retrieve credentials secret: %w", err)
 	}
 
-	accessKey := string(creds.Data[etcdbackup.AccessKeyIdEnvVarKey])
+	accessKey := string(creds.Data[etcdbackup.AccessKeyIDEnvVarKey])
 	secretKey := string(creds.Data[etcdbackup.SecretAccessKeyEnvVarKey])
 	if accessKey == "" || secretKey == "" {
-		return nil, fmt.Errorf("backup credentials do not contain %q or %q keys", etcdbackup.AccessKeyIdEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey)
+		return nil, fmt.Errorf("backup credentials do not contain %q or %q keys", etcdbackup.AccessKeyIDEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey)
 	}
 
 	return s3.NewClient(destination.Endpoint, accessKey, secretKey, c.caBundle.CertPool())

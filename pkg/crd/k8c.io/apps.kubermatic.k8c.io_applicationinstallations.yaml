@@ -588,6 +588,16 @@ spec:
                           type: string
                         status:
                           description: Status is the current state of the release.
+                          enum:
+                            - unknown
+                            - deployed
+                            - uninstalled
+                            - superseded
+                            - failed
+                            - uninstalling
+                            - pending-install
+                            - pending-upgrade
+                            - pending-rollback
                           type: string
                       type: object
                     name:

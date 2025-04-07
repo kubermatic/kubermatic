@@ -24,7 +24,13 @@ spec:
       # not specified here.
       node:
         # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
-        containerdRegistryMirrors: null
+        containerdRegistryMirrors:
+          # A map of registries to use to render configs and mirrors for containerd registries
+          registries:
+            docker.io:
+              # List of registry mirrors to use
+              mirrors:
+                - mirror.gcr.io
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure
@@ -150,6 +156,8 @@ spec:
         kubevirt:
           # Optional: indicates if region and zone labels from the cloud provider should be fetched.
           ccmZoneAndRegionEnabled: null
+          # CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
+          csiDriverOperator: null
           # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
           customNetworkPolicies:
@@ -180,6 +188,9 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+          # Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
+          # Defaults to false.
+          enableDedicatedCpus: false
           # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
           # Defaults to true.
           enableDefaultNetworkPolicies: true
@@ -401,7 +412,7 @@ spec:
           storagePolicy: ""
           # A list of VM templates to use for a given operating system. You must
           # define at least one template.
-          # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+          # See: https://github.com/kubermatic/machine-controller/blob/main/docs/vsphere.md#template-vms-preparation
           templates:
             amzn2: ""
             flatcar: ""
@@ -468,6 +479,8 @@ spec:
       zoneAntiAffinity: ""
     # KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
     konnectivityProxy:
+      # Args configures arguments (flags) for the Konnectivity deployments.
+      args: null
       # KeepaliveTime represents a duration of time to check if the transport is still alive.
       # The option is propagated to agents and server.
       # Defaults to 1m.

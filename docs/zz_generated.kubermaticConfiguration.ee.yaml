@@ -147,6 +147,9 @@ spec:
       requests:
         cpu: 200m
         memory: 128Mi
+  # MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer mirror-images` command.
+  # Each entry should be in the format "repository:tag".
+  mirrorImages: null
   # Proxy allows to configure Kubermatic to use proxies to talk to the
   # world outside of its cluster.
   proxy:
@@ -171,7 +174,8 @@ spec:
     # removed. Do not set this field.
     backupCleanupContainer: ""
     # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
-    backupDeleteContainer: |
+    backupDeleteContainer: |2
+
       name: delete-container
       image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
       command:
@@ -203,7 +207,8 @@ spec:
           ;;
         esac
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
-    backupStoreContainer: |
+    backupStoreContainer: |2
+
       name: store-container
       image: d3fk/s3cmd@sha256:fb4c4dcf3b842c3d0ead58bda26d05d045b77546e11ac2143d90abca02cbe823
       command:
@@ -459,7 +464,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.31.1
+    default: v1.31.7
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -545,9 +550,12 @@ spec:
       - v1.29.13
       - v1.30.5
       - v1.30.9
+      - v1.30.11
       - v1.31.1
       - v1.31.5
+      - v1.31.7
       - v1.32.1
+      - v1.32.3
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

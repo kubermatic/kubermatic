@@ -111,6 +111,15 @@ spec:
                         enforced.
                       type: boolean
                   type: object
+                clusterBackupOptions:
+                  properties:
+                    defaultChecksumAlgorithm:
+                      description: |-
+                        DefaultChecksumAlgorithm allows setting a default checksum algorithm used by Velero for uploading objects to S3.
+
+                        Optional
+                      type: string
+                  type: object
                 customLinks:
                   description: CustomLinks are additional links that can be shown the dashboard's footer.
                   items:

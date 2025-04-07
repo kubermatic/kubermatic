@@ -28,8 +28,8 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -93,8 +93,8 @@ func newUserGrafanaReconciler(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.User{}, builder.WithPredicates(serviceAccountPredicate)).
-		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler.Client))).
-		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler.Client))).
+		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler))).
+		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler))).
 		Build(reconciler)
 
 	return err
@@ -317,7 +317,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		projectMap[project.Name] = project.DeepCopy()
 	}
 	if !user.Spec.IsAdmin {
-		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
+		projectRoles, err := getProjectRolesForUser(ctx, r, user)
 		if err != nil {
 			return fmt.Errorf("error getting project roles for user %q: %w", user.Name, err)
 		}

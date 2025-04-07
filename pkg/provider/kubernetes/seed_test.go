@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -61,9 +61,9 @@ func TestSeedGetterFactoriesetsDefaults(t *testing.T) {
 	if nodeSettings == nil {
 		t.Fatal("expected the datacenter's node setting to be set, but it's nil")
 	}
-	if nodeSettings.ProxySettings.HTTPProxy.String() != "seed-proxy" {
+	if nodeSettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
-			nodeSettings.ProxySettings.HTTPProxy)
+			nodeSettings.HTTPProxy)
 	}
 }
 
@@ -103,9 +103,9 @@ func TestSeedsGetterFactoriesetsDefaults(t *testing.T) {
 	if nodeSettings == nil {
 		t.Fatal("expected the datacenter's node setting to be set, but it's nil")
 	}
-	if nodeSettings.ProxySettings.HTTPProxy.String() != "seed-proxy" {
+	if nodeSettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
-			nodeSettings.ProxySettings.HTTPProxy)
+			nodeSettings.HTTPProxy)
 	}
 }
 

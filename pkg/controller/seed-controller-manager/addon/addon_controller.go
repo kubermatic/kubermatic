@@ -29,15 +29,15 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/addon"
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon/migrations"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/kubectl"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -252,9 +252,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		addon,
 		kubermaticv1.AddonReconciledSuccessfully,
 		func(ctx context.Context) (*reconcile.Result, error) {
-			return kubermaticv1helper.ClusterReconcileWrapper(
+			return util.ClusterReconcileWrapper(
 				ctx,
-				r.Client,
+				r,
 				r.workerName,
 				cluster,
 				r.versions,
@@ -305,7 +305,7 @@ func (r *Reconciler) addonReconcileWrapper(
 	}
 
 	errs := []error{err}
-	err = kubermaticv1helper.UpdateAddonStatus(ctx, r.Client, addon, func(a *kubermaticv1.Addon) {
+	err = util.UpdateAddonStatus(ctx, r, addon, func(a *kubermaticv1.Addon) {
 		r.setAddonCondition(a, conditionType, reconcilingStatus)
 		a.Status.Phase = getAddonPhase(a)
 	})
@@ -349,12 +349,12 @@ func (r *Reconciler) garbageCollectAddon(ctx context.Context, log *zap.SugaredLo
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	reqeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
+	requeueAfter, err := r.ensureRequiredResourceTypesExist(ctx, log, addon, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if all required resources exist: %w", err)
 	}
-	if reqeueAfter != nil {
-		return reqeueAfter, nil
+	if requeueAfter != nil {
+		return requeueAfter, nil
 	}
 
 	migration := migrations.RelevantMigrations(cluster, addon.Name)
@@ -365,13 +365,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	if addon.DeletionTimestamp != nil {
-		if err := migration.PreRemove(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+		if err := migration.PreRemove(ctx, log, cluster, r, userClusterClient); err != nil {
 			return nil, fmt.Errorf("failed to perform preRemove migrations: %w", err)
 		}
 		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete manifests from cluster: %w", err)
 		}
-		if err := migration.PostRemove(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+		if err := migration.PostRemove(ctx, log, cluster, r, userClusterClient); err != nil {
 			return nil, fmt.Errorf("failed to perform postRemove migrations: %w", err)
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
@@ -420,7 +420,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		return nil, err
 	}
 
-	credentials, err := resources.GetCredentials(resources.NewCredentialsData(ctx, cluster, r.Client))
+	credentials, err := resources.GetCredentials(resources.NewCredentialsData(ctx, cluster, r))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get credentials: %w", err)
 	}
@@ -440,10 +440,8 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 
 	// listing IPAM allocations for cluster
 	ipamAllocationList := &kubermaticv1.IPAMAllocationList{}
-	if r.Client != nil {
-		if err := r.Client.List(ctx, ipamAllocationList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
-			return nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
-		}
+	if err := r.List(ctx, ipamAllocationList, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+		return nil, fmt.Errorf("failed to list IPAM allocations: %w", err)
 	}
 
 	data, err := addon.NewTemplateData(
@@ -642,7 +640,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 		return fmt.Errorf("failed to create command: %w", err)
 	}
 
-	ver := r.versions.KubermaticCommit
+	ver := r.versions.GitVersion
 	lastSuccess := addon.Status.Conditions[kubermaticv1.AddonReconciledSuccessfully]
 
 	userClusterClient, err := r.kubeconfigProvider.GetClient(ctx, cluster)
@@ -651,7 +649,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	}
 
 	if lastSuccess.KubermaticVersion != ver {
-		if err := migration.PreApply(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+		if err := migration.PreApply(ctx, log, cluster, r, userClusterClient); err != nil {
 			return fmt.Errorf("failed to perform preApply migrations: %w", err)
 		}
 	}
@@ -665,7 +663,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 	}
 
 	if lastSuccess.KubermaticVersion != ver {
-		if err := migration.PostApply(ctx, log, cluster, r.Client, userClusterClient); err != nil {
+		if err := migration.PostApply(ctx, log, cluster, r, userClusterClient); err != nil {
 			return fmt.Errorf("failed to perform postApply migrations: %w", err)
 		}
 	}
@@ -694,7 +692,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 	r.setAddonCondition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
 	addon.Status.Phase = getAddonPhase(addon)
 
-	return r.Client.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
+	return r.Status().Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
 }
 
 func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
@@ -729,7 +727,7 @@ func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogge
 		if ok {
 			delete(cluster.Status.Conditions, kubermaticv1.ClusterConditionCSIAddonInUse)
 		}
-		err = r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+		err = r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 	}
 	return err
 }
@@ -781,7 +779,7 @@ func (r *Reconciler) setAddonCondition(a *kubermaticv1.Addon, condType kubermati
 	condition.LastHeartbeatTime = now
 
 	if status == corev1.ConditionTrue {
-		condition.KubermaticVersion = r.versions.KubermaticCommit
+		condition.KubermaticVersion = r.versions.GitVersion
 	}
 
 	if a.Status.Conditions == nil {
@@ -802,13 +800,13 @@ func (r *Reconciler) csiAddonInUseStatus(ctx context.Context, cluster *kubermati
 	status, reason := r.checkCSIAddonInUse(ctx, cluster)
 	csiAddonInUse := kubermaticv1.ClusterCondition{
 		Status:            status,
-		KubermaticVersion: r.versions.Kubermatic,
+		KubermaticVersion: r.versions.GitVersion,
 		LastHeartbeatTime: metav1.Now(),
 		Reason:            reason,
 	}
 	oldCluster := cluster.DeepCopy()
 	cluster.Status.Conditions[kubermaticv1.ClusterConditionCSIAddonInUse] = csiAddonInUse
-	err := r.Client.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	err := r.Status().Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 	return err
 }
 
@@ -901,7 +899,7 @@ func filterPVsByProvisioner(pvs []corev1.PersistentVolume, provisionerName strin
 				pvNames = append(pvNames, pv.Name)
 			}
 		} else {
-			if pv.ObjectMeta.Annotations[pvMigrationAnnotation] == provisionerName {
+			if pv.Annotations[pvMigrationAnnotation] == provisionerName {
 				pvNames = append(pvNames, pv.Name)
 			}
 		}

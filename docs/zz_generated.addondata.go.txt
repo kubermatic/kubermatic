@@ -131,6 +131,9 @@ type CSIOptions struct {
 
 	// openstack
 	CinderTopologyEnabled bool
+
+	// kubevirt
+	OverwriteRegistry string
 }
 
 type MLASettings struct {

@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -130,8 +130,8 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			updatedProject.ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
+			updatedProject.ResourceVersion = ""
+			test.expectedProject.ResourceVersion = ""
 
 			if !diff.SemanticallyEqual(test.expectedProject, updatedProject) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))
@@ -205,8 +205,8 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			updatedProject.ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
+			updatedProject.ResourceVersion = ""
+			test.expectedProject.ResourceVersion = ""
 
 			if !diff.SemanticallyEqual(test.expectedProject, updatedProject) {
 				t.Fatalf("Objects differ:\n%v", diff.ObjectDiff(test.expectedProject, updatedProject))

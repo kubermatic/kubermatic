@@ -29,14 +29,14 @@ import (
 
 	kubeonev1beta2 "k8c.io/kubeone/pkg/apis/kubeone/v1beta2"
 	"k8c.io/kubeone/pkg/fail"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	reconcilerlog "k8c.io/reconciler/pkg/log"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -178,7 +178,7 @@ func withEventFilter() predicate.Predicate {
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r.Client)
+	paused, err := kuberneteshelper.ExternalClusterPausedChecker(ctx, request.Name, r)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to check kubeone external cluster pause status: %w", err)
 	}
@@ -245,7 +245,7 @@ func (r *reconciler) reconcile(ctx context.Context, externalClusterName string, 
 	finalizersToAddList := finalizersToAdd.UnsortedList()
 
 	if len(finalizersToAddList) > 0 {
-		if err := kuberneteshelper.TryAddFinalizer(ctx, r.Client, externalCluster, finalizersToAddList...); err != nil {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, externalCluster, finalizersToAddList...); err != nil {
 			return fmt.Errorf("failed to add kubeone namespace finalizer: %w", err)
 		}
 	}
@@ -448,7 +448,7 @@ func (r *reconciler) importAction(
 		}
 	} else if externalCluster.Spec.KubeconfigReference != nil && externalCluster.Status.Condition.Phase == kubermaticv1.ExternalClusterPhaseRunning {
 		// checking if cluster is accessible using client
-		clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+		clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r)
 		if err != nil {
 			return err
 		}
@@ -606,7 +606,7 @@ func (r *reconciler) upgradeAction(
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 	kubeOneNamespaceName := externalCluster.GetKubeOneNamespaceName()
 
-	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r)
 	if err != nil {
 		return err
 	}
@@ -782,7 +782,7 @@ func (r *reconciler) migrateAction(
 ) error {
 	manifestRef := externalCluster.Spec.CloudSpec.KubeOne.ManifestReference
 
-	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r.Client)
+	clusterClient, err := kuberneteshelper.GetClusterClient(ctx, externalCluster, r)
 	if err != nil {
 		return err
 	}
@@ -1012,14 +1012,14 @@ func (r *reconciler) generateKubeOneActionJob(ctx context.Context, log *zap.Suga
 		},
 	)
 
-	switch {
-	case action == ImportAction:
+	switch action {
+	case ImportAction:
 		kubeoneJobName = KubeOneImportJob
 		kubeoneCMName = KubeOneImportConfigMap
-	case action == UpgradeControlPlaneAction:
+	case UpgradeControlPlaneAction:
 		kubeoneJobName = KubeOneUpgradeJob
 		kubeoneCMName = KubeOneUpgradeConfigMap
-	case action == MigrateContainerRuntimeAction:
+	case MigrateContainerRuntimeAction:
 		kubeoneJobName = KubeOneMigrateJob
 		kubeoneCMName = KubeOneMigrateConfigMap
 	}
@@ -1408,14 +1408,14 @@ func generateConfigMap(namespace, action string) *corev1.ConfigMap {
 	var name, scriptToRun string
 	scriptToRun = resources.KubeOneScript
 
-	switch {
-	case action == ImportAction:
+	switch action {
+	case ImportAction:
 		name = KubeOneImportConfigMap
 		scriptToRun += "kubeone kubeconfig --manifest kubeonemanifest/manifest 2> /dev/null"
-	case action == UpgradeControlPlaneAction:
+	case UpgradeControlPlaneAction:
 		name = KubeOneUpgradeConfigMap
 		scriptToRun += "kubeone apply --manifest kubeonemanifest/manifest -y --log-format json"
-	case action == MigrateContainerRuntimeAction:
+	case MigrateContainerRuntimeAction:
 		name = KubeOneMigrateConfigMap
 		scriptToRun += "kubeone migrate to-containerd --manifest kubeonemanifest/manifest --log-format json"
 	}
@@ -1548,18 +1548,18 @@ func getPodLogs(ctx context.Context, pod *corev1.Pod) (string, error) {
 
 func determineExitCode(exitCode int32) kubermaticv1.ExternalClusterPhase {
 	var phaseError kubermaticv1.ExternalClusterPhase
-	switch {
-	case exitCode == fail.RuntimeErrorExitCode:
+	switch exitCode {
+	case fail.RuntimeErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseRuntimeError
-	case exitCode == fail.EtcdErrorExitCode:
+	case fail.EtcdErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseEtcdError
-	case exitCode == fail.KubeClientErrorExitCode:
+	case fail.KubeClientErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseKubeClientError
-	case exitCode == fail.SSHErrorExitCode:
+	case fail.SSHErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseSSHError
-	case exitCode == fail.ConnectionErrorExitCode:
+	case fail.ConnectionErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseConnectionError
-	case exitCode == fail.ConfigErrorExitCode:
+	case fail.ConfigErrorExitCode:
 		phaseError = kubermaticv1.ExternalClusterPhaseConfigError
 	default:
 		phaseError = kubermaticv1.ExternalClusterPhaseError

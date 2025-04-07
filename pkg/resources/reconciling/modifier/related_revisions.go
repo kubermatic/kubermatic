@@ -145,14 +145,14 @@ func getRelatedRevisionLabels(
 	}
 
 	for _, v := range volumes {
-		if v.VolumeSource.Secret != nil {
-			if err := loadSecret(v.VolumeSource.Secret.SecretName, false); err != nil {
+		if v.Secret != nil {
+			if err := loadSecret(v.Secret.SecretName, false); err != nil {
 				return nil, err
 			}
 		}
 
-		if v.VolumeSource.ConfigMap != nil {
-			if err := loadConfigMap(v.VolumeSource.ConfigMap.Name, false); err != nil {
+		if v.ConfigMap != nil {
+			if err := loadConfigMap(v.ConfigMap.Name, false); err != nil {
 				return nil, err
 			}
 		}

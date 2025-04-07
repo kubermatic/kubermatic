@@ -19,9 +19,9 @@ package cloudcontroller
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -138,6 +138,6 @@ func DigitaloceanCCMVersion(version semver.Semver) string {
 		fallthrough
 	default:
 		// This should always be the latest version.
-		return "v0.1.57"
+		return "v0.1.56"
 	}
 }

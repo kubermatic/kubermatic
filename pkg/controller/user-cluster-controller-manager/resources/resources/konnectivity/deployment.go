@@ -19,10 +19,10 @@ package konnectivity
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -49,13 +49,20 @@ var (
 	}
 )
 
-// DeploymentCreator returns function to create/update deployment for konnectivity agents in user cluster.
-func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kServerPort int, kKeepaliveTime string, imageRewriter registry.ImageRewriter) reconciling.NamedDeploymentReconcilerFactory {
+// DeploymentReconciler returns function to reconcile konnectivity agents deployment in user cluster.
+func DeploymentReconciler(
+	clusterVersion semver.Semver,
+	kServerHost string,
+	kServerPort int,
+	kKeepaliveTime string,
+	imageRewriter registry.ImageRewriter,
+	kResourcesOverrides map[string]*corev1.ResourceRequirements,
+) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.KonnectivityDeploymentName, func(ds *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := resources.BaseAppLabels(resources.KonnectivityDeploymentName, nil)
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
-			ds.Spec.Template.ObjectMeta.Labels = labels
+			ds.Spec.Template.Labels = labels
 
 			replicas := int32(2)
 			ds.Spec.Replicas = &replicas
@@ -144,7 +151,7 @@ func DeploymentReconciler(clusterVersion semver.Semver, kServerHost string, kSer
 				},
 			}
 
-			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, nil, ds.Annotations)
+			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defResourceRequirements, kResourcesOverrides, ds.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

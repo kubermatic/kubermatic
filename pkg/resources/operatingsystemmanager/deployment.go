@@ -23,13 +23,13 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -175,7 +175,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 					Name:    resources.OperatingSystemManagerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
-					Args:    getFlags(data.DC().Node, cs, data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], data.GetCSIMigrationFeatureGates(nil), data.Cluster().Spec.ImagePullSecret),
+					Args:    getFlags(data, cs),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -251,19 +251,27 @@ type clusterSpec struct {
 	podCidr          string
 }
 
-func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, externalCloudProvider bool, csiMigrationFeatureGates []string, imagePullSecret *corev1.SecretReference) []string {
+func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-		"-cluster-dns", cs.clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
 		"-namespace", "kube-system",
 	}
 
-	if externalCloudProvider {
+	if cs != nil {
+		flags = append(flags, "-cluster-dns", cs.clusterDNSIP)
+
+		if cs.containerRuntime != "" {
+			flags = append(flags, "-container-runtime", cs.containerRuntime)
+		}
+	}
+
+	if extCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; extCloudProvider {
 		flags = append(flags, "-external-cloud-provider")
 	}
 
+	nodeSettings := data.DC().Node
 	if nodeSettings != nil {
 		if len(nodeSettings.InsecureRegistries) > 0 {
 			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
@@ -274,27 +282,62 @@ func getFlags(nodeSettings *kubermaticv1.NodeSettings, cs *clusterSpec, external
 		if len(nodeSettings.RegistryMirrors) > 0 {
 			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
 		}
-		if !nodeSettings.HTTPProxy.Empty() {
-			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
-		}
-		if !nodeSettings.NoProxy.Empty() {
-			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
-		}
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
 		}
 	}
 
-	if len(csiMigrationFeatureGates) > 0 {
+	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
+
+	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
 		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
 	}
 
-	if imagePullSecret != nil {
+	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {
 		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
 	}
 
-	if cs.containerRuntime != "" {
-		flags = append(flags, "-container-runtime", cs.containerRuntime)
+	return flags
+}
+
+const (
+	flagHTTPProxy = "-node-http-proxy"
+	flagNoProxy   = "-node-no-proxy"
+)
+
+// appendProxyFlags adds HTTP and no-proxy flags from nodeSettings and cluster to the
+// provided flags slice. Cluster settings take precedence over nodeSettings when both exist.
+// Returns the updated flags slice.
+func appendProxyFlags(flags []string, nodeSettings *kubermaticv1.NodeSettings, cluster *kubermaticv1.Cluster) []string {
+	if nodeSettings == nil && cluster == nil {
+		return flags
+	}
+
+	flagsMap := make(map[string]string)
+	if nodeSettings != nil {
+		if httpProxy := nodeSettings.HTTPProxy; !httpProxy.Empty() {
+			flagsMap[flagHTTPProxy] = nodeSettings.HTTPProxy.String()
+		}
+		if noProxy := nodeSettings.NoProxy; !noProxy.Empty() {
+			flagsMap[flagNoProxy] = nodeSettings.NoProxy.String()
+		}
+	}
+
+	if cluster != nil {
+		osm := cluster.Spec.ComponentsOverride.OperatingSystemManager
+		if osm != nil {
+			if httpProxy := osm.Proxy.HTTPProxy; httpProxy != nil && !httpProxy.Empty() {
+				flagsMap[flagHTTPProxy] = httpProxy.String()
+			}
+
+			if noProxy := osm.Proxy.NoProxy; noProxy != nil && !noProxy.Empty() {
+				flagsMap[flagNoProxy] = noProxy.String()
+			}
+		}
+	}
+
+	for flag, value := range flagsMap {
+		flags = append(flags, flag, value)
 	}
 
 	return flags

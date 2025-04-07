@@ -25,8 +25,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -79,7 +79,7 @@ func TestGetCiliumAppInstallOverrideValues(t *testing.T) {
 			name:              "default values with overwrite registry",
 			cluster:           testCluster,
 			overwriteRegistry: "myregistry.io",
-			expectedValues:    `{"certgen":{"image":{"repository":"myregistry.io/cilium/certgen","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"cni":{"exclusive":false},"envoy":{"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"hubble":{"relay":{"image":{"repository":"myregistry.io/cilium/hubble-relay","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"ui":{"backend":{"image":{"repository":"myregistry.io/cilium/hubble-ui-backend","useDigest":false}},"frontend":{"image":{"repository":"myregistry.io/cilium/hubble-ui","useDigest":false}},"securityContext":{"enabled":true,"seccompProfile":{"type":"RuntimeDefault"}}}},"image":{"repository":"myregistry.io/cilium/cilium","useDigest":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":16,"clusterPoolIPv4PodCIDRList":["192.168.0.0/24","192.168.178.0/24"]}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"true","nodePort":{"range":"30000,31777"},"operator":{"image":{"repository":"myregistry.io/cilium/operator","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}},"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}`,
+			expectedValues:    `{"certgen":{"image":{"repository":"myregistry.io/cilium/certgen","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"cni":{"exclusive":false},"envoy":{"image":{"repository":"myregistry.io/cilium/cilium-envoy","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"hubble":{"relay":{"image":{"repository":"myregistry.io/cilium/hubble-relay","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"ui":{"backend":{"image":{"repository":"myregistry.io/cilium/hubble-ui-backend","useDigest":false}},"frontend":{"image":{"repository":"myregistry.io/cilium/hubble-ui","useDigest":false}},"securityContext":{"enabled":true,"seccompProfile":{"type":"RuntimeDefault"}}}},"image":{"repository":"myregistry.io/cilium/cilium","useDigest":false},"ipam":{"operator":{"clusterPoolIPv4MaskSize":16,"clusterPoolIPv4PodCIDRList":["192.168.0.0/24","192.168.178.0/24"]}},"k8sServiceHost":"cluster.kubermatic.test","k8sServicePort":6443,"kubeProxyReplacement":"true","nodePort":{"range":"30000,31777"},"operator":{"image":{"repository":"myregistry.io/cilium/operator","useDigest":false},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}},"securityContext":{"seccompProfile":{"type":"RuntimeDefault"}}},"podSecurityContext":{"seccompProfile":{"type":"RuntimeDefault"}}}`,
 		},
 	}
 	for _, testCase := range testCases {

@@ -43,6 +43,7 @@ spec:
     autoDiscovery:
       namespace: kube-system
     image:
+      # `Cluster.AutoscalerVersion` is injected by KKP based on the Kubernetes version of the cluster.
       tag: '{{ .Cluster.AutoscalerVersion }}'
     extraEnv:
       CAPI_GROUP: cluster.k8s.io
@@ -84,7 +85,8 @@ spec:
       subjects:
       - kind: ServiceAccount
         name: cluster-autoscaler-clusterapi-cluster-autoscaler
-        namespace: kube-system
+        # `Release.Namespace` is injected by Helm.
+        namespace: '{{ `{{.Release.Namespace}}` }}'
   documentationURL: https://github.com/kubernetes/autoscaler
   sourceURL: https://kubernetes.github.io/autoscaler
   logo: |+

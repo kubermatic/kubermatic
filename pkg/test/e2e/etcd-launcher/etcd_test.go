@@ -29,7 +29,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -110,7 +110,7 @@ func TestBackup(t *testing.T) {
 	logger.Info("created test namespace")
 
 	// create etcd backup that will be restored later
-	err, backup := createBackup(ctx, logger, client, cluster)
+	backup, err := createBackup(ctx, logger, client, cluster)
 	if err != nil {
 		t.Fatalf("failed to create etcd backup: %v", err)
 	}
@@ -239,7 +239,7 @@ func TestRecovery(t *testing.T) {
 	}
 }
 
-func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (error, *kubermaticv1.EtcdBackupConfig) {
+func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
 	log.Info("creating backup of etcd data...")
 	backup := &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -260,14 +260,14 @@ func createBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntim
 	}
 
 	if err := client.Create(ctx, backup); err != nil {
-		return fmt.Errorf("failed to create EtcdBackupConfig: %w", err), nil
+		return nil, fmt.Errorf("failed to create EtcdBackupConfig: %w", err)
 	}
 
 	if err := waitForEtcdBackup(ctx, log, client, backup); err != nil {
-		return fmt.Errorf("failed to wait for etcd backup finishing: %w (%v)", err, backup.Status), nil
+		return nil, fmt.Errorf("failed to wait for etcd backup finishing: %w (%v)", err, backup.Status)
 	}
 
-	return nil, backup
+	return backup, nil
 }
 
 func restoreBackup(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, backup *kubermaticv1.EtcdBackupConfig) error {
@@ -710,7 +710,7 @@ func deleteEtcdPVC(ctx context.Context, client ctrlruntimeclient.Client, cluster
 	// created of the PVC resource.
 	return wait.PollUntilContextTimeout(ctx, 2*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := client.Get(ctx, types.NamespacedName{Name: pvc.Name, Namespace: pvc.Namespace}, &pvc); err == nil {
-			if oldPvc.ObjectMeta.CreationTimestamp.Before(&pvc.ObjectMeta.CreationTimestamp) {
+			if oldPvc.CreationTimestamp.Before(&pvc.CreationTimestamp) {
 				return true, nil
 			}
 		}

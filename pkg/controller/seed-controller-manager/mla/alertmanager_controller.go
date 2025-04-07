@@ -28,8 +28,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -144,9 +143,9 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -280,7 +279,7 @@ func (r *alertmanagerController) cleanUpAlertmanagerConfiguration(ctx context.Co
 }
 
 func (r *alertmanagerController) cleanUpAlertmanagerConfigurationStatus(ctx context.Context, cluster *kubermaticv1.Cluster, errC error) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the alertmanager config status in Cluster CR
 		c.Status.ExtendedHealth.AlertmanagerConfig = nil
 		if errC != nil && !apierrors.IsNotFound(errC) {
@@ -392,7 +391,7 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	}
 
 	if alertmanager.Spec.ConfigSecret.Name == "" {
-		if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, alertmanager, func() error {
+		if _, err := controllerruntime.CreateOrUpdate(ctx, r, alertmanager, func() error {
 			alertmanager.Spec.ConfigSecret.Name = resources.DefaultAlertmanagerConfigSecretName
 			return nil
 		}); err != nil {
@@ -415,7 +414,7 @@ func (r *alertmanagerController) getAlertmanagerConfigForCluster(ctx context.Con
 	}
 
 	if secret.Data == nil || len(secret.Data[resources.AlertmanagerConfigSecretKey]) == 0 {
-		if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, secret, func() error {
+		if _, err := controllerruntime.CreateOrUpdate(ctx, r, secret, func() error {
 			secret.Data = map[string][]byte{
 				resources.AlertmanagerConfigSecretKey: configuration,
 			}
@@ -480,13 +479,13 @@ func (r *alertmanagerController) ensureAlertManagerConfigStatus(ctx context.Cont
 
 	// Update alertmanager config status in Alertmanager CR
 	if oldAlertmanager.Status.ConfigStatus != alertmanager.Status.ConfigStatus {
-		if err := r.Client.Status().Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
+		if err := r.Status().Patch(ctx, alertmanager, ctrlruntimeclient.MergeFrom(oldAlertmanager)); err != nil {
 			return fmt.Errorf("error patching alertmanager config status: %w", err)
 		}
 	}
 
 	// Update alertmanager config status in Cluster CR
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err = util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.AlertmanagerConfig = clusterStatus
 	})
 	if err != nil {

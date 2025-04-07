@@ -29,20 +29,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/clients"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/tests"
 	ctypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -349,6 +349,8 @@ func (r *TestRunner) executeTests(
 
 	var err error
 
+	versions := kubermatic.GetVersions()
+
 	// NB: It's important for this health check loop to refresh the cluster object, as
 	// during reconciliation some cloud providers will fill in missing fields in the CloudSpec,
 	// and later when we create MachineDeployments we potentially rely on these fields
@@ -361,10 +363,8 @@ func (r *TestRunner) executeTests(
 				return err, nil
 			}
 
-			versions := kubermatic.NewDefaultVersions()
-
 			// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-			missingConditions, _ := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
+			missingConditions, _ := controllerutil.ClusterReconciliationSuccessful(cluster, versions, true)
 			if len(missingConditions) > 0 {
 				return fmt.Errorf("missing conditions: %v", missingConditions), nil
 			}

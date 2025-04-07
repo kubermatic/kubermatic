@@ -31,7 +31,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
@@ -157,7 +157,7 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	OperatingSystemManagerKubeconfigSecretName = "operatingsystemmanager-kubeconfig"
-	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm webhook.
+	// OperatingSystemManagerWebhookKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm webhook.
 	OperatingSystemManagerWebhookKubeconfigSecretName = "operatingsystemmanager-webhook-kubeconfig"
 	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller.
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
@@ -174,7 +174,7 @@ const (
 	OperatingSystemManagerWebhookServingCertSecretName = "operating-system-manager-webhook-serving-cert"
 	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	OperatingSystemManagerWebhookServingCertCertKeyName = "tls.crt"
-	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the private key.
+	// OperatingSystemManagerWebhookServingCertKeyKeyName is the name for the key that contains the private key.
 	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
@@ -472,7 +472,7 @@ const (
 	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin.
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
-	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
+	// EventRateLimitAdmissionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
 
 	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
@@ -506,7 +506,7 @@ const (
 	VMwareCloudDirectorCSIConfigmapName = "vcloud-csi-configmap"
 	// VMwareCloudDirectorCSIServiceAccountName is the name of the service account of the CSI controller.
 	VMwareCloudDirectorCSIServiceAccountName = "vcloud-csi"
-	// VMwareCloudDirectorCertUsername is the name of the user coming from kubeconfig cert.
+	// VMwareCloudDirectorCSICertUsername is the name of the user coming from kubeconfig cert.
 	VMwareCloudDirectorCSICertUsername = "kubermatic:vcloud-csi"
 	// VMwareCloudDirectorCSIKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	VMwareCloudDirectorCSIKubeconfigSecretName = "vcloud-csi-kubeconfig"
@@ -540,7 +540,7 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv.
 	TokensSecretKey = "tokens.csv"
-	// ViewersTokenSecretKey viewersToken.
+	// ViewerTokenSecretKey viewersToken.
 	ViewerTokenSecretKey = "viewerToken"
 	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesn't work as it has
 	// the key hardcoded.
@@ -896,7 +896,7 @@ const (
 )
 
 const (
-	// KubeLBKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubelb CCM.
+	// KubeLBCCMKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubelb CCM.
 	KubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
 	// KubeLBManagerKubeconfigSecretName is the name for the secret containing the kubeconfig for the kubelb management cluster used by the kubelb CCM.
 	KubeLBManagerKubeconfigSecretName = "kubelb-manager-kubeconfig"
@@ -1518,6 +1518,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.KonnectivityProxy.Resources != nil {
 		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
+		r[KonnectivityAgentContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 	}
 	if componentSettings.ControllerManager.Resources != nil {
 		r[ControllerManagerDeploymentName] = componentSettings.ControllerManager.Resources.DeepCopy()

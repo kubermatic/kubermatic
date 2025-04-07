@@ -25,14 +25,13 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -96,7 +95,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		// Watch for clusters
 		For(&kubermaticv1.Cluster{}).
 		// Watch changes for ApplicationDefinitions that have been enforced.
-		Watches(&appskubermaticv1.ApplicationDefinition{}, enqueueClusters(reconciler.Client, log), builder.WithPredicates(withEventFilter())).
+		Watches(&appskubermaticv1.ApplicationDefinition{}, enqueueClusters(reconciler, log), builder.WithPredicates(withEventFilter())).
 		Build(reconciler)
 
 	return err
@@ -118,9 +117,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -148,6 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
+	//nolint:staticcheck
 	ignoreDefaultApplications := false
 
 	// If the cluster has the initial application installations request annotation, we don't want to install the default applications as they will be
@@ -217,8 +217,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	if len(errors) == 0 && !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully, corev1.ConditionTrue) {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-			kubermaticv1helper.SetClusterCondition(
+		if err := util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+			util.SetClusterCondition(
 				cluster,
 				r.versions,
 				kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully,

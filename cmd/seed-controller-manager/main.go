@@ -26,15 +26,14 @@ import (
 	"strings"
 
 	"github.com/go-logr/zapr"
-	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/prometheus/client_golang/prometheus"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
 	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -46,7 +45,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 	osmv1alpha1 "k8c.io/operating-system-manager/pkg/crd/osm/v1alpha1"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -95,8 +94,8 @@ func main() {
 	// make sure the logging flags actually affect the global (deprecated) logger instance
 	kubermaticlog.Logger = log
 
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
+	versions := kubermatic.GetVersions()
+	cli.Hello(log, "Seed Controller-Manager", &versions)
 
 	electionName := controllerName + "-leader-election"
 	if options.workerName != "" {
@@ -109,7 +108,7 @@ func main() {
 	}
 
 	// Create a manager, disable metrics as we have our own handler that exposes
-	// the metrics of both the ctrltuntime registry and the default registry
+	// the metrics of both the ctrlruntime registry and the default registry
 	rootCtx := signals.SetupSignalHandler()
 
 	mgr, err := manager.New(cfg, manager.Options{
@@ -158,9 +157,6 @@ func main() {
 	}
 	if err := kubelbv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubelbv1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
-	if err := kubeovnv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubeovnv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer

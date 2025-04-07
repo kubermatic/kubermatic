@@ -25,14 +25,14 @@ import (
 
 	"go.uber.org/zap"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/sdk/v2/api/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -311,7 +311,7 @@ func TestReconcile(t *testing.T) {
 				Client:   seedClient,
 				recorder: &record.FakeRecorder{},
 				log:      log,
-				versions: kubermatic.NewFakeVersions(),
+				versions: kubermatic.GetFakeVersions(),
 
 				userClusterConnectionProvider: newFakeClientProvider(userClusterClient),
 
@@ -341,7 +341,7 @@ func TestReconcile(t *testing.T) {
 
 			// fetch potentially updated cluster object
 			newCluster := &kubermaticv1.Cluster{}
-			if err := r.Client.Get(ctx, nName, newCluster); err != nil {
+			if err := r.Get(ctx, nName, newCluster); err != nil {
 				t.Fatalf("Cluster object in seed cluster could not be found anymore: %v", err)
 			}
 

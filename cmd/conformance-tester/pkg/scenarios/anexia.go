@@ -20,17 +20,17 @@ import (
 	"context"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
-	nodeCpu      = 2
+	nodeCPU      = 2
 	nodeDiskSize = 60
 	nodeMemory   = 2048
 )
@@ -40,7 +40,7 @@ type anexiaScenario struct {
 }
 
 func (s *anexiaScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](
+	return sets.New(
 		providerconfig.OperatingSystemFlatcar,
 	)
 }
@@ -71,7 +71,7 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewAnexiaConfig().
-		WithCPUs(nodeCpu).
+		WithCPUs(nodeCPU).
 		WithMemory(nodeMemory).
 		AddDisk(nodeDiskSize, "ENT6").
 		WithTemplateID(secrets.Anexia.TemplateID).

@@ -20,8 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -93,7 +94,7 @@ func ValidateUserDelete(ctx context.Context,
 	client ctrlruntimeclient.Client,
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter) error {
-	projects, err := kubermaticv1helper.GetUserOwnedProjects(ctx, client, user.Name)
+	projects, err := util.GetUserOwnedProjects(ctx, client, user.Name)
 	if err != nil {
 		return err
 	}
@@ -107,7 +108,7 @@ func ValidateUserDelete(ctx context.Context,
 		// project has single owner user then check if project has resources
 
 		// if project has externalclusters
-		hasExtClusters, err := kubermaticv1helper.HasExternalClusters(ctx, client, project.Name)
+		hasExtClusters, err := util.HasExternalClusters(ctx, client, project.Name)
 		if err != nil {
 			return err
 		}
@@ -125,7 +126,7 @@ func ValidateUserDelete(ctx context.Context,
 			if err != nil {
 				return fmt.Errorf("failed to get Seed client: %w", err)
 			}
-			hasClusters, err := kubermaticv1helper.HasClusters(ctx, seedClient, project.Name)
+			hasClusters, err := util.HasClusters(ctx, seedClient, project.Name)
 			if err != nil {
 				return err
 			}

@@ -31,9 +31,9 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -139,7 +139,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
 		r.seedClient,
 		"",
@@ -385,7 +385,7 @@ func (r *reconciler) removeManagedObject(ctx context.Context, resource ctrlrunti
 	}
 
 	if isManagedBackupResource(resource) {
-		if err := r.userClient.Delete(ctx, resource); err != nil && !(apierrors.IsNotFound(err) || meta.IsNoMatchError(err)) {
+		if err := r.userClient.Delete(ctx, resource); err != nil && !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 			return fmt.Errorf("failed to delete user-cluster resource: %w", err)
 		}
 	}
@@ -422,7 +422,7 @@ func isManagedBackupResource(resource ctrlruntimeclient.Object) bool {
 	return labels[appskubermaticv1.ApplicationManagedByLabel] == ControllerName
 }
 
-func (r *reconciler) patchCluster(ctx context.Context, cluster *kubermaticv1.Cluster, patch kubermaticv1helper.ClusterPatchFunc) error {
+func (r *reconciler) patchCluster(ctx context.Context, cluster *kubermaticv1.Cluster, patch util.ClusterPatchFunc) error {
 	// modify it
 	original := cluster.DeepCopy()
 	patch(cluster)

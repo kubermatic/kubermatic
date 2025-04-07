@@ -29,7 +29,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -150,6 +150,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	flag.StringVar(&c.disabledCollectors, "disabled-collectors", "", "Disables metrics collectors in the seed. The value should be a comma-separated list of collector names.")
+
 	addFlags(flag.CommandLine)
 	flag.Parse()
 

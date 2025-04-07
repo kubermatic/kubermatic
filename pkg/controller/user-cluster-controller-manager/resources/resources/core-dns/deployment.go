@@ -22,7 +22,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
@@ -92,9 +92,9 @@ func DeploymentReconciler(kubernetesVersion *semverlib.Version, cluster *kuberma
 				}
 			}
 
-			if dep.Spec.Template.ObjectMeta.Labels == nil {
+			if dep.Spec.Template.Labels == nil {
 				// has to be the same as the selector
-				dep.Spec.Template.ObjectMeta.Labels = dep.Spec.Selector.MatchLabels
+				dep.Spec.Template.Labels = dep.Spec.Selector.MatchLabels
 			}
 
 			iptr := intstr.FromInt(1)

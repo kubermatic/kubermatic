@@ -91,7 +91,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "avg by (node_name) (100 - (rate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
+          "expr": "avg by (node_name) (100 - (rate(node_cpu_seconds_total{app_kubernetes_io_name=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -176,7 +176,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "avg (100 - (rate(node_cpu_seconds_total{app=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
+          "expr": "avg (100 - (rate(node_cpu_seconds_total{app_kubernetes_io_name=\"node-exporter\", mode=\"idle\", node_name=~\"$nodes\"}[2m]) * 100))",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A"
@@ -269,7 +269,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max by (node_name) (\n  node_memory_MemTotal_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n  - node_memory_MemFree_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n  - node_memory_Buffers_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n  - node_memory_Cached_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n)\n",
+          "expr": "max by (node_name) (\n  node_memory_MemTotal_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n  - node_memory_MemFree_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n  - node_memory_Buffers_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n  - node_memory_Cached_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n)\n",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -354,7 +354,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max(\n  (\n    sum(\n      node_memory_MemTotal_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n    - node_memory_MemFree_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n    - node_memory_Buffers_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n    - node_memory_Cached_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n    )\n    /\n    sum(\n      node_memory_MemTotal_bytes{app=\"node-exporter\", node_name=~\"$nodes\"}\n    )\n  ) * 100)",
+          "expr": "max(\n  (\n    sum(\n      node_memory_MemTotal_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n    - node_memory_MemFree_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n    - node_memory_Buffers_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n    - node_memory_Cached_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n    )\n    /\n    sum(\n      node_memory_MemTotal_bytes{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}\n    )\n  ) * 100)",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A"
@@ -446,7 +446,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max by (node_name) (rate(node_network_receive_bytes_total{app=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
+          "expr": "max by (node_name) (rate(node_network_receive_bytes_total{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -539,7 +539,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max by (node_name) (rate(node_network_transmit_bytes_total{app=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
+          "expr": "max by (node_name) (rate(node_network_transmit_bytes_total{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -632,7 +632,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max by (node_name) (rate(node_disk_read_bytes_total{app=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
+          "expr": "max by (node_name) (rate(node_disk_read_bytes_total{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -725,7 +725,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max by (node_name) (rate(node_disk_written_bytes_total{app=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
+          "expr": "max by (node_name) (rate(node_disk_written_bytes_total{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -818,7 +818,7 @@
           "datasource": {
             "uid": "$datasource"
           },
-          "expr": "max by (node_name) (rate(node_disk_io_time_seconds_total{app=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
+          "expr": "max by (node_name) (rate(node_disk_io_time_seconds_total{app_kubernetes_io_name=\"node-exporter\", node_name=~\"$nodes\"}[2m]))",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{ node_name }}",
@@ -949,7 +949,7 @@
         "datasource": {
           "uid": "$datasource"
         },
-        "definition": "label_values(node_boot_time_seconds{app=\"node-exporter\"}, node_name)",
+        "definition": "label_values(node_boot_time_seconds{app_kubernetes_io_name=\"node-exporter\"}, node_name)",
         "hide": 0,
         "includeAll": true,
         "label": "Nodes",
@@ -957,7 +957,7 @@
         "name": "nodes",
         "options": [],
         "query": {
-          "query": "label_values(node_boot_time_seconds{app=\"node-exporter\"}, node_name)",
+          "query": "label_values(node_boot_time_seconds{app_kubernetes_io_name=\"node-exporter\"}, node_name)",
           "refId": "prometheus-nodes-Variable-Query"
         },
         "refresh": 2,

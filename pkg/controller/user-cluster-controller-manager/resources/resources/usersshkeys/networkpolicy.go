@@ -29,11 +29,11 @@ import (
 )
 
 // NetworkPolicyReconciler NetworkPolicy allows egress traffic of user ssh keys agent to the world.
-func NetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceApi string) reconciling.NamedNetworkPolicyReconcilerFactory {
+func NetworkPolicyReconciler(k8sAPIIP string, k8sAPIPort int, k8sServiceAPI string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	return func() (string, reconciling.NetworkPolicyReconciler) {
 		apiServicePort := intstr.FromInt(443)
-		apiPort := intstr.FromInt(k8sApiPort)
-		protoTcp := corev1.ProtocolTCP
+		apiPort := intstr.FromInt(k8sAPIPort)
+		protoTCP := corev1.ProtocolTCP
 
 		return "user-ssh-key-agent", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
@@ -50,14 +50,14 @@ func NetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceApi stri
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", k8sApiIP),
+									CIDR: fmt.Sprintf("%s/32", k8sAPIIP),
 								},
 							},
 						},
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
 								Port:     &apiPort,
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 							},
 						},
 					},
@@ -65,14 +65,14 @@ func NetworkPolicyReconciler(k8sApiIP string, k8sApiPort int, k8sServiceApi stri
 						To: []networkingv1.NetworkPolicyPeer{
 							{
 								IPBlock: &networkingv1.IPBlock{
-									CIDR: fmt.Sprintf("%s/32", k8sServiceApi),
+									CIDR: fmt.Sprintf("%s/32", k8sServiceAPI),
 								},
 							},
 						},
 						Ports: []networkingv1.NetworkPolicyPort{
 							{
 								Port:     &apiServicePort,
-								Protocol: &protoTcp,
+								Protocol: &protoTCP,
 							},
 						},
 					},

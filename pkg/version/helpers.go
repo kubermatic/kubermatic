@@ -22,8 +22,8 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermativsemver "k8c.io/kubermatic/sdk/v2/semver"
 )
 
 func IsSupported(version *semverlib.Version, provider kubermaticv1.ProviderType, incompatibilities []*ProviderIncompatibility, conditions ...kubermaticv1.ConditionType) (bool, error) {

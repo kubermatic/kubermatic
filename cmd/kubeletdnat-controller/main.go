@@ -63,7 +63,7 @@ func main() {
 
 	reconciling.Configure(log)
 
-	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug, nil)
+	cli.Hello(log, "Kubelet DNAT-Controller", nil)
 
 	_, network, err := net.ParseCIDR(*networkFlag)
 	if err != nil {

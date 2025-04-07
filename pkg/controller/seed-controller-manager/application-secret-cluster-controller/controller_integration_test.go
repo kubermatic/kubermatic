@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -52,30 +52,25 @@ const (
 	interval    = time.Second * 1
 )
 
-var testEnv *envtest.Environment
-var client ctrlruntimeclient.Client
-var ctx context.Context
-var cancel context.CancelFunc
-
 // clusterWithWorkerName is a cluster with wokername=workerLabel. Application Secret should be synced in this cluster's namespace.
 var clusterWithWorkerName *kubermaticv1.Cluster
 
-// pauseClusterWithWorkerName is a cluster with wokername=workerLabel in pause state. Application Secret should NOT be synced in this cluster's namespace.
-var pauseClusterWithWorkerName *kubermaticv1.Cluster
+// pausedClusterWithWorkerName is a cluster with wokername=workerLabel in pause state. Application Secret should NOT be synced in this cluster's namespace.
+var pausedClusterWithWorkerName *kubermaticv1.Cluster
 
 // clusterWithoutWorkerName is a cluster with wokername="". Application Secret should NOT be synced in this cluster's namespace.
 var clusterWithoutWorkerName *kubermaticv1.Cluster
 
-// kubermaticNS is the namespace where kubermatic is installed; therefore the namespace where  Application Secrets live.
+// kubermaticNS is the namespace where kubermatic is installed; therefore the namespace where Application Secrets live.
 var kubermaticNS *corev1.Namespace
 
 func Test_reconciler_reconcile(t *testing.T) {
-	startTestEnvWithClusters(t)
-	defer stopTestEnv(t)
+	ctx := context.Background()
+	client := startTestEnvWithClusters(t, ctx)
 
 	tests := []struct {
 		name     string
-		testFunc func(t *testing.T)
+		testFunc func(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client)
 	}{
 		{
 			name:     "when an application secret is created it should be created into cluster namespace",
@@ -103,11 +98,13 @@ func Test_reconciler_reconcile(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, tt.testFunc)
+		t.Run(tt.name, func(t *testing.T) {
+			tt.testFunc(t, ctx, client)
+		})
 	}
 }
 
-func secretCreationTest(t *testing.T) {
+func secretCreationTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -122,15 +119,15 @@ func secretCreationTest(t *testing.T) {
 	}
 
 	// Secret should be synced on running cluster with same workername than controller.
-	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
-	expectSecretHasFinalizer(t, secret)
+	expectSecretSync(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretHasFinalizer(t, ctx, client, secret)
 
 	// Secret should not be synced on paused cluster and cluster with different workerName than controller.
-	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, pausedClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
-func secretUpdatedTest(t *testing.T) {
+func secretUpdatedTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -145,8 +142,8 @@ func secretUpdatedTest(t *testing.T) {
 	if err := client.Create(ctx, secret); err != nil {
 		t.Fatalf("failed to create secret: %s", err)
 	}
-	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
-	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretSync(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretNevertExist(t, ctx, client, pausedClusterWithWorkerName.Status.NamespaceName, secret.Name)
 
 	// Update the secret.
 	original := secret.DeepCopy()
@@ -157,15 +154,15 @@ func secretUpdatedTest(t *testing.T) {
 	}
 
 	// Secret should be synced on running cluster with same workername than controller.
-	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
-	expectSecretHasFinalizer(t, secret)
+	expectSecretSync(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretHasFinalizer(t, ctx, client, secret)
 
 	// Secret should not be synced on paused cluster and cluster with different workerName than controller.
-	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, pausedClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
-func secretIsDeletedTest(t *testing.T) {
+func secretIsDeletedTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "app-cred",
@@ -180,11 +177,11 @@ func secretIsDeletedTest(t *testing.T) {
 	if err := client.Create(ctx, secret); err != nil {
 		t.Fatalf("failed to create secret: %s", err)
 	}
-	expectSecretSync(t, clusterWithWorkerName.Status.NamespaceName, secret)
+	expectSecretSync(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret)
 
 	// Secret should not be synced on paused cluster and cluster with different workerName than controller.
-	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, pausedClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 
 	// deleting Secret
 	if err := client.Delete(ctx, secret); err != nil {
@@ -192,11 +189,11 @@ func secretIsDeletedTest(t *testing.T) {
 	}
 
 	// Secret should be deleted from cluster's namespace and kubermatic namespaces (i.e. finalizer has been removed).
-	expectSecretIsDeleted(t, clusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretIsDeleted(t, secret.Namespace, secret.Name)
+	expectSecretIsDeleted(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretIsDeleted(t, ctx, client, secret.Namespace, secret.Name)
 }
 
-func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T) {
+func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	// Create a cluster.
 	cluster := createCluster(t, ctx, client, "deleting-cluster", workerLabel, false, []string{"something-to-keep-object"})
 	defer func() {
@@ -239,10 +236,10 @@ func secretNotSyncWhenClusterBeingDeletedTest(t *testing.T) {
 	if err := client.Create(ctx, secret); err != nil {
 		t.Fatalf("failed to create secret: %s", err)
 	}
-	expectSecretNevertExist(t, cluster.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, cluster.Status.NamespaceName, secret.Name)
 }
 
-func nonApplicationSecretShouldNotBeSyncedTest(t *testing.T) {
+func nonApplicationSecretShouldNotBeSyncedTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "a-secret",
@@ -255,12 +252,12 @@ func nonApplicationSecretShouldNotBeSyncedTest(t *testing.T) {
 		t.Fatalf("failed to create secret: %s", err)
 	}
 
-	expectSecretNevertExist(t, clusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, pausedClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
-func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T) {
+func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "a-secret",
@@ -274,12 +271,12 @@ func secretInAnotherNsThanKubermaticNotSyncTest(t *testing.T) {
 		t.Fatalf("failed to create secret: %s", err)
 	}
 
-	expectSecretNevertExist(t, clusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, pauseClusterWithWorkerName.Status.NamespaceName, secret.Name)
-	expectSecretNevertExist(t, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, pausedClusterWithWorkerName.Status.NamespaceName, secret.Name)
+	expectSecretNevertExist(t, ctx, client, clusterWithoutWorkerName.Status.NamespaceName, secret.Name)
 }
 
-func expectSecretSync(t *testing.T, clusterNamespace string, expectedSecert *corev1.Secret) {
+func expectSecretSync(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterNamespace string, expectedSecert *corev1.Secret) {
 	syncedSecret := &corev1.Secret{}
 	var err error
 	if !utils.WaitFor(ctx, interval, timeout, func() bool {
@@ -304,7 +301,7 @@ func expectSecretSync(t *testing.T, clusterNamespace string, expectedSecert *cor
 	}
 }
 
-func expectSecretNevertExist(t *testing.T, clusterNamespace string, name string) {
+func expectSecretNevertExist(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterNamespace string, name string) {
 	syncedSecret := &corev1.Secret{}
 	// Consistently check secret does not exist.
 	if utils.WaitFor(ctx, interval, timeout, func() bool {
@@ -314,7 +311,7 @@ func expectSecretNevertExist(t *testing.T, clusterNamespace string, name string)
 	}
 }
 
-func expectSecretIsDeleted(t *testing.T, clusterNamespace string, name string) {
+func expectSecretIsDeleted(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterNamespace string, name string) {
 	t.Helper()
 	syncedSecret := &corev1.Secret{}
 	if !utils.WaitFor(ctx, interval, timeout, func() bool {
@@ -325,7 +322,7 @@ func expectSecretIsDeleted(t *testing.T, clusterNamespace string, name string) {
 	}
 }
 
-func expectSecretHasFinalizer(t *testing.T, secret *corev1.Secret) {
+func expectSecretHasFinalizer(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, secret *corev1.Secret) {
 	t.Helper()
 	currentSecret := &corev1.Secret{}
 	var err error
@@ -344,9 +341,7 @@ func expectSecretHasFinalizer(t *testing.T, secret *corev1.Secret) {
 	}
 }
 
-func startTestEnvWithClusters(t *testing.T) {
-	ctx, cancel = context.WithCancel(context.Background())
-
+func startTestEnvWithClusters(t *testing.T, ctx context.Context) ctrlruntimeclient.Client {
 	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
 	kubermaticlog.Logger = rawLog.Sugar()
 
@@ -354,7 +349,7 @@ func startTestEnvWithClusters(t *testing.T) {
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// Bootstrapping test environment.
-	testEnv = &envtest.Environment{
+	testEnv := &envtest.Environment{
 		CRDDirectoryPaths:     []string{"../../../crd/k8c.io"},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -363,6 +358,12 @@ func startTestEnvWithClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to start envTest: %s", err)
 	}
+
+	t.Cleanup(func() {
+		if err := testEnv.Stop(); err != nil {
+			t.Fatalf("failed to stop testEnv: %s", err)
+		}
+	})
 
 	if err := kubermaticv1.AddToScheme(scheme.Scheme); err != nil {
 		t.Fatalf("failed to add kubermaticv1 scheme: %s", err)
@@ -375,7 +376,7 @@ func startTestEnvWithClusters(t *testing.T) {
 		t.Fatalf("failed to create manager: %s", err)
 	}
 
-	client, err = ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
+	client, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		t.Fatalf("failed to create client: %s", err)
 	}
@@ -392,64 +393,23 @@ func startTestEnvWithClusters(t *testing.T) {
 	}
 
 	clusterWithWorkerName = createCluster(t, ctx, client, "with-worker-name", workerLabel, false, []string{})
-	pauseClusterWithWorkerName = createCluster(t, ctx, client, "paused-with-worker-name", workerLabel, true, []string{})
+	pausedClusterWithWorkerName = createCluster(t, ctx, client, "paused-with-worker-name", workerLabel, true, []string{})
 	clusterWithoutWorkerName = createCluster(t, ctx, client, "without-worker-name", "", false, []string{})
 
 	if err := Add(ctx, mgr, kubermaticlog.Logger, 2, workerLabel, kubermaticNS.Name); err != nil {
 		t.Fatalf("failed to add controller to manager: %s", err)
 	}
 
+	mgrCtx, cancel := context.WithCancel(ctx)
+	t.Cleanup(cancel)
+
 	go func() {
-		if err := mgr.Start(ctx); err != nil {
+		if err := mgr.Start(mgrCtx); err != nil {
 			t.Errorf("failed to start manager: %s", err)
-			return
 		}
 	}()
-}
 
-func stopTestEnv(t *testing.T) {
-	// Clean up and stop controller.
-	cleanupClusterAndNs(t, clusterWithWorkerName)
-	cleanupClusterAndNs(t, pauseClusterWithWorkerName)
-	cleanupClusterAndNs(t, clusterWithoutWorkerName)
-	cancel()
-
-	// Tearing down the test environment.
-	if err := testEnv.Stop(); err != nil {
-		t.Fatalf("failed to stop testEnv: %s", err)
-	}
-}
-
-func cleanupClusterAndNs(t *testing.T, cluster *kubermaticv1.Cluster) {
-	if cluster != nil {
-		cleanupNamespace(t, cluster.Status.NamespaceName)
-
-		currentCluster := &kubermaticv1.Cluster{}
-		err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cluster), currentCluster)
-		if err != nil && !apierrors.IsNotFound(err) {
-			t.Fatalf("failed to get cluster: %s", err)
-		}
-
-		// Delete cluster if it exists.
-		err = client.Delete(ctx, currentCluster)
-		if err != nil && !apierrors.IsNotFound(err) {
-			t.Fatalf("failed to delete cluster: %s", err)
-		}
-	}
-}
-
-func cleanupNamespace(t *testing.T, name string) {
-	ns := &corev1.Namespace{}
-	err := client.Get(ctx, types.NamespacedName{Name: name}, ns)
-	if err != nil && !apierrors.IsNotFound(err) {
-		t.Fatalf("failed to get namespace: %s", err)
-	}
-
-	// Delete ns if it exists.
-	err = client.Delete(ctx, ns)
-	if err != nil && !apierrors.IsNotFound(err) {
-		t.Fatalf("failed to delete cluster: %s", err)
-	}
+	return client
 }
 
 func createCluster(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, clusterName string, workerLabel string, isPause bool, finalizers []string) *kubermaticv1.Cluster {

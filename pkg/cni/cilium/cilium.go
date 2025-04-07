@@ -21,8 +21,8 @@ import (
 	"maps"
 	"strings"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -36,7 +36,7 @@ const (
 	ciliumImageRegistry = "quay.io/cilium/"
 )
 
-func toOciUrl(s string) string {
+func toOCIURL(s string) string {
 	if strings.Contains(s, "://") {
 		return s
 	}
@@ -75,7 +75,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.0",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -88,7 +88,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.3",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -101,7 +101,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.4",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -114,7 +114,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.6",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -127,7 +127,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.7",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -140,7 +140,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.8",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -153,7 +153,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.14",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -166,7 +166,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.1",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -179,7 +179,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.2",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -192,7 +192,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.3",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -205,7 +205,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.9",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -218,7 +218,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.16",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -231,7 +231,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.3",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -244,7 +244,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.10",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -257,7 +257,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.16.6",
-								URL:          toOciUrl(config.Spec.UserCluster.SystemApplications.HelmRepository),
+								URL:          toOCIURL(config.Spec.UserCluster.SystemApplications.HelmRepository),
 								Credentials:  credentials,
 							},
 						},
@@ -272,35 +272,73 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 
 			// we want to allow overriding the default values, so reconcile them only if nil
 			if app.Spec.DefaultValuesBlock == "" || app.Spec.DefaultValuesBlock == "{}" {
-				defaultValues := map[string]any{
-					"operator": map[string]any{
-						"replicas": 1,
-					},
-					"envoy": map[string]any{
-						"enabled": false,
-					},
-					"hubble": map[string]any{
-						"relay": map[string]any{
-							"enabled": true,
-						},
-						"ui": map[string]any{
-							"enabled": true,
-						},
-						// cronJob TLS cert gen method needs to be used for backward compatibility with older KKP
-						"tls": map[string]any{
-							"auto": map[string]any{
-								"method": "cronJob",
-							},
-						},
-					},
+				if err := setDefaultValues(app); err != nil {
+					return app, err
 				}
+				return app, nil
+			}
+
+			defaultValues, err := app.Spec.GetParsedDefaultValues()
+			if err != nil {
+				return app, fmt.Errorf("failed to unmarshal CNI values: %w", err)
+			}
+
+			if defaultValues != nil {
+				sanitizeValues(defaultValues)
 				rawValues, err := yaml.Marshal(defaultValues)
 				if err != nil {
-					return app, fmt.Errorf("failed to marshall default CNI values: %w", err)
+					return app, fmt.Errorf("failed to marshal CNI values: %w", err)
 				}
+
 				app.Spec.DefaultValuesBlock = string(rawValues)
 			}
+
 			return app, nil
+		}
+	}
+}
+
+// setDefaultValues sets the default values for the application.
+func setDefaultValues(app *appskubermaticv1.ApplicationDefinition) error {
+	defaultValues := map[string]any{
+		"operator": map[string]any{
+			"replicas": 1,
+		},
+		"envoy": map[string]any{
+			"enabled": false,
+		},
+		"hubble": map[string]any{
+			"relay": map[string]any{
+				"enabled": true,
+			},
+			"ui": map[string]any{
+				"enabled": true,
+			},
+			"tls": map[string]any{
+				"auto": map[string]any{
+					"method": "cronJob",
+				},
+			},
+		},
+	}
+	rawValues, err := yaml.Marshal(defaultValues)
+	if err != nil {
+		return fmt.Errorf("failed to marshal default CNI values: %w", err)
+	}
+	app.Spec.DefaultValuesBlock = string(rawValues)
+	return nil
+}
+
+func sanitizeValues(values map[string]any) {
+	// If not specified, set envoy.enabled to false
+	// https://github.com/cilium/cilium/commit/471f19a16593e1e9342c31bf3e26e5383737cb0a
+	if envoy, ok := values["envoy"].(map[string]any); ok {
+		if _, ok := envoy["enabled"]; !ok {
+			envoy["enabled"] = false
+		}
+	} else {
+		values["envoy"] = map[string]any{
+			"enabled": false,
 		}
 	}
 }
@@ -400,6 +438,10 @@ func GetAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 		}
 		valuesCertGen["image"] = map[string]any{
 			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesEnvoy["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium-envoy", overwriteRegistry)),
 			"useDigest":  false,
 		}
 	}

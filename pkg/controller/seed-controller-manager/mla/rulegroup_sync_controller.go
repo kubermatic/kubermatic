@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -196,7 +196,7 @@ func (r *ruleGroupSyncController) syncClusterNS(
 			log.Debugw("cluster have mla disabled, skipping", "cluster", cluster.Name)
 			continue
 		}
-		if err := action(r.Client, ruleGroup, &cluster); err != nil {
+		if err := action(r, ruleGroup, &cluster); err != nil {
 			return fmt.Errorf("failed to sync rulegroup for cluster %s: %w", cluster.Name, err)
 		}
 	}
