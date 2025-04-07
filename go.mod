@@ -68,10 +68,10 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.43.0
 	go.anx.io/go-anxcloud v0.7.3
-	go.etcd.io/etcd/api/v3 v3.5.14
-	go.etcd.io/etcd/client/pkg/v3 v3.5.14
-	go.etcd.io/etcd/client/v3 v3.5.14
-	go.etcd.io/etcd/etcdutl/v3 v3.5.9
+	go.etcd.io/etcd/api/v3 v3.5.17
+	go.etcd.io/etcd/client/pkg/v3 v3.5.17
+	go.etcd.io/etcd/client/v3 v3.5.17
+	go.etcd.io/etcd/etcdutl/v3 v3.5.17
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/oauth2 v0.23.0
@@ -340,11 +340,11 @@ require (
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	go.etcd.io/bbolt v1.3.10 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.13 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.13 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.13 // indirect
+	go.etcd.io/bbolt v1.3.11 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.17 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.17 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.17 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.17 // indirect
 	go.mongodb.org/mongo-driver v1.16.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/exporters/autoexport v0.46.1 // indirect
