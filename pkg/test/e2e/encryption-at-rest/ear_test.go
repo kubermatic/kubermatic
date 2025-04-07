@@ -137,7 +137,7 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("failed to enable encryption-at-rest: %v", err)
 	}
 
-	err = ensureApiServerUpdated(ctx, logger, seedClient, cluster)
+	err = ensureAPIServerUpdated(ctx, logger, seedClient, cluster)
 	if err != nil {
 		t.Fatalf("User cluster API server does not contain configurations for encryption-at-rest")
 	}
@@ -167,7 +167,7 @@ func TestEncryptionAtRest(t *testing.T) {
 	}
 }
 
-func ensureApiServerUpdated(ctx context.Context, logger *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func ensureAPIServerUpdated(ctx context.Context, logger *zap.SugaredLogger, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	logger.Info("waiting for ApiServer to contain configurations for encryption-at-rest")
 
 	err := wait.PollImmediateLog(
@@ -208,7 +208,8 @@ func isApiserverUpdated(ctx context.Context, client ctrlruntimeclient.Client, cl
 	hash := sha1.New()
 	hash.Write(spec)
 
-	if val, ok := secret.ObjectMeta.Labels[encryption.ApiserverEncryptionHashLabelKey]; !ok || val != hex.EncodeToString(hash.Sum(nil)) {
+	val, ok := secret.ObjectMeta.Labels[encryption.ApiserverEncryptionHashLabelKey] //nolint
+	if !ok || val != hex.EncodeToString(hash.Sum(nil)) {
 		return false, nil
 	}
 
