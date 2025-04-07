@@ -77,10 +77,10 @@ require (
 	github.com/vmware/go-vcloud-director/v2 v2.25.0
 	github.com/vmware/govmomi v0.49.0
 	go.anx.io/go-anxcloud v0.7.8
-	go.etcd.io/etcd/api/v3 v3.5.16
-	go.etcd.io/etcd/client/pkg/v3 v3.5.16
-	go.etcd.io/etcd/client/v3 v3.5.16
-	go.etcd.io/etcd/etcdutl/v3 v3.5.13
+	go.etcd.io/etcd/api/v3 v3.5.17
+	go.etcd.io/etcd/client/pkg/v3 v3.5.17
+	go.etcd.io/etcd/client/v3 v3.5.17
+	go.etcd.io/etcd/etcdutl/v3 v3.5.17
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.36.0
 	golang.org/x/oauth2 v0.28.0
@@ -98,7 +98,7 @@ require (
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
 	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
-	k8c.io/machine-controller/sdk v0.0.0-20250314150330-99a4aa5532ca
+	k8c.io/machine-controller/sdk v0.0.0-20250401130405-7b6ae89532d1
 	k8c.io/operating-system-manager v1.6.1-0.20241118134103-5db575f65108
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.32.1
@@ -354,10 +354,10 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	go.etcd.io/bbolt v1.3.11 // indirect
-	go.etcd.io/etcd/client/v2 v2.305.16 // indirect
-	go.etcd.io/etcd/pkg/v3 v3.5.16 // indirect
-	go.etcd.io/etcd/raft/v3 v3.5.16 // indirect
-	go.etcd.io/etcd/server/v3 v3.5.16 // indirect
+	go.etcd.io/etcd/client/v2 v2.305.17 // indirect
+	go.etcd.io/etcd/pkg/v3 v3.5.17 // indirect
+	go.etcd.io/etcd/raft/v3 v3.5.17 // indirect
+	go.etcd.io/etcd/server/v3 v3.5.17 // indirect
 	go.mongodb.org/mongo-driver v1.16.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/exporters/autoexport v0.46.1 // indirect
