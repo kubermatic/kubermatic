@@ -234,7 +234,7 @@ func setupKubeClients(ctx context.Context, opts *types.Options) error {
 		return fmt.Errorf("failed to get Kubermatic config: %w", err)
 	}
 
-	clusterClientProvider, err := clusterclient.NewExternalWithProxy(seedClusterClient, opts.Seed.GetManagementProxyUrl())
+	clusterClientProvider, err := clusterclient.NewExternalWithProxy(seedClusterClient, opts.Seed.GetManagementProxyURL())
 	if err != nil {
 		return fmt.Errorf("failed to get clusterClientProvider: %w", err)
 	}

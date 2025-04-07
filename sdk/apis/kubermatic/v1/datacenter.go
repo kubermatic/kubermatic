@@ -1220,8 +1220,7 @@ func (s *Seed) GetEtcdBackupDestination(destinationName string) *BackupDestinati
 	return s.Spec.EtcdBackupRestore.Destinations[destinationName]
 }
 
-
-func (s *Seed) GetManagementProxyUrl() string {
+func (s *Seed) GetManagementProxyURL() string {
 	if s.Spec.ManagementProxySettings != nil && s.Spec.ManagementProxySettings.ProxyHost != "" {
 		address := fmt.Sprintf("%s://%s", s.Spec.ManagementProxySettings.ProxyProtocol, s.Spec.ManagementProxySettings.ProxyHost)
 		if s.Spec.ManagementProxySettings.ProxyPort != nil {
