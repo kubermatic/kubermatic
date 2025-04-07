@@ -90,7 +90,7 @@ require (
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
 	k8c.io/machine-controller v1.60.1
-	k8c.io/operating-system-manager v1.6.2
+	k8c.io/operating-system-manager v1.6.4
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.31.2
 	k8s.io/apiextensions-apiserver v0.31.1
