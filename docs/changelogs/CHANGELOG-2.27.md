@@ -3,6 +3,32 @@
 - [v2.27.0](#v2270)
 - [v2.27.1](#v2271)
 - [v2.27.2](#v2272)
+- [v2.27.3](#v2273)
+
+## v2.27.3
+
+**GitHub release: [v2.27.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.3)**
+
+### New Features
+
+- A new field `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` is added to seed crd to control whether KubeVirt machine cpus are configured by `spec.template.spec.domain.resources` with requests and limits or `spec.template.spec.domain.cpu` . Later one is required to use KubeVirt cpu allocation ratio feature ([#14298](https://github.com/kubermatic/kubermatic/pull/14298))
+- Ensure `mirror-images` processes all images without blocking, logging failed images at the end for better visibility and debugging ([#14279](https://github.com/kubermatic/kubermatic/pull/14279))
+- The KKP API is now aware on how to configure cpus for KubeVirt virtual machines based on a new introduced field in kkp seed crd called `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` ([#7264](https://github.com/kubermatic/dashboard/pull/7264))
+
+### Bugfixes
+
+- Node-local-dns in user clusters will now use `IfNotPresent` pull policy instead of `Always` ([#14309](https://github.com/kubermatic/kubermatic/pull/14309))
+
+### Updates
+
+- Update etcd to 3.5.17 for all supported Kubernetes releases ([#14338](https://github.com/kubermatic/kubermatic/pull/14338))
+- Update MC version to [v1.61.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.1) ([#14339](https://github.com/kubermatic/kubermatic/pull/14339))
+- Update OSM to [1.6.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.4) ([#14332](https://github.com/kubermatic/kubermatic/pull/14332))
+- Update the default application's nginx ingress controller to use the save and patched version of v1.12.1 ([#14341](https://github.com/kubermatic/kubermatic/pull/14341))
+
+### Documentation
+
+- Add 1.32.3/1.31.7/1.30.11 to the list of supported Kubernetes releases ([#14266](https://github.com/kubermatic/kubermatic/pull/14266))
 
 ## v2.27.2
 
