@@ -494,15 +494,11 @@ spec:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
         condition: inTreeProvider
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-        operation: CREATE
+        operation: UPGRADE
         # Provider to which to apply the compatibility check.
         # Empty string matches all providers
         provider: ""
         # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
-        version: '>= 1.29.0'
-      - condition: inTreeProvider
-        operation: UPGRADE
-        provider: ""
         version: '>= 1.29.0'
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
@@ -521,14 +517,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.28.*
+        from: 1.29.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.29.*
-      - from: 1.29.*
-        to: 1.29.*
-      - from: 1.29.*
         to: 1.30.*
       - from: 1.30.*
         to: 1.30.*
@@ -542,12 +534,6 @@ spec:
         to: 1.32.*
     # Versions lists the available versions.
     versions:
-      - v1.29.0
-      - v1.29.1
-      - v1.29.2
-      - v1.29.4
-      - v1.29.9
-      - v1.29.13
       - v1.30.5
       - v1.30.9
       - v1.30.11
