@@ -7,6 +7,17 @@
 - [v2.26.4](#v2264)
 - [v2.26.5](#v2265)
 - [v2.26.6](#v2266)
+- [v2.26.7](#v2267)
+
+## v2.26.7
+
+**GitHub release: [v2.26.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.7)**
+
+### Updates
+
+- Add 1.31.7/1.30.11 to the list of supported Kubernetes releases ([#14291](https://github.com/kubermatic/kubermatic/pull/14291))
+- Update etcd to 3.5.17 for all supported Kubernetes releases ([#14337](https://github.com/kubermatic/kubermatic/pull/14337))
+- Update OSM to [1.6.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.4) ([#14333](https://github.com/kubermatic/kubermatic/pull/14333))
 
 ## v2.26.6
 
