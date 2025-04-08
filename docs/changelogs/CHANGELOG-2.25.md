@@ -16,6 +16,20 @@
 - [v2.25.13](#v22513)
 - [v2.25.14](#v22514)
 - [v2.25.15](#v22515)
+- [v2.25.16](#v22516)
+
+## v2.25.16
+
+**GitHub release: [v2.25.16](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.16)**
+
+### Bugfixes
+
+- Edge Provider: Fix a bug where clusters were stuck in `creating` phase due to wrongfully waiting for Machine Controller's health status ([#14257](https://github.com/kubermatic/kubermatic/pull/14257))
+
+### Updates
+
+- Update etcd to 3.5.17 for all supported Kubernetes releases ([#14336](https://github.com/kubermatic/kubermatic/pull/14336))
+- Update OSM to [1.5.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.5.5) ([#14334](https://github.com/kubermatic/kubermatic/pull/14334))
 
 ## v2.25.15
 
