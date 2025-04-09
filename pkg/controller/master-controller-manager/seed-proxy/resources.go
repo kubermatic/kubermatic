@@ -164,8 +164,8 @@ func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, cr
 	host := kubeconfig.Host
 	var proxy string
 	if kubeconfig.Proxy != nil {
-		if proxyUrl, err := kubeconfig.Proxy(nil); err == nil && proxyUrl != nil {
-			proxy = proxyUrl.String()
+		if proxyURL, err := kubeconfig.Proxy(nil); err == nil && proxyURL != nil {
+			proxy = proxyURL.String()
 		}
 	}
 
@@ -192,7 +192,7 @@ func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, cr
 	}
 }
 
-func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret, proxyUrl *string) ([]byte, error) {
+func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret, proxyURL *string) ([]byte, error) {
 	clusterName := "seed"
 	contextName := "default"
 	authName := "token-based"
@@ -200,8 +200,8 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret, 
 	cluster := api.NewCluster()
 	cluster.CertificateAuthorityData = credentials.Data[corev1.ServiceAccountRootCAKey]
 	cluster.Server = host
-	if proxyUrl != nil {
-		cluster.ProxyURL = *proxyUrl
+	if proxyURL != nil {
+		cluster.ProxyURL = *proxyURL
 	}
 
 	context := api.NewContext()

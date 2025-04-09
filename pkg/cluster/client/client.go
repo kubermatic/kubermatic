@@ -120,13 +120,13 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 	return data, nil
 }
 
-func setProxyURL(proxyUrl string, config []byte) ([]byte, error) {
+func setProxyURL(proxyURL string, config []byte) ([]byte, error) {
 	cfg, err := clientcmd.Load(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 	for _, cluster := range cfg.Clusters {
-		cluster.ProxyURL = proxyUrl
+		cluster.ProxyURL = proxyURL
 	}
 	data, err := clientcmd.Write(*cfg)
 	if err != nil {
