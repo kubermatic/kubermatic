@@ -48,13 +48,12 @@ source hack/ci/setup-kind-cluster.sh
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
-source hack/ci/setup-kubermatic-in-kind.sh
+source hack/ci/setup-kubermatic-backups-in-kind.sh
 
 echodate "Running encryption-at-rest tests..."
 
-go_test encryption_at_rest -timeout 120m -tags e2e,ee -v ./pkg/test/e2e/encryption-at-rest \
-  -kubeconfig "$KUBECONFIG" \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
+go_test encryption_at_rest -timeout 60m -tags e2e,ee -v ./pkg/test/e2e/encryption-at-rest \
+  -byo-kkp-datacenter byo-kubernetes \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Encryption At Rest tests completed successfully!"
