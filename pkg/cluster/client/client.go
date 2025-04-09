@@ -57,14 +57,14 @@ func NewExternalWithProxy(seedClient ctrlruntimeclient.Client, proxy string) (*P
 		seedClient:         seedClient,
 		useExternalAddress: true,
 		restMapperCache:    restmapper.New(),
-		proxyUrl:           proxy,
+		proxyURL:           proxy,
 	}, nil
 }
 
 type Provider struct {
 	seedClient         ctrlruntimeclient.Client
 	useExternalAddress bool
-	proxyUrl           string
+	proxyURL           string
 
 	// We keep the existing cluster mappings to avoid the discovery on each call to the API server
 	restMapperCache *restmapper.Cache
@@ -91,8 +91,8 @@ func (p *Provider) GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Clust
 		d = replacedConfig
 	}
 
-	if p.proxyUrl != "" {
-		replacedConfig, err := setProxyUrl(p.proxyUrl, d)
+	if p.proxyURL != "" {
+		replacedConfig, err := setProxyUrl(p.proxyURL, d)
 		if err != nil {
 			return nil, err
 		}
