@@ -92,7 +92,7 @@ func (p *Provider) GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Clust
 	}
 
 	if p.proxyURL != "" {
-		replacedConfig, err := setProxyUrl(p.proxyURL, d)
+		replacedConfig, err := setProxyURL(p.proxyURL, d)
 		if err != nil {
 			return nil, err
 		}
@@ -120,7 +120,7 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 	return data, nil
 }
 
-func setProxyUrl(proxyUrl string, config []byte) ([]byte, error) {
+func setProxyURL(proxyUrl string, config []byte) ([]byte, error) {
 	cfg, err := clientcmd.Load(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
