@@ -116,7 +116,7 @@ func (os *Provider) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clu
 }
 
 func (os *Provider) ClusterNeedsReconciling(cluster *kubermaticv1.Cluster) bool {
-	return true
+	return false
 }
 
 // ValidateCloudSpec validates the given CloudSpec.
@@ -780,7 +780,11 @@ func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 	}
 
 	if oldSpec.Openstack.SecurityGroups != "" && oldSpec.Openstack.SecurityGroups != newSpec.Openstack.SecurityGroups {
-		return fmt.Errorf("updating OpenStack security group is not supported (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
+		if isMultipleSGs(oldSpec.Openstack.SecurityGroups) && !isMultipleSGs(newSpec.Openstack.SecurityGroups) {
+			return nil
+		}
+
+		return fmt.Errorf("updating OpenStack security group is not supported; only migration from multiple (comma-separated) security groups to a single security group is allowed (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
 	}
 
 	return nil

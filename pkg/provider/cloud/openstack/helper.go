@@ -80,3 +80,9 @@ func isEndpointNotFoundErr(err error) bool {
 	// right side of the || to catch any error returned as struct (in case...)
 	return errors.As(err, &endpointNotFoundErr) || errors.As(err, &gophercloud.ErrEndpointNotFound{})
 }
+
+// isMultipleSGs returns true if the input string contains more than one non-empty security group.
+func isMultipleSGs(sg string) bool {
+
+	return len(strings.Split(sg, ",")) > 1
+}
