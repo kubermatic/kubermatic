@@ -71,7 +71,7 @@ spec:
           {{- end }}
 
           echo "Datasource provisioning completed successfully."
-
+        resources: {}
         volumeMounts:
         - mountPath: /etc/grafana/provisioning/datasources
           name: grafana-datasources
