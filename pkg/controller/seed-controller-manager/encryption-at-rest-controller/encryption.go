@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *Reconciler) encryptData(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) encryptData(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	key, resourceList, err := getActiveConfiguration(ctx, r.Client, cluster)
 	if err != nil {
 		return &reconcile.Result{}, err
