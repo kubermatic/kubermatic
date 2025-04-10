@@ -83,6 +83,5 @@ func isEndpointNotFoundErr(err error) bool {
 
 // isMultipleSGs returns true if the input string contains more than one non-empty security group.
 func isMultipleSGs(sg string) bool {
-
 	return len(strings.Split(sg, ",")) > 1
 }
