@@ -192,3 +192,8 @@ vars, this script won't run properly.
 This ensures that the Prometheus rules deployed into userclusters
 are valid Prometheus rules.
 
+## run-default-application-e2e-test.sh
+
+This script triggers and monitors Prow jobs for end-to-end (E2E) testing of applications from the default application catalog.
+Each Prow job verifies the successful installation of an ApplicationInstallation object, checks its conditions for a healthy state,
+ensures a Helm release has been deployed, and confirms that the application's pods are running correctly.
