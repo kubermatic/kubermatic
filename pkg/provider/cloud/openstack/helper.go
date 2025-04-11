@@ -23,11 +23,7 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
-	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
-	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
-	ostokens "github.com/gophercloud/gophercloud/openstack/identity/v3/tokens"
-	osusers "github.com/gophercloud/gophercloud/openstack/identity/v3/users"
 	"github.com/gophercloud/gophercloud/pagination"
 )
 
@@ -72,40 +68,6 @@ func getFlavors(authClient *gophercloud.ProviderClient, region string) ([]osflav
 	return allFlavors, nil
 }
 
-func getTenants(authClient *gophercloud.ProviderClient, region string) ([]osprojects.Project, error) {
-	sc, err := goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{Region: region})
-	if err != nil {
-		// this is special case for services that span only one region.
-		if isEndpointNotFoundErr(err) {
-			sc, err = goopenstack.NewIdentityV3(authClient, gophercloud.EndpointOpts{})
-			if err != nil {
-				return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
-			}
-		} else {
-			return nil, fmt.Errorf("couldn't get identity endpoint: %w", err)
-		}
-	}
-
-	// We need to fetch the token to get more details - here we're just fetching the user object from the token response
-	user, err := ostokens.Get(sc, sc.Token()).ExtractUser()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get user from token: %w", err)
-	}
-
-	// We cannot list all projects - instead we must list projects of a given user
-	allPages, err := osusers.ListProjects(sc, user.ID).AllPages()
-	if err != nil {
-		return nil, fmt.Errorf("couldn't list tenants: %w", err)
-	}
-
-	allProjects, err := osprojects.ExtractProjects(allPages)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't extract tenants: %w", err)
-	}
-
-	return allProjects, nil
-}
-
 func isNotFoundErr(err error) bool {
 	var errNotFound gophercloud.ErrDefault404
 
@@ -119,16 +81,7 @@ func isEndpointNotFoundErr(err error) bool {
 	return errors.As(err, &endpointNotFoundErr) || errors.As(err, &gophercloud.ErrEndpointNotFound{})
 }
 
-func getAvailabilityZones(computeClient *gophercloud.ServiceClient) ([]osavailabilityzones.AvailabilityZone, error) {
-	allPages, err := osavailabilityzones.List(computeClient).AllPages()
-	if err != nil {
-		return nil, err
-	}
-
-	availabilityZones, err := osavailabilityzones.ExtractAvailabilityZones(allPages)
-	if err != nil {
-		return nil, err
-	}
-
-	return availabilityZones, nil
+// isMultipleSGs returns true if the input string contains more than one non-empty security group.
+func isMultipleSGs(sg string) bool {
+	return len(strings.Split(sg, ",")) > 1
 }

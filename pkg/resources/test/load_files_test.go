@@ -146,7 +146,7 @@ var (
 				Network:        "openstack-network",
 				Password:       "openstack-password",
 				RouterID:       "openstack-router-id",
-				SecurityGroups: "openstack-security-group1,openstack-security-group2",
+				SecurityGroups: "openstack-security-group1",
 			},
 		},
 		"bringyourown": {
