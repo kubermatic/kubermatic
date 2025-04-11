@@ -47,16 +47,24 @@ func NewInternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
 // that uses the external cluster address and hence works from everywhere.
 // Use NewInternal if possible.
 func NewExternal(seedClient ctrlruntimeclient.Client) (*Provider, error) {
+	return NewExternalWithProxy(seedClient, "")
+}
+
+// NewExternalWithProxy provides the same client connection provider
+// as NewExternal but with support to use a Proxy.
+func NewExternalWithProxy(seedClient ctrlruntimeclient.Client, proxy string) (*Provider, error) {
 	return &Provider{
 		seedClient:         seedClient,
 		useExternalAddress: true,
 		restMapperCache:    restmapper.New(),
+		proxyURL:           proxy,
 	}, nil
 }
 
 type Provider struct {
 	seedClient         ctrlruntimeclient.Client
 	useExternalAddress bool
+	proxyURL           string
 
 	// We keep the existing cluster mappings to avoid the discovery on each call to the API server
 	restMapperCache *restmapper.Cache
@@ -75,7 +83,21 @@ func (p *Provider) GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Clust
 	}
 
 	if p.useExternalAddress {
-		return setExternalAddress(c, d)
+		replacedConfig, err := setExternalAddress(c, d)
+		if err != nil {
+			return nil, err
+		}
+
+		d = replacedConfig
+	}
+
+	if p.proxyURL != "" {
+		replacedConfig, err := setProxyURL(p.proxyURL, d)
+		if err != nil {
+			return nil, err
+		}
+
+		d = replacedConfig
 	}
 
 	return d, nil
@@ -89,6 +111,22 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 	address := c.Status.Address
 	for _, cluster := range cfg.Clusters {
 		cluster.Server = address.URL
+	}
+	data, err := clientcmd.Write(*cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal kubeconfig: %w", err)
+	}
+
+	return data, nil
+}
+
+func setProxyURL(proxyURL string, config []byte) ([]byte, error) {
+	cfg, err := clientcmd.Load(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
+	}
+	for _, cluster := range cfg.Clusters {
+		cluster.ProxyURL = proxyURL
 	}
 	data, err := clientcmd.Write(*cfg)
 	if err != nil {

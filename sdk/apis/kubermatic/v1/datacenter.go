@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -316,6 +317,9 @@ type SeedSpec struct {
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
+	// ManagementProxySettings can be used if the KubeAPI of the user clusters
+	// will not be directly available from kkp and a proxy in between should be used
+	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -1186,6 +1190,15 @@ type KubeLBDatacenterSettings struct {
 	DisableIngressClass bool `json:"disableIngressClass,omitempty"`
 }
 
+type ManagementProxySettings struct {
+	// If set, the proxy will be used
+	ProxyHost string `json:"proxyHost,omitempty"`
+	// the proxies port to be used
+	ProxyPort *int32 `json:"proxyPort,omitempty"`
+	// the protocol to use ("http", "https", and "socks5" schemes are supported)
+	ProxyProtocol string `json:"proxyProtocol,omitempty"`
+}
+
 // IsEtcdAutomaticBackupEnabled returns true if etcd automatic backup is configured for the seed.
 func (s *Seed) IsEtcdAutomaticBackupEnabled() bool {
 	if cfg := s.Spec.EtcdBackupRestore; cfg != nil {
@@ -1205,4 +1218,16 @@ func (s *Seed) GetEtcdBackupDestination(destinationName string) *BackupDestinati
 	}
 
 	return s.Spec.EtcdBackupRestore.Destinations[destinationName]
+}
+
+func (s *Seed) GetManagementProxyURL() string {
+	if s.Spec.ManagementProxySettings != nil && s.Spec.ManagementProxySettings.ProxyHost != "" {
+		address := fmt.Sprintf("%s://%s", s.Spec.ManagementProxySettings.ProxyProtocol, s.Spec.ManagementProxySettings.ProxyHost)
+		if s.Spec.ManagementProxySettings.ProxyPort != nil {
+			address = fmt.Sprintf("%s:%d", address, *s.Spec.ManagementProxySettings.ProxyPort)
+		}
+		return address
+	}
+
+	return ""
 }

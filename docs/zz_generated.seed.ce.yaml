@@ -573,6 +573,9 @@ spec:
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
+  # ManagementProxySettings can be used if the KubeAPI of the user clusters
+  # will not be directly available from kkp and a proxy in between should be used
+  managementProxySettings: null
   # Metering configures the metering tool on user clusters across the seed.
   metering:
     enabled: false

@@ -2699,6 +2699,22 @@ spec:
                     Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
                     For informational purposes in the Kubermatic dashboard only.
                   type: string
+                managementProxySettings:
+                  description: |-
+                    ManagementProxySettings can be used if the KubeAPI of the user clusters
+                    will not be directly available from kkp and a proxy in between should be used
+                  properties:
+                    proxyHost:
+                      description: If set, the proxy will be used
+                      type: string
+                    proxyPort:
+                      description: the proxies port to be used
+                      format: int32
+                      type: integer
+                    proxyProtocol:
+                      description: the protocol to use ("http", "https", and "socks5" schemes are supported)
+                      type: string
+                  type: object
                 metering:
                   description: Metering configures the metering tool on user clusters across the seed.
                   properties:
