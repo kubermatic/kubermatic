@@ -138,9 +138,7 @@ func TestEncryptionAtRest(t *testing.T) {
 		testJig:    testJig,
 	}
 
-	// Test Case 1:
 	// Enable encryption at rest and verify it works
-	logger.Info("Test Case 1 running...")
 	err = r.enableEAR(ctx, cluster)
 	if err != nil {
 		t.Fatalf("failed to enable encryption-at-rest: %v", err)
@@ -151,12 +149,9 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("failed to ensure data encryption: %v", err)
 	}
 
-	// Test Case 2:
 	// Create an etcd backup for testing. Then, create a new secret that is not going to be part of the backup.
 	// Rotate the encryption key to a new one. So, update the primary encryption key to the new one: `rotatedKeyName`.
 	// Verify that the new secret is not encrypted with the initial encryption key; instead it is encrypted with the new encryption key.
-	logger.Info("Test Case 2 running...")
-
 	err = r.createEtcdBackup(ctx, cluster)
 	if err != nil {
 		t.Fatalf("failed to create etcd backup: %v", err)
@@ -187,11 +182,10 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("failed to rotate encryption key: %v", err)
 	}
 
-	// Test Case 3: Restore etcd backup created with previous key, which is now the secondary key.
+	// Restore etcd backup created with previous key, which is now the secondary key.
 	// After restore, verify the original secret (included in backup) is accessible.
 	// Verify that the original secret is still properly encrypted in etcd after restore.
 	// Verify the post-backup secret is not present as it wasn't in the backup.
-	logger.Info("Test Case 3 running...")
 	err = r.restoreEtcdBackup(ctx, cluster)
 	if err != nil {
 		t.Fatalf("failed to restore etcd backup: %v", err)
@@ -210,9 +204,7 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("post-backup secret unexpectedly exists after restore: %v", err)
 	}
 
-	// Test Case 4:
 	// After restoring etcd backup, verify encryption still works for new secrets.
-	logger.Info("Test Case 4 running...")
 	postRestoreSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "post-restore-",
@@ -233,9 +225,7 @@ func TestEncryptionAtRest(t *testing.T) {
 		t.Fatalf("encryption not working for new secrets after restore: %v", err)
 	}
 
-	// Test Case 5: Disable encryption at rest and verify data is decrypted automatically.
-	logger.Info("Test Case 5 running...")
-
+	// Disable encryption at rest and verify data is decrypted automatically.
 	err = r.disableEAR(ctx, cluster)
 	if err != nil {
 		t.Fatalf("failed to disable encryption-at-rest: %v", err)
