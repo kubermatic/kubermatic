@@ -68,6 +68,12 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 		}
 	}
 
+	if newCluster.Spec.Cloud.Kubevirt != nil && len(datacenter.Node.RegistryMirrors) > 0 {
+		newCluster.Spec.Cloud.Kubevirt.CSIDriverOperator = &kubermaticv1.KubeVirtCSIDriverOperator{
+			OverwriteRegistry: datacenter.Node.RegistryMirrors[0],
+		}
+	}
+
 	if newCluster.Spec.ClusterNetwork.KonnectivityEnabled == nil { //nolint:staticcheck
 		newCluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(true) //nolint:staticcheck
 	}
