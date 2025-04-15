@@ -81,6 +81,7 @@ type TemplateData struct {
 	machineControllerImageTag        string
 	machineControllerImageRepository string
 	backupSchedule                   time.Duration
+	backupCount                      *int
 	versions                         kubermatic.Versions
 	caBundle                         CABundle
 	clusterBackupStorageLocation     *kubermaticv1.ClusterBackupStorageLocation
@@ -235,6 +236,11 @@ func (td *TemplateDataBuilder) WithFailureDomainZoneAntiaffinity(enabled bool) *
 
 func (td *TemplateDataBuilder) WithBackupPeriod(backupPeriod time.Duration) *TemplateDataBuilder {
 	td.data.backupSchedule = backupPeriod
+	return td
+}
+
+func (td *TemplateDataBuilder) WithBackupCount(backupCount int) *TemplateDataBuilder {
+	td.data.backupCount = &backupCount
 	return td
 }
 
@@ -557,6 +563,10 @@ func (d *TemplateData) NetworkIntfMgrImage() string {
 
 func (d *TemplateData) BackupSchedule() time.Duration {
 	return d.backupSchedule
+}
+
+func (d *TemplateData) BackupCount() *int {
+	return d.backupCount
 }
 
 func (d *TemplateData) DNATControllerTag() string {

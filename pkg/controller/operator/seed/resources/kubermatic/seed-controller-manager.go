@@ -103,6 +103,14 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				args = append(args, "-v=2")
 			}
 
+			if cfg.Spec.SeedController.BackupInterval != "" {
+				args = append(args, fmt.Sprintf("-backup-interval=%s", cfg.Spec.SeedController.BackupInterval))
+			}
+
+			if cfg.Spec.SeedController.BackupCount != nil {
+				args = append(args, fmt.Sprintf("-backup-count=%d", *cfg.Spec.SeedController.BackupCount))
+			}
+
 			mcCfg := cfg.Spec.UserCluster.MachineController
 			if mcCfg.ImageTag != "" {
 				args = append(args, fmt.Sprintf("-machine-controller-image-tag=%s", mcCfg.ImageTag))

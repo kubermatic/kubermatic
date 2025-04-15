@@ -229,6 +229,12 @@ type KubermaticSeedControllerConfiguration struct {
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
+	// BackupInterval defines the time duration between consecutive etcd backups.
+	// Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
+	BackupInterval string `json:"backupInterval,omitempty"`
+	// BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
+	// Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
+	BackupCount *int `json:"backupCount,omitempty"`
 }
 
 // KubermaticWebhookConfiguration configures the Kubermatic webhook.

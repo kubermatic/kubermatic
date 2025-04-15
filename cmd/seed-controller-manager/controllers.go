@@ -156,6 +156,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		backupInterval,
+		ctrlCtx.runOptions.backupCount,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		ctrlCtx.runOptions.kubermaticImage,

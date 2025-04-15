@@ -56,6 +56,7 @@ type controllerRunOptions struct {
 	nodeAccessNetwork        string
 	addonsPath               string
 	backupInterval           string
+	backupCount              int
 	etcdDiskSize             resource.Quantity
 	dockerPullConfigJSONFile string
 	kubermaticImage          string
@@ -123,6 +124,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.backupInterval, "backup-interval", defaulting.DefaultBackupInterval, "Interval in which the etcd gets backed up")
+	flag.IntVar(&c.backupCount, "backup-count", kubermaticv1.DefaultKeptBackupsCount, "Number of backups to keep around before deleting the oldest one")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "", "The file containing the docker auth config.")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
