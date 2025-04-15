@@ -336,6 +336,14 @@ type EtcdBackupRestore struct {
 	// created for every user cluster. Has to correspond to a destination in Destinations.
 	// If removed, it removes the related default etcd backup configs.
 	DefaultDestination string `json:"defaultDestination,omitempty"`
+
+	// BackupInterval defines the time duration between consecutive etcd backups.
+	// Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
+	BackupInterval string `json:"backupInterval,omitempty"`
+
+	// BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
+	// Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
+	BackupCount *int `json:"backupCount,omitempty"`
 }
 
 // BackupDestination defines the bucket name and endpoint as a backup destination, and holds reference to the credentials secret.

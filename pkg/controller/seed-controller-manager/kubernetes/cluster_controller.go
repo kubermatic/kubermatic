@@ -98,6 +98,7 @@ type Reconciler struct {
 	machineControllerImageRepository string
 	concurrentClusterUpdates         int
 	backupSchedule                   time.Duration
+	backupCount                      int
 
 	oidcIssuerURL      string
 	oidcIssuerClientID string
@@ -126,6 +127,7 @@ func Add(
 	dockerPullConfigJSON []byte,
 	concurrentClusterUpdates int,
 	backupSchedule time.Duration,
+	backupCount int,
 
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
@@ -161,6 +163,7 @@ func Add(
 		machineControllerImageRepository: machineControllerImageRepository,
 		concurrentClusterUpdates:         concurrentClusterUpdates,
 		backupSchedule:                   backupSchedule,
+		backupCount:                      backupCount,
 
 		externalURL:  externalURL,
 		seedGetter:   seedGetter,
