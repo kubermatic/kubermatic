@@ -381,8 +381,18 @@ spec:
                         This field is a no-op and is no longer used. The old backup controller it was used for has been
                         removed. Do not set this field.
                       type: string
+                    backupCount:
+                      description: |-
+                        BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
+                        Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
+                      type: integer
                     backupDeleteContainer:
                       description: BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
+                      type: string
+                    backupInterval:
+                      description: |-
+                        BackupInterval defines the time duration between consecutive etcd backups.
+                        Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
                       type: string
                     backupStoreContainer:
                       description: BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
