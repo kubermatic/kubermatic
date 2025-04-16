@@ -199,11 +199,17 @@ func (td *TemplateDataBuilder) WithEtcdLauncherImage(image string) *TemplateData
 }
 
 func (td *TemplateDataBuilder) WithEtcdBackupStoreContainer(container *corev1.Container) *TemplateDataBuilder {
+	if td.data.KubermaticConfiguration() != nil && td.data.KubermaticConfiguration().Spec.SeedController.BackupStoreContainer == "" {
+		container.Image = registry.Must(td.data.RewriteImage(container.Image))
+	}
 	td.data.etcdBackupStoreContainer = container
 	return td
 }
 
 func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.Container) *TemplateDataBuilder {
+	if td.data.KubermaticConfiguration() != nil && td.data.KubermaticConfiguration().Spec.SeedController.BackupDeleteContainer == "" {
+		container.Image = registry.Must(td.data.RewriteImage(container.Image))
+	}
 	td.data.etcdBackupDeleteContainer = container
 	return td
 }
