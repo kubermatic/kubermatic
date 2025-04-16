@@ -80,7 +80,11 @@ prometheus:
       # Change values if minio running in different namespace and having different label. default is is set to minio.
       #namespace: minio
       #appLabel: minio
-
+    # Master/seed etcd metrics scraping can be enabled by providing the etcd client cert & key, this is required for prometheus to scrape metrics using TLS.
+    etcd:
+      tls:
+        crt: ''
+        key: ''
   # Similarly to the scraping config, you can configure the
   # target alertmanagers here.
   alerting:
