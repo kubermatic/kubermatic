@@ -68,6 +68,18 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 		}
 	}
 
+	// Ensure the KubeVirt CSI Driver Operator uses the configured overwrite registry
+	// to enforce consistent image pulling from the specified registry in offline setups.
+	if newCluster.Spec.Cloud.Kubevirt != nil && config.Spec.UserCluster.OverwriteRegistry != "" {
+		if newCluster.Spec.Cloud.Kubevirt.CSIDriverOperator == nil {
+			newCluster.Spec.Cloud.Kubevirt.CSIDriverOperator = &kubermaticv1.KubeVirtCSIDriverOperator{
+				OverwriteRegistry: config.Spec.UserCluster.OverwriteRegistry,
+			}
+		} else if newCluster.Spec.Cloud.Kubevirt.CSIDriverOperator.OverwriteRegistry == "" {
+			newCluster.Spec.Cloud.Kubevirt.CSIDriverOperator.OverwriteRegistry = config.Spec.UserCluster.OverwriteRegistry
+		}
+	}
+
 	if newCluster.Spec.ClusterNetwork.KonnectivityEnabled == nil { //nolint:staticcheck
 		newCluster.Spec.ClusterNetwork.KonnectivityEnabled = ptr.To(true) //nolint:staticcheck
 	}
