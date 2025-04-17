@@ -62,7 +62,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.1.2"
+	imageTag  = "4bead876fca3f80d355879471bdc72c2762f8e54"
 )
 
 type kubeLBData interface {
