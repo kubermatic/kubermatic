@@ -298,6 +298,10 @@ func (c ClusterSpec) IsKubeLBEnabled() bool {
 	return c.KubeLB != nil && c.KubeLB.Enabled
 }
 
+func (k KubeLB) IsGatewayAPIEnabled() bool {
+	return k.EnableGatewayAPI != nil && *k.EnableGatewayAPI
+}
+
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
 type CNIPluginSettings struct {
 	// Type is the CNI plugin type to be used.
