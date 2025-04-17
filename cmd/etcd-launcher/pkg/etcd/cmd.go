@@ -93,5 +93,10 @@ func etcdCmd(config *Cluster) []string {
 			"--experimental-corrupt-check-time=240m",
 		}...)
 	}
+
+	if config.QuotaBackendBytes > 0 {
+		cmd = append(cmd, fmt.Sprintf("--quota-backend-bytes=%d", config.QuotaBackendBytes))
+	}
+
 	return cmd
 }

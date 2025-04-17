@@ -464,7 +464,7 @@ func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfigu
 }
 
 func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions, seed *kubermaticv1.Seed) (images []string, err error) {
-	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
+	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false, 0)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
 	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false, kubermaticVersions)
