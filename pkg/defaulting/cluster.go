@@ -152,7 +152,12 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
+	defaultKubeLBSettings(datacenter, seed, spec)
 
+	return nil
+}
+
+func defaultKubeLBSettings(datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, spec *kubermaticv1.ClusterSpec) {
 	var enableGatewayAPI *bool
 	// If KubeLB is enforced, enable it.
 	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
@@ -186,7 +191,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 			}
 		}
 	}
-	return nil
 }
 
 // GetDefaultingClusterTemplate returns the ClusterTemplate that is referenced by the Seed.
