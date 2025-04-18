@@ -116,6 +116,10 @@ func enqueueUserForUserProjectBinding(c ctrlruntimeclient.Client) func(context.C
 			return res
 		}
 		for _, user := range userList.Items {
+			// Skip service accounts
+			if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+				continue
+			}
 			if upb.Spec.UserEmail == user.Spec.Email {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
 			}
@@ -140,6 +144,10 @@ func enqueueUserForGroupProjectBinding(c ctrlruntimeclient.Client) func(context.
 			return res
 		}
 		for _, user := range userList.Items {
+			// Skip service accounts
+			if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+				continue
+			}
 			if slices.Contains(user.Spec.Groups, gpb.Spec.Group) {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
 			}
@@ -155,10 +163,6 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	user := &kubermaticv1.User{}
 	if err := r.Get(ctx, request.NamespacedName, user); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
-	}
-
-	if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
-		return reconcile.Result{}, nil
 	}
 
 	grafanaClient, err := r.userGrafanaController.clientProvider(ctx)
