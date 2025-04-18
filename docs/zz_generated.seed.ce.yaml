@@ -462,6 +462,10 @@ spec:
       hostAntiAffinity: ""
       # NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
       nodeSelector: null
+      # QuotaBackendBytes is the maximum backend size of etcd in bytes (0 means use etcd default).
+
+      # For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+      quotaBackendBytes: null
       # Resources allows to override the resource requirements for etcd Pods.
       resources: null
       # StorageClass is the Kubernetes StorageClass used for persistent storage

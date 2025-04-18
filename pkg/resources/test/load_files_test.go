@@ -961,7 +961,7 @@ func generateAndVerifyResources(t *testing.T, ctx context.Context, client ctrlru
 	}
 
 	var statefulSetReconcilers []reconciling.NamedStatefulSetReconcilerFactory
-	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false)...)
+	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false, 0)...)
 	statefulSetReconcilers = append(statefulSetReconcilers, monitoringcontroller.GetStatefulSetReconcilers(data)...)
 	for _, factory := range statefulSetReconcilers {
 		name, reconciler := factory()

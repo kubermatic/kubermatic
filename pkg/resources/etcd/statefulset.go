@@ -70,7 +70,7 @@ type etcdStatefulSetReconcilerData interface {
 }
 
 // StatefulSetReconciler returns the function to reconcile the etcd StatefulSet.
-func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetReconcilerFactory {
+func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorruptionChecks, enableTLSOnly bool, quotaBackendBytes int64) reconciling.NamedStatefulSetReconcilerFactory {
 	return func() (string, reconciling.StatefulSetReconciler) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			replicas := computeReplicas(data, set)
@@ -226,11 +226,10 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name: resources.EtcdStatefulSetName,
-
+					Name:            resources.EtcdStatefulSetName,
 					Image:           registry.Must(data.RewriteImage(resources.RegistryK8S + "/etcd:" + imageTag + "-0")),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled),
+					Command:         getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled, quotaBackendBytes),
 					Env:             etcdEnv,
 					Ports:           etcdPorts,
 					ReadinessProbe: &corev1.Probe{
@@ -467,7 +466,7 @@ func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int32 {
 	return *settings.ClusterSize
 }
 
-func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) []string {
+func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool, quotaBackendBytes int64) []string {
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"run",
@@ -480,6 +479,10 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 
 		if enableCorruptionCheck {
 			command = append(command, "--enable-corruption-check")
+		}
+
+		if quotaBackendBytes > 0 {
+			command = append(command, "--quota-backend-bytes", strconv.FormatInt(quotaBackendBytes, 10))
 		}
 
 		return command
@@ -523,6 +526,10 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 	if enableCorruptionCheck {
 		command = append(command, "--experimental-initial-corrupt-check")
 		command = append(command, "--experimental-corrupt-check-time", "240m")
+	}
+
+	if quotaBackendBytes > 0 {
+		command = append(command, "--quota-backend-bytes", strconv.FormatInt(quotaBackendBytes, 10))
 	}
 
 	return command
