@@ -73,8 +73,8 @@ dex:
 
   volumes:
     - name: theme-kkp
-      configMap:
-        name: dex-theme-kkp
+      secret:
+        secretName: dex-theme-kkp
 
   volumeMounts:
     - name: theme-kkp
