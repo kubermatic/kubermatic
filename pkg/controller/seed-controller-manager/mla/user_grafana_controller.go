@@ -84,7 +84,7 @@ func newUserGrafanaReconciler(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
-		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
+		return !kubermaticv1helper.IsProjectServiceAccount(user.Name)
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -155,6 +155,10 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	user := &kubermaticv1.User{}
 	if err := r.Get(ctx, request.NamespacedName, user); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
+	}
+
+	if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+		return reconcile.Result{}, nil
 	}
 
 	grafanaClient, err := r.userGrafanaController.clientProvider(ctx)
