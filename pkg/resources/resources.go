@@ -1036,7 +1036,7 @@ const (
 	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
 	DefaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
 	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
-	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
+	DefaultClusterServicesCIDRIPv6 = "fd02::/108"
 
 	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
 	DefaultNodeCIDRMaskSizeIPv4 = 24
