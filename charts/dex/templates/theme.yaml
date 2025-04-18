@@ -13,10 +13,10 @@
 # limitations under the License.
 
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
 metadata:
   name: dex-theme-kkp
 data:
 {{- range $name, $content := .Files.Glob "theme/*" }}
-  {{ replace "theme/" "" $name }}: {{ $content | toString | quote }}
+  {{ replace "theme/" "" $name }}: {{ $content | toString | b64enc | quote }}
 {{- end -}}
