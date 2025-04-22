@@ -325,7 +325,7 @@ presubmits:
       preset-vault: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           command:
             - "./hack/ci/run-encryption-at-rest-tests.sh"
           env:
