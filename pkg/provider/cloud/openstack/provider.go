@@ -512,7 +512,7 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		}
 		if router != nil {
 			// Router found, attach subnets if not already attached
-			err = attachSubnetsIfNeeded(netClient, cluster)
+			err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 			return cluster, err
 		}
 	}
@@ -531,7 +531,7 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to update RouterID in the cluster spec: %w", err)
 		}
-		err = attachSubnetsIfNeeded(netClient, cluster)
+		err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 		return cluster, err
 	}
 	var routerID string
@@ -576,15 +576,15 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 	}
 
 	// Attach the new router to subnets
-	err = attachSubnetsIfNeeded(netClient, cluster)
+	err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 
 	return cluster, err
 }
 
-func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster) error {
+func attachSubnetsIfNeeded(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
 	// Check if the router is already attached to the IPv4 subnet and attach to missing subnet if necessary
 	if cluster.Spec.Cloud.Openstack.SubnetID != "" {
-		err := linkSubnetToRouter(netClient, cluster, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterSubnetLinkCleanupFinalizer)
+		err := linkSubnetToRouter(ctx, netClient, cluster, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterSubnetLinkCleanupFinalizer, update)
 		if err != nil {
 			return err
 		}
@@ -592,7 +592,7 @@ func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kuberm
 
 	// Check if the router is already attached to the IPv6 subnetand attach to missing subnet if necessary
 	if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
-		err := linkSubnetToRouter(netClient, cluster, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterIPv6SubnetLinkCleanupFinalizer)
+		err := linkSubnetToRouter(ctx, netClient, cluster, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterIPv6SubnetLinkCleanupFinalizer, update)
 		if err != nil {
 			return err
 		}
@@ -601,7 +601,7 @@ func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kuberm
 	return nil
 }
 
-func linkSubnetToRouter(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, subnetID string, routerID string, finalizer string) error {
+func linkSubnetToRouter(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, subnetID string, routerID string, finalizer string, update provider.ClusterUpdater) error {
 	var ipAttached bool
 	router, err := getRouterIDForSubnet(netClient, subnetID)
 	ipAttached = err == nil && router != ""
@@ -610,8 +610,15 @@ func linkSubnetToRouter(netClient *gophercloud.ServiceClient, cluster *kubermati
 		if err != nil {
 			return err
 		}
-		kubernetes.AddFinalizer(cluster, finalizer)
+		// Add the Link finalizer
+		_, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kubernetes.AddFinalizer(cluster, finalizer)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add %s in the cluster spec: %w", finalizer, err)
+		}
 	}
+
 	return nil
 }
 
