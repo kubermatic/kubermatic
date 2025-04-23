@@ -45,7 +45,6 @@ crd_dir="pkg/ee/cluster-backup/user-cluster/velero-controller/resources/static"
 cd "$crd_dir"
 
 version=$($velero version --client-only | grep Version | cut -d' ' -f2)
-echo "version is: $version"
 crds=$($velero install --crds-only --dry-run -o json | jq -c '.items[]')
 
 while IFS= read -r crd; do
