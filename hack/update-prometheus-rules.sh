@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-containerize ./hack/update-prometheus-rules.sh
-
 promtool=promtool
 if ! [ -x "$(command -v $promtool)" ]; then
   version=2.43.1

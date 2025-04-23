@@ -113,44 +113,6 @@ write_junit() {
 EOF
 }
 
-is_containerized() {
-  # we're inside a Kubernetes pod/container or inside a container launched by containerize()
-  [ -n "${KUBERNETES_SERVICE_HOST:-}" ] || [ -n "${CONTAINERIZED:-}" ]
-}
-
-containerize() {
-  local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.5.0}"
-  local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
-  local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
-  local skip="${NO_CONTAINERIZE:-}"
-
-  # short-circuit containerize when in some cases it needs to be avoided
-  [ -n "$skip" ] && return
-
-  if ! is_containerized; then
-    echodate "Running $cmd in a Docker container using $image..."
-    mkdir -p "$gocache"
-    mkdir -p "$gomodcache"
-
-    exec $CONTAINER_RUNTIME run \
-      -v "$PWD":/go/src/k8c.io/kubermatic \
-      -v "$gocache":"$gocache" \
-      -v "$gomodcache":"$gomodcache" \
-      -w /go/src/k8c.io/kubermatic \
-      -e "GOCACHE=$gocache" \
-      -e "GOMODCACHE=$gomodcache" \
-      -e "CONTAINERIZED=true" \
-      -u "$(id -u):$(id -g)" \
-      --entrypoint="$cmd" \
-      --rm \
-      -it \
-      $image $@
-
-    exit $?
-  fi
-}
-
 ensure_github_host_pubkey() {
   # check whether we already have a known_hosts entry for Github
   if ssh-keygen -F github.com > /dev/null 2>&1; then

@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-containerize ./hack/update-gatekeeper-crds.sh
-
 gatekeeperVersion="v3.12.0"
 
 tmpFile=gatekeeper.tar.gz
@@ -29,7 +27,12 @@ curl -fLo "$tmpFile" "https://github.com/open-policy-agent/gatekeeper/archive/re
 crdDir=pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper/static/
 rm -f $crdDir/*
 
-tar xzf "$tmpFile" --wildcards -C "$crdDir" --strip-components=5 '*/charts/gatekeeper/crds/*'
+tar_flags="xzf"
+if tar --help 2>&1 | grep -q -- '--wildcards'; then
+  tar_flags="xzf --wildcards"
+fi
+
+tar $tar_flags "$tmpFile" -C "$crdDir" --strip-components=5 '*/charts/gatekeeper/crds/*'
 rm "$tmpFile"
 
 cd "$crdDir"

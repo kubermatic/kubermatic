@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-if [ "$#" -lt 2 ] || [ "$1" == "--help" ]; then
+if [ "$#" -lt 1 ] || [ "$1" == "--help" ]; then
   cat << EOF
 Usage: $(basename $0) (version)
 where:
@@ -29,14 +29,6 @@ EOF
   exit 0
 fi
 
-containerize ./hack/update-velero-crds.sh $1
-
-# positional args refer to the args of containerize() function, not the script. So, we skip one
-# echo $*
-# ./hack/update-velero-crds.sh v1.10.1
-if is_containerized; then
-  version="$2"
-fi
 velero=velero
 
 if ! [ -x "$(command -v $velero)" ]; then
@@ -53,6 +45,7 @@ crd_dir="pkg/ee/cluster-backup/user-cluster/velero-controller/resources/static"
 cd "$crd_dir"
 
 version=$($velero version --client-only | grep Version | cut -d' ' -f2)
+echo "version is: $version"
 crds=$($velero install --crds-only --dry-run -o json | jq -c '.items[]')
 
 while IFS= read -r crd; do

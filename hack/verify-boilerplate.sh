@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic-labs/boilerplate:v0.2.0 containerize hack/verify-boilerplate.sh
-
 echodate "Checking Kubermatic CE licenses..."
 boilerplate \
   -boilerplates hack/boilerplate/ce \

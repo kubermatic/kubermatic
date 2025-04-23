@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-containerize ./hack/update-cert-manager-crds.sh
-
 cd charts/cert-manager/
 
 version=$(yq '.appVersion' Chart.yaml)

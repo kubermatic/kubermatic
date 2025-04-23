@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.24-node-20-3 containerize ./hack/verify-spelling.sh
-
 echodate "Running codespell..."
 
 skip=(

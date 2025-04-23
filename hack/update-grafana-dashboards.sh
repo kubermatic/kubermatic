@@ -19,8 +19,6 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-containerize ./hack/update-grafana-dashboards.sh
-
 for dashboard in charts/monitoring/grafana/dashboards/*/*.json; do
   echodate "$dashboard"
   format_dashboard "$dashboard"
