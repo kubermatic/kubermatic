@@ -18,6 +18,8 @@ package openstack
 
 import (
 	"bytes"
+	"maps"
+	"slices"
 	"strconv"
 	"time"
 
@@ -132,12 +134,17 @@ func (c *CloudConfig) String() (string, error) {
 	bs := out.Section("BlockStorage", "")
 	c.BlockStorage.toINI(bs)
 
-	for name, opts := range c.LoadBalancerClass {
+	for _, name := range slices.Sorted(maps.Keys(c.LoadBalancerClass)) {
 		if name == "" {
 			continue
 		}
 
 		lbClass := out.Section("LoadBalancerClass", name)
+		opts, ok := c.LoadBalancerClass[name]
+		if !ok {
+			continue
+		}
+
 		opts.toINI(lbClass)
 	}
 
