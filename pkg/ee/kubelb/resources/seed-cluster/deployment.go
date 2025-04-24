@@ -210,7 +210,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 			flags = append(flags, "-enable-secret-synchronizer")
 		}
 		if kubelb.DisableIngressClass {
-			flags = append(flags, "-use-ingress-class", "false")
+			flags = append(flags, "-use-ingress-class=false")
 		}
 	}
 
