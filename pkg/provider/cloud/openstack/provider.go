@@ -534,32 +534,7 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 		return cluster, err
 	}
-	var routerID string
-	// if SubnetID is provided but RouterID not, try to retrieve RouterID
-	if cluster.Spec.Cloud.Openstack.SubnetID != "" {
-		var err error
-		routerID, err = getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %w", cluster.Spec.Cloud.Openstack.SubnetID, err)
-		}
-	}
-	if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" && routerID == "" {
-		var err error
-		routerID, err = getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.IPv6SubnetID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %w", cluster.Spec.Cloud.Openstack.IPv6SubnetID, err)
-		}
-	}
-	if routerID != "" {
-		// Update the cluster spec with the new router ID
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.RouterID = routerID
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update RouterID in the cluster spec: %w", err)
-		}
-		return cluster, nil
-	}
+
 	// Router not found by name, create a new router
 	router, err = createRouter(netClient, cluster.Name, cluster.Spec.Cloud.Openstack.FloatingIPPool)
 	if err != nil {
