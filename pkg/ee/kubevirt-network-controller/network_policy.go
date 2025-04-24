@@ -36,8 +36,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// namespacedClusterIsolationNetworkPolicyReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network.
-func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subnets []string, subnetGateways []string) reconciling.NamedNetworkPolicyReconcilerFactory {
+// namespacedClusterIsolationNetworkPolicyDefaultAllowReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network.
+func namespacedClusterIsolationNetworkPolicyDefaultAllowReconciler(clusterName string, subnets []string, subnetGateways []string) reconciling.NamedNetworkPolicyReconcilerFactory {
 	// Allow egress for subnet gateways
 	subnetGatewaysRule := []networkingv1.NetworkPolicyEgressRule{}
 	for _, gw := range subnetGateways {
@@ -99,9 +99,73 @@ func namespacedClusterIsolationNetworkPolicyReconciler(clusterName string, subne
 	}
 }
 
-func reconcileNamespacedClusterIsolationNetworkPolicy(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, subnets []string, subnetGateways []string, namespace string) error {
+// namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler creates a network policy that restrict Egress traffic between clusters deployed in the namespaced mode within the same VPC network.
+func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kubermaticv1.Cluster, nameservers []string) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
+		apiserverAddress := cluster.Status.Address.IP
+		return fmt.Sprintf("cluster-isolation-%s", cluster.Name), func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"cluster.x-k8s.io/cluster-name": cluster.Name,
+					},
+				},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+					networkingv1.PolicyTypeIngress,
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: fmt.Sprintf("%s/32", apiserverAddress),
+								},
+							},
+						},
+					},
+				},
+				Ingress: []networkingv1.NetworkPolicyIngressRule{
+					{
+						From: []networkingv1.NetworkPolicyPeer{
+							{
+								IPBlock: &networkingv1.IPBlock{
+									CIDR: fmt.Sprintf("%s/32", apiserverAddress),
+								},
+							},
+						},
+					},
+				},
+			}
+			for _, nameserver := range nameservers {
+				np.Spec.Egress = append(np.Spec.Egress, networkingv1.NetworkPolicyEgressRule{
+					To: []networkingv1.NetworkPolicyPeer{
+						{
+							IPBlock: &networkingv1.IPBlock{
+								CIDR: fmt.Sprintf("%s/32", nameserver),
+							},
+						},
+					},
+				})
+			}
+			return np, nil
+		}
+	}
+}
+
+func reconcileNamespacedClusterIsolationNetworkPolicyDefaultAllow(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, subnets []string, subnetGateways []string, namespace string) error {
 	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
-		namespacedClusterIsolationNetworkPolicyReconciler(cluster.Name, subnets, subnetGateways),
+		namespacedClusterIsolationNetworkPolicyDefaultAllowReconciler(cluster.Name, subnets, subnetGateways),
+	}
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, namespace, client); err != nil {
+		return fmt.Errorf("failed to ensure Network Policies: %w", err)
+	}
+	return nil
+}
+
+func reconcileNamespacedClusterIsolationNetworkPolicyDefaultDeny(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, namespace string, nameServers []string) error {
+	namedNetworkPolicyReconcilerFactories := []reconciling.NamedNetworkPolicyReconcilerFactory{
+		namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster, nameServers),
 	}
 	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyReconcilerFactories, namespace, client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %w", err)

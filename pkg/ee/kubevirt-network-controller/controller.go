@@ -61,8 +61,8 @@ const (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	seedGetter   provider.SeedGetter
-	configGetter provider.KubermaticConfigurationGetter
+	seedGetter  provider.SeedGetter
+	infraGetter kubevirtInfranGetter
 
 	log        *zap.SugaredLogger
 	versions   kubermatic.Versions
@@ -78,17 +78,16 @@ func Add(
 	workerName string,
 
 	seedGetter provider.SeedGetter,
-	configGetter provider.KubermaticConfigurationGetter,
 
 	versions kubermatic.Versions,
 ) error {
 	reconciler := &Reconciler{
-		log:          log.Named(ControllerName),
-		Client:       mgr.GetClient(),
-		seedGetter:   seedGetter,
-		configGetter: configGetter,
-		workerName:   workerName,
-		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		log:         log.Named(ControllerName),
+		Client:      mgr.GetClient(),
+		seedGetter:  seedGetter,
+		infraGetter: SetupKubeVirtInfraClient,
+		workerName:  workerName,
+		recorder:    mgr.GetEventRecorderFor(ControllerName),
 	}
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -144,9 +143,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	kubeVirtInfraClient, err := r.SetupKubeVirtInfraClient(ctx, cluster)
+	kubeVirtInfraClient, err := r.infraGetter(ctx, cluster, r.Client)
 	if err != nil {
-		return reconcile.Result{}, err
+		return &reconcile.Result{}, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
@@ -194,25 +193,35 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kube
 		}
 	}
 
-	gateways := make([]string, 0)
-	cidrs := make([]string, 0)
-	for _, vpc := range dc.ProviderNetwork.VPCs {
-		for _, subnet := range vpc.Subnets {
-			log.Debug("Fetching gateway and cidr for subnet: %s", subnet.Name)
-			gateway, cidr, err := processSubnet(ctx, kubeVirtInfraClient, subnet.Name)
-			if err != nil {
-				return &reconcile.Result{}, err
-			}
-			gateways = append(gateways, gateway)
-			cidrs = append(cidrs, cidr)
-		}
-	}
-
-	if len(gateways) > 0 && len(cidrs) > 0 {
-		log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster")
-		if err := reconcileNamespacedClusterIsolationNetworkPolicy(ctx, kubeVirtInfraClient, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
+	switch dc.ProviderNetwork.NetworkPolicy.Mode {
+	case kubermaticv1.NetworkPolicyModeDeny:
+		log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster in default deny mode")
+		if err := reconcileNamespacedClusterIsolationNetworkPolicyDefaultDeny(ctx, kubeVirtInfraClient, cluster, dc.NamespacedMode.Namespace, dc.DNSConfig.Nameservers); err != nil {
 			return &reconcile.Result{}, err
 		}
+	case kubermaticv1.NetworkPolicyModeAllow:
+		gateways := make([]string, 0)
+		cidrs := make([]string, 0)
+		for _, vpc := range dc.ProviderNetwork.VPCs {
+			for _, subnet := range vpc.Subnets {
+				log.Debug("Fetching gateway and cidr for subnet: %s", subnet.Name)
+				gateway, cidr, err := processSubnet(ctx, kubeVirtInfraClient, subnet.Name)
+				if err != nil {
+					return &reconcile.Result{}, err
+				}
+				gateways = append(gateways, gateway)
+				cidrs = append(cidrs, cidr)
+			}
+		}
+
+		if len(gateways) > 0 && len(cidrs) > 0 {
+			log.Debug("Setting up cluster-isolation NetworkPolicy for the tenant cluster in default allow mode")
+			if err := reconcileNamespacedClusterIsolationNetworkPolicyDefaultAllow(ctx, kubeVirtInfraClient, cluster, cidrs, gateways, dc.NamespacedMode.Namespace); err != nil {
+				return &reconcile.Result{}, err
+			}
+		}
+	default:
+		return &reconcile.Result{}, fmt.Errorf("no valid mode %v", dc.ProviderNetwork.NetworkPolicy.Mode)
 	}
 
 	return nil, nil
