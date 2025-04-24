@@ -1189,6 +1189,44 @@ spec:
                               ipv6Enabled:
                                 description: 'Optional: defines if the IPv6 is enabled for the datacenter'
                                 type: boolean
+                              loadBalancerClasses:
+                                description: 'Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.'
+                                items:
+                                  properties:
+                                    config:
+                                      description: Config is the configuration for the specified LoadBalancerClass section in the cloud config.
+                                      properties:
+                                        floatingNetworkID:
+                                          description: FloatingNetworkID is the external network used to create floating IP for the load balancer VIP.
+                                          type: string
+                                        floatingSubnet:
+                                          description: FloatingSubnet is a name pattern for the external network subnet used to create floating IP for the load balancer VIP.
+                                          type: string
+                                        floatingSubnetID:
+                                          description: FloatingSubnetID is the external network subnet used to create floating IP for the load balancer VIP.
+                                          type: string
+                                        floatingSubnetTags:
+                                          description: FloatingSubnetTags is a comma separated list of tags for the external network subnet used to create floating IP for the load balancer VIP.
+                                          type: string
+                                        memberSubnetID:
+                                          description: MemberSubnetID is the ID of the Neutron network on which to create the members of the load balancer.
+                                          type: string
+                                        networkID:
+                                          description: NetworkID is the ID of the Neutron network on which to create load balancer VIP, not needed if subnet-id is set.
+                                          type: string
+                                        subnetID:
+                                          description: SubnetID is the ID of the Neutron subnet on which to create load balancer VIP.
+                                          type: string
+                                      type: object
+                                    name:
+                                      description: Name is the name of the load balancer class.
+                                      minLength: 1
+                                      type: string
+                                  required:
+                                    - config
+                                    - name
+                                  type: object
+                                type: array
                               loadBalancerMethod:
                                 description: |-
                                   Optional: Gets mapped to the "lb-method" setting in the cloud config.

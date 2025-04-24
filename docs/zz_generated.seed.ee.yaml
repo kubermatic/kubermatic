@@ -303,6 +303,8 @@ spec:
             ubuntu: ""
           # Optional: defines if the IPv6 is enabled for the datacenter
           ipv6Enabled: false
+          # Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
+          loadBalancerClasses: null
           # Optional: Gets mapped to the "lb-method" setting in the cloud config.
           # defaults to "ROUND_ROBIN".
           loadBalancerMethod: null
