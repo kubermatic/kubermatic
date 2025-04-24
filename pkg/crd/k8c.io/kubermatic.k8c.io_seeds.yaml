@@ -1086,7 +1086,7 @@ spec:
                                         type: string
                                     type: object
                                   networkPolicyEnabled:
-                                    description: 'Deprecated: Use dc.ProviderNetwork.NetworkPolicy.Enabled instead.'
+                                    description: 'Deprecated: Use .networkPolicy.enabled instead.'
                                     type: boolean
                                   vpcs:
                                     items:
@@ -1126,6 +1126,7 @@ spec:
                                     type: array
                                 required:
                                   - name
+                                  - networkPolicy
                                 type: object
                               vmEvictionStrategy:
                                 description: |-
