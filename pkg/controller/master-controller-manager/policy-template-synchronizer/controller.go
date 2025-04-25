@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -116,7 +116,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, poli
 
 	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 		seedPolicyTemplate := &kubermaticv1.PolicyTemplate{}
-		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(policyTemplate), seedPolicyTemplate); err != nil && !errors.IsNotFound(err) {
+		if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(policyTemplate), seedPolicyTemplate); err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to fetch PolicyTemplate on seed cluster: %w", err)
 		}
 
