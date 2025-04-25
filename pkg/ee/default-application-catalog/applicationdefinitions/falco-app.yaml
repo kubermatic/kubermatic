@@ -45,7 +45,7 @@ spec:
       source:
         helm:
           chartName: falco
-          chartVersion: 4.19.0
+          chartVersion: 4.21.2
           url: https://falcosecurity.github.io/charts
     version: 0.40.0
   documentationURL: https://falco.org/
