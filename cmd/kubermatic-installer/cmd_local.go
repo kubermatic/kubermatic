@@ -72,9 +72,10 @@ var (
 type LocalOptions struct {
 	Options
 
-	HelmBinary  string
-	HelmTimeout time.Duration
-	Endpoint    string
+	HelmBinary     string
+	HelmTimeout    time.Duration
+	Endpoint       string
+	KubeOVNEnabled bool
 }
 
 func LocalCommand(logger *logrus.Logger) *cobra.Command {
@@ -98,7 +99,6 @@ func LocalCommand(logger *logrus.Logger) *cobra.Command {
 	}
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
-	cmd.PersistentFlags().StringVar(&opt.Endpoint, "endpoint", "", "endpoint address for KKP installation (e.g. 10.0.0.5.nip.io), if this flag is left empty, the installer does best effort in auto-configuring from available network interfaces")
 
 	cmd.AddCommand(localKindCommand(logger, opt))
 	// TODO: expose when ready
@@ -137,14 +137,21 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
 			}
 		},
-		RunE: localKindFunc(logger, opt),
+		RunE: localKindFunc(logger, &opt),
 	}
+	cmd.PersistentFlags().StringVar(&opt.Endpoint, "endpoint", "", "endpoint address for KKP installation (e.g. 10.0.0.5.nip.io), if this flag is left empty, the installer does best effort in auto-configuring from available network interfaces")
+	cmd.PersistentFlags().BoolVar(&opt.KubeOVNEnabled, "kube-ovn-enabled", false, "enables usage of kube-ovn instead of kindnet as the cni plugin")
 	return cmd
 }
 
-func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, context.CancelFunc) {
+func localKind(logger *logrus.Logger, dir string, opt *LocalOptions) (ctrlruntimeclient.Client, context.CancelFunc) {
 	kindConfig := filepath.Join(dir, "kind-config.yaml")
-	if err := os.WriteFile(kindConfig, []byte(kindConfigContent), 0600); err != nil {
+	configContent := kindConfigContent
+	if opt.KubeOVNEnabled {
+		configContent += kindConfigKubeOVNContent
+		logger.Info("Disabling kindnet to deploy kube-ovn cni plugin")
+	}
+	if err := os.WriteFile(kindConfig, []byte(configContent), 0600); err != nil {
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
@@ -216,6 +223,17 @@ func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, 
 	err := helmClient.InstallChart("kubevirt", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, []string{"--create-namespace"})
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
+	}
+}
+
+func installKubeOVN(logger *logrus.Logger, helmClient helm.Client, opt LocalOptions) {
+	logger.Info("Installing KubeOVN...")
+	if err := helmClient.BuildChartDependencies(filepath.Join(opt.ChartsDirectory, "local-kube-ovn"), nil); err != nil {
+		logger.Fatalf("Failed to fetch KubeOVN Helm chart: %v", err)
+	}
+	err := helmClient.InstallChart("kube-system", "kube-ovn", filepath.Join(opt.ChartsDirectory, "local-kube-ovn"), "", nil, []string{"--wait"})
+	if err != nil {
+		logger.Fatalf("Failed to install KubeOVN Helm release: %v", err)
 	}
 }
 
@@ -353,13 +371,13 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	internalKubeconfig := filepath.Join(dir, "kube-config-internal.yaml")
 	kindSeedSecret := initKindSeedSecret(kubeClient, logger, kubeconfig, internalKubeconfig)
 	ensureResource(kubeClient, logger, &kindSeedSecret)
-	kindPreset := initKindPreset(logger, internalKubeconfig)
+	kindPreset := initKindPreset(logger, internalKubeconfig, opts.KubeOVNEnabled)
 	ensureResource(kubeClient, logger, &kindPreset)
 	ensureResource(kubeClient, logger, &kindLocalSeed)
 	return kkpEndpoint
 }
 
-func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
+func localKindFunc(logger *logrus.Logger, opt *LocalOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
 		exampleDir := "./examples"
 
@@ -372,7 +390,7 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 			logger.Fatal("Failed to find examples directory, please ensure it and the charts directory from the KKP download archive remain together with the kubermatic-installer.")
 		}
 
-		kubeClient, cancel := localKind(logger, exampleDir)
+		kubeClient, cancel := localKind(logger, exampleDir, opt)
 		defer cancel()
 
 		kubeconfig := filepath.Join(exampleDir, "kube-config.yaml")
@@ -392,8 +410,12 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 				helmVersion,
 			)
 		}
-		installKubevirt(logger, exampleDir, helmClient, opt)
-		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, opt)
+		if opt.KubeOVNEnabled {
+			installKubeOVN(logger, helmClient, *opt)
+		}
+		// installCertManager(logger, exampleDir, helmClient, *opt)
+		installKubevirt(logger, exampleDir, helmClient, *opt)
+		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, *opt)
 		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)
 		logger.Infof("  Default login:    %v", kkpDefaultLogin)
@@ -457,12 +479,15 @@ func initKindSeedSecret(kubeClient ctrlruntimeclient.Client, logger *logrus.Logg
 	return kindKubeconfigSeedSecret
 }
 
-func initKindPreset(logger *logrus.Logger, internalKubeconfigPath string) kubermaticv1.Preset {
+func initKindPreset(logger *logrus.Logger, internalKubeconfigPath string, kubeOVNEnabled bool) kubermaticv1.Preset {
 	k, err := os.ReadFile(internalKubeconfigPath)
 	if err != nil {
 		logger.Fatalf("Failed to initialize preset: %v", err)
 	}
 	kindLocalPreset.Spec.Kubevirt.Kubeconfig = base64.StdEncoding.EncodeToString(k)
+	if kubeOVNEnabled {
+		kindLocalPreset.Spec.Kubevirt.VPCName = "ovn-cluster"
+	}
 	return kindLocalPreset
 }
 
