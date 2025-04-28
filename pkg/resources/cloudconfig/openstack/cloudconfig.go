@@ -18,6 +18,8 @@ package openstack
 
 import (
 	"bytes"
+	"maps"
+	"slices"
 	"strconv"
 	"time"
 
@@ -37,11 +39,11 @@ const (
 // CSI @ https://github.com/kubernetes/cloud-provider-openstack/blob/release-1.30/pkg/csi/cinder/openstack/openstack.go
 // but were trimmed down to what KKP needs and to avoid a heavy dependency
 // on the Openstack CCM Go module.
-
 type CloudConfig struct {
-	Global       GlobalOpts
-	LoadBalancer LoadBalancerOpts
-	BlockStorage BlockStorageOpts
+	Global            GlobalOpts
+	LoadBalancer      LoadBalancerOpts
+	BlockStorage      BlockStorageOpts
+	LoadBalancerClass LBClassOpts
 }
 
 func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, credentials resources.Credentials) CloudConfig {
@@ -61,6 +63,21 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 	useOctavia := dc.Spec.Openstack.UseOctavia
 	if cluster.Spec.Cloud.Openstack.UseOctavia != nil {
 		useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
+	}
+
+	var lbClassOpts LBClassOpts
+	if len(dc.Spec.Openstack.LoadBalancerClasses) > 0 {
+		lbClassOpts = make(LBClassOpts, len(dc.Spec.Openstack.LoadBalancerClasses))
+		for _, lbClass := range dc.Spec.Openstack.LoadBalancerClasses {
+			lbClassOpts[lbClass.Name] = &LBClass{
+				FloatingNetworkID:  lbClass.Config.FloatingNetworkID,
+				FloatingSubnetID:   lbClass.Config.FloatingSubnetID,
+				FloatingSubnet:     lbClass.Config.FloatingSubnet,
+				FloatingSubnetTags: lbClass.Config.FloatingSubnetTags,
+				NetworkID:          lbClass.Config.NetworkID,
+				SubnetID:           lbClass.Config.SubnetID,
+			}
+		}
 	}
 
 	cc := CloudConfig{
@@ -85,6 +102,7 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 			LBProvider:           lbProvider,
 			UseOctavia:           useOctavia,
 		},
+		LoadBalancerClass: lbClassOpts,
 	}
 
 	if cluster.Spec.Cloud.Openstack.EnableIngressHostname != nil {
@@ -115,6 +133,20 @@ func (c *CloudConfig) String() (string, error) {
 
 	bs := out.Section("BlockStorage", "")
 	c.BlockStorage.toINI(bs)
+
+	for _, name := range slices.Sorted(maps.Keys(c.LoadBalancerClass)) {
+		if name == "" {
+			continue
+		}
+
+		lbClass := out.Section("LoadBalancerClass", name)
+		opts, ok := c.LoadBalancerClass[name]
+		if !ok {
+			continue
+		}
+
+		opts.toINI(lbClass)
+	}
 
 	buf := &bytes.Buffer{}
 	if err := out.Render(buf); err != nil {
@@ -221,4 +253,36 @@ func (o *GlobalOpts) toINI(section ini.Section) {
 		section.AddStringKey("tenant-id", o.TenantID)
 		section.AddStringKey("domain-name", o.DomainName)
 	}
+}
+
+// LBClassOpts is a map of LoadBalancerClass names to their corresponding options.
+// The key is the name of the LoadBalancerClass, and the value is the corresponding options.
+type LBClassOpts map[string]*LBClass
+
+// LBClass defines the corresponding floating network, floating subnet or internal subnet ID
+// for the LoadBalancerClass section of the cloud.cfg.
+type LBClass struct {
+	FloatingNetworkID  string
+	FloatingSubnetID   string
+	FloatingSubnet     string
+	FloatingSubnetTags string
+	NetworkID          string
+	SubnetID           string
+	MemberSubnetID     string
+}
+
+func (o *LBClass) toINI(section ini.Section) {
+	addIfNotEmpty := func(key, value string) {
+		if value != "" {
+			section.AddStringKey(key, value)
+		}
+	}
+
+	addIfNotEmpty("floating-network-id", o.FloatingNetworkID)
+	addIfNotEmpty("floating-subnet-id", o.FloatingSubnetID)
+	addIfNotEmpty("floating-subnet", o.FloatingSubnet)
+	addIfNotEmpty("floating-subnet-tags", o.FloatingSubnetTags)
+	addIfNotEmpty("network-id", o.NetworkID)
+	addIfNotEmpty("subnet-id", o.SubnetID)
+	addIfNotEmpty("member-subnet-id", o.MemberSubnetID)
 }
