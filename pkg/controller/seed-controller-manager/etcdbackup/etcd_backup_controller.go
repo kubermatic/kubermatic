@@ -296,22 +296,24 @@ func (r *Reconciler) reconcile(
 	return totalReconcile, nil
 }
 
-func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration) (*corev1.Container, error) {
-	// a customized container is configured
-	if cfg.Spec.SeedController.BackupStoreContainer != "" {
-		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
+func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration) (*corev1.Container, bool, error) {
+	selectedContainer := defaulting.DefaultBackupStoreContainer
+	customContainer := cfg.Spec.SeedController.BackupStoreContainer
+	if customContainer != "" {
+		selectedContainer = customContainer
 	}
-
-	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupStoreContainer)
+	container, err := kuberneteshelper.ContainerFromString(selectedContainer)
+	return container, customContainer != "", err
 }
 
-func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration) (*corev1.Container, error) {
-	// a customized container is configured
-	if cfg.Spec.SeedController.BackupDeleteContainer != "" {
-		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
+func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration) (*corev1.Container, bool, error) {
+	selectedContainer := defaulting.DefaultBackupDeleteContainer
+	customContainer := cfg.Spec.SeedController.BackupDeleteContainer
+	if customContainer != "" {
+		selectedContainer = customContainer
 	}
-
-	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupDeleteContainer)
+	container, err := kuberneteshelper.ContainerFromString(selectedContainer)
+	return container, customContainer != "", err
 }
 
 func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
@@ -892,12 +894,12 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("credentials not set for backup destination %q", backupConfig.Spec.Destination)
 	}
 
-	storeContainer, err := getBackupStoreContainer(config)
+	storeContainer, customStoreContainer, err := getBackupStoreContainer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd backup store container: %w", err)
 	}
 
-	deleteContainer, err := getBackupDeleteContainer(config)
+	deleteContainer, customBackupContainer, err := getBackupDeleteContainer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd backup delete container: %w", err)
 	}
@@ -911,8 +913,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithVersions(r.versions).
 		WithOverwriteRegistry(r.overwriteRegistry).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
-		WithEtcdBackupStoreContainer(storeContainer).
-		WithEtcdBackupDeleteContainer(deleteContainer).
+		WithEtcdBackupStoreContainer(storeContainer, customStoreContainer).
+		WithEtcdBackupDeleteContainer(deleteContainer, customBackupContainer).
 		WithEtcdBackupDestination(destination).
 		Build(), nil
 }
