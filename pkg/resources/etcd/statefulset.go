@@ -428,7 +428,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// 	return "v3.4.3"
 	// }
 
-	return "3.5.17"
+	return "3.5.21"
 }
 
 func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {
