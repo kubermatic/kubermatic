@@ -602,8 +602,8 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				WithCluster(cluster).
 				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -949,8 +949,8 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				WithCluster(cluster).
 				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -1236,8 +1236,8 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				WithCluster(cluster).
 				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -1558,8 +1558,8 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				WithCluster(cluster).
 				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
