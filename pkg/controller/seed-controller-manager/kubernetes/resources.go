@@ -507,7 +507,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		cloudconfig.SecretReconciler(data, resources.CloudConfigSecretName),
+		cloudconfig.SecretReconciler(data, resources.CloudConfigSeedSecretName),
 		certificates.RootCAReconciler(data),
 		certificates.FrontProxyCAReconciler(),
 		resources.ImagePullSecretReconciler(r.dockerPullConfigJSON),

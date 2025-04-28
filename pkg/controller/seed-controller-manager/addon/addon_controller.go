@@ -166,6 +166,37 @@ func Add(
 		},
 	}
 
+	enqueueAddonsOnCSISecretChange := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
+		return []reconcile.Request{
+			{
+				NamespacedName: types.NamespacedName{
+					Name:      csiAddonName,
+					Namespace: a.GetNamespace(),
+				},
+			},
+		}
+	})
+
+	csiSecretPredicate := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldObj := e.ObjectOld
+			newObj := e.ObjectNew
+			if oldObj == nil || newObj == nil {
+				return false
+			}
+
+			if oldObj.GetName() != resources.CloudConfigSeedSecretName || newObj.GetName() != resources.CloudConfigSeedSecretName {
+				return false
+			}
+
+			if oldObj.GetResourceVersion() != newObj.GetResourceVersion() {
+				return true
+			}
+
+			return false
+		},
+	}
+
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(ControllerName).
 		WithOptions(controller.Options{
@@ -173,6 +204,7 @@ func Add(
 		}).
 		For(&kubermaticv1.Addon{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Watches(&kubermaticv1.Cluster{}, enqueueClusterAddons, builder.WithPredicates(clusterPredicate)).
+		Watches(&corev1.Secret{}, enqueueAddonsOnCSISecretChange, builder.WithPredicates(csiSecretPredicate)).
 		Build(reconciler)
 
 	return err
