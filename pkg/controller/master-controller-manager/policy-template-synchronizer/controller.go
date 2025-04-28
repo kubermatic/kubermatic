@@ -91,14 +91,14 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.recorder.Event(policyTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{}, err
 }
 
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, policyTemplate *kubermaticv1.PolicyTemplate) error {
 	// handling deletion
 	if !policyTemplate.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, policyTemplate); err != nil {
-			return fmt.Errorf("handling deletion of policy template: %w", err)
+			return fmt.Errorf("failed to handle deletion of policy template: %w", err)
 		}
 		return nil
 	}
@@ -132,25 +132,24 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, poli
 }
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, policyTemplate *kubermaticv1.PolicyTemplate) error {
-	if kuberneteshelper.HasFinalizer(policyTemplate, kubermaticv1.PolicyTemplateSeedCleanupFinalizer) {
-		if err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-			err := seedClient.Delete(ctx, &kubermaticv1.PolicyTemplate{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: policyTemplate.Name,
-				},
-			})
-
-			return ctrlruntimeclient.IgnoreNotFound(err)
-		}); err != nil {
-			return fmt.Errorf("failed to delete policy template %q from seeds: %w", policyTemplate.Name, err)
-		}
-
-		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, policyTemplate, kubermaticv1.PolicyTemplateSeedCleanupFinalizer); err != nil {
-			return fmt.Errorf("failed to remove finalizer %s: %w", policyTemplate.Name, err)
-		}
+	if !kuberneteshelper.HasFinalizer(policyTemplate, kubermaticv1.PolicyTemplateSeedCleanupFinalizer) {
+		return nil
 	}
 
-	return nil
+	err := r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+		err := seedClient.Delete(ctx, &kubermaticv1.PolicyTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: policyTemplate.Name,
+			},
+		})
+
+		return ctrlruntimeclient.IgnoreNotFound(err)
+	})
+	if err != nil {
+		return err
+	}
+
+	return kuberneteshelper.TryRemoveFinalizer(ctx, r.masterClient, policyTemplate, kubermaticv1.PolicyTemplateSeedCleanupFinalizer)
 }
 
 func policyTemplateReconcilerFactory(policyTemplate *kubermaticv1.PolicyTemplate) reconciling.NamedPolicyTemplateReconcilerFactory {
