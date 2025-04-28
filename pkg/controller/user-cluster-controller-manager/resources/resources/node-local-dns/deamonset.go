@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	version = "1.22.20"
+	version = "1.25.0"
 )
 
 func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
