@@ -264,7 +264,7 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	return nil
 }
 
-func (r *Reconciler) addonReconciler(ctx context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedAddonReconcilerFactory {
+func (r *Reconciler) addonReconciler(_ context.Context, cluster *kubermaticv1.Cluster, addon kubermaticv1.Addon) reconciling.NamedAddonReconcilerFactory {
 	return func() (name string, create reconciling.AddonReconciler) {
 		return addon.Name, func(existing *kubermaticv1.Addon) (*kubermaticv1.Addon, error) {
 			existing.Labels = addon.Labels

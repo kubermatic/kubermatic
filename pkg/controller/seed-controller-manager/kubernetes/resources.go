@@ -112,7 +112,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return &reconcile.Result{RequeueAfter: clusterIPUnknownRetryTimeout}, nil
 	}
 
-	// check that all secrets are available // New way of handling secrets
+	// check that all secrets are available
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return nil, err
 	}
