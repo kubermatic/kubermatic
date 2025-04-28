@@ -115,6 +115,18 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 					networkingv1.PolicyTypeIngress,
 				},
 				Egress: []networkingv1.NetworkPolicyEgressRule{
+					// Allow egress for pods with the cluster.x-k8s.io/cluster-name label
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"cluster.x-k8s.io/cluster-name": cluster.Name,
+									},
+								},
+							},
+						},
+					},
 					{
 						To: []networkingv1.NetworkPolicyPeer{
 							{
@@ -128,6 +140,13 @@ func namespacedClusterIsolationNetworkPolicyDefaultDenyReconciler(cluster *kuber
 				Ingress: []networkingv1.NetworkPolicyIngressRule{
 					{
 						From: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"cluster.x-k8s.io/cluster-name": cluster.Name,
+									},
+								},
+							},
 							{
 								IPBlock: &networkingv1.IPBlock{
 									CIDR: fmt.Sprintf("%s/32", apiserverAddress),

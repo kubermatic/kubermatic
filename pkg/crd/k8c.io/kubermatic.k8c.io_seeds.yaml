@@ -1126,7 +1126,6 @@ spec:
                                     type: array
                                 required:
                                   - name
-                                  - networkPolicy
                                 type: object
                               vmEvictionStrategy:
                                 description: |-

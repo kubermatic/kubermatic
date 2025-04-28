@@ -87,7 +87,7 @@ func TestReconcile(t *testing.T) {
 										ProviderNetwork: &kubermaticv1.ProviderNetwork{
 											Name:                 "test",
 											NetworkPolicyEnabled: true,
-											NetworkPolicy: kubermaticv1.NetworkPolicy{
+											NetworkPolicy: &kubermaticv1.NetworkPolicy{
 												Enabled: true,
 												Mode:    kubermaticv1.NetworkPolicyModeAllow,
 											},
@@ -195,7 +195,7 @@ func TestReconcile(t *testing.T) {
 										ProviderNetwork: &kubermaticv1.ProviderNetwork{
 											Name:                 "test",
 											NetworkPolicyEnabled: true,
-											NetworkPolicy: kubermaticv1.NetworkPolicy{
+											NetworkPolicy: &kubermaticv1.NetworkPolicy{
 												Enabled: true,
 												Mode:    kubermaticv1.NetworkPolicyModeDeny,
 											},
@@ -226,6 +226,18 @@ func TestReconcile(t *testing.T) {
 					},
 					Egress: []networkingv1.NetworkPolicyEgressRule{
 						{
+							Ports: []networkingv1.NetworkPolicyPort{},
+							To: []networkingv1.NetworkPolicyPeer{
+								{
+									PodSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											"cluster.x-k8s.io/cluster-name": clusterName,
+										},
+									},
+								},
+							},
+						},
+						{
 							To: []networkingv1.NetworkPolicyPeer{
 								{
 									IPBlock: &networkingv1.IPBlock{
@@ -247,6 +259,13 @@ func TestReconcile(t *testing.T) {
 					Ingress: []networkingv1.NetworkPolicyIngressRule{
 						{
 							From: []networkingv1.NetworkPolicyPeer{
+								{
+									PodSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											"cluster.x-k8s.io/cluster-name": clusterName,
+										},
+									},
+								},
 								{
 									IPBlock: &networkingv1.IPBlock{
 										CIDR: "35.194.142.199/32",
@@ -287,7 +306,7 @@ func TestReconcile(t *testing.T) {
 										ProviderNetwork: &kubermaticv1.ProviderNetwork{
 											Name:                 "test",
 											NetworkPolicyEnabled: false,
-											NetworkPolicy: kubermaticv1.NetworkPolicy{
+											NetworkPolicy: &kubermaticv1.NetworkPolicy{
 												Enabled: false,
 											},
 											VPCs: []kubermaticv1.VPC{
@@ -333,7 +352,7 @@ func TestReconcile(t *testing.T) {
 										ProviderNetwork: &kubermaticv1.ProviderNetwork{
 											Name:                 "test",
 											NetworkPolicyEnabled: true,
-											NetworkPolicy: kubermaticv1.NetworkPolicy{
+											NetworkPolicy: &kubermaticv1.NetworkPolicy{
 												Enabled: true,
 												Mode:    kubermaticv1.NetworkPolicyModeAllow,
 											},

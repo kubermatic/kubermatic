@@ -909,8 +909,8 @@ type ProviderNetwork struct {
 	Name string `json:"name"`
 	VPCs []VPC  `json:"vpcs,omitempty"`
 	// Deprecated: Use .networkPolicy.enabled instead.
-	NetworkPolicyEnabled bool          `json:"networkPolicyEnabled,omitempty"`
-	NetworkPolicy        NetworkPolicy `json:"networkPolicy"`
+	NetworkPolicyEnabled bool           `json:"networkPolicyEnabled,omitempty"`
+	NetworkPolicy        *NetworkPolicy `json:"networkPolicy,omitempty"`
 }
 
 // NetworkPolicy describes if and which network policies will be deployed by default to kubevirt userclusters.
