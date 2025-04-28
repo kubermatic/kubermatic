@@ -42,7 +42,7 @@ data:
 # limitations under the License.
 
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   name: dex-theme-kkp
 data:
@@ -233,9 +233,9 @@ spec:
         - name: config
           secret:
             secretName: release-name-dex
-        - name: theme-kkp
-          secret:
-            secretName: dex-theme-kkp
+        - configMap:
+            name: dex-theme-kkp
+          name: theme-kkp
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
