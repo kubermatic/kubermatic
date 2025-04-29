@@ -211,7 +211,7 @@ spec:
         esac
     # BackupInterval defines the time duration between consecutive etcd backups.
     # Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
-    backupInterval: ""
+    backupInterval: 0s
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
     backupStoreContainer: |2
 

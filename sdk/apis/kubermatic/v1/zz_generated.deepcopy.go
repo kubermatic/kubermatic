@@ -3060,6 +3060,7 @@ func (in *EtcdBackupRestore) DeepCopyInto(out *EtcdBackupRestore) {
 			(*out)[key] = outVal
 		}
 	}
+	out.BackupInterval = in.BackupInterval
 	if in.BackupCount != nil {
 		in, out := &in.BackupCount, &out.BackupCount
 		*out = new(int)
@@ -4653,6 +4654,7 @@ func (in *KubermaticSeedControllerConfiguration) DeepCopyInto(out *KubermaticSee
 		*out = make([]MetricsCollector, len(*in))
 		copy(*out, *in)
 	}
+	out.BackupInterval = in.BackupInterval
 	if in.BackupCount != nil {
 		in, out := &in.BackupCount, &out.BackupCount
 		*out = new(int)
