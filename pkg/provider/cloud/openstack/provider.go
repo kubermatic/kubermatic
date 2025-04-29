@@ -757,10 +757,6 @@ func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 		return fmt.Errorf("updating OpenStack subnet ID is not supported (was %s, updated to %s)", oldSpec.Openstack.SubnetID, newSpec.Openstack.SubnetID)
 	}
 
-	if oldSpec.Openstack.RouterID != "" && oldSpec.Openstack.RouterID != newSpec.Openstack.RouterID {
-		return fmt.Errorf("updating OpenStack router ID is not supported (was %s, updated to %s)", oldSpec.Openstack.RouterID, newSpec.Openstack.RouterID)
-	}
-
 	if oldSpec.Openstack.SecurityGroups != "" && oldSpec.Openstack.SecurityGroups != newSpec.Openstack.SecurityGroups {
 		if isMultipleSGs(oldSpec.Openstack.SecurityGroups) && !isMultipleSGs(newSpec.Openstack.SecurityGroups) {
 			return nil
