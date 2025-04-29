@@ -389,7 +389,7 @@ func TestNewClusters(t *testing.T) {
 				WithPatch(func(c *kubermaticv1.ClusterSpec) *kubermaticv1.ClusterSpec {
 					c.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 					c.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16", "fd01::/48"}
-					c.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20", "fd02::/120"}
+					c.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20", "fd02::/108"}
 					return c
 				})
 

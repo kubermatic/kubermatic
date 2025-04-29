@@ -62,7 +62,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.1.2"
+	imageTag  = "4bead876fca3f80d355879471bdc72c2762f8e54"
 )
 
 type kubeLBData interface {
@@ -205,7 +205,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 			flags = append(flags, "-enable-secret-synchronizer")
 		}
 		if kubelb.DisableIngressClass {
-			flags = append(flags, "-use-ingress-class", "false")
+			flags = append(flags, "-use-ingress-class=false")
 		}
 	}
 

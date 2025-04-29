@@ -236,6 +236,10 @@ spec:
               # Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
               # for increased availability
               zones: null
+          # Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
+          # example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
+          # otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
+          matchSubnetAndStorageLocation: null
           # NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
           namespacedMode: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used
@@ -300,6 +304,8 @@ spec:
             ubuntu: ""
           # Optional: defines if the IPv6 is enabled for the datacenter
           ipv6Enabled: false
+          # Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
+          loadBalancerClasses: null
           # Optional: Gets mapped to the "lb-method" setting in the cloud config.
           # defaults to "ROUND_ROBIN".
           loadBalancerMethod: null
