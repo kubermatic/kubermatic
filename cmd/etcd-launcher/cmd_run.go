@@ -89,7 +89,7 @@ func RunCommand(logger *zap.SugaredLogger) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&opt.podIP, "pod-ip", "", "IP address of this etcd pod")
 	cmd.PersistentFlags().StringVar(&opt.token, "token", "", "etcd database token")
 	cmd.PersistentFlags().BoolVar(&opt.enableCorruptionCheck, "enable-corruption-check", false, "enable experimental corruption check")
-	cmd.PersistentFlags().Int64Var(&opt.quotaBackendBytes, "quota-backend-bytes", 0, "maximum backend size of etcd in bytes (0 means use etcd default)")
+	cmd.PersistentFlags().Int64Var(&opt.quotaBackendBytes, "quota-backend-gb", 0, "maximum backend size of etcd in gb (0 means use etcd default)")
 
 	return cmd
 }

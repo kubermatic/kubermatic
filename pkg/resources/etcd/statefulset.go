@@ -529,7 +529,10 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 	}
 
 	if quotaBackendGB > 0 {
-		command = append(command, "--quota-backend-gb", strconv.FormatInt(quotaBackendGB, 10))
+		bytes, overflow := resources.ConvertGBToBytes(uint64(quotaBackendGB))
+		if !overflow {
+			command = append(command, "--quota-backend-bytes", strconv.FormatUint(bytes, 10))
+		}
 	}
 
 	return command

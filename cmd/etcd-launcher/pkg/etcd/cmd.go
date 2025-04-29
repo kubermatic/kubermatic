@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"math"
 	"net"
 	"os"
 	"os/exec"
@@ -96,24 +95,11 @@ func etcdCmd(config *Cluster) []string {
 	}
 
 	if config.QuotaBackendGB > 0 {
-		bytes, overflow := convertGBToBytes(uint64(config.QuotaBackendGB))
+		bytes, overflow := resources.ConvertGBToBytes(uint64(config.QuotaBackendGB))
 		if !overflow {
 			cmd = append(cmd, fmt.Sprintf("--quota-backend-bytes=%d", bytes))
 		}
 	}
 
 	return cmd
-}
-
-// convertGBToBytes converts Gigabytes (GB using decimal) to Bytes.
-// Takes a non-negative number of GB.
-// Returns the number of bytes and a boolean indicating if overflow occurred.
-func convertGBToBytes(gb uint64) (bytes uint64, overflow bool) {
-	const GB uint64 = 1 << 30
-
-	if GB > 0 && gb > math.MaxUint64/GB {
-		return 0, true
-	}
-
-	return gb * GB, false
 }
