@@ -99,7 +99,7 @@ require (
 	k8c.io/kubeone v1.7.3
 	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
 	k8c.io/machine-controller/sdk v0.0.0-20250401130405-7b6ae89532d1
-	k8c.io/operating-system-manager v1.6.1-0.20241118134103-5db575f65108
+	k8c.io/operating-system-manager v1.6.1-0.20250428124649-f21192a17b6f
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.32.1
 	k8s.io/apiextensions-apiserver v0.32.1
@@ -394,10 +394,9 @@ require (
 	gopkg.in/validator.v2 v2.0.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8c.io/machine-controller v1.59.1-0.20241011055903-713b23c97a6c // indirect
+	gotest.tools/v3 v3.5.1 // indirect
 	k8s.io/component-base v0.32.1 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240911193312-2b36238f13e9 // indirect
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect
