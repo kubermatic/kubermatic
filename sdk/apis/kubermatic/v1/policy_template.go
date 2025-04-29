@@ -29,6 +29,11 @@ const (
 	PolicyTemplateKind = "PolicyTemplate"
 )
 
+const (
+	// PolicyTemplateSeedCleanupFinalizer indicates that synced policy template on seed clusters need cleanup.
+	PolicyTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-policy-template"
+)
+
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status

@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
+	policytemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/policy-template-synchronizer"
 	presetsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/preset-synchronizer"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
 	projectsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-synchronizer"
@@ -79,6 +80,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		presetSynchronizerFactoryCreator(ctrlCtx),
 		resourceQuotaSynchronizerFactoryCreator(ctrlCtx),
 		resourceQuotaControllerFactoryCreator(ctrlCtx),
+		policyTemplateSynchronizerFactoryCreator(ctrlCtx),
 	}
 
 	controllerFactories = append(controllerFactories, setupLifecycleControllerCreators(ctrlCtx)...)
@@ -271,6 +273,17 @@ func presetSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontroller
 			masterMgr,
 			seedManagerMap,
 			ctrlCtx.log,
+		)
+	}
+}
+
+func policyTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return policytemplatesynchronizer.ControllerName, policytemplatesynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
 		)
 	}
 }
