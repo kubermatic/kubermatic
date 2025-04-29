@@ -46,16 +46,16 @@ func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermati
 				config.Labels[kubermaticv1.ProjectIDLabelKey] = data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
 			}
 
-			var backupScheduleString string
-			var err error
-
+			var backupDuration time.Duration
 			if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.BackupInterval.Duration > 0 {
-				backupScheduleString = seed.Spec.EtcdBackupRestore.BackupInterval.String()
+				backupDuration = seed.Spec.EtcdBackupRestore.BackupInterval.Duration
 			} else {
-				backupScheduleString, err = parseDuration(data.BackupSchedule())
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse backup duration: %w", err)
-				}
+				backupDuration = data.BackupSchedule()
+			}
+
+			backupScheduleString, err := convertDurationToCron(backupDuration)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse backup duration: %w", err)
 			}
 
 			if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.BackupCount != nil {
@@ -82,7 +82,7 @@ func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermati
 	}
 }
 
-func parseDuration(interval time.Duration) (string, error) {
+func convertDurationToCron(interval time.Duration) (string, error) {
 	scheduleString := fmt.Sprintf("@every %vm", interval.Round(time.Minute).Minutes())
 	// We verify the validity of the scheduleString here, because the etcd_backup_controller
 	// only does that inside its sync loop, which means it is entirely possible to create
