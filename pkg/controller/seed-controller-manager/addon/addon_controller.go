@@ -77,6 +77,9 @@ const (
 	csiAddonName                 = "csi"
 	pvMigrationAnnotation        = "pv.kubernetes.io/migrated-to"
 	defaultStorageClassAddonName = "default-storage-class"
+
+	kindDeployment             = "Deployment"
+	openstackCsiDeploymentName = "openstack-cinder-csi-controllerplugin"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig.
@@ -992,8 +995,8 @@ func (r *Reconciler) addCSIRevisionLabels(
 	parsedUnstructuredObj *metav1unstructured.Unstructured,
 ) (*metav1unstructured.Unstructured, error) {
 	if cluster == nil || cluster.Spec.Cloud.Openstack == nil ||
-		parsedUnstructuredObj == nil || parsedUnstructuredObj.GetKind() != "Deployment" ||
-		parsedUnstructuredObj.GetName() != "openstack-cinder-csi-controllerplugin" {
+		parsedUnstructuredObj == nil || parsedUnstructuredObj.GetKind() != kindDeployment ||
+		parsedUnstructuredObj.GetName() != openstackCsiDeploymentName {
 		// Currently, we add revision labels to the OpenStack CSI Drivers to restart CSI deployment pods
 		// whenever cloud-config-csi secret, which contains Application Credentials for Openstack, is updated.
 		return parsedUnstructuredObj, nil
