@@ -339,7 +339,7 @@ type EtcdBackupRestore struct {
 
 	// BackupInterval defines the time duration between consecutive etcd backups.
 	// Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
-	BackupInterval string `json:"backupInterval,omitempty"`
+	BackupInterval metav1.Duration `json:"backupInterval,omitempty"`
 
 	// BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
 	// Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.

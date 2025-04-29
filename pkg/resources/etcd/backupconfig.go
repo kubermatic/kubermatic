@@ -49,8 +49,8 @@ func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermati
 			var backupScheduleString string
 			var err error
 
-			if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.BackupInterval != "" {
-				backupScheduleString = seed.Spec.EtcdBackupRestore.BackupInterval
+			if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.BackupInterval.Duration > 0 {
+				backupScheduleString = seed.Spec.EtcdBackupRestore.BackupInterval.String()
 			} else {
 				backupScheduleString, err = parseDuration(data.BackupSchedule())
 				if err != nil {
