@@ -53,7 +53,8 @@ cert-manager:
   #   value: 'some value'
 
   webhook:
-    replicas: 1
+    # Corrected key use `replicaCount` instead of `replicas` to fix Helm schema validation error: `webhook: Additional property replicas is not allowed`
+    replicaCount: 1
     image:
       pullPolicy: IfNotPresent
 
@@ -68,9 +69,14 @@ cert-manager:
     nodeSelector: {}
     tolerations: []
 
+    # Commenting this to fix helm schema validation error ` webhook: Additional property injectAPIServerCA is not allowed` - To be reviewed.
+    # Note: This field has be removed as part of the cert-manager 0.15.0 release. Check https://github.com/cert-manager/cert-manager/pull/2743/files#diff-719152aa560e98613908347a8a4426abb52974938a36e334d066bf084daf1716L198-L204
     # If true, the apiserver's CA bundle will be automatically injected into the
     # webhook's ValidatingWebhookConfiguration resource by the CA injector.
-    injectAPIServerCA: true
+    # in future this will default to false, as the apiserver can use the loopback
+    # configuration caBundle to talk to itself in kubernetes 1.11+
+    # see https://github.com/kubernetes/kubernetes/pull/62649
+    # injectAPIServerCA: true
 
     # The port that the webhook should listen on for requests.
     # In GKE private clusters, by default kubernetes apiservers are allowed to
@@ -80,7 +86,8 @@ cert-manager:
     securePort: 10250
 
   cainjector:
-    replicas: 1
+    # Corrected key use `replicaCount` instead of `replicas` to fix Helm schema validation error: `webhook: Additional property replicas is not allowed`
+    replicaCount: 1
     image:
       pullPolicy: IfNotPresent
 
