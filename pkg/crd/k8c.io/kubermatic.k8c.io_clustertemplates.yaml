@@ -2082,9 +2082,9 @@ spec:
                             type: string
                           description: NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
                           type: object
-                        quotaBackendBytes:
+                        quotaBackendGB:
                           description: |-
-                            QuotaBackendBytes is the maximum backend size of etcd in bytes (0 means use etcd default).
+                            QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
 
                             For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
                           format: int64

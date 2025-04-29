@@ -111,7 +111,7 @@ func RunFunc(log *zap.SugaredLogger, opt *runOptions) cobraFuncE {
 			DataDir:               opt.dataDir,
 			Token:                 opt.token,
 			EnableCorruptionCheck: opt.enableCorruptionCheck,
-			QuotaBackendBytes:     opt.quotaBackendBytes,
+			QuotaBackendGB:        opt.quotaBackendBytes,
 		}
 
 		ctx := cmd.Context()

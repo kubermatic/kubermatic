@@ -3195,8 +3195,8 @@ func (in *EtcdStatefulSetSettings) DeepCopyInto(out *EtcdStatefulSetSettings) {
 			(*out)[key] = val
 		}
 	}
-	if in.QuotaBackendBytes != nil {
-		in, out := &in.QuotaBackendBytes, &out.QuotaBackendBytes
+	if in.QuotaBackendGB != nil {
+		in, out := &in.QuotaBackendGB, &out.QuotaBackendGB
 		*out = new(int64)
 		**out = **in
 	}

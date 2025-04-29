@@ -36,7 +36,7 @@ func TestGetEtcdCommand(t *testing.T) {
 		cluster               *kubermaticv1.Cluster
 		enableCorruptionCheck bool
 		launcherEnabled       bool
-		quotaBackendBytes     int64
+		quotaBackendGb        int64
 		expectedArgs          int
 	}{
 		{
@@ -75,9 +75,9 @@ func TestGetEtcdCommand(t *testing.T) {
 					NamespaceName: "cluster-62m9k9tqlm",
 				},
 			},
-			launcherEnabled:   true,
-			quotaBackendBytes: 5959,
-			expectedArgs:      14,
+			launcherEnabled: true,
+			quotaBackendGb:  4,
+			expectedArgs:    14,
 		},
 		{
 			name: "without-launcher-and-quota-backend-bytes",
@@ -89,9 +89,9 @@ func TestGetEtcdCommand(t *testing.T) {
 					NamespaceName: "cluster-62m9k9tqlm",
 				},
 			},
-			launcherEnabled:   false,
-			quotaBackendBytes: 5959,
-			expectedArgs:      32,
+			launcherEnabled: false,
+			quotaBackendGb:  4,
+			expectedArgs:    32,
 		},
 		{
 			name: "with-launcher-and-with-corruption-flags",
@@ -125,7 +125,7 @@ func TestGetEtcdCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			args := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled, test.quotaBackendBytes)
+			args := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled, test.quotaBackendGb)
 
 			if len(args) != test.expectedArgs {
 				t.Fatalf("got less/more arguments than expected. got %d expected %d: %s", len(args), test.expectedArgs, strings.Join(args, " "))
