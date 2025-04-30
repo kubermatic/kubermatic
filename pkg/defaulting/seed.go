@@ -18,6 +18,7 @@ package defaulting
 
 import (
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -29,7 +30,7 @@ import (
 
 const (
 	// DefaultBackupInterval defines the default interval used to create backups.
-	DefaultBackupInterval = "20m"
+	DefaultBackupInterval time.Duration = time.Minute * 20
 
 	// DefaultMeteringStorageSize is the default size for the metering Prometheus PVC.
 	DefaultMeteringStorageSize = "100Gi"

@@ -2612,6 +2612,16 @@ spec:
                     EtcdBackupRestore holds the configuration of the automatic etcd backup restores for the Seed;
                     if this is set, the new backup/restore controllers are enabled for this Seed.
                   properties:
+                    backupCount:
+                      description: |-
+                        BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
+                        Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
+                      type: integer
+                    backupInterval:
+                      description: |-
+                        BackupInterval defines the time duration between consecutive etcd backups.
+                        Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
+                      type: string
                     defaultDestination:
                       description: |-
                         DefaultDestination marks the default destination that will be used for the default etcd backup config which is
