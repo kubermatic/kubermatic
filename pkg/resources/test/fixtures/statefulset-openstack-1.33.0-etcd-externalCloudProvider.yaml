@@ -107,7 +107,7 @@ spec:
           value: https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379
         - name: INITIAL_CLUSTER
           value: etcd-0=http://etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2380,etcd-1=http://etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2380,etcd-2=http://etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2380
-        image: registry.k8s.io/etcd:3.5.17-0
+        image: registry.k8s.io/etcd:3.5.21-0
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
