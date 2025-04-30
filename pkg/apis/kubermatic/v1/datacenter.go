@@ -853,6 +853,11 @@ type DatacenterSpecKubevirt struct {
 
 	// CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
 	CSIDriverOperator *KubeVirtCSIDriverOperator `json:"csiDriverOperator,omitempty"`
+
+	// Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
+	// example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
+	// otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
+	MatchSubnetAndStorageLocation *bool `json:"matchSubnetAndStorageLocation,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
@@ -872,6 +877,12 @@ type VPC struct {
 // Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
 type Subnet struct {
 	Name string `json:"name"`
+	// Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
+	// for increased availability
+	Zones []string `json:"zones,omitempty"`
+	// Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
+	// to span multiple regions
+	Regions []string `json:"regions,omitempty"`
 }
 
 type NamespacedMode struct {

@@ -1040,6 +1040,12 @@ spec:
                                     - name
                                   type: object
                                 type: array
+                              matchSubnetAndStorageLocation:
+                                description: |-
+                                  Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
+                                  example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
+                                  otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
+                                type: boolean
                               namespacedMode:
                                 description: NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
                                 properties:
@@ -1072,6 +1078,20 @@ spec:
                                             properties:
                                               name:
                                                 type: string
+                                              regions:
+                                                description: |-
+                                                  Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
+                                                  to span multiple regions
+                                                items:
+                                                  type: string
+                                                type: array
+                                              zones:
+                                                description: |-
+                                                  Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
+                                                  for increased availability
+                                                items:
+                                                  type: string
+                                                type: array
                                             required:
                                               - name
                                             type: object
