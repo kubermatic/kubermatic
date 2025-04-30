@@ -151,14 +151,18 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileInstancetypes(ctx, kubevirtNamespace, client)
-	if err != nil {
-		return cluster, err
+	if k.dc != nil && !k.dc.DisableDefaultInstanceTypes {
+		err = reconcileInstancetypes(ctx, kubevirtNamespace, client)
+		if err != nil {
+			return cluster, err
+		}
 	}
 
-	err = reconcilePreferences(ctx, kubevirtNamespace, client)
-	if err != nil {
-		return cluster, err
+	if k.dc != nil && !k.dc.DisableDefaultPreferences {
+		err = reconcilePreferences(ctx, kubevirtNamespace, client)
+		if err != nil {
+			return cluster, err
+		}
 	}
 
 	enableDefaultNetworkPolices := true
