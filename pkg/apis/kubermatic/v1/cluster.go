@@ -436,9 +436,9 @@ type AuthorizationConfig struct {
 	// Optional: List of enabled Authorization modes (by default 'Node,RBAC')
 	// Important: order matters
 	EnabledModes []string `json:"enabledModes,omitempty"`
-	// Contains the settions for the AuthorizationWebhook if EnabledModes contains Webhook
+	// Contains the settings for the AuthorizationWebhook if EnabledModes contains Webhook
 	AuthorizationWebhookConfiguration *AuthorizationWebhookConfiguration `json:"authorizationWebhookConfiguration,omitempty"`
-
+	// Configuration options for mounting the authorization config file from a secret
 	AuthorizationConfigurationFile *AuthorizationConfigurationFile `json:"authorizationConfigurationFile,omitempty"`
 }
 
@@ -457,7 +457,7 @@ type AuthorizationConfigurationFile struct {
 	// The secret Key containing the AuthorizationConfig k8s object
 	SecretKey string `json:"secretKey"`
 	// the path were the secret should be mounted, by default '/etc/kubernetes/authorization-configs'
-	SecretMountPath string `json:"secretMountPath"`
+	SecretMountPath string `json:"secretMountPath,omitempty"`
 }
 
 func (c ClusterSpec) IsWebhookAuthorizationEnabled() bool {

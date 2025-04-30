@@ -90,7 +90,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			auditWebhookBackendEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.WebhookBackend != nil
 
 			volumes := getVolumes(data, enableEncryptionConfiguration, auditLogEnabled, auditWebhookBackendEnabled)
-			volumeMounts := getVolumeMounts(data, data.IsKonnectivityEnabled(), enableEncryptionConfiguration, auditWebhookBackendEnabled)
+			volumeMounts := getVolumeMounts(data, enableEncryptionConfiguration, auditWebhookBackendEnabled)
 
 			version := data.Cluster().Status.Versions.Apiserver.Semver()
 			address := data.Cluster().Status.Address
@@ -510,7 +510,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APISe
 	return settings, nil
 }
 
-func getVolumeMounts(data *resources.TemplateData, isKonnectivityEnabled, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
+func getVolumeMounts(data *resources.TemplateData, isEncryptionEnabled bool, isAuditWebhookEnabled bool) []corev1.VolumeMount {
 	vms := []corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
@@ -579,7 +579,7 @@ func getVolumeMounts(data *resources.TemplateData, isKonnectivityEnabled, isEncr
 		},
 	}
 
-	if isKonnectivityEnabled {
+	if data.IsKonnectivityEnabled() {
 		vms = append(vms, []corev1.VolumeMount{
 			{
 				Name:      resources.KonnectivityUDS,
