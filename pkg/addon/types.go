@@ -21,8 +21,8 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +86,10 @@ func NewTemplateData(
 
 	if cluster.Spec.Cloud.Openstack != nil {
 		csiOptions.CinderTopologyEnabled = cluster.Spec.Cloud.Openstack.CinderTopologyEnabled
+	}
+
+	if cluster.Spec.Cloud.Kubevirt != nil && cluster.Spec.Cloud.Kubevirt.CSIDriverOperator != nil {
+		csiOptions.OverwriteRegistry = cluster.Spec.Cloud.Kubevirt.CSIDriverOperator.OverwriteRegistry
 	}
 
 	csiMigration := metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) || kubermaticv1helper.CCMMigrationCompleted(cluster)
@@ -281,4 +285,7 @@ type CSIOptions struct {
 
 	// openstack
 	CinderTopologyEnabled bool
+
+	// kubevirt
+	OverwriteRegistry string
 }

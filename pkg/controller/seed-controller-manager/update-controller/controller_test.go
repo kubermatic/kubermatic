@@ -23,10 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -315,7 +315,7 @@ func TestGetNextApiServerVersion(t *testing.T) {
 				},
 			}
 
-			nextVersion, err := getNextApiServerVersion(context.Background(), config, cluster)
+			nextVersion, err := getNextApiserverVersion(context.Background(), config, cluster)
 			if err != nil {
 				if !tt.expectedErr {
 					t.Fatalf("Expected next version %s, but got error: %v", tt.expected.String(), err)
@@ -803,7 +803,7 @@ func TestReconcile(t *testing.T) {
 				Client:       fake.NewClientBuilder().WithObjects(cluster).Build(),
 				configGetter: configGetter,
 				log:          zap.NewNop().Sugar(),
-				versions:     kubermatic.NewFakeVersions(),
+				versions:     kubermatic.GetFakeVersions(),
 				recorder:     record.NewFakeRecorder(10),
 				cpChecker: func(_ context.Context, _ ctrlruntimeclient.Client, _ *zap.SugaredLogger, _ *kubermaticv1.Cluster) (*controlPlaneStatus, error) {
 					return &tt.currentStatus, nil
@@ -821,7 +821,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				newCluster := &kubermaticv1.Cluster{}
-				err := rec.Client.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(cluster), newCluster)
+				err := rec.Get(context.Background(), ctrlruntimeclient.ObjectKeyFromObject(cluster), newCluster)
 				if err != nil {
 					t.Fatalf("Failed to find cluster: %v", err)
 				}

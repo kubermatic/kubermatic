@@ -12,22 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kubeStateMetrics:
-  image:
-    repository: registry.k8s.io/kube-state-metrics/kube-state-metrics
-    tag: v2.12.0
-  # list of image pull secret references, e.g.
-  # imagePullSecrets:
-  #   - name: registry-k8s-io-pull-secret
+# More options can be found on the Upstream values file:
+# https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-state-metrics/values.yaml
+
+kube-state-metrics:
+  fullnameOverride: kube-state-metrics
   imagePullSecrets: []
   resources:
     requests:
-      # Rationalized based on real world usage
       cpu: 3m
       memory: 128Mi
     limits:
       cpu: 2
       memory: 384Mi
+
+  # List of additional cli arguments to configure kube-state-metrics
+  # all the possible args can be found here: https://github.com/kubernetes/kube-state-metrics/blob/main/docs/developer/cli-arguments.md
+  extraArgs:
+  - --metric-labels-allowlist=pods=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance,component,part-of,app,unit],deployments=[app.kubernetes.io/name,app.kubernetes.io/component,app.kubernetes.io/instance],persistentvolumeclaims=[excluded-from-alerts]
+
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8080'
+    fluentbit.io/parser: glog
+    cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
+
+  serviceAccount:
+    # If false then the user will opt out of automounting API credentials.
+    automountServiceAccountToken: false
 
   rbac:
     # Add permissions for CustomResources' apiGroups in Role/ClusterRole. Should be used in conjunction with Custom Resource State Metrics configuration
@@ -43,26 +55,47 @@ kubeStateMetrics:
     # Add ClusterRole permissions to list/watch the customResources defined in the config to rbac.extraRules
     config: {}
 
-  resizer:
-    image:
-      repository: registry.k8s.io/autoscaling/addon-resizer
-      tag: '1.8.16'
-    resources:
-      requests:
-        cpu: 50m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 48Mi
-
   nodeSelector: {}
+  
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
       - podAffinityTerm:
           labelSelector:
             matchLabels:
-              app: kube-state-metrics
+              app.kubernetes.io/name: kube-state-metrics
           topologyKey: kubernetes.io/hostname
         weight: 100
+  
   tolerations: []
+
+  # Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  podDisruptionBudget:
+    maxUnavailable: 1
+
+  # Add /tmp as emptyDir, because readOnlyRootFilesystem is used.
+  volumes:
+  - name: tmp
+    emptyDir: {}
+
+  volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    enabled: false
+
+  selfMonitor:
+    enabled: true

@@ -82,7 +82,7 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 				MatchLabels: controllerLabels,
 			}
 
-			ds.Spec.Template.ObjectMeta.Labels = controllerLabels
+			ds.Spec.Template.Labels = controllerLabels
 			ds.Spec.Template.Spec.ServiceAccountName = resources.MLALoggingAgentServiceAccountName
 			ds.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsUser:  ptr.To[int64](0),

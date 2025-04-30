@@ -26,10 +26,10 @@ import (
 	"github.com/distribution/reference"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -216,7 +216,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.31.1"),
+		Default: semver.NewSemverOrDie("v1.31.7"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -235,11 +235,14 @@ var (
 			// Kubernetes 1.30
 			newSemver("v1.30.5"),
 			newSemver("v1.30.9"),
+			newSemver("v1.30.11"),
 			// Kubernetes 1.31
 			newSemver("v1.31.1"),
 			newSemver("v1.31.5"),
+			newSemver("v1.31.7"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
+			newSemver("v1.32.3"),
 		},
 		Updates: []kubermaticv1.Update{
 			// ======= 1.28 =======

@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	predicateutils "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -47,10 +47,11 @@ const (
 )
 
 type Reconciler struct {
+	ctrlruntimeclient.Client
+
 	log        *zap.SugaredLogger
 	workerName string
-	ctrlruntimeclient.Client
-	recorder record.EventRecorder
+	recorder   record.EventRecorder
 }
 
 // add the controller.
@@ -62,9 +63,9 @@ func Add(
 ) error {
 	log = log.Named(ControllerName)
 	reconciler := &Reconciler{
+		Client:     mgr.GetClient(),
 		log:        log,
 		workerName: workerName,
-		Client:     mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 	}
 

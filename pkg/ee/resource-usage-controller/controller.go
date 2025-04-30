@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resource_usage_controller
+package resourceusagecontroller
 
 import (
 	"context"
@@ -30,13 +30,13 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	machinevalidation "k8c.io/kubermatic/v2/pkg/ee/validation/machine"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -123,14 +123,14 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 			return fmt.Errorf("error getting machine resource usage for machine %q: %w", machine.Name, err)
 		}
 
-		resourceUsage.CPU.Add(*resourceDetails.Cpu())
+		resourceUsage.CPU.Add(*resourceDetails.CPU())
 		resourceUsage.Memory.Add(*resourceDetails.Memory())
 		resourceUsage.Storage.Add(*resourceDetails.Storage())
 	}
 
 	cluster.Status.ResourceUsage = resourceUsage
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r.seedClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ResourceUsage = resourceUsage
 	})
 }

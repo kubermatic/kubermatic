@@ -17,7 +17,7 @@ limitations under the License.
 package provider
 
 import (
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -61,14 +61,14 @@ func mergeTags(existing []providerconfig.ConfigVarString, newTags []string) []pr
 
 func IsConfigVarStringEmpty(val providerconfig.ConfigVarString) bool {
 	// Check if SecretKeyRef is empty.
-	if val.SecretKeyRef.ObjectReference.Namespace != "" ||
-		val.SecretKeyRef.ObjectReference.Name != "" ||
+	if val.SecretKeyRef.Namespace != "" ||
+		val.SecretKeyRef.Name != "" ||
 		val.SecretKeyRef.Key != "" {
 		return false
 	}
 	// Check if ConfigMapKeyRef is empty.
-	if val.ConfigMapKeyRef.ObjectReference.Namespace != "" ||
-		val.ConfigMapKeyRef.ObjectReference.Name != "" ||
+	if val.ConfigMapKeyRef.Namespace != "" ||
+		val.ConfigMapKeyRef.Name != "" ||
 		val.ConfigMapKeyRef.Key != "" {
 		return false
 	}

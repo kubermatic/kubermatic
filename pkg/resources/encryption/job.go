@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
@@ -61,7 +61,7 @@ func EncryptionJobCreator(data encryptionData, cluster *kubermaticv1.Cluster, se
 			Labels: map[string]string{
 				resources.AppLabelKey:  AppLabelValue,
 				ClusterLabelKey:        cluster.Name,
-				SecretRevisionLabelKey: secret.ObjectMeta.ResourceVersion,
+				SecretRevisionLabelKey: secret.ResourceVersion,
 			},
 		},
 		Spec: batchv1.JobSpec{

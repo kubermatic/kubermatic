@@ -19,8 +19,8 @@ package kubermaticmaster
 import (
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 
 	"k8s.io/utils/ptr"
 )
@@ -130,7 +130,7 @@ func Test_isPublicIp(t *testing.T) {
 	}
 
 	for ip, want := range testCases {
-		if got := isPublicIp(ip); got != want {
+		if got := isPublicIP(ip); got != want {
 			t.Errorf("isPublicIp(%s) = %v , want: %v", ip, got, want)
 		}
 	}

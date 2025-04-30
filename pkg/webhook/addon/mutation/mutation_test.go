@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -265,12 +265,12 @@ func TestHandle(t *testing.T) {
 				},
 			}
 			res := handler.Handle(context.Background(), tt.req)
-			if res.AdmissionResponse.Result != nil && res.AdmissionResponse.Result.Code == http.StatusInternalServerError {
+			if res.Result != nil && res.Result.Code == http.StatusInternalServerError {
 				if tt.wantError {
 					return
 				}
 
-				t.Fatalf("Request failed: %v", res.AdmissionResponse.Result.Message)
+				t.Fatalf("Request failed: %v", res.Result.Message)
 			}
 
 			a := map[string]jsonpatch.JsonPatchOperation{}

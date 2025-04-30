@@ -24,7 +24,7 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 
@@ -52,7 +52,7 @@ func isApiserverUpdated(ctx context.Context, client ctrlruntimeclient.Client, cl
 	hash := sha1.New()
 	hash.Write(spec)
 
-	if val, ok := secret.ObjectMeta.Labels[encryptionresources.ApiserverEncryptionHashLabelKey]; !ok || val != hex.EncodeToString(hash.Sum(nil)) {
+	if val, ok := secret.Labels[encryptionresources.ApiserverEncryptionHashLabelKey]; !ok || val != hex.EncodeToString(hash.Sum(nil)) {
 		// the secret on the cluster (or in the cache) doesn't seem updated yet
 		return false, nil
 	}

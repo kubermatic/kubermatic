@@ -58,7 +58,7 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 			if annotations == nil {
 				annotations = map[string]string{}
 			}
-			annotations[resources.VersionLabel] = versions.KubermaticCommit
+			annotations[resources.VersionLabel] = versions.GitVersion
 			crdObject.SetAnnotations(annotations)
 		}
 

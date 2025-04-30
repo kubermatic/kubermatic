@@ -22,7 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -59,7 +59,7 @@ type Reconciler struct {
 // an error if any API operation failed, otherwise will return an empty
 // dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("seed", request.NamespacedName.String())
+	log := r.log.With("seed", request.String())
 	log.Debug("reconciling seed")
 
 	return reconcile.Result{}, r.reconcile(ctx, request.Name, log)
@@ -324,7 +324,7 @@ func (r *Reconciler) reconcileMasterDeployments(ctx context.Context, seed *kuber
 		masterDeploymentReconciler(seed, secret, registry.GetImageRewriterFunc(config.Spec.UserCluster.OverwriteRegistry)),
 	}
 
-	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, creators, seed.Namespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in the namespace %s: %w", seed.Namespace, err)
 	}
 
@@ -336,7 +336,7 @@ func (r *Reconciler) reconcileMasterServices(ctx context.Context, seed *kubermat
 		masterServiceReconciler(seed, secret),
 	}
 
-	if err := reconciling.ReconcileServices(ctx, creators, seed.Namespace, r.Client); err != nil {
+	if err := reconciling.ReconcileServices(ctx, creators, seed.Namespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile Services in the namespace %s: %w", seed.Namespace, err)
 	}
 
@@ -358,7 +358,7 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 		r.masterGrafanaConfigmapReconciler(seeds),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, MasterGrafanaNamespace, r); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in the namespace %s: %w", MasterGrafanaNamespace, err)
 	}
 

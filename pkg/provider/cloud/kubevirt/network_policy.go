@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,15 +32,15 @@ import (
 
 // clusterIsolationNetworkPolicyReconciler creates a network policy that restrict Egress traffic. By default it allows access to
 // each other pod in the same namespace, Internet, Kubermatic nodeport proxy and DNS servers.
-func clusterIsolationNetworkPolicyReconciler(clusterIp string, nameservers []string) reconciling.NamedNetworkPolicyReconcilerFactory {
-	apiServerCIDR := clusterIp + "/32"
+func clusterIsolationNetworkPolicyReconciler(clusterIP string, nameservers []string) reconciling.NamedNetworkPolicyReconcilerFactory {
+	apiServerCIDR := clusterIP + "/32"
 	dnsPort := intstr.FromInt(53)
 	tcp := corev1.ProtocolTCP
 	udp := corev1.ProtocolUDP
 
 	// This address might only be set after the control plane has initialized.
 	var apiServerRule networkingv1.NetworkPolicyEgressRule
-	if clusterIp != "" {
+	if clusterIP != "" {
 		apiServerRule = networkingv1.NetworkPolicyEgressRule{
 			To: []networkingv1.NetworkPolicyPeer{
 				{

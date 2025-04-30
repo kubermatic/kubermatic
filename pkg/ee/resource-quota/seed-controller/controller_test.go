@@ -28,7 +28,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -41,7 +41,7 @@ import (
 )
 
 const rqName = "resourceQuota"
-const projectId = "project1"
+const projectID = "project1"
 
 func TestReconcile(t *testing.T) {
 	testCases := []struct {
@@ -58,8 +58,8 @@ func TestReconcile(t *testing.T) {
 			seedClient: fake.
 				NewClientBuilder().
 				WithObjects(genResourceQuota(rqName),
-					genCluster("c1", projectId, "2", "5G", "10G"),
-					genCluster("c2", projectId, "5", "2G", "8G"),
+					genCluster("c1", projectID, "2", "5G", "10G"),
+					genCluster("c2", projectID, "5", "2G", "8G"),
 					genCluster("notSameProjectCluster", "impostor", "3", "3G", "3G")).
 				Build(),
 			expectedUsage: *genResourceDetails("7", "7G", "18G"),
@@ -99,7 +99,7 @@ func genResourceQuota(name string) *kubermaticv1.ResourceQuota {
 	rq.Name = name
 	rq.Spec = kubermaticv1.ResourceQuotaSpec{
 		Subject: kubermaticv1.Subject{
-			Name: projectId,
+			Name: projectID,
 			Kind: kubermaticv1.ProjectSubjectKind,
 		},
 	}
@@ -111,10 +111,10 @@ func genResourceDetails(cpu, mem, storage string) *kubermaticv1.ResourceDetails 
 	return kubermaticv1.NewResourceDetails(resource.MustParse(cpu), resource.MustParse(mem), resource.MustParse(storage))
 }
 
-func genCluster(name, projectId, cpu, mem, storage string) *kubermaticv1.Cluster {
+func genCluster(name, projectID, cpu, mem, storage string) *kubermaticv1.Cluster {
 	cluster := &kubermaticv1.Cluster{}
 	cluster.Name = name
-	cluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectId}
+	cluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
 	cluster.Status.ResourceUsage = genResourceDetails(cpu, mem, storage)
 
 	return cluster

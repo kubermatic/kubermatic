@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -71,7 +71,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	_, err := builder.ControllerManagedBy(mgr).
 		Named(controllerName).
 		For(&kubermaticv1.UserProjectBinding{}).
-		Watches(&kubermaticv1.User{}, enqueueUserProjectBindingsForUser(r.Client, r.log)).
+		Watches(&kubermaticv1.User{}, enqueueUserProjectBindingsForUser(r, r.log)).
 		Build(r)
 
 	return err

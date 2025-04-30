@@ -17,7 +17,7 @@ limitations under the License.
 package cluster
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -117,10 +117,10 @@ func MutateUpdate(oldCluster, newCluster *kubermaticv1.Cluster, config *kubermat
 }
 
 func addCCMCSIMigrationAnnotations(cluster *kubermaticv1.Cluster) {
-	if cluster.ObjectMeta.Annotations == nil {
-		cluster.ObjectMeta.Annotations = map[string]string{}
+	if cluster.Annotations == nil {
+		cluster.Annotations = map[string]string{}
 	}
 
-	cluster.ObjectMeta.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
-	cluster.ObjectMeta.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
+	cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation] = ""
+	cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation] = ""
 }

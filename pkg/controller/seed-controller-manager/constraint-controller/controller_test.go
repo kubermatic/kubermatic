@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -143,9 +143,9 @@ func genConstraint(name, namespace, kind string, label, deleted bool) *kubermati
 	constraint := generator.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
-			constraint.Labels[Key] = constraint.Name
+			constraint.Labels[key] = constraint.Name
 		} else {
-			constraint.Labels = map[string]string{Key: constraint.Name}
+			constraint.Labels = map[string]string{key: constraint.Name}
 		}
 	}
 	if deleted {

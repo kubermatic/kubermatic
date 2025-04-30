@@ -26,13 +26,15 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers"
 	"k8c.io/kubermatic/v2/pkg/cni/cilium"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	"sigs.k8s.io/yaml"
 )
 
 func GetImagesFromSystemApplicationDefinitions(
@@ -107,15 +109,37 @@ func SystemAppsHelmCharts(
 			values, err := appDef.Spec.GetDefaultValues()
 			if err != nil {
 				yield(nil, err)
-
 				return
 			}
+
+			if appName == kubermaticv1.CNIPluginTypeCilium.String() {
+				// For Cilium, we'll use the default values from the Helm chart but will mutate the values to ensure that additional images are also mirrored.
+				defaultValues, err := appDef.Spec.GetParsedDefaultValues()
+				if err != nil {
+					yield(nil, fmt.Errorf("failed to unmarshal CNI values: %w", err))
+					return
+				}
+				// Enable `cilium-envoy` to ensure that the additional images are also mirrored.
+				if envoy, ok := defaultValues["envoy"].(map[string]any); ok {
+					envoy["enabled"] = true
+				} else {
+					defaultValues["envoy"] = map[string]any{
+						"enabled": true,
+					}
+				}
+
+				values, err = yaml.Marshal(defaultValues)
+				if err != nil {
+					yield(nil, fmt.Errorf("failed to marshal CNI values: %w", err))
+					return
+				}
+			}
+
 			if values != nil {
 				valuesFile = path.Join(tmpDir, "values.yaml")
 				err = os.WriteFile(valuesFile, values, 0o644)
 				if err != nil {
 					yield(nil, fmt.Errorf("failed to create values file: %w", err))
-
 					return
 				}
 			}

@@ -21,9 +21,9 @@ import (
 
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	aws "k8c.io/machine-controller/pkg/cloudprovider/provider/aws/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/cloudprovider/aws"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	"k8s.io/utils/ptr"
 )

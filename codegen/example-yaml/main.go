@@ -26,13 +26,12 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -40,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/ptr"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
 func main() {
@@ -56,18 +56,18 @@ func main() {
 	target := flag.Arg(1)
 
 	if _, err := os.Stat(target); err != nil {
-		if err := os.MkdirAll(target, 0755); err != nil {
+		if err := os.MkdirAll(target, 0o755); err != nil {
 			log.Fatalf("Failed to create target directory %s: %v", target, err)
 		}
 	}
 
 	// find all .go files in kubermatic/v1
-	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/kubermatic/v1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
-	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/apps.kubermatic/v1/*.go"))
+	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find appsKubermatic go files: %v", err)
 	}
@@ -156,6 +156,13 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
 						RegistryMirrors:    []string{},
+						ContainerdRegistryMirrors: &kubermaticv1.ContainerRuntimeContainerd{
+							Registries: map[string]kubermaticv1.ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"mirror.gcr.io"},
+								},
+							},
+						},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
@@ -222,10 +229,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 									},
 								},
 							},
-							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
-								Name:           "rook-ceph-block",
-								IsDefaultClass: ptr.To(true),
-							},
+							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{
+								{
+									Name:           "rook-ceph-block",
+									IsDefaultClass: ptr.To(true),
+								},
 							},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},

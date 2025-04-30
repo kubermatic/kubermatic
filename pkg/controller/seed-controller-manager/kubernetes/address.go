@@ -21,8 +21,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/address"
 )
@@ -33,7 +33,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 	// TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
 	if cluster.Status.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
-		err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		err = util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.Address.AdminToken = kubernetes.GenerateToken()
 		})
 		if err != nil {
@@ -45,7 +45,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 	b := address.NewModifiersBuilder(log)
 	modifiers, err := b.
 		Cluster(cluster).
-		Client(r.Client).
+		Client(r).
 		ExternalURL(r.externalURL).
 		Seed(seed).
 		Build(ctx)
@@ -54,7 +54,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 	}
 
 	if len(modifiers) > 0 {
-		err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+		err = util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			for _, modifier := range modifiers {
 				modifier(c)
 			}

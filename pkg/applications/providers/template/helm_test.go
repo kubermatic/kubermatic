@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -222,9 +222,9 @@ func TestGetDeployOps(t *testing.T) {
 	}
 }
 
-func newDeployOpts(t *testing.T, wait bool, timeout time.Duration, atomic bool, enableDns bool) *helmclient.DeployOpts {
+func newDeployOpts(t *testing.T, wait bool, timeout time.Duration, atomic bool, enableDNS bool) *helmclient.DeployOpts {
 	t.Helper()
-	deployOps, err := helmclient.NewDeployOpts(wait, timeout, atomic, enableDns)
+	deployOps, err := helmclient.NewDeployOpts(wait, timeout, atomic, enableDNS)
 	if err != nil {
 		t.Fatalf("failed to build deployOpts: %s", err)
 	}

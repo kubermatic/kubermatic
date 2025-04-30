@@ -60,8 +60,8 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 			if ds.Spec.Selector == nil {
 				ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			}
-			if ds.Spec.Template.ObjectMeta.Labels == nil {
-				ds.Spec.Template.ObjectMeta.Labels = labels
+			if ds.Spec.Template.Labels == nil {
+				ds.Spec.Template.Labels = labels
 			}
 
 			ds.Spec.Template.Spec.ServiceAccountName = resources.NodeLocalDNSServiceAccountName
@@ -90,7 +90,7 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 				{
 					Name:            "node-cache",
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/dns/k8s-dns-node-cache:%s", resources.RegistryK8S, version))),
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Args: []string{
 						"-localip",
 						kubesystem.NodeLocalDNSCacheAddress,

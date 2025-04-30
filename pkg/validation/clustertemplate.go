@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -45,8 +45,8 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 
 	// ensure that a ClusterTemplate has a project reference
 	if scope == kubermaticv1.ProjectClusterTemplateScope {
-		projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
-		if !ok || projectId == "" {
+		projectID, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
+		if !ok || projectID == "" {
 			allErrs = append(allErrs, field.Required(
 				parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
 				fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),

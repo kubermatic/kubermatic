@@ -22,11 +22,11 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	osmresources "k8c.io/operating-system-manager/pkg/controllers/osc/resources"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -142,8 +142,8 @@ func completeCloudProviderSpec(config *providerconfig.Config, cluster *kubermati
 	return nil
 }
 
-// Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
-// kubelet version if it wasn't specified.
+// ValidateMachineDeployment validates if the node deployment structure fulfills certain requirements.
+// It returns node deployment with updated kubelet version if it wasn't specified.
 func ValidateMachineDeployment(md *clusterv1alpha1.MachineDeployment, controlPlaneVersion *semverlib.Version) error {
 	if kubelet := md.Spec.Template.Spec.Versions.Kubelet; kubelet != "" {
 		kubeletVersion, err := semverlib.NewVersion(kubelet)

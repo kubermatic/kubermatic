@@ -19,7 +19,7 @@ package test
 import (
 	"fmt"
 
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 // mock that raises an error when try to read secret.

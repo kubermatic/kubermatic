@@ -25,8 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/clusterdeletion"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
@@ -76,6 +75,7 @@ type Features struct {
 // Reconciler is a controller which is responsible for managing clusters.
 type Reconciler struct {
 	ctrlruntimeclient.Client
+
 	log                     *zap.SugaredLogger
 	userClusterConnProvider userClusterConnectionProvider
 	workerName              string
@@ -109,7 +109,7 @@ type Reconciler struct {
 	caBundle         *certificates.CABundle
 }
 
-// NewController creates a cluster controller.
+// Add creates a cluster controller.
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -141,8 +141,9 @@ func Add(
 	versions kubermatic.Versions,
 ) error {
 	reconciler := &Reconciler{
+		Client: mgr.GetClient(),
+
 		log:                     log.Named(ControllerName),
-		Client:                  mgr.GetClient(),
 		userClusterConnProvider: userClusterConnProvider,
 		workerName:              workerName,
 
@@ -251,9 +252,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := controllerutil.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -300,7 +301,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return client, nil
 		}
 
-		if err := clusterdeletion.New(r.Client, r.recorder, userClusterClientGetter).CleanupCluster(ctx, log, cluster); err != nil {
+		if err := clusterdeletion.New(r, r.recorder, userClusterClientGetter).CleanupCluster(ctx, log, cluster); err != nil {
 			return nil, err
 		}
 
@@ -357,7 +358,7 @@ func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cl
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {
-	err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err := controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ErrorMessage = &message
 		c.Status.ErrorReason = &reason
 	})
@@ -369,7 +370,7 @@ func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermatic
 }
 
 func (r *Reconciler) clearClusterError(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ErrorMessage = nil
 		c.Status.ErrorReason = nil
 	})

@@ -14,6 +14,34 @@
 - [v2.25.11](#v22511)
 - [v2.25.12](#v22512)
 - [v2.25.13](#v22513)
+- [v2.25.14](#v22514)
+- [v2.25.15](#v22515)
+
+## v2.25.15
+
+**GitHub release: [v2.25.15](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.15)**
+
+### Bugfixes
+
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7221](https://github.com/kubermatic/dashboard/pull/7221))
+
+### Updates
+
+- Security: Update nginx-ingress-controller to 1.11.5, fixing CVE-2025-1097, CVE-2025-1098, CVE-2025-1974, CVE-2025-24513, CVE-2025-24514 ([#14276](https://github.com/kubermatic/kubermatic/pull/14276))
+
+## v2.25.14
+
+**GitHub release: [v2.25.14](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.14)**
+
+### Bugfixes
+
+- Fix a bug where ca-bundle was not being used to communicate to minio for metering ([#14072](https://github.com/kubermatic/kubermatic/pull/14072))
+- Fix datacenter creation for Edge provider ([#7167](https://github.com/kubermatic/dashboard/pull/7167))
+- Fix wrong GCP machine deployment values in Edit Machine Deployment dialog ([#7169](https://github.com/kubermatic/dashboard/pull/7169))
+
+### Updates
+
+- Update go-git to 5.13.0 [CVE-2025-21613, CVE-2025-21614] ([#14152](https://github.com/kubermatic/kubermatic/pull/14152))
 
 ## v2.25.13
 

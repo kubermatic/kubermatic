@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -41,6 +41,8 @@ const (
 	name               = "nodeport-proxy"
 	imageName          = "kubermatic/nodeport-proxy"
 	envoyAppLabelValue = resources.NodePortProxyEnvoyDeploymentName
+
+	EnvoyVersion = "v1.26.1"
 
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
@@ -267,7 +269,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", seed.Spec.NodeportProxy.Envoy.DockerRepository, versions.Envoy))),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", seed.Spec.NodeportProxy.Envoy.DockerRepository, EnvoyVersion))),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",

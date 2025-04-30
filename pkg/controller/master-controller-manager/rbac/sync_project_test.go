@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
 	kubermaticface "k8c.io/kubermatic/v2/pkg/test/fake"
@@ -103,8 +103,8 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			err = masterClient.List(ctx, &projectList)
 			assert.NoError(t, err)
 
-			projectList.Items[0].ObjectMeta.ResourceVersion = ""
-			test.expectedProject.ObjectMeta.ResourceVersion = ""
+			projectList.Items[0].ResourceVersion = ""
+			test.expectedProject.ResourceVersion = ""
 
 			assert.Len(t, projectList.Items, 1)
 			assert.Equal(t, projectList.Items[0], *test.expectedProject)

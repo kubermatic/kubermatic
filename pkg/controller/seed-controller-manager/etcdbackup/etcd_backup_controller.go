@@ -24,8 +24,8 @@ import (
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -195,9 +195,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	var suppressedError error
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -385,7 +385,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
 		// based on the most recent scheduled backup or, as a fallback, the backupConfig's creation time
 
-		nextBackupTime := backupConfig.ObjectMeta.CreationTimestamp.Time
+		nextBackupTime := backupConfig.CreationTimestamp.Time
 
 		if len(backupConfig.Status.CurrentBackups) > 0 {
 			latestBackup := &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
@@ -807,7 +807,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 	secretName := etcdbackup.GetEtcdBackupSecretName(cluster)
 
 	getCA := func() (*triple.KeyPair, error) {
-		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
+		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r)
 	}
 
 	creators := []reconciling.NamedSecretReconcilerFactory{
@@ -821,7 +821,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 		),
 	}
 
-	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, modifier.Ownership(cluster, "", r.scheme))
+	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r, modifier.Ownership(cluster, "", r.scheme))
 }
 
 func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
@@ -835,7 +835,7 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1
 		certificates.CABundleConfigMapReconciler(name, r.caBundle),
 	}
 
-	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, modifier.Ownership(cluster, "", r.scheme))
+	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r, modifier.Ownership(cluster, "", r.scheme))
 }
 
 func parseCronSchedule(scheduleString string) (cron.Schedule, error) {

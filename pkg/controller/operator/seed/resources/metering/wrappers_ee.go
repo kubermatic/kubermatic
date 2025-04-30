@@ -21,7 +21,7 @@ package metering
 import (
 	"context"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/ee/metering"
 	meteringprometheus "k8c.io/kubermatic/v2/pkg/ee/metering/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"

@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	encryptionresources "k8c.io/kubermatic/v2/pkg/resources/encryption"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -56,7 +56,7 @@ func EncryptionConfigurationSecretReconciler(data encryptionData) reconciling.Na
 			secret.Name = resources.EncryptionConfigurationSecretName
 
 			// return empty secret if no config and no condition is set.
-			if !(data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()) {
+			if !data.Cluster().IsEncryptionEnabled() && !data.Cluster().IsEncryptionActive() {
 				return secret, nil
 			}
 
@@ -178,8 +178,8 @@ func EncryptionConfigurationSecretReconciler(data encryptionData) reconciling.Na
 
 			secret.Data = secretData
 
-			if secret.ObjectMeta.Labels == nil {
-				secret.ObjectMeta.Labels = map[string]string{}
+			if secret.Labels == nil {
+				secret.Labels = map[string]string{}
 			}
 
 			spec, err := json.Marshal(data.Cluster().Spec.EncryptionConfiguration)
@@ -190,7 +190,7 @@ func EncryptionConfigurationSecretReconciler(data encryptionData) reconciling.Na
 			hash := sha1.New()
 			hash.Write(spec)
 
-			secret.ObjectMeta.Labels[encryptionresources.ApiserverEncryptionHashLabelKey] = hex.EncodeToString(hash.Sum(nil))
+			secret.Labels[encryptionresources.ApiserverEncryptionHashLabelKey] = hex.EncodeToString(hash.Sum(nil))
 
 			return secret, nil
 		}

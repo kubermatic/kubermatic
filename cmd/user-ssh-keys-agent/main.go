@@ -49,7 +49,7 @@ func main() {
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 	reconciling.Configure(log)
 
-	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug, nil)
+	cli.Hello(log, "User SSH-Key Agent", nil)
 
 	cfg, err := config.GetConfig()
 	if err != nil {

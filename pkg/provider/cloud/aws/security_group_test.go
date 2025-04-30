@@ -24,7 +24,7 @@ import (
 
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/utils/ptr"
@@ -96,7 +96,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 				expectedPerm.UserIdGroupPairs[i].UserId = nil
 			}
 
-			if compareIpPermissions(perm, expectedPerm) {
+			if compareIPPermissions(perm, expectedPerm) {
 				found = true
 				break
 			}
@@ -112,7 +112,7 @@ func assertSecurityGroup(t *testing.T, cluster *kubermaticv1.Cluster, group *ec2
 	}
 }
 
-func compareIpPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermission) bool {
+func compareIPPermissions(perm1 ec2types.IpPermission, perm2 ec2types.IpPermission) bool {
 	if ptr.Deref[int32](perm1.FromPort, -1) != ptr.Deref[int32](perm2.FromPort, -1) {
 		return false
 	}

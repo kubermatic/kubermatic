@@ -22,7 +22,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -65,9 +65,10 @@ func reconcileAvailabilitySet(ctx context.Context, clients *ClientSet, location 
 	// - SKU name
 	// - fault domain count
 	// - update domain count
-	if !((availabilitySet.SKU != nil && availabilitySet.SKU.Name != nil && *availabilitySet.SKU.Name == *target.SKU.Name) && availabilitySet.Properties != nil &&
-		(availabilitySet.Properties.PlatformFaultDomainCount != nil && *availabilitySet.Properties.PlatformFaultDomainCount == *target.Properties.PlatformFaultDomainCount) &&
-		(availabilitySet.Properties.PlatformUpdateDomainCount != nil && *availabilitySet.Properties.PlatformUpdateDomainCount == *target.Properties.PlatformUpdateDomainCount)) {
+	if availabilitySet.SKU == nil || availabilitySet.SKU.Name == nil || *availabilitySet.SKU.Name != *target.SKU.Name ||
+		availabilitySet.Properties == nil ||
+		availabilitySet.Properties.PlatformFaultDomainCount == nil || *availabilitySet.Properties.PlatformFaultDomainCount != *target.Properties.PlatformFaultDomainCount ||
+		availabilitySet.Properties.PlatformUpdateDomainCount == nil || *availabilitySet.Properties.PlatformUpdateDomainCount != *target.Properties.PlatformUpdateDomainCount {
 		if err := ensureAvailabilitySet(ctx, clients.AvailabilitySets, cluster.Spec.Cloud, target); err != nil {
 			return nil, fmt.Errorf("failed to ensure AvailabilitySet exists: %w", err)
 		}

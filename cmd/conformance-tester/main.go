@@ -42,7 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -85,7 +85,7 @@ func main() {
 	defer metrics.UpdateMetrics(log)
 
 	// say hello
-	cli.Hello(log, "Conformance Tests", true, nil)
+	cli.Hello(log, "Conformance Tests", nil)
 	log.Infow("Runner configuration",
 		"providers", sets.List(opts.Providers),
 		"operatingsystems", sets.List(opts.Distributions),

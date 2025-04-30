@@ -16,7 +16,7 @@ limitations under the License.
 
 package defaulting
 
-import appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+import appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 
 func DefaultApplicationDefinition(appInstall *appskubermaticv1.ApplicationDefinition) error {
 	DefaultDeployOpts(appInstall.Spec.DefaultDeployOptions)

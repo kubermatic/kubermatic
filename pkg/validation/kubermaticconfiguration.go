@@ -23,8 +23,9 @@ import (
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
+	"github.com/distribution/reference"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -33,6 +34,11 @@ import (
 
 func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurationSpec) field.ErrorList {
 	allErrs := field.ErrorList{}
+
+	// Validate the MirrorImages field
+	if err := ValidateMirrorImages(spec.MirrorImages); err != nil {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "mirrorImages"), spec.MirrorImages, err.Error()))
+	}
 
 	// general cloud spec logic
 	if errs := ValidateKubermaticVersioningConfiguration(spec.Versions, field.NewPath("spec", "versions")); len(errs) > 0 {
@@ -144,4 +150,21 @@ func validateAutomaticUpdateRulesOnlyPointToValidVersions(config kubermaticv1.Ku
 	}
 
 	return allErrs
+}
+
+func ValidateMirrorImages(images []string) error {
+	for _, img := range images {
+		// Parse the image reference using distribution/reference
+		named, err := reference.Parse(img)
+		if err != nil {
+			return fmt.Errorf("invalid image reference %q: %w", img, err)
+		}
+
+		// Ensure the image is tagged
+		_, ok := named.(reference.NamedTagged)
+		if !ok {
+			return fmt.Errorf("image reference %q must include a tag", img)
+		}
+	}
+	return nil
 }

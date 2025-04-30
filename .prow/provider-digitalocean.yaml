@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -72,7 +72,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -101,6 +101,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-do-ubuntu-1.31
     decorate: true
+    run_if_changed: "(digitalocean.go|/digitalocean/)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"
@@ -115,7 +116,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -158,7 +159,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-9
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
           env:
             - name: KUBERMATIC_EDITION
               value: ee

@@ -17,7 +17,7 @@ limitations under the License.
 package resources
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -56,7 +56,7 @@ func OperatorDeploymentReconciler(imageRewriter registry.ImageRewriter, updateWi
 			labels := map[string]string{"app.kubernetes.io/name": OperatorDeploymentName}
 
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
-			dep.Spec.Template.ObjectMeta.Labels = labels
+			dep.Spec.Template.Labels = labels
 			dep.Spec.Template.Spec.ServiceAccountName = operatorServiceAccountName
 
 			env := []corev1.EnvVar{

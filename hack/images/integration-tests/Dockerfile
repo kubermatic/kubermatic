@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-3
+FROM quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/integration-tests/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-ENV KUBE_VERSION=1.31.0
+ENV KUBE_VERSION=1.32.0
 
 RUN os=$(go env GOOS) && \
     arch=$(go env GOARCH) && \

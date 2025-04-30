@@ -29,16 +29,16 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -108,6 +108,7 @@ func NewTemplateDataBuilder() *TemplateDataBuilder {
 }
 
 func (td *TemplateDataBuilder) WithContext(ctx context.Context) *TemplateDataBuilder {
+	//nolint:fatcontext // tracked via https://github.com/kubermatic/kubermatic/issues/13563
 	td.data.ctx = ctx
 	return td
 }
@@ -319,11 +320,11 @@ func (d *TemplateData) EtcdBackupDestination() *kubermaticv1.BackupDestination {
 }
 
 func (d *TemplateData) EtcdLauncherTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) NodePortProxyTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 // UserClusterMLAEnabled returns userClusterMLAEnabled.
@@ -543,7 +544,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) DNATControllerImage() string {
@@ -559,7 +560,7 @@ func (d *TemplateData) BackupSchedule() time.Duration {
 }
 
 func (d *TemplateData) DNATControllerTag() string {
-	return d.versions.Kubermatic
+	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {
@@ -749,9 +750,9 @@ func (d *TemplateData) KubermaticConfiguration() *kubermaticv1.KubermaticConfigu
 	return d.config
 }
 
-func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
-	cluster := data.Cluster()
-	dc := data.DC()
+func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
+	cluster := d.Cluster()
+	dc := d.DC()
 
 	refTo := func(key string) *corev1.EnvVarSource {
 		return &corev1.EnvVarSource{
@@ -801,7 +802,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "DO_TOKEN", ValueFrom: refTo(DigitaloceanToken)})
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(data.ctx, data.client)
+		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(d.ctx, d.client)
 		spec := cluster.Spec.Cloud.VSphere
 		vars = append(vars, corev1.EnvVar{Name: "VSPHERE_ADDRESS", Value: dc.Spec.VSphere.Endpoint})
 		if val, _ := secretKeySelector(spec.CredentialsReference, VsphereInfraManagementUserUsername); val != "" {
@@ -865,7 +866,7 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "VCD_ALLOW_UNVERIFIED_SSL", Value: "true"})
 		}
 	}
-	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(data.Seed(), cluster.Status.Address.InternalName)...)
+	vars = append(vars, GetHTTPProxyEnvVarsFromSeed(d.Seed(), cluster.Status.Address.InternalName)...)
 
 	vars = SanitizeEnvVars(vars)
 	if cluster.Spec.Cloud.Kubevirt != nil && dc.Spec.Kubevirt != nil && dc.Spec.Kubevirt.NamespacedMode != nil && dc.Spec.Kubevirt.NamespacedMode.Enabled {
@@ -875,4 +876,41 @@ func (data *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	}
 
 	return vars, nil
+}
+
+func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
+	if d.Seed() == nil {
+		return nil, fmt.Errorf("invalid cluster template, seed cluster template is nil")
+	}
+
+	seed := d.Seed()
+
+	r := seed.Spec.DefaultComponentSettings.KonnectivityProxy.Args
+	if r != nil {
+		return r, nil
+	}
+
+	if seed.Spec.DefaultClusterTemplate == "" {
+		return r, nil
+	}
+
+	tpl := kubermaticv1.ClusterTemplate{}
+	key := types.NamespacedName{Namespace: seed.Namespace, Name: seed.Spec.DefaultClusterTemplate}
+	if err := d.client.Get(d.ctx, key, &tpl); err != nil {
+		return nil, fmt.Errorf("failed to get ClusterTemplate for konnectivity: %w", err)
+	}
+
+	if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
+		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
+	}
+
+	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+}
+
+func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
+	if d.Cluster() == nil {
+		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
+	}
+
+	return d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.Args, nil
 }
