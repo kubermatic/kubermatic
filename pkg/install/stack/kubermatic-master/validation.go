@@ -241,7 +241,7 @@ func (*MasterStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfigu
 		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)
 	}
 
-	helmFailures := validateHelmValues(config, helmValues, opt, logger)
+	helmFailures := validateHelmValues(config, helmValues, logger)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
 	}
@@ -304,7 +304,7 @@ type dexClient struct {
 	ID string `yaml:"id"`
 }
 
-func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
+func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) []error {
 	if helmValues.IsEmpty() {
 		return []error{fmt.Errorf("No Helm Values file was provided, or the file was empty; installation cannot proceed. Please use the flag --helm-values=<valuesfile.yaml>")}
 	}
@@ -317,21 +317,20 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		helmValues.Set(path, config.Spec.ImagePullSecret)
 	}
 
-	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		path := yamled.Path{"dex", "ingress", "host"}
-		if domain, _ := helmValues.GetString(path); domain == "" {
-			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
-			helmValues.Set(path, config.Spec.Ingress.Domain)
-		}
-	}
-
 	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading
 	}
 
-	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+	useNewDexChart, _ := helmValues.GetBool(yamled.Path{"useNewDexChart"})
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] && !useNewDexChart {
+		path := yamled.Path{"dex", "ingress", "host"}
+		if domain, _ := helmValues.GetString(path); domain == "" {
+			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
+			helmValues.Set(path, config.Spec.Ingress.Domain)
+		}
+
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
 		clients := []dexClient{}
