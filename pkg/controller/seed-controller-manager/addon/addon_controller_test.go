@@ -431,7 +431,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 			Name: "test",
 		},
 	}
-	labeledManifests, err := controller.ensureAddonLabelOnManifests(a, []runtime.RawExtension{manifest})
+	labeledManifests, err := controller.ensureAddonLabelOnManifests(context.Background(), nil, a, []runtime.RawExtension{manifest})
 	if err != nil {
 		t.Fatal(err)
 	}

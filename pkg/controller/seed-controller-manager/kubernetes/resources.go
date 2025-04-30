@@ -112,7 +112,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return &reconcile.Result{RequeueAfter: clusterIPUnknownRetryTimeout}, nil
 	}
 
-	// check that all secrets are available // New way of handling secrets
+	// check that all secrets are available
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return nil, err
 	}
@@ -507,7 +507,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		cloudconfig.SecretReconciler(data, resources.CloudConfigSecretName),
+		cloudconfig.SecretReconciler(data, resources.CloudConfigSeedSecretName),
 		certificates.RootCAReconciler(data),
 		certificates.FrontProxyCAReconciler(),
 		resources.ImagePullSecretReconciler(r.dockerPullConfigJSON),
