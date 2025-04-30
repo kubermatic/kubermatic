@@ -55,7 +55,7 @@ spec:
             secretKeyRef:
               key: secretAccessKey
               name: cloud-credentials
-        image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.32.0
+        image: registry.k8s.io/provider-aws/cloud-controller-manager:v1.32.1
         name: cloud-controller-manager
         resources:
           limits:
