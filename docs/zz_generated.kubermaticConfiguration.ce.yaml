@@ -72,6 +72,9 @@ spec:
     kind: ""
     # Name is the name of resource being referenced
     name: ca-bundle
+  # DisableSSHKeys (optional) prevents users from adding SSH keys to worker nodes.
+  # When true, users cannot configure or inject SSH keys to nodes.
+  disableSSHKeys: false
   # ExposeStrategy is the strategy to expose the cluster with.
   # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
   # if this is set to LoadBalancerStrategy.

@@ -185,6 +185,11 @@ spec:
                     - name
                   type: object
                   x-kubernetes-map-type: atomic
+                disableSSHKeys:
+                  description: |-
+                    DisableSSHKeys (optional) prevents users from adding SSH keys to worker nodes.
+                    When true, users cannot configure or inject SSH keys to nodes.
+                  type: boolean
                 exposeStrategy:
                   description: |-
                     ExposeStrategy is the strategy to expose the cluster with.
