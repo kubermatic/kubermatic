@@ -372,6 +372,12 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 				continue
 			}
 
+			// Skip installation of the UserSSHKeys CRD when SSH key functionality is disabled.
+			// The CRD is automatically included by default when DisableSSHKeys is false/unset.
+			if cfg.Spec.DisableSSHKeys && crdObject.Name == "usersshkeys.kubermatic.k8c.io" {
+				continue
+			}
+
 			creators = append(creators, common.CRDReconciler(&crds[i], log, r.versions))
 		}
 	}

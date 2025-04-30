@@ -133,6 +133,9 @@ type KubermaticConfigurationSpec struct {
 	// MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
 	// Each entry should be in the format "repository:tag".
 	MirrorImages []string `json:"mirrorImages,omitempty"`
+	// DisableSSHKeys (optional) prevents users from adding SSH keys to worker nodes.
+	// When true, users cannot configure or inject SSH keys to nodes.
+	DisableSSHKeys bool `json:"disableSSHKeys,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.

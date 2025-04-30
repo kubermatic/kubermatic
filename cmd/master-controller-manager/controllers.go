@@ -65,10 +65,13 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.workerNamePredicate,
 	)
 
+	config, err := ctrlCtx.configGetter(ctrlCtx.ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get the kubermatic configuration: %w", err)
+	}
 	controllerFactories := []seedcontrollerlifecycle.ControllerFactory{
 		rbacControllerFactory,
 		projectLabelSynchronizerFactoryCreator(ctrlCtx),
-		userSSHKeySynchronizerFactoryCreator(ctrlCtx),
 		masterConstraintSynchronizerFactoryCreator(ctrlCtx),
 		masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx),
 		userSynchronizerFactoryCreator(ctrlCtx),
@@ -81,6 +84,10 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		resourceQuotaSynchronizerFactoryCreator(ctrlCtx),
 		resourceQuotaControllerFactoryCreator(ctrlCtx),
 		policyTemplateSynchronizerFactoryCreator(ctrlCtx),
+	}
+
+	if !config.Spec.DisableSSHKeys {
+		controllerFactories = append(controllerFactories, userSSHKeySynchronizerFactoryCreator(ctrlCtx))
 	}
 
 	controllerFactories = append(controllerFactories, setupLifecycleControllerCreators(ctrlCtx)...)
@@ -99,9 +106,13 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := userprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create user-project-binding controller: %w", err)
 	}
-	if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create usersshkey-project-ownership controller: %w", err)
+
+	if !config.Spec.DisableSSHKeys {
+		if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+			return fmt.Errorf("failed to create usersshkey-project-ownership controller: %w", err)
+		}
 	}
+
 	if err := serviceaccount.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
 	}

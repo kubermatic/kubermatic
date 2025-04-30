@@ -87,9 +87,9 @@ type TemplateData struct {
 	apiServerAlternateNames          *certutil.AltNames
 
 	supportsFailureDomainZoneAntiAffinity bool
-
-	userClusterMLAEnabled bool
-	isKonnectivityEnabled bool
+	disableSSHKeys                        bool
+	userClusterMLAEnabled                 bool
+	isKonnectivityEnabled                 bool
 
 	tunnelingAgentIP string
 
@@ -913,6 +913,13 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
 }
 
+func (d *TemplateData) IsSSHKeysDisabled() bool {
+	if d.KubermaticConfiguration() != nil {
+		return d.KubermaticConfiguration().Spec.DisableSSHKeys
+	}
+
+	return false
+}
 func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
 	if d.Cluster() == nil {
 		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
