@@ -902,6 +902,14 @@ spec:
                                     - spec
                                   type: object
                                 type: array
+                              disableDefaultInstanceTypes:
+                                description: |-
+                                  DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+                                  (standard-2, standard-4, standard-8) in KubeVirt environments.
+                                type: boolean
+                              disableDefaultPreferences:
+                                description: DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+                                type: boolean
                               dnsConfig:
                                 description: |-
                                   DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
