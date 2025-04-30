@@ -46,7 +46,9 @@ import (
 	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
 	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -65,7 +67,13 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.workerNamePredicate,
 	)
 
-	config, err := ctrlCtx.configGetter(ctrlCtx.ctx)
+	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(ctrlCtx.mgr.GetAPIReader(), ctrlCtx.namespace)
+	if err != nil {
+		return fmt.Errorf("failed to get KubermaticConfiguration Getter : %w", err)
+
+	}
+
+	config, err := configGetter(ctrlCtx.ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get the kubermatic configuration: %w", err)
 	}
@@ -86,7 +94,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		policyTemplateSynchronizerFactoryCreator(ctrlCtx),
 	}
 
-	if !config.Spec.DisableSSHKeys {
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
 		controllerFactories = append(controllerFactories, userSSHKeySynchronizerFactoryCreator(ctrlCtx))
 	}
 
@@ -107,7 +115,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create user-project-binding controller: %w", err)
 	}
 
-	if !config.Spec.DisableSSHKeys {
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
 		if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 			return fmt.Errorf("failed to create usersshkey-project-ownership controller: %w", err)
 		}

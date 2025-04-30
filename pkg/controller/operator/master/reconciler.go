@@ -437,7 +437,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		common.PoliciesWebhookConfigurationReconciler(ctx, config, r.Client),
 	}
 
-	if !config.Spec.DisableSSHKeys {
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
 		reconcilers = append(reconcilers, kubermatic.UserSSHKeyValidatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
@@ -456,7 +456,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 		common.ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 	}
 
-	if !config.Spec.DisableSSHKeys {
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
 		reconcilers = append(reconcilers, kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 

@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -915,7 +916,7 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 
 func (d *TemplateData) IsSSHKeysDisabled() bool {
 	if d.KubermaticConfiguration() != nil {
-		return d.KubermaticConfiguration().Spec.DisableSSHKeys
+		return d.KubermaticConfiguration().Spec.FeatureGates[features.DisableUserSSHKey]
 	}
 
 	return false
