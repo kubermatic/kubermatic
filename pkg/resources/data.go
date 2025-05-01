@@ -88,7 +88,6 @@ type TemplateData struct {
 	apiServerAlternateNames          *certutil.AltNames
 
 	supportsFailureDomainZoneAntiAffinity bool
-	disableSSHKeys                        bool
 	userClusterMLAEnabled                 bool
 	isKonnectivityEnabled                 bool
 

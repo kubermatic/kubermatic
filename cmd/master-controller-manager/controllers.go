@@ -70,7 +70,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(ctrlCtx.mgr.GetAPIReader(), ctrlCtx.namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get KubermaticConfiguration Getter : %w", err)
-
 	}
 
 	config, err := configGetter(ctrlCtx.ctx)

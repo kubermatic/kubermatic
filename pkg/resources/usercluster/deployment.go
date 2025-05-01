@@ -166,8 +166,8 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			if !data.IsSSHKeysDisabled() {
 				args = append(args, fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent))
-
 			}
+
 			if data.Cluster().Spec.DebugLog {
 				args = append(args, "-log-debug=true")
 			}
