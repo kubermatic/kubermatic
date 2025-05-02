@@ -800,9 +800,9 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetReconcilers returns all StatefulSetReconcilers that are currently in use.
-func GetStatefulSetReconcilers(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetReconcilerFactory {
+func GetStatefulSetReconcilers(data *resources.TemplateData, enableDataCorruptionChecks, enableTLSOnly bool, quotaBackendGB int64) []reconciling.NamedStatefulSetReconcilerFactory {
 	return []reconciling.NamedStatefulSetReconcilerFactory{
-		etcd.StatefulSetReconciler(data, enableDataCorruptionChecks, enableTLSOnly),
+		etcd.StatefulSetReconciler(data, enableDataCorruptionChecks, enableTLSOnly, quotaBackendGB),
 	}
 }
 
@@ -898,7 +898,12 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 		return err
 	}
 
-	creators := GetStatefulSetReconcilers(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
+	quotaBackendGB := int64(0)
+	if b := c.Spec.ComponentsOverride.Etcd.QuotaBackendGB; b != nil {
+		quotaBackendGB = *b
+	}
+
+	creators := GetStatefulSetReconcilers(data, r.features.EtcdDataCorruptionChecks, useTLSOnly, quotaBackendGB)
 
 	modifiers := []reconciling.ObjectModifier{
 		modifier.RelatedRevisionsLabels(ctx, r),

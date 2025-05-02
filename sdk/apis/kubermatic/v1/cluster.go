@@ -831,6 +831,10 @@ type EtcdStatefulSetSettings struct {
 	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 	// NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+	//
+	// For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+	QuotaBackendGB *int64 `json:"quotaBackendGb,omitempty"`
 }
 
 type LeaderElectionSettings struct {
