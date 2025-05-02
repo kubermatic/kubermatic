@@ -197,12 +197,18 @@ func (td *TemplateDataBuilder) WithEtcdLauncherImage(image string) *TemplateData
 	return td
 }
 
-func (td *TemplateDataBuilder) WithEtcdBackupStoreContainer(container *corev1.Container) *TemplateDataBuilder {
+func (td *TemplateDataBuilder) WithEtcdBackupStoreContainer(container *corev1.Container, isCustom bool) *TemplateDataBuilder {
+	if !isCustom {
+		container.Image = registry.Must(td.data.RewriteImage(container.Image))
+	}
 	td.data.etcdBackupStoreContainer = container
 	return td
 }
 
-func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.Container) *TemplateDataBuilder {
+func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.Container, isCustom bool) *TemplateDataBuilder {
+	if !isCustom {
+		container.Image = registry.Must(td.data.RewriteImage(container.Image))
+	}
 	td.data.etcdBackupDeleteContainer = container
 	return td
 }
