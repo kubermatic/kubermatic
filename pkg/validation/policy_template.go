@@ -27,9 +27,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-// TODO: I will change these to constants and move them to the PolicyTemplate CRD
 var (
-	validVisibilities = sets.New("global", "project", "cluster")
+	validVisibilities = sets.New(kubermaticv1.PolicyTemplateGlobalVisibility, kubermaticv1.PolicyTemplateProjectVisibility, kubermaticv1.PolicyTemplateClusterVisibility)
 )
 
 // ValidatePolicyTemplate validates the PolicyTemplate resource.
@@ -49,12 +48,11 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 		allErrs = append(allErrs, field.NotSupported(specPath.Child("visibility"), template.Spec.Visibility, validVisibilities.UnsortedList()))
 	}
 
-	// TODO: THis check will also be updated after I move the constants
-	if template.Spec.Visibility == "project" && template.Spec.ProjectID == "" {
+	if template.Spec.Visibility == kubermaticv1.PolicyTemplateProjectVisibility && template.Spec.ProjectID == "" {
 		allErrs = append(allErrs, field.Required(specPath.Child("projectID"), "projectID is required when visibility is 'project'"))
 	}
 
-	if template.Spec.Visibility != "project" && template.Spec.ProjectID != "" {
+	if template.Spec.Visibility != kubermaticv1.PolicyTemplateProjectVisibility && template.Spec.ProjectID != "" {
 		allErrs = append(allErrs, field.Forbidden(specPath.Child("projectID"), "projectID must only be set when visibility is 'project'"))
 	}
 
@@ -118,7 +116,7 @@ func validateKyvernoPolicySpec(fldPath *field.Path, spec *kyvernoapiv1.Spec) fie
 
 	// Kyverno allows the following values for validationFailureAction: audit, enforce, Audit, Enforce.
 	// The lowercase values are deprecated, but Kyverno still supports them, so we need to check for them.
-	// This field is deprecated too and scheduled to be removed in future versions, but still supported, so we need to check for it.
+	// This field is deprecated too and scheduled to be removed in future versions.
 	validActions := []string{string(kyvernoapiv1.Audit), string(kyvernoapiv1.Enforce), "audit", "enforce"}
 	validActionSet := sets.NewString(validActions...)
 	if spec.ValidationFailureAction != "" && !validActionSet.Has(string(spec.ValidationFailureAction)) {
