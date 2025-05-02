@@ -84,7 +84,7 @@ func newUserGrafanaReconciler(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
-		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
+		return !kubermaticv1helper.IsProjectServiceAccount(user.Name)
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -116,6 +116,10 @@ func enqueueUserForUserProjectBinding(c ctrlruntimeclient.Client) func(context.C
 			return res
 		}
 		for _, user := range userList.Items {
+			// Skip service accounts
+			if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+				continue
+			}
 			if upb.Spec.UserEmail == user.Spec.Email {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
 			}
@@ -140,6 +144,10 @@ func enqueueUserForGroupProjectBinding(c ctrlruntimeclient.Client) func(context.
 			return res
 		}
 		for _, user := range userList.Items {
+			// Skip service accounts
+			if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+				continue
+			}
 			if slices.Contains(user.Spec.Groups, gpb.Spec.Group) {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
 			}

@@ -32,6 +32,7 @@ import (
 type etcdBackupConfigReconcilerData interface {
 	Cluster() *kubermaticv1.Cluster
 	BackupSchedule() time.Duration
+	BackupCount() *int
 }
 
 // BackupConfigReconciler returns the function to reconcile the EtcdBackupConfigs.
@@ -45,14 +46,26 @@ func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermati
 				config.Labels[kubermaticv1.ProjectIDLabelKey] = data.Cluster().Labels[kubermaticv1.ProjectIDLabelKey]
 			}
 
-			backupScheduleString, err := parseDuration(data.BackupSchedule())
+			var backupDuration time.Duration
+			if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.BackupInterval.Duration > 0 {
+				backupDuration = seed.Spec.EtcdBackupRestore.BackupInterval.Duration
+			} else {
+				backupDuration = data.BackupSchedule()
+			}
+
+			backupScheduleString, err := convertDurationToCron(backupDuration)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse backup duration: %w", err)
 			}
+
+			if seed.Spec.EtcdBackupRestore != nil && seed.Spec.EtcdBackupRestore.BackupCount != nil {
+				config.Spec.Keep = seed.Spec.EtcdBackupRestore.BackupCount
+			} else {
+				config.Spec.Keep = data.BackupCount()
+			}
+
 			config.Spec.Name = resources.EtcdDefaultBackupConfigName
 			config.Spec.Schedule = backupScheduleString
-			keep := 20
-			config.Spec.Keep = &keep
 			config.Spec.Cluster = corev1.ObjectReference{
 				Kind:       kubermaticv1.ClusterKindName,
 				Name:       data.Cluster().Name,
@@ -69,7 +82,7 @@ func BackupConfigReconciler(data etcdBackupConfigReconcilerData, seed *kubermati
 	}
 }
 
-func parseDuration(interval time.Duration) (string, error) {
+func convertDurationToCron(interval time.Duration) (string, error) {
 	scheduleString := fmt.Sprintf("@every %vm", interval.Round(time.Minute).Minutes())
 	// We verify the validity of the scheduleString here, because the etcd_backup_controller
 	// only does that inside its sync loop, which means it is entirely possible to create
