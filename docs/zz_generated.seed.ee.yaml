@@ -168,6 +168,11 @@ spec:
                 podSelector: {}
                 policyTypes:
                   - Ingress
+          # DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+          # (standard-2, standard-4, standard-8) in KubeVirt environments.
+          disableDefaultInstanceTypes: false
+          # DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+          disableDefaultPreferences: false
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:
