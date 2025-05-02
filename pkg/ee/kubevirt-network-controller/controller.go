@@ -33,11 +33,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -52,6 +55,7 @@ const (
 	ControllerName                = "kubevirt-network-controller"
 	WorkloadSubnetLabel           = "k8c.io/kubevirt-workload-subnet"
 	NetworkPolicyPodSelectorLabel = "cluster.x-k8s.io/cluster-name"
+	NetworkPolicyCleanupFinalizer = "kubermatic.k8c.io/cleanup-kubevirt-infra-network-policy"
 )
 
 type Reconciler struct {
@@ -130,6 +134,33 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
+	if datacenter.Spec.Kubevirt.ProviderNetwork == nil {
+		log.Debug("Skipping reconciliation as the provider network is not configured")
+		return reconcile.Result{}, nil
+	}
+
+	if !datacenter.Spec.Kubevirt.ProviderNetwork.NetworkPolicyEnabled {
+		log.Debug("Skipping reconciliation as the network policy is not enabled")
+		return reconcile.Result{}, nil
+	}
+
+	kubeVirtInfraClient, err := r.SetupKubeVirtInfraClient(ctx, cluster)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if cluster.DeletionTimestamp != nil {
+		if !kuberneteshelper.HasFinalizer(cluster, NetworkPolicyCleanupFinalizer) {
+			return reconcile.Result{}, nil
+		}
+		log.Debug("Cleaning up cloud provider")
+		if err := cleanUpKubevirtCloudProviderNetworkPolicy(ctx, kubeVirtInfraClient, cluster, datacenter.Spec.Kubevirt); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed cloud provider cleanup: %w", err)
+		}
+
+		return reconcile.Result{}, kuberneteshelper.TryRemoveFinalizer(ctx, r.Client, cluster, NetworkPolicyCleanupFinalizer)
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := util.ClusterReconcileWrapper(
 		ctx,
@@ -139,7 +170,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		r.versions,
 		kubermaticv1.ClusterConditionKubeVirtNetworkControllerSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, log, cluster, datacenter.Spec.Kubevirt)
+			return r.reconcile(ctx, log, kubeVirtInfraClient, cluster, datacenter.Spec.Kubevirt)
 		},
 	)
 
@@ -154,21 +185,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) (*reconcile.Result, error) {
-	if dc.ProviderNetwork == nil {
-		log.Debug("Skipping reconciliation as the provider network is not configured")
-		return nil, nil
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kubeVirtInfraClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) (*reconcile.Result, error) {
+	// add the cleanup finalizer first
+	if !kuberneteshelper.HasFinalizer(cluster, NetworkPolicyCleanupFinalizer) {
+		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, NetworkPolicyCleanupFinalizer); err != nil {
+			return nil, fmt.Errorf("failed to add finalizer: %w", err)
+		}
+
+		return &reconcile.Result{Requeue: true}, nil
 	}
 
-	if !dc.ProviderNetwork.NetworkPolicyEnabled {
-		log.Debug("Skipping reconciliation as the network policy is not enabled")
-		return nil, nil
-	}
-
-	kubeVirtInfraClient, err := r.SetupKubeVirtInfraClient(ctx, cluster)
-	if err != nil {
-		return &reconcile.Result{}, err
-	}
 	gateways := make([]string, 0)
 	cidrs := make([]string, 0)
 	for _, vpc := range dc.ProviderNetwork.VPCs {
@@ -213,4 +239,14 @@ func processSubnet(ctx context.Context, kvInfraClient ctrlruntimeclient.Client, 
 	}
 
 	return gateway, cidrBlock, nil
+}
+
+func cleanUpKubevirtCloudProviderNetworkPolicy(ctx context.Context, kvInfraClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) error {
+	networkPolicy := &networkingv1.NetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("cluster-isolation-%s", cluster.Name),
+			Namespace: dc.NamespacedMode.Namespace,
+		},
+	}
+	return kvInfraClient.Delete(ctx, networkPolicy)
 }
