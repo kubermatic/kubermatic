@@ -29,32 +29,41 @@ const (
 	PolicyBindingKindName = "PolicyBinding"
 )
 
-// Condition reasons for PolicyBinding.
+// PolicyBindingConditionType defines the type of condition in PolicyBindingStatus.
+//
+// +kubebuilder:validation:Enum=Ready;TemplateValid;KyvernoPolicyApplied
+type PolicyBindingConditionType string
+
+// Condition types for PolicyBinding Status.
 const (
-	// PolicyAppliedSuccessfully indicates the policy was successfully applied.
-	PolicyAppliedSuccessfully = "PolicyAppliedSuccessfully"
+	// PolicyBindingConditionReady indicates if the corresponding Kyverno policy/policies.
+	PolicyBindingConditionReady PolicyBindingConditionType = "Ready"
 
-	// PolicyApplicationFailed indicates the policy application failed.
-	PolicyApplicationFailed = "PolicyApplicationFailed"
+	// PolicyBindingConditionTemplateValid indicates if the referenced PolicyTemplate is valid.
+	PolicyBindingConditionTemplateValid PolicyBindingConditionType = "TemplateValid"
 
-	// PolicyTemplateNotFound indicates the referenced template doesn't exist.
-	PolicyTemplateNotFound = "PolicyTemplateNotFound"
+	// PolicyBindingConditionKyvernoPolicyApplied indicates whether the controller
+	// successfully created/updated the required Kyverno Policy/ClusterPolicy resource(s).
+	PolicyBindingConditionKyvernoPolicyApplied PolicyBindingConditionType = "KyvernoPolicyApplied"
 )
 
-// Condition types for PolicyBinding.
+// Annotation keys for PolicyBinding.
 const (
-	// PolicyReady indicates if the policy has been successfully applied.
-	PolicyReadyCondition = "Ready"
-
-	// PolicyEnforced indicates if the policy is currently being enforced.
-	PolicyEnforcedCondition = "Enforced"
+	// AnnotationPolicyEnforced is added to PolicyBinding resources that were automatically
+	// created because the referenced PolicyTemplate has spec.enforced=true.
+	AnnotationPolicyEnforced = "policy.kubermatic.k8c.io/enforced-by-template"
 )
 
-// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:scope=Namespaced,categories=kubermatic,shortName=pb
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled",description="Whether the policy is applied (only relevant if not enforced)"
-// +kubebuilder:printcolumn:name="Scope",type=string,JSONPath=".spec.scope",description="cluster or namespace"
+// +kubebuilder:printcolumn:name="Template",type=string,JSONPath=".spec.policyTemplateRef.name"
+// +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".status.templateEnforced"
+// +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled"
+// +kubebuilder:printcolumn:name="Active",type=string,JSONPath=".status.active"
+// +kubebuilder:printcolumn:name="Namespaced",type=boolean,JSONPath=".spec.namespacedPolicy"
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // PolicyBinding binds a PolicyTemplate to specific clusters/projects and
 // optionally enables or disables it (if the template is not enforced).
@@ -69,46 +78,56 @@ type PolicyBinding struct {
 // PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
 type PolicyBindingSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
+	//
+	// +kubebuilder:validation:Required
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
+	// Enabled controls whether the policy defined by the template should be actively applied to the cluster.
+	//
+	// Relevant only if the referenced PolicyTemplate has `spec.enforced: false`.
+	// If the template is not enforced, setting this to `false` will cause the reconciler
+	// to remove the corresponding Kyverno Policy/ClusterPolicy resource(s).
+	//
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
+	//
+	// If false (default): A single cluster-scoped Kyverno 'ClusterPolicy' is created.
+	// If true: One or more namespaced Kyverno 'Policy' resources are created in namespaces
+	// matching the NamespaceSelector.
+	//
+	// +optional
 	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
 
-	// Scope specifies the scope of the policy.
-	// Can be one of: global, project, or cluster
+	// NamespaceSelector specifies which namespaces the Kyverno 'Policy' resource(s)
+	// should be created in when `spec.NamespacedPolicy` is true.
 	//
-	// +kubebuilder:validation:Enum=global;project;cluster
-	Scope string `json:"scope"`
-
-	// Target specifies which clusters/projects to apply the policy to
-	Target PolicyTargetSpec `json:"target,omitempty"`
+	// Relevant only if `spec.NamespacedPolicy` is true.
+	// If `NamespacedPolicy` is true and this selector is omitted, no Kyverno 'Policy'
+	// resources will be created by default.
+	//
+	// +optional
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
-// PolicyTargetSpec indicates how to select projects/clusters in Kubermatic.
-type PolicyTargetSpec struct {
-	// Projects is a list of projects to apply the policy to
-	Projects ResourceSelector `json:"projects,omitempty"`
-
-	// Clusters is a list of clusters to apply the policy to
-	Clusters ResourceSelector `json:"clusters,omitempty"`
-}
-
-// ResourceSelector is a struct that contains the label selector, name, and selectAll fields.
-type ResourceSelector struct {
-	// LabelSelector is a label selector to select the resources (projects/clusters)
-	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
-	// Name is a list of names to select the resources (projects/clusters)
-	Name []string `json:"name,omitempty"`
-	// SelectAll is a boolean to select all the resources (projects/clusters) from cluster admins.
-	SelectAll bool `json:"selectAll,omitempty"`
-}
-
-// PolicyBindingStatus is the status of the policy binding.
+// PolicyBindingStatus defines the observed state of the PolicyBinding within the User Cluster.
 type PolicyBindingStatus struct {
 	// ObservedGeneration is the generation observed by the controller.
 	//
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// TemplateEnforced reflects the value of `spec.enforced` from PolicyTemplate
+	//
+	// +optional
+	TemplateEnforced *bool `json:"templateEnforced,omitempty"`
+
+	// Active reflects whether the Kyverno policy resource(s) exist and are active in this User Cluster.
+	// A policy is active if `TemplateEnforced` is true or `spec.Enabled` is true/default.
+	//
+	// +optional
+	Active *bool `json:"active,omitempty"`
 
 	// Conditions represents the latest available observations of the policy binding's current state
 	// +optional
