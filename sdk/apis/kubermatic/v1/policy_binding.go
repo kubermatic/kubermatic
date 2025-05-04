@@ -106,7 +106,7 @@ type PolicyBindingSpec struct {
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
-// PolicyBindingStatus defines the observed state of the PolicyBinding within the User Cluster.
+// PolicyBindingStatus is the status of the policy binding.
 type PolicyBindingStatus struct {
 	// ObservedGeneration is the generation observed by the controller.
 	//

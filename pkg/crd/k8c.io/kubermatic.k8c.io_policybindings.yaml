@@ -174,7 +174,7 @@ spec:
                 - policyTemplateRef
               type: object
             status:
-              description: PolicyBindingStatus defines the observed state of the PolicyBinding within the User Cluster.
+              description: PolicyBindingStatus is the status of the policy binding.
               properties:
                 active:
                   description: Active reflects whether the Kyverno policy resource(s) exist and are active in this User Cluster.
