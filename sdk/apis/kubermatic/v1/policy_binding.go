@@ -43,15 +43,17 @@ const (
 	PolicyBindingConditionTemplateValid PolicyBindingConditionType = "TemplateValid"
 
 	// PolicyBindingConditionKyvernoPolicyApplied indicates whether the controller
-	// successfully created/updated the required Kyverno Policy/ClusterPolicy resource(s).
+	// successfully created/updated the required Kyverno Policy/ClusterPolicy resources.
 	PolicyBindingConditionKyvernoPolicyApplied PolicyBindingConditionType = "KyvernoPolicyApplied"
 )
 
 // Annotation keys for PolicyBinding.
 const (
-	// AnnotationPolicyEnforced is added to PolicyBinding resources that were automatically
-	// created because the referenced PolicyTemplate has spec.enforced=true.
+	// AnnotationPolicyEnforced is added to PolicyBinding resources that were automatically created.
 	AnnotationPolicyEnforced = "policy.kubermatic.k8c.io/enforced-by-template"
+
+	// AnnotationPolicyDefault is added to PolicyBinding resources that were defaulted from the PolicyTemplate.
+	AnnotationPolicyDefault = "policy.kubermatic.k8c.io/default-policy"
 )
 
 // +kubebuilder:resource:scope=Namespaced,categories=kubermatic,shortName=pb
@@ -84,28 +86,21 @@ type PolicyBindingSpec struct {
 
 	// Enabled controls whether the policy defined by the template should be actively applied to the cluster.
 	//
-	// Relevant only if the referenced PolicyTemplate has `spec.enforced: false`.
-	// If the template is not enforced, setting this to `false` will cause the reconciler
-	// to remove the corresponding Kyverno Policy/ClusterPolicy resource(s).
+	// Relevant only if the referenced PolicyTemplate has spec.enforced=false.
 	//
 	// +optional
 	Enabled *bool `json:"enabled,omitempty"`
 
 	// NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
-	//
-	// If false (default): A single cluster-scoped Kyverno 'ClusterPolicy' is created.
-	// If true: One or more namespaced Kyverno 'Policy' resources are created in namespaces
-	// matching the NamespaceSelector.
+	// The type of Kyverno resource can be either Policy (if true) or ClusterPolicy (if false).
 	//
 	// +optional
 	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
 
-	// NamespaceSelector specifies which namespaces the Kyverno 'Policy' resource(s)
-	// should be created in when `spec.NamespacedPolicy` is true.
+	// NamespaceSelector specifies which namespaces the Kyverno Policy resource(s) should be created in
 	//
-	// Relevant only if `spec.NamespacedPolicy` is true.
-	// If `NamespacedPolicy` is true and this selector is omitted, no Kyverno 'Policy'
-	// resources will be created by default.
+	// Relevant only if NamespacedPolicy is true.
+	// If NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
 	//
 	// +optional
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
@@ -124,7 +119,6 @@ type PolicyBindingStatus struct {
 	TemplateEnforced *bool `json:"templateEnforced,omitempty"`
 
 	// Active reflects whether the Kyverno policy resource(s) exist and are active in this User Cluster.
-	// A policy is active if `TemplateEnforced` is true or `spec.Enabled` is true/default.
 	//
 	// +optional
 	Active *bool `json:"active,omitempty"`
