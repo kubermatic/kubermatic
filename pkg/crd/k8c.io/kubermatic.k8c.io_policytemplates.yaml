@@ -214,9 +214,9 @@ spec:
 
                     Can be one of: global, project, or cluster
                   enum:
-                    - global
-                    - project
-                    - cluster
+                    - Global
+                    - Project
+                    - Cluster
                   type: string
               required:
                 - description

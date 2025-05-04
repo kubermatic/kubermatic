@@ -40,14 +40,14 @@ const (
 type PolicyTemplateVisibilityType string
 
 const (
-	// PolicyTemplateGlobalVisibility is the visibility of the policy template when it is created in the global scope.
-	PolicyTemplateGlobalVisibility = "Global"
+	// PolicyTemplateVisibilityGlobal is the visibility of the policy template when it is created in the global scope.
+	PolicyTemplateVisibilityGlobal = "Global"
 
-	// PolicyTemplateProjectVisibility is the visibility of the policy template when it is created in the project scope.
-	PolicyTemplateProjectVisibility = "Project"
+	// PolicyTemplateVisibilityProject is the visibility of the policy template when it is created in the project scope.
+	PolicyTemplateVisibilityProject = "Project"
 
-	// PolicyTemplateClusterVisibility is the visibility of the policy template when it is created in the cluster scope.
-	PolicyTemplateClusterVisibility = "Cluster"
+	// PolicyTemplateVisibilityCluster is the visibility of the policy template when it is created in the cluster scope.
+	PolicyTemplateVisibilityCluster = "Cluster"
 )
 
 // +kubebuilder:resource:scope=Cluster,categories=kubermatic,shortName=pt
@@ -85,7 +85,7 @@ type PolicyTemplateSpec struct {
 	// Visibility specifies where the policy is visible.
 	//
 	// Can be one of: global, project, or cluster
-	// +kubebuilder:validation:Enum=global;project;cluster
+	// +kubebuilder:validation:Enum=Global;Project;Cluster
 	// +kubebuilder:validation:Required
 	Visibility string `json:"visibility"`
 

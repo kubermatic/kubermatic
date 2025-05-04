@@ -21,14 +21,16 @@ import (
 	"fmt"
 
 	kyvernoapiv1 "github.com/kyverno/kyverno/api/kyverno/v1"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 var (
-	validVisibilities = sets.New(kubermaticv1.PolicyTemplateGlobalVisibility, kubermaticv1.PolicyTemplateProjectVisibility, kubermaticv1.PolicyTemplateClusterVisibility)
+	validVisibilities = sets.New(kubermaticv1.PolicyTemplateVisibilityGlobal, kubermaticv1.PolicyTemplateVisibilityProject, kubermaticv1.PolicyTemplateVisibilityCluster)
 )
 
 // ValidatePolicyTemplate validates the PolicyTemplate resource.
@@ -46,14 +48,36 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 
 	if !validVisibilities.Has(template.Spec.Visibility) {
 		allErrs = append(allErrs, field.NotSupported(specPath.Child("visibility"), template.Spec.Visibility, validVisibilities.UnsortedList()))
+	} else {
+		switch template.Spec.Visibility {
+		case kubermaticv1.PolicyTemplateVisibilityProject:
+			if template.Spec.ProjectID == "" {
+				allErrs = append(allErrs, field.Required(specPath.Child("projectID"), fmt.Sprintf("projectID is required when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityProject)))
+			}
+			if template.Spec.Target != nil && template.Spec.Target.ProjectSelector != nil {
+				allErrs = append(allErrs, field.Forbidden(specPath.Child("target", "projectSelector"), fmt.Sprintf("projectSelector cannot be set when visibility is '%s'; scope is defined by projectID", kubermaticv1.PolicyTemplateVisibilityProject)))
+			}
+		case kubermaticv1.PolicyTemplateVisibilityGlobal:
+			if template.Spec.ProjectID != "" {
+				allErrs = append(allErrs, field.Invalid(specPath.Child("projectID"), template.Spec.ProjectID, fmt.Sprintf("projectID must be empty when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityGlobal)))
+			}
+		}
 	}
 
-	if template.Spec.Visibility == kubermaticv1.PolicyTemplateProjectVisibility && template.Spec.ProjectID == "" {
-		allErrs = append(allErrs, field.Required(specPath.Child("projectID"), "projectID is required when visibility is 'project'"))
-	}
-
-	if template.Spec.Visibility != kubermaticv1.PolicyTemplateProjectVisibility && template.Spec.ProjectID != "" {
-		allErrs = append(allErrs, field.Forbidden(specPath.Child("projectID"), "projectID must only be set when visibility is 'project'"))
+	if template.Spec.Target != nil {
+		targetPath := specPath.Child("target")
+		if template.Spec.Target.ProjectSelector != nil {
+			_, err := metav1.LabelSelectorAsSelector(template.Spec.Target.ProjectSelector)
+			if err != nil {
+				allErrs = append(allErrs, field.Invalid(targetPath.Child("projectSelector"), template.Spec.Target.ProjectSelector, fmt.Sprintf("invalid label selector syntax: %v", err)))
+			}
+		}
+		if template.Spec.Target.ClusterSelector != nil {
+			_, err := metav1.LabelSelectorAsSelector(template.Spec.Target.ClusterSelector)
+			if err != nil {
+				allErrs = append(allErrs, field.Invalid(targetPath.Child("clusterSelector"), template.Spec.Target.ClusterSelector, fmt.Sprintf("invalid label selector syntax: %v", err)))
+			}
+		}
 	}
 
 	// Validate the raw PolicySpec from Kyverno
