@@ -897,6 +897,11 @@ type DatacenterSpecKubevirt struct {
 	// example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
 	// otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
 	MatchSubnetAndStorageLocation *bool `json:"matchSubnetAndStorageLocation,omitempty"`
+	// DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+	// (standard-2, standard-4, standard-8) in KubeVirt environments.
+	DisableDefaultInstanceTypes bool `json:"disableDefaultInstanceTypes,omitempty"`
+	// DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+	DisableDefaultPreferences bool `json:"disableDefaultPreferences,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
