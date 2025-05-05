@@ -28,6 +28,7 @@ import (
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
 	kubevirtnetworkcontroller "k8c.io/kubermatic/v2/pkg/ee/kubevirt-network-controller"
+	kyvernocontroller "k8c.io/kubermatic/v2/pkg/ee/kyverno"
 	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -53,6 +54,10 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := kubelbcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.seedGetter, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create KubeLB controller: %w", err)
+	}
+
+	if err := kyvernocontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
+		return fmt.Errorf("failed to create Kyverno controller: %w", err)
 	}
 
 	if err := kubevirtnetworkcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.seedGetter, ctrlCtx.configGetter, ctrlCtx.versions); err != nil {
