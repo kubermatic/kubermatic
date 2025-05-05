@@ -96,7 +96,6 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 }
 
 // validateKyvernoPolicySpec performs structural validation on the Kyverno PolicySpec.
-// This is not exhaustive Kyverno validation but checks key components.
 func validateKyvernoPolicySpec(fldPath *field.Path, spec *kyvernoapiv1.Spec) field.ErrorList {
 	var allErrs field.ErrorList
 

@@ -177,7 +177,7 @@ spec:
               description: PolicyBindingStatus is the status of the policy binding.
               properties:
                 active:
-                  description: Active reflects whether the Kyverno policy resource(s) exist and are active in this User Cluster.
+                  description: Active reflects whether the Kyverno policy exists and is active in this User Cluster.
                   type: boolean
                 conditions:
                   description: Conditions represents the latest available observations of the policy binding's current state

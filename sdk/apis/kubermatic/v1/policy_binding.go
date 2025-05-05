@@ -36,7 +36,7 @@ type PolicyBindingConditionType string
 
 // Condition types for PolicyBinding Status.
 const (
-	// PolicyBindingConditionReady indicates if the corresponding Kyverno policy/policies.
+	// PolicyBindingConditionReady indicates if the corresponding Kyverno policy is ready.
 	PolicyBindingConditionReady PolicyBindingConditionType = "Ready"
 
 	// PolicyBindingConditionTemplateValid indicates if the referenced PolicyTemplate is valid.
@@ -118,7 +118,7 @@ type PolicyBindingStatus struct {
 	// +optional
 	TemplateEnforced *bool `json:"templateEnforced,omitempty"`
 
-	// Active reflects whether the Kyverno policy resource(s) exist and are active in this User Cluster.
+	// Active reflects whether the Kyverno policy exists and is active in this User Cluster.
 	//
 	// +optional
 	Active *bool `json:"active,omitempty"`
