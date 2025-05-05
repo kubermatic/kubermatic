@@ -122,11 +122,6 @@ spec:
                       type: object
                   type: object
                   x-kubernetes-map-type: atomic
-                namespacedPolicy:
-                  description: |-
-                    NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
-                    The type of Kyverno resource can be either Policy (if true) or ClusterPolicy (if false).
-                  type: boolean
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
                   properties:

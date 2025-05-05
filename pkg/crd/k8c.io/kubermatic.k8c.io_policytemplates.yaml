@@ -72,6 +72,9 @@ spec:
                     If true, this policy is mandatory
                     A PolicyBinding referencing it cannot disable it
                   type: boolean
+                namespacedPolicy:
+                  description: NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
+                  type: boolean
                 policySpec:
                   description: |-
                     PolicySpec is the policy spec of the Kyverno Policy we want to apply on the cluster.

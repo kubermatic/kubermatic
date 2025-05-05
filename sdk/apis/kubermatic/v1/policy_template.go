@@ -106,6 +106,11 @@ type PolicyTemplateSpec struct {
 	// A PolicyBinding referencing it cannot disable it
 	Enforced bool `json:"enforced"`
 
+	// NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
+	//
+	// +optional
+	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
+
 	// Target allows selection of projects and clusters where this template applies,
 	// If 'Target' itself is omitted, the scope defaults based on 'Visibility' and 'ProjectID':
 	//

@@ -91,16 +91,10 @@ type PolicyBindingSpec struct {
 	// +optional
 	Enabled *bool `json:"enabled,omitempty"`
 
-	// NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
-	// The type of Kyverno resource can be either Policy (if true) or ClusterPolicy (if false).
-	//
-	// +optional
-	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
-
 	// NamespaceSelector specifies which namespaces the Kyverno Policy resource(s) should be created in
 	//
-	// Relevant only if NamespacedPolicy is true.
-	// If NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
+	// Relevant only if Template.NamespacedPolicy is true.
+	// If Template.NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
 	//
 	// +optional
 	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
