@@ -68,13 +68,13 @@ var (
 			"1.13.7", // CVE-2023-44487 (High Severity)
 			"1.13.8", // CVE-2024-28860, CVE-2024-28248 (High Severity)
 			"1.13.14",
-			"1.14.1", // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
-			"1.14.2", // CVE-2023-44487 (High Severity)
-			"1.14.3", // CVE-2024-28860, CVE-2024-28248 (High Severity)
-			"1.14.9", // CVE-2024-47825 (Moderate Severity)
-			"1.15.3", // CVE-2024-47825 (Moderate Severity)
+			"1.14.1",  // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
+			"1.14.2",  // CVE-2023-44487 (High Severity)
+			"1.14.3",  // CVE-2024-28860, CVE-2024-28248 (High Severity)
+			"1.14.9",  // CVE-2024-47825 (Moderate Severity)
+			"1.15.3",  // CVE-2024-47825 (Moderate Severity)
 			"1.15.10", // CVE-2025-32793 (Moderate Severity)
-			"1.16.6", // CVE-2025-32793 (Moderate Severity)
+			"1.16.6",  // CVE-2025-32793 (Moderate Severity)
 		),
 	}
 )
