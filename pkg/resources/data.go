@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -54,7 +55,13 @@ import (
 
 const (
 	CloudProviderExternalFlag = "external"
+
+	// AuditLoggingSidecarEnvClusterName is the name of the environment variable that contains the cluster name
+	// that is used to identify the cluster for the audit logging sidecar.
+	AuditLoggingSidecarEnvClusterName = "CLUSTER_NAME"
 )
+
+var auditLoggingConfigParserRegex = regexp.MustCompile(`\$\{([a-zA-Z0-9_]+)\}`)
 
 type CABundle interface {
 	CertPool() *x509.CertPool
@@ -601,6 +608,25 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 	return val, nil
 }
 
+func (d *TemplateData) GetConfigMapValue(ref *corev1.ConfigMapKeySelector) (string, error) {
+	cm := corev1.ConfigMap{}
+
+	err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{
+		Name:      ref.Name,
+		Namespace: d.cluster.Status.NamespaceName,
+	}, &cm)
+	if err != nil {
+		return "", err
+	}
+
+	val, ok := cm.Data[ref.Key]
+	if !ok {
+		return "", fmt.Errorf("key %q not found in configmap", ref.Key)
+	}
+
+	return val, nil
+}
+
 func (d *TemplateData) GetCloudProviderName() (string, error) {
 	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
@@ -929,4 +955,140 @@ func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
 	}
 
 	return d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+}
+
+func (d *TemplateData) GetAuditLoggingSidecarEnvs() []corev1.EnvVar {
+	if d.Cluster() == nil {
+		return nil
+	}
+
+	c := d.Cluster()
+
+	envMap := map[string]corev1.EnvVar{}
+	if c.Spec.AuditLogging != nil &&
+		c.Spec.AuditLogging.SidecarSettings != nil &&
+		c.Spec.AuditLogging.SidecarSettings.ExtraEnvs != nil {
+
+		for _, env := range c.Spec.AuditLogging.SidecarSettings.ExtraEnvs {
+			envMap[env.Name] = env
+		}
+	}
+
+	envMap[AuditLoggingSidecarEnvClusterName] = corev1.EnvVar{
+		Name:  AuditLoggingSidecarEnvClusterName,
+		Value: c.Name,
+	}
+
+	envs := make([]corev1.EnvVar, 0, len(envMap))
+	for _, env := range envMap {
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (d *TemplateData) AuditLoggingSidecarConfig() *kubermaticv1.AuditSidecarConfiguration {
+	if d.Cluster() == nil {
+		return nil
+	}
+
+	if d.Cluster().Spec.AuditLogging != nil &&
+		d.Cluster().Spec.AuditLogging.SidecarSettings != nil &&
+		d.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
+		return d.Cluster().Spec.AuditLogging.SidecarSettings.Config
+	}
+
+	return nil
+}
+
+// ParseFluentBitRecords parses the audit-logging sidecar configuration from the cluster template.
+// It expands the variables in the audit sidecar configuration and returns the expanded configuration
+// if any variable is found in the configuration.
+func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfiguration, error) {
+	if d.Cluster() == nil {
+		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
+	}
+
+	config := d.AuditLoggingSidecarConfig()
+	if config == nil {
+		return nil, nil
+	}
+
+	envs := d.GetAuditLoggingSidecarEnvs()
+	if len(envs) == 0 {
+		return config, nil
+	}
+
+	envValueMap := make(map[string]string, len(envs))
+	for _, env := range envs {
+		v := env.Value
+		if v == "" && env.ValueFrom != nil {
+			var err error
+			v, err = d.loadEnv(env.ValueFrom)
+			if err != nil {
+				continue
+			}
+		}
+
+		envValueMap[env.Name] = v
+	}
+
+	for _, filters := range config.Filters {
+		for i, filter := range filters {
+			filters[i] = expandVariables(filter, envValueMap)
+		}
+	}
+
+	return config, nil
+}
+
+func (d *TemplateData) loadEnv(env *corev1.EnvVarSource) (string, error) {
+	if env.SecretKeyRef != nil {
+		b, err := d.GetSecretKeyValue(env.SecretKeyRef)
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+	}
+
+	if env.ConfigMapKeyRef != nil {
+		val, err := d.GetConfigMapValue(env.ConfigMapKeyRef)
+		if err != nil {
+			return "", err
+		}
+
+		return val, nil
+	}
+
+	if env.FieldRef != nil {
+		return "", fmt.Errorf("fieldRef not supported")
+	}
+
+	if env.ResourceFieldRef != nil {
+		return "", fmt.Errorf("resourceFieldRef not supported")
+	}
+
+	return "", nil
+}
+
+func expandVariables(input string, vars map[string]string) string {
+	if vars == nil {
+		return input
+	}
+
+	output := auditLoggingConfigParserRegex.ReplaceAllStringFunc(input, func(match string) string {
+		submatches := auditLoggingConfigParserRegex.FindStringSubmatch(match)
+		if len(submatches) < 2 {
+			return match
+		}
+		varName := submatches[1]
+
+		if value, ok := vars[varName]; ok {
+			return value
+		}
+
+		return match
+	})
+	return output
 }

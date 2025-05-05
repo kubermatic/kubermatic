@@ -187,8 +187,11 @@ func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSe
 			}
 
 			config := &kubermaticv1.AuditSidecarConfiguration{}
-			if data.Cluster().Spec.AuditLogging.SidecarSettings != nil && data.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
-				config = data.Cluster().Spec.AuditLogging.SidecarSettings.Config
+
+			var err error
+			config, err = data.ParseFluentBitRecords()
+			if err != nil {
+				return nil, err
 			}
 
 			t, err := template.New("fluent-bit.conf").Parse(fluentBitConfigTemplate)
