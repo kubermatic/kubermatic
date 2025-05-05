@@ -120,15 +120,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Kyverno was disabled after it was enabled. Clean up resources.
-	// if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) && !cluster.Spec.IsKyvernoEnabled() {
-	// 	log.Debug("Cleaning up Kyverno resources")
-	// 	return reconcile.Result{}, r.handleKyvernoCleanup(ctx, cluster)
-	// }
+	if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) && !cluster.Spec.IsKyvernoEnabled() {
+		log.Debug("Cleaning up Kyverno resources")
+		return reconcile.Result{}, r.handleKyvernoCleanup(ctx, cluster)
+	}
 
 	// Kyverno is disabled. Nothing to do.
-	// if !cluster.Spec.IsKyvernoEnabled() {
-	// 	return reconcile.Result{}, nil
-	// }
+	if !cluster.Spec.IsKyvernoEnabled() {
+		return reconcile.Result{}, nil
+	}
 
 	if cluster.Status.NamespaceName == "" {
 		log.Debug("Skipping cluster reconciling because it has no namespace yet")
