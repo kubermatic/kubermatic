@@ -19,12 +19,12 @@ package images
 import (
 	"context"
 	"fmt"
+	"iter"
 	"os"
 	"path"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"iter"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
