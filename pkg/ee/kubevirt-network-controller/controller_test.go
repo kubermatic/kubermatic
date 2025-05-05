@@ -433,7 +433,7 @@ func TestReconcile(t *testing.T) {
 			currentNetPol := &networkingv1.NetworkPolicy{}
 			if err := fakeClient.Get(ctx, types.NamespacedName{Name: fmt.Sprintf("cluster-isolation-%s", clusterName), Namespace: "test"}, currentNetPol); err != nil {
 				if tc.wantNetPolicy != nil {
-					t.Fatalf("failed to fetch infra cluster network policies")
+					t.Fatalf("failed to fetch infra cluster network policies with error: %v", err)
 				}
 				// when we do not expect any network policy to be created, we can continue with next test case
 				return
