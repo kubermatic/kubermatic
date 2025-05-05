@@ -44,7 +44,7 @@ fi
 
 if [ -z "${KUBECONFIG:-}" ]; then
   KUBECONFIG=dev.kubeconfig
-  vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > $KUBECONFIG
+  vault kv get -field=kubeconfig dev/seed-clusters/$KUBERMATIC_EXTERNAL_URL > $KUBECONFIG
 fi
 
 if [ -z "${DOCKERCONFIGJSON:-}" ]; then
