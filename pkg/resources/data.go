@@ -1011,7 +1011,7 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 
 	config := d.AuditLoggingSidecarConfig()
 	if config == nil {
-		return nil, nil
+		return &kubermaticv1.AuditSidecarConfiguration{}, nil
 	}
 
 	envs := d.GetAuditLoggingSidecarEnvs()
