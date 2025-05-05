@@ -81,14 +81,15 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 	}
 
 	// Validate the raw PolicySpec from Kyverno
-	if template.Spec.PolicySpec.Raw == nil || len(template.Spec.PolicySpec.Raw) == 0 {
-		allErrs = append(allErrs, field.Required(specPath.Child("policySpec"), "policySpec is required"))
+	policySpecPath := specPath.Child("policySpec")
+	if len(template.Spec.PolicySpec.Raw) == 0 {
+		allErrs = append(allErrs, field.Required(policySpecPath, "policySpec must contain the raw Kyverno policy definition"))
 	} else {
 		var kyvernoPolicySpec kyvernoapiv1.Spec
 		if err := json.Unmarshal(template.Spec.PolicySpec.Raw, &kyvernoPolicySpec); err != nil {
-			allErrs = append(allErrs, field.Invalid(specPath.Child("policySpec"), "<raw data>", fmt.Sprintf("failed to unmarshal policySpec into Kyverno Spec: %v", err)))
+			allErrs = append(allErrs, field.Invalid(policySpecPath, "<raw data>", fmt.Sprintf("failed to unmarshal policySpec into Kyverno Spec: %v", err)))
 		} else {
-			allErrs = append(allErrs, validateKyvernoPolicySpec(specPath.Child("policySpec"), &kyvernoPolicySpec)...)
+			allErrs = append(allErrs, validateKyvernoPolicySpec(policySpecPath, &kyvernoPolicySpec)...)
 		}
 	}
 

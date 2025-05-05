@@ -23,18 +23,15 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	utilerrors "k8s.io/apimachinery/pkg/util/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
-var testScheme = fake.NewScheme()
-
-// Minimal valid Kyverno policy spec for testing
+// Minimal valid Kyverno policy spec for testing.
 var validMinimalPolicySpec = map[string]interface{}{
 	"validationFailureAction": "Audit",
 	"background":              true,
@@ -103,16 +100,16 @@ func checkErrors(t *testing.T, name string, err error, wantErrors bool, expected
 		foundPaths := sets.NewString()
 		fieldErrs := field.ErrorList{}
 
-		agg, ok := err.(utilerrors.Aggregate)
-		if ok {
+		var agg kerrors.Aggregate
+		if errors.As(err, &agg) {
 			for _, wrappedErr := range agg.Errors() {
-				fieldErr := &field.Error{}
+				var fieldErr *field.Error
 				if errors.As(wrappedErr, &fieldErr) {
 					fieldErrs = append(fieldErrs, fieldErr)
 				}
 			}
 		} else {
-			fieldErr := &field.Error{}
+			var fieldErr *field.Error
 			if errors.As(err, &fieldErr) {
 				fieldErrs = append(fieldErrs, fieldErr)
 			}
@@ -305,7 +302,6 @@ func TestAdmissionValidationPolicyTemplate(t *testing.T) {
 
 	t.Run("ValidateCreate", func(t *testing.T) {
 		for _, tt := range tests {
-			tt := tt
 			t.Run(tt.name, func(t *testing.T) {
 				t.Parallel()
 				_, err := validator.ValidateCreate(context.Background(), tt.template.DeepCopy())
@@ -447,7 +443,6 @@ func testImmutability(t *testing.T, validator *validator) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := validator.ValidateUpdate(context.Background(), tt.oldTemplate.DeepCopyObject(), tt.newTemplate.DeepCopyObject())
