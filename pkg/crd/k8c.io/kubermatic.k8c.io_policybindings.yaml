@@ -78,8 +78,8 @@ spec:
                   description: |-
                     NamespaceSelector specifies which namespaces the Kyverno Policy resource(s) should be created in
 
-                    Relevant only if NamespacedPolicy is true.
-                    If NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
+                    Relevant only if Template.NamespacedPolicy is true.
+                    If Template.NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
