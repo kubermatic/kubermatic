@@ -35,7 +35,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
-// handleKyvernoCleanup removes all Kyverno resources from the user cluster
+// handleKyvernoCleanup removes all Kyverno resources from the user cluster.
 func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if err := r.ensureKyvernoUserClusterResourcesAreRemoved(ctx, cluster); err != nil {
 		return err

@@ -30,7 +30,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ResourcesForDeletion returns a list of objects that should be deleted when cleaning up Kyverno
+// ResourcesForDeletion returns a list of objects that should be deleted when cleaning up Kyverno.
 func ResourcesForDeletion() []ctrlruntimeclient.Object {
 	resources := []ctrlruntimeclient.Object{}
 
