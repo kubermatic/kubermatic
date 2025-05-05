@@ -1070,7 +1070,23 @@ spec:
                                 properties:
                                   name:
                                     type: string
+                                  networkPolicy:
+                                    description: NetworkPolicy describes if and which network policies will be deployed by default to kubevirt userclusters.
+                                    properties:
+                                      enabled:
+                                        type: boolean
+                                      mode:
+                                        default: allow
+                                        description: |-
+                                          NetworkPolicyMode maps directly to the values supported by the kubermatic network policy mode for kubevirt
+                                          worker nodes in kube-ovn environments.
+                                        enum:
+                                          - deny
+                                          - allow
+                                        type: string
+                                    type: object
                                   networkPolicyEnabled:
+                                    description: 'Deprecated: Use .networkPolicy.enabled instead.'
                                     type: boolean
                                   vpcs:
                                     items:
