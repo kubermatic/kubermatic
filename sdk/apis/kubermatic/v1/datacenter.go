@@ -906,10 +906,30 @@ type DatacenterSpecKubevirt struct {
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
 type ProviderNetwork struct {
-	Name                 string `json:"name"`
-	VPCs                 []VPC  `json:"vpcs,omitempty"`
-	NetworkPolicyEnabled bool   `json:"networkPolicyEnabled,omitempty"`
+	Name string `json:"name"`
+	VPCs []VPC  `json:"vpcs,omitempty"`
+	// Deprecated: Use .networkPolicy.enabled instead.
+	NetworkPolicyEnabled bool           `json:"networkPolicyEnabled,omitempty"`
+	NetworkPolicy        *NetworkPolicy `json:"networkPolicy,omitempty"`
 }
+
+// NetworkPolicy describes if and which network policies will be deployed by default to kubevirt userclusters.
+type NetworkPolicy struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=allow
+	Mode NetworkPolicyMode `json:"mode"`
+}
+
+// NetworkPolicyMode maps directly to the values supported by the kubermatic network policy mode for kubevirt
+// worker nodes in kube-ovn environments.
+// +kubebuilder:validation:Enum=deny;allow
+type NetworkPolicyMode string
+
+const (
+	NetworkPolicyModeAllow NetworkPolicyMode = "allow"
+	NetworkPolicyModeDeny  NetworkPolicyMode = "deny"
+)
 
 // VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
 // is isolated from any other resources within the KubeVirt infra cluster.
