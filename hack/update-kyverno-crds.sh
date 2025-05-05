@@ -49,8 +49,8 @@ echodate "Downloading Kyverno CRDs for version $version..."
 url="https://github.com/kyverno/kyverno/releases/download/$version/install.yaml"
 
 # Download and split CRDs into separate files
-wget -qO- "$url" | \
-  yq eval-all --split-exp '.spec.names.plural' 'select(.kind == "CustomResourceDefinition")' - | \
+wget -qO- "$url" |
+  yq eval-all --split-exp '.spec.names.plural' 'select(.kind == "CustomResourceDefinition")' - |
   while IFS= read -r file; do
     if [ -f "$file" ]; then
       name=$(basename "$file" .yaml)
