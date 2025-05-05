@@ -149,18 +149,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	if cluster.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(cluster, NetworkPolicyCleanupFinalizer) {
-			return reconcile.Result{}, nil
-		}
-		log.Debug("Cleaning up cloud provider")
-		if err := cleanUpKubevirtCloudProviderNetworkPolicy(ctx, kubeVirtInfraClient, cluster, datacenter.Spec.Kubevirt); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed cloud provider cleanup: %w", err)
-		}
-
-		return reconcile.Result{}, kuberneteshelper.TryRemoveFinalizer(ctx, r.Client, cluster, NetworkPolicyCleanupFinalizer)
-	}
-
 	// Add a wrapping here so we can emit an event on error
 	result, err := util.ClusterReconcileWrapper(
 		ctx,
@@ -186,13 +174,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, kubeVirtInfraClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, dc *kubermaticv1.DatacenterSpecKubevirt) (*reconcile.Result, error) {
+	// Cluster is marked for deletion.
+	if cluster.DeletionTimestamp != nil {
+		if kuberneteshelper.HasFinalizer(cluster, NetworkPolicyCleanupFinalizer) {
+			log.Debug("Cleaning up cloud provider")
+			if err := cleanUpKubevirtCloudProviderNetworkPolicy(ctx, kubeVirtInfraClient, cluster, dc); err != nil {
+				return &reconcile.Result{}, fmt.Errorf("failed cloud provider cleanup: %w", err)
+			}
+			return &reconcile.Result{}, kuberneteshelper.TryRemoveFinalizer(ctx, r.Client, cluster, NetworkPolicyCleanupFinalizer)
+		}
+		// Finalizer doesn't exist so clean up is already done.
+		return &reconcile.Result{}, nil
+	}
+
 	// add the cleanup finalizer first
 	if !kuberneteshelper.HasFinalizer(cluster, NetworkPolicyCleanupFinalizer) {
 		if err := kuberneteshelper.TryAddFinalizer(ctx, r, cluster, NetworkPolicyCleanupFinalizer); err != nil {
 			return nil, fmt.Errorf("failed to add finalizer: %w", err)
 		}
-
-		return &reconcile.Result{Requeue: true}, nil
 	}
 
 	gateways := make([]string, 0)
