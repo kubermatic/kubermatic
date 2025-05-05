@@ -44,7 +44,7 @@ func TestParseFluentBitRecords(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name: "no audit logging config returns nil",
+			name: "no audit logging config should return an empty config",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -54,7 +54,7 @@ func TestParseFluentBitRecords(t *testing.T) {
 					NamespaceName: "cluster-test-cluster",
 				},
 			},
-			expectedConfig: nil,
+			expectedConfig: &kubermaticv1.AuditSidecarConfiguration{},
 		},
 		{
 			name: "config without variables passes through unchanged",
@@ -361,7 +361,7 @@ func TestParseFluentBitRecords(t *testing.T) {
 			objects = append(objects, tt.configMaps...)
 
 			client := fakectrlruntimeclient.NewClientBuilder().
-				WithScheme(newTestScheme()).
+				WithScheme(newTestScheme(t)).
 				WithRuntimeObjects(objects...).
 				Build()
 
@@ -440,9 +440,17 @@ func TestExpandVariables(t *testing.T) {
 	}
 }
 
-func newTestScheme() *runtime.Scheme {
+func newTestScheme(t *testing.T) *runtime.Scheme {
 	scheme := runtime.NewScheme()
-	corev1.AddToScheme(scheme)
-	kubermaticv1.AddToScheme(scheme)
+	err := corev1.AddToScheme(scheme)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = kubermaticv1.AddToScheme(scheme)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	return scheme
 }

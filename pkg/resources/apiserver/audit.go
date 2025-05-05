@@ -186,10 +186,7 @@ func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSe
 				secret.Data = map[string][]byte{}
 			}
 
-			config := &kubermaticv1.AuditSidecarConfiguration{}
-
-			var err error
-			config, err = data.ParseFluentBitRecords()
+			config, err := data.ParseFluentBitRecords()
 			if err != nil {
 				return nil, err
 			}

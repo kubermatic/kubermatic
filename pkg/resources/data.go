@@ -968,7 +968,6 @@ func (d *TemplateData) GetAuditLoggingSidecarEnvs() []corev1.EnvVar {
 	if c.Spec.AuditLogging != nil &&
 		c.Spec.AuditLogging.SidecarSettings != nil &&
 		c.Spec.AuditLogging.SidecarSettings.ExtraEnvs != nil {
-
 		for _, env := range c.Spec.AuditLogging.SidecarSettings.ExtraEnvs {
 			envMap[env.Name] = env
 		}
