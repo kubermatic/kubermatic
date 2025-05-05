@@ -914,8 +914,8 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 }
 
 func (d *TemplateData) IsSSHKeysDisabled() bool {
-	if d.KubermaticConfiguration() != nil {
-		return d.KubermaticConfiguration().Spec.FeatureGates[features.DisableUserSSHKey]
+	if config := d.KubermaticConfiguration(); config != nil {
+		return config.Spec.FeatureGates[features.DisableUserSSHKey]
 	}
 
 	return false
