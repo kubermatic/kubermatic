@@ -8,6 +8,35 @@
 - [v2.26.5](#v2265)
 - [v2.26.6](#v2266)
 - [v2.26.7](#v2267)
+- [v2.26.8](#v2268)
+
+## v2.26.8
+
+**GitHub release: [v2.26.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.8)**
+
+### ACTION REQUIRED
+
+- Update cert-manager to v1.16.5. In the cert-manager values.yaml, following updates should be done ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
+    - update  `webhook.replicas` to `webhook.replicaCount`
+    - update  `cainjector.replicas` to `webhook.replicaCount`
+    - remove `webhook.injectAPIServerCA` 
+
+### Supported Kubernetes versions
+
+- Add 1.31.8/1.30.12 to the list of supported Kubernetes releases ([#14395](https://github.com/kubermatic/kubermatic/pull/14395))
+
+### Bugfixes
+
+- Fix a bug for KubeLB where disabling the ingress class for a user cluster was not working ([#14396](https://github.com/kubermatic/kubermatic/pull/14396))
+- Add role prioritization: Update logic to return the highest-priority role for members with multiple roles ([#7272](https://github.com/kubermatic/dashboard/pull/7272))
+- Add special characters restriction on Inputs and escape values to avoid rendering as HTML ([#7288](https://github.com/kubermatic/dashboard/pull/7288))
+
+### Updates
+
+- Security: Update Cilium to 1.15.16 because the previous version is affected by CVE-2025-32793 ([#14435](https://github.com/kubermatic/kubermatic/pull/14435))
+- Update oauth2-proxy to v7.8.2 ([#14392](https://github.com/kubermatic/kubermatic/pull/14392))
+- Update OSM version to [v1.6.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.5) ([#14413](https://github.com/kubermatic/kubermatic/pull/14413))
+- Update KubeLB CCM to [v1.1.4](https://docs.kubermatic.com/kubelb/v1.1/release-notes/#v114) ([#14365](https://github.com/kubermatic/kubermatic/pull/14365))
 
 ## v2.26.7
 
