@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This that when we're in a PR targetting a release branch, the minimum
+### This that when we're in a PR targeting a release branch, the minimum
 ### Go version used to build KKP is not bumped to a different minor version.
 
 set -euo pipefail
@@ -30,7 +30,7 @@ if [ -z "$TARGET_BRANCH" ]; then
 fi
 
 if ! [[ "$TARGET_BRANCH" =~ ^release/ ]]; then
-  echo "This PR is not targetting a release branch, skipping Go version check."
+  echo "This PR is not targeting a release branch, skipping Go version check."
   exit 0
 fi
 
