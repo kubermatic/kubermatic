@@ -17,6 +17,21 @@
 - [v2.25.14](#v22514)
 - [v2.25.15](#v22515)
 - [v2.25.16](#v22516)
+- [v2.25.17](#v22517)
+
+## v2.25.17
+
+**GitHub release: [v2.25.17](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.17)**
+
+### Bugfixes
+
+- Add role prioritization: Update logic to return the highest-priority role for members with multiple roles ([#7272](https://github.com/kubermatic/dashboard/pull/7272))
+- Add special characters restriction on Inputs and escape values to avoid rendering as HTML ([#7289](https://github.com/kubermatic/dashboard/pull/7289))
+
+### Updates
+
+- Update cert-manager to v1.12.16 ([#14401](https://github.com/kubermatic/kubermatic/pull/14401))
+- Update oauth2-proxy to v7.8.2 ([#14393](https://github.com/kubermatic/kubermatic/pull/14393))
 
 ## v2.25.16
 
