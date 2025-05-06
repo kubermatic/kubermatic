@@ -350,6 +350,8 @@ spec:
           rhel: ""
           rockylinux: ""
           ubuntu: ""
+        # Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+        # This provider is no longer supported. Migrate your configurations away from "packet" immediately.
         # Packet configures an Equinix Metal datacenter.
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
