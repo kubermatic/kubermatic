@@ -30,7 +30,7 @@ import (
 )
 
 var (
-	validVisibilities = sets.New(kubermaticv1.PolicyTemplateVisibilityGlobal, kubermaticv1.PolicyTemplateVisibilityProject, kubermaticv1.PolicyTemplateVisibilityCluster)
+	validPolicyVisibilities = sets.New(kubermaticv1.PolicyTemplateVisibilityGlobal, kubermaticv1.PolicyTemplateVisibilityProject, kubermaticv1.PolicyTemplateVisibilityCluster)
 )
 
 // ValidatePolicyTemplate validates the PolicyTemplate resource.
@@ -46,18 +46,19 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 		allErrs = append(allErrs, field.Required(specPath.Child("description"), "description is required"))
 	}
 
-	if !validVisibilities.Has(template.Spec.Visibility) {
-		allErrs = append(allErrs, field.NotSupported(specPath.Child("visibility"), template.Spec.Visibility, validVisibilities.UnsortedList()))
+	if !validPolicyVisibilities.Has(template.Spec.Visibility) {
+		allErrs = append(allErrs, field.NotSupported(specPath.Child("visibility"), template.Spec.Visibility, validPolicyVisibilities.UnsortedList()))
 	} else {
-		switch template.Spec.Visibility {
-		case kubermaticv1.PolicyTemplateVisibilityProject:
+		if template.Spec.Visibility == kubermaticv1.PolicyTemplateVisibilityProject {
 			if template.Spec.ProjectID == "" {
 				allErrs = append(allErrs, field.Required(specPath.Child("projectID"), fmt.Sprintf("projectID is required when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityProject)))
 			}
 			if template.Spec.Target != nil && template.Spec.Target.ProjectSelector != nil {
 				allErrs = append(allErrs, field.Forbidden(specPath.Child("target", "projectSelector"), fmt.Sprintf("projectSelector cannot be set when visibility is '%s'; scope is defined by projectID", kubermaticv1.PolicyTemplateVisibilityProject)))
 			}
-		case kubermaticv1.PolicyTemplateVisibilityGlobal:
+		}
+
+		if template.Spec.Visibility == kubermaticv1.PolicyTemplateVisibilityGlobal {
 			if template.Spec.ProjectID != "" {
 				allErrs = append(allErrs, field.Invalid(specPath.Child("projectID"), template.Spec.ProjectID, fmt.Sprintf("projectID must be empty when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityGlobal)))
 			}
@@ -128,7 +129,7 @@ func validateKyvernoPolicySpec(fldPath *field.Path, spec *kyvernoapiv1.Spec) fie
 		}
 
 		if rule.HasMutate() && rule.Mutation.RawPatchStrategicMerge == nil && len(rule.Mutation.PatchesJSON6902) == 0 && rule.Mutation.ForEachMutation == nil {
-			allErrs = append(allErrs, field.Required(rulePath.Child("mutate"), "mutation rule requires a patchStrategicMerge, patchesJson6902, or foreach block"))
+			allErrs = append(allErrs, field.Required(rulePath.Child("mutate"), "mutation rule requires a patchStrategicMerge, patchesJson6902 or foreach block"))
 		}
 		if rule.HasGenerate() && rule.Generation.RawData == nil && rule.Generation.Clone == (kyvernoapiv1.CloneFrom{}) {
 			allErrs = append(allErrs, field.Required(rulePath.Child("generate"), "generation rule requires a data or clone block"))
