@@ -285,6 +285,7 @@ func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kube
 	case kubermaticv1.OpenstackCloudProvider:
 		return provider.CompleteOpenstackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Openstack, os)
 	case kubermaticv1.PacketCloudProvider:
+		//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 		return provider.CompleteEquinixMetalProviderSpec(assert[equinixmetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Packet)
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VMwareCloudDirector, os)

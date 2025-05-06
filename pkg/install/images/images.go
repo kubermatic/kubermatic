@@ -802,7 +802,8 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 		},
 		{
 			ProviderName: string(kubermaticv1.PacketCloudProvider),
-			Packet:       &kubermaticv1.PacketCloudSpec{},
+			//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
+			Packet: &kubermaticv1.PacketCloudSpec{},
 		},
 		{
 			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),

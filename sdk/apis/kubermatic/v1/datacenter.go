@@ -434,6 +434,8 @@ type DatacenterSpec struct {
 	Azure *DatacenterSpecAzure `json:"azure,omitempty"`
 	// Openstack configures an Openstack datacenter.
 	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
+	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Packet configures an Equinix Metal datacenter.
 	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 	// Hetzner configures a Hetzner datacenter.
@@ -812,6 +814,8 @@ type DatacenterSpecBringYourOwn struct {
 type DatacenterSpecEdge struct {
 }
 
+// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 // DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available

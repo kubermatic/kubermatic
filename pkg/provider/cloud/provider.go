@@ -64,6 +64,7 @@ func Provider(
 	if datacenter.Spec.Openstack != nil {
 		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
 	}
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if datacenter.Spec.Packet != nil {
 		return packet.NewCloudProvider(secretKeyGetter), nil
 	}
