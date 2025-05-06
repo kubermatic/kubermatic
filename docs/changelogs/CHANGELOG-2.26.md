@@ -14,7 +14,15 @@
 
 **GitHub release: [v2.26.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.8)**
 
+### ACTION REQUIRED
+
+- Update cert-manager to v1.16.5. In the cert-manager values.yaml, following updates should be done ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
+    - update  `webhook.replicas` to `webhook.replicaCount`
+    - update  `cainjector.replicas` to `webhook.replicaCount`
+    - remove `webhook.injectAPIServerCA` 
+
 ### Supported Kubernetes versions
+
 - Add 1.31.8/1.30.12 to the list of supported Kubernetes releases ([#14395](https://github.com/kubermatic/kubermatic/pull/14395))
 
 ### Bugfixes
@@ -26,7 +34,6 @@
 ### Updates
 
 - Security: Update Cilium to 1.15.16 because the previous version is affected by CVE-2025-32793 ([#14435](https://github.com/kubermatic/kubermatic/pull/14435))
-- Update cert-manager to v1.16.5Action Required: In the cert-manager values.yaml, following updates should be done  - update  `webhook.replicas` to `webhook.replicaCount` - update  `cainjector.replicas` to `webhook.replicaCount` - remove `webhook.injectAPIServerCA` ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
 - Update oauth2-proxy to v7.8.2 ([#14392](https://github.com/kubermatic/kubermatic/pull/14392))
 - Update OSM version to [v1.6.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.5) ([#14413](https://github.com/kubermatic/kubermatic/pull/14413))
 - Update KubeLB CCM to [v1.1.4](https://docs.kubermatic.com/kubelb/v1.1/release-notes/#v114) ([#14365](https://github.com/kubermatic/kubermatic/pull/14365))
