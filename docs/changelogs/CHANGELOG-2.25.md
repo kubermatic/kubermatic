@@ -23,6 +23,11 @@
 
 **GitHub release: [v2.25.17](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.17)**
 
+### Bugfixes
+
+- Add role prioritization: Update logic to return the highest-priority role for members with multiple roles ([#7272](https://github.com/kubermatic/dashboard/pull/7272))
+- Add special characters restriction on Inputs and escape values to avoid rendering as HTML ([#7289](https://github.com/kubermatic/dashboard/pull/7289))
+
 ### Updates
 
 - Update cert-manager to v1.12.16 ([#14401](https://github.com/kubermatic/kubermatic/pull/14401))
