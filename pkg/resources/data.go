@@ -43,6 +43,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -616,15 +617,18 @@ func (d *TemplateData) GetConfigMapValue(ref *corev1.ConfigMapKeySelector) (stri
 		Namespace: d.cluster.Status.NamespaceName,
 	}, &cm)
 	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", fmt.Errorf("configmap %q not found in namespace %q, err: %w", ref.Name, d.cluster.Status.NamespaceName, err)
+		}
+
 		return "", err
 	}
 
-	val, ok := cm.Data[ref.Key]
-	if !ok {
-		return "", fmt.Errorf("key %q not found in configmap", ref.Key)
+	if val, ok := cm.Data[ref.Key]; ok {
+		return val, nil
 	}
 
-	return val, nil
+	return "", fmt.Errorf("key %q not found in configmap %q in namespace %q", ref.Key, ref.Name, d.cluster.Status.NamespaceName)
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
@@ -1042,33 +1046,26 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 }
 
 func (d *TemplateData) loadEnv(env *corev1.EnvVarSource) (string, error) {
-	if env.SecretKeyRef != nil {
+	switch {
+	case env.SecretKeyRef != nil:
 		b, err := d.GetSecretKeyValue(env.SecretKeyRef)
 		if err != nil {
 			return "", err
 		}
-
 		return string(b), nil
-	}
-
-	if env.ConfigMapKeyRef != nil {
+	case env.ConfigMapKeyRef != nil:
 		val, err := d.GetConfigMapValue(env.ConfigMapKeyRef)
 		if err != nil {
 			return "", err
 		}
-
 		return val, nil
-	}
-
-	if env.FieldRef != nil {
+	case env.FieldRef != nil:
 		return "", fmt.Errorf("fieldRef not supported")
-	}
-
-	if env.ResourceFieldRef != nil {
+	case env.ResourceFieldRef != nil:
 		return "", fmt.Errorf("resourceFieldRef not supported")
+	default:
+		return "", fmt.Errorf("no valid EnvVarSource specified")
 	}
-
-	return "", nil
 }
 
 func expandVariables(input string, vars map[string]string) string {
