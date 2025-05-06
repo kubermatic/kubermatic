@@ -38,18 +38,18 @@ go_minor_version() {
   grep -E '^go 1' "$1" | sed -E 's/^go (1\.[0-9]+).*$/\1/'
 }
 
-currentURL="https://github.com/$REPO_OWNER/$REPO_NAME/raw/refs/heads/$TARGET_BRANCH/go.mod"
-wget -O current.go.mod --no-verbose "$currentURL"
+releaseURL="https://github.com/$REPO_OWNER/$REPO_NAME/raw/refs/heads/$TARGET_BRANCH/go.mod"
+wget -O release.go.mod --no-verbose "$releaseURL"
 
-requested="$(go_minor_version go.mod)"
-current="$(go_minor_version current.go.mod)"
-rm current.go.mod
+currentVersion="$(go_minor_version go.mod)"
+releaseVersion="$(go_minor_version release.go.mod)"
+rm release.go.mod
 
-echo "$TARGET_BRANCH's Go release: $current"
-echo "This PR's Go release......: $requested"
+echo "$TARGET_BRANCH's Go release: $releaseVersion"
+echo "This PR's Go release......: $currentVersion"
 echo
 
-if [[ "$requested" != "$current" ]]; then
+if [[ "$currentVersion" != "$releaseVersion" ]]; then
   echo "Go upgrades are not allowed in release branches."
   exit 1
 fi
