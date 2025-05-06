@@ -61,7 +61,7 @@ func ValidateUser(u *kubermaticv1.User) field.ErrorList {
 
 	// Ensure that `isAdmin` and `globalViewer` are not both true at the same time.
 	// These roles are mutually exclusive — a user can't be both an admin and a global viewer.
-	if isAdminAndGlobalViewer(u.Spec.IsAdmin, u.Spec.IsGlobalViewer) {
+	if isAdminAndGlobalViewer(u.Spec) {
 		allErrs = append(allErrs, field.Invalid(
 			field.NewPath("spec"),
 			u.Spec,
@@ -149,8 +149,8 @@ func ValidateUserDelete(ctx context.Context,
 	return nil
 }
 
-func isAdminAndGlobalViewer(isAdmin, isGlobalViewer bool) bool {
-	if isAdmin && isGlobalViewer {
+func isAdminAndGlobalViewer(userSpec kubermaticv1.UserSpec) bool {
+	if userSpec.IsAdmin && userSpec.IsGlobalViewer {
 		return true
 	}
 	return false

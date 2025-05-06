@@ -169,7 +169,6 @@ spec:
               required:
                 - admin
                 - email
-                - isGlobalViewer
                 - name
               type: object
             status:

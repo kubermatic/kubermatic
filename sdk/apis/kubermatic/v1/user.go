@@ -82,7 +82,8 @@ type UserSpec struct {
 	// IsGlobalViewer defines whether this user is a global viewer with read-only access across the KKP dashboard.
 	// GlobalViewer can for example see all projects and clusters in the KKP dashboard.
 	// +kubebuilder:default=false
-	IsGlobalViewer bool `json:"isGlobalViewer"`
+	// +optional
+	IsGlobalViewer bool `json:"isGlobalViewer,omitempty"`
 	// Groups holds the information to which groups the user belongs to. Set automatically when logging in to the
 	// KKP API, and used by the KKP API.
 	Groups []string `json:"groups,omitempty"`
