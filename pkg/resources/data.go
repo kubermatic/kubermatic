@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -88,9 +89,8 @@ type TemplateData struct {
 	apiServerAlternateNames          *certutil.AltNames
 
 	supportsFailureDomainZoneAntiAffinity bool
-
-	userClusterMLAEnabled bool
-	isKonnectivityEnabled bool
+	userClusterMLAEnabled                 bool
+	isKonnectivityEnabled                 bool
 
 	tunnelingAgentIP string
 
@@ -925,6 +925,13 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
 }
 
+func (d *TemplateData) IsSSHKeysDisabled() bool {
+	if config := d.KubermaticConfiguration(); config != nil {
+		return config.Spec.FeatureGates[features.DisableUserSSHKey]
+	}
+
+	return false
+}
 func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
 	if d.Cluster() == nil {
 		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")

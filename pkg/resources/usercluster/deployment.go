@@ -73,6 +73,7 @@ type userclusterControllerData interface {
 	GetCloudProviderName() (string, error)
 	UserClusterMLAEnabled() bool
 	IsKonnectivityEnabled() bool
+	IsSSHKeysDisabled() bool
 	DC() *kubermaticv1.Datacenter
 	GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error)
 	GetEnvVars() ([]corev1.EnvVar, error)
@@ -144,7 +145,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				"-overwrite-registry", data.GetLegacyOverwriteRegistry(),
 				"-version", data.Cluster().Status.Versions.ControlPlane.String(),
 				"-application-cache", resources.ApplicationCacheMountPath,
-				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
@@ -162,6 +162,10 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			if email := data.Cluster().Status.UserEmail; email != "" {
 				args = append(args, "-owner-email", email)
+			}
+
+			if !data.IsSSHKeysDisabled() {
+				args = append(args, fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent))
 			}
 
 			if data.Cluster().Spec.DebugLog {

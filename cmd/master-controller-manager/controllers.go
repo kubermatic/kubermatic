@@ -46,6 +46,7 @@ import (
 	usersshkeyprojectownershipcontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-project-ownership"
 	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,7 +69,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	controllerFactories := []seedcontrollerlifecycle.ControllerFactory{
 		rbacControllerFactory,
 		projectLabelSynchronizerFactoryCreator(ctrlCtx),
-		userSSHKeySynchronizerFactoryCreator(ctrlCtx),
 		masterConstraintSynchronizerFactoryCreator(ctrlCtx),
 		masterConstraintTemplateSynchronizerFactoryCreator(ctrlCtx),
 		userSynchronizerFactoryCreator(ctrlCtx),
@@ -81,6 +81,10 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		resourceQuotaSynchronizerFactoryCreator(ctrlCtx),
 		resourceQuotaControllerFactoryCreator(ctrlCtx),
 		policyTemplateSynchronizerFactoryCreator(ctrlCtx),
+	}
+
+	if !ctrlCtx.featureGates[features.DisableUserSSHKey] {
+		controllerFactories = append(controllerFactories, userSSHKeySynchronizerFactoryCreator(ctrlCtx))
 	}
 
 	controllerFactories = append(controllerFactories, setupLifecycleControllerCreators(ctrlCtx)...)
@@ -99,9 +103,13 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := userprojectbinding.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create user-project-binding controller: %w", err)
 	}
-	if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create usersshkey-project-ownership controller: %w", err)
+
+	if !ctrlCtx.featureGates[features.DisableUserSSHKey] {
+		if err := usersshkeyprojectownershipcontroller.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
+			return fmt.Errorf("failed to create usersshkey-project-ownership controller: %w", err)
+		}
 	}
+
 	if err := serviceaccount.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create serviceaccount controller: %w", err)
 	}
