@@ -53,7 +53,7 @@ try() {
     EXIT_CODE=1
   fi
 
-  SUMMARY="$SUMMARY\n$(printf "%-35s %s" "$title" "$status")"
+  SUMMARY="$SUMMARY\n$(printf "%-40s %s" "$title" "$status")"
 
   git reset --hard --quiet
   git clean --force
@@ -82,8 +82,8 @@ echo
 echo "SUMMARY"
 echo "======="
 echo
-echo "Check                               Result"
-echo -n "------------------------------------------"
+echo "Check                                    Result"
+echo -n "-----------------------------------------------"
 echo -e "$SUMMARY"
 
 exit $EXIT_CODE
