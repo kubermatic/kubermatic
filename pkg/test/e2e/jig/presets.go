@@ -339,6 +339,7 @@ func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	}
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials EquinixMetalCredentials, replicas int) *TestJig {
 	projectJig := NewProjectJig(client, log)
 

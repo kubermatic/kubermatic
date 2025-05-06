@@ -205,8 +205,9 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.Openstack != nil {
 		return cluster.Spec.Cloud.Openstack.CredentialsReference, nil
 	}
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if cluster.Spec.Cloud.Packet != nil {
-		return cluster.Spec.Cloud.Packet.CredentialsReference, nil
+		return cluster.Spec.Cloud.Packet.CredentialsReference, nil //nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return cluster.Spec.Cloud.Kubevirt.CredentialsReference, nil
@@ -277,6 +278,8 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 			return Credentials{}, err
 		}
 	}
+
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
 			return Credentials{}, err
@@ -381,6 +384,8 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		cluster.Spec.Cloud.Openstack.Password = credentials.Openstack.Password
 		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
 	}
+
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
 			return err
@@ -660,6 +665,7 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	return openstackCredentials, nil
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
 	spec := data.Cluster().Spec.Cloud.Packet
 	packetCredentials := PacketCredentials{}

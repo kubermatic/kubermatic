@@ -449,6 +449,7 @@ func (r *TestRunner) executeTests(
 	}
 	// Packet is slower at provisioning the instances, presumably because those are actual
 	// physical hosts.
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if cluster.Spec.Cloud.Packet != nil {
 		overallTimeout += 45 * time.Minute
 	}
