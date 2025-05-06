@@ -204,7 +204,7 @@ Go cache again.
 
 ## verify-go-version.sh
 
-This that when we're in a PR targetting a release branch, the minimum
+This that when we're in a PR targeting a release branch, the minimum
 Go version used to build KKP is not bumped to a different minor version.
 
 ## verify.sh
