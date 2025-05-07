@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resources
+package userclusterresources
 
 import (
 	"embed"
@@ -37,12 +37,12 @@ import (
 
 // embeddedFS is an embedded fs that contains Kyverno CRD manifests
 //
-//go:embed static/*
+//go:embed static/kyverno-crds/*
 var embeddedFS embed.FS
 
-// CRDs returns a list of CRDs.
-func CRDs() ([]apiextensionsv1.CustomResourceDefinition, error) {
-	files, err := embeddedFS.ReadDir("static")
+// KyvernoCRDs returns a list of Kyverno CRDs.
+func KyvernoCRDs() ([]apiextensionsv1.CustomResourceDefinition, error) {
+	files, err := embeddedFS.ReadDir("static/kyverno-crds")
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func CRDs() ([]apiextensionsv1.CustomResourceDefinition, error) {
 }
 
 func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error) {
-	f, err := embeddedFS.Open("static/" + filename)
+	f, err := embeddedFS.Open("static/kyverno-crds/" + filename)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +76,8 @@ func loadCRD(filename string) (*apiextensionsv1.CustomResourceDefinition, error)
 	return crd, nil
 }
 
-// CRDReconciler returns a reconciler for a CRD.
-func CRDReconciler(crd apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
+// KyvernoCRDReconciler returns a reconciler for a Kyverno CRD.
+func KyvernoCRDReconciler(crd apiextensionsv1.CustomResourceDefinition) reconciling.NamedCustomResourceDefinitionReconcilerFactory {
 	return func() (string, reconciling.CustomResourceDefinitionReconciler) {
 		return crd.Name, func(target *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			kubernetes.EnsureAnnotations(target, crd.Annotations)

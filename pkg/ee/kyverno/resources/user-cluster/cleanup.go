@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package resources
+package userclusterresources
 
 import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -34,7 +34,7 @@ import (
 func ResourcesForDeletion() []ctrlruntimeclient.Object {
 	resources := []ctrlruntimeclient.Object{}
 
-	crds, err := CRDs()
+	crds, err := KyvernoCRDs()
 	if err != nil {
 		return resources
 	}

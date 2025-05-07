@@ -186,14 +186,14 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		return fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	crds, err := userclusterresources.CRDs()
+	crds, err := userclusterresources.KyvernoCRDs()
 	if err != nil {
 		return fmt.Errorf("failed to get Kyverno CRDs: %w", err)
 	}
 
 	crdReconcilers := make([]kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory, 0, len(crds))
 	for _, crd := range crds {
-		crdReconcilers = append(crdReconcilers, userclusterresources.CRDReconciler(crd))
+		crdReconcilers = append(crdReconcilers, userclusterresources.KyvernoCRDReconciler(crd))
 	}
 
 	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, crdReconcilers, "", userClusterClient); err != nil {
