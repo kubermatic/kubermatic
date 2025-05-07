@@ -29,32 +29,43 @@ const (
 	PolicyBindingKindName = "PolicyBinding"
 )
 
-// Condition reasons for PolicyBinding.
+// PolicyBindingConditionType defines the type of condition in PolicyBindingStatus.
+//
+// +kubebuilder:validation:Enum=Ready;TemplateValid;KyvernoPolicyApplied
+type PolicyBindingConditionType string
+
+// Condition types for PolicyBinding Status.
 const (
-	// PolicyAppliedSuccessfully indicates the policy was successfully applied.
-	PolicyAppliedSuccessfully = "PolicyAppliedSuccessfully"
+	// PolicyBindingConditionReady indicates if the corresponding Kyverno policy is ready.
+	PolicyBindingConditionReady PolicyBindingConditionType = "Ready"
 
-	// PolicyApplicationFailed indicates the policy application failed.
-	PolicyApplicationFailed = "PolicyApplicationFailed"
+	// PolicyBindingConditionTemplateValid indicates if the referenced PolicyTemplate is valid.
+	PolicyBindingConditionTemplateValid PolicyBindingConditionType = "TemplateValid"
 
-	// PolicyTemplateNotFound indicates the referenced template doesn't exist.
-	PolicyTemplateNotFound = "PolicyTemplateNotFound"
+	// PolicyBindingConditionKyvernoPolicyApplied indicates whether the controller
+	// successfully created/updated the required Kyverno Policy/ClusterPolicy resources.
+	PolicyBindingConditionKyvernoPolicyApplied PolicyBindingConditionType = "KyvernoPolicyApplied"
 )
 
-// Condition types for PolicyBinding.
+// Annotation keys for PolicyBinding.
 const (
-	// PolicyReady indicates if the policy has been successfully applied.
-	PolicyReadyCondition = "Ready"
+	// AnnotationPolicyEnforced is added to PolicyBinding resources that were automatically created.
+	AnnotationPolicyEnforced = "policy.kubermatic.k8c.io/enforced-by-template"
 
-	// PolicyEnforced indicates if the policy is currently being enforced.
-	PolicyEnforcedCondition = "Enforced"
+	// AnnotationPolicyDefault is added to PolicyBinding resources that were defaulted from the PolicyTemplate.
+	AnnotationPolicyDefault = "policy.kubermatic.k8c.io/default-policy"
 )
 
-// +kubebuilder:resource:scope=Namespaced
+// +kubebuilder:resource:scope=Namespaced,categories=kubermatic,shortName=pb
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled",description="Whether the policy is applied (only relevant if not enforced)"
-// +kubebuilder:printcolumn:name="Scope",type=string,JSONPath=".spec.scope",description="cluster or namespace"
+// +kubebuilder:printcolumn:name="Template",type=string,JSONPath=".spec.policyTemplateRef.name"
+// +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".status.templateEnforced"
+// +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled"
+// +kubebuilder:printcolumn:name="Active",type=string,JSONPath=".status.active"
+// +kubebuilder:printcolumn:name="Namespaced",type=boolean,JSONPath=".spec.namespacedPolicy"
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // PolicyBinding binds a PolicyTemplate to specific clusters/projects and
 // optionally enables or disables it (if the template is not enforced).
@@ -69,38 +80,24 @@ type PolicyBinding struct {
 // PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
 type PolicyBindingSpec struct {
 	// PolicyTemplateRef references the PolicyTemplate by name
+	//
+	// +kubebuilder:validation:Required
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// NamespacedPolicy is a boolean to indicate if the policy binding is namespaced
-	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
-
-	// Scope specifies the scope of the policy.
-	// Can be one of: global, project, or cluster
+	// Enabled controls whether the policy defined by the template should be actively applied to the cluster.
 	//
-	// +kubebuilder:validation:Enum=global;project;cluster
-	Scope string `json:"scope"`
+	// Relevant only if the referenced PolicyTemplate has spec.enforced=false.
+	//
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
 
-	// Target specifies which clusters/projects to apply the policy to
-	Target PolicyTargetSpec `json:"target,omitempty"`
-}
-
-// PolicyTargetSpec indicates how to select projects/clusters in Kubermatic.
-type PolicyTargetSpec struct {
-	// Projects is a list of projects to apply the policy to
-	Projects ResourceSelector `json:"projects,omitempty"`
-
-	// Clusters is a list of clusters to apply the policy to
-	Clusters ResourceSelector `json:"clusters,omitempty"`
-}
-
-// ResourceSelector is a struct that contains the label selector, name, and selectAll fields.
-type ResourceSelector struct {
-	// LabelSelector is a label selector to select the resources (projects/clusters)
-	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
-	// Name is a list of names to select the resources (projects/clusters)
-	Name []string `json:"name,omitempty"`
-	// SelectAll is a boolean to select all the resources (projects/clusters) from cluster admins.
-	SelectAll bool `json:"selectAll,omitempty"`
+	// NamespaceSelector specifies which namespaces the Kyverno Policy resource(s) should be created in
+	//
+	// Relevant only if Template.NamespacedPolicy is true.
+	// If Template.NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
+	//
+	// +optional
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 // PolicyBindingStatus is the status of the policy binding.
@@ -109,6 +106,16 @@ type PolicyBindingStatus struct {
 	//
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// TemplateEnforced reflects the value of `spec.enforced` from PolicyTemplate
+	//
+	// +optional
+	TemplateEnforced *bool `json:"templateEnforced,omitempty"`
+
+	// Active reflects whether the Kyverno policy exists and is active in this User Cluster.
+	//
+	// +optional
+	Active *bool `json:"active,omitempty"`
 
 	// Conditions represents the latest available observations of the policy binding's current state
 	// +optional

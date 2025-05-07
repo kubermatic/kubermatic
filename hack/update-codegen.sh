@@ -85,9 +85,7 @@ declare -A locationMap=(
   ["verticalpodautoscalercheckpoints.autoscaling.k8s.io"]="seed"
 
   ["policytemplates.kubermatic.k8c.io"]="master,seed"
-  # PolicyBindings will be deployed on master clusters although they are primarily used on seed clusters.
-  # This is because the KKP API (running on master) sets up caching rules for PolicyBindings.
-  ["policybindings.kubermatic.k8c.io"]="master,seed"
+  ["policybindings.kubermatic.k8c.io"]="usercluster"
 )
 
 failure=false
