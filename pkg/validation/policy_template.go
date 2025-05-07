@@ -48,20 +48,19 @@ func ValidatePolicyTemplate(template *kubermaticv1.PolicyTemplate) field.ErrorLi
 
 	if !validPolicyVisibilities.Has(template.Spec.Visibility) {
 		allErrs = append(allErrs, field.NotSupported(specPath.Child("visibility"), template.Spec.Visibility, validPolicyVisibilities.UnsortedList()))
-	} else {
-		if template.Spec.Visibility == kubermaticv1.PolicyTemplateVisibilityProject {
-			if template.Spec.ProjectID == "" {
-				allErrs = append(allErrs, field.Required(specPath.Child("projectID"), fmt.Sprintf("projectID is required when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityProject)))
-			}
-			if template.Spec.Target != nil && template.Spec.Target.ProjectSelector != nil {
-				allErrs = append(allErrs, field.Forbidden(specPath.Child("target", "projectSelector"), fmt.Sprintf("projectSelector cannot be set when visibility is '%s'; scope is defined by projectID", kubermaticv1.PolicyTemplateVisibilityProject)))
-			}
-		}
+	}
 
-		if template.Spec.Visibility == kubermaticv1.PolicyTemplateVisibilityGlobal {
-			if template.Spec.ProjectID != "" {
-				allErrs = append(allErrs, field.Invalid(specPath.Child("projectID"), template.Spec.ProjectID, fmt.Sprintf("projectID must be empty when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityGlobal)))
-			}
+	switch template.Spec.Visibility {
+	case kubermaticv1.PolicyTemplateVisibilityProject:
+		if template.Spec.ProjectID == "" {
+			allErrs = append(allErrs, field.Required(specPath.Child("projectID"), fmt.Sprintf("projectID is required when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityProject)))
+		}
+		if template.Spec.Target != nil && template.Spec.Target.ProjectSelector != nil {
+			allErrs = append(allErrs, field.Forbidden(specPath.Child("target", "projectSelector"), fmt.Sprintf("projectSelector cannot be set when visibility is '%s'; scope is defined by projectID", kubermaticv1.PolicyTemplateVisibilityProject)))
+		}
+	case kubermaticv1.PolicyTemplateVisibilityGlobal:
+		if template.Spec.ProjectID != "" {
+			allErrs = append(allErrs, field.Invalid(specPath.Child("projectID"), template.Spec.ProjectID, fmt.Sprintf("projectID must be empty when visibility is '%s'", kubermaticv1.PolicyTemplateVisibilityGlobal)))
 		}
 	}
 
