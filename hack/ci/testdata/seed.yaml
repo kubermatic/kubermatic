@@ -111,7 +111,7 @@ spec:
           templates:
             flatcar: kkp-flatcar-3033.2.2
             rhel: kkp-rhel-8.6
-            ubuntu: kubeone-ubuntu-22.04
+            ubuntu: kkp-ubuntu-24.04
             rockylinux: kkp-rockylinux-8
     azure-westeurope:
       location: "Azure West europe"
