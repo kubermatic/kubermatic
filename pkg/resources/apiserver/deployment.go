@@ -263,6 +263,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 								ReadOnly:  true,
 							},
 						},
+						Env: data.GetAuditLoggingSidecarEnvs(),
 					},
 				)
 			}

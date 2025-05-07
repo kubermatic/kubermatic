@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -43,6 +44,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -55,7 +57,13 @@ import (
 
 const (
 	CloudProviderExternalFlag = "external"
+
+	// AuditLoggingSidecarEnvClusterName is the name of the environment variable that contains the cluster name
+	// that is used to identify the cluster for the audit logging sidecar.
+	AuditLoggingSidecarEnvClusterName = "CLUSTER_NAME"
 )
+
+var auditLoggingConfigParserRegex = regexp.MustCompile(`\$\{([a-zA-Z0-9_]+)\}`)
 
 type CABundle interface {
 	CertPool() *x509.CertPool
@@ -601,6 +609,28 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 	return val, nil
 }
 
+func (d *TemplateData) GetConfigMapValue(ref *corev1.ConfigMapKeySelector) (string, error) {
+	cm := corev1.ConfigMap{}
+
+	err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{
+		Name:      ref.Name,
+		Namespace: d.cluster.Status.NamespaceName,
+	}, &cm)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", fmt.Errorf("configmap %q not found in namespace %q, err: %w", ref.Name, d.cluster.Status.NamespaceName, err)
+		}
+
+		return "", err
+	}
+
+	if val, ok := cm.Data[ref.Key]; ok {
+		return val, nil
+	}
+
+	return "", fmt.Errorf("key %q not found in configmap %q in namespace %q", ref.Key, ref.Name, d.cluster.Status.NamespaceName)
+}
+
 func (d *TemplateData) GetCloudProviderName() (string, error) {
 	return kubermaticv1helper.ClusterCloudProviderName(d.Cluster().Spec.Cloud)
 }
@@ -938,4 +968,100 @@ func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
 	}
 
 	return d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+}
+
+func (d *TemplateData) GetAuditLoggingSidecarEnvs() []corev1.EnvVar {
+	if d.Cluster() == nil {
+		return nil
+	}
+
+	c := d.Cluster()
+
+	envMap := map[string]corev1.EnvVar{}
+	if c.Spec.AuditLogging != nil &&
+		c.Spec.AuditLogging.SidecarSettings != nil &&
+		c.Spec.AuditLogging.SidecarSettings.ExtraEnvs != nil {
+		for _, env := range c.Spec.AuditLogging.SidecarSettings.ExtraEnvs {
+			envMap[env.Name] = env
+		}
+	}
+
+	envMap[AuditLoggingSidecarEnvClusterName] = corev1.EnvVar{
+		Name:  AuditLoggingSidecarEnvClusterName,
+		Value: c.Name,
+	}
+
+	envs := make([]corev1.EnvVar, 0, len(envMap))
+	for _, env := range envMap {
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (d *TemplateData) AuditLoggingSidecarConfig() *kubermaticv1.AuditSidecarConfiguration {
+	if d.Cluster() == nil {
+		return nil
+	}
+
+	if d.Cluster().Spec.AuditLogging != nil &&
+		d.Cluster().Spec.AuditLogging.SidecarSettings != nil &&
+		d.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
+		return d.Cluster().Spec.AuditLogging.SidecarSettings.Config
+	}
+
+	return nil
+}
+
+// ParseFluentBitRecords parses the audit-logging sidecar configuration from the cluster template.
+// It expands the variables in the audit sidecar configuration and returns the expanded configuration
+// if any variable is found in the configuration.
+func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfiguration, error) {
+	if d.Cluster() == nil {
+		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
+	}
+
+	config := d.AuditLoggingSidecarConfig()
+	if config == nil {
+		return &kubermaticv1.AuditSidecarConfiguration{}, nil
+	}
+
+	envs := d.GetAuditLoggingSidecarEnvs()
+	if len(envs) == 0 {
+		return config, nil
+	}
+
+	envValueMap := make(map[string]string, len(envs))
+	for _, env := range envs {
+		envValueMap[env.Name] = env.Value
+	}
+
+	for _, filters := range config.Filters {
+		for i, filter := range filters {
+			filters[i] = expandVariables(filter, envValueMap)
+		}
+	}
+
+	return config, nil
+}
+
+func expandVariables(input string, vars map[string]string) string {
+	if vars == nil {
+		return input
+	}
+
+	output := auditLoggingConfigParserRegex.ReplaceAllStringFunc(input, func(match string) string {
+		submatches := auditLoggingConfigParserRegex.FindStringSubmatch(match)
+		if len(submatches) < 2 {
+			return match
+		}
+		varName := submatches[1]
+
+		if value, ok := vars[varName]; ok {
+			return value
+		}
+
+		return match
+	})
+	return output
 }
