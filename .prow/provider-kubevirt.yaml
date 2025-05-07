@@ -16,6 +16,7 @@ presubmits:
   - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.33
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    run_if_changed: "(addons/csi/kubevirt/|pkg/provider/cloud/kubevirt/|pkg/resources/cloudconfig/kubevirt|pkg/resources/cloudcontroller/kubevirt.go)"
     labels:
       preset-kubevirt: "true"
       preset-vault: "true"

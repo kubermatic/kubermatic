@@ -155,7 +155,7 @@ spec:
               - 8.8.8.8
           infraStorageClasses:
             - isDefaultClass: true
-              name: rook-ceph-block
+              name: local-path
     syseleven-dbl1:
       country: DE
       location: Syseleven - dbl1
