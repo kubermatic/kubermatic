@@ -1024,16 +1024,7 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 
 	envValueMap := make(map[string]string, len(envs))
 	for _, env := range envs {
-		v := env.Value
-		if v == "" && env.ValueFrom != nil {
-			var err error
-			v, err = d.loadEnv(env.ValueFrom)
-			if err != nil {
-				continue
-			}
-		}
-
-		envValueMap[env.Name] = v
+		envValueMap[env.Name] = env.Value
 	}
 
 	for _, filters := range config.Filters {
@@ -1043,29 +1034,6 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 	}
 
 	return config, nil
-}
-
-func (d *TemplateData) loadEnv(env *corev1.EnvVarSource) (string, error) {
-	switch {
-	case env.SecretKeyRef != nil:
-		b, err := d.GetSecretKeyValue(env.SecretKeyRef)
-		if err != nil {
-			return "", err
-		}
-		return string(b), nil
-	case env.ConfigMapKeyRef != nil:
-		val, err := d.GetConfigMapValue(env.ConfigMapKeyRef)
-		if err != nil {
-			return "", err
-		}
-		return val, nil
-	case env.FieldRef != nil:
-		return "", fmt.Errorf("fieldRef not supported")
-	case env.ResourceFieldRef != nil:
-		return "", fmt.Errorf("resourceFieldRef not supported")
-	default:
-		return "", fmt.Errorf("no valid EnvVarSource specified")
-	}
 }
 
 func expandVariables(input string, vars map[string]string) string {
