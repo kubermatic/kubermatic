@@ -141,5 +141,3 @@ awk -v outdir="$crd_dir" -v version="$version" '
 rm -f "$crds"
 
 echodate "Successfully extracted CRDs to $crd_dir"
-
-
