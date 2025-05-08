@@ -320,6 +320,8 @@ type SeedSpec struct {
 	// ManagementProxySettings can be used if the KubeAPI of the user clusters
 	// will not be directly available from kkp and a proxy in between should be used
 	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
+	// DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
+	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
