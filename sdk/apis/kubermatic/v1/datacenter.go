@@ -320,7 +320,9 @@ type SeedSpec struct {
 	// ManagementProxySettings can be used if the KubeAPI of the user clusters
 	// will not be directly available from kkp and a proxy in between should be used
 	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
-	// DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
+	// DefaultAPIServerAllowedIPRanges defines a set of CIDR ranges that are **always appended**
+	// to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
+	// provide a security baseline that cannot be overridden by cluster-specific configurations.
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
 }
 
