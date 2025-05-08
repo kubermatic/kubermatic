@@ -107,7 +107,7 @@ func TestParseFluentBitRecords(t *testing.T) {
 									{
 										"Name":   "record_modifier",
 										"Match":  "*",
-										"Record": "cluster ${CLUSTER_NAME}",
+										"Record": "cluster ${CLUSTER_ID}",
 										"Extra":  "value with ${CUSTOM_VAR}",
 									},
 								},
@@ -151,7 +151,7 @@ func TestParseFluentBitRecords(t *testing.T) {
 									{
 										"Name":   "record_modifier",
 										"Match":  "*",
-										"Record": "cluster ${CLUSTER_NAME} in region ${REGION}",
+										"Record": "cluster ${CLUSTER_ID} in region ${REGION}",
 									},
 								},
 							},

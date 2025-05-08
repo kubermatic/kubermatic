@@ -39,7 +39,7 @@ type AuditSidecarSettings struct {
 	// Additional environment variables can be set and passed to the AuditSidecarConfiguration field
 	// to allow passing variables to the fluent-bit configuration.
 	// Only, `Value` field is supported for the environment variables; `ValueFrom` field is not supported.
-	// By default, `CLUSTER_NAME` is set as an environment variable in the audit-logging sidecar.
+	// By default, `CLUSTER_ID` is set as an environment variable in the audit-logging sidecar.
 	ExtraEnvs []corev1.EnvVar `json:"extraEnvs,omitempty"`
 }
 
