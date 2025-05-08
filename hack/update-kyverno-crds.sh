@@ -48,17 +48,11 @@ rm -f *.yaml
 echodate "Downloading Kyverno CRDs for version $version..."
 url="https://github.com/kyverno/kyverno/releases/download/$version/install.yaml"
 
-wget -qO- "$url" |
+curl -sL "$url" |
   yq eval-all --split-exp '(.metadata.name + ".yaml")' 'select(.kind == "CustomResourceDefinition")' -
 
 for crd_filename in *.yaml; do
-  if [ ! -f "$crd_filename" ]; then
-    if [[ "$crd_filename" == "*.yaml" ]]; then # Glob didn't expand, meaning no files matched
-      echodate "No YAML files found. Exiting loop." >&2
-      break
-    fi
-    continue
-  fi
+  [ -e "$crd_filename" ] || continue
 
   processed_content_tmpfile=$(mktemp "./${crd_filename}.processed.XXXXXX")
 
