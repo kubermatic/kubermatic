@@ -263,6 +263,10 @@ type ClusterSpec struct {
 
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
+
+	// Kyverno holds the configuration for the Kyverno policy management component.
+	// Only available in Enterprise Edition.
+	Kyverno *KyvernoSettings `json:"kyverno,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -428,6 +432,16 @@ func (c ClusterSpec) IsClusterBackupEnabled() bool {
 		c.BackupConfig.BackupStorageLocation.Name != ""
 }
 
+// KyvernoSettings contains settings for the Kyverno component as part of the cluster control plane. This component is responsible for policy management.
+type KyvernoSettings struct {
+	// Controls whether Kyverno is deployed or not.
+	Enabled bool `json:"enabled"`
+}
+
+func (c ClusterSpec) IsKyvernoEnabled() bool {
+	return c.Kyverno != nil && c.Kyverno.Enabled
+}
+
 const (
 	// ClusterConditionSeedResourcesUpToDate indicates that all controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
@@ -453,6 +467,7 @@ const (
 	ClusterConditionIPAMControllerReconcilingSuccess                             ClusterConditionType = "IPAMControllerReconciledSuccessfully"
 	ClusterConditionKubeVirtNetworkControllerSuccess                             ClusterConditionType = "KubeVirtNetworkControllerReconciledSuccessfully"
 	ClusterConditionClusterBackupControllerReconcilingSuccess                    ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
+	ClusterConditionKyvernoControllerReconcilingSuccess                          ClusterConditionType = "KyvernoControllerReconciledSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"

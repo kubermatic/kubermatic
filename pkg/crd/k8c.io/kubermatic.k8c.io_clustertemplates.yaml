@@ -3192,6 +3192,17 @@ spec:
                         Enabled by default.
                       type: boolean
                   type: object
+                kyverno:
+                  description: |-
+                    Kyverno holds the configuration for the Kyverno policy management component.
+                    Only available in Enterprise Edition.
+                  properties:
+                    enabled:
+                      description: Controls whether Kyverno is deployed or not.
+                      type: boolean
+                  required:
+                    - enabled
+                  type: object
                 machineNetworks:
                   description: 'Optional: MachineNetworks is the list of the networking parameters used for IPAM.'
                   items:
