@@ -1474,7 +1474,10 @@ spec:
                     across all seeds).
                   type: object
                 defaultAPIServerAllowedIPRanges:
-                  description: DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
+                  description: |-
+                    DefaultAPIServerAllowedIPRanges defines a set of CIDR ranges that are **always appended**
+                    to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
+                    provide a security baseline that cannot be overridden by cluster-specific configurations.
                   items:
                     type: string
                   type: array
