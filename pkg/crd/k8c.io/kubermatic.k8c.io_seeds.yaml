@@ -1473,6 +1473,11 @@ spec:
                     Each DC must have a globally unique identifier (i.e. names must be unique
                     across all seeds).
                   type: object
+                defaultAPIServerAllowedIPRanges:
+                  description: DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
+                  items:
+                    type: string
+                  type: array
                 defaultClusterTemplate:
                   description: |-
                     DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used

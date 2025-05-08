@@ -539,3 +539,71 @@ func TestValidate(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateDefaultAPIServerAllowedIPRanges(t *testing.T) {
+	testCases := []struct {
+		name        string
+		cidrs       []string
+		errExpected bool
+	}{
+		{
+			name:  "valid IPv4 CIDR",
+			cidrs: []string{"192.168.1.0/24"},
+		},
+		{
+			name:  "valid IPv6 CIDR",
+			cidrs: []string{"2001:db8::/32"},
+		},
+		{
+			name:        "invalid CIDR format",
+			cidrs:       []string{"invalid"},
+			errExpected: true,
+		},
+		{
+			name:        "invalid IPv4 mask",
+			cidrs:       []string{"192.168.1.0/33"},
+			errExpected: true,
+		},
+		{
+			name:        "invalid IPv6 mask",
+			cidrs:       []string{"2001:db8::/129"},
+			errExpected: true,
+		},
+		{
+			name:  "host address CIDR (allowed by current validation)",
+			cidrs: []string{"192.168.1.1/24"},
+		},
+		{
+			name:        "multiple CIDRs with one invalid",
+			cidrs:       []string{"192.168.1.0/24", "invalid"},
+			errExpected: true,
+		},
+		{
+			name:  "multiple valid CIDRs",
+			cidrs: []string{"192.168.1.0/24", "2001:db8::/32"},
+		},
+		{
+			name:  "empty CIDR list",
+			cidrs: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultAPIServerAllowedIPRanges: tc.cidrs,
+				},
+			}
+
+			err := validateDefaultAPIServerAllowedIPRanges(context.Background(), seed)
+
+			if tc.errExpected && err == nil {
+				t.Errorf("Expected error but got none")
+			}
+			if !tc.errExpected && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+		})
+	}
+}

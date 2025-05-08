@@ -432,6 +432,8 @@ spec:
             rhel: ""
             rockylinux: ""
             ubuntu: ""
+  # DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
+  defaultAPIServerAllowedIPRanges: null
   # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
   # to default all new created clusters
   defaultClusterTemplate: ""
