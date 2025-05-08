@@ -166,6 +166,240 @@ spec:
                               - NodePort
                               - LoadBalancer
                             type: string
+                          auditLogging:
+                            description: 'Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).'
+                            properties:
+                              enabled:
+                                description: Enabled will enable or disable audit logging.
+                                type: boolean
+                              policyPreset:
+                                description: 'Optional: PolicyPreset can be set to utilize a pre-defined set of audit policy rules.'
+                                enum:
+                                  - ""
+                                  - metadata
+                                  - recommended
+                                  - minimal
+                                type: string
+                              sidecar:
+                                description: 'Optional: Configures the fluent-bit sidecar deployed alongside kube-apiserver.'
+                                properties:
+                                  config:
+                                    description: |-
+                                      AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.
+                                      Also see https://docs.fluentbit.io/manual/v/1.8/administration/configuring-fluent-bit/configuration-file.
+                                    properties:
+                                      filters:
+                                        items:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                        type: array
+                                      outputs:
+                                        items:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                        type: array
+                                      service:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                  extraEnvs:
+                                    description: |-
+                                      ExtraEnvs are the additional environment variables that can be set for the audit logging sidecar.
+                                      Additional environment variables can be set and passed to the AuditSidecarConfiguration field
+                                      to allow passing variables to the fluent-bit configuration.
+                                      Only, `Value` field is supported for the environment variables; `ValueFrom` field is not supported.
+                                      By default, `CLUSTER_NAME` is set as an environment variable in the audit-logging sidecar.
+                                    items:
+                                      description: EnvVar represents an environment variable present in a Container.
+                                      properties:
+                                        name:
+                                          description: Name of the environment variable. Must be a C_IDENTIFIER.
+                                          type: string
+                                        value:
+                                          description: |-
+                                            Variable references $(VAR_NAME) are expanded
+                                            using the previously defined environment variables in the container and
+                                            any service environment variables. If a variable cannot be resolved,
+                                            the reference in the input string will be unchanged. Double $$ are reduced
+                                            to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                            "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                            Escaped references will never be expanded, regardless of whether the variable
+                                            exists or not.
+                                            Defaults to "".
+                                          type: string
+                                        valueFrom:
+                                          description: Source for the environment variable's value. Cannot be used if value is not empty.
+                                          properties:
+                                            configMapKeyRef:
+                                              description: Selects a key of a ConfigMap.
+                                              properties:
+                                                key:
+                                                  description: The key to select.
+                                                  type: string
+                                                name:
+                                                  default: ""
+                                                  description: |-
+                                                    Name of the referent.
+                                                    This field is effectively required, but due to backwards compatibility is
+                                                    allowed to be empty. Instances of this type with an empty value here are
+                                                    almost certainly wrong.
+                                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                  type: string
+                                                optional:
+                                                  description: Specify whether the ConfigMap or its key must be defined
+                                                  type: boolean
+                                              required:
+                                                - key
+                                              type: object
+                                              x-kubernetes-map-type: atomic
+                                            fieldRef:
+                                              description: |-
+                                                Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                                spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+                                              properties:
+                                                apiVersion:
+                                                  description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
+                                                  type: string
+                                                fieldPath:
+                                                  description: Path of the field to select in the specified API version.
+                                                  type: string
+                                              required:
+                                                - fieldPath
+                                              type: object
+                                              x-kubernetes-map-type: atomic
+                                            resourceFieldRef:
+                                              description: |-
+                                                Selects a resource of the container: only resources limits and requests
+                                                (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+                                              properties:
+                                                containerName:
+                                                  description: 'Container name: required for volumes, optional for env vars'
+                                                  type: string
+                                                divisor:
+                                                  anyOf:
+                                                    - type: integer
+                                                    - type: string
+                                                  description: Specifies the output format of the exposed resources, defaults to "1"
+                                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                                  x-kubernetes-int-or-string: true
+                                                resource:
+                                                  description: 'Required: resource to select'
+                                                  type: string
+                                              required:
+                                                - resource
+                                              type: object
+                                              x-kubernetes-map-type: atomic
+                                            secretKeyRef:
+                                              description: Selects a key of a secret in the pod's namespace
+                                              properties:
+                                                key:
+                                                  description: The key of the secret to select from.  Must be a valid secret key.
+                                                  type: string
+                                                name:
+                                                  default: ""
+                                                  description: |-
+                                                    Name of the referent.
+                                                    This field is effectively required, but due to backwards compatibility is
+                                                    allowed to be empty. Instances of this type with an empty value here are
+                                                    almost certainly wrong.
+                                                    More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                                  type: string
+                                                optional:
+                                                  description: Specify whether the Secret or its key must be defined
+                                                  type: boolean
+                                              required:
+                                                - key
+                                              type: object
+                                              x-kubernetes-map-type: atomic
+                                          type: object
+                                      required:
+                                        - name
+                                      type: object
+                                    type: array
+                                  resources:
+                                    description: ResourceRequirements describes the compute resource requirements.
+                                    properties:
+                                      claims:
+                                        description: |-
+                                          Claims lists the names of resources, defined in spec.resourceClaims,
+                                          that are used by this container.
+
+                                          This is an alpha field and requires enabling the
+                                          DynamicResourceAllocation feature gate.
+
+                                          This field is immutable. It can only be set for containers.
+                                        items:
+                                          description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                          properties:
+                                            name:
+                                              description: |-
+                                                Name must match the name of one entry in pod.spec.resourceClaims of
+                                                the Pod where this field is used. It makes that resource available
+                                                inside a container.
+                                              type: string
+                                            request:
+                                              description: |-
+                                                Request is the name chosen for a request in the referenced claim.
+                                                If empty, everything from the claim is made available, otherwise
+                                                only the result of this request.
+                                              type: string
+                                          required:
+                                            - name
+                                          type: object
+                                        type: array
+                                        x-kubernetes-list-map-keys:
+                                          - name
+                                        x-kubernetes-list-type: map
+                                      limits:
+                                        additionalProperties:
+                                          anyOf:
+                                            - type: integer
+                                            - type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
+                                        description: |-
+                                          Limits describes the maximum amount of compute resources allowed.
+                                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                        type: object
+                                      requests:
+                                        additionalProperties:
+                                          anyOf:
+                                            - type: integer
+                                            - type: string
+                                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                          x-kubernetes-int-or-string: true
+                                        description: |-
+                                          Requests describes the minimum amount of compute resources required.
+                                          If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                          otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                          More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                                        type: object
+                                    type: object
+                                type: object
+                              webhookBackend:
+                                description: 'Optional: Configures the webhook backend for audit logs.'
+                                properties:
+                                  auditWebhookConfig:
+                                    description: 'Required : AuditWebhookConfig contains reference to secret holding the audit webhook config file'
+                                    properties:
+                                      name:
+                                        description: name is unique within a namespace to reference a secret resource.
+                                        type: string
+                                      namespace:
+                                        description: namespace defines the space within which the secret name must be unique.
+                                        type: string
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  auditWebhookInitialBackoff:
+                                    default: 10s
+                                    type: string
+                                required:
+                                  - auditWebhookConfig
+                                type: object
+                            type: object
                           aws:
                             description: AWS configures an Amazon Web Services (AWS) datacenter.
                             properties:
@@ -256,6 +490,7 @@ spec:
                             type: object
                           enforceAuditLogging:
                             description: |-
+                              Deprecated: use AuditLogging instead.
                               Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
                               ignoring cluster-specific settings.
                             type: boolean
@@ -266,6 +501,7 @@ spec:
                             type: boolean
                           enforcedAuditWebhookSettings:
                             description: |-
+                              Deprecated: use AuditLogging instead.
                               Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
                               ignoring cluster-specific settings.
                             properties:

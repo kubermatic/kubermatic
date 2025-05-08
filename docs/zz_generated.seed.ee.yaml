@@ -63,6 +63,8 @@ spec:
         # APIServerServiceType is the service type used for API Server service `apiserver-external` for the user clusters.
         # By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
         apiServerServiceType: null
+        # Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+        auditLogging: null
         # AWS configures an Amazon Web Services (AWS) datacenter.
         aws:
           # List of AMIs to use for a given operating system.
@@ -116,12 +118,14 @@ spec:
         # Edge contains settings for clusters using manually created
         # nodes in edge envs.
         edge: {}
+        # Deprecated: use AuditLogging instead.
         # Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
         # ignoring cluster-specific settings.
         enforceAuditLogging: false
         # Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
         # ignoring cluster-specific settings.
         enforcePodSecurityPolicy: false
+        # Deprecated: use AuditLogging instead.
         # Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
         # ignoring cluster-specific settings.
         enforcedAuditWebhookSettings: null

@@ -2268,6 +2268,11 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(AuditWebhookBackendSettings)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.AuditLogging != nil {
+		in, out := &in.AuditLogging, &out.AuditLogging
+		*out = new(AuditLoggingSettings)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.ProviderReconciliationInterval != nil {
 		in, out := &in.ProviderReconciliationInterval, &out.ProviderReconciliationInterval
 		*out = new(metav1.Duration)
