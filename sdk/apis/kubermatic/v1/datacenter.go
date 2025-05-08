@@ -322,6 +322,8 @@ type SeedSpec struct {
 	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
 	// DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
+	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
