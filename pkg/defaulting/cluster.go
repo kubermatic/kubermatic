@@ -94,7 +94,13 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		return fieldErr
 	}
 
+	// Set the audit logging settings
+	if datacenter.Spec.AuditLogging != nil {
+		spec.AuditLogging = datacenter.Spec.AuditLogging
+	}
+
 	// Enforce audit logging
+	//nolint:staticcheck // Deprecated EnforceAuditLogging, Use AuditLogging instead.
 	if datacenter.Spec.EnforceAuditLogging {
 		if spec.AuditLogging == nil {
 			spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
@@ -103,6 +109,7 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	}
 
 	// Enforce audit webhook backend
+	//nolint:staticcheck // Deprecated EnforcedAuditWebhookSettings, Use AuditLogging instead.
 	if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
 		spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
 	}
