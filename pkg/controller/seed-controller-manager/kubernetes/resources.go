@@ -1159,7 +1159,7 @@ func hostnameToIPList(ctx context.Context, hostname string) ([]net.IP, error) {
 }
 
 func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
-	if data.DC().Spec.AuditLogging != nil && data.DC().Spec.AuditLogging.WebhookBackend != nil {
+	if data.DC().Spec.EnforcedAuditWebhookSettings != nil {
 		// if webhook backend is enabled on the DC then create the auditwebhookconfig secret in the user cluster ns.
 		creators := []reconciling.NamedSecretReconcilerFactory{r.auditWebhookSecretReconciler(ctx, data)}
 		if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r); err != nil {
@@ -1173,13 +1173,13 @@ func (r *Reconciler) ensureAuditWebhook(ctx context.Context, c *kubermaticv1.Clu
 // audit webhook configuration for api server audit logs.
 func (r *Reconciler) auditWebhookSecretReconciler(ctx context.Context, data *resources.TemplateData) reconciling.NamedSecretReconcilerFactory {
 	return func() (string, reconciling.SecretReconciler) {
-		return data.DC().Spec.AuditLogging.WebhookBackend.AuditWebhookConfig.Name, func(secret *corev1.Secret) (*corev1.Secret, error) {
+		return data.DC().Spec.EnforcedAuditWebhookSettings.AuditWebhookConfig.Name, func(secret *corev1.Secret) (*corev1.Secret, error) {
 			if secret.Data == nil {
 				secret.Data = map[string][]byte{}
 			}
-			if data.DC().Spec.AuditLogging.WebhookBackend != nil {
+			if data.DC().Spec.EnforcedAuditWebhookSettings != nil {
 				webhookBackendSecret := &corev1.Secret{}
-				err := r.Get(ctx, types.NamespacedName{Name: data.DC().Spec.AuditLogging.WebhookBackend.AuditWebhookConfig.Name, Namespace: data.DC().Spec.AuditLogging.WebhookBackend.AuditWebhookConfig.Namespace}, webhookBackendSecret)
+				err := r.Get(ctx, types.NamespacedName{Name: data.DC().Spec.EnforcedAuditWebhookSettings.AuditWebhookConfig.Name, Namespace: data.DC().Spec.EnforcedAuditWebhookSettings.AuditWebhookConfig.Namespace}, webhookBackendSecret)
 				if err != nil {
 					return secret, err
 				} else {

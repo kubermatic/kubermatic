@@ -320,8 +320,13 @@ type SeedSpec struct {
 	// ManagementProxySettings can be used if the KubeAPI of the user clusters
 	// will not be directly available from kkp and a proxy in between should be used
 	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
+<<<<<<< HEAD
 	// DefaultAPIServerAllowedIPRanges specifies CIDR ranges allowed to access user cluster API servers.
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
+=======
+	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+>>>>>>> fce733efe (update)
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -467,18 +472,13 @@ type DatacenterSpec struct {
 	// exactly (i.e. "example.com" will not match "user@test.example.com").
 	RequiredEmails []string `json:"requiredEmails,omitempty"`
 
-	// Deprecated: use AuditLogging instead.
 	// Optional: EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
 	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
-	// Deprecated: use AuditLogging instead.
 	// Optional: EnforcedAuditWebhookSettings allows admins to control webhook backend for audit logs of all the clusters within the DC,
 	// ignoring cluster-specific settings.
 	EnforcedAuditWebhookSettings *AuditWebhookBackendSettings `json:"enforcedAuditWebhookSettings,omitempty"`
-
-	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
-	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
 	// Optional: EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings.

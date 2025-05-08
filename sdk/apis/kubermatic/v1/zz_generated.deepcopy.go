@@ -2268,11 +2268,6 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 		*out = new(AuditWebhookBackendSettings)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.AuditLogging != nil {
-		in, out := &in.AuditLogging, &out.AuditLogging
-		*out = new(AuditLoggingSettings)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.ProviderReconciliationInterval != nil {
 		in, out := &in.ProviderReconciliationInterval, &out.ProviderReconciliationInterval
 		*out = new(metav1.Duration)
@@ -6994,10 +6989,17 @@ func (in *SeedSpec) DeepCopyInto(out *SeedSpec) {
 		*out = new(ManagementProxySettings)
 		(*in).DeepCopyInto(*out)
 	}
+<<<<<<< HEAD
 	if in.DefaultAPIServerAllowedIPRanges != nil {
 		in, out := &in.DefaultAPIServerAllowedIPRanges, &out.DefaultAPIServerAllowedIPRanges
 		*out = make([]string, len(*in))
 		copy(*out, *in)
+=======
+	if in.AuditLogging != nil {
+		in, out := &in.AuditLogging, &out.AuditLogging
+		*out = new(AuditLoggingSettings)
+		(*in).DeepCopyInto(*out)
+>>>>>>> fce733efe (update)
 	}
 }
 
