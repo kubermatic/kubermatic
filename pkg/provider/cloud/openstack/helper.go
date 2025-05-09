@@ -20,11 +20,15 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	"github.com/gophercloud/gophercloud/pagination"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -84,4 +88,25 @@ func isEndpointNotFoundErr(err error) bool {
 // isMultipleSGs returns true if the input string contains more than one non-empty security group.
 func isMultipleSGs(sg string) bool {
 	return len(strings.Split(sg, ",")) > 1
+}
+
+func retryOnError(
+	numTries int,
+	operation func() error,
+) error {
+	steps := 0
+	backoff := wait.Backoff{
+		Steps:    numTries,
+		Duration: 500 * time.Millisecond,
+		Factor:   2.0,
+		Jitter:   0.1,
+	}
+	retriable := func(err error) bool {
+		steps++
+
+		return steps <= backoff.Steps
+	}
+	return retry.OnError(backoff, retriable, func() error {
+		return operation()
+	})
 }
