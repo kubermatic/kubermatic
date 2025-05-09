@@ -138,6 +138,13 @@ func TestClusterBackupAndRestore(t *testing.T) {
 	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	defer testJig.Cleanup(ctx, t, true)
 
+	testJig.ClusterJig.WithTestName("clusterbackup")
+
+	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	if err != nil {
+		t.Fatalf("Failed to setup test environment: %v", err)
+	}
+
 	logger.Info("Waiting for cluster to become healthy...")
 
 	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
@@ -161,7 +168,7 @@ func TestClusterBackupAndRestore(t *testing.T) {
 	}
 	logger.Info("Waiting for nodes to become Ready...")
 
-	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		nodes := &corev1.NodeList{}
 		if err := clusterClient.List(ctx, nodes); err != nil {
 			return fmt.Errorf("failed to list nodes: %w", err), nil
@@ -178,13 +185,6 @@ func TestClusterBackupAndRestore(t *testing.T) {
 		return fmt.Errorf("no Ready nodes found yet"), nil
 	}); err != nil {
 		t.Fatalf("Nodes never became ready: %v", err)
-	}
-
-	testJig.ClusterJig.WithTestName("clusterbackup")
-
-	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
-	if err != nil {
-		t.Fatalf("Failed to setup test environment: %v", err)
 	}
 
 	cbslName, err := createBackupConfiguration(ctx, logger, seedClient, project, s3Credentials)
