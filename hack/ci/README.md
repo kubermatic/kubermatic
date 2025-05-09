@@ -55,15 +55,28 @@ This script compiles the KKP binaries and then builds and pushes all
 container images by using `hack/release-images.sh`. It is only
 useful as part of another script to setup KKP for testing.
 
+## run-addons-integration-test.sh
+
+TBD
+
 ## run-cilium-e2e-test.sh
 
 This script is used as a postsubmit job and updates the dev master
 cluster after every commit to main.
 
+## run-cluster-backup-e2e-tests.sh
+
+TBD
+
 ## run-conformance-tests.sh
 
 After having set up a local KKP installation, this script is then
 used to run the conformance-tester for a given cloud provider.
+
+## run-default-application-e2e-test.sh
+
+This script is used as a postsubmit job and updates the dev master
+cluster after every commit to main.
 
 ## run-dualstack-e2e-test.sh
 
@@ -74,6 +87,10 @@ TBD
 This script sets up a local KKP installation in kind and then
 runs the conformance-tester to create userclusters and check their
 Kubernetes conformance.
+
+## run-encryption-at-rest-tests.sh
+
+TBD
 
 ## run-etcd-launcher-tests.sh
 
@@ -129,6 +146,10 @@ This serves as the precursor for all other tests.
 This script should be sourced, not called, so callers get the variables
 it sets.
 
+## setup-kubermatic-cluster-backup-in-kind.sh
+
+TBD
+
 ## setup-kubermatic-in-kind.sh
 
 This script creates a local kind cluster, compiles the KKP binaries,
@@ -181,6 +202,11 @@ Runs as a postsubmit and refreshes the gocache by downloading the
 previous version, compiling everything and then tar'ing up the
 Go cache again.
 
+## verify-go-version.sh
+
+This that when we're in a PR targeting a release branch, the minimum
+Go version used to build KKP is not bumped to a different minor version.
+
 ## verify.sh
 
 This script is used as a presubmit to check that Helm chart versions
@@ -192,8 +218,3 @@ vars, this script won't run properly.
 This ensures that the Prometheus rules deployed into userclusters
 are valid Prometheus rules.
 
-## run-default-application-e2e-test.sh
-
-This script triggers and monitors Prow jobs for end-to-end (E2E) testing of applications from the default application catalog.
-Each Prow job verifies the successful installation of an ApplicationInstallation object, checks its conditions for a healthy state,
-ensures a Helm release has been deployed, and confirms that the application's pods are running correctly.
