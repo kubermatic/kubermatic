@@ -41,6 +41,13 @@ spec:
           chartVersion: 0.10.1
           url: https://aquasecurity.github.io/helm-charts/
     version: 0.58.1
+  - template:
+      source:
+        helm:
+          chartName: trivy
+          chartVersion: 0.14.1
+          url: https://aquasecurity.github.io/helm-charts/
+    version: 0.62.1
   documentationURL: https://aquasecurity.github.io/trivy/
   sourceURL: https://github.com/aquasecurity/trivy
   logo: |+

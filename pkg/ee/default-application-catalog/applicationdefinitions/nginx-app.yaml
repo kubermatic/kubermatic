@@ -52,7 +52,7 @@ spec:
       source:
         helm:
           chartName: ingress-nginx
-          chartVersion: 4.12.1
+          chartVersion: 4.12.2
           url: https://kubernetes.github.io/ingress-nginx
     version: 1.12.1
   documentationURL: https://kubernetes.github.io/ingress-nginx/
