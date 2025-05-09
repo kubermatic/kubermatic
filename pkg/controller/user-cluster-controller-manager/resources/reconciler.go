@@ -687,9 +687,11 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
-		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+	if !data.cluster.Spec.DisableCSIDriver {
+		if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
+			r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+			creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+		}
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r); err != nil {
