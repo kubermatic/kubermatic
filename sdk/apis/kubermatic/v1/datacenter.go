@@ -324,6 +324,8 @@ type SeedSpec struct {
 	// to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
 	// provide a security baseline that cannot be overridden by cluster-specific configurations.
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
+	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
