@@ -52,7 +52,7 @@ const (
 	version       = "v1.14.0"
 	pluginVersion = "v1.10.0"
 
-	backupOrigin = "kkp-backend"
+	backupOrigin = "kkp-controllers"
 
 	// Adds AWS tags to backup objects created through the BSL configured via KKP.
 	// For more details, refer to:
@@ -168,5 +168,5 @@ func CustomizationConfigMapReconciler(rewriter registry.ImageRewriter) reconcili
 }
 
 func getTags(backupOrigin, projectID, clusterID string) string {
-	return fmt.Sprintf("backup-origin:%s&project-id:%s&cluster-id:%s", backupOrigin, projectID, clusterID)
+	return fmt.Sprintf("backup-origin=%s&project-id=%s&cluster-id=%s", backupOrigin, projectID, clusterID)
 }
