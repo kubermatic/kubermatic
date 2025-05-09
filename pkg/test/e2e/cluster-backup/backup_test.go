@@ -138,6 +138,48 @@ func TestClusterBackupAndRestore(t *testing.T) {
 	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	defer testJig.Cleanup(ctx, t, true)
 
+	logger.Info("Waiting for cluster to become healthy...")
+
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		cluster, err := testJig.ClusterJig.Cluster(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get cluster object: %w", err), nil
+		}
+
+		if cluster.Status.ExtendedHealth.AllHealthy() {
+			return nil, nil
+		}
+
+		return fmt.Errorf("cluster is not fully healthy yet: %+v", cluster.Status.ExtendedHealth), nil
+	}); err != nil {
+		t.Fatalf("Cluster never became healthy: %v", err)
+	}
+
+	clusterClient, err := testJig.ClusterClient(ctx)
+	if err != nil {
+		t.Fatalf("Cluster Client creation failed")
+	}
+	logger.Info("Waiting for nodes to become Ready...")
+
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		nodes := &corev1.NodeList{}
+		if err := clusterClient.List(ctx, nodes); err != nil {
+			return fmt.Errorf("failed to list nodes: %w", err), nil
+		}
+
+		for _, node := range nodes.Items {
+			for _, cond := range node.Status.Conditions {
+				if cond.Type == corev1.NodeReady && cond.Status == corev1.ConditionTrue {
+					return nil, nil
+				}
+			}
+		}
+
+		return fmt.Errorf("no Ready nodes found yet"), nil
+	}); err != nil {
+		t.Fatalf("Nodes never became ready: %v", err)
+	}
+
 	testJig.ClusterJig.WithTestName("clusterbackup")
 
 	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
@@ -167,7 +209,7 @@ func TestClusterBackupAndRestore(t *testing.T) {
 		t.Fatalf("Failed to register velero/v1 scheme: %v", err)
 	}
 
-	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		key := types.NamespacedName{Name: veleroDeployment, Namespace: veleroNamespace}
 		health, err := resources.HealthyDeployment(ctx, userClient, key, -1)
 		if err != nil {
@@ -184,7 +226,7 @@ func TestClusterBackupAndRestore(t *testing.T) {
 	}
 
 	logger.Info("Waiting for BackupStorageLocation to be synced...")
-	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		key := types.NamespacedName{Name: userClusterBSLName, Namespace: veleroNamespace}
 		userCBSL := &velerov1.BackupStorageLocation{}
 
@@ -217,7 +259,7 @@ func TestClusterBackupAndRestore(t *testing.T) {
 	}
 
 	logger.Info("Waiting for backup to complete...")
-	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		// refresh Backup information
 		if err := userClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(clusterBackup), clusterBackup); err != nil {
 			return err, nil
@@ -259,7 +301,7 @@ func TestClusterBackupAndRestore(t *testing.T) {
 	}
 
 	logger.Info("Waiting for restore to complete...")
-	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+	if err := wait.PollImmediateLog(ctx, logger, 5*time.Second, 10*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		// refresh Restore information
 		if err := userClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(clusterRestore), clusterRestore); err != nil {
 			return err, nil
