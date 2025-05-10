@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: kube-system
 resources:
-  - https://raw.githubusercontent.com/kubernetes-sigs/vsphere-csi-driver/refs/tags/v3.3.1/manifests/vanilla/vsphere-csi-driver.yaml
+  - https://raw.githubusercontent.com/kubernetes-sigs/vsphere-csi-driver/refs/tags/v3.4.0/manifests/vanilla/vsphere-csi-driver.yaml
 patches:
   # remove windows support daemon sets
   - target:

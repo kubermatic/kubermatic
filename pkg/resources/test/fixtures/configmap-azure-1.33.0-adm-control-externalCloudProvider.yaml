@@ -1,0 +1,10 @@
+# This file has been generated, DO NOT EDIT.
+
+data:
+  admission-control.yaml: |
+    kind: AdmissionConfiguration
+    apiVersion: apiserver.config.k8s.io/v1
+metadata:
+  creationTimestamp: null
+  name: adm-control
+  namespace: cluster-de-test-01

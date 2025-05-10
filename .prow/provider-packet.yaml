@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-packet-ubuntu-1.32
+  - name: pre-kubermatic-e2e-packet-ubuntu-1.33
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -29,12 +29,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.32"
+              value: "1.33"
             - name: PROVIDER
               value: "packet"
             - name: DISTRIBUTIONS

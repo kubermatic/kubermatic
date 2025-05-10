@@ -78,6 +78,9 @@ var (
 		{
 			Version: semverlib.MustParse("1.32.0"),
 		},
+		{
+			Version: semverlib.MustParse("1.33.0"),
+		},
 	}
 
 	featureSets = []map[string]bool{
