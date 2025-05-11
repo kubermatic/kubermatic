@@ -61,9 +61,7 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Template",type=string,JSONPath=".spec.policyTemplateRef.name"
 // +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".status.templateEnforced"
-// +kubebuilder:printcolumn:name="Enabled",type=boolean,JSONPath=".spec.enabled"
 // +kubebuilder:printcolumn:name="Active",type=string,JSONPath=".status.active"
-// +kubebuilder:printcolumn:name="Namespaced",type=boolean,JSONPath=".spec.namespacedPolicy"
 // +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
@@ -84,20 +82,40 @@ type PolicyBindingSpec struct {
 	// +kubebuilder:validation:Required
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// Enabled controls whether the policy defined by the template should be actively applied to the cluster.
+	// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into
 	//
 	// Relevant only if the referenced PolicyTemplate has spec.enforced=false.
+	// If Template.NamespacedPolicy is true and this field is omitted, no Kyverno Policy resources will be created.
 	//
 	// +optional
-	Enabled *bool `json:"enabled,omitempty"`
+	KyvernoPolicyNamespace *KyvernoPolicyNamespace `json:"kyvernoPolicyNamespace,omitempty"`
+}
 
-	// NamespaceSelector specifies which namespaces the Kyverno Policy resource(s) should be created in
+// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into
+// This is relevant only if a Kyverno Policy resource is created because Kyverno Policy is namespaced.
+// For Kyverno ClusterPolicy, this field is ignored.
+type KyvernoPolicyNamespace struct {
+	// Name is the namespace to deploy the Kyverno Policy into.
 	//
-	// Relevant only if Template.NamespacedPolicy is true.
-	// If Template.NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
+	// +kubebuilder:validation:Pattern:=`^(|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)`
+	// +kubebuilder:validation:MaxLength:=63
+	// +kubebuilder:validation:Type=string
+	Name string `json:"name"`
+
+	// Create defines whether the namespace should be created if it does not exist. Defaults to true
+	//
+	// +kubebuilder:default:=true
+	Create bool `json:"create"`
+
+	// Labels of the Kyverno namespace
 	//
 	// +optional
-	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Annotations of the Kyverno namespace
+	//
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // PolicyBindingStatus is the status of the policy binding.
