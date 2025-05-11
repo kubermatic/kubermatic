@@ -691,6 +691,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		common.KubermaticConfigurationAdmissionWebhookReconciler(ctx, cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, cfg, client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, cfg, client),
 	}
