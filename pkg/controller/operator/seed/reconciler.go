@@ -211,6 +211,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		common.KubermaticConfigurationAdmissionWebhookName(cfg),
 		common.ApplicationDefinitionAdmissionWebhookName,
 		common.PoliciesAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 		kubermaticseed.ClusterAdmissionWebhookName,
 		kubermaticseed.IPAMPoolAdmissionWebhookName,
 	}
