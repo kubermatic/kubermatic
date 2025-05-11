@@ -191,6 +191,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		common.KubermaticConfigurationAdmissionWebhookName(config),
 		common.GroupProjectBindingAdmissionWebhookName,
 		common.ResourceQuotaAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 	}
 
 	mutating := []string{
@@ -435,6 +436,7 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		kubermatic.ResourceQuotaValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.GroupProjectBindingValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, config, r.Client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 	}
 
 	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
