@@ -1,7 +1,8 @@
 module k8c.io/kubermatic/v2
 
-go 1.23.0
-toolchain go1.24.1
+go 1.23.8
+
+toolchain go1.24.2
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -55,6 +56,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.21.0
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.13
+	github.com/kyverno/kyverno v1.13.5
 	github.com/minio/minio-go/v7 v7.0.69
 	github.com/nutanix-cloud-native/prism-go-client v0.5.1
 	github.com/olekukonko/tablewriter v0.0.5
@@ -120,8 +122,6 @@ require (
 	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/yaml v1.4.0
 )
-
-require github.com/kyverno/kyverno v1.13.5
 
 require (
 	cel.dev/expr v0.19.1 // indirect
