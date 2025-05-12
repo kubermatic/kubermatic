@@ -247,10 +247,10 @@ func PolicyBindingReconciler(logger *zap.SugaredLogger, template kubermaticv1.Po
 			}
 
 			if template.Spec.Enforced {
-				annotations[kubermaticv1.AnnotationPolicyEnforced] = "true"
+				annotations[kubermaticv1.AnnotationPolicyEnforced] = strconv.FormatBool(true)
 			}
 			if template.Spec.Default {
-				annotations[kubermaticv1.AnnotationPolicyDefault] = "true"
+				annotations[kubermaticv1.AnnotationPolicyDefault] = strconv.FormatBool(true)
 			}
 
 			// Copy labels from the template if any
