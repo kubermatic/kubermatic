@@ -46,4 +46,5 @@ boilerplate \
   -boilerplates hack/boilerplate/ee \
   -exclude pkg/ee/cluster-backup/resources/user-cluster/static \
   -exclude pkg/ee/kyverno/resources/user-cluster/static \
+  -exclude pkg/ee/default-policy-catalog/policytemplates \
   pkg/ee
