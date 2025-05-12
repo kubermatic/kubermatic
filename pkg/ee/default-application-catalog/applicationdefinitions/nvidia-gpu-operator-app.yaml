@@ -41,6 +41,13 @@ spec:
             chartVersion: v24.9.1
             url: https://helm.ngc.nvidia.com/nvidia
       version: v24.9.1
+    - template:
+        source:
+          helm:
+            chartName: gpu-operator
+            chartVersion: v25.3.0
+            url: https://helm.ngc.nvidia.com/nvidia
+      version: v25.3.0
   defaultValuesBlock: |
     node-feature-discovery:
       fullnameOverride: gpu-operator-node-feature-discovery

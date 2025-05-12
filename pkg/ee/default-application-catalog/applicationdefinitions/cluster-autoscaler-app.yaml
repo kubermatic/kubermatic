@@ -34,7 +34,7 @@ spec:
         source:
           helm:
             chartName: cluster-autoscaler
-            chartVersion: 9.45.1
+            chartVersion: 9.46.6
             url: https://kubernetes.github.io/autoscaler
       version: 1.32.0
   defaultValuesBlock: |

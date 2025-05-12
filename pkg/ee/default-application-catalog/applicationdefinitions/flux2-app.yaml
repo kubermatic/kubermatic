@@ -48,6 +48,13 @@ spec:
           chartVersion: 2.14.1
           url: https://fluxcd-community.github.io/helm-charts
     version: 2.4.0
+  - template:
+      source:
+        helm:
+          chartName: flux2
+          chartVersion: 2.15.0
+          url: https://fluxcd-community.github.io/helm-charts
+    version: 2.5.1
   documentationURL: https://fluxcd.io/
   sourceURL: https://github.com/fluxcd-community/helm-charts
   logo: |+
