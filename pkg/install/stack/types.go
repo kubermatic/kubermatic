@@ -68,6 +68,8 @@ type DeployOptions struct {
 	DeployDefaultAppCatalog bool
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 type Stack interface {

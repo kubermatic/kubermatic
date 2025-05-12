@@ -1,0 +1,30 @@
+apiVersion: kubermatic.k8c.io/v1
+kind: PolicyTemplate
+metadata:
+  name: restrict-nodeport
+spec:
+  title: Disallow NodePort
+  description: | 
+      A Kubernetes Service of type NodePort uses a host port to receive traffic from
+      any source. A NetworkPolicy cannot be used to control traffic to host ports.
+      Although NodePort Services can be useful, their use must be limited to Services
+      with additional upstream security checks. This policy validates that any new Services
+      do not use the `NodePort` type.  
+  category: Best Practices
+  severity: medium
+  visibility: Global
+  policySpec:
+    validationFailureAction: Audit
+    background: true
+    rules:
+    - name: validate-nodeport
+      match:
+        any:
+        - resources:
+            kinds:
+            - Service
+      validate:
+        message: "Services of type NodePort are not allowed."
+        pattern:
+          spec:
+            =(type): "!NodePort"

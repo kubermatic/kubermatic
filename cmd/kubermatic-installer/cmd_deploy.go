@@ -87,6 +87,8 @@ type DeployOptions struct {
 	DeployDefaultAppCatalog bool
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.Command {
@@ -214,6 +216,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
+			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
 		}
 
 		// prepare Kubernetes and Helm clients
