@@ -58,6 +58,7 @@ const (
 	policyName        = "test-policy"
 )
 
+//nolint:gocyclo
 func TestReconcile(t *testing.T) {
 	log := zap.NewNop().Sugar()
 

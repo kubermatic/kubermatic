@@ -41,6 +41,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -142,6 +143,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Determine whether to ignore default policies
+	//nolint:staticcheck
 	ignoreDefaultPolicies := false
 
 	// Default policies are already created.
@@ -274,7 +276,7 @@ func PolicyBindingReconciler(logger *zap.SugaredLogger, template kubermaticv1.Po
 	}
 }
 
-// isClusterTargeted checks if the PolicyTemplate targets the given cluster
+// isClusterTargeted checks if the PolicyTemplate targets the given cluster.
 func isClusterTargeted(cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate) bool {
 	// If no target is specified, we check the visibility
 	if template.Spec.Target == nil {
@@ -301,7 +303,7 @@ func isClusterTargeted(cluster *kubermaticv1.Cluster, template *kubermaticv1.Pol
 		}
 
 		projectLabels := map[string]string{kubermaticv1.ProjectIDLabelKey: cluster.Labels[kubermaticv1.ProjectIDLabelKey]}
-		if !selector.Matches(labels(projectLabels)) {
+		if !selector.Matches(labels.Set(projectLabels)) {
 			return false
 		}
 	}
@@ -313,24 +315,12 @@ func isClusterTargeted(cluster *kubermaticv1.Cluster, template *kubermaticv1.Pol
 			return false
 		}
 
-		if !selector.Matches(labels(cluster.Labels)) {
+		if !selector.Matches(labels.Set(cluster.Labels)) {
 			return false
 		}
 	}
 
 	return true
-}
-
-// labels is a helper that converts a map[string]string to a labels.Labels type
-type labels map[string]string
-
-func (l labels) Get(key string) string {
-	return l[key]
-}
-
-func (l labels) Has(key string) bool {
-	_, exists := l[key]
-	return exists
 }
 
 func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
