@@ -61,6 +61,7 @@ func (s *packetScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Packet.KKPDatacenter,
+			//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 			Packet: &kubermaticv1.PacketCloudSpec{
 				APIKey:    secrets.Packet.APIKey,
 				ProjectID: secrets.Packet.ProjectID,

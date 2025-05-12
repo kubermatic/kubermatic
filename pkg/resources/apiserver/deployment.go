@@ -248,7 +248,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers,
 					corev1.Container{
 						Name:    auditLogsSidecarName,
-						Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/fluent/fluent-bit:1.9.5")),
+						Image:   registry.Must(data.RewriteImage(resources.RegistryDocker + "/fluent/fluent-bit:4.0.0")),
 						Command: []string{"/fluent-bit/bin/fluent-bit"},
 						Args:    []string{"-c", "/etc/fluent-bit/fluent-bit.conf"},
 						VolumeMounts: []corev1.VolumeMount{
@@ -263,6 +263,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 								ReadOnly:  true,
 							},
 						},
+						Env: data.GetAuditLoggingSidecarEnvs(),
 					},
 				)
 			}

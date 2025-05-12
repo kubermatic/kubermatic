@@ -70,9 +70,6 @@ var (
 
 	kubernetesVersions = []*version.Version{
 		{
-			Version: semverlib.MustParse("1.29.0"),
-		},
-		{
 			Version: semverlib.MustParse("1.30.0"),
 		},
 		{
@@ -149,7 +146,7 @@ var (
 				Network:        "openstack-network",
 				Password:       "openstack-password",
 				RouterID:       "openstack-router-id",
-				SecurityGroups: "openstack-security-group1,openstack-security-group2",
+				SecurityGroups: "openstack-security-group1",
 			},
 		},
 		"bringyourown": {
@@ -964,7 +961,7 @@ func generateAndVerifyResources(t *testing.T, ctx context.Context, client ctrlru
 	}
 
 	var statefulSetReconcilers []reconciling.NamedStatefulSetReconcilerFactory
-	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false)...)
+	statefulSetReconcilers = append(statefulSetReconcilers, kubernetescontroller.GetStatefulSetReconcilers(data, false, false, 0)...)
 	statefulSetReconcilers = append(statefulSetReconcilers, monitoringcontroller.GetStatefulSetReconcilers(data)...)
 	for _, factory := range statefulSetReconcilers {
 		name, reconciler := factory()

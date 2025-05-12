@@ -72,6 +72,8 @@ type Cluster struct {
 	DataDir               string
 	Token                 string
 	EnableCorruptionCheck bool
+	// QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+	QuotaBackendGB int64
 
 	clusterClient ctrlruntimeclient.Client
 	namespace     string // filled in later during init()

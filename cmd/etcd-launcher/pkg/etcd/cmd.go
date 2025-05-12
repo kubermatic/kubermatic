@@ -93,5 +93,13 @@ func etcdCmd(config *Cluster) []string {
 			"--experimental-corrupt-check-time=240m",
 		}...)
 	}
+
+	if config.QuotaBackendGB > 0 {
+		bytes, overflow := resources.ConvertGBToBytes(uint64(config.QuotaBackendGB))
+		if !overflow {
+			cmd = append(cmd, fmt.Sprintf("--quota-backend-bytes=%d", bytes))
+		}
+	}
+
 	return cmd
 }

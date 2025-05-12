@@ -464,7 +464,7 @@ func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfigu
 }
 
 func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions, seed *kubermaticv1.Seed) (images []string, err error) {
-	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
+	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false, 0)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
 	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false, kubermaticVersions)
@@ -802,7 +802,8 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 		},
 		{
 			ProviderName: string(kubermaticv1.PacketCloudProvider),
-			Packet:       &kubermaticv1.PacketCloudSpec{},
+			//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
+			Packet: &kubermaticv1.PacketCloudSpec{},
 		},
 		{
 			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),

@@ -29,10 +29,33 @@ const (
 	PolicyTemplateKind = "PolicyTemplate"
 )
 
-// +kubebuilder:resource:scope=Cluster
+const (
+	// PolicyTemplateSeedCleanupFinalizer indicates that synced policy template on seed clusters need cleanup.
+	PolicyTemplateSeedCleanupFinalizer = "kubermatic.k8c.io/cleanup-seed-policy-template"
+)
+
+// PolicyTemplateVisibilityType defines the primary intended audience/scope for the template.
+//
+// +kubebuilder:validation:Enum=Global;Project;Cluster
+type PolicyTemplateVisibilityType string
+
+const (
+	// PolicyTemplateVisibilityGlobal is the visibility of the policy template when it is created in the global scope.
+	PolicyTemplateVisibilityGlobal = "Global"
+
+	// PolicyTemplateVisibilityProject is the visibility of the policy template when it is created in the project scope.
+	PolicyTemplateVisibilityProject = "Project"
+
+	// PolicyTemplateVisibilityCluster is the visibility of the policy template when it is created in the cluster scope.
+	PolicyTemplateVisibilityCluster = "Cluster"
+)
+
+// +kubebuilder:resource:scope=Cluster,categories=kubermatic,shortName=pt
 // +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".spec.enforced",description="Whether the policy is mandatory"
+// +kubebuilder:printcolumn:name="Visibility",type=string,JSONPath=".spec.visibility"
+// +kubebuilder:printcolumn:name="ProjectID",type=string,JSONPath=".spec.projectID"
+// +kubebuilder:printcolumn:name="Enforced",type=boolean,JSONPath=".spec.enforced"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // PolicyTemplate defines a reusable blueprint of a Kyverno policy.
 type PolicyTemplate struct {
@@ -62,7 +85,8 @@ type PolicyTemplateSpec struct {
 	// Visibility specifies where the policy is visible.
 	//
 	// Can be one of: global, project, or cluster
-	// +kubebuilder:validation:Enum=global;project;cluster
+	// +kubebuilder:validation:Enum=Global;Project;Cluster
+	// +kubebuilder:validation:Required
 	Visibility string `json:"visibility"`
 
 	// ProjectID is the ID of the project for which the policy template is created
@@ -71,7 +95,7 @@ type PolicyTemplateSpec struct {
 	// +optional
 	ProjectID string `json:"projectID,omitempty"`
 
-	// Default determines whether we apply the policy (create policy binding)
+	// Default determines whether we apply the policy (create policy binding) by default
 	//
 	// +optional
 	Default bool `json:"default,omitempty"`
@@ -81,6 +105,17 @@ type PolicyTemplateSpec struct {
 	// If true, this policy is mandatory
 	// A PolicyBinding referencing it cannot disable it
 	Enforced bool `json:"enforced"`
+
+	// NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
+	//
+	// +optional
+	NamespacedPolicy bool `json:"namespacedPolicy,omitempty"`
+
+	// Target allows selection of projects and clusters where this template applies,
+	// If 'Target' itself is omitted, the scope defaults based on 'Visibility' and 'ProjectID':
+	//
+	// +optional
+	Target *PolicyTemplateTarget `json:"target,omitempty"`
 
 	// PolicySpec is the policy spec of the Kyverno Policy we want to apply on the cluster.
 	//
@@ -109,6 +144,19 @@ type PolicyTemplateSpec struct {
 	// There are also further examples of Kyverno policies in the
 	// [Kyverno Policies Examples](https://kyverno.io/policies/).
 	PolicySpec runtime.RawExtension `json:"policySpec"`
+}
+
+// PolicyTemplateTarget allows specifying label selectors for Projects and Clusters.
+type PolicyTemplateTarget struct {
+	// ProjectSelector filters KKP Projects based on their labels.
+	//
+	// +optional
+	ProjectSelector *metav1.LabelSelector `json:"projectSelector,omitempty"`
+
+	// ClusterSelector filters individual KKP Cluster resources based on their labels.
+	//
+	// +optional
+	ClusterSelector *metav1.LabelSelector `json:"clusterSelector,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

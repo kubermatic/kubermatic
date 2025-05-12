@@ -191,6 +191,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		common.KubermaticConfigurationAdmissionWebhookName(config),
 		common.GroupProjectBindingAdmissionWebhookName,
 		common.ResourceQuotaAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 	}
 
 	mutating := []string{
@@ -431,11 +432,15 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		common.SeedAdmissionWebhookReconciler(ctx, config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookReconciler(ctx, config, r.Client),
 		kubermatic.UserValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
-		kubermatic.UserSSHKeyValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ResourceQuotaValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.GroupProjectBindingValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, config, r.Client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
+	}
+
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
+		reconcilers = append(reconcilers, kubermatic.UserSSHKeyValidatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
@@ -449,9 +454,12 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 	logger.Debug("Reconciling Mutating Webhooks")
 
 	reconcilers := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
-		kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ExternalClusterMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
+	}
+
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
+		reconcilers = append(reconcilers, kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {

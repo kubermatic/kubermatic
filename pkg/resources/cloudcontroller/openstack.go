@@ -113,8 +113,6 @@ func OpenStackCCMTag(version semver.Semver) (string, error) {
 	// gcrane ls --json registry.k8s.io/provider-os/openstack-cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v128:
-		return "v1.28.3", nil
 	case v129:
 		return "v1.29.1", nil
 	case v130:

@@ -39,6 +39,8 @@ resourceTypes:
   - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: GroupProjectBinding }
   - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: IPAMAllocation }
   - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: KubermaticConfiguration }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: PolicyBinding }
+  - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: PolicyTemplate }
   - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Preset }
   - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: Project }
   - { package: k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1, resourceName: ResourceQuota }
@@ -68,3 +70,6 @@ resourceTypes:
 
   # velero/v1
   - {package: github.com/vmware-tanzu/velero/pkg/apis/velero/v1, resourceName: BackupStorageLocation, importAlias: velerov1 }
+
+  # kyverno/v1
+  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: ClusterPolicy, apiVersionPrefix: Kyverno }

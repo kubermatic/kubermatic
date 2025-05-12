@@ -125,6 +125,12 @@ spec:
                       type: string
                   type: object
                   x-kubernetes-map-type: atomic
+                isGlobalViewer:
+                  default: false
+                  description: |-
+                    IsGlobalViewer defines whether this user is a global viewer with read-only access across the KKP dashboard.
+                    GlobalViewer can for example see all projects and clusters in the KKP dashboard.
+                  type: boolean
                 name:
                   description: Name is the full name of this user.
                   type: string

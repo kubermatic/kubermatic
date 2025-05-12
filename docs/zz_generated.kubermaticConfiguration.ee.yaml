@@ -173,6 +173,9 @@ spec:
     # This field is a no-op and is no longer used. The old backup controller it was used for has been
     # removed. Do not set this field.
     backupCleanupContainer: ""
+    # BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
+    # Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
+    backupCount: null
     # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
     backupDeleteContainer: |2
 
@@ -206,6 +209,9 @@ spec:
           exit $?
           ;;
         esac
+    # BackupInterval defines the time duration between consecutive etcd backups.
+    # Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
+    backupInterval: 0s
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
     backupStoreContainer: |2
 
@@ -464,7 +470,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.31.7
+    default: v1.31.8
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -494,15 +500,11 @@ spec:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
         condition: inTreeProvider
         # Operation is the operation triggering the compatibility check (CREATE or UPDATE)
-        operation: CREATE
+        operation: UPGRADE
         # Provider to which to apply the compatibility check.
         # Empty string matches all providers
         provider: ""
         # Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
-        version: '>= 1.29.0'
-      - condition: inTreeProvider
-        operation: UPGRADE
-        provider: ""
         version: '>= 1.29.0'
     # Updates is a list of available and automatic upgrades.
     # All 'to' versions must be configured in the version list for this orchestrator.
@@ -521,14 +523,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.28.*
+        from: 1.29.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.29.*
-      - from: 1.29.*
-        to: 1.29.*
-      - from: 1.29.*
         to: 1.30.*
       - from: 1.30.*
         to: 1.30.*
@@ -542,20 +540,17 @@ spec:
         to: 1.32.*
     # Versions lists the available versions.
     versions:
-      - v1.29.0
-      - v1.29.1
-      - v1.29.2
-      - v1.29.4
-      - v1.29.9
-      - v1.29.13
       - v1.30.5
       - v1.30.9
       - v1.30.11
+      - v1.30.12
       - v1.31.1
       - v1.31.5
       - v1.31.7
+      - v1.31.8
       - v1.32.1
       - v1.32.3
+      - v1.32.4
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

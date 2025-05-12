@@ -43,6 +43,7 @@ import (
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	policieswebhook "k8c.io/kubermatic/v2/pkg/webhook/policies"
+	policytemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/policytemplate/validation"
 	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
@@ -235,6 +236,14 @@ func main() {
 	groupProjectBindingValidator := groupprojectbinding.NewValidator()
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup PolicyTemplate webhook
+
+	policyTemplateValidator := policytemplatevalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.PolicyTemplate{}).WithValidator(policyTemplateValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup PolicyTemplate validation webhook", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////

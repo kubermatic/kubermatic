@@ -259,7 +259,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{}, nil
 
 	case kubermaticv1.ClusterEncryptionPhaseEncryptionNeeded:
-		return r.encryptData(ctx, r, log, cluster)
+		return r.encryptData(ctx, log, cluster)
 
 	case kubermaticv1.ClusterEncryptionPhaseActive:
 		// get a key hint as defined in the ClusterSpec to compare to the current status.

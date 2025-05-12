@@ -5,6 +5,8 @@ metadata:
   namespace: kubermatic
 # Spec describes the configuration of the Seed cluster.
 spec:
+  # Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+  auditLogging: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
   country: ""
@@ -165,6 +167,11 @@ spec:
                 podSelector: {}
                 policyTypes:
                   - Ingress
+          # DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+          # (standard-2, standard-4, standard-8) in KubeVirt environments.
+          disableDefaultInstanceTypes: false
+          # DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+          disableDefaultPreferences: false
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:
@@ -236,6 +243,10 @@ spec:
               # Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
               # for increased availability
               zones: null
+          # Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
+          # example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
+          # otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
+          matchSubnetAndStorageLocation: null
           # NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
           namespacedMode: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used
@@ -300,6 +311,8 @@ spec:
             ubuntu: ""
           # Optional: defines if the IPv6 is enabled for the datacenter
           ipv6Enabled: false
+          # Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
+          loadBalancerClasses: null
           # Optional: Gets mapped to the "lb-method" setting in the cloud config.
           # defaults to "ROUND_ROBIN".
           loadBalancerMethod: null
@@ -336,6 +349,8 @@ spec:
           rhel: ""
           rockylinux: ""
           ubuntu: ""
+        # Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+        # This provider is no longer supported. Migrate your configurations away from "packet" immediately.
         # Packet configures an Equinix Metal datacenter.
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
@@ -416,6 +431,10 @@ spec:
             rhel: ""
             rockylinux: ""
             ubuntu: ""
+  # DefaultAPIServerAllowedIPRanges defines a set of CIDR ranges that are **always appended**
+  # to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
+  # provide a security baseline that cannot be overridden by cluster-specific configurations.
+  defaultAPIServerAllowedIPRanges: null
   # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
   # to default all new created clusters
   defaultClusterTemplate: ""
@@ -462,6 +481,10 @@ spec:
       hostAntiAffinity: ""
       # NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
       nodeSelector: null
+      # QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+
+      # For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+      quotaBackendGb: null
       # Resources allows to override the resource requirements for etcd Pods.
       resources: null
       # StorageClass is the Kubernetes StorageClass used for persistent storage
@@ -573,6 +596,9 @@ spec:
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
+  # ManagementProxySettings can be used if the KubeAPI of the user clusters
+  # will not be directly available from kkp and a proxy in between should be used
+  managementProxySettings: null
   # Metering configures the metering tool on user clusters across the seed.
   metering:
     enabled: false

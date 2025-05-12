@@ -71,6 +71,7 @@ func (b *equinixmetalConfig) WithTag(tag string) *equinixmetalConfig {
 	return b
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func CompleteEquinixMetalProviderSpec(config *equinixmetal.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecPacket) (*equinixmetal.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.Packet == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Equinix Metal cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)

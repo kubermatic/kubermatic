@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
+apiVersion: v2
 name: blackbox-exporter
 version: 9.9.9-dev
 appVersion: v0.25.0
@@ -24,7 +24,12 @@ keywords:
   - blackbox-exporter
 home: https://github.com/prometheus/blackbox_exporter
 sources:
-  - https://github.com/helm/charts/tree/master/stable/prometheus-blackbox-exporter
+  - https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-blackbox-exporter
 maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
+dependencies:
+  - name: prometheus-blackbox-exporter
+    repository: https://prometheus-community.github.io/helm-charts
+    version: 9.2.0
+    alias: blackbox-exporter

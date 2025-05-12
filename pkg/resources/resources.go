@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"time"
@@ -1041,7 +1042,7 @@ const (
 	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
 	DefaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
 	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
-	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
+	DefaultClusterServicesCIDRIPv6 = "fd02::/108"
 
 	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
 	DefaultNodeCIDRMaskSizeIPv4 = 24
@@ -1769,6 +1770,19 @@ func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivi
 		return "InternalIP,ExternalIP"
 	}
 	return "ExternalIP,InternalIP"
+}
+
+// ConvertGBToBytes converts Gigabytes (GB using decimal) to Bytes.
+// Takes a non-negative number of GB.
+// Returns the number of bytes and a boolean indicating if overflow occurred.
+func ConvertGBToBytes(gb uint64) (bytes uint64, overflow bool) {
+	const GB uint64 = 1 << 30
+
+	if GB > 0 && gb > math.MaxUint64/GB {
+		return 0, true
+	}
+
+	return gb * GB, false
 }
 
 func containsString(s []string, str string) bool {

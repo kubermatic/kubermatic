@@ -45,6 +45,7 @@ skip=(
   ./charts/local-kubevirt/crds
   ./pkg/ee/default-application-catalog/applicationdefinitions
   ./pkg/resources/test/fixtures
+  ./pkg/ee/kyverno/resources/user-cluster/static
 )
 
 function join {

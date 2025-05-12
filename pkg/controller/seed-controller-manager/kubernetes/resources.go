@@ -112,7 +112,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return &reconcile.Result{RequeueAfter: clusterIPUnknownRetryTimeout}, nil
 	}
 
-	// check that all secrets are available // New way of handling secrets
+	// check that all secrets are available
 	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
 		return nil, err
 	}
@@ -283,6 +283,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithMachineControllerImageTag(r.machineControllerImageTag).
 		WithMachineControllerImageRepository(r.machineControllerImageRepository).
 		WithBackupPeriod(r.backupSchedule).
+		WithBackupCount(r.backupCount).
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
@@ -507,7 +508,7 @@ func (r *Reconciler) GetSecretReconcilers(ctx context.Context, data *resources.T
 	namespace := data.Cluster().Status.NamespaceName
 
 	creators := []reconciling.NamedSecretReconcilerFactory{
-		cloudconfig.SecretReconciler(data, resources.CloudConfigSecretName),
+		cloudconfig.SecretReconciler(data, resources.CloudConfigSeedSecretName),
 		certificates.RootCAReconciler(data),
 		certificates.FrontProxyCAReconciler(),
 		resources.ImagePullSecretReconciler(r.dockerPullConfigJSON),
@@ -799,9 +800,9 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Clust
 }
 
 // GetStatefulSetReconcilers returns all StatefulSetReconcilers that are currently in use.
-func GetStatefulSetReconcilers(data *resources.TemplateData, enableDataCorruptionChecks bool, enableTLSOnly bool) []reconciling.NamedStatefulSetReconcilerFactory {
+func GetStatefulSetReconcilers(data *resources.TemplateData, enableDataCorruptionChecks, enableTLSOnly bool, quotaBackendGB int64) []reconciling.NamedStatefulSetReconcilerFactory {
 	return []reconciling.NamedStatefulSetReconcilerFactory{
-		etcd.StatefulSetReconciler(data, enableDataCorruptionChecks, enableTLSOnly),
+		etcd.StatefulSetReconciler(data, enableDataCorruptionChecks, enableTLSOnly, quotaBackendGB),
 	}
 }
 
@@ -897,7 +898,12 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 		return err
 	}
 
-	creators := GetStatefulSetReconcilers(data, r.features.EtcdDataCorruptionChecks, useTLSOnly)
+	quotaBackendGB := int64(0)
+	if b := c.Spec.ComponentsOverride.Etcd.QuotaBackendGB; b != nil {
+		quotaBackendGB = *b
+	}
+
+	creators := GetStatefulSetReconcilers(data, r.features.EtcdDataCorruptionChecks, useTLSOnly, quotaBackendGB)
 
 	modifiers := []reconciling.ObjectModifier{
 		modifier.RelatedRevisionsLabels(ctx, r),

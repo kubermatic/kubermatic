@@ -200,6 +200,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 								MinimumMemory: 0,
 							},
 						},
+						//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
 							Metro:      "",

@@ -16,7 +16,7 @@ The basic steps to get started on this are these:
     * Master Controller Manager: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-master-controller-manager.sh`
     * KKP Operator: `$(go env GOPATH)/src/k8c.io/kubermatic/hack/run-operator.sh`
 
-Now you can visit <http://localhost:8000> in your webbrowser, log in and create a cluster
+Now you can visit <http://localhost:8000> in your web browser, log in and create a cluster
 at a provider of your choice. The result can then be viewed by looking into the respective
 seed cluster:
 
@@ -40,7 +40,7 @@ fp5lzdp6kx            8h        objective-hopper             user3@example.com
 *Hint:* If you only work on the API you can skip starting the controllers. If you only work
 on controllers, you can skip starting the UI and API and instead create a cluster at
 `https://dev.kubermatic.io`,
-and add a label `worker-name:` to it with the output of `uname -n` as value. This will make
+and add a label `worker-name:` to it with the output of `uname -n | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]'` as value. This will make
 the controllers running in that seed cluster ignore your cluster and make the local controllers
 take care of it.
 

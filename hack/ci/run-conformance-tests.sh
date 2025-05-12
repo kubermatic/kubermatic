@@ -22,6 +22,44 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+download_kube_test() {
+  local directory="$1"
+
+  echodate "Kubernetes release: $RELEASES_TO_TEST"
+
+  KUBE_VERSION="$(download_archive https://dl.k8s.io/release/stable-$RELEASES_TO_TEST.txt -Ls)"
+  echodate "Kubernetes version: $KUBE_VERSION"
+
+  TMP_DIR="/tmp/k8s"
+
+  rm -rf -- "$directory"
+  mkdir -p "$TMP_DIR" "$directory"
+
+  directory="$directory/platforms/$(go env GOOS)/$(go env GOARCH)"
+  mkdir -p "$directory"
+
+  TEST_BINARIES=kubernetes-test-$(go env GOOS)-$(go env GOARCH).tar.gz
+  mkdir -p "$TMP_DIR"
+  download_archive "https://dl.k8s.io/$KUBE_VERSION/$TEST_BINARIES" -Lo "$TMP_DIR/$TEST_BINARIES"
+  tar -zxf "$TMP_DIR/$TEST_BINARIES" -C "$TMP_DIR"
+  mv $TMP_DIR/kubernetes/test/bin/* "$directory/"
+  rm -rf -- "$TMP_DIR"
+
+  CLIENT_BINARIES=kubernetes-client-$(go env GOOS)-$(go env GOARCH).tar.gz
+  mkdir -p "$TMP_DIR"
+  download_archive "https://dl.k8s.io/$KUBE_VERSION/$CLIENT_BINARIES" -Lo "$TMP_DIR/$CLIENT_BINARIES"
+  tar -zxf "$TMP_DIR/$CLIENT_BINARIES" -C "$TMP_DIR"
+  mv $TMP_DIR/kubernetes/client/bin/* "$directory/"
+  rm -rf -- "$TMP_DIR"
+
+  echodate "Done downloading Kubernetes test binaries."
+}
+
+TEST_NAME="Download kube-test binaries"
+echodate "Downloading kube-test binaries..."
+
+download_kube_test "/opt/kube-test/$RELEASES_TO_TEST"
+
 if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
   echodate "Getting default SSH pubkey for machines from Vault"
   retry 5 vault_ci_login

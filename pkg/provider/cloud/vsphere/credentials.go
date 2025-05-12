@@ -51,7 +51,7 @@ func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector prov
 	}
 
 	if cloud.VSphere.CredentialsReference == nil {
-		return "", "", errors.New("cluster contains no password an and empty credentialsReference")
+		return "", "", errors.New("cluster contains no password and an empty credentialsReference")
 	}
 
 	if username == "" && infraManagementUser {

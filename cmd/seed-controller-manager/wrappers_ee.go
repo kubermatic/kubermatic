@@ -28,6 +28,7 @@ import (
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
 	kubevirtnetworkcontroller "k8c.io/kubermatic/v2/pkg/ee/kubevirt-network-controller"
+	kyvernocontroller "k8c.io/kubermatic/v2/pkg/ee/kyverno"
 	resourcequotaseedcontroller "k8c.io/kubermatic/v2/pkg/ee/resource-quota/seed-controller"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -55,12 +56,16 @@ func setupControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create KubeLB controller: %w", err)
 	}
 
-	if err := kubevirtnetworkcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.seedGetter, ctrlCtx.configGetter, ctrlCtx.versions); err != nil {
+	if err := kubevirtnetworkcontroller.Add(ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.seedGetter, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create KubeVirt network controller: %w", err)
 	}
 
 	if err := clusterbackuprbac.Add(ctrlCtx.mgr, ctrlCtx.log); err != nil {
 		return fmt.Errorf("failed to create cluster-backup rbac controller: %w", err)
+	}
+
+	if err := kyvernocontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
+		return fmt.Errorf("failed to create Kyverno controller: %w", err)
 	}
 
 	return nil

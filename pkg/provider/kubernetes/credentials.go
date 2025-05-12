@@ -57,6 +57,7 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Openstack != nil {
 		return createOrUpdateOpenstackSecret(ctx, seedClient, cluster)
 	}
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if cluster.Spec.Cloud.Packet != nil {
 		return createOrUpdatePacketSecret(ctx, seedClient, cluster)
 	}
@@ -358,6 +359,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	return true, nil
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
 	spec := cluster.Spec.Cloud.Packet
 

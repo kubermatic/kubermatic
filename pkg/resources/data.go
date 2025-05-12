@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -32,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -42,6 +44,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -54,7 +57,13 @@ import (
 
 const (
 	CloudProviderExternalFlag = "external"
+
+	// AuditLoggingSidecarEnvClusterID is the name of the environment variable that contains the cluster ID
+	// that is used to identify the cluster for the audit logging sidecar.
+	AuditLoggingSidecarEnvClusterID = "CLUSTER_ID"
 )
+
+var auditLoggingConfigParserRegex = regexp.MustCompile(`\$\{([a-zA-Z0-9_]+)\}`)
 
 type CABundle interface {
 	CertPool() *x509.CertPool
@@ -81,15 +90,15 @@ type TemplateData struct {
 	machineControllerImageTag        string
 	machineControllerImageRepository string
 	backupSchedule                   time.Duration
+	backupCount                      *int
 	versions                         kubermatic.Versions
 	caBundle                         CABundle
 	clusterBackupStorageLocation     *kubermaticv1.ClusterBackupStorageLocation
 	apiServerAlternateNames          *certutil.AltNames
 
 	supportsFailureDomainZoneAntiAffinity bool
-
-	userClusterMLAEnabled bool
-	isKonnectivityEnabled bool
+	userClusterMLAEnabled                 bool
+	isKonnectivityEnabled                 bool
 
 	tunnelingAgentIP string
 
@@ -198,12 +207,18 @@ func (td *TemplateDataBuilder) WithEtcdLauncherImage(image string) *TemplateData
 	return td
 }
 
-func (td *TemplateDataBuilder) WithEtcdBackupStoreContainer(container *corev1.Container) *TemplateDataBuilder {
+func (td *TemplateDataBuilder) WithEtcdBackupStoreContainer(container *corev1.Container, isCustom bool) *TemplateDataBuilder {
+	if !isCustom {
+		container.Image = registry.Must(td.data.RewriteImage(container.Image))
+	}
 	td.data.etcdBackupStoreContainer = container
 	return td
 }
 
-func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.Container) *TemplateDataBuilder {
+func (td *TemplateDataBuilder) WithEtcdBackupDeleteContainer(container *corev1.Container, isCustom bool) *TemplateDataBuilder {
+	if !isCustom {
+		container.Image = registry.Must(td.data.RewriteImage(container.Image))
+	}
 	td.data.etcdBackupDeleteContainer = container
 	return td
 }
@@ -235,6 +250,11 @@ func (td *TemplateDataBuilder) WithFailureDomainZoneAntiaffinity(enabled bool) *
 
 func (td *TemplateDataBuilder) WithBackupPeriod(backupPeriod time.Duration) *TemplateDataBuilder {
 	td.data.backupSchedule = backupPeriod
+	return td
+}
+
+func (td *TemplateDataBuilder) WithBackupCount(backupCount int) *TemplateDataBuilder {
+	td.data.backupCount = &backupCount
 	return td
 }
 
@@ -559,6 +579,10 @@ func (d *TemplateData) BackupSchedule() time.Duration {
 	return d.backupSchedule
 }
 
+func (d *TemplateData) BackupCount() *int {
+	return d.backupCount
+}
+
 func (d *TemplateData) DNATControllerTag() string {
 	return d.versions.KubermaticContainerTag
 }
@@ -583,6 +607,28 @@ func (d *TemplateData) GetSecretKeyValue(ref *corev1.SecretKeySelector) ([]byte,
 	}
 
 	return val, nil
+}
+
+func (d *TemplateData) GetConfigMapValue(ref *corev1.ConfigMapKeySelector) (string, error) {
+	cm := corev1.ConfigMap{}
+
+	err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{
+		Name:      ref.Name,
+		Namespace: d.cluster.Status.NamespaceName,
+	}, &cm)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return "", fmt.Errorf("configmap %q not found in namespace %q, err: %w", ref.Name, d.cluster.Status.NamespaceName, err)
+		}
+
+		return "", err
+	}
+
+	if val, ok := cm.Data[ref.Key]; ok {
+		return val, nil
+	}
+
+	return "", fmt.Errorf("key %q not found in configmap %q in namespace %q", ref.Key, ref.Name, d.cluster.Status.NamespaceName)
 }
 
 func (d *TemplateData) GetCloudProviderName() (string, error) {
@@ -822,6 +868,8 @@ func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 			vars = append(vars, corev1.EnvVar{Name: "TINK_KUBECONFIG", ValueFrom: refTo(TinkerbellKubeconfig)})
 		}
 	}
+
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if cluster.Spec.Cloud.Packet != nil {
 		vars = append(vars, corev1.EnvVar{Name: "METAL_AUTH_TOKEN", ValueFrom: refTo(PacketAPIKey)})
 		vars = append(vars, corev1.EnvVar{Name: "METAL_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
@@ -907,10 +955,113 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
 }
 
+func (d *TemplateData) IsSSHKeysDisabled() bool {
+	if config := d.KubermaticConfiguration(); config != nil {
+		return config.Spec.FeatureGates[features.DisableUserSSHKey]
+	}
+
+	return false
+}
 func (d *TemplateData) GetKonnectivityAgentArgs() ([]string, error) {
 	if d.Cluster() == nil {
 		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
 	}
 
 	return d.Cluster().Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+}
+
+func (d *TemplateData) GetAuditLoggingSidecarEnvs() []corev1.EnvVar {
+	if d.Cluster() == nil {
+		return nil
+	}
+
+	c := d.Cluster()
+
+	envMap := map[string]corev1.EnvVar{}
+	if c.Spec.AuditLogging != nil &&
+		c.Spec.AuditLogging.SidecarSettings != nil &&
+		c.Spec.AuditLogging.SidecarSettings.ExtraEnvs != nil {
+		for _, env := range c.Spec.AuditLogging.SidecarSettings.ExtraEnvs {
+			envMap[env.Name] = env
+		}
+	}
+
+	envMap[AuditLoggingSidecarEnvClusterID] = corev1.EnvVar{
+		Name:  AuditLoggingSidecarEnvClusterID,
+		Value: c.Name,
+	}
+
+	envs := make([]corev1.EnvVar, 0, len(envMap))
+	for _, env := range envMap {
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (d *TemplateData) AuditLoggingSidecarConfig() *kubermaticv1.AuditSidecarConfiguration {
+	if d.Cluster() == nil {
+		return nil
+	}
+
+	if d.Cluster().Spec.AuditLogging != nil &&
+		d.Cluster().Spec.AuditLogging.SidecarSettings != nil &&
+		d.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
+		return d.Cluster().Spec.AuditLogging.SidecarSettings.Config
+	}
+
+	return nil
+}
+
+// ParseFluentBitRecords parses the audit-logging sidecar configuration from the cluster template.
+// It expands the variables in the audit sidecar configuration and returns the expanded configuration
+// if any variable is found in the configuration.
+func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfiguration, error) {
+	if d.Cluster() == nil {
+		return nil, fmt.Errorf("invalid cluster template, user cluster template is nil")
+	}
+
+	config := d.AuditLoggingSidecarConfig()
+	if config == nil {
+		return &kubermaticv1.AuditSidecarConfiguration{}, nil
+	}
+
+	envs := d.GetAuditLoggingSidecarEnvs()
+	if len(envs) == 0 {
+		return config, nil
+	}
+
+	envValueMap := make(map[string]string, len(envs))
+	for _, env := range envs {
+		envValueMap[env.Name] = env.Value
+	}
+
+	for _, filters := range config.Filters {
+		for i, filter := range filters {
+			filters[i] = expandVariables(filter, envValueMap)
+		}
+	}
+
+	return config, nil
+}
+
+func expandVariables(input string, vars map[string]string) string {
+	if vars == nil {
+		return input
+	}
+
+	output := auditLoggingConfigParserRegex.ReplaceAllStringFunc(input, func(match string) string {
+		submatches := auditLoggingConfigParserRegex.FindStringSubmatch(match)
+		if len(submatches) < 2 {
+			return match
+		}
+		varName := submatches[1]
+
+		if value, ok := vars[varName]; ok {
+			return value
+		}
+
+		return match
+	})
+	return output
 }

@@ -3,6 +3,70 @@
 - [v2.27.0](#v2270)
 - [v2.27.1](#v2271)
 - [v2.27.2](#v2272)
+- [v2.27.3](#v2273)
+- [v2.27.4](#v2274)
+
+## v2.27.4
+
+**GitHub release: [v2.27.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.4)**
+
+### ACTION REQUIRED
+- Update cert-manager to v1.16.5. In the cert-manager values.yaml, following updates should be done ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
+    - update  `webhook.replicas` to `webhook.replicaCount`
+    - update  `cainjector.replicas` to `webhook.replicaCount`
+    - remove `webhook.injectAPIServerCA`
+
+### Supported Kubernetes versions
+
+- Add 1.32.4/1.31.8/1.30.12 to the list of supported Kubernetes releases ([#14385](https://github.com/kubermatic/kubermatic/pull/14385))
+
+### New Features
+
+- Support infra storage classes and provider network subnets location compatibilities ([#7303](https://github.com/kubermatic/dashboard/pull/7303))
+
+### Bugfixes
+
+- Ensure that etcd backup images are pulled from the overwrite Registry in air-gapped environments ([#14356](https://github.com/kubermatic/kubermatic/pull/14356))
+- Fix a bug for KubeLB where disabling the ingress class for a user cluster was not working ([#14396](https://github.com/kubermatic/kubermatic/pull/14396))
+- Remove old warnings for new dex chart ([#14423](https://github.com/kubermatic/kubermatic/pull/14423))
+- Add role prioritization: Update logic to return the highest-priority role for members with multiple roles ([#7272](https://github.com/kubermatic/dashboard/pull/7272))
+- Add special characters restriction on Inputs and escape values to avoid rendering as HTML ([#7273](https://github.com/kubermatic/dashboard/pull/7273))
+- Disable the Cluster Autoscaler option when the cluster autoscaler application is not defined in applications catalog ([#7283](https://github.com/kubermatic/dashboard/pull/7283))
+- Make the Subnets field required when a VPC is selected, in both Wizard and Machine Deployment modes ([#7305](https://github.com/kubermatic/dashboard/pull/7305))
+
+### Updates
+
+- Add Cert-manager version v1.16.5 in the default applications catalog ([#14418](https://github.com/kubermatic/kubermatic/pull/14418))
+- Security: Update Cilium to 1.15.16 / 1.16.9 because the previous versions are affected by CVE-2025-32793 ([#14436](https://github.com/kubermatic/kubermatic/pull/14436))
+- Support MatchSubnetAndStorageLocation  and Subnets Regions and Zones ([#14414](https://github.com/kubermatic/kubermatic/pull/14414))
+- Update oauth2-proxy to v7.8.2 ([#14388](https://github.com/kubermatic/kubermatic/pull/14388))
+- Update OSM version to [v1.6.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.5) ([#14412](https://github.com/kubermatic/kubermatic/pull/14412))
+- Update KubeLB CCM to [v1.1.4](https://docs.kubermatic.com/kubelb/v1.1/release-notes/#v114) ([#14366](https://github.com/kubermatic/kubermatic/pull/14366))
+
+## v2.27.3
+
+**GitHub release: [v2.27.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.3)**
+
+### Supported Kubernetes Versions
+
+- Add 1.32.3/1.31.7/1.30.11 to the list of supported Kubernetes releases ([#14266](https://github.com/kubermatic/kubermatic/pull/14266))
+
+### New Features
+
+- A new field `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` is added to seed crd to control whether KubeVirt machine cpus are configured by `spec.template.spec.domain.resources` with requests and limits or `spec.template.spec.domain.cpu` . Later one is required to use KubeVirt cpu allocation ratio feature ([#14298](https://github.com/kubermatic/kubermatic/pull/14298))
+- Ensure `mirror-images` processes all images without blocking, logging failed images at the end for better visibility and debugging ([#14279](https://github.com/kubermatic/kubermatic/pull/14279))
+- The KKP API is now aware on how to configure cpus for KubeVirt virtual machines based on a new introduced field in kkp seed crd called `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` ([#7264](https://github.com/kubermatic/dashboard/pull/7264))
+
+### Bugfixes
+
+- Node-local-dns in user clusters will now use `IfNotPresent` pull policy instead of `Always` ([#14309](https://github.com/kubermatic/kubermatic/pull/14309))
+
+### Updates
+
+- Update etcd to 3.5.17 for all supported Kubernetes releases ([#14338](https://github.com/kubermatic/kubermatic/pull/14338))
+- Update MC version to [v1.61.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.1) ([#14339](https://github.com/kubermatic/kubermatic/pull/14339))
+- Update OSM to [1.6.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.4) ([#14332](https://github.com/kubermatic/kubermatic/pull/14332))
+- Update the default application's nginx ingress controller to use the save and patched version of v1.12.1 ([#14341](https://github.com/kubermatic/kubermatic/pull/14341))
 
 ## v2.27.2
 

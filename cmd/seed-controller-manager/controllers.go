@@ -18,7 +18,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -135,11 +134,6 @@ func createCloudController(ctrlCtx *controllerContext) error {
 }
 
 func createKubernetesController(ctrlCtx *controllerContext) error {
-	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %w", ctrlCtx.runOptions.backupInterval, err)
-	}
-
 	return kubernetescontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -155,7 +149,8 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		userClusterMLAEnabled(ctrlCtx),
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
-		backupInterval,
+		ctrlCtx.runOptions.backupInterval,
+		ctrlCtx.runOptions.backupCount,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		ctrlCtx.runOptions.kubermaticImage,

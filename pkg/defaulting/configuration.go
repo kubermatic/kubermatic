@@ -216,7 +216,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.31.7"),
+		Default: semver.NewSemverOrDie("v1.31.8"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -225,38 +225,22 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.29
-			newSemver("v1.29.0"),
-			newSemver("v1.29.1"),
-			newSemver("v1.29.2"),
-			newSemver("v1.29.4"),
-			newSemver("v1.29.9"),
-			newSemver("v1.29.13"),
 			// Kubernetes 1.30
 			newSemver("v1.30.5"),
 			newSemver("v1.30.9"),
 			newSemver("v1.30.11"),
+			newSemver("v1.30.12"),
 			// Kubernetes 1.31
 			newSemver("v1.31.1"),
 			newSemver("v1.31.5"),
 			newSemver("v1.31.7"),
+			newSemver("v1.31.8"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),
+			newSemver("v1.32.4"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.28 =======
-			{
-				// Allow to next minor release
-				From: "1.28.*",
-				To:   "1.29.*",
-			},
-			// ======= 1.29 =======
-			{
-				// Allow to change to any patch version
-				From: "1.29.*",
-				To:   "1.29.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.29.*",
@@ -292,15 +276,9 @@ var (
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
-			// In-tree cloud providers have been fully removed in Kubernetes 1.29.
+			// In-tree cloud providers have been fully removed in Kubernetes 1.30.
 			// Thus, no in-tree provider is available anymore, and no cluster with in-tree CCM
 			// can be upgraded to 1.29.
-			{
-				Provider:  "",
-				Version:   ">= 1.29.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
 			{
 				Provider:  "",
 				Version:   ">= 1.29.0",
