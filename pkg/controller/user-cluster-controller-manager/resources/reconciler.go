@@ -733,9 +733,11 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
-		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+	if !data.cluster.Spec.DisableCSIDriver {
+		if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
+			r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+			creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+		}
 	}
 
 	if data.operatingSystemManagerEnabled {
@@ -904,7 +906,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		)
 	}
 
-	if data.csiCloudConfig != nil {
+	if !data.cluster.Spec.DisableCSIDriver && data.csiCloudConfig != nil {
 		if r.cloudProvider == kubermaticv1.AzureCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
 		}
@@ -922,8 +924,10 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
-	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-		creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+	if !data.cluster.Spec.DisableCSIDriver {
+		if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+		}
 	}
 
 	if r.userSSHKeyAgent {
