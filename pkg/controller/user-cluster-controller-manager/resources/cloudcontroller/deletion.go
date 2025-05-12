@@ -33,6 +33,12 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 				Namespace: namespace,
 			},
 		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.CSISnapshotWebhookSecretName,
+				Namespace: namespace,
+			},
+		},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: resources.CSISnapshotValidationWebhookConfigurationName,
