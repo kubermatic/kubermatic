@@ -94,6 +94,12 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		return fieldErr
 	}
 
+	// Set the audit logging settings
+	if seed.Spec.AuditLogging != nil {
+		spec.AuditLogging = new(kubermaticv1.AuditLoggingSettings)
+		(*seed.Spec.AuditLogging).DeepCopyInto(spec.AuditLogging)
+	}
+
 	// Enforce audit logging
 	if datacenter.Spec.EnforceAuditLogging {
 		if spec.AuditLogging == nil {

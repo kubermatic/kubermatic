@@ -211,6 +211,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		common.KubermaticConfigurationAdmissionWebhookName(cfg),
 		common.ApplicationDefinitionAdmissionWebhookName,
 		common.PoliciesAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 		kubermaticseed.ClusterAdmissionWebhookName,
 		kubermaticseed.IPAMPoolAdmissionWebhookName,
 	}
@@ -369,6 +370,12 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 
 		for i, crdObject := range crds {
 			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
+				continue
+			}
+
+			// Skip installation of the UserSSHKeys CRD when SSH key functionality is disabled.
+			// The CRD is automatically included by default when DisableUserSSHKeys featuregate is false/unset.
+			if cfg.Spec.FeatureGates[features.DisableUserSSHKey] && crdObject.Name == "usersshkeys.kubermatic.k8c.io" {
 				continue
 			}
 
@@ -684,6 +691,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		common.KubermaticConfigurationAdmissionWebhookReconciler(ctx, cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, cfg, client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, cfg, client),
 	}

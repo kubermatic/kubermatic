@@ -63,6 +63,8 @@ type PresetSpec struct {
 	AWS *AWS `json:"aws,omitempty"`
 	// Access data for OpenStack.
 	Openstack *Openstack `json:"openstack,omitempty"`
+	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Access data for Packet Cloud.
 	Packet *Packet `json:"packet,omitempty"`
 	// Access data for Google Cloud Platform(GCP).
@@ -367,6 +369,8 @@ func (s Openstack) IsValid() bool {
 		len(s.Domain) > 0
 }
 
+// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 type Packet struct {
 	ProviderPreset `json:",inline"`
 

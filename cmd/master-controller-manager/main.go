@@ -82,6 +82,7 @@ type controllerContext struct {
 	namespace               string
 	versions                kubermatic.Versions
 	overwriteRegistry       string
+	featureGates            features.FeatureGate
 
 	configGetter provider.KubermaticConfigurationGetter
 }
@@ -116,6 +117,7 @@ func main() {
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
 	ctrlCtx.namespace = runOpts.namespace
+	ctrlCtx.featureGates = runOpts.featureGates
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))

@@ -5,6 +5,8 @@ metadata:
   namespace: kubermatic
 # Spec describes the configuration of the Seed cluster.
 spec:
+  # Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+  auditLogging: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
   country: ""
@@ -168,6 +170,11 @@ spec:
                 podSelector: {}
                 policyTypes:
                   - Ingress
+          # DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+          # (standard-2, standard-4, standard-8) in KubeVirt environments.
+          disableDefaultInstanceTypes: false
+          # DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+          disableDefaultPreferences: false
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:
@@ -345,6 +352,8 @@ spec:
           rhel: ""
           rockylinux: ""
           ubuntu: ""
+        # Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+        # This provider is no longer supported. Migrate your configurations away from "packet" immediately.
         # Packet configures an Equinix Metal datacenter.
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
@@ -425,6 +434,10 @@ spec:
             rhel: ""
             rockylinux: ""
             ubuntu: ""
+  # DefaultAPIServerAllowedIPRanges defines a set of CIDR ranges that are **always appended**
+  # to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
+  # provide a security baseline that cannot be overridden by cluster-specific configurations.
+  defaultAPIServerAllowedIPRanges: null
   # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
   # to default all new created clusters
   defaultClusterTemplate: ""
@@ -471,6 +484,10 @@ spec:
       hostAntiAffinity: ""
       # NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
       nodeSelector: null
+      # QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+
+      # For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+      quotaBackendGb: null
       # Resources allows to override the resource requirements for etcd Pods.
       resources: null
       # StorageClass is the Kubernetes StorageClass used for persistent storage

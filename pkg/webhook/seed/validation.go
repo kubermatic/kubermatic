@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"regexp"
 	"sync"
 
@@ -184,6 +185,10 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		return err
 	}
 
+	if err := validateDefaultAPIServerAllowedIPRanges(ctx, subject); err != nil {
+		return err
+	}
+
 	if err := validateEtcdBackupConfiguration(ctx, seedClient, subject); err != nil {
 		return err
 	}
@@ -192,6 +197,17 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		return err
 	}
 
+	return nil
+}
+
+func validateDefaultAPIServerAllowedIPRanges(ctx context.Context, seed *kubermaticv1.Seed) error {
+	if len(seed.Spec.DefaultAPIServerAllowedIPRanges) > 0 {
+		for _, cidr := range seed.Spec.DefaultAPIServerAllowedIPRanges {
+			if _, _, err := net.ParseCIDR(cidr); err != nil {
+				return fmt.Errorf("%s is not a valid IP range", cidr)
+			}
+		}
+	}
 	return nil
 }
 

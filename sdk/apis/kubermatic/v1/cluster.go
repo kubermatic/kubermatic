@@ -263,6 +263,10 @@ type ClusterSpec struct {
 
 	// Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.
 	BackupConfig *BackupConfig `json:"backupConfig,omitempty"`
+
+	// Kyverno holds the configuration for the Kyverno policy management component.
+	// Only available in Enterprise Edition.
+	Kyverno *KyvernoSettings `json:"kyverno,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -428,6 +432,16 @@ func (c ClusterSpec) IsClusterBackupEnabled() bool {
 		c.BackupConfig.BackupStorageLocation.Name != ""
 }
 
+// KyvernoSettings contains settings for the Kyverno component as part of the cluster control plane. This component is responsible for policy management.
+type KyvernoSettings struct {
+	// Controls whether Kyverno is deployed or not.
+	Enabled bool `json:"enabled"`
+}
+
+func (c ClusterSpec) IsKyvernoEnabled() bool {
+	return c.Kyverno != nil && c.Kyverno.Enabled
+}
+
 const (
 	// ClusterConditionSeedResourcesUpToDate indicates that all controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
@@ -453,6 +467,7 @@ const (
 	ClusterConditionIPAMControllerReconcilingSuccess                             ClusterConditionType = "IPAMControllerReconciledSuccessfully"
 	ClusterConditionKubeVirtNetworkControllerSuccess                             ClusterConditionType = "KubeVirtNetworkControllerReconciledSuccessfully"
 	ClusterConditionClusterBackupControllerReconcilingSuccess                    ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
+	ClusterConditionKyvernoControllerReconcilingSuccess                          ClusterConditionType = "KyvernoControllerReconciledSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"
@@ -831,6 +846,10 @@ type EtcdStatefulSetSettings struct {
 	ZoneAntiAffinity AntiAffinityType `json:"zoneAntiAffinity,omitempty"`
 	// NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+	//
+	// For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+	QuotaBackendGB *int64 `json:"quotaBackendGb,omitempty"`
 }
 
 type LeaderElectionSettings struct {
@@ -1002,6 +1021,8 @@ type CloudSpec struct {
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
 	// Openstack defines the configuration data of an OpenStack cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
+	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Packet defines the configuration data of a Packet / Equinix Metal cloud.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
@@ -1367,6 +1388,8 @@ type OpenstackCloudSpec struct {
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
 }
 
+// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 // PacketCloudSpec specifies access data to a Packet cloud.
 type PacketCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`

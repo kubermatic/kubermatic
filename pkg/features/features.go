@@ -60,6 +60,11 @@ const (
 	// gate in the future.
 	// This feature perpetually in preview and never ready for production.
 	DevelopmentEnvironment = "DevelopmentEnvironment"
+
+	// DisableUserSSHKey if enabled disables the SSH key functionality in KKP. This will prevent users from managing SSH keys
+	// and disable related controllers and components such as the userSSHKeySynchronizerFactoryCreator and
+	// usersshkeyprojectownershipcontroller.
+	DisableUserSSHKey = "DisableUserSSHKey"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

@@ -320,6 +320,12 @@ type SeedSpec struct {
 	// ManagementProxySettings can be used if the KubeAPI of the user clusters
 	// will not be directly available from kkp and a proxy in between should be used
 	ManagementProxySettings *ManagementProxySettings `json:"managementProxySettings,omitempty"`
+	// DefaultAPIServerAllowedIPRanges defines a set of CIDR ranges that are **always appended**
+	// to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
+	// provide a security baseline that cannot be overridden by cluster-specific configurations.
+	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
+	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -434,6 +440,8 @@ type DatacenterSpec struct {
 	Azure *DatacenterSpecAzure `json:"azure,omitempty"`
 	// Openstack configures an Openstack datacenter.
 	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
+	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Packet configures an Equinix Metal datacenter.
 	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 	// Hetzner configures a Hetzner datacenter.
@@ -812,6 +820,8 @@ type DatacenterSpecBringYourOwn struct {
 type DatacenterSpecEdge struct {
 }
 
+// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 // DatacenterSpecPacket describes a Packet datacenter.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
@@ -897,14 +907,39 @@ type DatacenterSpecKubevirt struct {
 	// example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
 	// otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
 	MatchSubnetAndStorageLocation *bool `json:"matchSubnetAndStorageLocation,omitempty"`
+	// DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+	// (standard-2, standard-4, standard-8) in KubeVirt environments.
+	DisableDefaultInstanceTypes bool `json:"disableDefaultInstanceTypes,omitempty"`
+	// DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+	DisableDefaultPreferences bool `json:"disableDefaultPreferences,omitempty"`
 }
 
 // ProviderNetwork describes the infra cluster network fabric that is being used.
 type ProviderNetwork struct {
-	Name                 string `json:"name"`
-	VPCs                 []VPC  `json:"vpcs,omitempty"`
-	NetworkPolicyEnabled bool   `json:"networkPolicyEnabled,omitempty"`
+	Name string `json:"name"`
+	VPCs []VPC  `json:"vpcs,omitempty"`
+	// Deprecated: Use .networkPolicy.enabled instead.
+	NetworkPolicyEnabled bool           `json:"networkPolicyEnabled,omitempty"`
+	NetworkPolicy        *NetworkPolicy `json:"networkPolicy,omitempty"`
 }
+
+// NetworkPolicy describes if and which network policies will be deployed by default to kubevirt userclusters.
+type NetworkPolicy struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=allow
+	Mode NetworkPolicyMode `json:"mode"`
+}
+
+// NetworkPolicyMode maps directly to the values supported by the kubermatic network policy mode for kubevirt
+// worker nodes in kube-ovn environments.
+// +kubebuilder:validation:Enum=deny;allow
+type NetworkPolicyMode string
+
+const (
+	NetworkPolicyModeAllow NetworkPolicyMode = "allow"
+	NetworkPolicyModeDeny  NetworkPolicyMode = "deny"
+)
 
 // VPC  is a virtual network dedicated to a single tenant within a KubeVirt, where the resources in the VPC
 // is isolated from any other resources within the KubeVirt infra cluster.

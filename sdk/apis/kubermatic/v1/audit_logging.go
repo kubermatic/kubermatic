@@ -35,6 +35,12 @@ const (
 type AuditSidecarSettings struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Config    *AuditSidecarConfiguration   `json:"config,omitempty"`
+	// ExtraEnvs are the additional environment variables that can be set for the audit logging sidecar.
+	// Additional environment variables can be set and passed to the AuditSidecarConfiguration field
+	// to allow passing variables to the fluent-bit configuration.
+	// Only, `Value` field is supported for the environment variables; `ValueFrom` field is not supported.
+	// By default, `CLUSTER_ID` is set as an environment variable in the audit-logging sidecar.
+	ExtraEnvs []corev1.EnvVar `json:"extraEnvs,omitempty"`
 }
 
 // AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.
