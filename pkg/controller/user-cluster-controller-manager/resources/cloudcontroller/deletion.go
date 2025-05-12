@@ -19,6 +19,7 @@ package cloudcontroller
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,6 +31,11 @@ func ResourcesForDeletion(namespace string) []ctrlruntimeclient.Object {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.CSICloudConfigSecretName,
 				Namespace: namespace,
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: resources.CSISnapshotValidationWebhookConfigurationName,
 			},
 		},
 	}
