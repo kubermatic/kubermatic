@@ -35,4 +35,7 @@ spec:
     VerticalPodAutoscaler: true
   defaultAppCatalog:
     enabled: true
-    limitApps: []
+    limitApps:
+      - "argocd"
+      - "nginx"
+      - "trivy"

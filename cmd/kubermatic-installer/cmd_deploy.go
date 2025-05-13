@@ -191,6 +191,14 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
 
+		defaultAppCatalog := &kubermaticConfig.Spec.DefaultAppCatalog
+		if defaultAppCatalog == nil {
+			defaultAppCatalog = &kubermaticv1.DefaultAppCatalogConfig{
+				Enabled:   false,
+				LimitApps: []string{},
+			}
+		}
+
 		deployOptions := stack.DeployOptions{
 			HelmClient:                         *helmClient,
 			HelmValues:                         helmValues,
@@ -213,7 +221,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			MLASkipLogging:                     opt.MLASkipLogging,
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
-			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
+			DeployDefaultAppCatalog:            defaultAppCatalog.Enabled,
+			LimitApps:                          defaultAppCatalog.LimitApps,
 		}
 
 		// prepare Kubernetes and Helm clients
@@ -305,6 +314,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
 		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
+		deployOptions.DeployDefaultAppCatalog = defaultAppCatalog.Enabled
+		deployOptions.LimitApps = defaultAppCatalog.LimitApps
 
 		logger.Info("🚦 Validating existing installation…")
 
