@@ -44,7 +44,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -146,24 +145,15 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Determine whether to ignore default policies
-	// ignoreDefaultPolicies := false
-
 	createdCondition := kubermaticv1.ClusterConditionDefaultPolicyBindingsControllerCreatedSuccessfully
 	ignoreDefaultPolicies := cluster.Status.HasConditionValue(createdCondition, corev1.ConditionTrue)
 
-	// Default policies are already created.
-	// if cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionDefaultPolicyBindingsControllerCreatedSuccessfully, corev1.ConditionTrue) {
-	// ignoreDefaultPolicies = true
-	// }
-
-	// List all PolicyTemplates
 	policyTemplates := &kubermaticv1.PolicyTemplateList{}
 	if err := r.List(ctx, policyTemplates); err != nil {
 		return nil, fmt.Errorf("failed to list PolicyTemplates: %w", err)
 	}
 
-	// Collect all policy templates that need to be installed/updated.
-	templates := []kubermaticv1.PolicyTemplate{}
+	var reconcilers []reconciling.NamedPolicyBindingReconcilerFactory
 	for _, policyTemplate := range policyTemplates.Items {
 		if policyTemplate.DeletionTimestamp != nil {
 			continue
@@ -175,22 +165,15 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		if policyTemplate.Spec.Enforced || (policyTemplate.Spec.Default && !ignoreDefaultPolicies) {
-			templates = append(templates, policyTemplate)
+			reconcilers = append(reconcilers, policyBindingReconcilerFactory(policyTemplate))
 		}
 	}
 
-	// Get the namespace name for the cluster's control plane components
-	namespace := cluster.Status.NamespaceName
-
-	var errors []error
-	for _, template := range templates {
-		err := r.ensurePolicyBinding(ctx, namespace, template, cluster, log)
-		if err != nil {
-			errors = append(errors, err)
-		}
+	if err := reconciling.ReconcilePolicyBindings(ctx, reconcilers, cluster.Status.NamespaceName, r.Client); err != nil {
+		return nil, err
 	}
 
-	if len(errors) == 0 && !cluster.Status.HasConditionValue(createdCondition, corev1.ConditionTrue) {
+	if !cluster.Status.HasConditionValue(createdCondition, corev1.ConditionTrue) {
 		if err := util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 			util.SetClusterCondition(
 				cluster,
@@ -205,47 +188,14 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
-	return nil, kerrors.NewAggregate(errors)
+	return nil, nil
 }
 
-func (r *Reconciler) ensurePolicyBinding(ctx context.Context, namespace string, template kubermaticv1.PolicyTemplate, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) error {
-	// Check if the binding already exists
-	existingPolicyBindingList := &kubermaticv1.PolicyBindingList{}
-	if err := r.List(ctx, existingPolicyBindingList, ctrlruntimeclient.InNamespace(namespace)); err != nil {
-		return fmt.Errorf("failed to list policy bindings: %w", err)
-	}
-
-	// Check if we already have a binding for this template
-	var currentPolicyBinding *kubermaticv1.PolicyBinding
-	for _, binding := range existingPolicyBindingList.Items {
-		if binding.Spec.PolicyTemplateRef.Name == template.Name {
-			// Check if this is an enforced or default binding
-			policyEnforced, _ := strconv.ParseBool(binding.Annotations[kubermaticv1.AnnotationPolicyEnforced])
-			policyDefault, _ := strconv.ParseBool(binding.Annotations[kubermaticv1.AnnotationPolicyDefault])
-
-			if policyEnforced || policyDefault {
-				currentPolicyBinding = &binding
-				break
-			}
-		}
-	}
-
-	reconcilers := []reconciling.NamedPolicyBindingReconcilerFactory{
-		PolicyBindingReconciler(log, template, currentPolicyBinding, cluster),
-	}
-	return reconciling.ReconcilePolicyBindings(ctx, reconcilers, namespace, r.Client)
-}
-
-func PolicyBindingReconciler(logger *zap.SugaredLogger, template kubermaticv1.PolicyTemplate, existingBinding *kubermaticv1.PolicyBinding, cluster *kubermaticv1.Cluster) reconciling.NamedPolicyBindingReconcilerFactory {
+// policyBindingReconcilerFactory creates a named factory for reconciling policy bindings.
+func policyBindingReconcilerFactory(template kubermaticv1.PolicyTemplate) reconciling.NamedPolicyBindingReconcilerFactory {
 	return func() (string, reconciling.PolicyBindingReconciler) {
-		bindingName := template.Name
-		return bindingName, func(binding *kubermaticv1.PolicyBinding) (*kubermaticv1.PolicyBinding, error) {
-			delete(template.Annotations, corev1.LastAppliedConfigAnnotation)
-
-			annotations := template.Annotations
-			if annotations == nil {
-				annotations = make(map[string]string)
-			}
+		return template.Name, func(binding *kubermaticv1.PolicyBinding) (*kubermaticv1.PolicyBinding, error) {
+			annotations := make(map[string]string)
 
 			if template.Spec.Enforced {
 				annotations[kubermaticv1.AnnotationPolicyEnforced] = strconv.FormatBool(true)
@@ -254,10 +204,8 @@ func PolicyBindingReconciler(logger *zap.SugaredLogger, template kubermaticv1.Po
 				annotations[kubermaticv1.AnnotationPolicyDefault] = strconv.FormatBool(true)
 			}
 
-			// Ensure only our specific annotations without wiping existing ones
 			kubernetes.EnsureAnnotations(binding, annotations)
 
-			// Ensure labels from the template
 			kubernetes.EnsureLabels(binding, template.Labels)
 
 			binding.Spec = kubermaticv1.PolicyBindingSpec{
