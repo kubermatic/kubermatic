@@ -82,7 +82,7 @@ type PolicyBindingSpec struct {
 	// +kubebuilder:validation:Required
 	PolicyTemplateRef corev1.ObjectReference `json:"policyTemplateRef"`
 
-	// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into
+	// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into.
 	//
 	// Relevant only if the referenced PolicyTemplate has spec.enforced=false.
 	// If Template.NamespacedPolicy is true and this field is omitted, no Kyverno Policy resources will be created.
@@ -91,7 +91,7 @@ type PolicyBindingSpec struct {
 	KyvernoPolicyNamespace *KyvernoPolicyNamespace `json:"kyvernoPolicyNamespace,omitempty"`
 }
 
-// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into
+// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into.
 // This is relevant only if a Kyverno Policy resource is created because Kyverno Policy is namespaced.
 // For Kyverno ClusterPolicy, this field is ignored.
 type KyvernoPolicyNamespace struct {
