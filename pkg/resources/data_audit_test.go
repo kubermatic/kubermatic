@@ -26,7 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestParseFluentBitRecords(t *testing.T) {
@@ -189,7 +189,7 @@ func TestParseFluentBitRecords(t *testing.T) {
 			objects = append(objects, tt.secrets...)
 			objects = append(objects, tt.configMaps...)
 
-			client := fakectrlruntimeclient.NewClientBuilder().
+			client := ctrlruntimefakeclient.NewClientBuilder().
 				WithScheme(newTestScheme(t)).
 				WithRuntimeObjects(objects...).
 				Build()
