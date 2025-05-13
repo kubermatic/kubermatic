@@ -102,11 +102,6 @@ type KyvernoPolicyNamespace struct {
 	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
-	// Create defines whether the namespace should be created if it does not exist. Defaults to true
-	//
-	// +kubebuilder:default:=true
-	Create bool `json:"create"`
-
 	// Labels of the Kyverno namespace
 	//
 	// +optional
