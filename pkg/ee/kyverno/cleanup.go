@@ -29,6 +29,11 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	admissioncontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/admission-controller"
+	backgroundcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/background-controller"
+	cleanupcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/cleanup-controller"
+	commonresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
+	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
@@ -37,6 +42,12 @@ import (
 
 // handleKyvernoCleanup removes all Kyverno resources from the user cluster.
 func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	// Remove all Kyverno resources from seed user cluster namespace
+	if err := r.ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx, cluster); err != nil {
+		return err
+	}
+
+	// Remove all Kyverno resources from the user cluster
 	if err := r.ensureKyvernoUserClusterResourcesAreRemoved(ctx, cluster); err != nil {
 		return err
 	}
@@ -54,6 +65,50 @@ func (r *reconciler) ensureKyvernoUserClusterResourcesAreRemoved(ctx context.Con
 		err := userClusterClient.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete resource %s: %w", resource.GetName(), err)
+		}
+	}
+
+	return nil
+}
+
+func (r *reconciler) ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	// Delete common resources (ConfigMaps)
+	for _, resource := range commonresources.ResourcesForDeletion(cluster) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete common resource %s: %w", resource.GetName(), err)
+		}
+	}
+
+	// Delete admission controller resources
+	for _, resource := range admissioncontrollerresources.ResourcesForDeletion(cluster) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete admission controller resource %s: %w", resource.GetName(), err)
+		}
+	}
+
+	// Delete background controller resources
+	for _, resource := range backgroundcontrollerresources.ResourcesForDeletion(cluster) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete background controller resource %s: %w", resource.GetName(), err)
+		}
+	}
+
+	// Delete cleanup controller resources
+	for _, resource := range cleanupcontrollerresources.ResourcesForDeletion(cluster) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete cleanup controller resource %s: %w", resource.GetName(), err)
+		}
+	}
+
+	// Delete reports controller resources
+	for _, resource := range reportscontrollerresources.ResourcesForDeletion(cluster) {
+		err := r.Client.Delete(ctx, resource)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete reports controller resource %s: %w", resource.GetName(), err)
 		}
 	}
 
