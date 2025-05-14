@@ -34,5 +34,5 @@ spec:
     # at least ensure we deploy a working set of Deployments.
     VerticalPodAutoscaler: true
   defaultAppCatalog:
-    enabled: true
+    enabled: false
     limitApps: []

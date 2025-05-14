@@ -72,6 +72,14 @@ spec:
     kind: ""
     # Name is the name of resource being referenced
     name: ca-bundle
+  # DefaultAppCatalog shows if the default application catalog (AppDefs) is enabled,
+  # and if enabled, which applications should be installed.
+  defaultAppCatalog:
+    # Enabled determines whether default app catalog is applied.
+    enabled: false
+    # LimitApps specifies a list of applications allowed to be installed.
+    # If empty and Enabled is true, all available AppDefs will be installed.
+    limitApps: null
   # ExposeStrategy is the strategy to expose the cluster with.
   # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
   # if this is set to LoadBalancerStrategy.

@@ -133,6 +133,9 @@ type KubermaticConfigurationSpec struct {
 	// MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
 	// Each entry should be in the format "repository:tag".
 	MirrorImages []string `json:"mirrorImages,omitempty"`
+	// DefaultAppCatalog shows if the default application catalog (AppDefs) is enabled,
+	// and if enabled, which applications should be installed.
+	DefaultAppCatalog DefaultAppCatalogConfig `json:"defaultAppCatalog,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -534,6 +537,16 @@ type KubermaticProxyConfiguration struct {
 	// list if proxying is configured (i.e. HTTP/HTTPS are not empty):
 	// "127.0.0.1/8", "localhost", ".local", ".local.", "kubernetes", ".default", ".svc"
 	NoProxy string `json:"noProxy,omitempty"`
+}
+
+// DefaultAppCatalogConfig defines the configuration for the default application catalog.
+type DefaultAppCatalogConfig struct {
+	// Enabled determines whether default app catalog is applied.
+	Enabled bool `json:"enabled,omitempty"`
+
+	// LimitApps specifies a list of applications allowed to be installed.
+	// If empty and Enabled is true, all available AppDefs will be installed.
+	LimitApps []string `json:"limitApps,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
