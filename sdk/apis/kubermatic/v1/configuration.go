@@ -135,7 +135,7 @@ type KubermaticConfigurationSpec struct {
 	MirrorImages []string `json:"mirrorImages,omitempty"`
 	// DefaultAppCatalog shows if the default application catalog (AppDefs) is enabled,
 	// and if enabled, which applications should be installed.
-	DefaultAppCatalog DefaultAppCatalogConfig `json:"defaultAppCatalog"`
+	DefaultAppCatalog DefaultAppCatalogConfig `json:"defaultAppCatalog,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.

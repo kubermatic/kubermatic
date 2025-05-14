@@ -21,6 +21,7 @@ package defaultappcatalog
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"testing"
 

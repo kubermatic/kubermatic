@@ -2887,8 +2887,6 @@ spec:
                           type: object
                       type: object
                   type: object
-              required:
-                - defaultAppCatalog
               type: object
             status:
               description: KubermaticConfigurationStatus stores status information about a KubermaticConfiguration.
