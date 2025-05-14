@@ -58,11 +58,11 @@ func isManagedResource(netClient *gophercloud.ServiceClient, resourceType, resou
 }
 
 func addOwnershipToResource(netClient *gophercloud.ServiceClient, resourceType, resourceID, clusterID string) error {
-	return tags.Add(netClient, resourceType, resourceID, fmt.Sprintf("%s%s", TagPrefixClusterID, clusterID)).ExtractErr()
+	return tags.Add(netClient, resourceType, resourceID, OwnershipTag(clusterID)).ExtractErr()
 }
 
 func removeOwnershipFromResource(netClient *gophercloud.ServiceClient, resourceType, resourceID, clusterID string) error {
-	err := tags.Delete(netClient, resourceType, resourceID, fmt.Sprintf("%s%s", TagPrefixClusterID, clusterID)).ExtractErr()
+	err := tags.Delete(netClient, resourceType, resourceID, OwnershipTag(clusterID)).ExtractErr()
 	if err != nil && !isTagNotFound(err) {
 		return err
 	}
@@ -79,4 +79,8 @@ func getResourceOwners(netClient *gophercloud.ServiceClient, resourceType, resou
 
 func isTagNotFound(err error) bool {
 	return strings.Contains(err.Error(), "TagNotFound")
+}
+
+func OwnershipTag(clusterID string) string {
+	return fmt.Sprintf("%s%s", TagPrefixClusterID, clusterID)
 }
