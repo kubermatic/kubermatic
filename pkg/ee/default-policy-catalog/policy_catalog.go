@@ -110,12 +110,18 @@ func policyTemplateReconcilerFactory(policyTemplate *kubermaticv1.PolicyTemplate
 				policyTemplate.Spec.Default = true
 			}
 
-			if pt.Spec.Target != nil && pt.Spec.Target.ProjectSelector != nil {
-				policyTemplate.Spec.Target.ProjectSelector = pt.Spec.Target.ProjectSelector
-			}
+			if pt.Spec.Target != nil {
+				if policyTemplate.Spec.Target == nil {
+					policyTemplate.Spec.Target = &kubermaticv1.PolicyTemplateTarget{}
+				}
 
-			if pt.Spec.Target != nil && pt.Spec.Target.ClusterSelector != nil {
-				policyTemplate.Spec.Target.ClusterSelector = pt.Spec.Target.ClusterSelector
+				if pt.Spec.Target.ProjectSelector != nil {
+					policyTemplate.Spec.Target.ProjectSelector = pt.Spec.Target.ProjectSelector
+				}
+
+				if pt.Spec.Target.ClusterSelector != nil {
+					policyTemplate.Spec.Target.ClusterSelector = pt.Spec.Target.ClusterSelector
+				}
 			}
 
 			pt.Spec = policyTemplate.Spec
