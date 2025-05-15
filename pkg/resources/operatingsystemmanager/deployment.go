@@ -70,6 +70,7 @@ type operatingSystemManagerData interface {
 	ComputedNodePortRange() string
 	OperatingSystemManagerImageTag() string
 	OperatingSystemManagerImageRepository() string
+	OperatingSystemManagerDefaultOSPsDisabled() bool
 }
 
 // DeploymentReconciler returns the function to create and update the operating system manager deployment.
@@ -295,6 +296,10 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 
 	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {
 		flags = append(flags, "-node-registry-credentials-secret", fmt.Sprintf("%s/%s", imagePullSecret.Namespace, imagePullSecret.Name))
+	}
+
+	if disableDefaultOSP := data.OperatingSystemManagerDefaultOSPsDisabled(); disableDefaultOSP {
+		flags = append(flags, "-disable-default-osps")
 	}
 
 	return flags
