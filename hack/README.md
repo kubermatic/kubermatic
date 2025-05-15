@@ -66,12 +66,6 @@ registry.
 The purpose of this is to mirror all images used in a KKP setup
 to prewarm a local Docker registry, for example in offline setups.
 
-## run-ccm-migration-e2e-test-in-kind.sh
-
-This script sets up a local KKP installation in kind, deploys a
-couple of test Presets and Users and then runs the e2e tests for the
-external ccm-migration.
-
 ## run-conformance-tests.sh
 
 Compiles the conformance tests and then runs them in a local Docker
