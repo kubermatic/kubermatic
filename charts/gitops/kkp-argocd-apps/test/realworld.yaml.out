@@ -261,13 +261,13 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: oauth
+  name: dex
   namespace: argocd
 spec:
   project: default
   sources:
   - repoURL: 'https://github.com/kubermatic/kubermatic.git'
-    path: ./charts/oauth
+    path: ./charts/dex
     targetRevision: notSet
     helm:
       valueFiles:
@@ -281,7 +281,7 @@ spec:
     ref: values
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: oauth
+    namespace: dex
   syncPolicy:
     syncOptions:
       - CreateNamespace=true

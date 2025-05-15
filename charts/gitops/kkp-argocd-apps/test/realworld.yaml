@@ -26,7 +26,7 @@ nginx:
   enable: true
 certManager:
   enable: true
-oauth:
+dex:
   enable: true
   autoSync: true
 seedSettings:
