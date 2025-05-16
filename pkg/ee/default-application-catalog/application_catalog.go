@@ -41,6 +41,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
@@ -50,7 +51,8 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 	sublogger := log.Prefix(logger, "   ")
 
 	if !opt.DeployDefaultAppCatalog {
-		sublogger.Info("Skipping deployment of default Application catalog, set --deploy-default-app-catalog to enable it.")
+		sublogger.Info("Skipping deployment of default Application catalog. To enable it, set the 'enabled' field in the KubermaticConfiguration file's DefaultAppCatalogConfig section to true.")
+		sublogger.Info("If you want to limit the applications, specify the 'limitApps' field with a list of allowed apps.")
 		return nil
 	}
 
@@ -84,7 +86,13 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
 		}
 
-		creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+		if len(opt.LimitApps) == 0 {
+			creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+		}
+
+		if len(opt.LimitApps) > 0 && (slices.Contains(opt.LimitApps, appDef.Spec.DisplayName) || slices.Contains(opt.LimitApps, appDef.Name)) {
+			creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+		}
 	}
 
 	if err = kkpreconciling.ReconcileApplicationDefinitions(ctx, creators, "", kubeClient); err != nil {

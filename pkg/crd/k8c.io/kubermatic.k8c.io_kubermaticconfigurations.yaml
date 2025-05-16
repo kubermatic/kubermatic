@@ -185,6 +185,22 @@ spec:
                     - name
                   type: object
                   x-kubernetes-map-type: atomic
+                defaultAppCatalog:
+                  description: |-
+                    DefaultAppCatalog shows if the default application catalog (AppDefs) is enabled,
+                    and if enabled, which applications should be installed.
+                  properties:
+                    enabled:
+                      description: Enabled determines whether default app catalog is applied.
+                      type: boolean
+                    limitApps:
+                      description: |-
+                        LimitApps specifies a list of applications allowed to be installed.
+                        If empty and Enabled is true, all available AppDefs will be installed.
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 exposeStrategy:
                   description: |-
                     ExposeStrategy is the strategy to expose the cluster with.

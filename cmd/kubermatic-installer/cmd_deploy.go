@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"reflect"
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -39,6 +40,7 @@ import (
 	userclustermla "k8c.io/kubermatic/v2/pkg/install/stack/usercluster-mla"
 	"k8c.io/kubermatic/v2/pkg/log"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -191,6 +193,19 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
 
+		defaultAppCatalog := &kubermaticConfig.Spec.DefaultAppCatalog
+		if reflect.DeepEqual(*defaultAppCatalog, kubermaticv1.DefaultAppCatalogConfig{}) {
+			*defaultAppCatalog = kubermaticv1.DefaultAppCatalogConfig{
+				Enabled:   false,
+				LimitApps: []string{},
+			}
+		}
+
+		kubermaticEdition := versions.KubermaticEdition
+		if kubermaticEdition != edition.EE && defaultAppCatalog.Enabled {
+			return fmt.Errorf("you must use kubermatic enterprise edition to enable default application catalog")
+		}
+
 		deployOptions := stack.DeployOptions{
 			HelmClient:                         *helmClient,
 			HelmValues:                         helmValues,
@@ -213,7 +228,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			MLASkipLogging:                     opt.MLASkipLogging,
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
-			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
+			DeployDefaultAppCatalog:            defaultAppCatalog.Enabled,
+			LimitApps:                          defaultAppCatalog.LimitApps,
 		}
 
 		// prepare Kubernetes and Helm clients
@@ -305,6 +321,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		deployOptions.Logger = subLogger
 		deployOptions.SeedsGetter = seedsGetter
 		deployOptions.SeedClientGetter = kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
+		deployOptions.DeployDefaultAppCatalog = defaultAppCatalog.Enabled
+		deployOptions.LimitApps = defaultAppCatalog.LimitApps
 
 		logger.Info("🚦 Validating existing installation…")
 
