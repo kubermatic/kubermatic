@@ -31,3 +31,7 @@ import (
 func deployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	return nil // NOP
 }
+
+func deployDefaultPolicyTemplateCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	return nil // NOP
+}
