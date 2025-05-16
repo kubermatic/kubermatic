@@ -25,6 +25,7 @@ import (
 
 	clusterbackuprbac "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/seed/rbac-controller"
 	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
+	defaultpolicycontroller "k8c.io/kubermatic/v2/pkg/ee/default-policy-controller"
 	groupprojectbindingcontroller "k8c.io/kubermatic/v2/pkg/ee/group-project-binding/controller"
 	kubelbcontroller "k8c.io/kubermatic/v2/pkg/ee/kubelb"
 	kubevirtnetworkcontroller "k8c.io/kubermatic/v2/pkg/ee/kubevirt-network-controller"
@@ -66,6 +67,10 @@ func setupControllers(ctrlCtx *controllerContext) error {
 
 	if err := kyvernocontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create Kyverno controller: %w", err)
+	}
+
+	if err := defaultpolicycontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.seedGetter, ctrlCtx.configGetter, ctrlCtx.log, ctrlCtx.versions); err != nil {
+		return fmt.Errorf("failed to create default policy controller: %w", err)
 	}
 
 	return nil
