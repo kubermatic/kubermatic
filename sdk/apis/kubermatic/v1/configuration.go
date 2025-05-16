@@ -335,6 +335,10 @@ type OperatingSystemManager struct {
 	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
 	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageTag string `json:"imageTag,omitempty"`
+	// DisableDefaultOperatingSystemProfiles setting this property to true, would disable the creation of OSMs default
+	// OperatingSystemProfiles and users would need to provide a CustomOperatingSystemProfile to configure user clusters
+	// worker nodes.
+	DisableDefaultOperatingSystemProfiles bool `json:"disableDefaultOperatingSystemProfiles,omitempty"`
 }
 
 // KubermaticAddonConfiguration describes the addons for a given cluster runtime.
