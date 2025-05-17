@@ -19,6 +19,7 @@ package registry
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/distribution/reference"
 )
@@ -109,4 +110,12 @@ func RewriteImage(image, overwriteRegistry string) (string, error) {
 	}
 
 	return image, nil
+}
+
+func ToOCIURL(s string) string {
+	if strings.Contains(s, "://") {
+		return s
+	}
+
+	return "oci://" + s
 }

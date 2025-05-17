@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/cni/cilium"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -483,10 +484,14 @@ func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ApplicationDefinitions")
 
-	reconcilers := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{
-		cilium.ApplicationDefinitionReconciler(config),
+	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(logger, config)
+	if err != nil {
+		return fmt.Errorf("failed to get system application definition reconciler factories: %w", err)
 	}
-	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
+
+	sysAppDefReconcilers = append(sysAppDefReconcilers, cilium.ApplicationDefinitionReconciler(config))
+
+	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, sysAppDefReconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
 	}
 
