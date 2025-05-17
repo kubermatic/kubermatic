@@ -207,14 +207,14 @@ Go cache again.
 This that when we're in a PR targeting a release branch, the minimum
 Go version used to build KKP is not bumped to a different minor version.
 
+## verify-user-cluster-prometheus-configs.sh
+
+This ensures that the Prometheus rules deployed into userclusters
+are valid Prometheus rules.
+
 ## verify.sh
 
 This script is used as a presubmit to check that Helm chart versions
 have been updated if charts have been modified. Without the Prow env
 vars, this script won't run properly.
-
-## verify-user-cluster-prometheus-configs.sh
-
-This ensures that the Prometheus rules deployed into userclusters
-are valid Prometheus rules.
 
