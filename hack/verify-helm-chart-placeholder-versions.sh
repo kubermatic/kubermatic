@@ -37,18 +37,18 @@ EXCLUDED_CHARTS=(
 
 errors=0
 
-echo "Checking Chart.yaml files for version: $EXPECTED_PLACEHOLDER_VERSION"
+echodate "Checking Chart.yaml files for version: $EXPECTED_PLACEHOLDER_VERSION"
 
 for chart in $CHART_FILES; do
   # Skip excluded charts
   if printf '%s\n' "${EXCLUDED_CHARTS[@]}" | grep -qx "$chart"; then
-    echo "Skipping placeholder version check on Helm chart with custom version management: $chart"
+    echodate "Skipping placeholder version check on Helm chart with custom version management: $chart"
     continue
   fi
 
   # Check version
   if ! grep -q "^version: ${EXPECTED_PLACEHOLDER_VERSION}$" "$chart"; then
-    echo "Error: $chart does not contain expected placeholder Helm chart version '$EXPECTED_PLACEHOLDER_VERSION'"
+    echodate "Error: $chart does not contain expected placeholder Helm chart version '$EXPECTED_PLACEHOLDER_VERSION'"
     errors=1
   fi
 done
@@ -56,15 +56,15 @@ done
 # Ensure all excluded files exist
 for excluded in "${EXCLUDED_CHARTS[@]}"; do
   if [[ ! -f "$excluded" ]]; then
-    echo "Error: Expected chart with custom version management was not found: $excluded"
+    echodate "Error: Expected chart with custom version management was not found: $excluded"
     errors=1
   fi
 done
 
 if [[ "$errors" -ne 0 ]]; then
-  echo
-  echo "Some Chart.yaml files did not meet version expectations."
+  echodate
+  echodate "Some Chart.yaml files did not meet version expectations."
   exit 1
 fi
 
-echo "All Chart.yaml files passed version check."
+echodate "All Chart.yaml files passed version check."
