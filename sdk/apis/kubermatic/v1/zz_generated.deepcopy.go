@@ -2539,6 +2539,11 @@ func (in *DatacenterSpecKubevirt) DeepCopyInto(out *DatacenterSpecKubevirt) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.CCMLoadBalancerEnabled != nil {
+		in, out := &in.CCMLoadBalancerEnabled, &out.CCMLoadBalancerEnabled
+		*out = new(bool)
+		**out = **in
+	}
 	if in.CSIDriverOperator != nil {
 		in, out := &in.CSIDriverOperator, &out.CSIDriverOperator
 		*out = new(KubeVirtCSIDriverOperator)
