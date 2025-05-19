@@ -44,18 +44,15 @@ $sed -i 's/omitgenyaml/omitempty/g' $KKPV1/*.go
 
 # generate docs for ce version
 $sed -i "s/,omitcegenyaml/,omitempty,ce/g" $KKPV1/*.go
-# Second pass: recursively find and replace nested struct tags
-find $KKPV1 -type f -name "*.go" -exec $sed -i 's/`json:"[^"]*"`/`json:"\0,omitempty,ce"`/g' {} +
 
 # generate docs for CE version
-go run -tags ce codegen/example-yaml/main.go . docs
+go run -tags ce ./codegen/example-yaml . docs
 
 # Restore original tags
 $sed -i "s/omitempty,ce/omitcegenyaml/g" $KKPV1/*.go
-find $KKPV1 -type f -name "*.go" -exec $sed -i 's/,omitempty,ce//g' {} +
 
 # generate docs for EE version
-go run -tags ee codegen/example-yaml/main.go . docs
+go run -tags ee ./codegen/example-yaml . docs
 
 # revert our changes
 $sed -i 's/omitempty/omitgenyaml/g' $KKPV1/*.go
