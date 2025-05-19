@@ -26,6 +26,7 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,31 +40,31 @@ func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Obj
 	return []ctrlruntimeclient.Object{
 		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      deploymentName,
+				Name:      commonseedresources.KyvernoReportsControllerDeploymentName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      metricsServiceName,
+				Name:      commonseedresources.KyvernoReportsControllerMetricsServiceName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
 		&rbacv1.Role{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      reportsControllerRoleName,
+				Name:      commonseedresources.KyvernoReportsControllerRoleName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
 		&rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      reportsControllerRoleBindingName,
+				Name:      commonseedresources.KyvernoReportsControllerRoleBindingName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      reportsControllerServiceAccountName,
+				Name:      commonseedresources.KyvernoReportsControllerServiceAccountName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},

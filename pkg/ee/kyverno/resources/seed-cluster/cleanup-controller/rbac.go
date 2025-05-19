@@ -28,26 +28,17 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-const (
-	CleanupControllerRoleName        = "kyverno:cleanup-controller"
-	CleanupControllerRoleBindingName = "kyverno:cleanup-controller"
-)
-
 // RoleReconciler returns the function to create and update the Kyverno cleanup controller role.
 func RoleReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
-		return CleanupControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
-			r.Labels = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
+		return commonseedresources.KyvernoCleanupControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
+			r.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			namespace := cluster.Status.NamespaceName
 			tlsCaSecret := fmt.Sprintf("kyverno-cleanup-controller.%s.svc.kyverno-tls-ca", namespace)
@@ -97,24 +88,19 @@ func RoleReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedRoleReconcil
 // RoleBindingReconciler returns the function to create and update the Kyverno cleanup controller role binding.
 func RoleBindingReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedRoleBindingReconcilerFactory {
 	return func() (string, reconciling.RoleBindingReconciler) {
-		return CleanupControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
-			rb.Labels = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
+		return commonseedresources.KyvernoCleanupControllerRoleBindingName, func(rb *rbacv1.RoleBinding) (*rbacv1.RoleBinding, error) {
+			rb.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			rb.RoleRef = rbacv1.RoleRef{
 				APIGroup: "rbac.authorization.k8s.io",
 				Kind:     "Role",
-				Name:     CleanupControllerRoleName,
+				Name:     commonseedresources.KyvernoCleanupControllerRoleName,
 			}
 
 			rb.Subjects = []rbacv1.Subject{
 				{
 					Kind:      "ServiceAccount",
-					Name:      CleanupControllerServiceAccountName,
+					Name:      commonseedresources.KyvernoCleanupControllerServiceAccountName,
 					Namespace: cluster.Status.NamespaceName,
 				},
 			}

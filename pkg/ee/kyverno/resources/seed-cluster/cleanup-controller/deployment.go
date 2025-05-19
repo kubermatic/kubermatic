@@ -28,6 +28,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -39,21 +40,11 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-const (
-	DeploymentName = "kyverno-cleanup-controller"
-	KyvernoVersion = "v1.14.1"
-)
-
 // DeploymentReconciler returns the function to create and update the Kyverno cleanup controller deployment.
 func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return DeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   KyvernoVersion,
-			}
+		return commonseedresources.KyvernoCleanupControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			// Deployment spec
 			dep.Spec.Replicas = resources.Int32(2)
@@ -68,24 +59,15 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 
 			// Selector must match template labels
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/component": "cleanup-controller",
-					"app.kubernetes.io/instance":  "kyverno",
-					"app.kubernetes.io/part-of":   "kyverno",
-				},
+				MatchLabels: commonseedresources.KyvernoSelectorLabels(commonseedresources.CleanupControllerComponentNameLabel),
 			}
 
 			// Pod template
-			dep.Spec.Template.ObjectMeta.Labels = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   KyvernoVersion,
-			}
+			dep.Spec.Template.ObjectMeta.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			// Pod spec
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
-			dep.Spec.Template.Spec.ServiceAccountName = CleanupControllerServiceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = commonseedresources.KyvernoCleanupControllerServiceAccountName
 
 			// Pod anti-affinity
 			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
@@ -99,7 +81,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 										{
 											Key:      "app.kubernetes.io/component",
 											Operator: metav1.LabelSelectorOpIn,
-											Values:   []string{"cleanup-controller"},
+											Values:   []string{commonseedresources.CleanupControllerComponentNameLabel},
 										},
 									},
 								},
@@ -127,7 +109,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "controller",
-					Image:           "reg.kyverno.io/kyverno/cleanup-controller:" + KyvernoVersion,
+					Image:           "reg.kyverno.io/kyverno/cleanup-controller:" + commonseedresources.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Ports: []corev1.ContainerPort{
 						{
@@ -146,21 +128,19 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						"--serverIP=kyverno-svc." + namespace + ".svc.cluster.local.",
 						fmt.Sprintf("--caSecretName=kyverno-cleanup-controller.%s.svc.kyverno-tls-ca", namespace),
 						fmt.Sprintf("--tlsSecretName=kyverno-cleanup-controller.%s.svc.kyverno-tls-pair", namespace),
-						"--resyncPeriod=15m",
-						"--maxAPICallResponseLength=2000000",
 					},
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KYVERNO_DEPLOYMENT",
-							Value: DeploymentName,
+							Value: commonseedresources.KyvernoCleanupControllerDeploymentName,
 						},
 						{
 							Name:  "INIT_CONFIG",
-							Value: "kyverno",
+							Value: commonseedresources.KyvernoConfigMapName,
 						},
 						{
 							Name:  "METRICS_CONFIG",
-							Value: "kyverno-metrics",
+							Value: commonseedresources.KyvernoMetricsConfigMapName,
 						},
 						{
 							Name: "KYVERNO_POD_NAME",
@@ -172,11 +152,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						{
 							Name:  "KYVERNO_SERVICEACCOUNT_NAME",
-							Value: CleanupControllerServiceAccountName,
+							Value: commonseedresources.KyvernoCleanupControllerServiceAccountName,
 						},
 						{
 							Name:  "KYVERNO_ROLE_NAME",
-							Value: CleanupControllerRoleName,
+							Value: commonseedresources.KyvernoCleanupControllerRoleName,
 						},
 						{
 							Name: "KYVERNO_NAMESPACE",
@@ -188,7 +168,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						{
 							Name:  "KYVERNO_SVC",
-							Value: ServiceName,
+							Value: commonseedresources.KyvernoCleanupControllerServiceName,
 						},
 					},
 					Resources: corev1.ResourceRequirements{

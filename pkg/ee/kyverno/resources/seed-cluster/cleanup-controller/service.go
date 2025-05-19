@@ -26,27 +26,18 @@ package cleanupcontrollerresources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	ServiceName        = "kyverno-cleanup-controller"
-	MetricsServiceName = "kyverno-cleanup-controller-metrics"
-)
-
 // ServiceReconciler returns the function to create and update the Kyverno cleanup controller service.
 func ServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
-		return ServiceName, func(svc *corev1.Service) (*corev1.Service, error) {
-			svc.Labels = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
+		return commonseedresources.KyvernoCleanupControllerServiceName, func(svc *corev1.Service) (*corev1.Service, error) {
+			svc.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			svc.Spec.Type = corev1.ServiceTypeClusterIP
 
@@ -60,11 +51,7 @@ func ServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceRe
 				},
 			}
 
-			svc.Spec.Selector = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-			}
+			svc.Spec.Selector = commonseedresources.KyvernoSelectorLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			return svc, nil
 		}
@@ -74,13 +61,8 @@ func ServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceRe
 // MetricsServiceReconciler returns the function to create and update the Kyverno cleanup controller metrics service.
 func MetricsServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
-		return MetricsServiceName, func(svc *corev1.Service) (*corev1.Service, error) {
-			svc.Labels = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
+		return commonseedresources.KyvernoCleanupControllerMetricsServiceName, func(svc *corev1.Service) (*corev1.Service, error) {
+			svc.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			svc.Spec.Type = corev1.ServiceTypeClusterIP
 
@@ -93,11 +75,7 @@ func MetricsServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedSe
 				},
 			}
 
-			svc.Spec.Selector = map[string]string{
-				"app.kubernetes.io/component": "cleanup-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-			}
+			svc.Spec.Selector = commonseedresources.KyvernoSelectorLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			return svc, nil
 		}

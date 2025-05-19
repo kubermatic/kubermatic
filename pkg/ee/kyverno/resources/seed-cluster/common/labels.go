@@ -22,22 +22,23 @@
    END OF TERMS AND CONDITIONS
 */
 
-package admissioncontrollerresources
+package commonseedresources
 
-import (
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
-	"k8c.io/reconciler/pkg/reconciling"
+import "github.com/kyverno/kyverno/api/kyverno"
 
-	corev1 "k8s.io/api/core/v1"
-)
+func KyvernoLabels(component string) map[string]string {
+	return map[string]string{
+		kyverno.LabelAppComponent:    component,
+		"app.kubernetes.io/instance": kyverno.ValueKyvernoApp,
+		"app.kubernetes.io/part-of":  kyverno.ValueKyvernoApp,
+		"app.kubernetes.io/version":  KyvernoVersion,
+	}
+}
 
-// ServiceAccountReconciler returns the function to create and update the Kyverno admission controller service account.
-func ServiceAccountReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountReconciler) {
-		return commonseedresources.KyvernoAdmissionControllerServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = commonseedresources.KyvernoLabels(commonseedresources.AdmissionControllerComponentNameLabel)
-			return sa, nil
-		}
+func KyvernoSelectorLabels(component string) map[string]string {
+	return map[string]string{
+		kyverno.LabelAppComponent:    component,
+		"app.kubernetes.io/instance": kyverno.ValueKyvernoApp,
+		"app.kubernetes.io/part-of":  kyverno.ValueKyvernoApp,
 	}
 }

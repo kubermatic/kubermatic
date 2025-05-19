@@ -26,25 +26,17 @@ package backgroundcontrollerresources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	backgroundControllerServiceAccountName = "kyverno-background-controller"
-)
-
 // ServiceAccountReconciler returns the function to create and update the Kyverno background controller service account.
 func ServiceAccountReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountReconciler) {
-		return backgroundControllerServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = map[string]string{
-				"app.kubernetes.io/component": "background-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
+		return commonseedresources.KyvernoBackgroundControllerServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+			sa.Labels = commonseedresources.KyvernoLabels(commonseedresources.BackgroundControllerComponentNameLabel)
 			return sa, nil
 		}
 	}

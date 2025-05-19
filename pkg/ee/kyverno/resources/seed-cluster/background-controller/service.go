@@ -26,26 +26,18 @@ package backgroundcontrollerresources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	serviceName = "kyverno-background-controller-metrics"
-)
-
 // MetricsServiceReconciler returns the function to create and update the Kyverno background controller metrics service.
 func MetricsServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceReconcilerFactory {
 	return func() (string, reconciling.ServiceReconciler) {
-		return serviceName, func(svc *corev1.Service) (*corev1.Service, error) {
-			svc.Labels = map[string]string{
-				"app.kubernetes.io/component": "background-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
+		return commonseedresources.KyvernoBackgroundControllerMetricsServiceName, func(svc *corev1.Service) (*corev1.Service, error) {
+			svc.Labels = commonseedresources.KyvernoLabels(commonseedresources.BackgroundControllerComponentNameLabel)
 
 			svc.Spec.Type = corev1.ServiceTypeClusterIP
 
@@ -58,11 +50,7 @@ func MetricsServiceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedSe
 				},
 			}
 
-			svc.Spec.Selector = map[string]string{
-				"app.kubernetes.io/component": "background-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-			}
+			svc.Spec.Selector = commonseedresources.KyvernoSelectorLabels(commonseedresources.BackgroundControllerComponentNameLabel)
 
 			return svc, nil
 		}
