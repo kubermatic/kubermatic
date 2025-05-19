@@ -52,7 +52,6 @@ func KyvernoConfigMapReconciler(cluster *kubermaticv1.Cluster) reconciling.Named
 			if cm.Annotations == nil {
 				cm.Annotations = map[string]string{}
 			}
-			cm.Annotations["helm.sh/resource-policy"] = "keep"
 
 			// Set data
 			cm.Data = map[string]string{

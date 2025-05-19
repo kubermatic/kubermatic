@@ -55,7 +55,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			// Deployment spec
-			dep.Spec.Replicas = int32Ptr(2)
+			dep.Spec.Replicas = int32Ptr(1)
 			dep.Spec.RevisionHistoryLimit = int32Ptr(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
@@ -110,13 +110,14 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			// Set volumes
-			namespace := cluster.Status.NamespaceName
 			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: "uc-admin-kubeconfig",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+							// SecretName: resources.AdminKubeconfigSecretName,
+							// SecretName: "kyverno-uc-sa-kubeconfig",
 						},
 					},
 				},
@@ -134,11 +135,6 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Name:            "kyverno-pre",
 					Image:           "reg.kyverno.io/kyverno/kyvernopre:" + kyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
-					Args: []string{
-						// "--kubeconfig=/etc/kubernetes/uc-admin-kubeconfig/kubeconfig",
-						"--loggingFormat=text",
-						"--v=2",
-					},
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
 							corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -203,16 +199,17 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 							Value: serviceName,
 						},
 					},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "uc-admin-kubeconfig",
-							MountPath: "/etc/kubernetes/uc-admin-kubeconfig",
-							ReadOnly:  true,
-						},
-					},
+					// VolumeMounts: []corev1.VolumeMount{
+					// 	{
+					// 		Name:      "uc-admin-kubeconfig",
+					// 		MountPath: "/etc/kubernetes/uc-admin-kubeconfig",
+					// 		ReadOnly:  true,
+					// 	},
+					// },
 				},
 			}
 
+			namespace := cluster.Status.NamespaceName
 			// Main container
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -220,12 +217,12 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Image:           "reg.kyverno.io/kyverno/kyverno:" + kyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Args: []string{
-						// "--leaderElect=false",
 						"--kubeconfig=/etc/kubernetes/uc-admin-kubeconfig/kubeconfig",
+						"--serverIP=kyverno-svc." + namespace + ".svc.cluster.local.",
 						fmt.Sprintf("--caSecretName=kyverno-svc.%s.svc.kyverno-tls-ca", namespace),
 						fmt.Sprintf("--tlsSecretName=kyverno-svc.%s.svc.kyverno-tls-pair", namespace),
-						// "--backgroundServiceAccountName=system:serviceaccount:kyverno-system-uc1:kyverno-background-controller-uc1-sa",
-						// "--reportsServiceAccountName=system:serviceaccount:kyverno-system-uc1:kyverno-reports-controller-uc1-sa",
+						fmt.Sprintf("--backgroundServiceAccountName=system:serviceaccount:%s:kyverno-background-controller", namespace),
+						fmt.Sprintf("--reportsServiceAccountName=system:serviceaccount:%s:kyverno-reports-controller", namespace),
 						"--servicePort=443",
 						"--webhookServerPort=9443",
 						"--resyncPeriod=15m",
@@ -336,6 +333,8 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						InitialDelaySeconds: 2,
 						PeriodSeconds:       6,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      1,
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 2,

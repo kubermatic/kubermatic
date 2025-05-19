@@ -117,6 +117,8 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+							// SecretName: resources.AdminKubeconfigSecretName,
+							// SecretName: "kyverno-uc-sa-kubeconfig",
 						},
 					},
 				},
@@ -142,6 +144,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					},
 					Args: []string{
 						"--kubeconfig=/etc/kubernetes/uc-admin-kubeconfig/kubeconfig",
+						"--serverIP=kyverno-svc." + namespace + ".svc.cluster.local.",
 						fmt.Sprintf("--caSecretName=kyverno-cleanup-controller.%s.svc.kyverno-tls-ca", namespace),
 						fmt.Sprintf("--tlsSecretName=kyverno-cleanup-controller.%s.svc.kyverno-tls-pair", namespace),
 						"--servicePort=443",
@@ -233,6 +236,8 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						InitialDelaySeconds: 2,
 						PeriodSeconds:       6,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      1,
 					},
 					LivenessProbe: &corev1.Probe{
 						FailureThreshold: 2,

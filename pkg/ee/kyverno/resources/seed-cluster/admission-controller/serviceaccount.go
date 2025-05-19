@@ -32,7 +32,8 @@ import (
 )
 
 const (
-	admissionControllerServiceAccountName = "kyverno-admission-controller"
+	// admissionControllerServiceAccountName = "kyverno-admission-controller"
+	admissionControllerServiceAccountName = "kyverno-service-account"
 )
 
 // ServiceAccountReconciler returns the function to create and update the Kyverno admission controller service account.

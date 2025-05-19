@@ -24,6 +24,7 @@ package admissioncontrollerresources
 
 import (
 	"context"
+	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
@@ -70,6 +71,18 @@ func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Obj
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      admissionControllerServiceAccountName,
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s.%s.svc.kyverno-tls-ca", serviceName, cluster.Status.NamespaceName),
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s.%s.svc.kyverno-tls-pair", serviceName, cluster.Status.NamespaceName),
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},

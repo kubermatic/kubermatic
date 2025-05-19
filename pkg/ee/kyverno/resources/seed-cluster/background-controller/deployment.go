@@ -114,6 +114,8 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+							// SecretName: resources.AdminKubeconfigSecretName,
+							// SecretName: "kyverno-uc-sa-kubeconfig",
 						},
 					},
 				},
