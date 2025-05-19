@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package backgroundcontrollerresources
+package userclusterresources
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -31,21 +31,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	backgroundControllerServiceAccountName = "kyverno-background-controller"
-)
-
-// ServiceAccountReconciler returns the function to create and update the Kyverno background controller service account.
-func ServiceAccountReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceAccountReconcilerFactory {
-	return func() (string, reconciling.ServiceAccountReconciler) {
-		return backgroundControllerServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = map[string]string{
-				"app.kubernetes.io/component": "background-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
-			}
-			return sa, nil
+func NamespaceReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return cluster.Status.NamespaceName, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			return ns, nil
 		}
 	}
 }

@@ -32,7 +32,6 @@ import (
 )
 
 const (
-	// admissionControllerServiceAccountName = "kyverno-admission-controller"
 	admissionControllerServiceAccountName = "kyverno-service-account"
 )
 
@@ -40,7 +39,6 @@ const (
 func ServiceAccountReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedServiceAccountReconcilerFactory {
 	return func() (string, reconciling.ServiceAccountReconciler) {
 		return admissionControllerServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			// sa.Namespace = cluster.Status.NamespaceName
 			sa.Labels = map[string]string{
 				"app.kubernetes.io/component": "admission-controller",
 				"app.kubernetes.io/instance":  "kyverno",

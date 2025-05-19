@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -55,8 +56,8 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			// Deployment spec
-			dep.Spec.Replicas = int32Ptr(1)
-			dep.Spec.RevisionHistoryLimit = int32Ptr(10)
+			dep.Spec.Replicas = resources.Int32(2)
+			dep.Spec.RevisionHistoryLimit = resources.Int32(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
 				RollingUpdate: &appsv1.RollingUpdateDeployment{
@@ -117,8 +118,6 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
-							// SecretName: resources.AdminKubeconfigSecretName,
-							// SecretName: "kyverno-uc-sa-kubeconfig",
 						},
 					},
 				},
@@ -147,20 +146,8 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						"--serverIP=kyverno-svc." + namespace + ".svc.cluster.local.",
 						fmt.Sprintf("--caSecretName=kyverno-cleanup-controller.%s.svc.kyverno-tls-ca", namespace),
 						fmt.Sprintf("--tlsSecretName=kyverno-cleanup-controller.%s.svc.kyverno-tls-pair", namespace),
-						"--servicePort=443",
-						"--cleanupServerPort=9443",
-						"--webhookServerPort=9443",
 						"--resyncPeriod=15m",
-						"--disableMetrics=false",
-						"--otelConfig=prometheus",
-						"--metricsPort=8000",
-						"--enableDeferredLoading=true",
-						"--dumpPayload=false",
 						"--maxAPICallResponseLength=2000000",
-						"--loggingFormat=text",
-						"--v=2",
-						"--protectManagedResources=false",
-						"--ttlReconciliationInterval=1m",
 					},
 					Env: []corev1.EnvVar{
 						{
@@ -214,13 +201,13 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 					},
 					SecurityContext: &corev1.SecurityContext{
-						AllowPrivilegeEscalation: boolPtr(false),
+						AllowPrivilegeEscalation: ptr.To(false),
 						Capabilities: &corev1.Capabilities{
 							Drop: []corev1.Capability{"ALL"},
 						},
-						Privileged:             boolPtr(false),
-						ReadOnlyRootFilesystem: boolPtr(true),
-						RunAsNonRoot:           boolPtr(true),
+						Privileged:             ptr.To(false),
+						ReadOnlyRootFilesystem: ptr.To(true),
+						RunAsNonRoot:           ptr.To(true),
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
@@ -280,13 +267,4 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			return dep, nil
 		}
 	}
-}
-
-// Helper functions
-func int32Ptr(i int32) *int32 {
-	return &i
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }
