@@ -644,6 +644,9 @@ spec:
   # KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
   # Only available in Enterprise Edition.
   kubelb:
+    # EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+    # This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+    enableForAllDatacenters: true
     # Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
     kubeconfig:
       # API version of the referent.
