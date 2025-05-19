@@ -52,6 +52,7 @@ func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermat
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, CleanupFinalizer)
 }
 
+// ensureKyvernoUserClusterResourcesAreRemoved removes all Kyverno resources from the user cluster.
 func (r *reconciler) ensureKyvernoUserClusterResourcesAreRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -65,6 +66,7 @@ func (r *reconciler) ensureKyvernoUserClusterResourcesAreRemoved(ctx context.Con
 	return nil
 }
 
+// ensureKyvernoSeedClusterNamespaceResourcesAreRemoved removes all Kyverno resources from the seed cluster namespace.
 func (r *reconciler) ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if err := admissioncontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
 		return fmt.Errorf("failed to clean up admission controller resources: %w", err)
