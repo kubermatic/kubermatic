@@ -76,7 +76,7 @@ func (r *reconciler) ensureKubeLBManagementClusterResourcesAreRemoved(ctx contex
 	}
 
 	// Get kubeLB management cluster client.
-	kubeLBManagementClient, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
+	kubeLBManagementClient, _, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
 	if err != nil {
 		return err
 	}
