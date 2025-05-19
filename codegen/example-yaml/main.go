@@ -269,6 +269,12 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				},
 			},
 			MLA: &kubermaticv1.SeedMLASettings{},
+			KubeLB: &kubermaticv1.KubeLBSettings{
+				Kubeconfig: corev1.ObjectReference{
+					Name:      "kubelb-management-kubeconfig",
+					Namespace: "kubermatic",
+				},
+			},
 		},
 	}
 
