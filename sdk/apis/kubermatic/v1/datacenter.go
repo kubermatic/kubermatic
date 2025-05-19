@@ -1278,6 +1278,8 @@ type KubeLBDatacenterSettings struct {
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`
 	// DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
 	DisableIngressClass bool `json:"disableIngressClass,omitempty"`
+	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster. These args are propagated to all the user clusters unless overridden at a cluster level.
+	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
 type ManagementProxySettings struct {
