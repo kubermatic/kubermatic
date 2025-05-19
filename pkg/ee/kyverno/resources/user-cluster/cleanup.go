@@ -42,6 +42,18 @@ func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Obj
 				Name: cluster.Status.NamespaceName,
 			},
 		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kyverno",
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kyverno-metrics",
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
 	}
 
 	crds, err := KyvernoCRDs()

@@ -39,7 +39,6 @@ import (
 
 	backgroundcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/background-controller"
 	cleanupcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/cleanup-controller"
-	commonresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -207,8 +206,8 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	}
 
 	configMapCreators := []reconciling.NamedConfigMapReconcilerFactory{
-		commonresources.KyvernoConfigMapReconciler(cluster),
-		commonresources.KyvernoMetricsConfigMapReconciler(cluster),
+		userclusterresources.KyvernoConfigMapReconciler(cluster),
+		userclusterresources.KyvernoMetricsConfigMapReconciler(cluster),
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, configMapCreators, cluster.Status.NamespaceName, userClusterClient); err != nil {

@@ -48,12 +48,7 @@ const (
 func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return deploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = map[string]string{
-				"app.kubernetes.io/component": "admission-controller",
-				"app.kubernetes.io/instance":  "kyverno",
-				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   kyvernoVersion,
-			}
+			dep.Labels = kyvernoLabels(deploymentName, kyvernoVersion)
 
 			// Deployment spec
 			dep.Spec.Replicas = resources.Int32(3)
@@ -352,5 +347,14 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 
 			return dep, nil
 		}
+	}
+}
+
+func kyvernoLabels(kyvernoComponent, kyvernoVersion string) map[string]string {
+	return map[string]string{
+		"app.kubernetes.io/instance":  "kyverno",
+		"app.kubernetes.io/part-of":   "kyverno",
+		"app.kubernetes.io/component": kyvernoComponent,
+		"app.kubernetes.io/version":   kyvernoVersion,
 	}
 }

@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package commonresources
+package userclusterresources
 
 import (
 	"fmt"
