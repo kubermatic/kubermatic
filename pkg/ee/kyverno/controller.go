@@ -191,6 +191,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
+// ensureUserClusterResources ensures that the Kyverno resources are installed in the user cluster.
 func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
@@ -231,6 +232,7 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 	return nil
 }
 
+// ensureSeedClusterNamespaceResources ensures that the Kyverno resources are installed in the seed cluster.
 func (r *reconciler) ensureSeedClusterNamespaceResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	serviceAccountCreators := []reconciling.NamedServiceAccountReconcilerFactory{
 		admissioncontrollerresources.ServiceAccountReconciler(cluster),

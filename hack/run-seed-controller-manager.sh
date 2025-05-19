@@ -65,7 +65,7 @@ set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
   -namespace=kubermatic \
   -enable-leader-election=false \
-  -seed-name=dev \
+  -seed-name=$KUBERMATIC_SEED \
   -kubeconfig=$KUBECONFIG \
   -ca-bundle=$CA_BUNDLE \
   -addons-path=addons \
