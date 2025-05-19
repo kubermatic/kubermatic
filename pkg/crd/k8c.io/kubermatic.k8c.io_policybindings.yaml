@@ -72,15 +72,15 @@ spec:
                     annotations:
                       additionalProperties:
                         type: string
-                      description: Annotations of the Kyverno namespace
+                      description: Annotations to apply to this namespace.
                       type: object
                     labels:
                       additionalProperties:
                         type: string
-                      description: Labels of the Kyverno namespace
+                      description: Labels to apply to this namespace.
                       type: object
                     name:
-                      description: Name is the namespace to deploy the Kyverno Policy into.
+                      description: Name is the name of the namespace to deploy the Kyverno Policy into.
                       maxLength: 63
                       pattern: ^(|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)
                       type: string

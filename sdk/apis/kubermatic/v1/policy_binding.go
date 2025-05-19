@@ -91,23 +91,23 @@ type PolicyBindingSpec struct {
 	KyvernoPolicyNamespace *KyvernoPolicyNamespace `json:"kyvernoPolicyNamespace,omitempty"`
 }
 
-// KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into.
-// This is relevant only if a Kyverno Policy resource is created because Kyverno Policy is namespaced.
+// KyvernoPolicyNamespace specifies the namespace to deploy the Kyverno Policy into.
+// This is relevant only if a Kyverno Policy resource is created because a Kyverno Policy is namespaced.
 // For Kyverno ClusterPolicy, this field is ignored.
 type KyvernoPolicyNamespace struct {
-	// Name is the namespace to deploy the Kyverno Policy into.
+	// Name is the name of the namespace to deploy the Kyverno Policy into.
 	//
 	// +kubebuilder:validation:Pattern:=`^(|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)`
 	// +kubebuilder:validation:MaxLength:=63
 	// +kubebuilder:validation:Type=string
 	Name string `json:"name"`
 
-	// Labels of the Kyverno namespace
+	// Labels to apply to this namespace.
 	//
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Annotations of the Kyverno namespace
+	// Annotations to apply to this namespace.
 	//
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`

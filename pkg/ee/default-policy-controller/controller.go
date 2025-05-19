@@ -110,7 +110,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if cluster.DeletionTimestamp != nil {
 		// Cluster deletion in progress, skipping reconciliation
-		log.Debugw("Cluster deletion in progress, skipping reconciliation")
+		log.Debug("Cluster deletion in progress, skipping reconciliation")
 		return reconcile.Result{}, nil
 	}
 
@@ -140,7 +140,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) (*reconcile.Result, error) {
 	// Ensure that the cluster is healthy first, this is important for the default policy controller, and for all policy controllers.
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
-		log.Debugw("Cluster is not healthy, skipping reconciliation")
+		log.Debug("Cluster is not healthy, skipping reconciliation")
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
