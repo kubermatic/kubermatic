@@ -470,6 +470,8 @@ const (
 	ClusterConditionKubeVirtNetworkControllerSuccess                             ClusterConditionType = "KubeVirtNetworkControllerReconciledSuccessfully"
 	ClusterConditionClusterBackupControllerReconcilingSuccess                    ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
 	ClusterConditionKyvernoControllerReconcilingSuccess                          ClusterConditionType = "KyvernoControllerReconciledSuccessfully"
+	ClusterConditionDefaultPolicyControllerReconcilingSuccess                    ClusterConditionType = "DefaultPolicyControllerReconciledSuccessfully"
+	ClusterConditionDefaultPolicyBindingsControllerCreatedSuccessfully           ClusterConditionType = "DefaultPolicyBindingsControllerCreatedSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"
