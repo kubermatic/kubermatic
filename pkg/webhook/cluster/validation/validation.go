@@ -81,7 +81,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		return nil, fmt.Errorf("cluster name exceeds maximum allowed length of %d characters", validation.MaxClusterNameLength)
 	}
 
-	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)
+	datacenter, seed, cloudProvider, err := v.buildValidationDependencies(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 
 	versionManager := version.NewFromConfiguration(config)
 
-	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, cloudProvider, versionManager, v.features, nil)
+	errs := validation.ValidateNewClusterSpec(ctx, &cluster.Spec, datacenter, seed, cloudProvider, versionManager, v.features, nil)
 
 	if err := v.validateProjectRelation(ctx, cluster, nil); err != nil {
 		errs = append(errs, err)
@@ -113,7 +113,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		return nil, errors.New("new object is not a Cluster")
 	}
 
-	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, newCluster)
+	datacenter, seed, cloudProvider, err := v.buildValidationDependencies(ctx, newCluster)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 
 	updateManager := version.NewFromConfiguration(config)
 
-	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, cloudProvider, updateManager, v.features)
+	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, seed, cloudProvider, updateManager, v.features)
 
 	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
 		errs = append(errs, err)
@@ -138,31 +138,31 @@ func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (adm
 	return nil, nil
 }
 
-func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
+func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.Cluster) (*kubermaticv1.Datacenter, *kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
 	seed, err := v.seedGetter()
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, nil, nil, field.InternalError(nil, err)
 	}
 	if seed == nil {
-		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
+		return nil, nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
 	}
 
 	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(&c.Spec, seed)
 	if fieldErr != nil {
-		return nil, nil, fieldErr
+		return nil, nil, nil, fieldErr
 	}
 
 	if v.disableProviderValidation {
-		return datacenter, nil, nil
+		return datacenter, seed, nil, nil
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, nil, nil, field.InternalError(nil, err)
 	}
 
-	return datacenter, cloudProvider, nil
+	return datacenter, seed, cloudProvider, nil
 }
 
 func (v *validator) validateProjectRelation(ctx context.Context, cluster *kubermaticv1.Cluster, oldCluster *kubermaticv1.Cluster) *field.Error {
