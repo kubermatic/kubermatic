@@ -313,7 +313,7 @@ type SeedSpec struct {
 	//
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
-	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitcegenyaml"`
+	KubeLB *KubeLBSeedSettings `json:"kubelb,omitempty,omitcegenyaml"`
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
@@ -1242,6 +1242,14 @@ type OIDCProviderConfiguration struct {
 	// Optional: SkipTLSVerify skip TLS verification for the token issuer.
 	// If not set, configuration is inherited from the default OIDC provider.
 	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
+}
+
+type KubeLBSeedSettings struct {
+	KubeLBSettings `json:",inline"`
+
+	// EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+	// This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+	EnableForAllDatacenters bool `json:"enableForAllDatacenters,omitempty"`
 }
 
 type KubeLBSettings struct {
