@@ -62,7 +62,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "4bead876fca3f80d355879471bdc72c2762f8e54"
+	imageTag  = "v1.1.4"
 )
 
 type kubeLBData interface {
@@ -214,6 +214,17 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 	}
 	if clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass {
 		flags = append(flags, "-use-loadbalancer-class")
+	}
+
+	// Cluster configuration has a higher precedence than datacenter configuration.
+	if clusterKubeLB != nil && clusterKubeLB.ExtraArgs != nil {
+		for k, v := range clusterKubeLB.ExtraArgs {
+			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
+		}
+	} else if kubelb != nil && kubelb.ExtraArgs != nil {
+		for k, v := range kubelb.ExtraArgs {
+			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
+		}
 	}
 
 	return flags

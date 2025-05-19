@@ -36,7 +36,7 @@ envSpecificSettingFolderName: settings
 userMlaValuesFileName: values-usermla.yaml
 
 # KKP Core
-oauth:
+dex:
   enable: false
   autoSync: false
 nginx:

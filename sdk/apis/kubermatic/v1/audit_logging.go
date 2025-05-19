@@ -44,7 +44,7 @@ type AuditSidecarSettings struct {
 }
 
 // AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.
-// Also see https://docs.fluentbit.io/manual/v/1.8/administration/configuring-fluent-bit/configuration-file.
+// Also see https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file.
 type AuditSidecarConfiguration struct {
 	Service map[string]string   `json:"service,omitempty"`
 	Filters []map[string]string `json:"filters,omitempty"`
