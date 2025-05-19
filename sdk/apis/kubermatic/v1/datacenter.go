@@ -313,7 +313,7 @@ type SeedSpec struct {
 	//
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
-	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitcegenyaml"`
+	KubeLB *KubeLBSeedSettings `json:"kubelb,omitempty,omitcegenyaml"`
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
@@ -1244,6 +1244,14 @@ type OIDCProviderConfiguration struct {
 	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
 }
 
+type KubeLBSeedSettings struct {
+	KubeLBSettings `json:",inline"`
+
+	// EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+	// This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+	EnableForAllDatacenters bool `json:"enableForAllDatacenters,omitempty"`
+}
+
 type KubeLBSettings struct {
 	// Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
 	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
@@ -1270,6 +1278,8 @@ type KubeLBDatacenterSettings struct {
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`
 	// DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
 	DisableIngressClass bool `json:"disableIngressClass,omitempty"`
+	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster. These args are propagated to all the user clusters unless overridden at a cluster level.
+	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
 type ManagementProxySettings struct {

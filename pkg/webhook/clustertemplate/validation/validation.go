@@ -80,7 +80,7 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 	}
 
 	var errs field.ErrorList
-	datacenter, cloudProvider, err := v.buildValidationDependencies(ctx, &template.Spec)
+	datacenter, seed, cloudProvider, err := v.buildValidationDependencies(ctx, &template.Spec)
 	if err != nil {
 		return err
 	}
@@ -91,34 +91,34 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
 	}
 
 	versionManager := version.NewFromConfiguration(config)
-	errs = validation.ValidateClusterTemplate(ctx, template, datacenter, cloudProvider, v.features, versionManager, nil)
+	errs = validation.ValidateClusterTemplate(ctx, template, datacenter, seed, cloudProvider, v.features, versionManager, nil)
 
 	return errs.ToAggregate()
 }
 
-func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.ClusterSpec) (*kubermaticv1.Datacenter, provider.CloudProvider, *field.Error) {
+func (v *validator) buildValidationDependencies(ctx context.Context, c *kubermaticv1.ClusterSpec) (*kubermaticv1.Datacenter, *kubermaticv1.Seed, provider.CloudProvider, *field.Error) {
 	seed, err := v.seedGetter()
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, nil, nil, field.InternalError(nil, err)
 	}
 	if seed == nil {
-		return nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
+		return nil, nil, nil, field.InternalError(nil, errors.New("webhook is not configured with -seed-name, cannot validate Clusters"))
 	}
 
 	datacenter, fieldErr := defaulting.DatacenterForClusterSpec(c, seed)
 	if fieldErr != nil {
-		return nil, nil, fieldErr
+		return nil, nil, nil, fieldErr
 	}
 
 	if v.disableProviderValidation {
-		return datacenter, nil, nil
+		return datacenter, seed, nil, nil
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, v.client)
 	cloudProvider, err := cloud.Provider(datacenter, secretKeySelectorFunc, v.caBundle)
 	if err != nil {
-		return nil, nil, field.InternalError(nil, err)
+		return nil, nil, nil, field.InternalError(nil, err)
 	}
 
-	return datacenter, cloudProvider, nil
+	return datacenter, seed, cloudProvider, nil
 }

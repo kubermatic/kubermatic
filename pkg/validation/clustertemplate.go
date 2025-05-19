@@ -30,7 +30,7 @@ import (
 )
 
 // ValidateClusterTemplate validates a kubermaticv1.ClusterTemplate resource.
-func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	scope := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]
@@ -90,7 +90,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 	}
 
 	// validate cluster spec passed in ClusterTemplate
-	if errs := ValidateNewClusterSpec(ctx, &template.Spec, dc, cloudProvider, versionManager, enabledFeatures, parentFieldPath.Child("spec")); len(errs) > 0 {
+	if errs := ValidateNewClusterSpec(ctx, &template.Spec, dc, seed, cloudProvider, versionManager, enabledFeatures, parentFieldPath.Child("spec")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
