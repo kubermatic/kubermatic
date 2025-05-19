@@ -24,7 +24,7 @@ source hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
-export VAULT_VALUES_FIELD=hamburg-values.yaml
+export VAULT_VALUES_FIELD=helm-master.yaml
 
 # per-stack customizations
 case ${DEPLOY_STACK} in
@@ -33,12 +33,12 @@ kubermatic)
   ;;
 
 usercluster-mla)
-  export VAULT_VALUES_FIELD=hamburg-mla-values.yaml
+  export VAULT_VALUES_FIELD=helm-seed-shared-usercluster-mla.yaml
   NO_IMAGES=true BINARY_NAMES="kubermatic-installer" ./hack/ci/release-images.sh
   ;;
 
 seed-mla)
-  export VAULT_VALUES_FIELD=hamburg-values.yaml
+  export VAULT_VALUES_FIELD=helm-seed-shared-mla.yaml
   NO_IMAGES=true BINARY_NAMES="kubermatic-installer" ./hack/ci/release-images.sh
   ;;
 
@@ -51,7 +51,6 @@ export VALUES_FILE=/tmp/values.yaml
 export IMAGE_PULL_SECRET=/tmp/dockercfg
 export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 
-# deploy to dev
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
 vault kv get -field=${VAULT_VALUES_FIELD} dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
 vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${IMAGE_PULL_SECRET}
