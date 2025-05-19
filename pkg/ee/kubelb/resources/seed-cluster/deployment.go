@@ -218,7 +218,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 
 	// Cluster configuration has a higher precedence than datacenter configuration.
 	if clusterKubeLB != nil && clusterKubeLB.ExtraArgs != nil {
-		for k, v := range *clusterKubeLB.ExtraArgs {
+		for k, v := range clusterKubeLB.ExtraArgs {
 			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
 		}
 	} else if kubelb != nil && kubelb.ExtraArgs != nil {

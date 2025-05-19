@@ -291,7 +291,7 @@ type KubeLB struct {
 	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
-	ExtraArgs *map[string]string `json:"extraArgs,omitempty"`
+	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
