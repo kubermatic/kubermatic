@@ -60,7 +60,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 				MatchLabels: commonseedresources.KyvernoSelectorLabels(commonseedresources.AdmissionControllerComponentNameLabel),
 			}
 
-			dep.Spec.Template.ObjectMeta.Labels = commonseedresources.KyvernoLabels(commonseedresources.AdmissionControllerComponentNameLabel)
+			dep.Spec.Template.Labels = commonseedresources.KyvernoLabels(commonseedresources.AdmissionControllerComponentNameLabel)
 
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
 			dep.Spec.Template.Spec.ServiceAccountName = commonseedresources.KyvernoAdmissionControllerServiceAccountName

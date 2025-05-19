@@ -25,19 +25,19 @@
 package commonseedresources
 
 const (
-	// Kyverno version and registry
+	// Kyverno version and registry.
 	KyvernoVersion  = "v1.14.1"
 	KyvernoRegistry = "reg.kyverno.io/kyverno"
 )
 
 const (
-	// Kyverno Deployments
+	// Kyverno Deployments.
 	KyvernoAdmissionControllerDeploymentName  = "kyverno-admission-controller"
 	KyvernoBackgroundControllerDeploymentName = "kyverno-background-controller"
 	KyvernoCleanupControllerDeploymentName    = "kyverno-cleanup-controller"
 	KyvernoReportsControllerDeploymentName    = "kyverno-reports-controller"
 
-	// Kyverno Services
+	// Kyverno Services.
 	KyvernoAdmissionControllerServiceName         = "kyverno-svc"
 	KyvernoAdmissionControllerMetricsServiceName  = "kyverno-svc-metrics"
 	KyvernoCleanupControllerServiceName           = "kyverno-cleanup-controller"
@@ -45,31 +45,31 @@ const (
 	KyvernoBackgroundControllerMetricsServiceName = "kyverno-background-controller-metrics"
 	KyvernoReportsControllerMetricsServiceName    = "kyverno-reports-controller-metrics"
 
-	// Kyverno ServiceAccounts
+	// Kyverno ServiceAccounts.
 	KyvernoAdmissionControllerServiceAccountName  = "kyverno-service-account"
 	KyvernoBackgroundControllerServiceAccountName = "kyverno-background-controller"
 	KyvernoCleanupControllerServiceAccountName    = "kyverno-cleanup-controller"
 	KyvernoReportsControllerServiceAccountName    = "kyverno-reports-controller"
 
-	// Kyverno Roles
+	// Kyverno Roles.
 	KyvernoAdmissionControllerRoleName  = "kyverno:admission-controller"
 	KyvernoBackgroundControllerRoleName = "kyverno:background-controller"
 	KyvernoCleanupControllerRoleName    = "kyverno:cleanup-controller"
 	KyvernoReportsControllerRoleName    = "kyverno:reports-controller"
 
-	// Kyverno RoleBindings
+	// Kyverno RoleBindings.
 	KyvernoAdmissionControllerRoleBindingName  = "kyverno:admission-controller"
 	KyvernoBackgroundControllerRoleBindingName = "kyverno:background-controller"
 	KyvernoCleanupControllerRoleBindingName    = "kyverno:cleanup-controller"
 	KyvernoReportsControllerRoleBindingName    = "kyverno:reports-controller"
 
-	// Kyverno Labels
+	// Kyverno Labels.
 	AdmissionControllerComponentNameLabel  = "admission-controller"
 	BackgroundControllerComponentNameLabel = "background-controller"
 	CleanupControllerComponentNameLabel    = "cleanup-controller"
 	ReportsControllerComponentNameLabel    = "reports-controller"
 
-	// Kyverno ConfigMaps
+	// Kyverno ConfigMaps.
 	KyvernoConfigMapName        = "kyverno"
 	KyvernoMetricsConfigMapName = "kyverno-metrics"
 )

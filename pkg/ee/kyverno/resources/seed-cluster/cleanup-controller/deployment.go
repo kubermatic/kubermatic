@@ -63,7 +63,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			// Pod template
-			dep.Spec.Template.ObjectMeta.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
+			dep.Spec.Template.Labels = commonseedresources.KyvernoLabels(commonseedresources.CleanupControllerComponentNameLabel)
 
 			// Pod spec
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
