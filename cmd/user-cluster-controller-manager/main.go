@@ -426,7 +426,7 @@ func main() {
 	}
 	log.Info("Registered Application Installation controller")
 
-	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker); err != nil {
+	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
 	}
 

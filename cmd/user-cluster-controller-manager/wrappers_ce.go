@@ -58,6 +58,7 @@ func setupControllers(
 	overwriteRegistry string,
 	caBundle *certificates.CABundle,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
+	namespace string,
 ) error {
 	return nil
 }
