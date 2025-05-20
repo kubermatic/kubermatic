@@ -241,7 +241,7 @@ func WebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, vers
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: cfg.Spec.CABundle.Name,
+								Name: resources.CABundleConfigMapName,
 							},
 						},
 					},
