@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This script ensures all Chart.yaml files in the main branch contain the KKP 
-### plain semver placeholder 'version: 9.9.9-dev', and are correctly updated 
+### This script ensures all Chart.yaml files in the main branch contain the KKP
+### plain semver placeholder 'version: 9.9.9-dev', and are correctly updated
 ### during packaging, prior to the GitHub release. Additionally, it exposes
-### a list of exceptions, for chart that managed differently within the KKP 
-### project (e.g. either vendored from external repositories or maintained 
+### a list of exceptions, for chart that managed differently within the KKP
+### project (e.g. either vendored from external repositories or maintained
 ### separately, and rely on specific packaging instructions)
 
 set -euo pipefail
@@ -41,14 +41,23 @@ echodate "Checking Chart.yaml files for version: $EXPECTED_PLACEHOLDER_VERSION"
 
 for chart in $CHART_FILES; do
   # Skip excluded charts
-  if printf '%s\n' "${EXCLUDED_CHARTS[@]}" | grep -qx "$chart"; then
-    echodate "Skipping placeholder version check on Helm chart with custom version management: $chart"
+  skip=false
+  for excluded in "${EXCLUDED_CHARTS[@]}"; do
+    if [[ "$chart" == "$excluded" ]]; then
+      skip=true
+      echodate "Skipping placeholder version check on Helm chart with custom version management: $chart"
+      break
+    fi
+  done
+
+  if $skip; then
     continue
   fi
 
   # Check version
-  if ! grep -q "^version: ${EXPECTED_PLACEHOLDER_VERSION}$" "$chart"; then
-    echodate "Error: $chart does not contain expected placeholder Helm chart version '$EXPECTED_PLACEHOLDER_VERSION'"
+  actual_version=$(yq e '.version' "$chart")
+  if [[ "$actual_version" != "$EXPECTED_PLACEHOLDER_VERSION" ]]; then
+    echodate "Error: $chart contains version '$actual_version', expected '$EXPECTED_PLACEHOLDER_VERSION'"
     errors=1
   fi
 done
