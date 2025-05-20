@@ -16,6 +16,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: cluster-autoscaler
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Cluster Autoscaler -  a component that automatically adjusts the size of a Kubernetes Cluster so that all pods have a place to run and there are no unneeded nodes.
   displayName: Cluster Autoscaler

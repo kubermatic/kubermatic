@@ -35,9 +35,25 @@ func SystemApplicationDefinitionReconcilerFactories(
 	logger *zap.SugaredLogger,
 	config *kubermaticv1.KubermaticConfiguration,
 ) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
+	if config.Spec.SystemApplications.Disable {
+		logger.Info("System applications are disabled, skipping deployment of system application definitions except Cilium.")
+		return nil, nil
+	}
+
 	sysAppDefFiles, err := GetSysAppDefFiles()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get system application definition files: %w", err)
+	}
+
+	filterApps := len(config.Spec.SystemApplications.Applications) > 0
+
+	requestedApps := make(map[string]struct{})
+	if filterApps {
+		for _, appName := range config.Spec.SystemApplications.Applications {
+			requestedApps[appName] = struct{}{}
+		}
+
+		logger.Debugf("Installing only specified system applications: %+v", config.Spec.SystemApplications.Applications)
 	}
 
 	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(sysAppDefFiles))
@@ -48,10 +64,16 @@ func SystemApplicationDefinitionReconcilerFactories(
 		}
 
 		appDef := &appskubermaticv1.ApplicationDefinition{}
-
 		err = yaml.Unmarshal(b, appDef)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
+		}
+
+		if filterApps {
+			if _, ok := requestedApps[appDef.Name]; !ok {
+				logger.Debugf("Skipping system application %q as it's not in the requested list", appDef.Name)
+				continue
+			}
 		}
 
 		creators = append(creators, systemApplicationDefinitionReconcilerFactory(appDef, config))

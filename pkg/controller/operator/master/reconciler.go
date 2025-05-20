@@ -159,7 +159,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
-	if err := r.reconcileAddonConfigs(ctx, defaulted, logger); err != nil {
+	if err := r.reconcileAddonConfigs(ctx, logger); err != nil {
 		return err
 	}
 
@@ -470,7 +470,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 	return nil
 }
 
-func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling AddonConfigs")
 
 	reconcilers := kubermatic.AddonConfigsReconcilers()
