@@ -569,15 +569,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	return configCopy, nil
 }
 
-func defaultHelmRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
-	if *repo != "" && strings.HasPrefix(*repo, "oci://") {
-		normalizedRepo := strings.TrimPrefix(*repo, "oci://")
-		return defaultDockerRepo(&normalizedRepo, defaultRepo, key, logger)
-	}
-
-	return defaultDockerRepo(repo, defaultRepo, key, logger)
-}
-
 func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
 	if *repo == "" {
 		*repo = defaultRepo
@@ -697,14 +688,14 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 // otherwise the default system applications helm repository will be used.
 func SystemApplicationsHelmRepositoryFromConfig(conf *kubermaticv1.SystemApplicationsConfiguration) string {
 	if conf == nil {
-		return ""
+		return registry.ToOCIURL(DefaultSystemApplicationsHelmRepository)
 	}
 
 	if conf.HelmRepository != "" {
 		return registry.ToOCIURL(conf.HelmRepository)
 	}
 
-	return DefaultSystemApplicationsHelmRepository
+	return registry.ToOCIURL(DefaultSystemApplicationsHelmRepository)
 }
 
 const DefaultBackupStoreContainer = `
