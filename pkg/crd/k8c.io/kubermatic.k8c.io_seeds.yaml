@@ -594,6 +594,11 @@ spec:
                               enforced:
                                 description: Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
                                 type: boolean
+                              extraArgs:
+                                additionalProperties:
+                                  type: string
+                                description: ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster. These args are propagated to all the user clusters unless overridden at a cluster level.
+                                type: object
                               kubeconfig:
                                 description: Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
                                 properties:
@@ -2994,6 +2999,11 @@ spec:
                     KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
                     Only available in Enterprise Edition.
                   properties:
+                    enableForAllDatacenters:
+                      description: |-
+                        EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+                        This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+                      type: boolean
                     kubeconfig:
                       description: Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
                       properties:
