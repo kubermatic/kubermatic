@@ -57,6 +57,8 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 				}
 			}
 
+			defaultHelmRepository := defaulting.SystemApplicationsHelmRepositoryFromConfig(&config.Spec.UserCluster.SystemApplications)
+
 			app.Spec.Versions = []appskubermaticv1.ApplicationVersion{
 				// NOTE: When introducing a new version, make sure it is:
 				//  - introduced in pkg/cni/version.go with the version string exactly matching the Spec.Versions.Version here
@@ -68,7 +70,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.0",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -81,7 +83,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.3",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -94,7 +96,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.4",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -107,7 +109,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.6",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -120,7 +122,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.7",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -133,7 +135,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.8",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -146,7 +148,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.13.14",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -159,7 +161,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.1",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -172,7 +174,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.2",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -185,7 +187,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.3",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -198,7 +200,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.9",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -211,7 +213,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.14.16",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -224,7 +226,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.3",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -237,7 +239,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.10",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -250,7 +252,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.15.16",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -263,7 +265,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.16.6",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -276,7 +278,7 @@ func ApplicationDefinitionReconciler(config *kubermaticv1.KubermaticConfiguratio
 							Helm: &appskubermaticv1.HelmSource{
 								ChartName:    ciliumHelmChartName,
 								ChartVersion: "1.16.9",
-								URL:          defaultHelmRepository(&config.Spec.UserCluster.SystemApplications),
+								URL:          defaultHelmRepository,
 								Credentials:  credentials,
 							},
 						},
@@ -614,19 +616,4 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 		app.Spec.DefaultValues = nil
 	}
 	return nil
-}
-
-// defaultHelmRepository returns the default Helm repository for the given system applications configuration.
-// if the configuration contains a HelmRepository, it will be used as the helm repository.
-// otherwise the default system applications helm repository will be used.
-func defaultHelmRepository(conf *kubermaticv1.SystemApplicationsConfiguration) string {
-	if conf == nil {
-		return ""
-	}
-
-	if conf.HelmRepository != "" {
-		return registry.ToOCIURL(conf.HelmRepository)
-	}
-
-	return defaulting.DefaultSystemApplicationsHelmRepository
 }
