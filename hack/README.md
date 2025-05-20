@@ -202,11 +202,11 @@ TBD
 
 ## verify-helm-chart-placeholder-versions.sh
 
-This script ensures all Chart.yaml files in the main branch contain the KKP 
-plain semver placeholder 'version: 9.9.9-dev', and are correctly updated 
+This script ensures all Chart.yaml files in the main branch contain the KKP
+plain semver placeholder 'version: 9.9.9-dev', and are correctly updated
 during packaging, prior to the GitHub release. Additionally, it exposes
-a list of exceptions, for chart that managed differently within the KKP 
-project (e.g. either vendored from external repositories or maintained 
+a list of exceptions, for chart that managed differently within the KKP
+project (e.g. either vendored from external repositories or maintained
 separately, and rely on specific packaging instructions)
 
 ## verify-import-order.sh
