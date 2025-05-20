@@ -149,6 +149,8 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 	for i := range appDef.Spec.Versions {
 		if sysAppConfig.HelmRepository != "" {
 			appDef.Spec.Versions[i].Template.Source.Helm.URL = registry.ToOCIURL(sysAppConfig.HelmRepository)
+		}
+		if credentials != nil {
 			appDef.Spec.Versions[i].Template.Source.Helm.Credentials = credentials
 		}
 	}
