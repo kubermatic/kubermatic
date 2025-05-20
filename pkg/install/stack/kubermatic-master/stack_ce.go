@@ -23,7 +23,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,8 +30,4 @@ import (
 
 func deployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	return nil // NOP
-}
-
-func deploySystemApplications(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	return applicationdefinitions.DeploySystemApplications(ctx, logger, kubeClient, opt)
 }

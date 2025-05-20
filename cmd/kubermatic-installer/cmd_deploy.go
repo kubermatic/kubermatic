@@ -84,8 +84,7 @@ type DeployOptions struct {
 	MLAIncludeIap            bool
 	MLASkipLogging           bool
 
-	DeployDefaultAppCatalog  bool
-	DeploySystemApplications bool
+	DeployDefaultAppCatalog bool
 
 	SkipCharts []string
 }
@@ -149,8 +148,6 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().BoolVar(&opt.MLAForceMLASecrets, "mla-force-secrets", false, "(UserCluster MLA) force re-installation of mla-secrets Helm chart")
 	cmd.PersistentFlags().BoolVar(&opt.MLAIncludeIap, "mla-include-iap", false, "(UserCluster MLA) Include Identity-Aware Proxy installation")
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipLogging, "mla-skip-logging", false, "Skip logging stack installation")
-
-	cmd.PersistentFlags().BoolVar(&opt.DeploySystemApplications, "deploy-system-applications", true, "installs system applications by default. Set it to false to disable system applications installation")
 
 	wrapDeployFlags(cmd.PersistentFlags(), &opt)
 
@@ -217,7 +214,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
-			DeploySystemApplications:           opt.DeploySystemApplications,
 		}
 
 		// prepare Kubernetes and Helm clients

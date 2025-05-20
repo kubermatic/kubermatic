@@ -17,87 +17,19 @@ limitations under the License.
 package applicationdefinitions
 
 import (
-	"context"
 	"fmt"
 	"io"
-	"time"
 
-	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/install/stack"
-	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
-	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
-
-func DeploySystemApplications(ctx context.Context,
-	logger *logrus.Entry,
-	kubeClient ctrlruntimeclient.Client,
-	opt stack.DeployOptions,
-) error {
-	logger.Info("📦 Deploying system applications...")
-	sublogger := log.Prefix(logger, "   ")
-
-	if !opt.DeploySystemApplications {
-		sublogger.Info("Skipping deployment of system applications, set --deploy-system-applications to enable it.")
-		return nil
-	}
-
-	appDefFiles, err := GetSysAppDefFiles()
-	if err != nil {
-		return fmt.Errorf("failed to fetch ApplicationDefinitions: %w", err)
-	}
-
-	sublogger.Info("Waiting for KKP webhook to become ready…")
-	webhook := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.WebhookDeploymentName,
-			Namespace: resources.KubermaticNamespace,
-		},
-	}
-
-	err = util.WaitForDeploymentRollout(ctx, kubeClient, webhook, opt.Versions.GitVersion, 5*time.Minute)
-	if err != nil {
-		return fmt.Errorf("failed waiting for webhook: %w", err)
-	}
-
-	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(appDefFiles))
-	for _, file := range appDefFiles {
-		b, err := io.ReadAll(file)
-		if err != nil {
-			return fmt.Errorf("failed to read ApplicationDefinition: %w", err)
-		}
-
-		appDef := &appskubermaticv1.ApplicationDefinition{}
-
-		err = yaml.Unmarshal(b, appDef)
-		if err != nil {
-			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
-		}
-
-		creators = append(creators, systemApplicationDefinitionReconcilerFactory(appDef, nil))
-	}
-
-	if err = kkpreconciling.ReconcileApplicationDefinitions(ctx, creators, "", kubeClient); err != nil {
-		return fmt.Errorf("failed to apply ApplicationDefinitions: %w", err)
-	}
-
-	logger.Info("✅ Success.")
-
-	return nil
-}
 
 func SystemApplicationDefinitionReconcilerFactories(
 	logger *zap.SugaredLogger,

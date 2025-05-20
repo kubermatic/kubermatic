@@ -43,7 +43,7 @@ skip=(
   ./charts/oauth/test
   ./addons/multus/crds.yaml
   ./charts/local-kubevirt/crds
-  ./pkg/system-applicationdefinitions/applicationdefinitions
+  ./pkg/applicationdefinitions/system-applications
   ./pkg/ee/default-application-catalog/applicationdefinitions
   ./pkg/resources/test/fixtures
   ./pkg/ee/kyverno/resources/user-cluster/static

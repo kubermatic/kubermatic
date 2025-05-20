@@ -65,8 +65,7 @@ type DeployOptions struct {
 	MLAIncludeIap            bool
 	MLASkipLogging           bool
 
-	DeployDefaultAppCatalog  bool
-	DeploySystemApplications bool
+	DeployDefaultAppCatalog bool
 
 	SkipCharts []string
 }
