@@ -477,7 +477,7 @@ spec:
       # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
       helmRegistryConfigFile: null
       # HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
-      helmRepository: quay.io/kubermatic/helm-charts
+      helmRepository: ""
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
