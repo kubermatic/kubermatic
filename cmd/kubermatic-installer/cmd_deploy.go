@@ -216,6 +216,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 			LimitApps:                          opt.LimitApps,
+			SkipSeedValidation:                 opt.SkipSeedValidation,
 		}
 
 		// prepare Kubernetes and Helm clients
