@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -521,10 +522,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultHelmRepo(&configCopy.Spec.UserCluster.SystemApplications.HelmRepository, DefaultSystemApplicationsHelmRepository, "userCluster.systemApplications.helmRepository", logger); err != nil {
-		return configCopy, err
-	}
-
 	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -570,15 +567,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	return configCopy, nil
-}
-
-func defaultHelmRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
-	if *repo != "" && strings.HasPrefix(*repo, "oci://") {
-		normalizedRepo := strings.TrimPrefix(*repo, "oci://")
-		return defaultDockerRepo(&normalizedRepo, defaultRepo, key, logger)
-	}
-
-	return defaultDockerRepo(repo, defaultRepo, key, logger)
 }
 
 func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
@@ -692,6 +680,22 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 	}
 
 	return nil
+}
+
+// SystemApplicationsHelmRepositoryFromConfig returns the default Helm repository for the given
+// system applications configuration.
+// if the configuration contains a HelmRepository, it will be used as the helm repository.
+// otherwise the default system applications helm repository will be used.
+func SystemApplicationsHelmRepositoryFromConfig(conf *kubermaticv1.SystemApplicationsConfiguration) string {
+	if conf == nil {
+		return registry.ToOCIURL(DefaultSystemApplicationsHelmRepository)
+	}
+
+	if conf.HelmRepository != "" {
+		return registry.ToOCIURL(conf.HelmRepository)
+	}
+
+	return registry.ToOCIURL(DefaultSystemApplicationsHelmRepository)
 }
 
 const DefaultBackupStoreContainer = `
