@@ -79,14 +79,11 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 	// Unmarshal the ClusterPolicy
 	var clusterPolicy kyvernov1.ClusterPolicy
 	if err := yaml.UnmarshalStrict(content, &clusterPolicy); err != nil {
-		return kubermaticv1.PolicyTemplate{}, err
+		return kubermaticv1.PolicyTemplate{}, fmt.Errorf("failed to convert Kyverno ClusterPolicy to Kubermatic PolicyTemplate: %w", err)
 	}
 
 	// Extract metadata from annotations
 	annotations := clusterPolicy.Annotations
-	if annotations == nil {
-		annotations = make(map[string]string)
-	}
 
 	title := annotations["policies.kyverno.io/title"]
 	category := annotations["policies.kyverno.io/category"]
