@@ -45,7 +45,7 @@ rm -f "$policies_dir"/*.yml "$policies_dir"/*.yaml
 
 echodate "Downloading Kyverno pod-security/enforce policies for $version..."
 cd "$policies_dir"
-kustomize build "https://github.com/kyverno/policies/pod-security/enforce?ref=$version" | \
+kustomize build "https://github.com/kyverno/policies/pod-security/enforce?ref=$version" |
   yq eval-all --split-exp '.metadata.name + ".yml"' 'select(.kind == "ClusterPolicy")' -
 
-echodate "Policies have been successfully downloaded. To convert them to PolicyTemplates, build and run the application." 
+echodate "Policies have been successfully downloaded. To convert them to PolicyTemplates, build and run the application."
