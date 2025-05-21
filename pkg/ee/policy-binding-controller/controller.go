@@ -147,10 +147,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 func (r *reconciler) reconcile(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
 	if !binding.DeletionTimestamp.IsZero() {
-		if err := r.deleteClusterPolicy(ctx, binding.Spec.PolicyTemplateRef.Name); err != nil {
-			return err
-		}
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, cleanupFinalizer)
+		return r.handlePolicyBindingCleanup(ctx, binding)
 	}
 
 	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, binding, cleanupFinalizer); err != nil {
