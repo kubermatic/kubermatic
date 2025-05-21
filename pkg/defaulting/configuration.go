@@ -30,7 +30,6 @@ import (
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -680,22 +679,6 @@ func defaultExternalClusterVersioning(settings *kubermaticv1.KubermaticVersionin
 	}
 
 	return nil
-}
-
-// SystemApplicationsHelmRepositoryFromConfig returns the default Helm repository for the given
-// system applications configuration.
-// if the configuration contains a HelmRepository, it will be used as the helm repository.
-// otherwise the default system applications helm repository will be used.
-func SystemApplicationsHelmRepositoryFromConfig(conf *kubermaticv1.SystemApplicationsConfiguration) string {
-	if conf == nil {
-		return registry.ToOCIURL(DefaultSystemApplicationsHelmRepository)
-	}
-
-	if conf.HelmRepository != "" {
-		return registry.ToOCIURL(conf.HelmRepository)
-	}
-
-	return registry.ToOCIURL(DefaultSystemApplicationsHelmRepository)
 }
 
 const DefaultBackupStoreContainer = `

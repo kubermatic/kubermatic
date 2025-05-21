@@ -24,7 +24,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -488,9 +487,6 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 	if err != nil {
 		return fmt.Errorf("failed to get system application definition reconciler factories: %w", err)
 	}
-
-	sysAppDefReconcilers = append(sysAppDefReconcilers, cilium.ApplicationDefinitionReconciler(config))
-
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, sysAppDefReconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
 	}

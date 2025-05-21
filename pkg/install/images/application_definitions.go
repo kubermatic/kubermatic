@@ -28,11 +28,10 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/applications/providers"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	"sigs.k8s.io/yaml"
 )
@@ -70,12 +69,22 @@ func SystemAppsHelmCharts(
 	helmTimeout time.Duration,
 	registryPrefix string,
 ) iter.Seq2[*SystemAppsHelmChart, error] {
-	appDefReconcilers := []reconciling.NamedApplicationDefinitionReconcilerFactory{
-		cilium.ApplicationDefinitionReconciler(config),
+	// If system applications are disabled we don't need to do anything.
+	if config.Spec.SystemApplications.Disable {
+		logger.Debug("System applications are disabled, skipping deployment of system application definitions.")
+		return nil
+	}
+
+	log := kubermaticlog.NewDefault().Sugar()
+	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(log, config)
+	if err != nil {
+		return func(yield func(*SystemAppsHelmChart, error) bool) {
+			yield(nil, fmt.Errorf("failed to get system application definition reconciler factories: %w", err))
+		}
 	}
 
 	return func(yield func(*SystemAppsHelmChart, error) bool) {
-		for _, createFunc := range appDefReconcilers {
+		for _, createFunc := range sysAppDefReconcilers {
 			appName, creator := createFunc()
 			appDef, err := creator(&appskubermaticv1.ApplicationDefinition{})
 			if err != nil {
@@ -181,7 +190,7 @@ func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, direc
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	sp, err := providers.NewSourceProvider(ctx, log.NewDefault().Sugar(), nil, "", directory, appSource, "")
+	sp, err := providers.NewSourceProvider(ctx, kubermaticlog.NewDefault().Sugar(), nil, "", directory, appSource, "")
 	if err != nil {
 		return "", fmt.Errorf("failed to create app source provider: %w", err)
 	}
