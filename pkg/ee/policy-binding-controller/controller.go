@@ -186,20 +186,20 @@ func (r *reconciler) clusterPolicyFactory(template *kubermaticv1.PolicyTemplate,
 			})
 
 			// Annotations
-			ann := map[string]string{
+			annotations := map[string]string{
 				AnnotationTitle:       template.Spec.Title,
 				AnnotationDescription: template.Spec.Description,
 			}
 			if template.Spec.Category != "" {
-				ann[AnnotationCategory] = template.Spec.Category
+				annotations[AnnotationCategory] = template.Spec.Category
 			}
 			if template.Spec.Severity != "" {
-				ann[AnnotationSeverity] = template.Spec.Severity
+				annotations[AnnotationSeverity] = template.Spec.Severity
 			}
 			for k, v := range template.Annotations {
-				ann[k] = v
+				annotations[k] = v
 			}
-			kuberneteshelper.EnsureAnnotations(existing, ann)
+			kuberneteshelper.EnsureAnnotations(existing, annotations)
 
 			// Kyverno Spec
 			var spec kyvernov1.Spec
