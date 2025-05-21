@@ -34,7 +34,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	kubermaticpred "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -46,11 +46,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	crpredicate "sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -81,56 +80,57 @@ func Add(seedMgr, userMgr manager.Manager, log *zap.SugaredLogger, namespace, cl
 		clusterIsPaused: clusterIsPaused,
 	}
 
-	// Predicate to limit PolicyBindings to our namespace.
-	inNamespace := kubermaticpred.ByNamespace(namespace)
-
-	// Watch PolicyBinding resources.
+	// Base controller managed by userMgr (inside UC)
 	builderCtrl := builder.ControllerManagedBy(userMgr).
 		Named(ControllerName).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
-		For(&kubermaticv1.PolicyBinding{}, builder.WithPredicates(inNamespace))
+		WithOptions(controller.Options{MaxConcurrentReconciles: 1})
 
-	// Watch PolicyTemplate changes.
-	templateHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
-		var requests []reconcile.Request
-		template := obj.(*kubermaticv1.PolicyTemplate)
+	builderCtrl = builderCtrl.WatchesRawSource(
+		source.Kind(seedMgr.GetCache(), &kubermaticv1.PolicyBinding{},
+			handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, b *kubermaticv1.PolicyBinding) []reconcile.Request {
+				if b.Namespace != namespace {
+					return nil
+				}
+				return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: b.Name}}}
+			}),
+			predicateutil.TypedByName[*kubermaticv1.PolicyBinding](clusterName),
+		),
+	)
 
-		bindings := &kubermaticv1.PolicyBindingList{}
-		if err := r.seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(namespace)); err != nil {
-			r.log.Errorw("failed to list PolicyBindings", "err", err)
-			return requests
-		}
-		for _, b := range bindings.Items {
-			if b.Spec.PolicyTemplateRef.Name == template.Name {
-				requests = append(requests, reconcile.Request{NamespacedName: ctrlruntimeclient.ObjectKey{
-					Namespace: namespace,
-					Name:      b.Name,
-				}})
-			}
-		}
-		return requests
-	})
+	builderCtrl = builderCtrl.WatchesRawSource(
+		source.Kind(
+			seedMgr.GetCache(),
+			&kubermaticv1.PolicyTemplate{},
+			handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, tpl *kubermaticv1.PolicyTemplate) []reconcile.Request {
+				var reqs []reconcile.Request
+				bindings := &kubermaticv1.PolicyBindingList{}
+				if err := r.seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(namespace)); err != nil {
+					r.log.Errorw("failed to list PolicyBindings", "err", err)
+					return nil
+				}
+				for _, b := range bindings.Items {
+					if b.Spec.PolicyTemplateRef.Name == tpl.Name {
+						reqs = append(reqs, reconcile.Request{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: b.Name}})
+					}
+				}
+				return reqs
+			}),
+		),
+	)
 
-	templatePred := crpredicate.Funcs{
-		CreateFunc:  func(e event.CreateEvent) bool { return true },
-		DeleteFunc:  func(e event.DeleteEvent) bool { return true },
-		UpdateFunc:  func(e event.UpdateEvent) bool { return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration() },
-		GenericFunc: func(e event.GenericEvent) bool { return false },
-	}
-
-	builderCtrl = builderCtrl.Watches(&kubermaticv1.PolicyTemplate{}, templateHandler, builder.WithPredicates(templatePred))
-
-	// Watch ClusterPolicy resources in the user cluster for drift.
-	cpHandler := handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
-		cp := obj.(*kyvernov1.ClusterPolicy)
-		bindingName, ok := cp.Labels["kubermatic.k8c.io/policy-binding"]
-		if !ok {
-			return nil
-		}
-		return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: bindingName}}}
-	})
-
-	builderCtrl = builderCtrl.Watches(&kyvernov1.ClusterPolicy{}, cpHandler)
+	builderCtrl = builderCtrl.WatchesRawSource(
+		source.Kind(
+			userMgr.GetCache(),
+			&kyvernov1.ClusterPolicy{},
+			handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, cp *kyvernov1.ClusterPolicy) []reconcile.Request {
+				name, ok := cp.Labels["kubermatic.k8c.io/policy-binding"]
+				if !ok {
+					return nil
+				}
+				return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: name}}}
+			}),
+		),
+	)
 
 	_, err := builderCtrl.Build(r)
 	return err
@@ -146,16 +146,19 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
 	}
 	if paused {
+		log.Debug("cluster is paused")
 		return reconcile.Result{}, nil
 	}
 
 	binding := &kubermaticv1.PolicyBinding{}
 	if err := r.seedClient.Get(ctx, req.NamespacedName, binding); err != nil {
+		log.Debug("policy binding not found, namespace: %s, name: %s", req.Namespace, req.Name)
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: r.clusterName}, cluster); err != nil {
+		log.Debug("cluster not found, name: %s", r.clusterName)
 		return reconcile.Result{}, err
 	}
 

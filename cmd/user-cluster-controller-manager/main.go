@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/zapr"
+	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
@@ -294,6 +295,9 @@ func main() {
 	}
 	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := kyvernov1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kyvernov1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	isPausedChecker := userclustercontrollermanager.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)
