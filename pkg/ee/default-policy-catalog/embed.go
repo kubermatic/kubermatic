@@ -24,14 +24,16 @@ package defaultpolicycatalog
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
 
+	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 )
@@ -74,14 +76,14 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 		return kubermaticv1.PolicyTemplate{}, err
 	}
 
-	// Unmarshal the ClusterPolicy into an unstructured object
-	var obj unstructured.Unstructured
-	if err := yaml.Unmarshal(content, &obj); err != nil {
+	// Unmarshal the ClusterPolicy
+	var clusterPolicy kyvernov1.ClusterPolicy
+	if err := yaml.UnmarshalStrict(content, &clusterPolicy); err != nil {
 		return kubermaticv1.PolicyTemplate{}, err
 	}
 
 	// Extract metadata from annotations
-	annotations := obj.GetAnnotations()
+	annotations := clusterPolicy.Annotations
 	if annotations == nil {
 		annotations = make(map[string]string)
 	}
@@ -91,17 +93,15 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 	description := annotations["policies.kyverno.io/description"]
 	severity := annotations["policies.kyverno.io/severity"]
 
-	// Get the policy spec
-	policySpec, found, err := unstructured.NestedMap(obj.Object, "spec")
+	// Convert ClusterPolicy spec to RawExtension
+	specJSON, err := json.Marshal(clusterPolicy.Spec)
 	if err != nil {
-		return kubermaticv1.PolicyTemplate{}, err
-	}
-	if !found {
-		return kubermaticv1.PolicyTemplate{}, fmt.Errorf("spec not found in ClusterPolicy")
+		return kubermaticv1.PolicyTemplate{}, fmt.Errorf("failed to marshal policy spec: %w", err)
 	}
 
-	policySpecObj := &unstructured.Unstructured{
-		Object: policySpec,
+	// Create a RawExtension with the JSON data
+	rawExtension := runtime.RawExtension{
+		Raw: specJSON,
 	}
 
 	// Create the PolicyTemplate
@@ -111,7 +111,7 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 			Kind:       "PolicyTemplate",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: obj.GetName(),
+			Name: clusterPolicy.Name,
 		},
 		Spec: kubermaticv1.PolicyTemplateSpec{
 			Title:       title,
@@ -119,7 +119,7 @@ func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemp
 			Category:    category,
 			Severity:    severity,
 			Visibility:  "Global",
-			PolicySpec:  runtime.RawExtension{Object: policySpecObj},
+			PolicySpec:  rawExtension,
 		},
 	}
 
