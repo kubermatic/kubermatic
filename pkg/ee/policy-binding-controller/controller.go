@@ -179,13 +179,11 @@ func (r *reconciler) reconcile(ctx context.Context, binding *kubermaticv1.Policy
 func (r *reconciler) clusterPolicyFactory(template *kubermaticv1.PolicyTemplate, binding *kubermaticv1.PolicyBinding) reconciling.NamedKyvernoClusterPolicyReconcilerFactory {
 	return func() (string, reconciling.KyvernoClusterPolicyReconciler) {
 		return template.Name, func(existing *kyvernov1.ClusterPolicy) (*kyvernov1.ClusterPolicy, error) {
-			// Labels
 			kuberneteshelper.EnsureLabels(existing, map[string]string{
 				LabelPolicyBinding:  binding.Name,
 				LabelPolicyTemplate: template.Name,
 			})
 
-			// Annotations
 			annotations := map[string]string{
 				AnnotationTitle:       template.Spec.Title,
 				AnnotationDescription: template.Spec.Description,
