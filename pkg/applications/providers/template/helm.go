@@ -291,3 +291,12 @@ func (h HelmTemplate) Rollback(applicationInstallation *appskubermaticv1.Applica
 
 	return helmClient.Rollback(getReleaseName(applicationInstallation))
 }
+
+func (h *HelmTemplate) templatePreDefinedValues(applicationValues map[string]any) (map[string]any, error) {
+	templateData, err := GetTemplateData(h.Ctx, h.SeedClient, h.ClusterName)
+
+	if err != nil {
+		return nil, err
+	}
+	return RenderValueTemplate(applicationValues, templateData)
+}

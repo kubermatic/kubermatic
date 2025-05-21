@@ -45,7 +45,7 @@ var (
 
 const (
 	projectName                    = "app-definitions-test-project"
-	countOfInstalledAppDefinitions = 4
+	countOfInstalledAppDefinitions = 5
 )
 
 func init() {
@@ -88,6 +88,6 @@ func TestClusters(t *testing.T) {
 	}
 
 	if len(appDefsList.Items) != countOfInstalledAppDefinitions {
-		t.Fatalf("the number of the applications definitions in the seed cluster is not correct: %v", err)
+		t.Fatalf("the number of the applications definitions in the seed cluster is not correct. Expected: %d, Got: %d", countOfInstalledAppDefinitions, len(appDefsList.Items))
 	}
 }

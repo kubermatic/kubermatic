@@ -21,20 +21,23 @@ import (
 	"io/fs"
 )
 
+const (
+	systemApplicationsDirectory = "system-applications"
+)
+
 //go:embed system-applications
 var f embed.FS
 
 func GetSysAppDefFiles() ([]fs.File, error) {
-	dirname := "system-applications"
 	files := []fs.File{}
-	entries, err := f.ReadDir(dirname)
+	entries, err := f.ReadDir(systemApplicationsDirectory)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			file, err := f.Open(dirname + "/" + entry.Name())
+			file, err := f.Open(systemApplicationsDirectory + "/" + entry.Name())
 			if err != nil {
 				return nil, err
 			}

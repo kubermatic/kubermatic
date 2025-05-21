@@ -20,7 +20,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
+	"strings"
 	"time"
 
 	"dario.cat/mergo"
@@ -30,9 +32,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -56,6 +59,12 @@ const (
 	ControllerName = "kkp-cni-application-installation-controller"
 
 	cniPluginNamespace = "kube-system"
+)
+
+// Cilium specific constants.
+const (
+	ciliumHelmChartName = "cilium"
+	ciliumImageRegistry = "quay.io/cilium/"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -379,7 +388,129 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 
 func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
 	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-		return cilium.GetAppInstallOverrideValues(cluster, overwriteRegistry)
+		return getAppInstallOverrideValues(cluster, overwriteRegistry)
 	}
 	return nil
+}
+
+// getAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
+// of the Cilium CNI managed by KKP.
+func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
+	podSecurityContext := map[string]any{
+		"seccompProfile": map[string]any{
+			"type": "RuntimeDefault",
+		},
+	}
+	defaultValues := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+	values := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+	valuesEnvoy := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+
+	valuesOperator := map[string]any{
+		"securityContext": map[string]any{
+			"seccompProfile": map[string]any{
+				"type": "RuntimeDefault",
+			},
+		},
+		"podSecurityContext": podSecurityContext,
+	}
+	valuesCni := map[string]any{
+		// we run Cilium as non-exclusive CNI to allow for Multus use-cases
+		"exclusive": false,
+	}
+
+	valuesCertGen := maps.Clone(defaultValues)
+	valuesRelay := maps.Clone(defaultValues)
+	valuesFrontend := map[string]any{}
+	valuesBackend := map[string]any{}
+
+	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
+		values["kubeProxyReplacement"] = "true"
+		values["k8sServiceHost"] = cluster.Status.Address.ExternalName
+		values["k8sServicePort"] = cluster.Status.Address.Port
+
+		nodePortRange := cluster.Spec.ComponentsOverride.Apiserver.NodePortRange
+		if nodePortRange != "" && nodePortRange != resources.DefaultNodePortRange {
+			values["nodePort"] = map[string]any{
+				"range": strings.ReplaceAll(nodePortRange, "-", ","),
+			}
+		}
+	} else {
+		values["kubeProxyReplacement"] = "false"
+		values["sessionAffinity"] = true
+		valuesCni["chainingMode"] = "portmap"
+	}
+
+	ipamOperator := map[string]any{
+		"clusterPoolIPv4PodCIDRList": cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDRs(),
+	}
+
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		ipamOperator["clusterPoolIPv4MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+
+	if cluster.IsDualStack() {
+		values["ipv6"] = map[string]any{"enabled": true}
+		ipamOperator["clusterPoolIPv6PodCIDRList"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDRs()
+		if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+			ipamOperator["clusterPoolIPv6MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+		}
+	}
+
+	values["ipam"] = map[string]any{"operator": ipamOperator}
+
+	// Override images if registry override is configured
+	if overwriteRegistry != "" {
+		values["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesOperator["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"operator", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesRelay["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-relay", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesBackend["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui-backend", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesFrontend["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesCertGen["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesEnvoy["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium-envoy", overwriteRegistry)),
+			"useDigest":  false,
+		}
+	}
+
+	uiSecContext := maps.Clone(podSecurityContext)
+	uiSecContext["enabled"] = true
+
+	values["cni"] = valuesCni
+	values["envoy"] = valuesEnvoy
+	values["operator"] = valuesOperator
+	values["certgen"] = valuesCertGen
+	values["hubble"] = map[string]any{
+		"relay": valuesRelay,
+		"ui": map[string]any{
+			"securityContext": uiSecContext,
+			"frontend":        valuesFrontend,
+			"backend":         valuesBackend,
+		},
+	}
+
+	return values
 }

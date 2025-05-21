@@ -27,6 +27,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
+	applicationtemplates "k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -381,4 +382,8 @@ func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(c
 		}
 		return res
 	}
+}
+
+func handleAddonCleanup(ctx context.Context, applicationName string, seedClusterNamespace string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	return applicationtemplates.HandleAddonCleanup(ctx, applicationName, seedClusterNamespace, seedClient, log)
 }

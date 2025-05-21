@@ -22,7 +22,7 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
+	cniapplicationinstallationcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cni-application-installation-controller"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -170,7 +170,7 @@ func ValidateKKPManagedApplicationInstallationUpdate(newAI, oldAI appskubermatic
 
 		if newAI.Name == kubermaticv1.CNIPluginTypeCilium.String() {
 			// Validate Cilium values update
-			allErrs = append(allErrs, cilium.ValidateValuesUpdate(newValues, oldValues, valuesPath)...)
+			allErrs = append(allErrs, cniapplicationinstallationcontroller.ValidateValuesUpdate(newValues, oldValues, valuesPath)...)
 		}
 	}
 
