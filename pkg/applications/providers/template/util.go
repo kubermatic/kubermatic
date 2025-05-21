@@ -108,7 +108,7 @@ func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 		clusterVersion = cluster.Spec.Version.Semver()
 	}
 	if clusterVersion != nil {
-		clusterAutoscalerVersion, err := getAutoscalerImageTag(fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()))
+		clusterAutoscalerVersion, err := GetAutoscalerImageTag(fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()))
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse autoscaler version for cluster %q", clusterName)
 		}
@@ -154,7 +154,7 @@ func RenderValueTemplate(applicationValues map[string]interface{}, templateData 
 	return parsedMap, nil
 }
 
-func getAutoscalerImageTag(majorMinorVersion string) (string, error) {
+func GetAutoscalerImageTag(majorMinorVersion string) (string, error) {
 	switch majorMinorVersion {
 	case "1.29":
 		return "v1.29.5", nil
