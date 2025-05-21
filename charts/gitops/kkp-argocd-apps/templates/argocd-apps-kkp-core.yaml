@@ -37,18 +37,18 @@ spec:
   - namespace: argocd
     server: https://kubernetes.default.svc
 
-{{ if .Values.oauth.enable }}
+{{ if .Values.dex.enable }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: oauth
+  name: dex
   namespace: argocd
 spec:
   project: default
   sources:
   - repoURL: '{{ .Values.kkpRepoURL }}'
-    path: {{ template "kkp.chart.pathprefix" . }}/charts/oauth
+    path: {{ template "kkp.chart.pathprefix" . }}/charts/dex
     targetRevision: {{ .Values.kkpVersion }}
     helm:
       valueFiles:
@@ -62,11 +62,11 @@ spec:
     ref: values
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: oauth
+    namespace: dex
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
-  {{- if .Values.oauth.autoSync }}
+  {{- if .Values.dex.autoSync }}
     automated: {}
   {{ end }}
 {{ end }}

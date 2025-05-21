@@ -1,0 +1,138 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gcp-cloud-controller-manager
+  name: gcp-cloud-controller-manager
+  namespace: cluster-de-test-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gcp-cloud-controller-manager
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,scratch
+        kubermatic.k8c.io/last-restart: ""
+      creationTimestamp: null
+      labels:
+        app: gcp-cloud-controller-manager
+        ca-bundle-configmap-revision: "123456"
+        cloud-config-secret-revision: "123456"
+        cloud-controller-manager-kubeconfig-secret-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
+        cluster: de-test-01
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/go-runner","args":["--redirect-stderr=true","/cloud-controller-manager","--v=2","--cloud-config=/etc/kubernetes/cloud/config","--secure-port=10258","--use-service-account-credentials","--cloud-provider=gce","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--allocate-node-cidrs","--cluster-name=de-test-01","--cluster-cidr=172.25.0.0/16"]}'
+        command:
+        - /http-prober-bin/http-prober
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubermatic/certs/ca-bundle.pem
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /etc/kubermatic/cloud-credentials/serviceAccount.json
+        image: registry.k8s.io/cloud-provider-gcp/cloud-controller-manager:v30.0.0
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 10258
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: cloud-controller-manager
+        resources:
+          limits:
+            cpu: "1"
+            memory: 512Mi
+          requests:
+            cpu: 50m
+            memory: 256Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: cloud-controller-manager-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubermatic/certs
+          name: ca-bundle
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
+        - mountPath: /etc/kubermatic/cloud-credentials
+          name: scratch
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      dnsPolicy: ClusterFirst
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.5.1
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      - args:
+        - -c
+        - base64 -d /input/serviceAccount > /scratch/serviceAccount.json
+        command:
+        - /bin/sh
+        image: quay.io/kubermatic/util:2.5.0
+        name: decode-sa
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: cloud-controller-manager-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubermatic/certs
+          name: ca-bundle
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
+        - mountPath: /input
+          name: cloud-credentials
+        - mountPath: /scratch
+          name: scratch
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: cloud-controller-manager-kubeconfig
+        secret:
+          secretName: cloud-controller-manager-kubeconfig
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
+      - name: cloud-config
+        secret:
+          secretName: cloud-config
+      - name: cloud-credentials
+        secret:
+          secretName: cloud-credentials
+      - emptyDir:
+          medium: Memory
+        name: scratch
+      - emptyDir: {}
+        name: http-prober-bin
+status: {}

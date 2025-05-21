@@ -284,51 +284,6 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-appcatalog-k8sgpt
-    run_if_changed: "(pkg/ee/default-application-catalog/k8sgpt-app.yaml)"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws-e2e-kkp: "true"
-      preset-kubeconfig-ci: "true"
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-      preset-e2e-ssh: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
-          command:
-            - "./hack/ci/run-default-application-e2e-test.sh"
-          env:
-            - name: APPLICATION_INSTALLATION_NAME
-              value: "k8sgpt"
-            - name: APPLICATION_NAME
-              value: "k8sgpt"
-            - name: APPLICATION_NAMESPACE
-              value: "k8sgpt"
-            - name: APP_LABEL_KEY
-              value: "app.kubernetes.io/name"
-            - name: NAMES
-              value: "k8sgpt-operator"
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 2
-            limits:
-              memory: 6Gi
-
   - name: pre-kubermatic-appcatalog-k8sgpt-operator
     run_if_changed: "(pkg/ee/default-application-catalog/k8sgpt-app.yaml)"
     decorate: true

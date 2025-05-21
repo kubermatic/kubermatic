@@ -619,3 +619,19 @@ download_archive() {
     curl --header "Host: $domain" "$url" "$@"
   fi
 }
+
+download_envtest() {
+  local envtestVersion="$2"
+  local archiveName="envtest-v${envtestVersion}-$(go env GOOS)-$(go env GOARCH).tar.gz"
+
+  echodate "Envtest version: $envtestVersion"
+
+  export KUBEBUILDER_ASSETS="$(mktemp -d)"
+  cd "$KUBEBUILDER_ASSETS"
+  download_archive "https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v${envtestVersion}/$archiveName" -Lo "$archiveName"
+  tar -zxf "$archiveName" --strip-components 2
+  rm "$archiveName"
+  cd -
+
+  echodate "Done downloading Kubernetes envtest binaries."
+}

@@ -1,0 +1,19 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  annotations:
+    nodeport-proxy.k8s.io/expose-namespaced: "true"
+  creationTimestamp: null
+  name: konnectivity-server
+  namespace: cluster-de-test-01
+spec:
+  ports:
+  - name: secure
+    port: 443
+    protocol: TCP
+    targetPort: 8132
+  selector:
+    app: apiserver
+  type: NodePort
+status:
+  loadBalancer: {}

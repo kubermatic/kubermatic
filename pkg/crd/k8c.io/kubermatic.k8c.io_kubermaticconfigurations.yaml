@@ -2424,6 +2424,12 @@ spec:
                     operatingSystemManager:
                       description: OperatingSystemManager configures the image repo and the tag version for osm deployment.
                       properties:
+                        disableDefaultOperatingSystemProfiles:
+                          description: |-
+                            DisableDefaultOperatingSystemProfiles setting this property to true, would disable the creation of OSMs default
+                            OperatingSystemProfiles and users would need to provide a CustomOperatingSystemProfile to configure user clusters
+                            worker nodes.
+                          type: boolean
                         imageRepository:
                           description: |-
                             ImageRepository is used to override the OperatingSystemManager image repository.

@@ -404,8 +404,39 @@ func (r *Router) SubResources() []ResourceBuilder {
 		func() Resource {
 			return &InterfaceInfo{routerID: r.ID}
 		},
+		func() Resource { return &ResourceTags{resourceID: r.ID, resourceType: "routers"} },
 	}
 }
+
+type ResourceTags struct {
+	resourceID   string
+	resourceType string
+	Tags         []string `json:"tags"`
+}
+
+func (t ResourceTags) GetType() string { return "tags" }
+func (t ResourceTags) GetID() string   { return t.resourceID }
+func (t ResourceTags) GetName() string { return t.resourceID }
+
+func (t ResourceTags) GetPath() string {
+	return fmt.Sprintf("/%s/%s/tags", t.resourceType, t.resourceID)
+}
+func (t *ResourceTags) FromCreateRequest(c []byte) (Resource, error) {
+	// expect {"tags": ["foo","bar",...]}
+	var body struct {
+		Tags []string `json:"tags"`
+	}
+	if err := json.Unmarshal(c, &body); err != nil {
+		return nil, err
+	}
+	t.Tags = body.Tags
+	return t, nil
+}
+
+func (t *ResourceTags) CreateResponse() ([]byte, error) {
+	return json.Marshal(struct{ Tags []string }{t.Tags})
+}
+func (t *ResourceTags) SubResources() []ResourceBuilder { return nil }
 
 type InterfaceInfo struct {
 	routers.InterfaceInfo

@@ -77,6 +77,9 @@ const (
 	// PoliciesAdmissionWebhookName is the name of the validating webhook that implements deletion policies.
 	PoliciesAdmissionWebhookName = "kubermatic-policies"
 
+	// PolicyTemplateAdmissionWebhookName is the name of the validating webhook for PolicyTemplates.
+	PolicyTemplateAdmissionWebhookName = "kubermatic-policytemplates"
+
 	// we use a shared certificate/CA for all webhooks, because multiple webhooks
 	// run in the same controller manager so it's much easier if they all use the
 	// same certs.

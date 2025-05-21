@@ -32,6 +32,9 @@
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
 {{ $version = "v1.31.2" }}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.33" }}
+{{ $version = "v1.32.0" }}
+{{ end }}
 
 {{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
 ---
@@ -145,6 +148,7 @@ rules:
       - watch
       - create
       - delete
+      - patch
   - apiGroups:
       - ""
     resources:
@@ -398,7 +402,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.30.1-alpha.1
+    chart: openstack-cinder-csi-2.33.0-alpha.0
     component: controllerplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -422,7 +426,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.30.1-alpha.1
+        chart: openstack-cinder-csi-2.33.0-alpha.0
         component: controllerplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -438,7 +442,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.4.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.7.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-attacher
           resources: {}
@@ -457,7 +461,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.6.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.1.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-provisioner
           resources: {}
@@ -473,7 +477,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.3.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.1.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-snapshotter
           resources: {}
@@ -490,7 +494,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.9.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.12.0" }}'
           imagePullPolicy: IfNotPresent
           name: csi-resizer
           resources: {}
@@ -504,7 +508,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.11.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.14.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources: {}
@@ -518,6 +522,7 @@ spec:
             - --endpoint=$(CSI_ENDPOINT)
             - --cloud-config=$(CLOUD_CONFIG)
             - --cluster=$(CLUSTER_NAME)
+            - --provide-node-service=false
           env:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
@@ -576,7 +581,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.30.1-alpha.1
+    chart: openstack-cinder-csi-2.33.0-alpha.0
     component: nodeplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -594,7 +599,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.30.1-alpha.1
+        chart: openstack-cinder-csi-2.33.0-alpha.0
         component: nodeplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -614,7 +619,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.12.0" }}'
           imagePullPolicy: IfNotPresent
           name: node-driver-registrar
           resources: {}
@@ -629,7 +634,7 @@ spec:
         - args:
             - -v=2
             - --csi-address=/csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.11.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.14.0" }}'
           imagePullPolicy: IfNotPresent
           name: liveness-probe
           resources: {}
@@ -643,6 +648,7 @@ spec:
             - /bin/cinder-csi-plugin
             - -v=2
             - --endpoint=$(CSI_ENDPOINT)
+            - --provide-controller-service=false
             - --cloud-config=$(CLOUD_CONFIG)
           env:
             - name: CSI_ENDPOINT

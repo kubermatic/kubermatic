@@ -424,6 +424,10 @@ func (d *TemplateData) OperatingSystemManagerImageRepository() string {
 	return d.config.Spec.UserCluster.OperatingSystemManager.ImageRepository
 }
 
+func (d *TemplateData) OperatingSystemManagerDefaultOSPsDisabled() bool {
+	return d.config.Spec.UserCluster.OperatingSystemManager.DisableDefaultOperatingSystemProfiles
+}
+
 // ClusterIPByServiceName returns the ClusterIP as string for the
 // Service specified by `name`. Service lookup happens within
 // `Cluster.Status.NamespaceName`. When ClusterIP fails to parse

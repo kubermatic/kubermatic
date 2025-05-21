@@ -116,7 +116,7 @@ spec:
                         config:
                           description: |-
                             AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.
-                            Also see https://docs.fluentbit.io/manual/v/1.8/administration/configuring-fluent-bit/configuration-file.
+                            Also see https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file.
                           properties:
                             filters:
                               items:
@@ -3175,6 +3175,11 @@ spec:
                     enabled:
                       description: Controls whether kubeLB is deployed or not.
                       type: boolean
+                    extraArgs:
+                      additionalProperties:
+                        type: string
+                      description: ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
+                      type: object
                     useLoadBalancerClass:
                       description: |-
                         UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
