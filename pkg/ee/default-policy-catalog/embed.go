@@ -24,15 +24,23 @@ package defaultpolicycatalog
 
 import (
 	"embed"
+	"fmt"
+	"io"
 	"io/fs"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
-//go:embed policytemplates
+//go:embed policies
 var f embed.FS
 
-func GetPolicyTemplates() ([]fs.File, error) {
-	dirname := "policytemplates"
-	files := []fs.File{}
+func GetPolicyTemplates() ([]kubermaticv1.PolicyTemplate, error) {
+	dirname := "policies"
+	templates := []kubermaticv1.PolicyTemplate{}
 	entries, err := f.ReadDir(dirname)
 	if err != nil {
 		return nil, err
@@ -40,12 +48,79 @@ func GetPolicyTemplates() ([]fs.File, error) {
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
+			// Open the ClusterPolicy file
 			file, err := f.Open(dirname + "/" + entry.Name())
 			if err != nil {
 				return nil, err
 			}
-			files = append(files, file)
+
+			// Convert the ClusterPolicy to PolicyTemplate
+			template, err := convertClusterPolicyToPolicyTemplate(file)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert %s: %w", entry.Name(), err)
+			}
+
+			templates = append(templates, template)
 		}
 	}
-	return files, nil
+	return templates, nil
+}
+
+// convertClusterPolicyToPolicyTemplate converts a Kyverno ClusterPolicy to a Kubermatic PolicyTemplate.
+func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemplate, error) {
+	content, err := io.ReadAll(file)
+	if err != nil {
+		return kubermaticv1.PolicyTemplate{}, err
+	}
+
+	// Unmarshal the ClusterPolicy into an unstructured object
+	var obj unstructured.Unstructured
+	if err := yaml.Unmarshal(content, &obj); err != nil {
+		return kubermaticv1.PolicyTemplate{}, err
+	}
+
+	// Extract metadata from annotations
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+
+	title := annotations["policies.kyverno.io/title"]
+	category := annotations["policies.kyverno.io/category"]
+	description := annotations["policies.kyverno.io/description"]
+	severity := annotations["policies.kyverno.io/severity"]
+
+	// Get the policy spec
+	policySpec, found, err := unstructured.NestedMap(obj.Object, "spec")
+	if err != nil {
+		return kubermaticv1.PolicyTemplate{}, err
+	}
+	if !found {
+		return kubermaticv1.PolicyTemplate{}, fmt.Errorf("spec not found in ClusterPolicy")
+	}
+
+	policySpecObj := &unstructured.Unstructured{
+		Object: policySpec,
+	}
+
+	// Create the PolicyTemplate
+	policyTemplate := kubermaticv1.PolicyTemplate{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kubermatic.k8c.io/v1",
+			Kind:       "PolicyTemplate",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: obj.GetName(),
+		},
+		Spec: kubermaticv1.PolicyTemplateSpec{
+			Title:       title,
+			Description: description,
+			Category:    category,
+			Severity:    severity,
+			Visibility:  "Global",
+			PolicySpec:  runtime.RawExtension{Object: policySpecObj},
+		},
+	}
+
+	return policyTemplate, nil
 }

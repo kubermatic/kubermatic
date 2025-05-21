@@ -25,7 +25,6 @@ package defaultpolicycatalog
 import (
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -42,7 +41,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/yaml"
 )
 
 func DeployDefaultPolicyTemplateCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
@@ -54,7 +52,7 @@ func DeployDefaultPolicyTemplateCatalog(ctx context.Context, logger *logrus.Entr
 		return nil
 	}
 
-	policyTemplateFiles, err := GetPolicyTemplates()
+	policyTemplates, err := GetPolicyTemplates()
 	if err != nil {
 		return fmt.Errorf("failed to fetch PolicyTemplates: %w", err)
 	}
@@ -71,20 +69,9 @@ func DeployDefaultPolicyTemplateCatalog(ctx context.Context, logger *logrus.Entr
 	}
 
 	creators := []kkpreconciling.NamedPolicyTemplateReconcilerFactory{}
-	for _, file := range policyTemplateFiles {
-		b, err := io.ReadAll(file)
-		if err != nil {
-			return fmt.Errorf("failed to read PolicyTemplate: %w", err)
-		}
-
-		policyTemplate := &kubermaticv1.PolicyTemplate{}
-		err = yaml.Unmarshal(b, policyTemplate)
-
-		if err != nil {
-			return fmt.Errorf("failed to parse PolicyTemplate: %w", err)
-		}
-
-		creators = append(creators, policyTemplateReconcilerFactory(policyTemplate))
+	for _, policyTemplate := range policyTemplates {
+		template := policyTemplate
+		creators = append(creators, policyTemplateReconcilerFactory(&template))
 	}
 
 	if err = kkpreconciling.ReconcilePolicyTemplates(ctx, creators, "", kubeClient); err != nil {
