@@ -34,7 +34,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
-	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -54,7 +53,17 @@ import (
 
 const (
 	ControllerName   = "kkp-policy-binding-controller"
-	CleanupFinalizer = "kubermatic.k8c.io/cleanup-policy-binding"
+	cleanupFinalizer = "kubermatic.k8c.io/cleanup-policy-binding"
+
+	// Labels
+	LabelPolicyBinding  = "kubermatic.k8c.io/policy-binding"
+	LabelPolicyTemplate = "kubermatic.k8c.io/policy-template"
+
+	// Kyverno resources annotations
+	AnnotationTitle       = "policies.kyverno.io/title"
+	AnnotationDescription = "policies.kyverno.io/description"
+	AnnotationCategory    = "policies.kyverno.io/category"
+	AnnotationSeverity    = "policies.kyverno.io/severity"
 )
 
 type reconciler struct {
@@ -80,57 +89,18 @@ func Add(seedMgr, userMgr manager.Manager, log *zap.SugaredLogger, namespace, cl
 		clusterIsPaused: clusterIsPaused,
 	}
 
-	// Base controller managed by userMgr (inside UC)
 	builderCtrl := builder.ControllerManagedBy(userMgr).
 		Named(ControllerName).
-		WithOptions(controller.Options{MaxConcurrentReconciles: 1})
-
-	builderCtrl = builderCtrl.WatchesRawSource(
-		source.Kind(seedMgr.GetCache(), &kubermaticv1.PolicyBinding{},
-			handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, b *kubermaticv1.PolicyBinding) []reconcile.Request {
-				if b.Namespace != namespace {
-					return nil
-				}
-				return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: b.Name}}}
-			}),
-			predicateutil.TypedByName[*kubermaticv1.PolicyBinding](clusterName),
-		),
-	)
-
-	builderCtrl = builderCtrl.WatchesRawSource(
-		source.Kind(
-			seedMgr.GetCache(),
-			&kubermaticv1.PolicyTemplate{},
-			handler.TypedEnqueueRequestsFromMapFunc(func(ctx context.Context, tpl *kubermaticv1.PolicyTemplate) []reconcile.Request {
-				var reqs []reconcile.Request
-				bindings := &kubermaticv1.PolicyBindingList{}
-				if err := r.seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(namespace)); err != nil {
-					r.log.Errorw("failed to list PolicyBindings", "err", err)
-					return nil
-				}
-				for _, b := range bindings.Items {
-					if b.Spec.PolicyTemplateRef.Name == tpl.Name {
-						reqs = append(reqs, reconcile.Request{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: b.Name}})
-					}
-				}
-				return reqs
-			}),
-		),
-	)
-
-	builderCtrl = builderCtrl.WatchesRawSource(
-		source.Kind(
-			userMgr.GetCache(),
-			&kyvernov1.ClusterPolicy{},
-			handler.TypedEnqueueRequestsFromMapFunc(func(_ context.Context, cp *kyvernov1.ClusterPolicy) []reconcile.Request {
-				name, ok := cp.Labels["kubermatic.k8c.io/policy-binding"]
-				if !ok {
-					return nil
-				}
-				return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: name}}}
-			}),
-		),
-	)
+		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
+		WatchesRawSource(source.Kind(seedMgr.GetCache(), &kubermaticv1.PolicyBinding{},
+			handler.TypedEnqueueRequestsFromMapFunc(mapPolicyBindingToRequest(namespace)),
+		)).
+		WatchesRawSource(source.Kind(seedMgr.GetCache(), &kubermaticv1.PolicyTemplate{},
+			handler.TypedEnqueueRequestsFromMapFunc(mapPolicyTemplateToRequest(r.seedClient, namespace, r.log)),
+		)).
+		WatchesRawSource(source.Kind(userMgr.GetCache(), &kyvernov1.ClusterPolicy{},
+			handler.TypedEnqueueRequestsFromMapFunc(mapClusterPolicyToRequest(namespace)),
+		))
 
 	_, err := builderCtrl.Build(r)
 	return err
@@ -146,7 +116,6 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, fmt.Errorf("failed to check cluster pause status: %w", err)
 	}
 	if paused {
-		log.Debug("cluster is paused")
 		return reconcile.Result{}, nil
 	}
 
@@ -164,7 +133,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	// Handle Kyverno disabled
 	if !cluster.Spec.IsKyvernoEnabled() {
-		return reconcile.Result{}, r.handleKyvernoDisabled(ctx, binding)
+		return reconcile.Result{}, r.handlePolicyBindingCleanup(ctx, binding)
 	}
 
 	// Normal reconciling
@@ -176,54 +145,32 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-// handleKyvernoDisabled ensures cleanup when the feature is disabled.
-func (r *reconciler) handleKyvernoDisabled(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
-	// Always attempt to delete ClusterPolicy first.
-	if err := r.deleteClusterPolicy(ctx, binding.Spec.PolicyTemplateRef.Name); err != nil {
-		return err
-	}
-
-	// Remove finalizer to allow deletion.
-	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, CleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to remove finalizer: %w", err)
-	}
-
-	// Delete the binding object itself (ignore NotFound to stay idempotent)
-	return ctrlruntimeclient.IgnoreNotFound(r.seedClient.Delete(ctx, binding))
-}
-
 func (r *reconciler) reconcile(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
 	if !binding.DeletionTimestamp.IsZero() {
 		if err := r.deleteClusterPolicy(ctx, binding.Spec.PolicyTemplateRef.Name); err != nil {
 			return err
 		}
-		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, CleanupFinalizer)
+		return kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, cleanupFinalizer)
 	}
 
-	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, binding, CleanupFinalizer); err != nil {
+	if err := kuberneteshelper.TryAddFinalizer(ctx, r.seedClient, binding, cleanupFinalizer); err != nil {
 		return fmt.Errorf("failed to add finalizer: %w", err)
 	}
 
 	template := &kubermaticv1.PolicyTemplate{}
 	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.PolicyTemplateRef.Name}, template); err != nil {
 		if apierrors.IsNotFound(err) {
-			if err := r.deleteClusterPolicy(ctx, binding.Spec.PolicyTemplateRef.Name); err != nil {
-				return err
-			}
-			return r.seedClient.Delete(ctx, binding)
+			return r.handlePolicyBindingCleanup(ctx, binding)
 		}
 		return err
 	}
 
 	if template.DeletionTimestamp != nil {
-		if err := r.deleteClusterPolicy(ctx, template.Name); err != nil {
-			return err
-		}
-		return r.seedClient.Delete(ctx, binding)
+		return r.handlePolicyBindingCleanup(ctx, binding)
 	}
 
 	if template.Spec.NamespacedPolicy {
-		return r.updateStatus(ctx, binding, template, false)
+		// TODO: implement
 	}
 
 	factories := []reconciling.NamedKyvernoClusterPolicyReconcilerFactory{
@@ -231,30 +178,10 @@ func (r *reconciler) reconcile(ctx context.Context, binding *kubermaticv1.Policy
 	}
 
 	if err := reconciling.ReconcileKyvernoClusterPolicys(ctx, factories, "", r.userClient); err != nil {
-		_ = r.updateStatus(ctx, binding, template, false)
 		return fmt.Errorf("failed to reconcile ClusterPolicy: %w", err)
 	}
 
-	return r.updateStatus(ctx, binding, template, true)
-}
-
-// deleteClusterPolicy removes the ClusterPolicy with the given name, ignoring NotFound.
-func (r *reconciler) deleteClusterPolicy(ctx context.Context, policyName string) error {
-	cp := &kyvernov1.ClusterPolicy{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: policyName,
-		},
-	}
-	return ctrlruntimeclient.IgnoreNotFound(r.userClient.Delete(ctx, cp))
-}
-
-func (r *reconciler) updateStatus(ctx context.Context, binding *kubermaticv1.PolicyBinding, template *kubermaticv1.PolicyTemplate, active bool) error {
-	updated := binding.DeepCopy()
-	updated.Status.ObservedGeneration = binding.Generation
-	updated.Status.TemplateEnforced = &template.Spec.Enforced
-	updated.Status.Active = &active
-
-	return r.seedClient.Status().Patch(ctx, updated, ctrlruntimeclient.MergeFrom(binding))
+	return nil
 }
 
 func (r *reconciler) clusterPolicyFactory(template *kubermaticv1.PolicyTemplate, binding *kubermaticv1.PolicyBinding) reconciling.NamedKyvernoClusterPolicyReconcilerFactory {
@@ -262,20 +189,20 @@ func (r *reconciler) clusterPolicyFactory(template *kubermaticv1.PolicyTemplate,
 		return template.Name, func(existing *kyvernov1.ClusterPolicy) (*kyvernov1.ClusterPolicy, error) {
 			// Labels
 			kubernetes.EnsureLabels(existing, map[string]string{
-				"kubermatic.k8c.io/policy-binding":  binding.Name,
-				"kubermatic.k8c.io/policy-template": template.Name,
+				LabelPolicyBinding:  binding.Name,
+				LabelPolicyTemplate: template.Name,
 			})
 
 			// Annotations
 			ann := map[string]string{
-				"policies.kyverno.io/title":       template.Spec.Title,
-				"policies.kyverno.io/description": template.Spec.Description,
+				AnnotationTitle:       template.Spec.Title,
+				AnnotationDescription: template.Spec.Description,
 			}
 			if template.Spec.Category != "" {
-				ann["policies.kyverno.io/category"] = template.Spec.Category
+				ann[AnnotationCategory] = template.Spec.Category
 			}
 			if template.Spec.Severity != "" {
-				ann["policies.kyverno.io/severity"] = template.Spec.Severity
+				ann[AnnotationSeverity] = template.Spec.Severity
 			}
 			for k, v := range template.Annotations {
 				ann[k] = v
@@ -291,4 +218,66 @@ func (r *reconciler) clusterPolicyFactory(template *kubermaticv1.PolicyTemplate,
 			return existing, nil
 		}
 	}
+}
+
+// mapPolicyBindingToRequest maps a PolicyBinding to a reconcile.Request.
+func mapPolicyBindingToRequest(namespace string) func(ctx context.Context, b *kubermaticv1.PolicyBinding) []reconcile.Request {
+	return func(ctx context.Context, b *kubermaticv1.PolicyBinding) []reconcile.Request {
+		if b.Namespace != namespace {
+			return nil
+		}
+		return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: b.Name}}}
+	}
+}
+
+// mapPolicyTemplateToRequest maps a PolicyTemplate to reconcile.Request for related PolicyBindings.
+func mapPolicyTemplateToRequest(seedClient ctrlruntimeclient.Client, namespace string, log *zap.SugaredLogger) func(ctx context.Context, tpl *kubermaticv1.PolicyTemplate) []reconcile.Request {
+	return func(ctx context.Context, tpl *kubermaticv1.PolicyTemplate) []reconcile.Request {
+		var reqs []reconcile.Request
+		bindings := &kubermaticv1.PolicyBindingList{}
+		if err := seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(namespace)); err != nil {
+			log.Errorw("failed to list PolicyBindings", "err", err)
+			return nil
+		}
+		for _, b := range bindings.Items {
+			if b.Spec.PolicyTemplateRef.Name == tpl.Name {
+				reqs = append(reqs, reconcile.Request{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: b.Name}})
+			}
+		}
+		return reqs
+	}
+}
+
+// mapClusterPolicyToRequest maps a ClusterPolicy to a reconcile.Request based on label.
+func mapClusterPolicyToRequest(namespace string) func(ctx context.Context, cp *kyvernov1.ClusterPolicy) []reconcile.Request {
+	return func(ctx context.Context, cp *kyvernov1.ClusterPolicy) []reconcile.Request {
+		name, ok := cp.Labels[LabelPolicyBinding]
+		if !ok {
+			return nil
+		}
+		return []reconcile.Request{{NamespacedName: ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: name}}}
+	}
+}
+
+// handlePolicyBindingCleanup handles the cleanup of a PolicyBinding and its resources.
+func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
+	if err := r.deleteClusterPolicy(ctx, binding.Spec.PolicyTemplateRef.Name); err != nil {
+		return fmt.Errorf("failed to delete ClusterPolicy: %w", err)
+	}
+
+	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, cleanupFinalizer); err != nil {
+		return fmt.Errorf("failed to remove finalizer: %w", err)
+	}
+
+	return ctrlruntimeclient.IgnoreNotFound(r.seedClient.Delete(ctx, binding))
+}
+
+// deleteClusterPolicy removes the ClusterPolicy with the given name, ignoring NotFound.
+func (r *reconciler) deleteClusterPolicy(ctx context.Context, policyName string) error {
+	cp := &kyvernov1.ClusterPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: policyName,
+		},
+	}
+	return ctrlruntimeclient.IgnoreNotFound(r.userClient.Delete(ctx, cp))
 }
