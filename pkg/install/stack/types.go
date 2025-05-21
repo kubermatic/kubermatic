@@ -69,6 +69,8 @@ type DeployOptions struct {
 	LimitApps               []string
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 type Stack interface {

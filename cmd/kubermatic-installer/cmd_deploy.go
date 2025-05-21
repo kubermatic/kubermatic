@@ -88,6 +88,8 @@ type DeployOptions struct {
 	LimitApps               []string
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.Command {
@@ -215,6 +217,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			Versions:                           versions,
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
+			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
 			LimitApps:                          opt.LimitApps,
 			SkipSeedValidation:                 opt.SkipSeedValidation,
 		}
