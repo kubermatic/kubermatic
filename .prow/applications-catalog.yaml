@@ -105,7 +105,9 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-cluster-autoscaler
-    run_if_changed: "(pkg/ee/default-application-catalog/cluster-autoscaler.yaml)"
+    # We are testing changes for the cluster-autoscaler application definition and the system applications
+    # reconciler through the same job.
+    run_if_changed: "(pkg/applicationdefinitions)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
