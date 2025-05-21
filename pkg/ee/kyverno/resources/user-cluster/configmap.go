@@ -29,6 +29,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -48,7 +49,7 @@ func KyvernoConfigMapReconciler(cluster *kubermaticv1.Cluster) reconciling.Named
 				"app.kubernetes.io/component": "config",
 				"app.kubernetes.io/instance":  "kyverno",
 				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
+				"app.kubernetes.io/version":   commonseedresources.KyvernoVersion,
 			}
 
 			// Set annotations
@@ -61,8 +62,8 @@ func KyvernoConfigMapReconciler(cluster *kubermaticv1.Cluster) reconciling.Named
 				"excludeGroups":          "system:nodes",
 				"resourceFilters":        getResourceFilters(cluster.Status.NamespaceName),
 				"updateRequestThreshold": "1000",
-				"webhooks":               "{\"namespaceSelector\":{\"matchExpressions\":[{\"key\":\"kubernetes.io/metadata.name\",\"operator\":\"NotIn\",\"values\":[\"kube-system\"]},{\"key\":\"kubernetes.io/metadata.name\",\"operator\":\"NotIn\",\"values\":[\"kyverno\"]}],\"matchLabels\":null}}",
-				"webhookAnnotations":     "{\"admissions.enforcer/disabled\":\"true\"}",
+				"webhooks":               getWebhooksConfig(),
+				"webhookAnnotations":     getWebhookAnnotations(),
 			}
 
 			return cm, nil
@@ -79,13 +80,13 @@ func KyvernoMetricsConfigMapReconciler(cluster *kubermaticv1.Cluster) reconcilin
 				"app.kubernetes.io/component": "config",
 				"app.kubernetes.io/instance":  "kyverno",
 				"app.kubernetes.io/part-of":   "kyverno",
-				"app.kubernetes.io/version":   "v1.14.1",
+				"app.kubernetes.io/version":   commonseedresources.KyvernoVersion,
 			}
 
 			// Set data
 			cm.Data = map[string]string{
-				"namespaces":       "{\"exclude\":[],\"include\":[]}",
-				"metricsExposure":  "{\"kyverno_admission_requests_total\":{\"disabledLabelDimensions\":[\"resource_namespace\"]},\"kyverno_admission_review_duration_seconds\":{\"disabledLabelDimensions\":[\"resource_namespace\"]},\"kyverno_cleanup_controller_deletedobjects_total\":{\"disabledLabelDimensions\":[\"resource_namespace\",\"policy_namespace\"]},\"kyverno_policy_execution_duration_seconds\":{\"disabledLabelDimensions\":[\"resource_namespace\",\"resource_request_operation\"]},\"kyverno_policy_results_total\":{\"disabledLabelDimensions\":[\"resource_namespace\",\"policy_namespace\"]},\"kyverno_policy_rule_info_total\":{\"disabledLabelDimensions\":[\"resource_namespace\",\"policy_namespace\"]}}",
+				"namespaces":       getNamespacesConfig(),
+				"metricsExposure":  getMetricsExposureConfig(),
 				"bucketBoundaries": "0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 15, 20, 25, 30",
 			}
 
@@ -118,4 +119,60 @@ func getResourceFilters(namespace string) string {
 	}
 
 	return strings.Join(filters, "\n")
+}
+
+func getWebhooksConfig() string {
+	return `{
+  "namespaceSelector": {
+    "matchExpressions": [
+      {
+        "key": "kubernetes.io/metadata.name",
+        "operator": "NotIn",
+        "values": ["kube-system"]
+      },
+      {
+        "key": "kubernetes.io/metadata.name",
+        "operator": "NotIn",
+        "values": ["kyverno"]
+      }
+    ],
+    "matchLabels": null
+  }
+}`
+}
+
+func getWebhookAnnotations() string {
+	return `{
+  "admissions.enforcer/disabled": "true"
+}`
+}
+
+func getNamespacesConfig() string {
+	return `{
+  "exclude": [],
+  "include": []
+}`
+}
+
+func getMetricsExposureConfig() string {
+	return `{
+  "kyverno_admission_requests_total": {
+    "disabledLabelDimensions": ["resource_namespace"]
+  },
+  "kyverno_admission_review_duration_seconds": {
+    "disabledLabelDimensions": ["resource_namespace"]
+  },
+  "kyverno_cleanup_controller_deletedobjects_total": {
+    "disabledLabelDimensions": ["resource_namespace", "policy_namespace"]
+  },
+  "kyverno_policy_execution_duration_seconds": {
+    "disabledLabelDimensions": ["resource_namespace", "resource_request_operation"]
+  },
+  "kyverno_policy_results_total": {
+    "disabledLabelDimensions": ["resource_namespace", "policy_namespace"]
+  },
+  "kyverno_policy_rule_info_total": {
+    "disabledLabelDimensions": ["resource_namespace", "policy_namespace"]
+  }
+}`
 }
