@@ -26,6 +26,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -84,7 +85,9 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 			return fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
 		}
 
-		creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+		if len(opt.LimitApps) == 0 || (len(opt.LimitApps) > 0 && (slices.Contains(opt.LimitApps, appDef.Spec.DisplayName) || slices.Contains(opt.LimitApps, appDef.Name))) {
+			creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+		}
 	}
 
 	if err = kkpreconciling.ReconcileApplicationDefinitions(ctx, creators, "", kubeClient); err != nil {
