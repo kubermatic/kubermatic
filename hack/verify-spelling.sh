@@ -47,6 +47,7 @@ skip=(
   ./pkg/ee/default-application-catalog/applicationdefinitions
   ./pkg/resources/test/fixtures
   ./pkg/ee/kyverno/resources/user-cluster/static
+  ./pkg/crd/k8s.io
 )
 
 function join {

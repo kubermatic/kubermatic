@@ -155,7 +155,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	return nil
 }
 
-
 // GetDefaultingClusterTemplate returns the ClusterTemplate that is referenced by the Seed.
 // Note that this can return nil if no template is configured yet (this is not considered
 // an error).
