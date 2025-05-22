@@ -37,7 +37,7 @@ import (
 )
 
 var (
-	kubevirtStorageClassName = "kubevirt-rook-ceph-block"
+	kubevirtStorageClassName = "kubevirt-local-path"
 )
 
 func supportsStorage(cluster *kubermaticv1.Cluster) bool {
