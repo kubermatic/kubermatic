@@ -84,10 +84,13 @@ declare -A locationMap=(
   ["verticalpodautoscalers.autoscaling.k8s.io"]="seed"
   ["verticalpodautoscalercheckpoints.autoscaling.k8s.io"]="seed"
 
-  ["gatewayclasses.gateway.networking.k8s.io"]="usercluster"
+  # Gateway API
   ["gateways.gateway.networking.k8s.io"]="usercluster"
   ["grpcroutes.gateway.networking.k8s.io"]="usercluster"
   ["httproutes.gateway.networking.k8s.io"]="usercluster"
+  ["tcproutes.gateway.networking.k8s.io"]="usercluster"
+  ["udproutes.gateway.networking.k8s.io"]="usercluster"
+  ["tlsroutes.gateway.networking.k8s.io"]="usercluster"
   ["referencegrants.gateway.networking.k8s.io"]="usercluster"
 
   ["policytemplates.kubermatic.k8c.io"]="master,seed"

@@ -1255,8 +1255,6 @@ type KubeLBSeedSettings struct {
 type KubeLBSettings struct {
 	// Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
 	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
-	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB and install the necessary GatewayAPI CRDs.
-	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
 }
 
 type KubeLBDatacenterSettings struct {
@@ -1274,6 +1272,9 @@ type KubeLBDatacenterSettings struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass bool `json:"useLoadBalancerClass,omitempty"`
+	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+	// When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+	EnableGatewayAPI bool `json:"enableGatewayAPI,omitempty"`
 	// EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`
 	// DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.

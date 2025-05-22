@@ -152,46 +152,9 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
-	defaultKubeLBSettings(datacenter, seed, spec)
-
 	return nil
 }
 
-func defaultKubeLBSettings(datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, spec *kubermaticv1.ClusterSpec) {
-	var enableGatewayAPI *bool
-	// If KubeLB is enforced, enable it.
-	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
-		if spec.KubeLB == nil {
-			spec.KubeLB = &kubermaticv1.KubeLB{
-				Enabled: true,
-			}
-		} else {
-			spec.KubeLB.Enabled = true
-		}
-	}
-
-	if spec.KubeLB != nil {
-		if spec.KubeLB.EnableGatewayAPI == nil {
-			if seed.Spec.KubeLB != nil && seed.Spec.KubeLB.EnableGatewayAPI != nil {
-				enableGatewayAPI = seed.Spec.KubeLB.EnableGatewayAPI
-			}
-
-			if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.EnableGatewayAPI != nil {
-				enableGatewayAPI = datacenter.Spec.KubeLB.EnableGatewayAPI
-			}
-
-			if enableGatewayAPI != nil {
-				spec.KubeLB.EnableGatewayAPI = enableGatewayAPI
-			}
-		}
-
-		if datacenter.Spec.KubeLB != nil {
-			if datacenter.Spec.KubeLB.UseLoadBalancerClass && spec.KubeLB.UseLoadBalancerClass == nil {
-				spec.KubeLB.UseLoadBalancerClass = ptr.To(true)
-			}
-		}
-	}
-}
 
 // GetDefaultingClusterTemplate returns the ClusterTemplate that is referenced by the Seed.
 // Note that this can return nil if no template is configured yet (this is not considered
