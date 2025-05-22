@@ -416,7 +416,7 @@ func (r *reconciler) deleteClusterPolicy(ctx context.Context, policyName string)
 	return nil
 }
 
-// deleteKyvernoPolicy removes the namespaced Kyverno Policy
+// deleteKyvernoPolicy removes the namespaced Kyverno Policy.
 func (r *reconciler) deleteKyvernoPolicy(ctx context.Context, policyName, policyNamespace string) error {
 	if policyName == "" || policyNamespace == "" {
 		return nil
