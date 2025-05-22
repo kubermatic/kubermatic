@@ -1014,6 +1014,7 @@ const (
 	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
+	NetworkPolicyKyvernoWebhookAllow                = "kyverno-webhook-allow"
 )
 
 const (

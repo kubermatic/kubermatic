@@ -22,60 +22,64 @@
    END OF TERMS AND CONDITIONS
 */
 
-package userclusterresources
+package cleanupcontrollerresources
 
 import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ResourcesForDeletion returns a list of objects that should be deleted when cleaning up Kyverno.
+// ResourcesForDeletion returns a list of resources that should be deleted when the Kyverno cleanup controller is removed.
 func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Object {
-	resources := []ctrlruntimeclient.Object{
-		&corev1.Namespace{
+	return []ctrlruntimeclient.Object{
+		&appsv1.Deployment{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: cluster.Status.NamespaceName,
-			},
-		},
-		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kyverno",
+				Name:      commonseedresources.KyvernoCleanupControllerDeploymentName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
-		&corev1.ConfigMap{
+		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kyverno-metrics",
+				Name:      commonseedresources.KyvernoCleanupControllerServiceName,
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      commonseedresources.KyvernoCleanupControllerMetricsServiceName,
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      commonseedresources.KyvernoCleanupControllerRoleName,
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      commonseedresources.KyvernoCleanupControllerRoleBindingName,
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      commonseedresources.KyvernoCleanupControllerServiceAccountName,
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
 	}
-
-	crds, err := KyvernoCRDs()
-	if err != nil {
-		return resources
-	}
-
-	for _, crd := range crds {
-		resources = append(resources, &apiextensionsv1.CustomResourceDefinition{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: crd.Name,
-			},
-		})
-	}
-
-	resources = append(resources, WebhooksForDeletion()...)
-
-	return resources
 }
 
-// CleanUpResources deletes all resources created in the user cluster.
+// CleanUpResources deletes all resources created for the Kyverno cleanup controller.
 func CleanUpResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	resources := ResourcesForDeletion(cluster)
 	for _, resource := range resources {
