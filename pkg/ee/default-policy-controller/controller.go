@@ -106,11 +106,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, err
 	}
 
-	// Skip reconciliation when Kyverno is disabled
-	if !cluster.Spec.IsKyvernoEnabled() {
-		return reconcile.Result{}, nil
-	}
-
 	log := r.log.With("cluster", cluster.Name)
 
 	if cluster.DeletionTimestamp != nil {

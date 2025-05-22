@@ -171,13 +171,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 		return r.handlePolicyBindingCleanup(ctx, binding)
 	}
 
-	// Main reconciliation logic
 	if template.Spec.NamespacedPolicy {
 		return r.reconcileNamespacedPolicy(ctx, log, template, binding)
 	}
 	return r.reconcileClusterPolicy(ctx, log, template, binding)
 }
 
+// reconcileNamespacedPolicy reconciles a namespaced Kyverno Policy.
 func (r *reconciler) reconcileNamespacedPolicy(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.PolicyTemplate, binding *kubermaticv1.PolicyBinding) error {
 	targetNamespace := binding.Spec.KyvernoPolicyNamespace.Name
 
@@ -217,6 +217,7 @@ func (r *reconciler) reconcileNamespacedPolicy(ctx context.Context, log *zap.Sug
 	return nil
 }
 
+// reconcileClusterPolicy reconciles a cluster-wide Kyverno Policy resource ClusterPolicy.
 func (r *reconciler) reconcileClusterPolicy(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.PolicyTemplate, binding *kubermaticv1.PolicyBinding) error {
 	clusterPolicyFactories := []kkpreconciling.NamedKyvernoClusterPolicyReconcilerFactory{
 		r.kyvernoClusterPolicyFactory(template, binding),
@@ -231,7 +232,7 @@ func (r *reconciler) reconcileClusterPolicy(ctx context.Context, log *zap.Sugare
 	}
 	for _, p := range policyList.Items {
 		if err := r.userClient.Delete(ctx, &p); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-			log.Errorw("Failed to delete stale Kyverno Policy", "policyName", p.Name, "namespace", p.Namespace, "error", err)
+			log.Error("Failed to delete stale Kyverno Policy", "policyName", p.Name, "namespace", p.Namespace, "error", err)
 		}
 	}
 	return nil
@@ -271,7 +272,6 @@ func (r *reconciler) kyvernoClusterPolicyFactory(template *kubermaticv1.PolicyTe
 			}
 			kuberneteshelper.EnsureAnnotations(cp, annotations)
 
-			// Kyverno Spec
 			var spec kyvernov1.Spec
 			if err := json.Unmarshal(template.Spec.PolicySpec.Raw, &spec); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal policySpec for ClusterPolicy %s: %w", template.Name, err)
@@ -307,7 +307,6 @@ func (r *reconciler) kyvernoPolicyFactory(template *kubermaticv1.PolicyTemplate,
 			}
 			kuberneteshelper.EnsureAnnotations(p, annotations)
 
-			// Kyverno Spec
 			var spec kyvernov1.Spec
 			if err := json.Unmarshal(template.Spec.PolicySpec.Raw, &spec); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal policySpec for Policy %s: %w", template.Name, err)
@@ -400,7 +399,7 @@ func (r *reconciler) deleteKyvernoResourcesForBinding(ctx context.Context, bindi
 	return nil
 }
 
-// deleteClusterPolicy removes the ClusterPolicy with the given name, ignoring NotFound.
+// deleteClusterPolicy removes the ClusterPolicy with the given name.
 func (r *reconciler) deleteClusterPolicy(ctx context.Context, policyName string) error {
 	if policyName == "" {
 		return nil
@@ -417,8 +416,7 @@ func (r *reconciler) deleteClusterPolicy(ctx context.Context, policyName string)
 	return nil
 }
 
-// deleteKyvernoPolicy removes the namespaced Kyverno Policy, ignoring NotFound.
-// Not strictly needed if cleanup relies on listing by label, but can be a helper.
+// deleteKyvernoPolicy removes the namespaced Kyverno Policy
 func (r *reconciler) deleteKyvernoPolicy(ctx context.Context, policyName, policyNamespace string) error {
 	if policyName == "" || policyNamespace == "" {
 		return nil
