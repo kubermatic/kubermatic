@@ -135,11 +135,10 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	if !cluster.Spec.IsKyvernoEnabled() && kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
-		return reconcile.Result{}, r.handlePolicyBindingCleanup(ctx, binding)
-	}
-
 	if !cluster.Spec.IsKyvernoEnabled() {
+		if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
+			return reconcile.Result{}, r.handlePolicyBindingCleanup(ctx, binding)
+		}
 		return reconcile.Result{}, nil
 	}
 
@@ -375,8 +374,10 @@ func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *ku
 		return err
 	}
 
-	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, cleanupFinalizer); err != nil {
-		return fmt.Errorf("failed to remove finalizer: %w", err)
+	if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
+		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, cleanupFinalizer); err != nil {
+			return fmt.Errorf("failed to remove finalizer: %w", err)
+		}
 	}
 
 	return nil
@@ -390,15 +391,9 @@ func (r *reconciler) deleteKyvernoResourcesForBinding(ctx context.Context, bindi
 		return fmt.Errorf("failed to delete ClusterPolicy %s: %w", policyRefName, err)
 	}
 
-	// Deleting by label. This is a more robust approach for cleanup as it doesn't care about the name or namespace of the policy.
-	policyList := &kyvernov1.PolicyList{}
-	if err := r.userClient.List(ctx, policyList, ctrlruntimeclient.MatchingLabels{LabelPolicyBinding: binding.Name}); err != nil {
-		return fmt.Errorf("failed to list Kyverno Policies for cleanup: %w", err)
-	}
-
-	for _, p := range policyList.Items {
-		if err := r.userClient.Delete(ctx, &p); ctrlruntimeclient.IgnoreNotFound(err) != nil {
-			return fmt.Errorf("failed to delete Kyverno Policy %s/%s: %w", p.Namespace, p.Name, err)
+	if binding.Spec.KyvernoPolicyNamespace != nil && binding.Spec.KyvernoPolicyNamespace.Name != "" {
+		if err := r.deleteKyvernoPolicy(ctx, policyRefName, binding.Spec.KyvernoPolicyNamespace.Name); err != nil {
+			return fmt.Errorf("failed to delete Kyverno Policy %s/%s: %w", binding.Spec.KyvernoPolicyNamespace.Name, policyRefName, err)
 		}
 	}
 
