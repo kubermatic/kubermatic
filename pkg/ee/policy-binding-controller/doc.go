@@ -26,7 +26,8 @@
 PolicyBindingController ensures that all PolicyBindings are automatically applied
 to the appropriate clusters in the form of Kyverno resources.
 The controller watches PolicyBinding resources within the cluster namespace in the Seed cluster.
-It also watches for PolicyTemplate resources as well and reconciles
-the affected PolicyBindings, in case the PolicyTemplate changes.
+It manages Kyverno ClusterPolicies for cluster-wide policies and Kyverno Policies for namespace-scoped policies.
+It also manages the cleanup of stale Kyverno resources for PolicyBindings that are deleted or
+have had their PolicyTemplate changed.
 */
 package policybindingcontroller
