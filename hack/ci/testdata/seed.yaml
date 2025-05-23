@@ -152,10 +152,24 @@ spec:
         kubevirt:
           dnsConfig:
             nameservers:
-              - 8.8.8.8
+              - 1.1.1.1
+          dnsPolicy: None
           infraStorageClasses:
+            - isDefaultClass: false
+              name: longhorn
             - isDefaultClass: true
-              name: rook-ceph-block
+              name: local-path
+          matchSubnetAndStorageLocation: false
+          namespacedMode:
+            enabled: true
+            name: kkp-e2e-tests
+          providerNetwork:
+            name: kcs
+            vpcs:
+              - name: ovn-cluster
+                subnets:
+                  - name: external
+                  - name: ovn-default
     syseleven-dbl1:
       country: DE
       location: Syseleven - dbl1
