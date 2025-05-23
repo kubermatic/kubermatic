@@ -177,6 +177,9 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, err)
 	}
 
+	if spec.IsAuthorizationConfigurationFileEnabled() && spec.IsWebhookAuthorizationEnabled() {
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("authorizationConfig"), "AuthorizationWebhookConfiguration and AuthorizationConfigurationFile cannot be used together"))
+	}
 	return allErrs
 }
 
