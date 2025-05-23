@@ -56,19 +56,6 @@ func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Obj
 		},
 	}
 
-	// crds, err := KyvernoCRDs()
-	// if err != nil {
-	// 	return resources
-	// }
-
-	// for _, crd := range crds {
-	// 	resources = append(resources, &apiextensionsv1.CustomResourceDefinition{
-	// 		ObjectMeta: metav1.ObjectMeta{
-	// 			Name: crd.Name,
-	// 		},
-	// 	})
-	// }
-
 	resources = append(resources, WebhooksForDeletion()...)
 
 	return resources
