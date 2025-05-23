@@ -67,6 +67,7 @@ try "Verify go.mod" make check-dependencies
 try "Verify generated documentation" ./hack/verify-docs.sh
 try "Verify license compatibility" ./hack/verify-licenses.sh
 try "Verify boilerplate" ./hack/verify-boilerplate.sh
+try "Verify Helm chart placeholder versions" ./hack/verify-helm-chart-placeholder-versions.sh
 try "Verify Grafana dashboards" ./hack/verify-grafana-dashboards.sh
 try "Verify Prometheus rules" ./hack/verify-prometheus-rules.sh
 try "Verify User Cluster Prometheus rules" ./hack/ci/verify-user-cluster-prometheus-configs.sh

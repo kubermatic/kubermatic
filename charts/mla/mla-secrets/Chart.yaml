@@ -14,7 +14,7 @@
 
 apiVersion: v2
 name: mla-secrets
-version: 0.1.1
+version: 9.9.9-dev
 appVersion: 0.1.0
 description: A Helm chart to manage MLA (Monitoring, Logging, Alerting) related secrets.
 keywords:
