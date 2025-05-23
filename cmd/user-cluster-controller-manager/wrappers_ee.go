@@ -99,6 +99,7 @@ func setupControllers(
 	caBundle *certificates.CABundle,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	namespace string,
+	kyvernoEnabled bool,
 ) error {
 	if err := resourceusagecontroller.Add(log, seedMgr, userMgr, clusterName, caBundle, clusterIsPaused); err != nil {
 		return fmt.Errorf("failed to create cluster-backup controller: %w", err)
@@ -108,8 +109,11 @@ func setupControllers(
 		return fmt.Errorf("failed to create cluster-backup controller: %w", err)
 	}
 
-	if err := policybindingcontroller.Add(seedMgr, userMgr, log, namespace, clusterName, clusterIsPaused); err != nil {
-		return fmt.Errorf("failed to create policy-binding controller: %w", err)
+	// Only enable policy binding controller if Kyverno is enabled.
+	if kyvernoEnabled {
+		if err := policybindingcontroller.Add(seedMgr, userMgr, log, namespace, clusterName, clusterIsPaused); err != nil {
+			return fmt.Errorf("failed to create policy-binding controller: %w", err)
+		}
 	}
 
 	return nil

@@ -130,12 +130,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, r.handleKyvernoCleanup(ctx, cluster)
 	}
 
-	// Ensure Kyverno CRDs are installed in the user cluster.
-	if err := r.ensureSeedClusterCRDResources(ctx, log, cluster); err != nil {
-		log.Error("Ensuring Kyverno CRDs in seed cluster failed", err)
-		return reconcile.Result{}, err
-	}
-
 	// Kyverno is disabled. Nothing to do.
 	if !cluster.Spec.IsKyvernoEnabled() {
 		return reconcile.Result{}, nil
@@ -216,6 +210,10 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		userclusterresources.KyvernoMetricsConfigMapReconciler(cluster),
 	}
 
+	if err := r.ensureUserClusterCRDResources(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to ensure Kyverno CRDs in user cluster: %w", err)
+	}
+
 	if err := reconciling.ReconcileConfigMaps(ctx, configMapCreators, cluster.Status.NamespaceName, userClusterClient); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
 	}
@@ -285,11 +283,8 @@ func (r *reconciler) ensureSeedClusterNamespaceResources(ctx context.Context, cl
 	return nil
 }
 
-// ensureSeedClusterCRDResources ensures that the Kyverno CRDs are installed in the user cluster.
-// This is an important step both for this controller and for the policy binding controller.
-// The policy binding controller establishes informers for the Kyverno CRDs in the seed cluster.
-func (r *reconciler) ensureSeedClusterCRDResources(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
-	log.Debug("Ensuring Kyverno CRDs in seed cluster")
+// ensureUserClusterCRDResources ensures that the Kyverno CRDs are installed in the user cluster.
+func (r *reconciler) ensureUserClusterCRDResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)

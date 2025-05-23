@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -54,6 +55,19 @@ func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Obj
 				Namespace: cluster.Status.NamespaceName,
 			},
 		},
+	}
+
+	crds, err := KyvernoCRDs()
+	if err != nil {
+		return resources
+	}
+
+	for _, crd := range crds {
+		resources = append(resources, &apiextensionsv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: crd.Name,
+			},
+		})
 	}
 
 	resources = append(resources, WebhooksForDeletion()...)
