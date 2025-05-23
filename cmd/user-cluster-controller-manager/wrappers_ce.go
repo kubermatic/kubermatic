@@ -59,6 +59,7 @@ func setupControllers(
 	caBundle *certificates.CABundle,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	namespace string,
+	kyvernoEnabled bool,
 ) error {
 	return nil
 }
