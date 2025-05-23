@@ -210,22 +210,12 @@ func (r *reconciler) ensureUserClusterResources(ctx context.Context, cluster *ku
 		userclusterresources.KyvernoMetricsConfigMapReconciler(cluster),
 	}
 
+	if err := r.ensureUserClusterCRDResources(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to ensure Kyverno CRDs in user cluster: %w", err)
+	}
+
 	if err := reconciling.ReconcileConfigMaps(ctx, configMapCreators, cluster.Status.NamespaceName, userClusterClient); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %w", err)
-	}
-
-	crds, err := userclusterresources.KyvernoCRDs()
-	if err != nil {
-		return fmt.Errorf("failed to get Kyverno CRDs: %w", err)
-	}
-
-	crdReconcilers := make([]kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory, 0, len(crds))
-	for _, crd := range crds {
-		crdReconcilers = append(crdReconcilers, userclusterresources.KyvernoCRDReconciler(crd))
-	}
-
-	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, crdReconcilers, "", userClusterClient); err != nil {
-		return fmt.Errorf("failed to reconcile Kyverno CRDs: %w", err)
 	}
 
 	return nil
@@ -288,6 +278,30 @@ func (r *reconciler) ensureSeedClusterNamespaceResources(ctx context.Context, cl
 
 	if err := reconciling.ReconcileDeployments(ctx, deploymentCreators, cluster.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %w", err)
+	}
+
+	return nil
+}
+
+// ensureUserClusterCRDResources ensures that the Kyverno CRDs are installed in the user cluster.
+func (r *reconciler) ensureUserClusterCRDResources(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get user cluster client: %w", err)
+	}
+
+	crds, err := userclusterresources.KyvernoCRDs()
+	if err != nil {
+		return fmt.Errorf("failed to get Kyverno CRDs: %w", err)
+	}
+
+	crdReconcilers := make([]kkpreconciling.NamedCustomResourceDefinitionReconcilerFactory, 0, len(crds))
+	for _, crd := range crds {
+		crdReconcilers = append(crdReconcilers, userclusterresources.KyvernoCRDReconciler(crd))
+	}
+
+	if err := kkpreconciling.ReconcileCustomResourceDefinitions(ctx, crdReconcilers, "", userClusterClient); err != nil {
+		return fmt.Errorf("failed to reconcile Kyverno CRDs: %w", err)
 	}
 
 	return nil

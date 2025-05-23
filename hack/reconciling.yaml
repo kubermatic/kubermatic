@@ -73,3 +73,5 @@ resourceTypes:
 
   # kyverno/v1
   - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: ClusterPolicy, apiVersionPrefix: Kyverno }
+  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: Policy, apiVersionPrefix: Kyverno }
+  
