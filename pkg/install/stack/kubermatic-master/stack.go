@@ -122,6 +122,10 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		return fmt.Errorf("failed to deploy default Application catalog: %w", err)
 	}
 
+	if err := deployDefaultPolicyTemplateCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy default Policy Template catalog: %w", err)
+	}
+
 	if s.showDNSHelp {
 		showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	appcat "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
+	policytemplatecatalog "k8c.io/kubermatic/v2/pkg/ee/default-policy-catalog"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -31,4 +32,8 @@ import (
 
 func deployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	return appcat.DeployDefaultApplicationCatalog(ctx, logger, kubeClient, opt)
+}
+
+func deployDefaultPolicyTemplateCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	return policytemplatecatalog.DeployDefaultPolicyTemplateCatalog(ctx, logger, kubeClient, opt)
 }

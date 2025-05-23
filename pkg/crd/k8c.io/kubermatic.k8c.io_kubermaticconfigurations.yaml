@@ -491,6 +491,20 @@ spec:
                           type: object
                       type: object
                   type: object
+                systemApplications:
+                  description: SystemApplications contains configuration for system applications.
+                  properties:
+                    applications:
+                      description: |-
+                        Applications is a list of system application definition names that should be installed in the master cluster.
+                        If not set, the default system applications will be installed.
+                      items:
+                        type: string
+                      type: array
+                    disable:
+                      description: Disable is used to disable the installation of system application definitions in the master cluster.
+                      type: boolean
+                  type: object
                 ui:
                   description: UI configures the dashboard.
                   properties:

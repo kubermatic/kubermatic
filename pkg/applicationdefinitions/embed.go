@@ -1,5 +1,3 @@
-//go:build !ee
-
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -16,16 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package applicationinstallationcontroller
+package applicationdefinitions
 
 import (
-	"context"
-
-	"go.uber.org/zap"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"embed"
+	"io/fs"
 )
 
-func handleAddonCleanup(ctx context.Context, applicationName string, seedClusterNamespace string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-	return nil
+const (
+	systemApplicationsDirectory = "system-applications"
+)
+
+//go:embed system-applications
+var f embed.FS
+
+func GetSysAppDefFiles() ([]fs.File, error) {
+	files := []fs.File{}
+	entries, err := f.ReadDir(systemApplicationsDirectory)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			file, err := f.Open(systemApplicationsDirectory + "/" + entry.Name())
+			if err != nil {
+				return nil, err
+			}
+			files = append(files, file)
+		}
+	}
+
+	return files, nil
 }

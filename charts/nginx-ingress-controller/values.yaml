@@ -24,6 +24,7 @@ nginx:
     config:
       # Increased body size to handle Minio workload, , https://github.com/rancher/rancher/issues/14323
       proxy-body-size: "0"
+      large-client-header-buffers: "4 64k"
       #load-balance: "least_conn"
     extraArgs: {}
     resources:
@@ -84,7 +85,7 @@ nginx:
         "helm.sh/resource-policy": keep
       # in case of azure, can specific a specific IP address for the nginx service
       # loadBalancerIP: ""
-    
+
     # Temporarily disable the admission webhooks
     admissionWebhooks:
       enabled: true

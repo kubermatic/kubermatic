@@ -28,11 +28,13 @@ import (
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
+	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/applications/providers"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/template"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	"sigs.k8s.io/yaml"
 )
@@ -70,12 +72,24 @@ func SystemAppsHelmCharts(
 	helmTimeout time.Duration,
 	registryPrefix string,
 ) iter.Seq2[*SystemAppsHelmChart, error] {
-	appDefReconcilers := []reconciling.NamedApplicationDefinitionReconcilerFactory{
-		cilium.ApplicationDefinitionReconciler(config),
+	// If system applications are disabled we don't need to do anything.
+	if config.Spec.SystemApplications.Disable {
+		logger.Debug("System applications are disabled, skipping deployment of system application definitions.")
+		return nil
 	}
 
+	log := kubermaticlog.NewDefault().Sugar()
+	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(log, config)
+	if err != nil {
+		return func(yield func(*SystemAppsHelmChart, error) bool) {
+			yield(nil, fmt.Errorf("failed to get system application definition reconciler factories: %w", err))
+		}
+	}
+
+	defaultKubernetesVersion := defaulting.DefaultKubernetesVersioning.Default
+
 	return func(yield func(*SystemAppsHelmChart, error) bool) {
-		for _, createFunc := range appDefReconcilers {
+		for _, createFunc := range sysAppDefReconcilers {
 			appName, creator := createFunc()
 			appDef, err := creator(&appskubermaticv1.ApplicationDefinition{})
 			if err != nil {
@@ -109,6 +123,13 @@ func SystemAppsHelmCharts(
 			values, err := appDef.Spec.GetDefaultValues()
 			if err != nil {
 				yield(nil, err)
+				return
+			}
+
+			// Render the ApplicationDefinition values to inject template variables
+			values, err = renderApplicationDefinitionValues(values, defaultKubernetesVersion)
+			if err != nil {
+				yield(nil, fmt.Errorf("failed to render ApplicationDefinition values: %w", err))
 				return
 			}
 
@@ -181,7 +202,7 @@ func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, direc
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	sp, err := providers.NewSourceProvider(ctx, log.NewDefault().Sugar(), nil, "", directory, appSource, "")
+	sp, err := providers.NewSourceProvider(ctx, kubermaticlog.NewDefault().Sugar(), nil, "", directory, appSource, "")
 	if err != nil {
 		return "", fmt.Errorf("failed to create app source provider: %w", err)
 	}
@@ -192,4 +213,33 @@ func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, direc
 	}
 
 	return chartPath, nil
+}
+
+func renderApplicationDefinitionValues(values []byte, clusterVersion *semver.Semver) ([]byte, error) {
+	// Convert []byte to map[string]interface{}
+	var valuesMap map[string]interface{}
+	if values != nil {
+		if err := yaml.Unmarshal(values, &valuesMap); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal values: %w", err)
+		}
+	}
+
+	clusterAutoscalerVersion, err := template.GetAutoscalerImageTag(fmt.Sprintf("%d.%d", clusterVersion.Semver().Major(), clusterVersion.Semver().Minor()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse autoscaler version with error: %w", err)
+	}
+
+	templateData := template.TemplateData{
+		Cluster: template.ClusterData{
+			Version:           fmt.Sprintf("%d.%d.%d", clusterVersion.Semver().Major(), clusterVersion.Semver().Minor(), clusterVersion.Semver().Patch()),
+			MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Semver().Major(), clusterVersion.Semver().Minor()),
+			AutoscalerVersion: clusterAutoscalerVersion,
+		},
+	}
+	renderedValues, err := template.RenderValueTemplate(valuesMap, &templateData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to render ApplicationDefinition values: %w", err)
+	}
+
+	return yaml.Marshal(renderedValues)
 }
