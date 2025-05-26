@@ -583,7 +583,9 @@ spec:
                                 description: DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
                                 type: boolean
                               enableGatewayAPI:
-                                description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+                                description: |-
+                                  EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+                                  When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
                                 type: boolean
                               enableSecretSynchronizer:
                                 description: EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
@@ -594,6 +596,11 @@ spec:
                               enforced:
                                 description: Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
                                 type: boolean
+                              extraArgs:
+                                additionalProperties:
+                                  type: string
+                                description: ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster. These args are propagated to all the user clusters unless overridden at a cluster level.
+                                type: object
                               kubeconfig:
                                 description: Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
                                 properties:
@@ -655,6 +662,9 @@ spec:
                           kubevirt:
                             description: Kubevirt configures a KubeVirt datacenter.
                             properties:
+                              ccmLoadBalancerEnabled:
+                                description: 'Optional: indicates if the ccm should create and manage the clusters load balancers.'
+                                type: boolean
                               ccmZoneAndRegionEnabled:
                                 description: 'Optional: indicates if region and zone labels from the cloud provider should be fetched.'
                                 type: boolean
@@ -1334,6 +1344,9 @@ spec:
                                           items:
                                             description: Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
                                             properties:
+                                              cidr:
+                                                description: CIDR is the subnet IPV4 CIDR.
+                                                type: string
                                               name:
                                                 type: string
                                               regions:
@@ -2994,6 +3007,11 @@ spec:
                     KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
                     Only available in Enterprise Edition.
                   properties:
+                    enableForAllDatacenters:
+                      description: |-
+                        EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+                        This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+                      type: boolean
                     kubeconfig:
                       description: Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
                       properties:

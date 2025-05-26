@@ -54,6 +54,7 @@ metadata:
   name: nginx-ingress-controller
   namespace: default
 data:
+  large-client-header-buffers: "4 64k"
   proxy-body-size: "0"
 ---
 # Source: nginx-ingress-controller/charts/nginx/templates/clusterrole.yaml

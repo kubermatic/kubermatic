@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/zapr"
+	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
@@ -113,6 +114,8 @@ type controllerRunOptions struct {
 	kubeVirtInfraNamespace            string
 
 	clusterBackup clusterBackupOptions
+
+	kyvernoEnabled bool
 }
 
 type clusterBackupOptions struct {
@@ -169,6 +172,7 @@ func main() {
 	flag.BoolVar(&runOp.kubeVirtVMIEvictionController, "kv-vmi-eviction-controller", false, "Start the KubeVirt VMI eviction controller")
 	flag.StringVar(&runOp.kubeVirtInfraKubeconfig, "kv-infra-kubeconfig", "", "Path to the KubeVirt infra kubeconfig.")
 	flag.StringVar(&runOp.kubeVirtInfraNamespace, "kv-infra-namespace", "", "Kubevirt infra namespace where workload will be deployed")
+	flag.BoolVar(&runOp.kyvernoEnabled, "kyverno-enabled", false, "Enable Kyverno in user cluster.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -295,6 +299,9 @@ func main() {
 	if err := velerov1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", velerov1.SchemeGroupVersion), zap.Error(err))
 	}
+	if err := kyvernov1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", kyvernov1.SchemeGroupVersion), zap.Error(err))
+	}
 
 	isPausedChecker := userclustercontrollermanager.NewClusterPausedChecker(seedMgr.GetClient(), runOp.clusterName)
 
@@ -335,6 +342,7 @@ func main() {
 		runOp.konnectivityKeepaliveTime,
 		runOp.ccmMigration,
 		runOp.ccmMigrationCompleted,
+		runOp.kyvernoEnabled,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
@@ -426,7 +434,7 @@ func main() {
 	}
 	log.Info("Registered Application Installation controller")
 
-	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker); err != nil {
+	if err := setupControllers(log, seedMgr, mgr, runOp.clusterName, versions, runOp.overwriteRegistry, caBundle, isPausedChecker, runOp.namespace, runOp.kyvernoEnabled); err != nil {
 		log.Fatalw("Failed to add controllers to mgr", zap.Error(err))
 	}
 

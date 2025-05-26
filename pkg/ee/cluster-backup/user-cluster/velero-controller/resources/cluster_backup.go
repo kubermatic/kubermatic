@@ -51,6 +51,13 @@ const (
 
 	version       = "v1.14.0"
 	pluginVersion = "v1.10.0"
+
+	backupOrigin = "kkp-controllers"
+
+	// Adds AWS tags to backup objects created through the BSL configured via KKP.
+	// For more details, refer to:
+	// https://github.com/vmware-tanzu/velero-plugin-for-aws/blob/aaf7d434f5f4e3c0f728f1d840d106e37e51ffd7/backupstoragelocation.md?plain=1#L119
+	BSLTags = "tagging"
 )
 
 // NamespaceReconciler creates the namespace for velero related resources on the user cluster.
@@ -121,6 +128,12 @@ func BSLReconciler(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBack
 			bsl.Spec.Credential = nil
 			// add bucket prefix using projectID/clusterID to avoid collision.
 			bsl.Spec.ObjectStorage.Prefix = fmt.Sprintf("%s/%s", projectID, cluster.Name)
+
+			if bsl.Spec.Config == nil {
+				bsl.Spec.Config = make(map[string]string)
+			}
+			bsl.Spec.Config[BSLTags] = getTags(backupOrigin, projectID, cluster.Name)
+
 			return bsl, nil
 		}
 	}
@@ -152,4 +165,8 @@ func CustomizationConfigMapReconciler(rewriter registry.ImageRewriter) reconcili
 			return cm, nil
 		}
 	}
+}
+
+func getTags(backupOrigin, projectID, clusterID string) string {
+	return fmt.Sprintf("backup-origin=%s&project-id=%s&cluster-id=%s", backupOrigin, projectID, clusterID)
 }

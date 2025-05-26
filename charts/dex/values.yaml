@@ -39,6 +39,9 @@ dex:
           # Required: must include at least the host chosen
           # above.
           - ""
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+      nginx.ingress.kubernetes.io/proxy-body-size: "25m"
 
   config:
     # Required: Must be set to the ingress.hosts[0].host plus the

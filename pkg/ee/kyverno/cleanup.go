@@ -29,14 +29,22 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	admissioncontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/admission-controller"
+	backgroundcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/background-controller"
+	cleanupcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/cleanup-controller"
+	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // handleKyvernoCleanup removes all Kyverno resources from the user cluster.
 func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	// Remove all Kyverno resources from seed user cluster namespace
+	if err := r.ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx, cluster); err != nil {
+		return err
+	}
+
+	// Remove all Kyverno resources from the user cluster
 	if err := r.ensureKyvernoUserClusterResourcesAreRemoved(ctx, cluster); err != nil {
 		return err
 	}
@@ -44,17 +52,36 @@ func (r *reconciler) handleKyvernoCleanup(ctx context.Context, cluster *kubermat
 	return kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, CleanupFinalizer)
 }
 
+// ensureKyvernoUserClusterResourcesAreRemoved removes all Kyverno resources from the user cluster.
 func (r *reconciler) ensureKyvernoUserClusterResourcesAreRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get user cluster client: %w", err)
 	}
 
-	for _, resource := range userclusterresources.ResourcesForDeletion() {
-		err := userClusterClient.Delete(ctx, resource)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete resource %s: %w", resource.GetName(), err)
-		}
+	if err := userclusterresources.CleanUpResources(ctx, userClusterClient, cluster); err != nil {
+		return fmt.Errorf("failed to clean up user cluster resources: %w", err)
+	}
+
+	return nil
+}
+
+// ensureKyvernoSeedClusterNamespaceResourcesAreRemoved removes all Kyverno resources from the seed cluster namespace.
+func (r *reconciler) ensureKyvernoSeedClusterNamespaceResourcesAreRemoved(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if err := admissioncontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
+		return fmt.Errorf("failed to clean up admission controller resources: %w", err)
+	}
+
+	if err := backgroundcontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
+		return fmt.Errorf("failed to clean up background controller resources: %w", err)
+	}
+
+	if err := cleanupcontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
+		return fmt.Errorf("failed to clean up cleanup controller resources: %w", err)
+	}
+
+	if err := reportscontrollerresources.CleanUpResources(ctx, r.Client, cluster); err != nil {
+		return fmt.Errorf("failed to clean up reports controller resources: %w", err)
 	}
 
 	return nil

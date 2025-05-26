@@ -133,6 +133,8 @@ type KubermaticConfigurationSpec struct {
 	// MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
 	// Each entry should be in the format "repository:tag".
 	MirrorImages []string `json:"mirrorImages,omitempty"`
+	// SystemApplications contains configuration for system applications.
+	SystemApplications SystemApplicationOptions `json:"systemApplications,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -335,6 +337,10 @@ type OperatingSystemManager struct {
 	// It is recommended to use this field only for development, tests and PoC purposes. For production environments.
 	// it is not recommended, to use this field due to compatibility with the overall KKP stack.
 	ImageTag string `json:"imageTag,omitempty"`
+	// DisableDefaultOperatingSystemProfiles setting this property to true, would disable the creation of OSMs default
+	// OperatingSystemProfiles and users would need to provide a CustomOperatingSystemProfile to configure user clusters
+	// worker nodes.
+	DisableDefaultOperatingSystemProfiles bool `json:"disableDefaultOperatingSystemProfiles,omitempty"`
 }
 
 // KubermaticAddonConfiguration describes the addons for a given cluster runtime.
@@ -534,6 +540,14 @@ type KubermaticProxyConfiguration struct {
 	// list if proxying is configured (i.e. HTTP/HTTPS are not empty):
 	// "127.0.0.1/8", "localhost", ".local", ".local.", "kubernetes", ".default", ".svc"
 	NoProxy string `json:"noProxy,omitempty"`
+}
+
+type SystemApplicationOptions struct {
+	// Disable is used to disable the installation of system application definitions in the master cluster.
+	Disable bool `json:"disable,omitempty"`
+	// Applications is a list of system application definition names that should be installed in the master cluster.
+	// If not set, the default system applications will be installed.
+	Applications []string `json:"applications,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

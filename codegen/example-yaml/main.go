@@ -42,6 +42,10 @@ import (
 	yaml "sigs.k8s.io/yaml/goyaml.v3"
 )
 
+const (
+	sampledc = "<<exampledc>>"
+)
+
 func main() {
 	flag.Parse()
 
@@ -113,7 +117,7 @@ func main() {
 	}
 }
 
-func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
+func createBaseExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
@@ -151,7 +155,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				"<<exampledc>>": {
+				sampledc: {
 					Node: &kubermaticv1.NodeSettings{
 						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
@@ -246,6 +250,14 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
 							Templates: imageList,
 						},
+						KubeLB: &kubermaticv1.KubeLBDatacenterSettings{
+							Enabled:                  true,
+							NodeAddressType:          "ExternalIP",
+							UseLoadBalancerClass:     true,
+							EnableGatewayAPI:         false,
+							EnableSecretSynchronizer: true,
+							DisableIngressClass:      false,
+						},
 					},
 				},
 			},
@@ -269,6 +281,15 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				},
 			},
 			MLA: &kubermaticv1.SeedMLASettings{},
+			KubeLB: &kubermaticv1.KubeLBSeedSettings{
+				EnableForAllDatacenters: true,
+				KubeLBSettings: kubermaticv1.KubeLBSettings{
+					Kubeconfig: corev1.ObjectReference{
+						Name:      "kubelb-management-kubeconfig",
+						Namespace: "kubermatic",
+					},
+				},
+			},
 		},
 	}
 
@@ -429,7 +450,6 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 				Name:    "apache",
 				Version: "1.2.3",
 			},
-			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
 			ValuesBlock: `
 commonLabels:
   owner: somebody`[1:],

@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	csiVersion = "35836e0c8b68d9916d29a838ea60cdd3fc6199cf"
+	csiVersion = "9ad38f9e49c296acfe7b9d3301ebff8a1056fa68"
 )
 
 // DeploymentsReconcilers returns the CSI controller Deployments for KubeVirt.
@@ -183,7 +183,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-provisioner",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-external-provisioner:4.13.0")),
+					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-external-provisioner:4.20.0")),
 					Args: []string{
 						"--csi-address=$(ADDRESS)",
 						"--default-fstype=ext4",
@@ -216,7 +216,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-attacher",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-external-attacher:4.13.0")),
+					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-external-attacher:4.20.0")),
 					Args: []string{
 						"--csi-address=$(ADDRESS)",
 						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
@@ -248,7 +248,7 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 				{
 					Name:            "csi-liveness-probe",
 					ImagePullPolicy: corev1.PullAlways,
-					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-livenessprobe:4.13.0")),
+					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-livenessprobe:4.20.0")),
 					Args: []string{
 						"--csi-address=/csi/csi.sock",
 						"--probe-timeout=3s",

@@ -149,6 +149,16 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 						"watch",
 					},
 				},
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"policytemplates"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"policybindings"},
+					Verbs:     []string{"*"},
+				},
 			}
 			return r, nil
 		}

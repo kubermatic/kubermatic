@@ -1294,3 +1294,40 @@ func ReconcileKyvernoClusterPolicys(ctx context.Context, namedFactories []NamedK
 
 	return nil
 }
+
+// KyvernoPolicyReconciler defines an interface to create/update Policys.
+type KyvernoPolicyReconciler = func(existing *kyvernov1.Policy) (*kyvernov1.Policy, error)
+
+// NamedKyvernoPolicyReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
+type NamedKyvernoPolicyReconcilerFactory = func() (name string, reconciler KyvernoPolicyReconciler)
+
+// KyvernoPolicyObjectWrapper adds a wrapper so the KyvernoPolicyReconciler matches ObjectReconciler.
+// This is needed as Go does not support function interface matching.
+func KyvernoPolicyObjectWrapper(reconciler KyvernoPolicyReconciler) reconciling.ObjectReconciler {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return reconciler(existing.(*kyvernov1.Policy))
+		}
+		return reconciler(&kyvernov1.Policy{})
+	}
+}
+
+// ReconcileKyvernoPolicys will create and update the KyvernoPolicys coming from the passed KyvernoPolicyReconciler slice.
+func ReconcileKyvernoPolicys(ctx context.Context, namedFactories []NamedKyvernoPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+	for _, factory := range namedFactories {
+		name, reconciler := factory()
+		reconcileObject := KyvernoPolicyObjectWrapper(reconciler)
+		reconcileObject = reconciling.CreateWithNamespace(reconcileObject, namespace)
+		reconcileObject = reconciling.CreateWithName(reconcileObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			reconcileObject = objectModifier(reconcileObject)
+		}
+
+		if err := reconciling.EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, reconcileObject, client, &kyvernov1.Policy{}, false); err != nil {
+			return fmt.Errorf("failed to ensure Policy %s/%s: %w", namespace, name, err)
+		}
+	}
+
+	return nil
+}

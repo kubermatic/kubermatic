@@ -292,12 +292,18 @@ type KubeLB struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
-	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
+	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
+	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
 	return c.KubeLB != nil && c.KubeLB.Enabled
+}
+
+func (k KubeLB) IsGatewayAPIEnabled() bool {
+	return k.EnableGatewayAPI != nil && *k.EnableGatewayAPI
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
@@ -536,6 +542,8 @@ const (
 	ClusterConditionKubeVirtNetworkControllerSuccess                             ClusterConditionType = "KubeVirtNetworkControllerReconciledSuccessfully"
 	ClusterConditionClusterBackupControllerReconcilingSuccess                    ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
 	ClusterConditionKyvernoControllerReconcilingSuccess                          ClusterConditionType = "KyvernoControllerReconciledSuccessfully"
+	ClusterConditionDefaultPolicyControllerReconcilingSuccess                    ClusterConditionType = "DefaultPolicyControllerReconciledSuccessfully"
+	ClusterConditionDefaultPolicyBindingsControllerCreatedSuccessfully           ClusterConditionType = "DefaultPolicyBindingsControllerCreatedSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"

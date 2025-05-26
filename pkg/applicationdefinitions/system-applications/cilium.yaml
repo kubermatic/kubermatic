@@ -1,0 +1,163 @@
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
+    apps.kubermatic.k8c.io/type: cni
+  name: cilium
+spec:
+  defaultValuesBlock: |
+    envoy:
+      enabled: false
+    hubble:
+      relay:
+        enabled: true
+      tls:
+        auto:
+          method: cronJob
+      ui:
+        enabled: true
+    operator:
+      replicas: 1
+  description: Cilium CNI - eBPF-based Networking, Security, and Observability
+  method: helm
+  selector: {}
+  versions:
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.0
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.0
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.3
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.3
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.4
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.4
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.6
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.6
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.7
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.7
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.8
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.8
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.13.14
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.13.14
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.14.1
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.14.1
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.14.2
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.14.2
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.14.3
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.14.3
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.14.9
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.14.9
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.14.16
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.14.16
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.15.3
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.15.3
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.15.10
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.15.10
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.15.16
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.15.16
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.16.6
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.16.6
+    - template:
+        source:
+          helm:
+            chartName: cilium
+            chartVersion: 1.16.9
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 1.16.9
+  documentationURL: https://docs.cilium.io/en/stable/
+  sourceURL: https://github.com/cilium/cilium
+  logo: |+
+    PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICB4bWxuczpjYz0iaHR0cDovL2NyZWF0aXZlY29tbW9ucy5vcmcvbnMjIgogICB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiCiAgIHhtbG5zOnN2Zz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c29kaXBvZGk9Imh0dHA6Ly9zb2RpcG9kaS5zb3VyY2Vmb3JnZS5uZXQvRFREL3NvZGlwb2RpLTAuZHRkIgogICB4bWxuczppbmtzY2FwZT0iaHR0cDovL3d3dy5pbmtzY2FwZS5vcmcvbmFtZXNwYWNlcy9pbmtzY2FwZSIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0iTGF5ZXJfMSIKICAgaW5rc2NhcGU6dmVyc2lvbj0iMC45Mi4zICgyNDA1NTQ2LCAyMDE4LTAzLTExKSIKICAgc29kaXBvZGk6ZG9jbmFtZT0iY2lsaXVtLWFyMjEuc3ZnIgogICB4PSIwcHgiCiAgIHk9IjBweCIKICAgdmlld0JveD0iMS4yMiAwLjk4IDEyMCA1OS45OTk5OTkiCiAgIHhtbDpzcGFjZT0icHJlc2VydmUiCiAgIHdpZHRoPSIxMjAiCiAgIGhlaWdodD0iNjAiPjxtZXRhZGF0YQogICBpZD0ibWV0YWRhdGE0MiI+PHJkZjpSREY+PGNjOldvcmsKICAgICAgIHJkZjphYm91dD0iIj48ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD48ZGM6dHlwZQogICAgICAgICByZGY6cmVzb3VyY2U9Imh0dHA6Ly9wdXJsLm9yZy9kYy9kY21pdHlwZS9TdGlsbEltYWdlIiAvPjxkYzp0aXRsZT48L2RjOnRpdGxlPjwvY2M6V29yaz48L3JkZjpSREY+PC9tZXRhZGF0YT48ZGVmcwogICBpZD0iZGVmczQwIiAvPjxzb2RpcG9kaTpuYW1lZHZpZXcKICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICBib3JkZXJjb2xvcj0iIzY2NjY2NiIKICAgYm9yZGVyb3BhY2l0eT0iMSIKICAgb2JqZWN0dG9sZXJhbmNlPSIxMCIKICAgZ3JpZHRvbGVyYW5jZT0iMTAiCiAgIGd1aWRldG9sZXJhbmNlPSIxMCIKICAgaW5rc2NhcGU6cGFnZW9wYWNpdHk9IjAiCiAgIGlua3NjYXBlOnBhZ2VzaGFkb3c9IjIiCiAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgaW5rc2NhcGU6d2luZG93LWhlaWdodD0iMTAwMSIKICAgaWQ9Im5hbWVkdmlldzM4IgogICBzaG93Z3JpZD0iZmFsc2UiCiAgIGlua3NjYXBlOnpvb209IjgiCiAgIGlua3NjYXBlOmN4PSI2OC41NjY0NDgiCiAgIGlua3NjYXBlOmN5PSIxOS4zNDE1MTEiCiAgIGlua3NjYXBlOndpbmRvdy14PSItOSIKICAgaW5rc2NhcGU6d2luZG93LXk9Ii05IgogICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICBpbmtzY2FwZTpjdXJyZW50LWxheWVyPSJMYXllcl8xIiAvPgo8c3R5bGUKICAgdHlwZT0idGV4dC9jc3MiCiAgIGlkPSJzdHlsZTIiPgoJLnN0MHtmaWxsOiMzNzM3Mzc7fQoJLnN0MXtmaWxsOiNFODI0Mjk7fQoJLnN0MntmaWxsOiM2Mjg5QzY7fQoJLnN0M3tmaWxsOiNGOUM1MTU7fQoJLnN0NHtmaWxsOiM4MDYxQTk7fQoJLnN0NXtmaWxsOiNGMTc0MjM7fQoJLnN0NntmaWxsOiM5N0M5M0Q7fQoJLnN0N3tmaWxsOiNDQURENzI7fQoJLnN0OHtmaWxsOiMxRTIyMjI7fQo8L3N0eWxlPgoKPGcKICAgaWQ9Imc4ODIiCiAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0wLjc1NzE3MTU3KSI+PGcKICAgICB0cmFuc2Zvcm09Im1hdHJpeCgwLjE0MjQwMjM3LDAsMCwwLjE0MjQwMjM3LDQuNDg5NDgwMSwxMi4xNDAxNjYpIgogICAgIGlkPSJnMzUwMyI+Cgk8ZwogICBpZD0iZzM1MDUiPgoJCTxnCiAgIGlkPSJnMzUwNyI+CgkJCTxwYXRoCiAgIHN0eWxlPSJmaWxsOiMzNzM3MzciCiAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgIGQ9Ik0gMTg5LjgsOTIuOSBIIDE0NCBsIC0yMywzOS44IDIyLjksMzkuNCBoIDQ1LjkgbCAyMi45LC0zOS40IHogbSAtNi4xLDY4LjQgSCAxNTAgbCAtMTYuOCwtMjguNyAxNi44LC0yOSBoIDMzLjcgbCAxNi44LDI5IHoiCiAgIGNsYXNzPSJzdDAiCiAgIGlkPSJwYXRoMzUwOSIgLz4KCQkJPHBvbHlnb24KICAgc3R5bGU9ImZpbGw6I2U4MjQyOSIKICAgcG9pbnRzPSIxMzMuMiwxMzIuNyAxNTAsMTYxLjMgMTgzLjcsMTYxLjMgMjAwLjYsMTMyLjcgMTgzLjcsMTAzLjMgMTUwLDEwMy4zICIKICAgY2xhc3M9InN0MSIKICAgaWQ9InBvbHlnb24zNTExIiAvPgoJCTwvZz4KCQk8ZwogICBpZD0iZzM1MTMiPgoJCQk8cGF0aAogICBzdHlsZT0iZmlsbDojMzczNzM3IgogICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICBkPSJNIDE4OS44LDE3Ny41IEggMTQ0IGwgLTIzLDM5LjcgMjIuOSwzOS40IGggNDUuOSBsIDIyLjksLTM5LjQgeiBtIC02LjEsNjguNyBIIDE1MCBsIC0xNi44LC0yOC43IDE2LjgsLTI5IGggMzMuNyBsIDE2LjgsMjkgeiIKICAgY2xhc3M9InN0MCIKICAgaWQ9InBhdGgzNTE1IiAvPgoJCQk8cG9seWdvbgogICBzdHlsZT0iZmlsbDojNjI4OWM2IgogICBwb2ludHM9IjEzMy4yLDIxNy4yIDE1MCwyNDYuMiAxODMuNywyNDYuMiAyMDAuNiwyMTcuMiAxODMuNywxODguMiAxNTAsMTg4LjIgIgogICBjbGFzcz0ic3QyIgogICBpZD0icG9seWdvbjM1MTciIC8+CgkJPC9nPgoJCTxnCiAgIGlkPSJnMzUxOSI+CgkJCTxwYXRoCiAgIHN0eWxlPSJmaWxsOiMzNzM3MzciCiAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgIGQ9Ik0gMTg5LjgsOCBIIDE0NCBsIC0yMywzOS44IDIzLDM5LjQgaCA0NS45IGwgMjIuOSwtMzkuNCB6IG0gLTYuMSw2OC40IEggMTUwIEwgMTMzLjIsNDcuNyAxNTAsMTguNCBoIDMzLjcgbCAxNi44LDI5IHoiCiAgIGNsYXNzPSJzdDAiCiAgIGlkPSJwYXRoMzUyMSIgLz4KCQkJPHBvbHlnb24KICAgc3R5bGU9ImZpbGw6I2Y5YzUxNSIKICAgcG9pbnRzPSIxMzMuMiw0Ny44IDE1MCw3Ni40IDE4My43LDc2LjQgMjAwLjYsNDcuOCAxODMuNywxOC40IDE1MCwxOC40ICIKICAgY2xhc3M9InN0MyIKICAgaWQ9InBvbHlnb24zNTIzIiAvPgoJCTwvZz4KCTwvZz4KCTxnCiAgIGlkPSJnMzUyNSI+CgkJPGcKICAgaWQ9ImczNTI3Ij4KCQkJPHBhdGgKICAgc3R5bGU9ImZpbGw6IzM3MzczNyIKICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIKICAgZD0ibSAyNjQuMywxMzUuNSBoIC00NS41IGwgLTIyLjksMzkuOCAyMi45LDM5LjQgaCA0NS45IGwgMjIuOSwtMzkuNCB6IG0gLTYuMSw2OC41IGggLTMzLjcgbCAtMTYuOCwtMjguNyAxNi44LC0yOSBoIDMzLjcgbCAxNi44LDI5IHoiCiAgIGNsYXNzPSJzdDAiCiAgIGlkPSJwYXRoMzUyOSIgLz4KCQkJPHBvbHlnb24KICAgc3R5bGU9ImZpbGw6IzgwNjFhOSIKICAgcG9pbnRzPSIyMDguMSwxNzUuMyAyMjQuOSwyMDQgMjU4LjIsMjA0IDI3NS40LDE3NS4zIDI1OC4yLDE0NS45IDIyNC45LDE0NS45ICIKICAgY2xhc3M9InN0NCIKICAgaWQ9InBvbHlnb24zNTMxIiAvPgoJCTwvZz4KCQk8ZwogICBpZD0iZzM1MzMiPgoJCQk8cGF0aAogICBzdHlsZT0iZmlsbDojMzczNzM3IgogICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICBkPSJtIDI2NC4zLDUwLjYgaCAtNDUuNSBsIC0yMi45LDM5LjQgMjIuOSwzOS40IGggNDUuOSBMIDI4Ny42LDkwIFogbSAtNi4xLDY4LjUgaCAtMzMuNyBsIC0xNi44LC0yOC43IDE2LjgsLTI5IGggMzMuNyBsIDE2LjgsMjkgeiIKICAgY2xhc3M9InN0MCIKICAgaWQ9InBhdGgzNTM1IiAvPgoJCQk8cG9seWdvbgogICBzdHlsZT0iZmlsbDojZjE3NDIzIgogICBwb2ludHM9IjIwOC4xLDkwLjQgMjI0LjksMTE5LjEgMjU4LjIsMTE5LjEgMjc1LjQsOTAuNCAyNTguMiw2MSAyMjQuOSw2MSAiCiAgIGNsYXNzPSJzdDUiCiAgIGlkPSJwb2x5Z29uMzUzNyIgLz4KCQk8L2c+Cgk8L2c+Cgk8ZwogICBpZD0iZzM1MzkiPgoJCTxnCiAgIGlkPSJnMzU0MSI+CgkJCTxwYXRoCiAgIHN0eWxlPSJmaWxsOiMzNzM3MzciCiAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgIGQ9Ik0gMTE0LjksMTM1LjUgSCA2OS40IGwgLTIyLjksMzkuOCAyMi45LDM5LjQgaCA0NS45IGwgMjIuOSwtMzkuNCB6IE0gMTA4LjgsMjA0IEggNzUuNSBsIC0xNi44LC0yOC43IDE2LjgsLTI5IGggMzMuNyBsIDE2LjgsMjkgeiIKICAgY2xhc3M9InN0MCIKICAgaWQ9InBhdGgzNTQzIiAvPgoJCQk8cG9seWdvbgogICBzdHlsZT0iZmlsbDojOTdjOTNkIgogICBwb2ludHM9IjU4LjcsMTc1LjMgNzUuNSwyMDQgMTA4LjgsMjA0IDEyNiwxNzUuMyAxMDguOCwxNDUuOSA3NS41LDE0NS45ICIKICAgY2xhc3M9InN0NiIKICAgaWQ9InBvbHlnb24zNTQ1IiAvPgoJCTwvZz4KCQk8ZwogICBpZD0iZzM1NDciPgoJCQk8cGF0aAogICBzdHlsZT0iZmlsbDojMzczNzM3IgogICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICBkPSJNIDExNC45LDUwLjYgSCA2OS40IEwgNDYuNSw5MCA2OS40LDEyOS40IGggNDUuOSBMIDEzOC4yLDkwIFogbSAtNi4xLDY4LjUgSCA3NS41IEwgNTguNyw5MC40IDc1LjUsNjEuNCBoIDMzLjcgbCAxNi44LDI5IHoiCiAgIGNsYXNzPSJzdDAiCiAgIGlkPSJwYXRoMzU0OSIgLz4KCQkJPHBvbHlnb24KICAgc3R5bGU9ImZpbGw6I2NhZGQ3MiIKICAgcG9pbnRzPSI1OC43LDkwLjQgNzUuNSwxMTkuMSAxMDguOCwxMTkuMSAxMjYsOTAuNCAxMDguOCw2MSA3NS41LDYxICIKICAgY2xhc3M9InN0NyIKICAgaWQ9InBvbHlnb24zNTUxIiAvPgoJCTwvZz4KCTwvZz4KPC9nPjxnCiAgICAgdHJhbnNmb3JtPSJtYXRyaXgoMC4xNTI2OTMxMiwwLDAsMC4xNTI2OTMxMiw1NC41MTQzODEsLTI1LjM0MDg1NykiCiAgICAgaWQ9ImczNTUzIj4KCTxnCiAgIGlkPSJnMzU1NSI+CgkJPHBhdGgKICAgc3R5bGU9ImZpbGw6IzFlMjIyMiIKICAgZD0ibSAzMS44LDM0Ny42IGMgMy44LDAgNy4zLDAuNSAxMC42LDEuMiAzLjMsMC43IDYuMSwxLjkgOC44LDMuMyB2IDEwLjQgYyAtMy4zLC0xLjIgLTYuNCwtMi4xIC05LjIsLTIuOCAtMy4xLC0wLjcgLTUuOSwtMS4yIC05LC0xLjIgLTMuMSwwIC02LjEsMC41IC05LjIsMS40IC0zLjEsMC45IC01LjcsMi42IC04LjMsNSAtMi40LDIuNCAtNC4zLDUuNCAtNS45LDkuMiAtMS40LDMuOCAtMi4xLDguNSAtMi4xLDE0LjIgMCw0IDAuNSw3LjggMS43LDExLjQgMS4yLDMuNSAyLjgsNi40IDUsOSAyLjIsMi42IDUsNC41IDgsNS45IDMuMywxLjQgNy4xLDIuMSAxMS40LDIuMSAzLjEsMCA2LjEsLTAuMiA5LjUsLTAuOSAzLjEsLTAuNyA2LjEsLTEuNyA5LjIsLTIuOCB2IDEwLjQgYyAtMC45LDAuNSAtMi4xLDEuMiAtMy41LDEuNyAtMS40LDAuNSAtMy4xLDAuOSAtNSwxLjQgLTEuNywwLjUgLTMuNSwwLjcgLTUuNywwLjkgLTEuOSwwLjIgLTQsMC41IC01LjksMC41IC01LjIsMCAtOS45LC0wLjcgLTE0LjcsLTIuNCAtNC41LC0xLjcgLTguNSwtNCAtMTIuMSwtNy4xIC0zLjMsLTMuMyAtNi4xLC03LjMgLTgsLTEyLjMgLTEuOSwtNSAtMy4xLC0xMC42IC0zLjEsLTE3LjUgMCwtNSAwLjUsLTkuNSAxLjcsLTEzLjUgMC45LC00IDIuNCwtNy42IDQuMywtMTAuNiAxLjksLTMgNCwtNS43IDYuNCwtNy44IDIuNCwtMi4xIDUsLTMuOCA3LjgsLTUuMiAyLjgsLTEuNCA1LjcsLTIuNCA4LjUsLTMuMSAzLjEsLTAuMyA1LjksLTAuOCA4LjgsLTAuOCB6IgogICBjbGFzcz0ic3Q4IgogICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICBpZD0icGF0aDM1NTciIC8+CgkJPHBhdGgKICAgc3R5bGU9ImZpbGw6IzFlMjIyMiIKICAgZD0iTSA3MS41LDMzMiBWIDMxOCBIIDg0IHYgMTQgeiBtIDAuMiw5My45IHYgLTc2LjIgaCAxMi41IHYgNzYuMiB6IgogICBjbGFzcz0ic3Q4IgogICBpbmtzY2FwZTpjb25uZWN0b3ItY3VydmF0dXJlPSIwIgogICBpZD0icGF0aDM1NTkiIC8+CgkJPHBhdGgKICAgc3R5bGU9ImZpbGw6IzFlMjIyMiIKICAgZD0iTSAxMDkuOCw0MjUuOSBWIDMwOS44IGggMTIuNSB2IDExNi4xIHoiCiAgIGNsYXNzPSJzdDgiCiAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgIGlkPSJwYXRoMzU2MSIgLz4KCQk8cGF0aAogICBzdHlsZT0iZmlsbDojMWUyMjIyIgogICBkPSJtIDE0Ny43LDMzMiB2IC0xNCBoIDEyLjUgdiAxNCB6IG0gMC4yLDkzLjkgdiAtNzYuMiBoIDEyLjUgdiA3Ni4yIHoiCiAgIGNsYXNzPSJzdDgiCiAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgIGlkPSJwYXRoMzU2MyIgLz4KCQk8cGF0aAogICBzdHlsZT0iZmlsbDojMWUyMjIyIgogICBkPSJtIDIxNS42LDQyNy44IGMgLTQsMCAtNy42LC0wLjUgLTEwLjYsLTEuMiAtMy4xLC0wLjkgLTUuOSwtMi4xIC04LjMsLTMuNSAtMi40LC0xLjcgLTQuNSwtMy4zIC02LjEsLTUuNyAtMS43LC0yLjEgLTMuMSwtNC41IC00LC03LjEgLTAuNywtMS45IC0xLjIsLTQgLTEuNywtNi40IC0wLjIsLTIuNCAtMC41LC00LjcgLTAuNSwtNy42IHYgLTQ2LjYgaCAxMi41IHYgNDYuNiBjIDAsNC4zIDAuNSw3LjggMS43LDEwLjYgMS4yLDMuMyAzLjMsNS43IDYuMSw3LjYgMi44LDEuOSA2LjYsMi44IDEwLjksMi44IDQuNywwIDguNSwtMC45IDExLjQsLTMuMSAyLjgsLTIuMSA1LC00LjcgNi4xLC04LjMgMC45LC0yLjYgMS40LC01LjkgMS40LC05LjcgViAzNDkuNiBIIDI0NyB2IDQ2LjggYyAwLDIuNiAtMC4yLDUgLTAuNSw3LjEgLTAuMiwyLjEgLTAuNyw0LjMgLTEuNCw2LjEgLTAuOSwyLjYgLTIuNCw1IC00LDcuMyAtMS43LDIuMSAtMy44LDQgLTYuMSw1LjcgLTIuNCwxLjcgLTUuMiwyLjggLTguNSwzLjggLTMuNCwwLjkgLTYuOSwxLjQgLTEwLjksMS40IHoiCiAgIGNsYXNzPSJzdDgiCiAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiCiAgIGlkPSJwYXRoMzU2NSIgLz4KCQk8cGF0aAogICBzdHlsZT0iZmlsbDojMWUyMjIyIgogICBkPSJtIDMzMi40LDQyNS45IGggLTEyLjUgdiAtNDkgYyAwLC0zLjMgLTAuNSwtNi4xIC0xLjIsLTguNSAtMC43LC0yLjQgLTEuNywtNC4zIC0zLjEsLTUuNyAtMS40LC0xLjQgLTMuMSwtMi42IC01LC0zLjMgLTEuOSwtMC43IC00LC0wLjkgLTYuNCwtMC45IC00LjUsMCAtOC41LDEuMiAtMTIuMSwzLjUgLTMuNSwyLjQgLTYuOSw1LjcgLTkuNyw5LjkgdiA1NC4yIEggMjcwIHYgLTc2LjQgaCA5LjcgbCAyLjQsMTAuNiBoIDAuMiBjIDEuNCwtMS43IDIuOCwtMy4zIDQuNSwtNSAxLjcsLTEuNCAzLjUsLTIuOCA1LjQsLTQgMS45LC0xLjIgNC4zLC0yLjEgNi42LC0yLjYgMi40LC0wLjcgNSwtMC45IDcuOCwtMC45IDUuNywwIDEwLjQsMS40IDE0LjIsNCAzLjgsMi44IDYuNiw2LjQgOC44LDExLjEgaCAwLjIgYyAzLjMsLTQuNyA3LjMsLTguNSAxMS42LC0xMS4xIDQuMywtMi42IDkuNSwtNCAxNS4xLC00IDIuNiwwIDUuNCwwLjUgOC41LDEuMiAzLjEsMC43IDUuNywyLjEgOC4zLDQgMi42LDEuOSA0LjUsNC43IDYuMSw4LjMgMS43LDMuNSAyLjYsOCAyLjYsMTMuNyB2IDUxLjEgSCAzNzAgViAzNzcgYyAwLC0zLjMgLTAuNSwtNi4xIC0xLjIsLTguNSAtMC43LC0yLjQgLTEuNywtNC4zIC0zLjEsLTUuNyAtMS40LC0xLjQgLTMuMSwtMi42IC01LC0zLjMgLTEuOSwtMC43IC00LC0wLjkgLTYuNCwtMC45IC00LjUsMCAtOC41LDEuMiAtMTIuMSwzLjUgLTMuNSwyLjQgLTYuOSw1LjcgLTkuOSw5LjkgeiIKICAgY2xhc3M9InN0OCIKICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIKICAgaWQ9InBhdGgzNTY3IiAvPgoJPC9nPgo8L2c+PC9nPgo8L3N2Zz4=
+  logoFormat: svg+xml

@@ -631,6 +631,17 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 		operatingsystemmanager.OperatingSystemProfileCRDReconciler(),
 	}
 
+	if data.cluster.Spec.IsKubeLBEnabled() && data.cluster.Spec.KubeLB.IsGatewayAPIEnabled() {
+		crds, err := crd.CRDsForGroup(crd.GatewayAPIGroup)
+		if err != nil {
+			return fmt.Errorf("failed to get %s CRDs: %w", crd.GatewayAPIGroup, err)
+		}
+
+		for _, c := range crds {
+			creators = append(creators, applications.CRDReconciler(&c))
+		}
+	}
+
 	if r.opaIntegration {
 		gatekeeperCRDs, err := gatekeeper.CRDs()
 		if err != nil {
@@ -687,9 +698,11 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Contex
 		creators = append(creators, csimigration.ValidatingwebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.VsphereCSIMigrationWebhookConfigurationWebhookName))
 	}
 
-	if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
-		r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-		creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+	if !data.cluster.Spec.DisableCSIDriver {
+		if r.cloudProvider == kubermaticv1.VSphereCloudProvider || r.cloudProvider == kubermaticv1.NutanixCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider ||
+			r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+			creators = append(creators, csisnapshotter.ValidatingSnapshotWebhookConfigurationReconciler(data.caCert.Cert, metav1.NamespaceSystem, resources.CSISnapshotValidationWebhookConfigurationName))
+		}
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r); err != nil {
@@ -854,7 +867,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		)
 	}
 
-	if data.csiCloudConfig != nil {
+	if !data.cluster.Spec.DisableCSIDriver && data.csiCloudConfig != nil {
 		if r.cloudProvider == kubermaticv1.AzureCloudProvider || r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.VSphereCloudProvider {
 			creators = append(creators, cloudcontroller.CloudConfig(data.csiCloudConfig, resources.CSICloudConfigSecretName))
 		}
@@ -872,8 +885,10 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
-	if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
-		creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+	if !data.cluster.Spec.DisableCSIDriver {
+		if r.cloudProvider == kubermaticv1.OpenstackCloudProvider || r.cloudProvider == kubermaticv1.DigitaloceanCloudProvider {
+			creators = append(creators, csisnapshotter.TLSServingCertificateReconciler(resources.CSISnapshotValidationWebhookName, data.caCert))
+		}
 	}
 
 	if r.userSSHKeyAgent {

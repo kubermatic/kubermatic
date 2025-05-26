@@ -386,7 +386,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: '{{ Image "registry.k8s.io/csi-vsphere/driver:v3.3.1" }}'
+          image: '{{ Image "registry.k8s.io/csi-vsphere/driver:v3.4.0" }}'
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -441,7 +441,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: '{{ Image "registry.k8s.io/csi-vsphere/syncer:v3.3.1" }}'
+          image: '{{ Image "registry.k8s.io/csi-vsphere/syncer:v3.4.0" }}'
           imagePullPolicy: Always
           name: vsphere-syncer
           ports:
@@ -469,10 +469,11 @@ spec:
             - --leader-election-retry-period=30s
             - --kube-api-qps=100
             - --kube-api-burst=100
+            - --worker-threads=100
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.5.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.7.0" }}'
           name: csi-attacher
           volumeMounts:
             - mountPath: /csi
@@ -491,7 +492,7 @@ spec:
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.10.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.12.0" }}'
           name: csi-resizer
           volumeMounts:
             - mountPath: /csi
@@ -499,7 +500,7 @@ spec:
         - args:
             - --v=4
             - --csi-address=/csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.12.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.14.0" }}'
           name: liveness-probe
           volumeMounts:
             - mountPath: /csi
@@ -536,7 +537,7 @@ spec:
           env:
             - name: ADDRESS
               value: /csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v7.0.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0" }}'
           name: csi-snapshotter
           volumeMounts:
             - mountPath: /csi
@@ -608,7 +609,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: NODEGETINFO_WATCH_TIMEOUT_MINUTES
               value: "1"
-          image: '{{ Image "registry.k8s.io/csi-vsphere/driver:v3.3.1" }}'
+          image: '{{ Image "registry.k8s.io/csi-vsphere/driver:v3.4.0" }}'
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -653,7 +654,7 @@ spec:
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
               value: /var/lib/kubelet/plugins/csi.vsphere.vmware.com/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.10.1" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.12.0" }}'
           livenessProbe:
             exec:
               command:
@@ -670,7 +671,7 @@ spec:
         - args:
             - --v=4
             - --csi-address=/csi/csi.sock
-          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.12.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.14.0" }}'
           name: liveness-probe
           volumeMounts:
             - mountPath: /csi

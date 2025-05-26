@@ -26,15 +26,9 @@ spec:
         - jsonPath: .status.templateEnforced
           name: Enforced
           type: boolean
-        - jsonPath: .spec.enabled
-          name: Enabled
-          type: boolean
         - jsonPath: .status.active
           name: Active
           type: string
-        - jsonPath: .spec.namespacedPolicy
-          name: Namespaced
-          type: boolean
         - jsonPath: .status.conditions[?(@.type=='Ready')].status
           name: Ready
           type: string
@@ -68,60 +62,31 @@ spec:
             spec:
               description: PolicyBindingSpec describes how and where to apply the referenced PolicyTemplate.
               properties:
-                enabled:
+                kyvernoPolicyNamespace:
                   description: |-
-                    Enabled controls whether the policy defined by the template should be actively applied to the cluster.
+                    KyvernoPolicyNamespace specifies the Kyverno namespace to deploy the Kyverno Policy into.
 
                     Relevant only if the referenced PolicyTemplate has spec.enforced=false.
-                  type: boolean
-                namespaceSelector:
-                  description: |-
-                    NamespaceSelector specifies which namespaces the Kyverno Policy resource(s) should be created in
-
-                    Relevant only if Template.NamespacedPolicy is true.
-                    If Template.NamespacedPolicy is true and this selector is omitted, no Kyverno Policy resources will be created.
+                    If Template.NamespacedPolicy is true and this field is omitted, no Kyverno Policy resources will be created.
                   properties:
-                    matchExpressions:
-                      description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
-                      items:
-                        description: |-
-                          A label selector requirement is a selector that contains values, a key, and an operator that
-                          relates the key and values.
-                        properties:
-                          key:
-                            description: key is the label key that the selector applies to.
-                            type: string
-                          operator:
-                            description: |-
-                              operator represents a key's relationship to a set of values.
-                              Valid operators are In, NotIn, Exists and DoesNotExist.
-                            type: string
-                          values:
-                            description: |-
-                              values is an array of string values. If the operator is In or NotIn,
-                              the values array must be non-empty. If the operator is Exists or DoesNotExist,
-                              the values array must be empty. This array is replaced during a strategic
-                              merge patch.
-                            items:
-                              type: string
-                            type: array
-                            x-kubernetes-list-type: atomic
-                        required:
-                          - key
-                          - operator
-                        type: object
-                      type: array
-                      x-kubernetes-list-type: atomic
-                    matchLabels:
+                    annotations:
                       additionalProperties:
                         type: string
-                      description: |-
-                        matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
-                        map is equivalent to an element of matchExpressions, whose key field is "key", the
-                        operator is "In", and the values array contains only "value". The requirements are ANDed.
+                      description: Annotations to apply to this namespace.
                       type: object
+                    labels:
+                      additionalProperties:
+                        type: string
+                      description: Labels to apply to this namespace.
+                      type: object
+                    name:
+                      description: Name is the name of the namespace to deploy the Kyverno Policy into.
+                      maxLength: 63
+                      pattern: ^(|[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)
+                      type: string
+                  required:
+                    - name
                   type: object
-                  x-kubernetes-map-type: atomic
                 policyTemplateRef:
                   description: PolicyTemplateRef references the PolicyTemplate by name
                   properties:

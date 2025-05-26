@@ -38,3 +38,25 @@ kubermaticOperator:
   extraEnv: []
   # - name: KEY
   #   value: 'value'
+
+  # Node scheduling configuration
+  tolerations: []
+  # Example:
+  # - key: "node-role.kubernetes.io/control-plane"
+  #   operator: "Exists"
+  #   effect: "NoSchedule"
+
+  affinity: {}
+  # Example:
+  # nodeAffinity:
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #   - weight: 100
+  #     preference:
+  #       matchExpressions:
+  #       - key: node-role.kubernetes.io/control-plane
+  #         operator: Exists
+
+  nodeSelector: {}
+  # Example:
+  # kubernetes.io/os: linux
+  # node-role.kubernetes.io/control-plane: ""

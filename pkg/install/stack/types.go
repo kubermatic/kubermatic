@@ -66,8 +66,11 @@ type DeployOptions struct {
 	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
+	LimitApps               []string
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 type Stack interface {

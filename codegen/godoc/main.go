@@ -31,7 +31,7 @@ import (
 	"golang.org/x/tools/go/packages"
 
 	"k8c.io/kubermatic/v2/pkg/addon"
-	"k8c.io/kubermatic/v2/pkg/ee/applications"
+	"k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
 )
 
@@ -44,7 +44,7 @@ func main() {
 	}
 
 	// document application template data
-	if err := generate("zz_generated.applicationdata.go.txt", applications.TemplateData{}); err != nil {
+	if err := generate("zz_generated.applicationdata.go.txt", template.TemplateData{}); err != nil {
 		log.Fatalf("Failed to create documentation: %v", err)
 	}
 

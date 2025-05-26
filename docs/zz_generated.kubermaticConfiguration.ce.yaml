@@ -274,6 +274,13 @@ spec:
       requests:
         cpu: 200m
         memory: 100Mi
+  # SystemApplications contains configuration for system applications.
+  systemApplications:
+    # Applications is a list of system application definition names that should be installed in the master cluster.
+    # If not set, the default system applications will be installed.
+    applications: null
+    # Disable is used to disable the installation of system application definitions in the master cluster.
+    disable: false
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.
@@ -446,6 +453,10 @@ spec:
     nodePortRange: 30000-32767
     # OperatingSystemManager configures the image repo and the tag version for osm deployment.
     operatingSystemManager:
+      # DisableDefaultOperatingSystemProfiles setting this property to true, would disable the creation of OSMs default
+      # OperatingSystemProfiles and users would need to provide a CustomOperatingSystemProfile to configure user clusters
+      # worker nodes.
+      disableDefaultOperatingSystemProfiles: false
       # ImageRepository is used to override the OperatingSystemManager image repository.
       # It is recommended to use this field only for development, tests and PoC purposes. For production environments.
       # it is not recommended, to use this field due to compatibility with the overall KKP stack.
@@ -466,7 +477,7 @@ spec:
       # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
       helmRegistryConfigFile: null
       # HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
-      helmRepository: quay.io/kubermatic/helm-charts
+      helmRepository: ""
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
@@ -538,6 +549,10 @@ spec:
         to: 1.32.*
       - from: 1.32.*
         to: 1.32.*
+      - from: 1.32.*
+        to: 1.33.*
+      - from: 1.33.*
+        to: 1.33.*
     # Versions lists the available versions.
     versions:
       - v1.30.5
@@ -551,6 +566,7 @@ spec:
       - v1.32.1
       - v1.32.3
       - v1.32.4
+      - v1.33.0
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

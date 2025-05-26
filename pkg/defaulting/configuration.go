@@ -239,6 +239,8 @@ var (
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),
 			newSemver("v1.32.4"),
+			// Kubernetes 1.33
+			newSemver("v1.33.0"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
@@ -273,6 +275,17 @@ var (
 				// Allow to change to any patch version
 				From: "1.32.*",
 				To:   "1.32.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.32.*",
+				To:   "1.33.*",
+			},
+			// ======= 1.33 =======
+			{
+				// Allow to change to any patch version
+				From: "1.33.*",
+				To:   "1.33.*",
 			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
@@ -508,10 +521,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultHelmRepo(&configCopy.Spec.UserCluster.SystemApplications.HelmRepository, DefaultSystemApplicationsHelmRepository, "userCluster.systemApplications.helmRepository", logger); err != nil {
-		return configCopy, err
-	}
-
 	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -557,15 +566,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	return configCopy, nil
-}
-
-func defaultHelmRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
-	if *repo != "" && strings.HasPrefix(*repo, "oci://") {
-		normalizedRepo := strings.TrimPrefix(*repo, "oci://")
-		return defaultDockerRepo(&normalizedRepo, defaultRepo, key, logger)
-	}
-
-	return defaultDockerRepo(repo, defaultRepo, key, logger)
 }
 
 func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {

@@ -223,7 +223,6 @@ spec:
                   type: string
               required:
                 - description
-                - enforced
                 - policySpec
                 - title
                 - visibility

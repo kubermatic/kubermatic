@@ -332,8 +332,6 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			}
 
 			copyKubermaticConfig := kubermaticConfig.DeepCopy()
-			// force using default repos
-			copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository = defaulting.DefaultSystemApplicationsHelmRepository
 
 			logger.Info("🚀 Getting images from system Applications Helm charts…")
 
@@ -342,8 +340,13 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					return err
 				}
 
+				chartRepository := sysChart.Template.Source.Helm.URL
+				if copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository != "" {
+					chartRepository = copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository
+				}
+
 				chartImage := fmt.Sprintf("%s/%s:%s",
-					defaulting.DefaultSystemApplicationsHelmRepository,
+					chartRepository,
 					sysChart.Template.Source.Helm.ChartName,
 					sysChart.Version,
 				)

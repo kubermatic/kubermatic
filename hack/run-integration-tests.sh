@@ -39,6 +39,16 @@ if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon_ci
 fi
 
+if ! [ -x "$(command -v etcd)" ]; then
+  TEST_NAME="Download envtest binaries"
+  echodate "Downloading envtest binaries..."
+
+  TMP_DIR="$(mktemp -d)"
+  PATH="$PATH:$TMP_DIR"
+
+  download_envtest "$TMP_DIR" "1.33.0"
+fi
+
 # For the AWS tests, we need a localstack container running.
 if [ -z "${SKIP_AWS_PROVIDER:-}" ]; then
   echodate "Setting up localstack container, set \$SKIP_AWS_PROVIDER to skip..."
