@@ -594,9 +594,9 @@ const (
 	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert.
 	ServingCertKeySecretKey = "serving.key"
 
-	// AuthorizationWebhookVolumeName
+	// AuthorizationWebhookVolumeName is the name for the authorization-webhook config mounted volume.
 	AuthorizationWebhookVolumeName = "authorization-webhook"
-	// AuthorizationConfigurationVolumeName
+	// AuthorizationConfigurationVolumeName is the name for the authorization-configuration mounted volume.
 	AuthorizationConfigurationVolumeName = "authorization-configuration"
 
 	// CloudConfigSecretKey is the secret key for cloud-config.
