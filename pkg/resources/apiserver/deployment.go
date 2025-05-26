@@ -483,16 +483,23 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 			"/etc/kubernetes/encryption-configuration/encryption-configuration.yaml")
 	}
 
+	flags = append(flags, generateAuthorizationFlags(cluster)...)
+
+	return flags, nil
+}
+
+func generateAuthorizationFlags(cluster *kubermaticv1.Cluster) []string {
+	flags := []string{}
 	if cluster.Spec.IsWebhookAuthorizationEnabled() {
 		flags = append(flags, "--authorization-webhook-config-file", "/etc/kubernetes/authorization-webhook.yaml")
 		flags = append(flags, "--authorization-webhook-version", cluster.Spec.GetAuthorizationWebhookVersion())
 	}
 
 	if cluster.Spec.IsAuthorizationConfigurationFileEnabled() {
-		flags = append(flags, "--authorization-config", filepath.Join(getAuthorizationConfigurationMountPath(data.Cluster().Spec.AuthorizationConfig), cluster.Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey))
+		flags = append(flags, "--authorization-config", filepath.Join(getAuthorizationConfigurationMountPath(cluster.Spec.AuthorizationConfig), cluster.Spec.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey))
 	}
 
-	return flags, nil
+	return flags
 }
 
 // getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
