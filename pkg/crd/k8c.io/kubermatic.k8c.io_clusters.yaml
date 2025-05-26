@@ -336,6 +336,50 @@ spec:
                         - auditWebhookConfig
                       type: object
                   type: object
+                authorizationConfig:
+                  description: 'Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now'
+                  properties:
+                    authorizationConfigurationFile:
+                      description: Configuration options for mounting the authorization config file from a secret
+                      properties:
+                        secretKey:
+                          description: The secret Key containing the AuthorizationConfig k8s object
+                          type: string
+                        secretMountPath:
+                          description: the path were the secret should be mounted, by default '/etc/kubernetes/authorization-configs'
+                          type: string
+                        secretName:
+                          description: The secret containing the authorizaion configuration
+                          type: string
+                      required:
+                        - secretKey
+                        - secretName
+                      type: object
+                    authorizationWebhookConfiguration:
+                      description: Contains the settings for the AuthorizationWebhook if EnabledModes contains Webhook
+                      properties:
+                        secretKey:
+                          description: The secret Key inside the secret
+                          type: string
+                        secretName:
+                          description: The secret containing the webhook configuration
+                          type: string
+                        webhookVersion:
+                          description: the Webhook Version, by default "v1"
+                          type: string
+                      required:
+                        - secretKey
+                        - secretName
+                        - webhookVersion
+                      type: object
+                    enabledModes:
+                      description: |-
+                        Optional: List of enabled Authorization modes (by default 'Node,RBAC')
+                        Important: order matters
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 backupConfig:
                   description: 'Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.'
                   properties:
@@ -355,41 +399,6 @@ spec:
                           type: string
                       type: object
                       x-kubernetes-map-type: atomic
-                  type: object
-                authorizationConfig:
-                  description:
-                  properties:
-                    enabledModes:
-                      description: 'Optional: List of enabled Authorization modes (by default "Node,RBAC"), order matters'
-                      items:
-                        type: string
-                      type: array
-                    authorizationConfigurationFile:
-                      description: 'Settings for the new configuration approach of the authorization chain (not compatible with authorizationWebhookConfiguration)'
-                      properties:
-                        secretName:
-                          description: 'The secret containing the authorization configurations. The whole secrets get mounted to support additional config files like kubeconfigs'
-                          type: string
-                        secretKey:
-                          description: 'The secret Key containing the AuthorizationConfig object'
-                          type: string
-                        secretMountPath:
-                          description: 'The path where the secret gets mounted. By default: /etc/kubernetes/authorization-configs'
-                          type: string
-                      type: object
-                    authorizationWebhookConfiguration:
-                      description: 'Settings for the Webhook Authorization mode command line parameters (not compatible with authorizationConfigurationFile)'
-                      properties:
-                        secretName:
-                          description: 'The secret containing the webhook configuration'
-                          type: string
-                        secretKey:
-                          description: 'The secret Key inside the secret'
-                          type: string
-                        webhookVersion:
-                          description: 'The Webhook Version, by default "v1"'
-                          type: string
-                      type: object
                   type: object
                 cloud:
                   description: |-
