@@ -960,6 +960,8 @@ type Subnet struct {
 	// Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
 	// to span multiple regions
 	Regions []string `json:"regions,omitempty"`
+	// CIDR is the subnet IPV4 CIDR.
+	CIDR string `json:"cidr,omitempty"`
 }
 
 type NamespacedMode struct {
