@@ -18,9 +18,12 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
+	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,7 +34,12 @@ const (
 	reachableCheckPeriod = 5 * time.Second
 )
 
-func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) (*reconcile.Result, error) {
+func (r *Reconciler) reconcileCluster(
+	ctx context.Context,
+	cluster *kubermaticv1.Cluster,
+	namespace *corev1.Namespace,
+	conf *kubermaticv1.KubermaticConfiguration,
+) (*reconcile.Result, error) {
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
 		res, err := r.AddFinalizers(ctx, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
 		if err != nil {
@@ -39,6 +47,24 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		}
 		if !res.IsZero() {
 			return res, nil
+		}
+	}
+
+	userSSHKeyDisabled := false
+	if conf != nil {
+		userSSHKeyDisabled = conf.Spec.FeatureGates[features.DisableUserSSHKey]
+	}
+	if userSSHKeyDisabled {
+		if kuberneteshelper.HasFinalizer(cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer) {
+			if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer); err != nil {
+				return nil, fmt.Errorf("failed to remove SSH key finalizer: %w", err)
+			}
+		}
+	} else {
+		if !kuberneteshelper.HasFinalizer(cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer) {
+			if _, err := r.AddFinalizers(ctx, cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer); err != nil {
+				return nil, fmt.Errorf("failed to add SSH key finalizer: %w", err)
+			}
 		}
 	}
 

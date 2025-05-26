@@ -322,7 +322,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to sync health: %w", err)
 	}
 
-	res, err := r.reconcileCluster(ctx, cluster, namespace)
+	conf, err := r.configGetter(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
+	res, err := r.reconcileCluster(ctx, cluster, namespace, conf)
 	if err != nil {
 		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ReconcileClusterError, err.Error())
 		if updateErr != nil {
