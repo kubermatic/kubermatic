@@ -269,7 +269,7 @@ type ClusterSpec struct {
 	// Only available in Enterprise Edition.
 	Kyverno *KyvernoSettings `json:"kyverno,omitempty"`
 
-	// Optional: AuthorizationConfig to configure the apiserver authorization modes
+	// Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now
 	AuthorizationConfig *AuthorizationConfig `json:"authorizationConfig,omitempty"`
 }
 
