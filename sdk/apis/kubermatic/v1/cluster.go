@@ -267,6 +267,11 @@ type ClusterSpec struct {
 	// Kyverno holds the configuration for the Kyverno policy management component.
 	// Only available in Enterprise Edition.
 	Kyverno *KyvernoSettings `json:"kyverno,omitempty"`
+
+	// Optional: FeatureGates can be used to enable K8S optional Features(https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/)
+	// FeatureGates will be passed to kube-apiserver, kube-controller-manager and kube-scheduler.
+	// As well to machine-controller & operating-system for providing them to the kubelet
+	FeatureGates map[string]bool `json:"featureGates,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -436,6 +441,14 @@ func (c ClusterSpec) IsClusterBackupEnabled() bool {
 	return c.BackupConfig != nil &&
 		c.BackupConfig.BackupStorageLocation != nil &&
 		c.BackupConfig.BackupStorageLocation.Name != ""
+}
+
+func (c ClusterSpec) GetK8SFeatureGateStrings() []string {
+	gates := []string{}
+	for key, value := range c.FeatureGates {
+		gates = append(gates, fmt.Sprintf("%s=%t", key, value))
+	}
+	return gates
 }
 
 // KyvernoSettings contains settings for the Kyverno component as part of the cluster control plane. This component is responsible for policy management.

@@ -3141,6 +3141,14 @@ spec:
                     - LoadBalancer
                     - Tunneling
                   type: string
+                featureGates:
+                  additionalProperties:
+                    type: boolean
+                  description: |-
+                    Optional: FeatureGates can be used to enable K8S optional Features(https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/)
+                    FeatureGates will be passed to kube-apiserver, kube-controller-manager and kube-scheduler.
+                    As well to machine-controller & operating-system for providing them to the kubelet
+                  type: object
                 features:
                   additionalProperties:
                     type: boolean

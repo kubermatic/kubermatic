@@ -465,6 +465,8 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		)
 	}
 
+	featureGates = append(featureGates, cluster.Spec.GetK8SFeatureGateStrings()...)
+
 	if len(featureGates) > 0 {
 		flags = append(flags, "--feature-gates")
 		flags = append(flags, strings.Join(featureGates, ","))

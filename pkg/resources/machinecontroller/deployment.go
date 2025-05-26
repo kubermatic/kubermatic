@@ -18,6 +18,7 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
 
@@ -143,7 +144,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(data.Cluster().Spec.Features),
+					Args:    getFlags(data.Cluster().Spec.Features, data.Cluster().Spec.GetK8SFeatureGateStrings()),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "PROBER_KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -214,7 +215,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 	}
 }
 
-func getFlags(features map[string]bool) []string {
+func getFlags(features map[string]bool, featureGates []string) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-health-probe-address", "0.0.0.0:8085",
@@ -228,5 +229,8 @@ func getFlags(features map[string]bool) []string {
 		flags = append(flags, "-node-external-cloud-provider")
 	}
 
+	if len(featureGates) > 0 {
+		flags = append(flags, fmt.Sprintf("--node-kubelet-feature-gates=%s", strings.Join(featureGates, ",")))
+	}
 	return flags
 }

@@ -18,6 +18,7 @@ package scheduler
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -89,6 +90,12 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
+			}
+
+			featureGates := data.Cluster().Spec.GetK8SFeatureGateStrings()
+
+			if len(featureGates) > 0 {
+				flags = append(flags, fmt.Sprintf("--feature-gates=%s", strings.Join(featureGates, ",")))
 			}
 
 			kubernetes.EnsureLabels(&dep.Spec.Template, map[string]string{
