@@ -336,7 +336,7 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 			}
 			app.Spec.DeployOptions = &appskubermaticv1.DeployOptions{
 				Helm: &appskubermaticv1.HelmDeployOptions{
-					// Use atomic deployment, as atomic (with fixed retries count) migitates breaking the etcd due to creating events
+					// Use atomic deployment, as atomic (with fixed retries count) mitigates breaking the etcd due to creating events
 					// when retrying on failure without a limit
 					Atomic: true,
 					Wait:   true,
