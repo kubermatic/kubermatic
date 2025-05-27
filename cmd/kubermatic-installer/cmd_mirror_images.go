@@ -256,12 +256,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 			}
 
-			_, err = images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
+			clusterVersions, err := images.GetVersions(logger, kubermaticConfig, options.VersionFilter)
 			if err != nil {
 				return fmt.Errorf("failed to load versions: %w", err)
 			}
 
-			_, err = certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
+			caBundle, err := certificates.NewCABundleFromFile(filepath.Join(options.ChartsDirectory, "kubermatic-operator/static/ca-bundle.pem"))
 			if err != nil {
 				return fmt.Errorf("failed to load CA bundle: %w", err)
 			}
@@ -274,7 +274,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				defer os.RemoveAll(options.AddonsPath)
 			}
 
-			_, err = addonutil.LoadAddonsFromDirectory(options.AddonsPath)
+			allAddons, err := addonutil.LoadAddonsFromDirectory(options.AddonsPath)
 			if err != nil {
 				return fmt.Errorf("failed to load addons: %w", err)
 			}
@@ -284,11 +284,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			// Using a set here for deduplication
 			imageSet := sets.New[string]()
 
-			// imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix)
-			// if err != nil {
-			// 	return err
-			// }
-			// imageSet.Insert(imageList...)
+			imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix)
+			if err != nil {
+				return err
+			}
+			imageSet.Insert(imageList...)
 
 			// Populate the imageSet with images specified in the KubermaticConfiguration's MirrorImages field.
 			// This ensures that all required images for mirroring are included in the set for further processing.
@@ -317,18 +317,18 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			}
 
 			if options.ChartsDirectory != "" {
-				// chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
-				// chartsLogger.Info("🚀 Rendering Helm charts…")
+				chartsLogger := logger.WithField("charts-directory", options.ChartsDirectory)
+				chartsLogger.Info("🚀 Rendering Helm charts…")
 
-				// // Because charts can specify a desired kubeVersion and the helm render default is hardcoded to 1.20, we need to set a custom kubeVersion.
-				// // Otherwise some charts would fail to render (e.g. consul).
-				// // Since we are just rendering from the client-side, it makes sense to use the latest kubeVersion we support.
-				// latestClusterVersion := clusterVersions[len(clusterVersions)-1]
-				// images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix, latestClusterVersion.Version.Original())
-				// if err != nil {
-				// 	return fmt.Errorf("failed to get images: %w", err)
-				// }
-				// imageSet.Insert(images...)
+				// Because charts can specify a desired kubeVersion and the helm render default is hardcoded to 1.20, we need to set a custom kubeVersion.
+				// Otherwise some charts would fail to render (e.g. consul).
+				// Since we are just rendering from the client-side, it makes sense to use the latest kubeVersion we support.
+				latestClusterVersion := clusterVersions[len(clusterVersions)-1]
+				images, err := images.GetImagesForHelmCharts(ctx, chartsLogger, kubermaticConfig, helmClient, options.ChartsDirectory, options.HelmValuesFile, options.RegistryPrefix, latestClusterVersion.Version.Original())
+				if err != nil {
+					return fmt.Errorf("failed to get images: %w", err)
+				}
+				imageSet.Insert(images...)
 			}
 
 			copyKubermaticConfig := kubermaticConfig.DeepCopy()
@@ -346,8 +346,8 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					sysChart.Version,
 				)
 
-				fmt.Println(chartImage)
-				imageSet.Insert(chartImage)
+				fmt.Println(removeOCIPrefix(chartImage))
+				imageSet.Insert(removeOCIPrefix(chartImage))
 				imageSet.Insert(sysChart.WorkloadImages...)
 			}
 
@@ -397,4 +397,14 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return nil
 		}
 	})
+}
+
+func removeOCIPrefix(input string) string {
+	// Check if the string starts with "oci://"
+	if strings.HasPrefix(input, "oci://") {
+		// Remove the "oci://" prefix by slicing the string
+		return input[len("oci://"):]
+	}
+	// Return the original string if it doesn't start with "oci://"
+	return input
 }
