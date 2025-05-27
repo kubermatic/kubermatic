@@ -647,7 +647,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-app-definitions
-    always_run: true
+    run_if_changed: "(pkg/ee/default-application-catalog/application_catalog.go|pkg/ee/default-application-catalog/embed.go|hack/ci/run-application-definitions-e2e-test.sh)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
