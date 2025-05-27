@@ -365,6 +365,7 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 		crane.WithContext(ctx),
 		crane.WithUserAgent(userAgent),
 	}
+	options = append(options, crane.Insecure)
 
 	log.Info("Copying image…")
 

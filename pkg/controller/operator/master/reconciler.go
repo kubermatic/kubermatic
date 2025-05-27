@@ -483,7 +483,7 @@ func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, logger *zap.Suga
 func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ApplicationDefinitions")
 
-	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(logger, config)
+	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(logger, config, false)
 	if err != nil {
 		return fmt.Errorf("failed to get system application definition reconciler factories: %w", err)
 	}
