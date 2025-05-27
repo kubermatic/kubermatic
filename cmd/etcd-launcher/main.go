@@ -24,7 +24,7 @@ import (
 
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -58,13 +58,11 @@ func main() {
 	log := createLogger()
 	ctx := signals.SetupSignalHandler()
 
-	versions := kubermaticversion.NewDefaultVersions()
-
 	rootCmd := &cobra.Command{
 		Use:           "etcd-launcher",
 		Short:         "Runs etcd clusters for KKP user cluster control planes",
 		SilenceErrors: true,
-		Version:       versions.Kubermatic,
+		Version:       kubermatic.GetVersions().GitVersion,
 	}
 
 	// cobra does not make any distinction between "error that happened because of bad flags"
@@ -87,7 +85,7 @@ func main() {
 	rootCmd.PersistentFlags().StringVar(&opts.etcdCertFile, "etcd-client-cert-file", resources.EtcdClientCertFile, "path to etcd client cert file")
 	rootCmd.PersistentFlags().StringVar(&opts.etcdKeyFile, "etcd-client-key-file", resources.EtcdClientKeyFile, "path to etcd client cert key")
 
-	addCommands(rootCmd, log, versions)
+	addCommands(rootCmd, log)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		os.Exit(1)
@@ -100,7 +98,7 @@ func createLogger() *zap.SugaredLogger {
 	return rawLog.Sugar()
 }
 
-func addCommands(cmd *cobra.Command, logger *zap.SugaredLogger, versions kubermaticversion.Versions) {
+func addCommands(cmd *cobra.Command, logger *zap.SugaredLogger) {
 	cmd.AddCommand(
 		RunCommand(logger),
 		IsRunningCommand(logger),

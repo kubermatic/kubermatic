@@ -21,11 +21,9 @@ docker:
 .PHONY: aws-node-termination-handler
 aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-termination-handler.yaml
 aws-node-termination-handler:
-	helm repo add eks https://aws.github.io/eks-charts/ || true
-	helm repo update
 	cat aws-node-termination-handler/_header.txt > $(OUTPUT_FILE)
-	helm template aws-node-termination-handler eks/aws-node-termination-handler \
-	  --version 0.21.0 \
+	helm template aws-node-termination-handler oci://public.ecr.aws/aws-ec2/helm/aws-node-termination-handler \
+	  --version 0.26.0 \
 	  --namespace kube-system \
 	  --values values-aws-node-termination-handler.yaml \
 	  >> $(OUTPUT_FILE)

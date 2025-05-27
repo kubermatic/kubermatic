@@ -21,12 +21,12 @@ import (
 	"sync"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -535,6 +535,74 @@ func TestValidate(t *testing.T) {
 
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)
+			}
+		})
+	}
+}
+
+func TestValidateDefaultAPIServerAllowedIPRanges(t *testing.T) {
+	testCases := []struct {
+		name        string
+		cidrs       []string
+		errExpected bool
+	}{
+		{
+			name:  "valid IPv4 CIDR",
+			cidrs: []string{"192.168.1.0/24"},
+		},
+		{
+			name:  "valid IPv6 CIDR",
+			cidrs: []string{"2001:db8::/32"},
+		},
+		{
+			name:        "invalid CIDR format",
+			cidrs:       []string{"invalid"},
+			errExpected: true,
+		},
+		{
+			name:        "invalid IPv4 mask",
+			cidrs:       []string{"192.168.1.0/33"},
+			errExpected: true,
+		},
+		{
+			name:        "invalid IPv6 mask",
+			cidrs:       []string{"2001:db8::/129"},
+			errExpected: true,
+		},
+		{
+			name:  "host address CIDR (allowed by current validation)",
+			cidrs: []string{"192.168.1.1/24"},
+		},
+		{
+			name:        "multiple CIDRs with one invalid",
+			cidrs:       []string{"192.168.1.0/24", "invalid"},
+			errExpected: true,
+		},
+		{
+			name:  "multiple valid CIDRs",
+			cidrs: []string{"192.168.1.0/24", "2001:db8::/32"},
+		},
+		{
+			name:  "empty CIDR list",
+			cidrs: []string{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultAPIServerAllowedIPRanges: tc.cidrs,
+				},
+			}
+
+			err := validateDefaultAPIServerAllowedIPRanges(context.Background(), seed)
+
+			if tc.errExpected && err == nil {
+				t.Errorf("Expected error but got none")
+			}
+			if !tc.errExpected && err != nil {
+				t.Errorf("Unexpected error: %v", err)
 			}
 		})
 	}

@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -63,7 +63,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		if healthMapping[name].healthStatus == nil {
 			healthMapping[name].healthStatus = new(kubermaticv1.HealthStatus)
 		}
-		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+		*healthMapping[name].healthStatus = util.GetHealthStatus(status, cluster, r.versions)
 	}
 
 	if showKonnectivity {
@@ -78,18 +78,21 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %w", err)
 	}
-	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
+	extendedHealth.Etcd = util.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
-	// check the actual status of the machineController components only if the API server is healthy
-	// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
-	mcHealthStatus := kubermaticv1.HealthStatusDown
-	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
-		mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+	// MachineController is not deployed/supported on Edge clusters.
+	if cluster.Spec.Cloud.Edge == nil {
+		// check the actual status of the machineController components only if the API server is healthy
+		// because we need to access it to retrieve the machineController mutatingWebhookConfiguration
+		mcHealthStatus := kubermaticv1.HealthStatusDown
+		if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
+			mcHealthStatus, err = r.machineControllerHealthCheck(ctx, cluster, ns)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get machine controller health: %w", err)
+			}
 		}
+		extendedHealth.MachineController = util.GetHealthStatus(mcHealthStatus, cluster, r.versions)
 	}
-	extendedHealth.MachineController = kubermaticv1helper.GetHealthStatus(mcHealthStatus, cluster, r.versions)
 
 	applicationControllerHealthStatus := kubermaticv1.HealthStatusDown
 	if extendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
@@ -98,7 +101,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to evaluate application controller health: %w", err)
 		}
 	}
-	extendedHealth.ApplicationController = kubermaticv1helper.GetHealthStatus(applicationControllerHealthStatus, cluster, r.versions)
+	extendedHealth.ApplicationController = util.GetHealthStatus(applicationControllerHealthStatus, cluster, r.versions)
 
 	status, err := r.operatingSystemManagerHealthCheck(ctx, cluster, ns)
 	if err != nil {
@@ -131,13 +134,13 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		return err
 	}
 
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth = *extendedHealth
 
 		// set ClusterConditionEtcdClusterInitialized, this should be done only once
 		// when etcd becomes healthy for the first time.
 		if extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
-			kubermaticv1helper.SetClusterCondition(
+			util.SetClusterCondition(
 				c,
 				r.versions,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,
@@ -147,8 +150,8 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 			)
 		}
 
-		if kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
-			kubermaticv1helper.SetClusterCondition(
+		if util.IsClusterInitialized(cluster, r.versions) {
+			util.SetClusterCondition(
 				c,
 				r.versions,
 				kubermaticv1.ClusterConditionClusterInitialized,
@@ -209,7 +212,7 @@ func (r *Reconciler) operatingSystemManagerHealthCheck(ctx context.Context, clus
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.OperatingSystemManagerDeploymentName, err)
 	}
-	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	status = util.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 
@@ -220,7 +223,7 @@ func (r *Reconciler) kubeLBHealthCheck(ctx context.Context, cluster *kubermaticv
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubeLBDeploymentName, err)
 	}
-	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	status = util.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 
@@ -231,7 +234,7 @@ func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubernetesDashboardDeploymentName, err)
 	}
-	status = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
+	status = util.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
 }
 
@@ -285,7 +288,7 @@ func (r *Reconciler) applicationControllerHealthCheck(ctx context.Context, clust
 func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
 	// check the etcd
 	statefulSet := &appsv1.StatefulSet{}
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
+	err := r.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.EtcdStatefulSetName}, statefulSet)
 
 	if err != nil {
 		// if the StatefulSet for etcd doesn't exist yet, there's nothing to worry about

@@ -42,6 +42,8 @@ const (
 	k8sDir = "k8s.io"
 )
 
+const GatewayAPIGroup = "gateway.networking.k8s.io"
+
 // Groups returns a list of all known API groups for which CRDs are available.
 func Groups() ([]string, error) {
 	dirs := []string{k8cDir, k8sDir}
@@ -67,7 +69,7 @@ func Groups() ([]string, error) {
 	return sets.List(groups), nil
 }
 
-// CRDForType returns the CRD for a given object or returns an error if the
+// CRDForObject returns the CRD for a given object or returns an error if the
 // object is not using one of the known types (*.k8c.io).
 func CRDForObject(obj runtime.Object) (*apiextensionsv1.CustomResourceDefinition, error) {
 	return CRDForGVK(obj.GetObjectKind().GroupVersionKind())

@@ -17,12 +17,21 @@ limitations under the License.
 package openstack
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gophercloud/gophercloud"
+	tags "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/attributestags"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 )
 
+// createRouter creates a Neutron router and ensures it is tagged correctly.
+// The router is considered invalid without proper tags:
+//   - OpenStack API does not support creating a router with tags directly;
+//     we must first create the router and then tag the resource.
+//   - If tagging fails, the router is deleted to prevent orphaned resources.
+//   - If deletion after tagging failure also fails, it's a critical error requiring manual intervention.
 func createRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkName string) (*osrouters.Router, error) {
 	extNetwork, err := getNetworkByName(netClient, extNetworkName, true)
 	if err != nil {
@@ -39,10 +48,31 @@ func createRouter(netClient *gophercloud.ServiceClient, clusterName, extNetworkN
 		AdminStateUp: &iTrue,
 		GatewayInfo:  &gwi,
 	})
-	if res.Err != nil {
-		return nil, res.Err
+
+	router, err := res.Extract()
+	if err != nil {
+		return nil, err
 	}
-	return res.Extract()
+
+	// CRITICAL SECTION: Tagging is mandatory for resource management.
+	// - Tags enable lifecycle tracking (e.g., cleanup, cost allocation)
+	// - Retry tagging up to 3 times with exponential backoff for transient failures
+	err = addTags(netClient, clusterName, router.ID)
+	if err != nil {
+		// FALLBACK: Delete the router if tagging fails
+		// - Prevents orphaned routers without required metadata
+		// - Retry deletion 3 times with exponential backoff (transient failures possible)
+		deleteErr := retryOnError(3, func() error { return deleteRouter(netClient, router.ID) })
+		if deleteErr != nil {
+			return nil, fmt.Errorf(
+				"CRITICAL FAILURE: Router %s created but tagging failed, and deletion also failed: %w (original error: %w)",
+				router.ID, deleteErr, err,
+			)
+		}
+		return nil, fmt.Errorf("failed to tag router (rolled back): %w", err)
+	}
+
+	return router, nil
 }
 
 func getRouterByName(netClient *gophercloud.ServiceClient, name string) (*osrouters.Router, error) {
@@ -110,4 +140,42 @@ func deleteRouter(netClient *gophercloud.ServiceClient, routerID string) error {
 		return res.Err
 	}
 	return res.ExtractErr()
+}
+
+func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {
+	matchString := fmt.Sprintf("Router already has a port on subnet %s", subnetID)
+
+	var gopherCloud400Err gophercloud.ErrDefault400
+	if !errors.As(err, &gopherCloud400Err) || !strings.Contains(string(gopherCloud400Err.Body), matchString) {
+		return err
+	}
+
+	return nil
+}
+
+func addTags(netClient *gophercloud.ServiceClient, clusterName, routerID string) error {
+	return retryOnError(3, func() error {
+		tagOpts := tags.ReplaceAllOpts{
+			Tags: []string{
+				TagManagedByKubermatic,
+				TagPrefixClusterID + clusterName,
+			},
+		}
+		return tags.ReplaceAll(netClient, ResourceTypeRouter, routerID, tagOpts).Err
+	})
+}
+
+// isManagedRouter checks if a router is managed by Kubermatic KKP.
+func isManagedRouter(netClient *gophercloud.ServiceClient, routerID string) bool {
+	return isManagedResource(netClient, ResourceTypeRouter, routerID)
+}
+func ownTheRouter(netClient *gophercloud.ServiceClient, routerID string, clusterName string) error {
+	return addOwnershipToResource(netClient, ResourceTypeRouter, routerID, clusterName)
+}
+
+func removerRouterOwnership(netClient *gophercloud.ServiceClient, routerID string, clusterName string) error {
+	return removeOwnershipFromResource(netClient, ResourceTypeRouter, routerID, clusterName)
+}
+func getRouterOwners(netClient *gophercloud.ServiceClient, routerID string) ([]string, error) {
+	return getResourceOwners(netClient, ResourceTypeRouter, routerID)
 }

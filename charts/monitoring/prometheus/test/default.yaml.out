@@ -80,7 +80,7 @@ data:
       - action: labeldrop
         regex: replica
       alertmanagers:
-      - {"kubernetes_sd_configs":[{"api_server":null,"namespaces":{"names":["default"]},"role":"endpoints"}],"path_prefix":"/","relabel_configs":[{"action":"keep","regex":"alertmanager","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_name"]},{"action":"keep","regex":"web","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_endpoint_port_name"]}],"scheme":"http","timeout":"10s"}
+      - {"kubernetes_sd_configs":[{"api_server":null,"namespaces":{"names":["default"]},"role":"endpoints"}],"path_prefix":"/","relabel_configs":[{"action":"keep","regex":"alertmanager","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_service_name"]},{"action":"keep","regex":"http","replacement":"$1","separator":";","source_labels":["__meta_kubernetes_endpoint_port_name"]}],"scheme":"http","timeout":"10s"}
     scrape_configs:
     - {"bearer_token_file":"/var/run/secrets/kubernetes.io/serviceaccount/token","job_name":"apiserver","kubernetes_sd_configs":[{"role":"endpoints"}],"relabel_configs":[{"action":"keep","regex":"default;kubernetes;https","source_labels":["__meta_kubernetes_namespace","__meta_kubernetes_service_name","__meta_kubernetes_endpoint_port_name"]}],"scheme":"https","tls_config":{"ca_file":"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"}}
     - {"job_name":"blackbox-exporter-user-cluster-apiservers"}
@@ -1340,7 +1340,7 @@ data:
           # of the labels available on the container_* metrics, so we reduce them with the inner query to
           # only contain pod name, namespace and name.
           # Because the VPA does not allow to change the metric name it queries, but only the job selector,
-          # we "cheat" by re-using the same metric name and injecting a custom job ("cadvisor-vpa") label.
+          # we "cheat" by reusing the same metric name and injecting a custom job ("cadvisor-vpa") label.
           - record: container_cpu_usage_seconds_total
             expr: |
               label_replace(

@@ -19,10 +19,10 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -114,18 +114,18 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 	// gcrane ls --json mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v128:
-		return "1.28.13", nil
 	case v129:
 		return "1.29.11", nil
 	case v130:
 		return "1.30.7", nil
 	case v131:
-		fallthrough
+		return "1.31.5", nil
 	case v132:
+		return "1.32.4", nil
+	case v133:
 		fallthrough
 	default:
-		return "1.31.1", nil
+		return "1.33.0", nil
 	}
 }
 

@@ -21,11 +21,11 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -329,7 +329,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.19",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -392,7 +392,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.19",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: false,
@@ -424,7 +424,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "cilium",
-					Version: "v1.11",
+					Version: "1.16.6",
 				},
 			}.Build(),
 			wantAllowed: false,
@@ -456,7 +456,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "cilium",
-					Version: "v1.11",
+					Version: "1.16.6",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -476,7 +476,7 @@ func TestHandle(t *testing.T) {
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily:                 kubermaticv1.IPFamilyDualStack,
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd01::/48"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/120"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/108"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
 					NodeLocalDNSCacheEnabled: ptr.To(true),
@@ -489,7 +489,7 @@ func TestHandle(t *testing.T) {
 				},
 				CNIPlugin: &kubermaticv1.CNIPluginSettings{
 					Type:    "canal",
-					Version: "v3.22",
+					Version: "v3.28",
 				},
 			}.Build(),
 			wantAllowed: true,
@@ -509,7 +509,7 @@ func TestHandle(t *testing.T) {
 				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 					IPFamily:                 kubermaticv1.IPFamilyDualStack,
 					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16", "fd01::/48"}},
-					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/120"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20", "fd02::/108"}},
 					DNSDomain:                "cluster.local",
 					ProxyMode:                resources.IPVSProxyMode,
 					NodeLocalDNSCacheEnabled: ptr.To(true),

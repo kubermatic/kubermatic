@@ -58,6 +58,8 @@ func setupControllers(
 	overwriteRegistry string,
 	caBundle *certificates.CABundle,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
+	namespace string,
+	kyvernoEnabled bool,
 ) error {
 	return nil
 }

@@ -31,13 +31,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -271,7 +271,7 @@ func getGinkgoRuns(
 			"-progress",
 			fmt.Sprintf("-nodes=%d", run.parallelTests),
 			"-noColor=true",
-			"-flakeAttempts=2",
+			"-flakeAttempts=3",
 			fmt.Sprintf(`-focus=%s`, run.ginkgoFocus),
 			fmt.Sprintf(`-skip=%s`, run.ginkgoSkip),
 			path.Join(binRoot, "e2e.test"),

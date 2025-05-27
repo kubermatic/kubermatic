@@ -36,7 +36,7 @@ import (
 	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
 
@@ -72,6 +72,8 @@ type Cluster struct {
 	DataDir               string
 	Token                 string
 	EnableCorruptionCheck bool
+	// QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+	QuotaBackendGB int64
 
 	clusterClient ctrlruntimeclient.Client
 	namespace     string // filled in later during init()
@@ -374,7 +376,7 @@ func initialMemberList(ctx context.Context, log *zap.SugaredLogger, client ctrlr
 				members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 			}
 
-			if _, ok := pod.ObjectMeta.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
+			if _, ok := pod.Annotations[resources.EtcdTLSEnabledAnnotation]; ok {
 				members = append(
 					members,
 					fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2381", i, i, namespace),

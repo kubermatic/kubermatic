@@ -29,9 +29,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	kubeovnv1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -44,8 +42,11 @@ import (
 
 var scheme = runtime.NewScheme()
 
+// kubevirtInfranGetter is a function to retrieve the currently relevant
+// kube client for the used kubevirt infra cluster.
+type kubevirtInfranGetter = func(ctx context.Context, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) (ctrlruntimeclient.Client, error)
+
 func init() {
-	utilruntime.Must(kubeovnv1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 }
 
@@ -70,7 +71,7 @@ func newClient(kubeconfig string) (ctrlruntimeclient.Client, error) {
 	return client, nil
 }
 
-func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kubermaticv1.Cluster) (string, error) {
+func getKubeVirtInfraKConfig(ctx context.Context, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) (string, error) {
 	if cluster.Spec.Cloud.Kubevirt.Kubeconfig != "" {
 		return cluster.Spec.Cloud.Kubevirt.Kubeconfig, nil
 	}
@@ -79,7 +80,7 @@ func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kuber
 		return "", errors.New("no credentials provided")
 	}
 
-	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, r.Client)
+	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
 	kubeconfig, err := secretKeySelectorFunc(cluster.Spec.Cloud.Kubevirt.CredentialsReference, resources.KubeVirtKubeconfig)
 	if err != nil {
 		return "", err
@@ -88,8 +89,8 @@ func (r *Reconciler) getKubeVirtInfraKConfig(ctx context.Context, cluster *kuber
 	return kubeconfig, nil
 }
 
-func (r *Reconciler) SetupKubeVirtInfraClient(ctx context.Context, cluster *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error) {
-	kubeconfig, err := r.getKubeVirtInfraKConfig(ctx, cluster)
+func SetupKubeVirtInfraClient(ctx context.Context, cluster *kubermaticv1.Cluster, seedClient ctrlruntimeclient.Client) (ctrlruntimeclient.Client, error) {
+	kubeconfig, err := getKubeVirtInfraKConfig(ctx, cluster, seedClient)
 	if err != nil {
 		return nil, err
 	}

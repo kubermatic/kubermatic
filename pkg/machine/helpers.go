@@ -19,25 +19,25 @@ package machine
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/machine/provider"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	alibaba "k8c.io/machine-controller/pkg/cloudprovider/provider/alibaba/types"
-	anexia "k8c.io/machine-controller/pkg/cloudprovider/provider/anexia/types"
-	aws "k8c.io/machine-controller/pkg/cloudprovider/provider/aws/types"
-	azure "k8c.io/machine-controller/pkg/cloudprovider/provider/azure/types"
-	baremetal "k8c.io/machine-controller/pkg/cloudprovider/provider/baremetal/types"
-	digitalocean "k8c.io/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
-	equinixmetal "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
-	gce "k8c.io/machine-controller/pkg/cloudprovider/provider/gce/types"
-	hetzner "k8c.io/machine-controller/pkg/cloudprovider/provider/hetzner/types"
-	kubevirt "k8c.io/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
-	nutanix "k8c.io/machine-controller/pkg/cloudprovider/provider/nutanix/types"
-	openstack "k8c.io/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	vmwareclouddirector "k8c.io/machine-controller/pkg/cloudprovider/provider/vmwareclouddirector/types"
-	vsphere "k8c.io/machine-controller/pkg/cloudprovider/provider/vsphere/types"
-	"k8c.io/machine-controller/pkg/cloudprovider/util"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	alibaba "k8c.io/machine-controller/sdk/cloudprovider/alibaba"
+	anexia "k8c.io/machine-controller/sdk/cloudprovider/anexia"
+	aws "k8c.io/machine-controller/sdk/cloudprovider/aws"
+	azure "k8c.io/machine-controller/sdk/cloudprovider/azure"
+	baremetal "k8c.io/machine-controller/sdk/cloudprovider/baremetal"
+	digitalocean "k8c.io/machine-controller/sdk/cloudprovider/digitalocean"
+	equinixmetal "k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
+	gce "k8c.io/machine-controller/sdk/cloudprovider/gce"
+	hetzner "k8c.io/machine-controller/sdk/cloudprovider/hetzner"
+	kubevirt "k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
+	nutanix "k8c.io/machine-controller/sdk/cloudprovider/nutanix"
+	openstack "k8c.io/machine-controller/sdk/cloudprovider/openstack"
+	vmwareclouddirector "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
+	vsphere "k8c.io/machine-controller/sdk/cloudprovider/vsphere"
+	"k8c.io/machine-controller/sdk/net"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/amzn2"
 	"k8c.io/operating-system-manager/pkg/providerconfig/flatcar"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
@@ -285,6 +285,7 @@ func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kube
 	case kubermaticv1.OpenstackCloudProvider:
 		return provider.CompleteOpenstackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Openstack, os)
 	case kubermaticv1.PacketCloudProvider:
+		//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 		return provider.CompleteEquinixMetalProviderSpec(assert[equinixmetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Packet)
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VMwareCloudDirector, os)
@@ -303,17 +304,17 @@ func CompleteNetworkConfig(config *providerconfig.NetworkConfig, cluster *kuberm
 	}
 
 	if cluster != nil {
-		var ipFamily util.IPFamily
+		var ipFamily net.IPFamily
 
 		switch {
 		case cluster.IsIPv4Only():
-			ipFamily = util.IPFamilyIPv4
+			ipFamily = net.IPFamilyIPv4
 		case cluster.IsIPv6Only():
-			ipFamily = util.IPFamilyIPv6
+			ipFamily = net.IPFamilyIPv6
 		case cluster.IsDualStack():
-			ipFamily = util.IPFamilyIPv4IPv6
+			ipFamily = net.IPFamilyIPv4IPv6
 		default:
-			ipFamily = util.IPFamilyUnspecified
+			ipFamily = net.IPFamilyUnspecified
 		}
 
 		config.IPFamily = ipFamily

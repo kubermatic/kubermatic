@@ -26,8 +26,8 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -63,9 +63,10 @@ const (
 
 // Reconciler stores necessary components that are required to restore etcd backups.
 type Reconciler struct {
+	ctrlruntimeclient.Client
+
 	log        *zap.SugaredLogger
 	workerName string
-	ctrlruntimeclient.Client
 	recorder   record.EventRecorder
 	versions   kubermatic.Versions
 	seedGetter provider.SeedGetter
@@ -85,8 +86,9 @@ func Add(
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
+		Client: client,
+
 		log:        log,
-		Client:     client,
 		workerName: workerName,
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		versions:   versions,
@@ -202,7 +204,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	}
 
 	// check that the backup to restore from exists and is accessible
-	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r.Client, cluster, destination)
+	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, restore, true, r, cluster, destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to obtain S3 client: %w", err)
 	}
@@ -225,7 +227,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 			cluster.Annotations = map[string]string{}
 		}
 		cluster.Annotations[ActiveRestoreAnnotationName] = thisRestore
-		if err := r.Client.Update(ctx, cluster); err != nil {
+		if err := r.Update(ctx, cluster); err != nil {
 			if apierrors.IsConflict(err) {
 				return &reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 			}
@@ -300,8 +302,8 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 	log.Info("Rebuilding Statefulset...")
 
 	if cluster.Spec.Pause {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
-			kubermaticv1helper.SetClusterCondition(
+		if err := util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+			util.SetClusterCondition(
 				c,
 				r.versions,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,

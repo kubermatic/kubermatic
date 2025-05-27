@@ -19,10 +19,10 @@ package cloudcontroller
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -212,8 +212,6 @@ func GCPCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-provider-gcp/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v128:
-		return "v28.2.1"
 	case v129:
 		return "v29.0.0"
 	case v130:
@@ -221,6 +219,8 @@ func GCPCCMVersion(version semver.Semver) string {
 	case v131:
 		fallthrough
 	case v132:
+		fallthrough
+	case v133:
 		fallthrough
 	default:
 		return "v30.0.0"

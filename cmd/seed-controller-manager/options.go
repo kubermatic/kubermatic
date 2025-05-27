@@ -25,11 +25,12 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -55,7 +56,8 @@ type controllerRunOptions struct {
 	overwriteRegistry        string
 	nodeAccessNetwork        string
 	addonsPath               string
-	backupInterval           string
+	backupInterval           time.Duration
+	backupCount              int
 	etcdDiskSize             resource.Quantity
 	dockerPullConfigJSONFile string
 	kubermaticImage          string
@@ -122,7 +124,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.addonsPath, "addons-path", "/opt/addons", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&c.backupInterval, "backup-interval", defaulting.DefaultBackupInterval, "Interval in which the etcd gets backed up")
+	flag.DurationVar(&c.backupInterval, "backup-interval", defaulting.DefaultBackupInterval, "Interval in which the etcd gets backed up")
+	flag.IntVar(&c.backupCount, "backup-count", kubermaticv1.DefaultKeptBackupsCount, "Number of backups to keep around before deleting the oldest one")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "", "The file containing the docker auth config.")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
@@ -150,6 +153,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	flag.StringVar(&configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
 	flag.StringVar(&c.disabledCollectors, "disabled-collectors", "", "Disables metrics collectors in the seed. The value should be a comma-separated list of collector names.")
+
 	addFlags(flag.CommandLine)
 	flag.Parse()
 

@@ -26,10 +26,10 @@ import (
 	"github.com/distribution/reference"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -216,7 +216,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.31.1"),
+		Default: semver.NewSemverOrDie("v1.31.8"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -225,32 +225,24 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.29
-			newSemver("v1.29.0"),
-			newSemver("v1.29.1"),
-			newSemver("v1.29.2"),
-			newSemver("v1.29.4"),
-			newSemver("v1.29.9"),
 			// Kubernetes 1.30
 			newSemver("v1.30.5"),
+			newSemver("v1.30.9"),
+			newSemver("v1.30.11"),
+			newSemver("v1.30.12"),
 			// Kubernetes 1.31
 			newSemver("v1.31.1"),
+			newSemver("v1.31.5"),
+			newSemver("v1.31.7"),
+			newSemver("v1.31.8"),
 			// Kubernetes 1.32
-			newSemver("v1.32.0"),
+			newSemver("v1.32.1"),
+			newSemver("v1.32.3"),
+			newSemver("v1.32.4"),
+			// Kubernetes 1.33
+			newSemver("v1.33.0"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.28 =======
-			{
-				// Allow to next minor release
-				From: "1.28.*",
-				To:   "1.29.*",
-			},
-			// ======= 1.29 =======
-			{
-				// Allow to change to any patch version
-				From: "1.29.*",
-				To:   "1.29.*",
-			},
 			{
 				// Allow to next minor release
 				From: "1.29.*",
@@ -284,17 +276,22 @@ var (
 				From: "1.32.*",
 				To:   "1.32.*",
 			},
+			{
+				// Allow to next minor release
+				From: "1.32.*",
+				To:   "1.33.*",
+			},
+			// ======= 1.33 =======
+			{
+				// Allow to change to any patch version
+				From: "1.33.*",
+				To:   "1.33.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
-			// In-tree cloud providers have been fully removed in Kubernetes 1.29.
+			// In-tree cloud providers have been fully removed in Kubernetes 1.30.
 			// Thus, no in-tree provider is available anymore, and no cluster with in-tree CCM
 			// can be upgraded to 1.29.
-			{
-				Provider:  "",
-				Version:   ">= 1.29.0",
-				Condition: kubermaticv1.InTreeCloudProviderCondition,
-				Operation: kubermaticv1.CreateOperation,
-			},
 			{
 				Provider:  "",
 				Version:   ">= 1.29.0",
@@ -524,10 +521,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultHelmRepo(&configCopy.Spec.UserCluster.SystemApplications.HelmRepository, DefaultSystemApplicationsHelmRepository, "userCluster.systemApplications.helmRepository", logger); err != nil {
-		return configCopy, err
-	}
-
 	if err := defaultDockerRepo(&configCopy.Spec.VerticalPodAutoscaler.Recommender.DockerRepository, DefaultVPARecommenderDockerRepository, "verticalPodAutoscaler.recommender.dockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -573,15 +566,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	}
 
 	return configCopy, nil
-}
-
-func defaultHelmRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {
-	if *repo != "" && strings.HasPrefix(*repo, "oci://") {
-		normalizedRepo := strings.TrimPrefix(*repo, "oci://")
-		return defaultDockerRepo(&normalizedRepo, defaultRepo, key, logger)
-	}
-
-	return defaultDockerRepo(repo, defaultRepo, key, logger)
 }
 
 func defaultDockerRepo(repo *string, defaultRepo string, key string, logger *zap.SugaredLogger) error {

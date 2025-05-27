@@ -19,12 +19,12 @@ package kubernetesdashboard
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -181,8 +181,6 @@ func DashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// https://github.com/kubernetes/dashboard/releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.28":
-		return dashboardVersion, nil // not officially marked as supported
 	case "1.29":
 		return dashboardVersion, nil // not officially marked as supported
 	case "1.30":
@@ -190,6 +188,8 @@ func DashboardVersion(clusterVersion semver.Semver) (string, error) {
 	case "1.31":
 		return dashboardVersion, nil // not officially marked as supported
 	case "1.32":
+		return dashboardVersion, nil // not officially marked as supported
+	case "1.33":
 		return dashboardVersion, nil // not officially marked as supported
 	default:
 		return "", fmt.Errorf("no compatible version defined for Kubernetes %q", clusterVersion.MajorMinor())

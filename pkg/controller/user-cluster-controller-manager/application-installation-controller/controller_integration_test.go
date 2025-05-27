@@ -27,9 +27,9 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/fake"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
@@ -65,11 +65,12 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-1"
 				appInstallName := "app-1"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
+					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app); err != nil {
 						return false
 					}
 					return equality.Semantic.DeepEqual(&def.Spec.Versions[0], app.Status.ApplicationVersion)
@@ -87,12 +88,13 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-2"
 				appInstallName := "app-2"
 
+				_ = createNode(t, ctx, client)
 				createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, "app-def-not-exist", "1.0.0")
 
 				// Ensure application is not deleted.
 				if utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation should not have deen deleted")
@@ -109,12 +111,13 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-3"
 				appInstallName := "app-3"
 
+				_ = createNode(t, ctx, client)
 				createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0-not-exist")
 
 				// Ensure application is not deleted.
 				if utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app)
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app)
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation should not have deen deleted")
@@ -131,6 +134,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-5"
 				appInstallName := "app-5"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
@@ -142,7 +146,7 @@ func TestController(t *testing.T) {
 
 				// Checking application Installation CR is removed.
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &appskubermaticv1.ApplicationInstallation{})
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation CR should have been deleted but was not")
@@ -157,6 +161,7 @@ func TestController(t *testing.T) {
 				appDefName := "app-def-4"
 				appInstallName := "app-4"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, appInstallName, def.Spec.Versions[0])
@@ -184,7 +189,7 @@ func TestController(t *testing.T) {
 
 				// Checking application Installation CR is removed.
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &appskubermaticv1.ApplicationInstallation{})
+					err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &appskubermaticv1.ApplicationInstallation{})
 					return err != nil && apierrors.IsNotFound(err)
 				}) {
 					t.Fatal("applicationInstallation CR should have been deleted but was not")
@@ -196,14 +201,15 @@ func TestController(t *testing.T) {
 		{
 			name: "when app is updated, it should update app and update application.Status with new applicationVersion",
 			testFunc: func(t *testing.T) {
-				appDefName := "app-def-5"
-				appInstallName := "app-5"
+				appDefName := "app-def-6"
+				appInstallName := "app-6"
 
+				_ = createNode(t, ctx, client)
 				def := createApplicationDef(t, ctx, client, appDefName)
 				app := createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
+					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app); err != nil {
 						return false
 					}
 					return equality.Semantic.DeepEqual(&def.Spec.Versions[0], app.Status.ApplicationVersion)
@@ -222,7 +228,7 @@ func TestController(t *testing.T) {
 				}
 
 				if !utils.WaitFor(ctx, interval, timeout, func() bool {
-					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app); err != nil {
+					if err := client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app); err != nil {
 						return false
 					}
 					return equality.Semantic.DeepEqual(&def.Spec.Versions[1], app.Status.ApplicationVersion)
@@ -232,6 +238,26 @@ func TestController(t *testing.T) {
 
 				expectApplicationInstalledWithVersion(t, ctx, &applicationInstallerRecorder, app.Name, def.Spec.Versions[1])
 				expectStatusHasConditions(t, ctx, client, app.Name)
+			},
+		},
+		{
+			name: "when no node object is available no application event should be stored and therefore no helm release should be installed",
+			testFunc: func(t *testing.T) {
+				appDefName := "app-def-7"
+				appInstallName := "app-7"
+
+				_ = createApplicationDef(t, ctx, client, appDefName)
+				_ = createApplicationInstallation(t, ctx, client, appInstallName, appDefName, "1.0.0")
+
+				reason, found := applicationInstallerRecorder.DownloadEvents.Load(appInstallName)
+				if found {
+					t.Fatalf("found app download events but didn't expect one. %v", reason)
+				}
+
+				reason, found = applicationInstallerRecorder.ApplyEvents.Load(appInstallName)
+				if found {
+					t.Fatalf("found app apply events but didn't expect one. %v", reason)
+				}
 			},
 		},
 	}
@@ -290,7 +316,7 @@ func expectStatusHasConditions(t *testing.T, ctx context.Context, client ctrlrun
 	app := &appskubermaticv1.ApplicationInstallation{}
 	var errReason string
 	if !utils.WaitFor(ctx, interval, timeout, func() bool {
-		if err := client.Get(ctx, types.NamespacedName{Name: appName, Namespace: applicationNamespace}, app); err != nil {
+		if err := client.Get(ctx, types.NamespacedName{Name: appName, Namespace: applicationNamespaceName}, app); err != nil {
 			errReason = err.Error()
 			return false
 		}
@@ -309,7 +335,7 @@ func expectStatusHasConditions(t *testing.T, ctx context.Context, client ctrlrun
 }
 
 func createApplicationDef(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, appDefName string) *appskubermaticv1.ApplicationDefinition {
-	if err := client.Create(ctx, genApplicationDefinition(appDefName)); err != nil {
+	if err := client.Create(ctx, genApplicationDefinition(appDefName, nil)); err != nil {
 		t.Fatalf("failed to create applicationDefinition: %s", err)
 	}
 
@@ -324,18 +350,41 @@ func createApplicationDef(t *testing.T, ctx context.Context, client ctrlruntimec
 
 func createApplicationInstallation(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, appInstallName string, appDefName string, version string) appskubermaticv1.ApplicationInstallation {
 	// Create applicationInstallation.
-	if err := client.Create(ctx, genApplicationInstallation(appInstallName, appDefName, version, 0, 1, 0)); err != nil {
+	if err := client.Create(ctx, genApplicationInstallation(appInstallName, &defaultApplicationNamespace, appDefName, version, 0, 1, 0)); err != nil {
 		t.Fatalf("failed to create applicationInstallation: %s", err)
 	}
 
 	// Wait for application to be created.
 	app := appskubermaticv1.ApplicationInstallation{}
 	if !utils.WaitFor(ctx, interval, 3*time.Second, func() bool {
-		return client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespace}, &app) == nil
+		return client.Get(ctx, types.NamespacedName{Name: appInstallName, Namespace: applicationNamespaceName}, &app) == nil
 	}) {
-		t.Fatal("failed to create get applicationInstallation")
+		t.Fatal("failed to get applicationInstallation")
 	}
 	return app
+}
+
+func createNode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client) corev1.Node {
+	// Create node.
+	if err := client.Create(ctx, genNode("application-test-node")); err != nil {
+		t.Fatalf("failed to create node: %s", err)
+	}
+
+	// Wait for node to be created.
+	node := corev1.Node{}
+	if !utils.WaitFor(ctx, interval, 3*time.Second, func() bool {
+		return client.Get(ctx, types.NamespacedName{Name: "application-test-node"}, &node) == nil
+	}) {
+		t.Fatal("failed to get node")
+	}
+
+	t.Cleanup(func() {
+		if err := client.Delete(ctx, &node); err != nil {
+			t.Fatalf("failed to cleanup test node: %v", err)
+		}
+	})
+
+	return node
 }
 
 func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.ApplicationInstallerRecorder) (context.Context, ctrlruntimeclient.Client) {
@@ -376,7 +425,7 @@ func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.Applicatio
 
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: applicationNamespace,
+			Name: applicationNamespaceName,
 		},
 	}
 	if err := client.Create(ctx, ns); err != nil {
@@ -385,7 +434,7 @@ func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.Applicatio
 
 	isClusterPausedFunc := func(ctx context.Context) (bool, error) { return false, nil }
 
-	if err := Add(ctx, kubermaticlog.Logger, mgr, mgr, isClusterPausedFunc, applicationInstaller); err != nil {
+	if err := Add(ctx, kubermaticlog.Logger, mgr, mgr, isClusterPausedFunc, ns.Name, applicationInstaller); err != nil {
 		t.Fatalf("failed to add controller to manager: %s", err)
 	}
 

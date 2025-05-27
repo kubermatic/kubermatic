@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	testhelper "k8c.io/kubermatic/v2/pkg/test"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +36,7 @@ func TestGetEtcdCommand(t *testing.T) {
 		cluster               *kubermaticv1.Cluster
 		enableCorruptionCheck bool
 		launcherEnabled       bool
+		quotaBackendGb        int64
 		expectedArgs          int
 	}{
 		{
@@ -52,7 +53,62 @@ func TestGetEtcdCommand(t *testing.T) {
 			expectedArgs:    12,
 		},
 		{
-			name: "with-corruption-flags",
+			name: "without-launcher",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "62m9k9tqlm",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-62m9k9tqlm",
+				},
+			},
+			launcherEnabled: false,
+			expectedArgs:    30,
+		},
+		{
+			name: "with-launcher-and-quota-backend-bytes",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "62m9k9tqlm",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-62m9k9tqlm",
+				},
+			},
+			launcherEnabled: true,
+			quotaBackendGb:  4,
+			expectedArgs:    14,
+		},
+		{
+			name: "without-launcher-and-quota-backend-bytes",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "62m9k9tqlm",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-62m9k9tqlm",
+				},
+			},
+			launcherEnabled: false,
+			quotaBackendGb:  4,
+			expectedArgs:    32,
+		},
+		{
+			name: "with-launcher-and-with-corruption-flags",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "lg69pmx8wf",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-lg69pmx8wf",
+				},
+			},
+			enableCorruptionCheck: true,
+			launcherEnabled:       true,
+			expectedArgs:          13,
+		},
+		{
+			name: "without-launcher-and-with-corruption-flags",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "lg69pmx8wf",
@@ -69,7 +125,7 @@ func TestGetEtcdCommand(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			args := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled)
+			args := getEtcdCommand(test.cluster, test.enableCorruptionCheck, test.launcherEnabled, test.quotaBackendGb)
 
 			if len(args) != test.expectedArgs {
 				t.Fatalf("got less/more arguments than expected. got %d expected %d: %s", len(args), test.expectedArgs, strings.Join(args, " "))

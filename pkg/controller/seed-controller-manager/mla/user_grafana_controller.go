@@ -28,8 +28,8 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -84,7 +84,7 @@ func newUserGrafanaReconciler(
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
 		user := object.(*kubermaticv1.User)
-		return !kubermaticv1helper.IsProjectServiceAccount(user.Spec.Email)
+		return !kubermaticv1helper.IsProjectServiceAccount(user.Name)
 	})
 
 	_, err := builder.ControllerManagedBy(mgr).
@@ -93,8 +93,8 @@ func newUserGrafanaReconciler(
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.User{}, builder.WithPredicates(serviceAccountPredicate)).
-		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler.Client))).
-		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler.Client))).
+		Watches(&kubermaticv1.UserProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForUserProjectBinding(reconciler))).
+		Watches(&kubermaticv1.GroupProjectBinding{}, handler.EnqueueRequestsFromMapFunc(enqueueUserForGroupProjectBinding(reconciler))).
 		Build(reconciler)
 
 	return err
@@ -116,6 +116,10 @@ func enqueueUserForUserProjectBinding(c ctrlruntimeclient.Client) func(context.C
 			return res
 		}
 		for _, user := range userList.Items {
+			// Skip service accounts
+			if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+				continue
+			}
 			if upb.Spec.UserEmail == user.Spec.Email {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
 			}
@@ -140,6 +144,10 @@ func enqueueUserForGroupProjectBinding(c ctrlruntimeclient.Client) func(context.
 			return res
 		}
 		for _, user := range userList.Items {
+			// Skip service accounts
+			if kubermaticv1helper.IsProjectServiceAccount(user.Name) {
+				continue
+			}
 			if slices.Contains(user.Spec.Groups, gpb.Spec.Group) {
 				res = append(res, reconcile.Request{NamespacedName: types.NamespacedName{Name: user.Name, Namespace: user.Namespace}})
 			}
@@ -317,7 +325,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		projectMap[project.Name] = project.DeepCopy()
 	}
 	if !user.Spec.IsAdmin {
-		projectRoles, err := getProjectRolesForUser(ctx, r.Client, user)
+		projectRoles, err := getProjectRolesForUser(ctx, r, user)
 		if err != nil {
 			return fmt.Errorf("error getting project roles for user %q: %w", user.Name, err)
 		}

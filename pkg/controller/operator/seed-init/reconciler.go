@@ -23,9 +23,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -141,8 +141,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 }
 
 func (r *Reconciler) setSeedCondition(ctx context.Context, seed *kubermaticv1.Seed) error {
-	return kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
-		kubermaticv1helper.SetSeedCondition(
+	return util.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
+		util.SetSeedCondition(
 			s,
 			kubermaticv1.SeedConditionClusterInitialized,
 			corev1.ConditionTrue,
@@ -185,7 +185,7 @@ func (r *Reconciler) createInitialCRDs(ctx context.Context, seed *kubermaticv1.S
 			if crdObject.Annotations == nil {
 				crdObject.Annotations = map[string]string{}
 			}
-			crdObject.Annotations[resources.VersionLabel] = r.versions.KubermaticCommit
+			crdObject.Annotations[resources.VersionLabel] = r.versions.GitVersion
 
 			err := r.createOnSeed(ctx, &crdObject, client, crdLog)
 			if err == nil {

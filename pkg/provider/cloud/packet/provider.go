@@ -25,7 +25,7 @@ import (
 
 	"github.com/equinix/equinix-sdk-go/services/metalv1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
@@ -62,6 +62,8 @@ func (p *packet) ValidateCloudSpec(_ context.Context, spec kubermaticv1.CloudSpe
 
 // InitializeCloudProvider initializes a cluster, in particular
 // updates BillingCycle to the defaultBillingCycle, if it is not set.
+//
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func (p *packet) InitializeCloudProvider(ctx context.Context, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 	var err error
 	if cluster.Spec.Cloud.Packet.BillingCycle == "" {
@@ -90,6 +92,7 @@ func (p *packet) ValidateCloudSpecUpdate(_ context.Context, _ kubermaticv1.Cloud
 	return nil
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (apiKey, projectID string, err error) {
 	apiKey = cloudSpec.Packet.APIKey
 	projectID = cloudSpec.Packet.ProjectID
@@ -108,6 +111,7 @@ func GetCredentialsForCluster(cloudSpec kubermaticv1.CloudSpec, secretKeySelecto
 		if cloudSpec.Packet.CredentialsReference == nil {
 			return "", "", errors.New("no credentials provided")
 		}
+
 		projectID, err = secretKeySelector(cloudSpec.Packet.CredentialsReference, resources.PacketProjectID)
 		if err != nil {
 			return "", "", err

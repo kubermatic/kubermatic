@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
@@ -64,6 +64,7 @@ func Provider(
 	if datacenter.Spec.Openstack != nil {
 		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
 	}
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if datacenter.Spec.Packet != nil {
 		return packet.NewCloudProvider(secretKeyGetter), nil
 	}

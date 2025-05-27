@@ -36,6 +36,10 @@ spec:
         kubermatic.io/chart: kubermatic-operator
         fluentbit.io/parser: json_iso
     spec:
+      volumes:
+        - name: ca-bundle
+          configMap:
+            name: ca-bundle
       serviceAccountName: kubermatic-operator
       imagePullSecrets:
       - name: dockercfg
@@ -60,6 +64,8 @@ spec:
         - -enable-leader-election
         {{- end }}
         env:
+        - name: SSL_CERT_FILE
+          value: /opt/ca-bundle/ca-bundle.pem
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
@@ -79,6 +85,16 @@ spec:
           capabilities:
             drop:
             - ALL
+        volumeMounts:
+          - name: ca-bundle
+            readOnly: true
+            mountPath: /opt/ca-bundle/
+      tolerations:
+        {{- toYaml .Values.kubermaticOperator.tolerations | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.kubermaticOperator.affinity | nindent 8 }}
+      nodeSelector:
+        {{- toYaml .Values.kubermaticOperator.nodeSelector | nindent 8 }}
       securityContext:
         fsGroup: 65534
         runAsUser: 65534

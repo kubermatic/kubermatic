@@ -19,7 +19,7 @@ package usercluster
 import (
 	"fmt"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -81,6 +81,16 @@ func RoleReconciler() (string, reconciling.RoleReconciler) {
 					"update",
 				},
 			},
+			{
+				APIGroups: []string{"kubermatic.k8c.io"},
+				Resources: []string{"addons"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"delete",
+				},
+			},
 		}
 		return r, nil
 	}
@@ -138,6 +148,16 @@ func ClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 						"list",
 						"watch",
 					},
+				},
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"policytemplates"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				{
+					APIGroups: []string{"kubermatic.k8c.io"},
+					Resources: []string{"policybindings"},
+					Verbs:     []string{"*"},
 				},
 			}
 			return r, nil

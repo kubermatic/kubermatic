@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	equinixmetal "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
 )
 
 func TestEquinixMetalConfigBuilder(t *testing.T) {
@@ -42,6 +42,7 @@ func TestEquinixMetalConfigBuilder(t *testing.T) {
 	}
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 type equinixmetalTestcase struct {
 	baseTestcase[equinixmetal.RawConfig, kubermaticv1.DatacenterSpecPacket]
 }
@@ -52,6 +53,7 @@ func (tt *equinixmetalTestcase) Run(cluster *kubermaticv1.Cluster) (*equinixmeta
 
 var _ testcase[equinixmetal.RawConfig] = &equinixmetalTestcase{}
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func TestCompleteEquinixMetalProviderSpec(t *testing.T) {
 	t.Run("should validate the cluster's cloud provider", func(t *testing.T) {
 		datacenter := &kubermaticv1.DatacenterSpecPacket{
@@ -85,6 +87,7 @@ func TestCompleteEquinixMetalProviderSpec(t *testing.T) {
 			baseTestcase: baseTestcase[equinixmetal.RawConfig, kubermaticv1.DatacenterSpecPacket]{
 				name: "should apply the values from the datacenter",
 				datacenter: &kubermaticv1.DatacenterSpecPacket{
+
 					Metro: "testmetro",
 				},
 				expected: cloneBuilder(defaultMachine).WithMetro("testmetro"),

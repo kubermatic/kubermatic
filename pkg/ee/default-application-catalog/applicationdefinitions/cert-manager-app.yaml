@@ -41,6 +41,27 @@ spec:
           chartVersion: v1.14.1
           url: https://charts.jetstack.io
     version: v1.14.1
+  - template:
+      source:
+        helm:
+          chartName: cert-manager
+          chartVersion: v1.16.3
+          url: https://charts.jetstack.io
+    version: v1.16.3
+  - template:
+      source:
+        helm:
+          chartName: cert-manager
+          chartVersion: v1.16.5
+          url: https://charts.jetstack.io
+    version: v1.16.5
+  - template:
+      source:
+        helm:
+          chartName: cert-manager
+          chartVersion: v1.17.2
+          url: https://charts.jetstack.io
+    version: v1.17.2
   defaultValuesBlock: |
     installCRDs: true
   documentationURL: https://cert-manager.io/

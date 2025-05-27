@@ -24,14 +24,13 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	addonmutation "k8c.io/kubermatic/v2/pkg/webhook/addon/mutation"
 	applicationdefinitionmutation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/mutation"
 	applicationdefinitionvalidation "k8c.io/kubermatic/v2/pkg/webhook/application/applicationdefinition/validation"
@@ -44,12 +43,13 @@ import (
 	kubermaticconfigurationvalidation "k8c.io/kubermatic/v2/pkg/webhook/kubermaticconfiguration/validation"
 	mlaadminsettingmutation "k8c.io/kubermatic/v2/pkg/webhook/mlaadminsetting/mutation"
 	policieswebhook "k8c.io/kubermatic/v2/pkg/webhook/policies"
+	policytemplatevalidation "k8c.io/kubermatic/v2/pkg/webhook/policytemplate/validation"
 	resourcequotavalidation "k8c.io/kubermatic/v2/pkg/webhook/resourcequota/validation"
 	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 	uservalidation "k8c.io/kubermatic/v2/pkg/webhook/user/validation"
 	usersshkeymutation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/mutation"
 	usersshkeyvalidation "k8c.io/kubermatic/v2/pkg/webhook/usersshkey/validation"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -85,8 +85,7 @@ func main() {
 	reconciling.Configure(log)
 
 	// say hello
-	versions := kubermatic.NewDefaultVersions()
-	cli.Hello(log, "Webhook", options.log.Debug, &versions)
+	cli.Hello(log, "Webhook", nil)
 
 	// /////////////////////////////////////////
 	// get kubeconfig
@@ -237,6 +236,14 @@ func main() {
 	groupProjectBindingValidator := groupprojectbinding.NewValidator()
 	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
+	}
+
+	// /////////////////////////////////////////
+	// setup PolicyTemplate webhook
+
+	policyTemplateValidator := policytemplatevalidation.NewValidator(mgr.GetClient())
+	if err := builder.WebhookManagedBy(mgr).For(&kubermaticv1.PolicyTemplate{}).WithValidator(policyTemplateValidator).Complete(); err != nil {
+		log.Fatalw("Failed to setup PolicyTemplate validation webhook", zap.Error(err))
 	}
 
 	// /////////////////////////////////////////

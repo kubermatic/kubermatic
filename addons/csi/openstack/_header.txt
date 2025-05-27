@@ -20,9 +20,6 @@
 
 {{ $version := "UNSUPPORTED" }}
 
-{{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.1" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.29" }}
 {{ $version = "v1.29.1" }}
 {{ end }}
@@ -34,6 +31,9 @@
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
 {{ $version = "v1.31.2" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.33" }}
+{{ $version = "v1.32.0" }}
 {{ end }}
 
 {{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}

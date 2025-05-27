@@ -26,13 +26,12 @@ import (
 	"strings"
 
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -40,6 +39,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/test-infra/pkg/genyaml"
 	"k8s.io/utils/ptr"
+	yaml "sigs.k8s.io/yaml/goyaml.v3"
+)
+
+const (
+	sampledc = "<<exampledc>>"
 )
 
 func main() {
@@ -56,18 +60,18 @@ func main() {
 	target := flag.Arg(1)
 
 	if _, err := os.Stat(target); err != nil {
-		if err := os.MkdirAll(target, 0755); err != nil {
+		if err := os.MkdirAll(target, 0o755); err != nil {
 			log.Fatalf("Failed to create target directory %s: %v", target, err)
 		}
 	}
 
 	// find all .go files in kubermatic/v1
-	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/kubermatic/v1/*.go"))
+	kubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
-	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "pkg/apis/apps.kubermatic/v1/*.go"))
+	appsKubermaticFiles, err := filepath.Glob(filepath.Join(root, "vendor/k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1/*.go"))
 	if err != nil {
 		log.Fatalf("Failed to find appsKubermatic go files: %v", err)
 	}
@@ -113,7 +117,7 @@ func main() {
 	}
 }
 
-func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
+func createBaseExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 	operatingSystemProfileList := kubermaticv1.OperatingSystemProfileList{}
 	kubevirtHTTPSource := kubermaticv1.KubeVirtHTTPSource{
@@ -151,11 +155,18 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{
-				"<<exampledc>>": {
+				sampledc: {
 					Node: &kubermaticv1.NodeSettings{
 						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
 						RegistryMirrors:    []string{},
+						ContainerdRegistryMirrors: &kubermaticv1.ContainerRuntimeContainerd{
+							Registries: map[string]kubermaticv1.ContainerdRegistry{
+								"docker.io": {
+									Mirrors: []string{"mirror.gcr.io"},
+								},
+							},
+						},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
 						ProviderReconciliationInterval: &metav1.Duration{Duration: defaulting.DefaultCloudProviderReconciliationInterval},
@@ -193,6 +204,7 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 								MinimumMemory: 0,
 							},
 						},
+						//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
 							Metro:      "",
@@ -222,10 +234,11 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 									},
 								},
 							},
-							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{{
-								Name:           "rook-ceph-block",
-								IsDefaultClass: ptr.To(true),
-							},
+							InfraStorageClasses: []kubermaticv1.KubeVirtInfraStorageClass{
+								{
+									Name:           "rook-ceph-block",
+									IsDefaultClass: ptr.To(true),
+								},
 							},
 						},
 						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
@@ -236,6 +249,14 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 						},
 						VMwareCloudDirector: &kubermaticv1.DatacenterSpecVMwareCloudDirector{
 							Templates: imageList,
+						},
+						KubeLB: &kubermaticv1.KubeLBDatacenterSettings{
+							Enabled:                  true,
+							NodeAddressType:          "ExternalIP",
+							UseLoadBalancerClass:     true,
+							EnableGatewayAPI:         false,
+							EnableSecretSynchronizer: true,
+							DisableIngressClass:      false,
 						},
 					},
 				},
@@ -260,6 +281,15 @@ func createExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kubermatic
 				},
 			},
 			MLA: &kubermaticv1.SeedMLASettings{},
+			KubeLB: &kubermaticv1.KubeLBSeedSettings{
+				EnableForAllDatacenters: true,
+				KubeLBSettings: kubermaticv1.KubeLBSettings{
+					Kubeconfig: corev1.ObjectReference{
+						Name:      "kubelb-management-kubeconfig",
+						Namespace: "kubermatic",
+					},
+				},
+			},
 		},
 	}
 
@@ -410,7 +440,7 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 			Name: "<<appInstallation-name>>",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name:        "my-namespace",
 				Create:      true,
 				Labels:      map[string]string{"env": "dev"},
@@ -420,7 +450,6 @@ func createExampleApplicationInstallation() *appskubermaticv1.ApplicationInstall
 				Name:    "apache",
 				Version: "1.2.3",
 			},
-			Values: runtime.RawExtension{Raw: []byte(`{ "commonLabels": {"owner": "somebody"}}`)},
 			ValuesBlock: `
 commonLabels:
   owner: somebody`[1:],

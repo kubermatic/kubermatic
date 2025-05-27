@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.5
     kubermatic.k8c.io/location: master
   name: kubermaticsettings.kubermatic.k8c.io
 spec:
@@ -110,6 +110,15 @@ spec:
                         If enforced is set to true, the cleanup of LoadBalancers and PVCs is
                         enforced.
                       type: boolean
+                  type: object
+                clusterBackupOptions:
+                  properties:
+                    defaultChecksumAlgorithm:
+                      description: |-
+                        DefaultChecksumAlgorithm allows setting a default checksum algorithm used by Velero for uploading objects to S3.
+
+                        Optional
+                      type: string
                   type: object
                 customLinks:
                   description: CustomLinks are additional links that can be shown the dashboard's footer.

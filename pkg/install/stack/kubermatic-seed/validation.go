@@ -25,7 +25,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/util/podexec"
@@ -36,7 +36,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (m *SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*SeedStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	failures := []error{}
 
 	if err := ValidateMinioCompatibility(ctx, opt); err != nil {

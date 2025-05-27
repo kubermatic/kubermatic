@@ -19,7 +19,7 @@ package kubermatic
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -81,7 +81,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "controller-manager",
-					Image:   cfg.Spec.MasterController.DockerRepository + ":" + versions.Kubermatic,
+					Image:   cfg.Spec.MasterController.DockerRepository + ":" + versions.KubermaticContainerTag,
 					Command: []string{"master-controller-manager"},
 					Args:    args,
 					Env:     common.KubermaticProxyEnvironmentVars(&cfg.Spec.Proxy),

@@ -19,7 +19,7 @@ package scheduler
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -72,7 +72,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 
 			// Apply leader election settings
-			if lds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+			if lds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds; lds != nil {
 				flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
 			}
 			if rds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {

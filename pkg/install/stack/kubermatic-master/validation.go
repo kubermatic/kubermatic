@@ -28,21 +28,21 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	k8csemver "k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
+func (*MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions) []error {
 	var errs []error
 
 	// validation can only happen if KKP was already installed, otherwise the resource types
@@ -60,7 +60,7 @@ func (m *MasterStack) ValidateState(ctx context.Context, opt stack.DeployOptions
 	}
 
 	// Ensure that no KKP upgrade was skipped.
-	kkpMinorVersion := semverlib.MustParse(opt.Versions.KubermaticCommit).Minor()
+	kkpMinorVersion := semverlib.MustParse(opt.Versions.GitVersion).Minor()
 	minMinorRequired := kkpMinorVersion - 1
 
 	// The configured KubermaticConfiguration might be a static YAML file,
@@ -241,7 +241,7 @@ func (*MasterStack) ValidateConfiguration(config *kubermaticv1.KubermaticConfigu
 		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)
 	}
 
-	helmFailures := validateHelmValues(config, helmValues, opt, logger)
+	helmFailures := validateHelmValues(config, helmValues, logger)
 	for idx, e := range helmFailures {
 		helmFailures[idx] = prefixError("Helm values: ", e)
 	}
@@ -304,7 +304,7 @@ type dexClient struct {
 	ID string `yaml:"id"`
 }
 
-func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, opt stack.DeployOptions, logger logrus.FieldLogger) []error {
+func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) []error {
 	if helmValues.IsEmpty() {
 		return []error{fmt.Errorf("No Helm Values file was provided, or the file was empty; installation cannot proceed. Please use the flag --helm-values=<valuesfile.yaml>")}
 	}
@@ -317,21 +317,20 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		helmValues.Set(path, config.Spec.ImagePullSecret)
 	}
 
-	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
-		path := yamled.Path{"dex", "ingress", "host"}
-		if domain, _ := helmValues.GetString(path); domain == "" {
-			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
-			helmValues.Set(path, config.Spec.Ingress.Domain)
-		}
-	}
-
 	defaultedConfig, err := defaulting.DefaultConfiguration(config, zap.NewNop().Sugar())
 	if err != nil {
 		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %w", err))
 		return failures // must stop here, without defaulting the clientID check can be misleading
 	}
 
-	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+	useNewDexChart, _ := helmValues.GetBool(yamled.Path{"useNewDexChart"})
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] && !useNewDexChart {
+		path := yamled.Path{"dex", "ingress", "host"}
+		if domain, _ := helmValues.GetString(path); domain == "" {
+			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
+			helmValues.Set(path, config.Spec.Ingress.Domain)
+		}
+
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
 		clients := []dexClient{}
@@ -387,8 +386,8 @@ func randomString() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-// isPublicIp validates whether ip provided is public.
-func isPublicIp(ipAddress string) bool {
+// isPublicIP validates whether ip provided is public.
+func isPublicIP(ipAddress string) bool {
 	ipAddr := net.ParseIP(ipAddress)
 	return ipAddr != nil && !ipAddr.IsPrivate()
 }

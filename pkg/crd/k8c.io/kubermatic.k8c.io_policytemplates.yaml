@@ -1,0 +1,233 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.5
+    kubermatic.k8c.io/location: master,seed
+  name: policytemplates.kubermatic.k8c.io
+spec:
+  group: kubermatic.k8c.io
+  names:
+    categories:
+      - kubermatic
+    kind: PolicyTemplate
+    listKind: PolicyTemplateList
+    plural: policytemplates
+    shortNames:
+      - pt
+    singular: policytemplate
+  scope: Cluster
+  versions:
+    - additionalPrinterColumns:
+        - jsonPath: .spec.visibility
+          name: Visibility
+          type: string
+        - jsonPath: .spec.projectID
+          name: ProjectID
+          type: string
+        - jsonPath: .spec.enforced
+          name: Enforced
+          type: boolean
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: PolicyTemplate defines a reusable blueprint of a Kyverno policy.
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+                In CamelCase.
+                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+              type: string
+            metadata:
+              type: object
+            spec:
+              properties:
+                category:
+                  description: Category is the category of the policy, specified as an annotation in the Kyverno policy
+                  type: string
+                default:
+                  description: Default determines whether we apply the policy (create policy binding) by default
+                  type: boolean
+                description:
+                  description: Description is the description of the policy, specified as an annotation in the Kyverno policy
+                  type: string
+                enforced:
+                  description: |-
+                    Enforced indicates whether this policy is mandatory
+
+                    If true, this policy is mandatory
+                    A PolicyBinding referencing it cannot disable it
+                  type: boolean
+                namespacedPolicy:
+                  description: NamespacedPolicy dictates the type of Kyverno resource to be created in this User Cluster.
+                  type: boolean
+                policySpec:
+                  description: |-
+                    PolicySpec is the policy spec of the Kyverno Policy we want to apply on the cluster.
+
+                    The structure of this spec should follow the rules defined in Kyverno
+                    [Writing Policies Docs](https://kyverno.io/docs/writing-policies/).
+
+                    For example, a simple policy spec could be defined as:
+
+                       policySpec:
+                         validationFailureAction: Audit
+                         background: true
+                         rules:
+                         - name: check-for-labels
+                           match:
+                             any:
+                             - resources:
+                                 kinds:
+                                 - Pod
+                           validate:
+                             message: "The label `app.kubernetes.io/name` is required."
+                             pattern:
+                               metadata:
+                                 labels:
+                                   app.kubernetes.io/name: "?*"
+
+                    There are also further examples of Kyverno policies in the
+                    [Kyverno Policies Examples](https://kyverno.io/policies/).
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                projectID:
+                  description: |-
+                    ProjectID is the ID of the project for which the policy template is created
+
+                    Relevant only for project visibility policies
+                  type: string
+                severity:
+                  description: Severity indicates the severity level of the policy
+                  type: string
+                target:
+                  description: |-
+                    Target allows selection of projects and clusters where this template applies,
+                    If 'Target' itself is omitted, the scope defaults based on 'Visibility' and 'ProjectID':
+                  properties:
+                    clusterSelector:
+                      description: ClusterSelector filters individual KKP Cluster resources based on their labels.
+                      properties:
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                          items:
+                            description: |-
+                              A label selector requirement is a selector that contains values, a key, and an operator that
+                              relates the key and values.
+                            properties:
+                              key:
+                                description: key is the label key that the selector applies to.
+                                type: string
+                              operator:
+                                description: |-
+                                  operator represents a key's relationship to a set of values.
+                                  Valid operators are In, NotIn, Exists and DoesNotExist.
+                                type: string
+                              values:
+                                description: |-
+                                  values is an array of string values. If the operator is In or NotIn,
+                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                  the values array must be empty. This array is replaced during a strategic
+                                  merge patch.
+                                items:
+                                  type: string
+                                type: array
+                                x-kubernetes-list-type: atomic
+                            required:
+                              - key
+                              - operator
+                            type: object
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                            map is equivalent to an element of matchExpressions, whose key field is "key", the
+                            operator is "In", and the values array contains only "value". The requirements are ANDed.
+                          type: object
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    projectSelector:
+                      description: ProjectSelector filters KKP Projects based on their labels.
+                      properties:
+                        matchExpressions:
+                          description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
+                          items:
+                            description: |-
+                              A label selector requirement is a selector that contains values, a key, and an operator that
+                              relates the key and values.
+                            properties:
+                              key:
+                                description: key is the label key that the selector applies to.
+                                type: string
+                              operator:
+                                description: |-
+                                  operator represents a key's relationship to a set of values.
+                                  Valid operators are In, NotIn, Exists and DoesNotExist.
+                                type: string
+                              values:
+                                description: |-
+                                  values is an array of string values. If the operator is In or NotIn,
+                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                  the values array must be empty. This array is replaced during a strategic
+                                  merge patch.
+                                items:
+                                  type: string
+                                type: array
+                                x-kubernetes-list-type: atomic
+                            required:
+                              - key
+                              - operator
+                            type: object
+                          type: array
+                          x-kubernetes-list-type: atomic
+                        matchLabels:
+                          additionalProperties:
+                            type: string
+                          description: |-
+                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                            map is equivalent to an element of matchExpressions, whose key field is "key", the
+                            operator is "In", and the values array contains only "value". The requirements are ANDed.
+                          type: object
+                      type: object
+                      x-kubernetes-map-type: atomic
+                  type: object
+                title:
+                  description: Title is the title of the policy, specified as an annotation in the Kyverno policy
+                  type: string
+                visibility:
+                  description: |-
+                    Visibility specifies where the policy is visible.
+
+                    Can be one of: global, project, or cluster
+                  enum:
+                    - Global
+                    - Project
+                    - Cluster
+                  type: string
+              required:
+                - description
+                - policySpec
+                - title
+                - visibility
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources: {}

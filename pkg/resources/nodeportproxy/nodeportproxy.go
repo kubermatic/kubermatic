@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -42,9 +42,11 @@ const (
 	imageName          = "kubermatic/nodeport-proxy"
 	envoyAppLabelValue = resources.NodePortProxyEnvoyDeploymentName
 
+	EnvoyVersion = "v1.26.1"
+
 	// NodePortProxyExposeNamespacedAnnotationKey is the annotation key used to indicate that
 	// a service should be exposed by the namespaced NodeportProxy instance.
-	// We use it when clusters get exposed via a LoadBalancer, to allow re-using that LoadBalancer
+	// We use it when clusters get exposed via a LoadBalancer, to allow reusing that LoadBalancer
 	// for both the kube-apiserver and the openVPN server.
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
 	DefaultExposeAnnotationKey                 = "nodeport-proxy.k8s.io/expose"
@@ -267,7 +269,7 @@ func DeploymentEnvoyReconciler(data nodePortProxyData, versions kubermatic.Versi
 				},
 			}, {
 				Name:  resources.NodePortProxyEnvoyContainerName,
-				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", seed.Spec.NodeportProxy.Envoy.DockerRepository, versions.Envoy))),
+				Image: registry.Must(data.RewriteImage(fmt.Sprintf("%s:%s", seed.Spec.NodeportProxy.Envoy.DockerRepository, EnvoyVersion))),
 				Command: []string{
 					"/usr/local/bin/envoy",
 					"-c",
@@ -444,6 +446,11 @@ func FrontLoadBalancerServiceReconciler(data *resources.TemplateData) reconcilin
 			// Check if allowed IP ranges are configured and set the LoadBalancer source ranges
 			if data.Cluster().Spec.APIServerAllowedIPRanges != nil {
 				sourceIPList.Insert(data.Cluster().Spec.APIServerAllowedIPRanges.CIDRBlocks...)
+				if seed := data.Seed(); seed != nil {
+					if len(seed.Spec.DefaultAPIServerAllowedIPRanges) > 0 {
+						sourceIPList.Insert(seed.Spec.DefaultAPIServerAllowedIPRanges...)
+					}
+				}
 			}
 
 			s.Spec.LoadBalancerSourceRanges = sets.List(sourceIPList)

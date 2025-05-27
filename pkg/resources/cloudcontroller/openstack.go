@@ -19,10 +19,10 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -113,16 +113,16 @@ func OpenStackCCMTag(version semver.Semver) (string, error) {
 	// gcrane ls --json registry.k8s.io/provider-os/openstack-cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v128:
-		return "v1.28.3", nil
 	case v129:
 		return "v1.29.1", nil
 	case v130:
 		return "v1.30.2", nil
 	case v131:
-		fallthrough
+		return "1.31.2", nil
 	case v132:
-		return "v1.31.2", nil
+		return "v1.32.0", nil
+	case v133:
+		return "v1.32.0", nil
 	default:
 		return "", fmt.Errorf("%v is not yet supported", version)
 	}

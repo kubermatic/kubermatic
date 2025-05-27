@@ -18,10 +18,11 @@ package defaulting
 
 import (
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
@@ -29,7 +30,7 @@ import (
 
 const (
 	// DefaultBackupInterval defines the default interval used to create backups.
-	DefaultBackupInterval = "20m"
+	DefaultBackupInterval time.Duration = time.Minute * 20
 
 	// DefaultMeteringStorageSize is the default size for the metering Prometheus PVC.
 	DefaultMeteringStorageSize = "100Gi"
@@ -47,6 +48,8 @@ func DefaultSeed(seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfigu
 	logger.Debug("Applying defaults to Seed")
 
 	seedCopy := seed.DeepCopy()
+
+	seedCopy.SetDefaults()
 
 	if seedCopy.Spec.ExposeStrategy == "" {
 		seedCopy.Spec.ExposeStrategy = config.Spec.ExposeStrategy

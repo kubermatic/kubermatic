@@ -41,6 +41,20 @@ spec:
           chartVersion: 0.20.5
           url: https://aquasecurity.github.io/helm-charts/
     version: 0.18.4
+  - template:
+      source:
+        helm:
+          chartName: trivy-operator
+          chartVersion: 0.25.0
+          url: https://aquasecurity.github.io/helm-charts/
+    version: 0.23.0
+  - template:
+      source:
+        helm:
+          chartName: trivy-operator
+          chartVersion: 0.28.0
+          url: https://aquasecurity.github.io/helm-charts/
+    version: 0.26.0
   defaultValuesBlock: |
     trivy:
       # To specify that Trivy should ignore all unfixed vulnerabilities, set `ignoredUnfixed` flag to `true`

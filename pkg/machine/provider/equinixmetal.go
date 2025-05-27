@@ -19,9 +19,9 @@ package provider
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	equinixmetal "k8c.io/machine-controller/pkg/cloudprovider/provider/equinixmetal/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 type equinixmetalConfig struct {
@@ -71,6 +71,7 @@ func (b *equinixmetalConfig) WithTag(tag string) *equinixmetalConfig {
 	return b
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func CompleteEquinixMetalProviderSpec(config *equinixmetal.RawConfig, cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.DatacenterSpecPacket) (*equinixmetal.RawConfig, error) {
 	if cluster != nil && cluster.Spec.Cloud.Packet == nil {
 		return nil, fmt.Errorf("cannot use cluster to create Equinix Metal cloud spec as cluster uses %q", cluster.Spec.Cloud.ProviderName)

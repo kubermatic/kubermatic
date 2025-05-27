@@ -25,18 +25,18 @@
 package synccontroller
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 func cbslReconcilerFactory(cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedClusterBackupStorageLocationReconcilerFactory {
 	return func() (string, reconciling.ClusterBackupStorageLocationReconciler) {
 		return cbsl.Name, func(existing *kubermaticv1.ClusterBackupStorageLocation) (*kubermaticv1.ClusterBackupStorageLocation, error) {
-			if existing.ObjectMeta.Labels == nil {
-				existing.ObjectMeta.Labels = map[string]string{}
+			if existing.Labels == nil {
+				existing.Labels = map[string]string{}
 			}
-			for k, v := range cbsl.ObjectMeta.Labels {
-				existing.ObjectMeta.Labels[k] = v
+			for k, v := range cbsl.Labels {
+				existing.Labels[k] = v
 			}
 			existing.Spec = cbsl.Spec
 			return existing, nil

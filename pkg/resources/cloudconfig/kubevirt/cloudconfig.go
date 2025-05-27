@@ -19,7 +19,7 @@ package kubevirt
 import (
 	"gopkg.in/yaml.v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
 type CloudConfig struct {
@@ -29,10 +29,17 @@ type CloudConfig struct {
 	Namespace string `yaml:"namespace"`
 	// InstancesV2 used in KubeVirt cloud-controller-manager as metadata information about the infra cluster nodes
 	InstancesV2 InstancesV2 `yaml:"instancesV2"`
+	// LoadBalancer configures cloud-controller-manager LoadBalancer interface configurations.
+	LoadBalancer LoadBalancer `yaml:"loadBalancer"`
 }
 
 type InstancesV2 struct {
 	ZoneAndRegionEnabled bool `yaml:"zoneAndRegionEnabled"`
+}
+
+type LoadBalancer struct {
+	// Enabled activates the load balancer interface of the CCM
+	Enabled bool `yaml:"enabled"`
 }
 
 func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) CloudConfig {
@@ -41,6 +48,9 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) Clou
 		Namespace:  cluster.Status.NamespaceName,
 		InstancesV2: InstancesV2{
 			ZoneAndRegionEnabled: true,
+		},
+		LoadBalancer: LoadBalancer{
+			Enabled: true,
 		},
 	}
 
@@ -52,6 +62,12 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter) Clou
 		dc.Spec.Kubevirt.CCMZoneAndRegionEnabled != nil &&
 		!*dc.Spec.Kubevirt.CCMZoneAndRegionEnabled {
 		cloudConfig.InstancesV2.ZoneAndRegionEnabled = false
+	}
+
+	if dc.Spec.Kubevirt != nil &&
+		dc.Spec.Kubevirt.CCMLoadBalancerEnabled != nil &&
+		!*dc.Spec.Kubevirt.CCMLoadBalancerEnabled {
+		cloudConfig.LoadBalancer.Enabled = false
 	}
 
 	return cloudConfig

@@ -28,7 +28,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubelbresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -62,7 +62,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.1.2"
+	imageTag  = "v1.1.4"
 )
 
 type kubeLBData interface {
@@ -205,7 +205,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 			flags = append(flags, "-enable-secret-synchronizer")
 		}
 		if kubelb.DisableIngressClass {
-			flags = append(flags, "-use-ingress-class", "false")
+			flags = append(flags, "-use-ingress-class=false")
 		}
 	}
 
@@ -214,6 +214,17 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 	}
 	if clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass {
 		flags = append(flags, "-use-loadbalancer-class")
+	}
+
+	// Cluster configuration has a higher precedence than datacenter configuration.
+	if clusterKubeLB != nil && clusterKubeLB.ExtraArgs != nil {
+		for k, v := range clusterKubeLB.ExtraArgs {
+			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
+		}
+	} else if kubelb != nil && kubelb.ExtraArgs != nil {
+		for k, v := range kubelb.ExtraArgs {
+			flags = append(flags, fmt.Sprintf("-%s=%s", k, v))
+		}
 	}
 
 	return flags

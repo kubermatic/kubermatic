@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -158,7 +158,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
-	if err := r.reconcileAddonConfigs(ctx, defaulted, logger); err != nil {
+	if err := r.reconcileAddonConfigs(ctx, logger); err != nil {
 		return err
 	}
 
@@ -191,6 +191,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 		common.KubermaticConfigurationAdmissionWebhookName(config),
 		common.GroupProjectBindingAdmissionWebhookName,
 		common.ResourceQuotaAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 	}
 
 	mutating := []string{
@@ -343,7 +344,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	modifiers := []reconciling.ObjectModifier{
 		modifier.Ownership(config, common.OperatorName, r.scheme),
 		modifier.RelatedRevisionsLabels(ctx, r.Client),
-		modifier.VersionLabel(r.versions.Kubermatic),
+		modifier.VersionLabel(r.versions.GitVersion),
 	}
 
 	// add the image pull secret wrapper only when an image pull secret is provided
@@ -431,11 +432,15 @@ func (r *Reconciler) reconcileValidatingWebhooks(ctx context.Context, config *ku
 		common.SeedAdmissionWebhookReconciler(ctx, config, r.Client),
 		common.KubermaticConfigurationAdmissionWebhookReconciler(ctx, config, r.Client),
 		kubermatic.UserValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
-		kubermatic.UserSSHKeyValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ResourceQuotaValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.GroupProjectBindingValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, config, r.Client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, config, r.Client),
+	}
+
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
+		reconcilers = append(reconcilers, kubermatic.UserSSHKeyValidatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
@@ -449,9 +454,12 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 	logger.Debug("Reconciling Mutating Webhooks")
 
 	reconcilers := []reconciling.NamedMutatingWebhookConfigurationReconcilerFactory{
-		kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		kubermatic.ExternalClusterMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
 		common.ApplicationDefinitionMutatingWebhookConfigurationReconciler(ctx, config, r.Client),
+	}
+
+	if !config.Spec.FeatureGates[features.DisableUserSSHKey] {
+		reconcilers = append(reconcilers, kubermatic.UserSSHKeyMutatingWebhookConfigurationReconciler(ctx, config, r.Client))
 	}
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, reconcilers, "", r.Client); err != nil {
@@ -461,7 +469,7 @@ func (r *Reconciler) reconcileMutatingWebhooks(ctx context.Context, config *kube
 	return nil
 }
 
-func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling AddonConfigs")
 
 	reconcilers := kubermatic.AddonConfigsReconcilers()
@@ -475,10 +483,11 @@ func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, config *kubermat
 func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ApplicationDefinitions")
 
-	reconcilers := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{
-		cilium.ApplicationDefinitionReconciler(config),
+	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(logger, config)
+	if err != nil {
+		return fmt.Errorf("failed to get system application definition reconciler factories: %w", err)
 	}
-	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
+	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, sysAppDefReconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
 	}
 

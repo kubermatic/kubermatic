@@ -38,8 +38,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	ksemver "k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/addon"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	masteroperator "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
@@ -56,13 +57,12 @@ import (
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
-	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -78,6 +78,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/ptr"
 )
 
@@ -204,7 +206,7 @@ func extractAddonsFromArchive(dir string, reader *tar.Reader) error {
 			// we only want to extract the addons folder and thus we skip
 			// everything else in the image archive.
 			if strings.HasPrefix(header.Name, "addons") {
-				if err = os.MkdirAll(path, 0755); err != nil {
+				if err = os.MkdirAll(path, 0o755); err != nil {
 					return err
 				}
 			}
@@ -283,7 +285,7 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 		return fmt.Errorf("failed to load manifest: %w", err)
 	}
 
-	var repositoryToRefToImage = make(map[string]map[name.Reference]remote.Taggable)
+	repositoryToRefToImage := make(map[string]map[name.Reference]remote.Taggable)
 	for _, descriptor := range indexManifest {
 		for _, tagStr := range descriptor.RepoTags {
 			repoTag, err := name.NewTag(tagStr)
@@ -336,13 +338,21 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 		return 0, len(imageList), nil
 	}
 
+	var failedImages []string
+
 	for index, image := range imageList {
-		if err := copyImage(ctx, log, image, userAgent); err != nil {
-			return index, len(imageList), fmt.Errorf("failed copying image %s: %w", image.Source, err)
+		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
+			log.Errorf("Failed to copy image: %v", err)
+			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
 	}
 
-	return len(imageList), len(imageList), nil
+	successCount := len(imageList) - len(failedImages)
+	if len(failedImages) > 0 {
+		return successCount, len(imageList), fmt.Errorf("failed images:\n%s", strings.Join(failedImages, "\n"))
+	}
+
+	return successCount, len(imageList), nil
 }
 
 func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
@@ -358,7 +368,29 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 
 	log.Info("Copying image…")
 
-	return crane.Copy(image.Source, image.Destination, options...)
+	numTries := 0
+	backoff := wait.Backoff{
+		Steps:    3,
+		Duration: 500 * time.Millisecond,
+		Factor:   1.0,
+		Jitter:   0.1,
+	}
+
+	retriable := func(err error) bool {
+		numTries++
+		log.Info("Retrying…")
+
+		return numTries <= backoff.Steps
+	}
+
+	return retry.OnError(backoff, retriable, func() error {
+		err := crane.Copy(image.Source, image.Destination, options...)
+		if err != nil {
+			log.Error("Copying image:", err)
+		}
+
+		return err
+	})
 }
 
 func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, config *kubermaticv1.KubermaticConfiguration, addons map[string]*addon.Addon, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, registryPrefix string) (images []string, err error) {
@@ -385,6 +417,11 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	}
 
 	images = append(images, addonImages...)
+	if backupImages, err := etcdBackupImages(config.Spec.SeedController); err != nil {
+		return nil, fmt.Errorf("failed to get images from etcd backups: %w", err)
+	} else {
+		images = append(images, backupImages...)
+	}
 
 	if registryPrefix != "" {
 		var filteredImages []string
@@ -400,8 +437,34 @@ func GetImagesForVersion(log logrus.FieldLogger, clusterVersion *version.Version
 	return images, nil
 }
 
+func etcdBackupImages(configuration kubermaticv1.KubermaticSeedControllerConfiguration) ([]string, error) {
+	var images []string
+
+	if configuration.BackupStoreContainer == "" {
+		configuration.BackupStoreContainer = defaulting.DefaultBackupStoreContainer
+	}
+
+	if image, err := kubernetes.ContainerFromString(configuration.BackupStoreContainer); err != nil {
+		return nil, fmt.Errorf("failed to get backup store image: %w", err)
+	} else {
+		images = append(images, image.Image)
+	}
+
+	if configuration.BackupDeleteContainer == "" {
+		configuration.BackupDeleteContainer = defaulting.DefaultBackupDeleteContainer
+	}
+
+	if image, err := kubernetes.ContainerFromString(configuration.BackupDeleteContainer); err != nil {
+		return nil, fmt.Errorf("failed to get backup delete image: %w", err)
+	} else {
+		images = append(images, image.Image)
+	}
+
+	return images, nil
+}
+
 func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.TemplateData, config *kubermaticv1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions, seed *kubermaticv1.Seed) (images []string, err error) {
-	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false)
+	statefulsetReconcilers := kubernetescontroller.GetStatefulSetReconcilers(templateData, false, false, 0)
 	statefulsetReconcilers = append(statefulsetReconcilers, monitoring.GetStatefulSetReconcilers(templateData)...)
 
 	deploymentReconcilers := kubernetescontroller.GetDeploymentReconcilers(templateData, false, kubermaticVersions)
@@ -426,7 +489,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry)))
+		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil))
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
@@ -502,151 +565,49 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 
 func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersion *version.Version, cloudSpec kubermaticv1.CloudSpec, cniPlugin *kubermaticv1.CNIPluginSettings, konnectivityEnabled bool, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle, seed *kubermaticv1.Seed) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
-	caBundleConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.CABundleConfigMapName,
-			Namespace: mockNamespaceName,
+	mockObjects := []runtime.Object{
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.ApiserverServiceName,
+				Namespace: mockNamespaceName,
+			},
+			Spec: corev1.ServiceSpec{
+				Ports:     []corev1.ServicePort{{NodePort: 99}},
+				ClusterIP: "192.0.2.10",
+			},
 		},
-	}
-	prometheusConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.PrometheusConfigConfigMapName,
-			Namespace: mockNamespaceName,
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.OpenVPNServerServiceName,
+				Namespace: mockNamespaceName,
+			},
+			Spec: corev1.ServiceSpec{
+				Ports:     []corev1.ServicePort{{NodePort: 96}},
+				ClusterIP: "192.0.2.2",
+			},
 		},
-	}
-	dnsResolverConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.DNSResolverConfigMapName,
-			Namespace: mockNamespaceName,
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.DNSResolverServiceName,
+				Namespace: mockNamespaceName,
+			},
+			Spec: corev1.ServiceSpec{
+				Ports:     []corev1.ServicePort{{NodePort: 98}},
+				ClusterIP: "192.0.2.11",
+			},
 		},
-	}
-	openvpnClientConfigsConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.OpenVPNClientConfigsConfigMapName,
-			Namespace: mockNamespaceName,
-		},
-	}
-	auditConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.AuditConfigMapName,
-			Namespace: mockNamespaceName,
-		},
-	}
-	admissionControlConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.AdmissionControlConfigMapName,
-			Namespace: mockNamespaceName,
-		},
-	}
-	konnectivityKubeApiserverEgressConfigMap := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.KonnectivityKubeApiserverEgress,
-			Namespace: mockNamespaceName,
-		},
-	}
-	configMapList := &corev1.ConfigMapList{
-		Items: []corev1.ConfigMap{
-			caBundleConfigMap,
-			prometheusConfigMap,
-			dnsResolverConfigMap,
-			openvpnClientConfigsConfigMap,
-			auditConfigMap,
-			admissionControlConfigMap,
-			konnectivityKubeApiserverEgressConfigMap,
-		},
-	}
-	apiServerService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.ApiserverServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 99}},
-			ClusterIP: "192.0.2.10",
-		},
-	}
-	openvpnserverService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.OpenVPNServerServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 96}},
-			ClusterIP: "192.0.2.2",
-		},
-	}
-	dnsService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.DNSResolverServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{NodePort: 98}},
-			ClusterIP: "192.0.2.11",
-		},
-	}
-	konnectivityService := corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.KonnectivityProxyServiceName,
-			Namespace: mockNamespaceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{{Name: "secure", Port: 443, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(8132)}},
-			ClusterIP: "192.0.2.20",
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.KonnectivityProxyServiceName,
+				Namespace: mockNamespaceName,
+			},
+			Spec: corev1.ServiceSpec{
+				Ports:     []corev1.ServicePort{{Name: "secure", Port: 443, Protocol: corev1.ProtocolTCP, TargetPort: intstr.FromInt(8132)}},
+				ClusterIP: "192.0.2.20",
+			},
 		},
 	}
 
-	serviceList := &corev1.ServiceList{
-		Items: []corev1.Service{
-			apiServerService,
-			openvpnserverService,
-			dnsService,
-			konnectivityService,
-		},
-	}
-	secretList := createNamedSecrets([]string{
-		resources.CloudConfigSeedSecretName,
-		resources.CASecretName,
-		resources.TokensSecretName,
-		resources.ApiserverTLSSecretName,
-		resources.KubeletClientCertificatesSecretName,
-		resources.ServiceAccountKeySecretName,
-		resources.ApiserverEtcdClientCertificateSecretName,
-		resources.ApiserverFrontProxyClientCertificateSecretName,
-		resources.EtcdTLSCertificateSecretName,
-		resources.MachineControllerKubeconfigSecretName,
-		resources.ControllerManagerKubeconfigSecretName,
-		resources.SchedulerKubeconfigSecretName,
-		resources.KubeStateMetricsKubeconfigSecretName,
-		resources.OpenVPNCASecretName,
-		resources.OpenVPNServerCertificatesSecretName,
-		resources.OpenVPNClientCertificatesSecretName,
-		resources.FrontProxyCASecretName,
-		resources.KubeletDnatControllerKubeconfigSecretName,
-		resources.PrometheusApiserverClientCertificateSecretName,
-		resources.MetricsServerKubeconfigSecretName,
-		resources.MachineControllerWebhookServingCertSecretName,
-		resources.InternalUserClusterAdminKubeconfigSecretName,
-		resources.ClusterAutoscalerKubeconfigSecretName,
-		resources.KubernetesDashboardKubeconfigSecretName,
-		metricsserver.ServingCertSecretName,
-		resources.UserSSHKeys,
-		resources.AdminKubeconfigSecretName,
-		resources.GatekeeperWebhookServerCertSecretName,
-		resources.OperatingSystemManagerKubeconfigSecretName,
-		resources.KonnectivityKubeconfigSecretName,
-		resources.KonnectivityProxyTLSSecretName,
-		resources.OperatingSystemManagerWebhookKubeconfigSecretName,
-		resources.OperatingSystemManagerWebhookServingCertSecretName,
-		resources.KubeVirtCSISecretName,
-		resources.KubeVirtInfraSecretName,
-		resources.GoogleServiceAccountSecretName,
-		resources.VMwareCloudDirectorCSIKubeconfigSecretName,
-		resources.CSICloudConfigSecretName,
-		resources.VMwareCloudDirectorCSISecretName,
-		resources.KubeLBCCMKubeconfigSecretName,
-		resources.KubeLBManagerKubeconfigSecretName,
-	})
 	datacenter := &kubermaticv1.Datacenter{
 		Spec: kubermaticv1.DatacenterSpec{
 			Anexia:              &kubermaticv1.DatacenterSpecAnexia{},
@@ -659,12 +620,12 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 			VSphere:             &kubermaticv1.DatacenterSpecVSphere{},
 		},
 	}
-	objects := []runtime.Object{configMapList, secretList, serviceList}
 
 	clusterSemver, err := ksemver.NewSemver(clusterVersion.Version.String())
 	if err != nil {
 		return nil, err
 	}
+
 	fakeCluster := &kubermaticv1.Cluster{}
 	fakeCluster.Labels = map[string]string{kubermaticv1.ProjectIDLabelKey: "project"}
 	fakeCluster.Spec.Cloud = cloudSpec
@@ -678,8 +639,11 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	if enabled, exists := config.Spec.FeatureGates[kubermaticv1.ClusterFeatureEtcdLauncher]; exists && !enabled {
 		fakeCluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = false
 	}
+	fakeCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
+		Enabled: true,
+	}
 
-	if fakeCluster.Spec.Cloud.Openstack != nil || fakeCluster.Spec.Cloud.Hetzner != nil || fakeCluster.Spec.Cloud.Azure != nil || fakeCluster.Spec.Cloud.VSphere != nil || fakeCluster.Spec.Cloud.Anexia != nil {
+	if cloudSpec.Openstack != nil || cloudSpec.Hetzner != nil || cloudSpec.Azure != nil || cloudSpec.VSphere != nil || cloudSpec.Anexia != nil || cloudSpec.Kubevirt != nil {
 		if fakeCluster.Spec.Features == nil {
 			fakeCluster.Spec.Features = make(map[string]bool)
 		}
@@ -697,7 +661,7 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 	fakeCluster.Status.Versions.ControllerManager = *clusterSemver
 	fakeCluster.Status.Versions.Scheduler = *clusterSemver
 
-	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
+	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(mockObjects...).Build()
 
 	meteringConfig := &kubermaticv1.MeteringConfiguration{
 		RetentionDays:    defaulting.DefaultMeteringRetentionDays,
@@ -725,20 +689,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithCABundle(caBundle).
 		WithKonnectivityEnabled(konnectivityEnabled).
 		Build(), nil
-}
-
-func createNamedSecrets(secretNames []string) *corev1.SecretList {
-	secretList := corev1.SecretList{}
-	for _, secretName := range secretNames {
-		secret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: mockNamespaceName,
-			},
-		}
-		secretList.Items = append(secretList.Items, secret)
-	}
-	return &secretList
 }
 
 func GetVersions(log logrus.FieldLogger, config *kubermaticv1.KubermaticConfiguration, versionFilter string) ([]*version.Version, error) {
@@ -852,7 +802,8 @@ func GetCloudSpecs() []kubermaticv1.CloudSpec {
 		},
 		{
 			ProviderName: string(kubermaticv1.PacketCloudProvider),
-			Packet:       &kubermaticv1.PacketCloudSpec{},
+			//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
+			Packet: &kubermaticv1.PacketCloudSpec{},
 		},
 		{
 			ProviderName: string(kubermaticv1.VMwareCloudDirectorCloudProvider),

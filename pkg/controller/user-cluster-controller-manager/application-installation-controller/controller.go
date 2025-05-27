@@ -20,13 +20,16 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/apis/equality"
 	"k8c.io/kubermatic/v2/pkg/applications"
+	applicationtemplates "k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	userclustercontrollermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -60,27 +63,32 @@ const (
 
 	// maxRetries is the maximum number of retries on installation or upgrade failure.
 	maxRetries = 5
+
+	// initialRequeueDuration is the time interval which is used until a node object to schedule workloads is registered in the cluster.
+	initialRequeueDuration = 10 * time.Second
 )
 
 type reconciler struct {
-	log             *zap.SugaredLogger
-	seedClient      ctrlruntimeclient.Client
-	userClient      ctrlruntimeclient.Client
-	userRecorder    record.EventRecorder
-	clusterIsPaused userclustercontrollermanager.IsPausedChecker
-	appInstaller    applications.ApplicationInstaller
+	log                  *zap.SugaredLogger
+	seedClient           ctrlruntimeclient.Client
+	userClient           ctrlruntimeclient.Client
+	userRecorder         record.EventRecorder
+	clusterIsPaused      userclustercontrollermanager.IsPausedChecker
+	appInstaller         applications.ApplicationInstaller
+	seedClusterNamespace string
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, appInstaller applications.ApplicationInstaller) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, seedClusterNamespace string, appInstaller applications.ApplicationInstaller) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:             log,
-		seedClient:      seedMgr.GetClient(),
-		userClient:      userMgr.GetClient(),
-		userRecorder:    userMgr.GetEventRecorderFor(controllerName),
-		clusterIsPaused: clusterIsPaused,
-		appInstaller:    appInstaller,
+		log:                  log,
+		seedClient:           seedMgr.GetClient(),
+		userClient:           userMgr.GetClient(),
+		userRecorder:         userMgr.GetEventRecorderFor(controllerName),
+		clusterIsPaused:      clusterIsPaused,
+		appInstaller:         appInstaller,
+		seedClusterNamespace: seedClusterNamespace,
 	}
 
 	_, err := builder.ControllerManagedBy(userMgr).
@@ -112,6 +120,15 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 	if paused {
 		return reconcile.Result{}, nil
+	}
+
+	nodesAvailable, err := util.NodesAvailable(ctx, r.userClient)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to check if nodes are available: %w", err)
+	}
+	if !nodesAvailable {
+		r.log.Debug("waiting for nodes to join the cluster to be able to install applications")
+		return reconcile.Result{RequeueAfter: initialRequeueDuration}, nil
 	}
 
 	appInstallation := &appskubermaticv1.ApplicationInstallation{}
@@ -191,6 +208,11 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		if err := r.userClient.Status().Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
 			return fmt.Errorf("failed to update status with applicationVersion: %w", err)
 		}
+	}
+
+	// for addons migrated to ee default-application-catalog we need to purge resources before re-installing them via helm
+	if err := handleAddonCleanup(ctx, appInstallation.Name, r.seedClusterNamespace, r.seedClient, r.log); err != nil {
+		return err
 	}
 
 	// install application into the user-cluster
@@ -360,4 +382,8 @@ func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(c
 		}
 		return res
 	}
+}
+
+func handleAddonCleanup(ctx context.Context, applicationName string, seedClusterNamespace string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	return applicationtemplates.HandleAddonCleanup(ctx, applicationName, seedClusterNamespace, seedClient, log)
 }

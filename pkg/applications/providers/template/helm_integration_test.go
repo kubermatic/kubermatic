@@ -35,7 +35,7 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/release"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 	"k8c.io/kubermatic/v2/pkg/applications/test"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -61,6 +61,13 @@ var (
 	kubeconfigPath string
 )
 
+type Source string
+
+var (
+	git  Source = "git"
+	helm Source = "helm"
+)
+
 func TestHelmProvider(t *testing.T) {
 	const exampleChartLoc = "../../helmclient/testdata/examplechart"
 	const exampleV2ChartLoc = "../../helmclient/testdata/examplechart-v2"
@@ -75,7 +82,7 @@ func TestHelmProvider(t *testing.T) {
 	chartDir := t.TempDir()
 	chartGlobPath := path.Join(chartDir, "*.tgz")
 	test.PackageChart(t, "../../helmclient/testdata/examplechart2", chartDir)
-	registryUrl, regCredFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
+	registryURL, regCredFile := test.StartOciRegistryWithAuth(t, chartGlobPath)
 
 	tests := []struct {
 		name     string
@@ -86,7 +93,7 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, "", nil)
+				app := createApplicationInstallation(testNs, nil, "", nil, helm)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
 			},
@@ -97,7 +104,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
 				customCmData := map[string]string{"hello": "world", "a": "b"}
-				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil)
+				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil, helm)
 
 				appendDefaultValues(customCmData, test.DefaultData) // its check that object values are merged with default object values
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVersionLabel, 1, false)
@@ -110,7 +117,7 @@ func TestHelmProvider(t *testing.T) {
 				test.EnsureClusterWithCleanup(t, ctx, client)
 				// its check that scalar values overwrite default  scalar values
 				customVersionLabel := "1.2.3"
-				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.VersionLabelKey, customVersionLabel), "", nil)
+				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.VersionLabelKey, customVersionLabel), "", nil, helm)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, customVersionLabel, 1, false)
 			},
@@ -121,7 +128,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
 				customCmData := map[string]string{"hello": "world", "a": "b"}
-				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil)
+				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil, helm)
 
 				appendDefaultValues(customCmData, test.DefaultData)
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVersionLabel, 1, false)
@@ -139,7 +146,7 @@ func TestHelmProvider(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
 				customCmData := map[string]string{"hello": "world", "a": "b"}
-				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil)
+				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.CmDataKey, customCmData), "", nil, helm)
 
 				appendDefaultValues(customCmData, test.DefaultData)
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, customCmData, test.DefaultVersionLabel, 1, false)
@@ -177,10 +184,10 @@ func TestHelmProvider(t *testing.T) {
 		{
 			name: "application installation should be successful when dependency requires credentials that are provided",
 			testFunc: func(t *testing.T) {
-				chartFullPath := createChartWithDependency(t, registryUrl)
+				chartFullPath := createChartWithDependency(t, registryURL)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, "", nil)
+				app := createApplicationInstallation(testNs, nil, "", nil, helm)
 
 				app.Status.ApplicationVersion.Template.DependencyCredentials = &appskubermaticv1.DependencyCredentials{HelmCredentials: &appskubermaticv1.HelmCredentials{RegistryConfigFile: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: "registry-secret"},
@@ -207,10 +214,10 @@ func TestHelmProvider(t *testing.T) {
 		{
 			name: "application installation should fail when dependency requires credentials that are not provided",
 			testFunc: func(t *testing.T) {
-				chartFullPath := createChartWithDependency(t, registryUrl)
+				chartFullPath := createChartWithDependency(t, registryURL)
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, "", nil)
+				app := createApplicationInstallation(testNs, nil, "", nil, helm)
 
 				template := HelmTemplate{
 					Ctx:             context.Background(),
@@ -236,7 +243,7 @@ func TestHelmProvider(t *testing.T) {
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
 
 				// Create an application that deploy a LB service that will never get public ip -> helm release will not be be successful.
-				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.DeploySvcKey, true), "", deployOpts)
+				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.DeploySvcKey, true), "", deployOpts, helm)
 
 				template := HelmTemplate{
 					Ctx:             context.Background(),
@@ -262,7 +269,7 @@ func TestHelmProvider(t *testing.T) {
 					t.Fatal("app.Status.HelmRelease should not be nil")
 				}
 
-				if app.Status.HelmRelease.Info.Status != release.StatusFailed {
+				if app.Status.HelmRelease.Info.Status != appskubermaticv1.HelmReleaseStatus(release.StatusFailed) {
 					t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, app.Status.HelmRelease.Info.Status)
 				}
 			},
@@ -275,7 +282,7 @@ func TestHelmProvider(t *testing.T) {
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: true, Timeout: metav1.Duration{Duration: 5 * time.Second}, Atomic: false}}
 
 				// Create an application that deploy a LB service that will never get public ip -> helm release will not be be successful.
-				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.DeploySvcKey, true), "", nil)
+				app := createApplicationInstallation(testNs, toHelmRawValues(t, test.DeploySvcKey, true), "", nil, helm)
 
 				template := HelmTemplate{
 					Ctx:             context.Background(),
@@ -301,18 +308,18 @@ func TestHelmProvider(t *testing.T) {
 					t.Fatal("app.Status.HelmRelease should not be nil")
 				}
 
-				if app.Status.HelmRelease.Info.Status != release.StatusFailed {
+				if app.Status.HelmRelease.Info.Status != appskubermaticv1.HelmReleaseStatus(release.StatusFailed) {
 					t.Fatalf("expect releaseInfo.Info.Status to be '%s', got '%s'", release.StatusFailed, app.Status.HelmRelease.Info.Status)
 				}
 			},
 		},
 		{
-			name: "when an application is created with no values and enableDns=true, it should install app with default values and dns should be resolved",
+			name: "when an application is created with no values and enableDNS=true, it should install app with default values and dns should be resolved",
 			testFunc: func(t *testing.T) {
 				deployOpts := &appskubermaticv1.DeployOptions{Helm: &appskubermaticv1.HelmDeployOptions{Wait: false, Timeout: metav1.Duration{Duration: 0}, Atomic: false, EnableDNS: true}}
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, "", deployOpts)
+				app := createApplicationInstallation(testNs, nil, "", deployOpts, helm)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, true)
 			},
@@ -322,7 +329,17 @@ func TestHelmProvider(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
 				test.EnsureClusterWithCleanup(t, ctx, client)
-				app := createApplicationInstallation(testNs, nil, "key: value", nil)
+				app := createApplicationInstallation(testNs, nil, "key: value", nil, helm)
+
+				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
+			},
+		},
+		{
+			name: "when an application with git source is created with no values, it should install app with default values",
+			testFunc: func(t *testing.T) {
+				testNs := test.CreateNamespaceWithCleanup(t, ctx, client)
+				test.EnsureClusterWithCleanup(t, ctx, client)
+				app := createApplicationInstallation(testNs, nil, "", nil, git)
 
 				installOrUpgradeTest(t, ctx, client, testNs, app, exampleChartLoc, test.DefaultData, test.DefaultVersionLabel, 1, false)
 			},
@@ -334,7 +351,7 @@ func TestHelmProvider(t *testing.T) {
 	}
 }
 
-func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNs *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int, enableDns bool) {
+func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimeclient.Client, testNS *corev1.Namespace, app *appskubermaticv1.ApplicationInstallation, chartLoc string, expectedData map[string]string, expectedVersionLabel string, expectedVersion int, enableDNS bool) {
 	template := HelmTemplate{
 		Ctx:             context.Background(),
 		Kubeconfig:      kubeconfigPath,
@@ -351,17 +368,17 @@ func installOrUpgradeTest(t *testing.T, ctx context.Context, client ctrlruntimec
 	}
 	statusUpdater(&app.Status)
 
-	test.CheckConfigMap(t, ctx, client, testNs, expectedData, expectedVersionLabel, enableDns)
+	test.CheckConfigMap(t, ctx, client, testNS, expectedData, expectedVersionLabel, enableDNS)
 	assertStatusIsUpdated(t, app, statusUpdater, expectedVersion)
 }
-func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, rawValuesBlock string, deployOpts *appskubermaticv1.DeployOptions) *appskubermaticv1.ApplicationInstallation {
+func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, rawValuesBlock string, deployOpts *appskubermaticv1.DeployOptions, source Source) *appskubermaticv1.ApplicationInstallation {
 	app := &appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "default",
 			Name:      "app1",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name: testNs.Name,
 			},
 			Values:        runtime.RawExtension{},
@@ -372,14 +389,7 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, r
 			ApplicationVersion: &appskubermaticv1.ApplicationVersion{
 				Version: "0.1.0",
 				Template: appskubermaticv1.ApplicationTemplate{
-					Source: appskubermaticv1.ApplicationSource{
-						Helm: &appskubermaticv1.HelmSource{
-							URL:          "localhost",
-							ChartName:    "example",
-							ChartVersion: "0.1.0",
-							PlainHTTP:    ptr.To(true),
-						},
-					},
+					Source: appskubermaticv1.ApplicationSource{},
 				},
 			},
 		},
@@ -390,6 +400,24 @@ func createApplicationInstallation(testNs *corev1.Namespace, rawValues []byte, r
 
 	if rawValuesBlock != "" {
 		app.Spec.ValuesBlock = rawValuesBlock
+	}
+
+	if source == helm {
+		app.Status.ApplicationVersion.Template.Source.Helm = &appskubermaticv1.HelmSource{
+			URL:          "localhost",
+			ChartName:    "example",
+			ChartVersion: "0.1.0",
+			PlainHTTP:    ptr.To(true),
+		}
+	}
+
+	if source == git {
+		app.Status.ApplicationVersion.Template.Source.Git = &appskubermaticv1.GitSource{
+			Remote: "../../helmclient/testdata/examplechart-git",
+			Ref: appskubermaticv1.GitReference{
+				Branch: "main",
+			},
+		}
 	}
 
 	return app
@@ -459,7 +487,7 @@ func createCredentialSecret(t *testing.T, ctx context.Context, client ctrlruntim
 
 // createChartWithDependency takes testdata/examplechart as base and adds examplechart2 as a dependency. The full path to the chart directory is returned.
 // The dependency is stored on the helm registry accessible by registryUrl.
-func createChartWithDependency(t *testing.T, registryUrl string) string {
+func createChartWithDependency(t *testing.T, registryURL string) string {
 	// copy exampleChart  and add examplechart2 as dependency
 	chartFullPath := path.Join(t.TempDir(), "chartWithDependencies")
 	if err := test.CopyDir("../../helmclient/testdata/examplechart", chartFullPath); err != nil {
@@ -470,7 +498,7 @@ func createChartWithDependency(t *testing.T, registryUrl string) string {
 	if err != nil {
 		t.Fatalf("failed to load chart: %s", err)
 	}
-	chartToInstall.Metadata.Dependencies = []*chart.Dependency{{Name: "examplechart2", Version: "0.1.0", Repository: registryUrl}}
+	chartToInstall.Metadata.Dependencies = []*chart.Dependency{{Name: "examplechart2", Version: "0.1.0", Repository: registryURL}}
 	// Save the chart file.
 	out, err := yaml.Marshal(chartToInstall.Metadata)
 	if err != nil {

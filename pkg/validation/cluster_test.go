@@ -27,10 +27,10 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/stretchr/testify/assert"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/sdk/v2/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -63,7 +63,7 @@ func TestValidateClusterSpec(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := ValidateClusterSpec(test.spec, dc, features.FeatureGate{}, version.New([]*version.Version{{
+			err := ValidateClusterSpec(test.spec, dc, nil, features.FeatureGate{}, version.New([]*version.Version{{
 				Version: semverlib.MustParse("1.2.3"),
 			}}, nil, nil), nil, nil).ToAggregate()
 

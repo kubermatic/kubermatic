@@ -25,7 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 	"k8c.io/kubermatic/v2/pkg/applications/providers/util"
 
@@ -64,8 +64,8 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 	}
 	defer util.CleanUpHelmTempDir(helmCacheDir, h.Log)
 
+	var auth = helmclient.AuthSettings{}
 	source := applicationInstallation.Status.ApplicationVersion.Template.Source.Helm
-	var auth = util.NewAuthSettingsFromHelmSource(source)
 	if applicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials != nil {
 		auth, err = util.HelmAuthFromCredentials(h.Ctx, h.SeedClient, path.Join(helmCacheDir, "reg-creg"), h.SecretNamespace, source, applicationInstallation.Status.ApplicationVersion.Template.DependencyCredentials.HelmCredentials)
 		if err != nil {
@@ -119,7 +119,7 @@ func (h HelmTemplate) InstallOrUpgrade(chartLoc string, appDefinition *appskuber
 					LastDeployed:  metav1.Time(helmRelease.Info.LastDeployed),
 					Deleted:       metav1.Time(helmRelease.Info.Deleted),
 					Description:   helmRelease.Info.Description,
-					Status:        helmRelease.Info.Status,
+					Status:        appskubermaticv1.HelmReleaseStatus(helmRelease.Info.Status),
 					Notes:         helmRelease.Info.Notes,
 				},
 			}
@@ -166,7 +166,7 @@ func (h HelmTemplate) Uninstall(applicationInstallation *appskubermaticv1.Applic
 					LastDeployed:  metav1.Time(uninstallReleaseResponse.Release.Info.LastDeployed),
 					Deleted:       metav1.Time(uninstallReleaseResponse.Release.Info.Deleted),
 					Description:   uninstallReleaseResponse.Release.Info.Description,
-					Status:        uninstallReleaseResponse.Release.Info.Status,
+					Status:        appskubermaticv1.HelmReleaseStatus(uninstallReleaseResponse.Release.Info.Status),
 					Notes:         uninstallReleaseResponse.Release.Info.Notes,
 				},
 			}
@@ -290,4 +290,13 @@ func (h HelmTemplate) Rollback(applicationInstallation *appskubermaticv1.Applica
 	}
 
 	return helmClient.Rollback(getReleaseName(applicationInstallation))
+}
+
+func (h *HelmTemplate) templatePreDefinedValues(applicationValues map[string]any) (map[string]any, error) {
+	templateData, err := GetTemplateData(h.Ctx, h.SeedClient, h.ClusterName)
+
+	if err != nil {
+		return nil, err
+	}
+	return RenderValueTemplate(applicationValues, templateData)
 }

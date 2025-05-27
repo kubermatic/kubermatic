@@ -25,7 +25,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -120,6 +120,10 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 
 	if err := deployDefaultApplicationCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy default Application catalog: %w", err)
+	}
+
+	if err := deployDefaultPolicyTemplateCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy default Policy Template catalog: %w", err)
 	}
 
 	if s.showDNSHelp {
@@ -381,7 +385,7 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 			if ip == "" {
 				ip = ingress.IP
 			}
-			if isPublicIp(ingress.IP) {
+			if isPublicIP(ingress.IP) {
 				ip = ingress.IP
 			}
 		}

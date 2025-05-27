@@ -16,9 +16,6 @@
 # Run `make` instead.
 
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.28" }}
-{{ $version = "v1.28.6" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.29" }}
 {{ $version = "v1.29.4" }}
 {{ end }}

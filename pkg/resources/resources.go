@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"time"
@@ -31,7 +32,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/util/s3"
@@ -93,8 +94,6 @@ const (
 	UserClusterControllerDeploymentName = "usercluster-controller"
 	// UserClusterControllerContainerName is the name of the container within the usercluster-controller deployment.
 	UserClusterControllerContainerName = "usercluster-controller"
-	// ClusterAutoscalerDeploymentName is the name of the cluster-autoscaler deployment.
-	ClusterAutoscalerDeploymentName = "cluster-autoscaler"
 	// KubernetesDashboardDeploymentName is the name of the Kubernetes Dashboard deployment.
 	KubernetesDashboardDeploymentName = "kubernetes-dashboard"
 	// KubeLBDeploymentName is the name of the KubeLB deployment.
@@ -159,7 +158,7 @@ const (
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
 	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	OperatingSystemManagerKubeconfigSecretName = "operatingsystemmanager-kubeconfig"
-	// OperatingSystemManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm webhook.
+	// OperatingSystemManagerWebhookKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm webhook.
 	OperatingSystemManagerWebhookKubeconfigSecretName = "operatingsystemmanager-webhook-kubeconfig"
 	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller.
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
@@ -176,13 +175,10 @@ const (
 	OperatingSystemManagerWebhookServingCertSecretName = "operating-system-manager-webhook-serving-cert"
 	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the cert.
 	OperatingSystemManagerWebhookServingCertCertKeyName = "tls.crt"
-	// OperatingSystemManagerWebhookServingCertCertKeyName is the name for the key that contains the private key.
+	// OperatingSystemManagerWebhookServingCertKeyKeyName is the name for the key that contains the private key.
 	OperatingSystemManagerWebhookServingCertKeyKeyName = "tls.key"
 	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver.
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
-	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
-	// the cluster-autoscaler.
-	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard.
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
 	// WEBTerminalKubeconfigSecretName is the name of the kubeconfig secret user for WEB terminal tools pod.
@@ -303,8 +299,7 @@ const (
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert.
 	PrometheusCertUsername = "prometheus"
-	// ClusterAutoscalerCertUsername is the name of the user coming from the CA kubeconfig cert.
-	ClusterAutoscalerCertUsername = "kubermatic:cluster-autoscaler"
+
 	// KubernetesDashboardCertUsername is the name of the user coming from kubeconfig cert.
 	KubernetesDashboardCertUsername = "kubermatic:kubernetes-dashboard"
 	// MetricsScraperServiceAccountUsername is the name of the user coming from kubeconfig cert.
@@ -349,10 +344,6 @@ const (
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
 	// MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding.
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
-	// ClusterAutoscalerClusterRoleName is the name of the clusterrole for the cluster autoscaler.
-	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"
-	// ClusterAutoscalerClusterRoleBindingName is the name of the clusterrolebinding for the CA.
-	ClusterAutoscalerClusterRoleBindingName = "system:kubermatic-cluster-autoscaler"
 	// KubernetesDashboardRoleName is the name of the role for the Kubernetes Dashboard.
 	KubernetesDashboardRoleName = "system:kubernetes-dashboard"
 	// KubernetesDashboardRoleBindingName is the name of the role binding for the Kubernetes Dashboard.
@@ -482,7 +473,7 @@ const (
 	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin.
 	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 
-	// EventRateLimitAdmisionPlugin defines the EventRateLimit admission plugin.
+	// EventRateLimitAdmissionPlugin defines the EventRateLimit admission plugin.
 	EventRateLimitAdmissionPlugin = "EventRateLimit"
 
 	// KubeVirtInfraSecretName is the name for the secret containing the kubeconfig of the kubevirt infra cluster.
@@ -516,7 +507,7 @@ const (
 	VMwareCloudDirectorCSIConfigmapName = "vcloud-csi-configmap"
 	// VMwareCloudDirectorCSIServiceAccountName is the name of the service account of the CSI controller.
 	VMwareCloudDirectorCSIServiceAccountName = "vcloud-csi"
-	// VMwareCloudDirectorCertUsername is the name of the user coming from kubeconfig cert.
+	// VMwareCloudDirectorCSICertUsername is the name of the user coming from kubeconfig cert.
 	VMwareCloudDirectorCSICertUsername = "kubermatic:vcloud-csi"
 	// VMwareCloudDirectorCSIKubeconfigSecretName is the name for the secret containing the kubeconfig used by the osm.
 	VMwareCloudDirectorCSIKubeconfigSecretName = "vcloud-csi-kubeconfig"
@@ -550,7 +541,7 @@ const (
 	KubeconfigSecretKey = "kubeconfig"
 	// TokensSecretKey tokens.csv.
 	TokensSecretKey = "tokens.csv"
-	// ViewersTokenSecretKey viewersToken.
+	// ViewerTokenSecretKey viewersToken.
 	ViewerTokenSecretKey = "viewerToken"
 	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesn't work as it has
 	// the key hardcoded.
@@ -906,7 +897,7 @@ const (
 )
 
 const (
-	// KubeLBKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubelb CCM.
+	// KubeLBCCMKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubelb CCM.
 	KubeLBCCMKubeconfigSecretName = "kubelb-ccm-kubeconfig"
 	// KubeLBManagerKubeconfigSecretName is the name for the secret containing the kubeconfig for the kubelb management cluster used by the kubelb CCM.
 	KubeLBManagerKubeconfigSecretName = "kubelb-manager-kubeconfig"
@@ -1023,6 +1014,7 @@ const (
 	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
+	NetworkPolicyKyvernoWebhookAllow                = "kyverno-webhook-allow"
 )
 
 const (
@@ -1046,7 +1038,7 @@ const (
 	// DefaultClusterServicesCIDRIPv4KubeVirt is the default network range from which IPv4 service VIPs are allocated for KubeVirt clusters.
 	DefaultClusterServicesCIDRIPv4KubeVirt = "10.241.0.0/20"
 	// DefaultClusterServicesCIDRIPv6 is the default network range from which IPv6 service VIPs are allocated.
-	DefaultClusterServicesCIDRIPv6 = "fd02::/120"
+	DefaultClusterServicesCIDRIPv6 = "fd02::/108"
 
 	// DefaultNodeCIDRMaskSizeIPv4 is the default mask size used to address the nodes within provided IPv4 Pods CIDR.
 	DefaultNodeCIDRMaskSizeIPv4 = 24
@@ -1528,6 +1520,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.KonnectivityProxy.Resources != nil {
 		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
+		r[KonnectivityAgentContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 	}
 	if componentSettings.ControllerManager.Resources != nil {
 		r[ControllerManagerDeploymentName] = componentSettings.ControllerManager.Resources.DeepCopy()
@@ -1701,7 +1694,7 @@ func GetClusterNodeCIDRMaskSizeIPv6(cluster *kubermaticv1.Cluster) int32 {
 
 // GetNodePortsAllowedIPRanges returns effective CIDR range to be used for NodePort services for the given cluster
 // and provided allowed IP ranges coming from provider-specific API.
-func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges *kubermaticv1.NetworkRanges, allowedIPRange string) (res kubermaticv1.NetworkRanges) {
+func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges *kubermaticv1.NetworkRanges, allowedIPRange string, seedAllowedIPRanges *kubermaticv1.NetworkRanges) (res kubermaticv1.NetworkRanges) {
 	if allowedIPRanges != nil {
 		res.CIDRBlocks = allowedIPRanges.CIDRBlocks
 	}
@@ -1710,6 +1703,10 @@ func GetNodePortsAllowedIPRanges(cluster *kubermaticv1.Cluster, allowedIPRanges 
 	}
 
 	if len(res.CIDRBlocks) == 0 {
+		if seedAllowedIPRanges != nil && len(seedAllowedIPRanges.CIDRBlocks) > 0 {
+			res.CIDRBlocks = seedAllowedIPRanges.CIDRBlocks
+			return res
+		}
 		if cluster.IsIPv4Only() || cluster.IsDualStack() {
 			res.CIDRBlocks = append(res.CIDRBlocks, IPv4MatchAnyCIDR)
 		}
@@ -1769,6 +1766,19 @@ func GetKubeletPreferredAddressTypes(cluster *kubermaticv1.Cluster, isKonnectivi
 		return "InternalIP,ExternalIP"
 	}
 	return "ExternalIP,InternalIP"
+}
+
+// ConvertGBToBytes converts Gigabytes (GB using decimal) to Bytes.
+// Takes a non-negative number of GB.
+// Returns the number of bytes and a boolean indicating if overflow occurred.
+func ConvertGBToBytes(gb uint64) (bytes uint64, overflow bool) {
+	const GB uint64 = 1 << 30
+
+	if GB > 0 && gb > math.MaxUint64/GB {
+		return 0, true
+	}
+
+	return gb * GB, false
 }
 
 func containsString(s []string, str string) bool {

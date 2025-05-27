@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"html/template"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -186,9 +186,9 @@ func FluentBitSecretReconciler(data *resources.TemplateData) reconciling.NamedSe
 				secret.Data = map[string][]byte{}
 			}
 
-			config := &kubermaticv1.AuditSidecarConfiguration{}
-			if data.Cluster().Spec.AuditLogging.SidecarSettings != nil && data.Cluster().Spec.AuditLogging.SidecarSettings.Config != nil {
-				config = data.Cluster().Spec.AuditLogging.SidecarSettings.Config
+			config, err := data.ParseFluentBitRecords()
+			if err != nil {
+				return nil, err
 			}
 
 			t, err := template.New("fluent-bit.conf").Parse(fluentBitConfigTemplate)

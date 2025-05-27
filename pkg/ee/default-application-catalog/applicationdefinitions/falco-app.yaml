@@ -41,6 +41,13 @@ spec:
           chartVersion: 4.1.1
           url: https://falcosecurity.github.io/charts
     version: 0.37.0
+  - template:
+      source:
+        helm:
+          chartName: falco
+          chartVersion: 4.21.2
+          url: https://falcosecurity.github.io/charts
+    version: 0.40.0
   documentationURL: https://falco.org/
   sourceURL: https://github.com/falcosecurity/charts
   logo: |+

@@ -20,23 +20,22 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -54,7 +53,8 @@ import (
 )
 
 const (
-	ControllerName = "kkp-default-application-controller"
+	ControllerName      = "kkp-default-application-controller"
+	appDefinitionRefKey = ".spec.applicationRef.name"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -68,18 +68,20 @@ type Reconciler struct {
 	workerName                    string
 	recorder                      record.EventRecorder
 	seedGetter                    provider.SeedGetter
+	configGetter                  provider.KubermaticConfigurationGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	versions                      kubermatic.Versions
 }
 
-func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName string, seedGetter provider.SeedGetter, kubermaticConfigurationGetter provider.KubermaticConfigurationGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:                    seedGetter,
+		configGetter:                  kubermaticConfigurationGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
@@ -93,7 +95,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		// Watch for clusters
 		For(&kubermaticv1.Cluster{}).
 		// Watch changes for ApplicationDefinitions that have been enforced.
-		Watches(&appskubermaticv1.ApplicationDefinition{}, enqueueClusters(reconciler.Client, log), builder.WithPredicates(withEventFilter())).
+		Watches(&appskubermaticv1.ApplicationDefinition{}, enqueueClusters(reconciler, log), builder.WithPredicates(withEventFilter())).
 		Build(reconciler)
 
 	return err
@@ -115,9 +117,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -139,6 +141,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
+	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
+		r.log.Debug("Application controller not healthy")
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	}
+
+	//nolint:staticcheck
 	ignoreDefaultApplications := false
 
 	// If the cluster has the initial application installations request annotation, we don't want to install the default applications as they will be
@@ -172,12 +181,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
-	// Ensure that cluster is in a state when creating ApplicationInstallation is permissible
-	if !cluster.Status.ExtendedHealth.ApplicationControllerHealthy() {
-		r.log.Debug("Application controller not healthy")
-		return nil, nil
-	}
-
 	// List all ApplicationDefinitions
 	applicationDefinitions := &appskubermaticv1.ApplicationDefinitionList{}
 	if err := r.List(ctx, applicationDefinitions); err != nil {
@@ -185,7 +188,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Collect all applications that need to be installed/updated.
-	applications := []appskubermaticv1.ApplicationInstallation{}
+	applications := []appskubermaticv1.ApplicationDefinition{}
 	for _, applicationDefinition := range applicationDefinitions.Items {
 		if applicationDefinition.DeletionTimestamp != nil {
 			continue
@@ -199,7 +202,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		if applicationDefinition.Spec.Enforced || (applicationDefinition.Spec.Default && !ignoreDefaultApplications) {
-			applications = append(applications, r.generateApplicationInstallation(applicationDefinition))
+			applications = append(applications, applicationDefinition)
 		}
 	}
 
@@ -214,8 +217,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	if len(errors) == 0 && !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully, corev1.ConditionTrue) {
-		if err := kubermaticv1helper.UpdateClusterStatus(ctx, r.Client, cluster, func(c *kubermaticv1.Cluster) {
-			kubermaticv1helper.SetClusterCondition(
+		if err := util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+			util.SetClusterCondition(
 				cluster,
 				r.versions,
 				kubermaticv1.ClusterConditionDefaultApplicationInstallationsControllerCreatedSuccessfully,
@@ -231,138 +234,144 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) error {
-	// First ensure that the namespace exists
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, cluster *kubermaticv1.Cluster) error {
+	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
+	// for this we need to list all existing applications installations
+	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
+	if err := userClusterClient.List(ctx, existingApplicationList); err != nil {
+		return fmt.Errorf("failed to list installed applications: %w", err)
+	}
+
+	namespaceName, err := r.getApplicationInstallationNamespace(ctx, application.Name)
+	if err != nil {
+		return err
+	}
+	var currentApplicationInstallation *appskubermaticv1.ApplicationInstallation
+	for _, exisitingApplication := range existingApplicationList.Items {
+		// if we find an application installation which is defaulted and enforced we found an existing resource
+		if exisitingApplication.Spec.ApplicationRef.Name == application.Name && exisitingApplication.Name == application.Name {
+			// we can suppress the error here because the return value will be false if something cannot be parsed
+			appEnforcedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
+			appDefaultedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
+			// if enforced and defaulted we found the existing default application installation
+			if appEnforcedEnabled && appDefaultedEnabled {
+				currentApplicationInstallation = &exisitingApplication
+				break
+			}
+		}
+	}
+
+	if currentApplicationInstallation != nil && currentApplicationInstallation.Namespace != namespaceName {
+		namespaceName = currentApplicationInstallation.Namespace
+	}
+
+	// ensure that the namespace exists
 	namespace := &corev1.Namespace{}
-	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Namespace}, namespace); err != nil {
+	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: namespaceName}, namespace); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get namespace: %w", err)
 		}
 
 		// Create the namespace if it doesn't exist
-		namespace.Name = application.Namespace
+		namespace.Name = namespaceName
 		err := userClusterClient.Create(ctx, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to create namespace: %w", err)
 		}
 	}
 
-	existingApplication := &appskubermaticv1.ApplicationInstallation{}
-	if err := userClusterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: application.Name, Namespace: application.Namespace}, existingApplication); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get application installation: %w", err)
-		}
-
-		// Create the application
-		err := userClusterClient.Create(ctx, &application)
-		if err != nil {
-			return fmt.Errorf("failed to create application installation: %w", err)
-		}
-		return nil
+	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
+		ApplicationInstallationReconciler(ctx, r.log, application, currentApplicationInstallation, cluster),
 	}
-
-	// If the application is not enforced then we can't update it.
-	if application.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] != "true" {
-		return nil
-	}
-
-	// Before comparison delete the kubectl.kubernetes.io/last-applied-configuration annotation.
-	// This annotation is automatically generated by kubectl when applying a resource
-	// and causes unnecessary diffs
-	delete(existingApplication.Annotations, corev1.LastAppliedConfigAnnotation)
-
-	// Application installation already exists, update it if needed
-	if equality.Semantic.DeepEqual(existingApplication.Spec, application.Spec) &&
-		equality.Semantic.DeepEqual(existingApplication.Labels, application.Labels) &&
-		equality.Semantic.DeepEqual(existingApplication.Annotations, application.Annotations) {
-		return nil
-	}
-
-	// Required to update the object.
-	application.ResourceVersion = existingApplication.ResourceVersion
-	application.UID = existingApplication.UID
-
-	if err := userClusterClient.Update(ctx, &application); err != nil {
-		return fmt.Errorf("failed to update application installation %q: %w", application.Name, err)
-	}
-	return nil
+	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, namespaceName, userClusterClient)
 }
 
-func (r *Reconciler) generateApplicationInstallation(application appskubermaticv1.ApplicationDefinition) appskubermaticv1.ApplicationInstallation {
-	appVersion := application.Spec.DefaultVersion
-	if appVersion == "" {
-		// Iterate through all the versions and find the latest one by semver comparison
-		for _, version := range application.Spec.Versions {
+func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredLogger, application appskubermaticv1.ApplicationDefinition, exisitingApplication *appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) reconciling.NamedApplicationInstallationReconcilerFactory {
+	return func() (string, reconciling.ApplicationInstallationReconciler) {
+		applicationName := application.Name
+		// generatedApplication, err := generateApplicationInstallation(ctx, application, namespace)
+		return applicationName, func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
+			appVersion := application.Spec.DefaultVersion
 			if appVersion == "" {
-				appVersion = version.Version
-			}
+				// Iterate through all the versions and find the latest one by semver comparison
+				for _, version := range application.Spec.Versions {
+					if appVersion == "" {
+						appVersion = version.Version
+					}
 
-			currentVersion, err := semver.NewSemver(version.Version)
+					currentVersion, err := semver.NewSemver(version.Version)
+					if err != nil {
+						// We can't do much here. The webhooks and kubebuilder validation markers already impose semver usage so this error should never happen.
+						continue
+					}
+
+					selectedVersion, err := semver.NewSemver(appVersion)
+					if err != nil {
+						// We can't do much here. The webhooks and kubebuilder validation markers already impose semver usage so this error should never happen.
+						continue
+					}
+
+					if currentVersion.GreaterThan(selectedVersion) {
+						appVersion = version.Version
+					}
+				}
+			}
+			err := convertDefaultValuesToDefaultValuesBlock(&application)
 			if err != nil {
-				// We can't do much here. The webhooks and kubebuilder validation markers already impose semver usage so this error should never happen.
-				continue
+				// This is a non-critical error and we can still continue by using the `values` field instead of the `valuesBlock` field.
+				logger.Debugf("Failed to convert default values to default values block: %v", err)
 			}
 
-			selectedVersion, err := semver.NewSemver(appVersion)
-			if err != nil {
-				// We can't do much here. The webhooks and kubebuilder validation markers already impose semver usage so this error should never happen.
-				continue
+			delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
+
+			annotations := application.Annotations
+			if annotations == nil {
+				annotations = make(map[string]string)
 			}
 
-			if currentVersion.GreaterThan(selectedVersion) {
-				appVersion = version.Version
+			if application.Spec.Enforced {
+				annotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
 			}
+			if application.Spec.Default {
+				annotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
+			}
+
+			appNamespace := getAppNamespace(&application)
+			app.Annotations = annotations
+			app.Labels = application.Labels
+			app.Spec = appskubermaticv1.ApplicationInstallationSpec{
+				Namespace: appNamespace,
+				ApplicationRef: appskubermaticv1.ApplicationRef{
+					Name:    application.Name,
+					Version: appVersion,
+				},
+				ValuesBlock: application.Spec.DefaultValuesBlock,
+				Values:      runtime.RawExtension{Raw: []byte("{}")},
+			}
+
+			// We already tried conversion and it failed. This should never happen but we have to work around it anyways.
+			// Both DefaultValues and DefaultValuesBlock can not be set at the same time, our webhooks should prevent this.
+			if len(app.Spec.ValuesBlock) == 0 && application.Spec.DefaultValues != nil {
+				app.Spec.Values = *application.Spec.DefaultValues
+			}
+
+			return app, nil
 		}
 	}
-	err := convertDefaultValuesToDefaultValuesBlock(&application)
+}
+
+func (r *Reconciler) getApplicationInstallationNamespace(ctx context.Context, applicationName string) (string, error) {
+	namespaceName := applicationName
+	config, err := r.configGetter(ctx)
 	if err != nil {
-		// This is a non-critical error and we can still continue by using the `values` field instead of the `valuesBlock` field.
-		r.log.Debugf("Failed to convert default values to default values block: %v", err)
+		return "", err
 	}
-
-	delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
-
-	annotations := application.Annotations
-	if annotations == nil {
-		annotations = make(map[string]string)
+	if config != nil {
+		if config.Spec.UserCluster.Applications.Namespace != "" {
+			namespaceName = config.Spec.UserCluster.Applications.Namespace
+		}
 	}
-
-	if application.Spec.Enforced {
-		annotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
-	}
-	if application.Spec.Default {
-		annotations[appskubermaticv1.ApplicationDefaultedAnnotation] = "true"
-	}
-
-	app := appskubermaticv1.ApplicationInstallation{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        application.Name,
-			Namespace:   application.Name,
-			Annotations: annotations,
-			Labels:      application.Labels,
-		},
-		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
-				Name: application.Name,
-				// This ensures that the namespace is created in the user cluster, if it doesn't already exist.
-				Create: true,
-			},
-			ApplicationRef: appskubermaticv1.ApplicationRef{
-				Name:    application.Name,
-				Version: appVersion,
-			},
-			ValuesBlock: application.Spec.DefaultValuesBlock,
-			Values:      runtime.RawExtension{Raw: []byte("{}")},
-		},
-	}
-
-	// We already tried conversion and it failed. This should never happen but we have to work around it anyways.
-	// Both DefaultValues and DefaultValuesBlock can not be set at the same time, our webhooks should prevent this.
-	if len(app.Spec.ValuesBlock) == 0 && application.Spec.DefaultValues != nil {
-		app.Spec.Values = *application.Spec.DefaultValues
-	}
-
-	return app
+	return namespaceName, nil
 }
 
 func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {

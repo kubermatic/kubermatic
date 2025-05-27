@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.5
     kubermatic.k8c.io/location: master,seed
   name: kubermaticconfigurations.kubermatic.k8c.io
 spec:
@@ -339,6 +339,13 @@ spec:
                           type: object
                       type: object
                   type: object
+                mirrorImages:
+                  description: |-
+                    MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
+                    Each entry should be in the format "repository:tag".
+                  items:
+                    type: string
+                  type: array
                 proxy:
                   description: |-
                     Proxy allows to configure Kubermatic to use proxies to talk to the
@@ -374,8 +381,18 @@ spec:
                         This field is a no-op and is no longer used. The old backup controller it was used for has been
                         removed. Do not set this field.
                       type: string
+                    backupCount:
+                      description: |-
+                        BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
+                        Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
+                      type: integer
                     backupDeleteContainer:
                       description: BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
+                      type: string
+                    backupInterval:
+                      description: |-
+                        BackupInterval defines the time duration between consecutive etcd backups.
+                        Must be a valid time.Duration string format. Only takes effect when backup scheduling is enabled.
                       type: string
                     backupStoreContainer:
                       description: BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
@@ -473,6 +490,20 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                           type: object
                       type: object
+                  type: object
+                systemApplications:
+                  description: SystemApplications contains configuration for system applications.
+                  properties:
+                    applications:
+                      description: |-
+                        Applications is a list of system application definition names that should be installed in the master cluster.
+                        If not set, the default system applications will be installed.
+                      items:
+                        type: string
+                      type: array
+                    disable:
+                      description: Disable is used to disable the installation of system application definitions in the master cluster.
+                      type: boolean
                   type: object
                 ui:
                   description: UI configures the dashboard.
@@ -2322,6 +2353,15 @@ spec:
                       description: APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
                       format: int32
                       type: integer
+                    applications:
+                      description: Applications contains configuration for default Application settings.
+                      properties:
+                        namespace:
+                          description: |-
+                            Namespace is the namespace which is set as the default for applications installed via ui
+                            If left empty the default for the application installation namespace is the name of the resource itself
+                          type: string
+                      type: object
                     disableApiserverEndpointReconciling:
                       description: |-
                         DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
@@ -2398,6 +2438,12 @@ spec:
                     operatingSystemManager:
                       description: OperatingSystemManager configures the image repo and the tag version for osm deployment.
                       properties:
+                        disableDefaultOperatingSystemProfiles:
+                          description: |-
+                            DisableDefaultOperatingSystemProfiles setting this property to true, would disable the creation of OSMs default
+                            OperatingSystemProfiles and users would need to provide a CustomOperatingSystemProfile to configure user clusters
+                            worker nodes.
+                          type: boolean
                         imageRepository:
                           description: |-
                             ImageRepository is used to override the OperatingSystemManager image repository.

@@ -21,7 +21,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -63,10 +63,14 @@ type DeployOptions struct {
 	MLASkipMinioLifecycleMgr bool
 	MLAForceSecrets          bool
 	MLAIncludeIap            bool
+	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
+	LimitApps               []string
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 type Stack interface {

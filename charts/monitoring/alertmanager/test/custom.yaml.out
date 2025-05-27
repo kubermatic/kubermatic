@@ -1,0 +1,348 @@
+---
+# Source: alertmanager/charts/alertmanager/templates/pdb.yaml
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: alertmanager
+  labels:
+    helm.sh/chart: alertmanager-1.15.0
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/instance: release-name
+  minAvailable: 1
+---
+# Source: alertmanager/charts/alertmanager/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: alertmanager
+  labels:
+    helm.sh/chart: alertmanager-1.15.0
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+automountServiceAccountToken: true
+---
+# Source: alertmanager/charts/alertmanager/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager
+  labels:
+    helm.sh/chart: alertmanager-1.15.0
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+data:
+  alertmanager.yml: |
+    global:
+      slack_api_url: https://hooks.slack.com/services/YOUR_KEYS_HERE
+    inhibit_rules:
+    - equal:
+      - seed_cluster
+      - cluster
+      source_match:
+        alertname: KubermaticClusterPaused
+    - equal:
+      - seed_cluster
+      - cluster
+      source_match_re:
+        alertname: EtcdDown
+        cluster: .+
+    - equal:
+      - seed_cluster
+      - cluster
+      source_match_re:
+        alertname: KubernetesApiserverDown
+        cluster: .+
+    - equal:
+      - seed_cluster
+      - cluster
+      source_match_re:
+        alertname: OpenVPNServerDown
+        cluster: .+
+      target_match_re:
+        alertname: (CAdvisorDown|KubernetesNodeDown)
+    receivers:
+    - name: blackhole
+    - name: default
+    route:
+      group_by:
+      - alertname
+      - namespace
+      - seed_cluster
+      - cluster
+      group_interval: 5m
+      group_wait: 10s
+      receiver: default
+      repeat_interval: 1h
+      routes:
+      - match:
+          severity: none
+        receiver: blackhole
+    templates:
+    - /etc/alertmanager/*.tmpl
+    - /etc/alertmanager/templates/*.tmpl
+---
+# Source: alertmanager/templates/template.yaml
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubermatic-altermanager-templates
+data:
+  kubermatic.tmpl: |
+    {* A nice, compact set of templates for pretty Slack Alerts. *}
+    {* Capable of displaying the user-cluster from which alerts originate. *}
+    {* Shows a pretty flag if the seed cluster name matches regex. *}
+  
+    {{ define "slack.kubermatic.pretty.runbook" }}{{ with .Annotations.runbook_url }}<{{ . }}|:notebook:>{{ end }}{{ end }}
+    {{ define "slack.kubermatic.titlelink" }}{{ end }}
+    {{ define "slack.kubermatic.pretty.icon" }}{{ end }}
+    {{ define "slack.kubermatic.color" }}{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}{{ end }}
+  
+    {{ define "slack.kubermatic.pretty.labels" -}}
+    {{- with .CommonLabels.seed_cluster -}}
+    {{- if      (match "^(eu|europe)-" .) }}:flag-eu:
+    {{- else if (match "^usa?-" .) }}:flag-us:
+    {{- else if (match "^asia-" .) }}:flag-cn:
+    {{- else }}[{{ . }}]{{ end -}}
+    {{- end -}} {{ with .CommonLabels.cluster }} [{{ . }}]{{ end }}
+    {{- end }}
+  
+    {{ define "slack.kubermatic.title" -}}
+        {{- template "slack.kubermatic.pretty.icon" . -}}
+        {{ template "slack.kubermatic.pretty.labels" . }} <{{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}|{{ .CommonLabels.alertname }}>
+        {{- if eq .Status "firing" }} [ {{ .Alerts.Firing | len }} ]{{ end -}}
+    {{- end }}
+  
+    {{ define "slack.kubermatic.text" -}}
+    {{- range .Alerts }}
+    {{- if eq .Status "resolved" }}[RESOLVED] {{ end -}}
+    {{ .Annotations.message }} {{ template "slack.kubermatic.pretty.runbook" . }}
+    {{ end -}}
+    {{- end }}
+  
+    {* slack fallback for constraint environments like Android notifications *}
+  
+    {{ define "slack.kubermatic.fallback.icon" }}{{ if eq .Status "firing" }}✗{{ else }}✓{{ end }}{{ end }}
+    {{ define "slack.kubermatic.fallback.labels" }}[{{ .CommonLabels.seed_cluster | toUpper }}]{{ end }} {* do not include user cluster IDs in fallbacks *}
+    {{ define "slack.kubermatic.fallback.runbook" }}{{ with .Annotations.runbook_url }}<{{ . }}|:notebook:>{{ end }}{{ end }}
+  
+    {{ define "slack.kubermatic.fallback" -}}
+    {{- template "slack.kubermatic.fallback.icon" . }} {{ template "slack.kubermatic.fallback.labels" . }} {{ .CommonLabels.alertname }} {{ range .Alerts }} {{ .Annotations.message }} {{ end }}
+    {{- end }}
+---
+# Source: alertmanager/charts/alertmanager/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  labels:
+    helm.sh/chart: alertmanager-1.15.0
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9093
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+---
+# Source: alertmanager/charts/alertmanager/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-headless
+  labels:
+    helm.sh/chart: alertmanager-1.15.0
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+spec:
+  clusterIP: None
+  ports:
+    - port: 9093
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 9094
+      targetPort: clusterpeer-tcp
+      protocol: TCP
+      name: cluster-tcp
+    - port: 9094
+      targetPort: clusterpeer-udp
+      protocol: UDP
+      name: cluster-udp
+  selector:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+---
+# Source: alertmanager/charts/alertmanager/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: alertmanager
+  labels:
+    helm.sh/chart: alertmanager-1.15.0
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v0.28.0"
+    app.kubernetes.io/managed-by: Helm
+  namespace: default
+spec:
+  replicas: 3
+  minReadySeconds: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+      app.kubernetes.io/instance: release-name
+  serviceName: alertmanager-headless
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alertmanager
+        app.kubernetes.io/instance: release-name
+      annotations:
+    spec:
+      automountServiceAccountToken: true
+      serviceAccountName: alertmanager
+      nodeSelector:
+        workload: infra-mla
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchExpressions:
+                    - {key: app.kubernetes.io/name, operator: In, values: [alertmanager]}
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/infra-mla
+          operator: Exists
+      securityContext:
+        fsGroup: 65534
+      containers:
+        - name: alertmanager-configmap-reload
+          image: "quay.io/prometheus-operator/prometheus-config-reloader:v0.66.0"
+          imagePullPolicy: "IfNotPresent"
+          args:
+            - --watched-dir=/etc/alertmanager
+            - --reload-url=http://127.0.0.1:9093/-/reload
+          resources:
+            limits:
+              cpu: 150m
+              memory: 32Mi
+            requests:
+              cpu: 50m
+              memory: 24Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+        - name: alertmanager
+          securityContext:
+            runAsGroup: 65534
+            runAsNonRoot: true
+            runAsUser: 65534
+          image: "quay.io/prometheus/alertmanager:v0.28.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+          args:
+            - --storage.path=/alertmanager
+            - --config.file=/etc/alertmanager/alertmanager.yml
+            - --cluster.advertise-address=[$(POD_IP)]:9094
+            - --cluster.listen-address=0.0.0.0:9094
+            - --cluster.peer=alertmanager-0.alertmanager-headless:9094
+            - --cluster.peer=alertmanager-1.alertmanager-headless:9094
+            - --cluster.peer=alertmanager-2.alertmanager-headless:9094
+          ports:
+            - name: http
+              containerPort: 9093
+              protocol: TCP
+            - name: clusterpeer-tcp
+              containerPort: 9094
+              protocol: TCP
+            - name: clusterpeer-udp
+              containerPort: 9094
+              protocol: UDP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            limits:
+              cpu: 200m
+              memory: 48Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+            - name: storage
+              mountPath: /alertmanager
+            - mountPath: /etc/alertmanager/templates
+              name: templates
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: alertmanager
+        - configMap:
+            name: kubermatic-altermanager-templates
+          name: templates
+  volumeClaimTemplates:
+    - metadata:
+        name: storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+        storageClassName: kubermatic-fast

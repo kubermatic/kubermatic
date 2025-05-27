@@ -23,14 +23,14 @@ import (
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/networkpolicy"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -211,6 +211,7 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 		common.KubermaticConfigurationAdmissionWebhookName(cfg),
 		common.ApplicationDefinitionAdmissionWebhookName,
 		common.PoliciesAdmissionWebhookName,
+		common.PolicyTemplateAdmissionWebhookName,
 		kubermaticseed.ClusterAdmissionWebhookName,
 		kubermaticseed.IPAMPoolAdmissionWebhookName,
 	}
@@ -260,8 +261,8 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, cfg *kubermaticv1.K
 }
 
 func (r *Reconciler) setSeedCondition(ctx context.Context, seed *kubermaticv1.Seed, status corev1.ConditionStatus, reason string, message string) error {
-	return kubermaticv1helper.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
-		kubermaticv1helper.SetSeedCondition(s, kubermaticv1.SeedConditionResourcesReconciled, status, reason, message)
+	return util.UpdateSeedStatus(ctx, r.masterClient, seed, func(s *kubermaticv1.Seed) {
+		util.SetSeedCondition(s, kubermaticv1.SeedConditionResourcesReconciled, status, reason, message)
 	})
 }
 
@@ -369,6 +370,12 @@ func (r *Reconciler) reconcileCRDs(ctx context.Context, cfg *kubermaticv1.Kuberm
 
 		for i, crdObject := range crds {
 			if crdutil.SkipCRDOnCluster(&crdObject, crdutil.SeedCluster) {
+				continue
+			}
+
+			// Skip installation of the UserSSHKeys CRD when SSH key functionality is disabled.
+			// The CRD is automatically included by default when DisableUserSSHKeys featuregate is false/unset.
+			if cfg.Spec.FeatureGates[features.DisableUserSSHKey] && crdObject.Name == "usersshkeys.kubermatic.k8c.io" {
 				continue
 			}
 
@@ -564,7 +571,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *kubermaticv1
 	volumeLabelModifier := modifier.RelatedRevisionsLabels(ctx, client)
 	modifiers := []reconciling.ObjectModifier{
 		modifier.Ownership(seed, common.OperatorName, r.scheme),
-		modifier.VersionLabel(r.versions.Kubermatic),
+		modifier.VersionLabel(r.versions.GitVersion),
 		volumeLabelModifier,
 	}
 	// add the image pull secret wrapper only when an image pull secret is
@@ -598,7 +605,7 @@ func (r *Reconciler) reconcileCiliumNetworkPolicies(ctx context.Context, cfg *ku
 
 	netpol := &ciliumv2.CiliumClusterwideNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: networkpolicy.CiliumSeedApiserverAllow}}
 	if _, err := controllerutil.CreateOrUpdate(ctx, client, netpol, func() error {
-		netpol.Spec = networkpolicy.SeedApiServerRule()
+		netpol.Spec = networkpolicy.SeedApiserverRule()
 		return nil
 	}); err != nil {
 		return fmt.Errorf("failed to reconcile CiliumClusterwideNetworkPolicies: %w", err)
@@ -684,6 +691,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, cfg *kuberm
 		common.KubermaticConfigurationAdmissionWebhookReconciler(ctx, cfg, client),
 		kubermaticseed.ClusterValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx, cfg, client),
+		common.PolicyTemplateValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		kubermaticseed.IPAMPoolValidatingWebhookConfigurationReconciler(ctx, cfg, client),
 		common.PoliciesWebhookConfigurationReconciler(ctx, cfg, client),
 	}

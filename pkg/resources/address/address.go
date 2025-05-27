@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -211,7 +211,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	}
 
 	// Port
-	var port int32 = service.Spec.Ports[0].TargetPort.IntVal
+	var port = service.Spec.Ports[0].TargetPort.IntVal
 	if m.cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
 		port = service.Spec.Ports[0].NodePort
 	}

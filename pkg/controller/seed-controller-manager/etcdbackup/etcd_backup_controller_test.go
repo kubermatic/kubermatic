@@ -27,7 +27,8 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -35,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	etcdbackup "k8c.io/kubermatic/v2/pkg/resources/etcd/backup"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/test/generator"
@@ -600,10 +600,10 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -947,10 +947,10 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -1234,10 +1234,10 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -1556,10 +1556,10 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithCluster(cluster).
-				WithVersions(kubermatic.NewFakeVersions()).
+				WithVersions(kubermatic.GetFakeVersions()).
 				WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-				WithEtcdBackupStoreContainer(genStoreContainer()).
-				WithEtcdBackupDeleteContainer(genDeleteContainer()).
+				WithEtcdBackupStoreContainer(genStoreContainer(), false).
+				WithEtcdBackupDeleteContainer(genDeleteContainer(), false).
 				WithEtcdBackupDestination(genDefaultBackupDestination()).
 				Build()
 
@@ -1660,7 +1660,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				return c
 			}(),
 			expectedJobEnvVars: []corev1.EnvVar{
-				etcdbackup.GenSecretEnvVar(etcdbackup.AccessKeyIdEnvVarKey, etcdbackup.AccessKeyIdEnvVarKey, genDefaultBackupDestination()),
+				etcdbackup.GenSecretEnvVar(etcdbackup.AccessKeyIDEnvVarKey, etcdbackup.AccessKeyIDEnvVarKey, genDefaultBackupDestination()),
 				etcdbackup.GenSecretEnvVar(etcdbackup.SecretAccessKeyEnvVarKey, etcdbackup.SecretAccessKeyEnvVarKey, genDefaultBackupDestination()),
 				{
 					Name:  etcdbackup.BucketNameEnvVarKey,

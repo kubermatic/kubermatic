@@ -46,6 +46,12 @@ func RelatedRevisionsLabels(ctx context.Context, client ctrlruntimeclient.Client
 	}
 }
 
+// AddRevisionLabelsToObject is a helper function that adds revisions of the resources that the given object depends on, to the given object labels.
+// The revision labels are used to trigger a restart of the object when the dependent resources are updated.
+func AddRevisionLabelsToObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+	return addRevisionLabelsToObject(ctx, client, obj)
+}
+
 func addRevisionLabelsToObject(ctx context.Context, client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 	switch asserted := obj.(type) {
 	case *appsv1.Deployment:
@@ -145,14 +151,14 @@ func getRelatedRevisionLabels(
 	}
 
 	for _, v := range volumes {
-		if v.VolumeSource.Secret != nil {
-			if err := loadSecret(v.VolumeSource.Secret.SecretName, false); err != nil {
+		if v.Secret != nil {
+			if err := loadSecret(v.Secret.SecretName, false); err != nil {
 				return nil, err
 			}
 		}
 
-		if v.VolumeSource.ConfigMap != nil {
-			if err := loadConfigMap(v.VolumeSource.ConfigMap.Name, false); err != nil {
+		if v.ConfigMap != nil {
+			if err := loadConfigMap(v.ConfigMap.Name, false); err != nil {
 				return nil, err
 			}
 		}

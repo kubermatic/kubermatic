@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.23-node-20-7 containerize ./hack/verify-spelling.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.24-node-20-4 containerize ./hack/verify-spelling.sh
 
 echodate "Running codespell..."
 
@@ -43,8 +43,11 @@ skip=(
   ./charts/oauth/test
   ./addons/multus/crds.yaml
   ./charts/local-kubevirt/crds
+  ./pkg/applicationdefinitions/system-applications
   ./pkg/ee/default-application-catalog/applicationdefinitions
   ./pkg/resources/test/fixtures
+  ./pkg/ee/kyverno/resources/user-cluster/static
+  ./pkg/crd/k8s.io
 )
 
 function join {

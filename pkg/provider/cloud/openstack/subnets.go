@@ -22,7 +22,6 @@ import (
 	"github.com/gophercloud/gophercloud"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
-	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 
 	"k8s.io/utils/net"
@@ -192,33 +191,6 @@ func deleteSubnet(netClient *gophercloud.ServiceClient, subnetID string) error {
 		return res.Err
 	}
 	return res.ExtractErr()
-}
-
-func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName string) ([]ossubnets.Subnet, error) {
-	var allSubnets []ossubnets.Subnet
-
-	networks, err := getAllNetworks(netClient, osnetworks.ListOpts{Name: networkIDOrName})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list networks: %w", err)
-	}
-
-	networkID := networkIDOrName
-	if len(networks) == 1 {
-		networkID = networks[0].ID
-	} else if len(networks) > 1 {
-		return nil, fmt.Errorf("got %d networks for idOrName '%s', expected one at most", len(networks), networkIDOrName)
-	}
-
-	allPages, err := ossubnets.List(netClient, ossubnets.ListOpts{NetworkID: networkID}).AllPages()
-	if err != nil {
-		return nil, err
-	}
-
-	if allSubnets, err = ossubnets.ExtractSubnets(allPages); err != nil {
-		return nil, err
-	}
-
-	return allSubnets, nil
 }
 
 func attachSubnetToRouter(netClient *gophercloud.ServiceClient, subnetID, routerID string) (*osrouters.InterfaceInfo, error) {

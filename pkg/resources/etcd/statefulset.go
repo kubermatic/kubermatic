@@ -23,7 +23,7 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -70,7 +70,7 @@ type etcdStatefulSetReconcilerData interface {
 }
 
 // StatefulSetReconciler returns the function to reconcile the etcd StatefulSet.
-func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorruptionChecks bool, enableTLSOnly bool) reconciling.NamedStatefulSetReconcilerFactory {
+func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorruptionChecks, enableTLSOnly bool, quotaBackendGB int64) reconciling.NamedStatefulSetReconcilerFactory {
 	return func() (string, reconciling.StatefulSetReconciler) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 			replicas := computeReplicas(data, set)
@@ -226,11 +226,10 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name: resources.EtcdStatefulSetName,
-
+					Name:            resources.EtcdStatefulSetName,
 					Image:           registry.Must(data.RewriteImage(resources.RegistryK8S + "/etcd:" + imageTag + "-0")),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled),
+					Command:         getEtcdCommand(data.Cluster(), enableDataCorruptionChecks, launcherEnabled, quotaBackendGB),
 					Env:             etcdEnv,
 					Ports:           etcdPorts,
 					ReadinessProbe: &corev1.Probe{
@@ -415,15 +414,20 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	// during updates lacks behind the apiserver by one minor version; this is so that
 	// also external components like the kubernetes dashboard or external ccms wait for
 	// the new apiserver to be ready; etcd however is different and gets updated together
-	// with the apiserver;
+	// with the apiserver.
 	// As of now, all supported Kubernetes versions use the same etcd release, but the
 	// comment above is left as a reminder in case future versions switches will be needed
 	// again.
+	//
+	// See the SupportedEtcdVersion variable in
+	// https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/constants/constants.go
+	// for an overview.
+
 	// if c.Status.Versions.Apiserver.LessThan(semver.NewSemverOrDie("1.22.0")) {
 	// 	return "v3.4.3"
 	// }
 
-	return "3.5.9"
+	return "3.5.21"
 }
 
 func computeReplicas(data etcdStatefulSetReconcilerData, set *appsv1.StatefulSet) int32 {
@@ -462,7 +466,7 @@ func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int32 {
 	return *settings.ClusterSize
 }
 
-func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool) []string {
+func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launcherEnabled bool, quotaBackendGB int64) []string {
 	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"run",
@@ -475,6 +479,10 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 
 		if enableCorruptionCheck {
 			command = append(command, "--enable-corruption-check")
+		}
+
+		if quotaBackendGB > 0 {
+			command = append(command, "--quota-backend-gb", strconv.FormatInt(quotaBackendGB, 10))
 		}
 
 		return command
@@ -518,6 +526,13 @@ func getEtcdCommand(cluster *kubermaticv1.Cluster, enableCorruptionCheck, launch
 	if enableCorruptionCheck {
 		command = append(command, "--experimental-initial-corrupt-check")
 		command = append(command, "--experimental-corrupt-check-time", "240m")
+	}
+
+	if quotaBackendGB > 0 {
+		bytes, overflow := resources.ConvertGBToBytes(uint64(quotaBackendGB))
+		if !overflow {
+			command = append(command, "--quota-backend-bytes", strconv.FormatUint(bytes, 10))
+		}
 	}
 
 	return command

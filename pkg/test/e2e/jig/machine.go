@@ -24,13 +24,13 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/machine"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
-	clusterv1alpha1 "k8c.io/machine-controller/pkg/apis/cluster/v1alpha1"
-	evictiontypes "k8c.io/machine-controller/pkg/node/eviction/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
+	nodetypes "k8c.io/machine-controller/sdk/node"
+	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/operating-system-manager/pkg/providerconfig/rhel"
 	"k8c.io/operating-system-manager/pkg/providerconfig/ubuntu"
 
@@ -320,7 +320,7 @@ func (j *MachineJig) SkipEvictionForAllNodes(ctx context.Context, clusterClient 
 			if n.Annotations == nil {
 				n.Annotations = map[string]string{}
 			}
-			n.Annotations[evictiontypes.SkipEvictionAnnotationKey] = "true"
+			n.Annotations[nodetypes.SkipEvictionAnnotationKey] = "true"
 			return clusterClient.Update(ctx, &n)
 		})
 		if retErr != nil {

@@ -17,14 +17,21 @@ limitations under the License.
 package resources
 
 import (
+	"context"
+	"fmt"
+	"reflect"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"github.com/stretchr/testify/assert"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetCSIMigrationFeatureGates(t *testing.T) {
@@ -368,6 +375,339 @@ func TestNetworkInterfaceManagerImage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if img := tc.templateData.NetworkIntfMgrImage(); img != tc.wantNetworkIntfMgrImage {
 				t.Errorf("want network-interface-manager image %q, but got %q", tc.wantNetworkIntfMgrImage, img)
+			}
+		})
+	}
+}
+
+func TestGetKonnectivityAgentArgs(t *testing.T) {
+	testCases := []struct {
+		name         string
+		templateData *TemplateData
+		want         []string
+		wantErr      bool
+		errMsg       string
+	}{
+		{
+			name: "nil cluster returns error",
+			templateData: &TemplateData{
+				cluster: nil,
+			},
+			want:    nil,
+			wantErr: true,
+			errMsg:  "invalid cluster template, user cluster template is nil",
+		},
+		{
+			name: "valid cluster with KonnectivityProxy args",
+			templateData: &TemplateData{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{
+									"--arg1=value1",
+									"--arg2=value2",
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    []string{"--arg1=value1", "--arg2=value2"},
+			wantErr: false,
+			errMsg:  "",
+		},
+		{
+			name: "valid cluster with empty KonnectivityProxy args",
+			templateData: &TemplateData{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{},
+							},
+						},
+					},
+				},
+			},
+			want:    []string{},
+			wantErr: false,
+			errMsg:  "",
+		},
+		{
+			name: "valid cluster with nil KonnectivityProxy args",
+			templateData: &TemplateData{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: nil,
+							},
+						},
+					},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+			errMsg:  "",
+		},
+		{
+			name: "valid cluster with no ComponentsOverride",
+			templateData: &TemplateData{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{},
+				},
+			},
+			want:    nil,
+			wantErr: false,
+			errMsg:  "",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.templateData.GetKonnectivityAgentArgs()
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("unexpected error, got = %v, want = %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && err.Error() != tt.errMsg {
+				t.Errorf("unexpected error message, got = %v, want = %v", err.Error(), tt.errMsg)
+				return
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("unexpected result, got = %v, want = %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetKonnectivityServerArgs(t *testing.T) {
+	tests := []struct {
+		name           string
+		seed           *kubermaticv1.Seed
+		objects        []ctrlruntimeclient.Object
+		expectedArgs   []string
+		expectedErrMsg string
+	}{
+		{
+			name:           "nil seed returns error",
+			seed:           nil,
+			expectedErrMsg: "invalid cluster template, seed cluster template is nil",
+		},
+		{
+			name: "args directly from seed",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--arg1=value1", "--arg2=value2"},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--arg1=value1", "--arg2=value2"},
+		},
+		{
+			name: "empty default cluster template returns nil args",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "",
+				},
+			},
+			expectedArgs: nil,
+		},
+		{
+			name: "prefer direct args over template",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--direct-arg1=value1", "--direct-arg2=value2"},
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{"--template-arg1=value1", "--template-arg2=value2"},
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--direct-arg1=value1", "--direct-arg2=value2"},
+		},
+		{
+			name: "client error when getting template",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			expectedErrMsg: "failed to get ClusterTemplate for konnectivity",
+		},
+		{
+			name: "invalid template scope",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": "invalid-scope",
+						},
+					},
+				},
+			},
+			expectedErrMsg: fmt.Sprintf(
+				"invalid scope of default cluster template, is %q but must be %q",
+				"invalid-scope",
+				kubermaticv1.SeedTemplateScope,
+			),
+		},
+		{
+			name: "success from template",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{"--template-arg1=value1", "--template-arg2=value2"},
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--template-arg1=value1", "--template-arg2=value2"},
+		},
+		{
+			name: "nil args from template results in nil",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: nil,
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var objects []ctrlruntimeclient.Object
+			if tt.seed != nil {
+				objects = append(objects, tt.seed)
+			}
+
+			objects = append(objects, tt.objects...)
+
+			cl := fake.NewClientBuilder().
+				WithObjects(objects...).
+				Build()
+
+			templateData := &TemplateData{
+				ctx:    context.Background(),
+				client: cl,
+				seed:   tt.seed,
+			}
+
+			args, err := templateData.GetKonnectivityServerArgs()
+
+			if tt.expectedErrMsg != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedErrMsg)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedArgs, args)
 			}
 		})
 	}

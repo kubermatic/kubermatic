@@ -27,8 +27,7 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -118,9 +117,9 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := controllerutil.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -225,7 +224,7 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 
 	data := resources.NewTemplateDataBuilder().
 		WithContext(ctx).
-		WithClient(r.Client).
+		WithClient(r).
 		WithCluster(cluster).
 		WithOverwriteRegistry(r.overwriteRegistry).
 		Build()
@@ -361,7 +360,7 @@ func (r *datasourceGrafanaController) ensureDeployments(ctx context.Context, c *
 	creators := []reconciling.NamedDeploymentReconcilerFactory{
 		GatewayDeploymentReconciler(data, settings),
 	}
-	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r); err != nil {
 		return err
 	}
 	return nil
@@ -371,7 +370,7 @@ func (r *datasourceGrafanaController) ensureConfigMaps(ctx context.Context, c *k
 	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		GatewayConfigMapReconciler(c, r.mlaNamespace, settings),
 	}
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 	return nil
@@ -382,7 +381,7 @@ func (r *datasourceGrafanaController) ensureSecrets(ctx context.Context, c *kube
 		GatewayCAReconciler(),
 		GatewayCertificateReconciler(c, data.GetMLAGatewayCA),
 	}
-	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure that the Secrets exist: %w", err)
 	}
 	return nil
@@ -393,7 +392,7 @@ func (r *datasourceGrafanaController) ensureServices(ctx context.Context, c *kub
 		GatewayInternalServiceReconciler(),
 		GatewayExternalServiceReconciler(c),
 	}
-	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client)
+	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r)
 }
 
 func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
@@ -410,7 +409,7 @@ func (r *datasourceGrafanaController) CleanUp(ctx context.Context) error {
 }
 
 func (r *datasourceGrafanaController) cleanUpMLAGatewayHealthStatus(ctx context.Context, cluster *kubermaticv1.Cluster, resourceDeletionErr error) error {
-	return kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	return controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		// Remove the health status in Cluster CR
 		c.Status.ExtendedHealth.MLAGateway = nil
 		if resourceDeletionErr != nil && !apierrors.IsNotFound(resourceDeletionErr) {
@@ -438,7 +437,7 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 	}
 	if cluster.DeletionTimestamp.IsZero() && cluster.Status.NamespaceName != "" {
 		for _, resource := range ResourcesOnDeletion(cluster.Status.NamespaceName) {
-			err := r.Client.Delete(ctx, resource)
+			err := r.Delete(ctx, resource)
 			// Update Health status even in case of error
 			// If any resources could not be deleted (configmap, secret,.. not only deployment)
 			// The status will be kubermaticv1.HealthStatusDown until everything is cleaned up.
@@ -456,12 +455,12 @@ func (r *datasourceGrafanaController) handleDeletion(ctx context.Context, cluste
 }
 
 func (r *datasourceGrafanaController) mlaGatewayHealth(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	mlaGatewayHealth, err := resources.HealthyDeployment(ctx, r.Client, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: gatewayName}, 1)
+	mlaGatewayHealth, err := resources.HealthyDeployment(ctx, r, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: gatewayName}, 1)
 	if err != nil {
 		return fmt.Errorf("failed to get dep health %s: %w", resources.MLAMonitoringAgentDeploymentName, err)
 	}
 
-	err = kubermaticv1helper.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
+	err = controllerutil.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.MLAGateway = &mlaGatewayHealth
 	})
 	if err != nil {

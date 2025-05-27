@@ -1,0 +1,1 @@
+/opt/bin/etcd-launcher run --cluster lg69pmx8wf --pod-name $(POD_NAME) --pod-ip $(POD_IP) --api-version $(ETCDCTL_API) --token $(TOKEN) --enable-corruption-check

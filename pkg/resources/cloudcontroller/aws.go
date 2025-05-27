@@ -19,10 +19,10 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -129,8 +129,6 @@ func AWSCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/provider-aws/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v128:
-		return "v1.28.9"
 	case v129:
 		return "v1.29.7"
 	case v130:
@@ -138,8 +136,10 @@ func AWSCCMVersion(version semver.Semver) string {
 	case v131:
 		return "v1.31.1"
 	case v132:
+		return "v1.32.1"
+	case v133:
 		fallthrough
 	default:
-		return "v1.32.0"
+		return "v1.33.0"
 	}
 }

@@ -24,8 +24,8 @@ import (
 	cron "github.com/robfig/cron/v3"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -195,9 +195,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	var suppressedError error
 
 	// Add a wrapping here so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -296,22 +296,24 @@ func (r *Reconciler) reconcile(
 	return totalReconcile, nil
 }
 
-func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
-	// a customized container is configured
-	if cfg.Spec.SeedController.BackupStoreContainer != "" {
-		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupStoreContainer)
+func getBackupStoreContainer(cfg *kubermaticv1.KubermaticConfiguration) (*corev1.Container, bool, error) {
+	selectedContainer := defaulting.DefaultBackupStoreContainer
+	customContainer := cfg.Spec.SeedController.BackupStoreContainer
+	if customContainer != "" {
+		selectedContainer = customContainer
 	}
-
-	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupStoreContainer)
+	container, err := kuberneteshelper.ContainerFromString(selectedContainer)
+	return container, customContainer != "", err
 }
 
-func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed) (*corev1.Container, error) {
-	// a customized container is configured
-	if cfg.Spec.SeedController.BackupDeleteContainer != "" {
-		return kuberneteshelper.ContainerFromString(cfg.Spec.SeedController.BackupDeleteContainer)
+func getBackupDeleteContainer(cfg *kubermaticv1.KubermaticConfiguration) (*corev1.Container, bool, error) {
+	selectedContainer := defaulting.DefaultBackupDeleteContainer
+	customContainer := cfg.Spec.SeedController.BackupDeleteContainer
+	if customContainer != "" {
+		selectedContainer = customContainer
 	}
-
-	return kuberneteshelper.ContainerFromString(defaulting.DefaultBackupDeleteContainer)
+	container, err := kuberneteshelper.ContainerFromString(selectedContainer)
+	return container, customContainer != "", err
 }
 
 func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
@@ -385,7 +387,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
 		// based on the most recent scheduled backup or, as a fallback, the backupConfig's creation time
 
-		nextBackupTime := backupConfig.ObjectMeta.CreationTimestamp.Time
+		nextBackupTime := backupConfig.CreationTimestamp.Time
 
 		if len(backupConfig.Status.CurrentBackups) > 0 {
 			latestBackup := &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
@@ -807,7 +809,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 	secretName := etcdbackup.GetEtcdBackupSecretName(cluster)
 
 	getCA := func() (*triple.KeyPair, error) {
-		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
+		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r)
 	}
 
 	creators := []reconciling.NamedSecretReconcilerFactory{
@@ -821,7 +823,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 		),
 	}
 
-	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, modifier.Ownership(cluster, "", r.scheme))
+	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r, modifier.Ownership(cluster, "", r.scheme))
 }
 
 func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
@@ -835,7 +837,7 @@ func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1
 		certificates.CABundleConfigMapReconciler(name, r.caBundle),
 	}
 
-	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, modifier.Ownership(cluster, "", r.scheme))
+	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r, modifier.Ownership(cluster, "", r.scheme))
 }
 
 func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
@@ -892,12 +894,12 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, fmt.Errorf("credentials not set for backup destination %q", backupConfig.Spec.Destination)
 	}
 
-	storeContainer, err := getBackupStoreContainer(config, seed)
+	storeContainer, customStoreContainer, err := getBackupStoreContainer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd backup store container: %w", err)
 	}
 
-	deleteContainer, err := getBackupDeleteContainer(config, seed)
+	deleteContainer, customBackupContainer, err := getBackupDeleteContainer(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd backup delete container: %w", err)
 	}
@@ -911,8 +913,8 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithVersions(r.versions).
 		WithOverwriteRegistry(r.overwriteRegistry).
 		WithEtcdLauncherImage(r.etcdLauncherImage).
-		WithEtcdBackupStoreContainer(storeContainer).
-		WithEtcdBackupDeleteContainer(deleteContainer).
+		WithEtcdBackupStoreContainer(storeContainer, customStoreContainer).
+		WithEtcdBackupDeleteContainer(deleteContainer, customBackupContainer).
 		WithEtcdBackupDestination(destination).
 		Build(), nil
 }

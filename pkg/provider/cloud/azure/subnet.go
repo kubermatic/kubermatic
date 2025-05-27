@@ -25,7 +25,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -89,10 +89,10 @@ func reconcileSubnet(ctx context.Context, clients *ClientSet, location string, c
 	//
 	// Attributes we check:
 	// - Subnet CIDR
-	if !(subnet.Properties != nil &&
-		reflect.DeepEqual(subnet.Properties.AddressPrefix, target.Properties.AddressPrefix) &&
-		reflect.DeepEqual(subnet.Properties.AddressPrefixes, target.Properties.AddressPrefixes) &&
-		reflect.DeepEqual(subnet.Properties.RouteTable, target.Properties.RouteTable)) {
+	if subnet.Properties == nil ||
+		!reflect.DeepEqual(subnet.Properties.AddressPrefix, target.Properties.AddressPrefix) ||
+		!reflect.DeepEqual(subnet.Properties.AddressPrefixes, target.Properties.AddressPrefixes) ||
+		!reflect.DeepEqual(subnet.Properties.RouteTable, target.Properties.RouteTable) {
 		if err := ensureSubnet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}

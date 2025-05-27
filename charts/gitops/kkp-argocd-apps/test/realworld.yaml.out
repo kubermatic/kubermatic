@@ -261,13 +261,13 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: oauth
+  name: dex
   namespace: argocd
 spec:
   project: default
   sources:
   - repoURL: 'https://github.com/kubermatic/kubermatic.git'
-    path: ./charts/oauth
+    path: ./charts/dex
     targetRevision: notSet
     helm:
       valueFiles:
@@ -281,7 +281,7 @@ spec:
     ref: values
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: oauth
+    namespace: dex
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
@@ -316,6 +316,13 @@ spec:
   syncPolicy:
     syncOptions:
       - CreateNamespace=true
+      - Retry=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
     automated: {}
 ---
 # Source: argocd-apps/templates/argocd-apps-kkp-core.yaml
@@ -386,7 +393,7 @@ spec:
     path: 'dev'
     directory:
       recurse: true
-      exclude: 'values.yaml,values-usermla.yaml'
+      exclude: '{**/values.yaml,**/values-usermla.yaml,**/k8cConfig.yaml}'
       include: '{common/*,demo-master/*}'
   destination:
     server: 'https://kubernetes.default.svc'

@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,8 +129,8 @@ func TestHandle(t *testing.T) {
 				decoder: admission.NewDecoder(testScheme),
 			}
 			res := handler.Handle(context.Background(), tt.req)
-			if res.AdmissionResponse.Result != nil && (res.AdmissionResponse.Result.Code == http.StatusInternalServerError || res.AdmissionResponse.Result.Code == http.StatusBadRequest) {
-				t.Fatalf("Request failed: %v", res.AdmissionResponse.Result.Message)
+			if res.Result != nil && (res.Result.Code == http.StatusInternalServerError || res.Result.Code == http.StatusBadRequest) {
+				t.Fatalf("Request failed: %v", res.Result.Message)
 			}
 
 			a := map[string]jsonpatch.JsonPatchOperation{}

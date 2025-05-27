@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -75,6 +75,10 @@ func (k *kubevirt) DefaultCloudSpec(ctx context.Context, spec *kubermaticv1.Clus
 	client, err := k.GetClientForCluster(spec.Cloud)
 	if err != nil {
 		return err
+	}
+
+	if k.dc.CSIDriverOperator != nil {
+		spec.Cloud.Kubevirt.CSIDriverOperator = k.dc.CSIDriverOperator
 	}
 
 	return updateInfraStorageClassesInfo(ctx, client, spec.Cloud.Kubevirt, k.dc)
@@ -147,14 +151,18 @@ func (k *kubevirt) reconcileCluster(ctx context.Context, cluster *kubermaticv1.C
 		return cluster, err
 	}
 
-	err = reconcileInstancetypes(ctx, kubevirtNamespace, client)
-	if err != nil {
-		return cluster, err
+	if k.dc != nil && !k.dc.DisableDefaultInstanceTypes {
+		err = reconcileInstancetypes(ctx, kubevirtNamespace, client)
+		if err != nil {
+			return cluster, err
+		}
 	}
 
-	err = reconcilePreferences(ctx, kubevirtNamespace, client)
-	if err != nil {
-		return cluster, err
+	if k.dc != nil && !k.dc.DisableDefaultPreferences {
+		err = reconcilePreferences(ctx, kubevirtNamespace, client)
+		if err != nil {
+			return cluster, err
+		}
 	}
 
 	enableDefaultNetworkPolices := true

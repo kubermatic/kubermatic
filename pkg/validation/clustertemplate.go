@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -30,7 +30,7 @@ import (
 )
 
 // ValidateClusterTemplate validates a kubermaticv1.ClusterTemplate resource.
-func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.ClusterTemplate, dc *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, cloudProvider provider.CloudProvider, enabledFeatures features.FeatureGate, versionManager *version.Manager, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	scope := template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey]
@@ -45,8 +45,8 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 
 	// ensure that a ClusterTemplate has a project reference
 	if scope == kubermaticv1.ProjectClusterTemplateScope {
-		projectId, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
-		if !ok || projectId == "" {
+		projectID, ok := template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey]
+		if !ok || projectID == "" {
 			allErrs = append(allErrs, field.Required(
 				parentFieldPath.Child("metadata", "labels", kubermaticv1.ClusterTemplateProjectLabelKey),
 				fmt.Sprintf("label '%s' is required", kubermaticv1.ClusterTemplateProjectLabelKey),
@@ -90,7 +90,7 @@ func ValidateClusterTemplate(ctx context.Context, template *kubermaticv1.Cluster
 	}
 
 	// validate cluster spec passed in ClusterTemplate
-	if errs := ValidateNewClusterSpec(ctx, &template.Spec, dc, cloudProvider, versionManager, enabledFeatures, parentFieldPath.Child("spec")); len(errs) > 0 {
+	if errs := ValidateNewClusterSpec(ctx, &template.Spec, dc, seed, cloudProvider, versionManager, enabledFeatures, parentFieldPath.Child("spec")); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 

@@ -27,15 +27,15 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 	clusterversion "k8c.io/kubermatic/v2/pkg/version/cluster"
 
@@ -82,7 +82,7 @@ const (
 // routine, parentFieldPath can be nil.
 //
 //nolint:gocyclo // there just needs to be a place that validates the spec and the spec is simply large; splitting this function into smaller ones would not help readability
-func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, enabledFeatures features.FeatureGate, versionManager *version.Manager, currentVersion *semver.Semver, parentFieldPath *field.Path) field.ErrorList {
+func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, kubeLBSeedSettings *kubermaticv1.KubeLBSeedSettings, enabledFeatures features.FeatureGate, versionManager *version.Manager, currentVersion *semver.Semver, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	if spec.HumanReadableName == "" {
@@ -166,8 +166,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
-	// KubeLB can only be enabled on the cluster if it's either enforced or enabled at the datacenter level.
-	if spec.IsKubeLBEnabled() && (dc.Spec.KubeLB == nil || !(dc.Spec.KubeLB.Enabled || dc.Spec.KubeLB.Enforced)) {
+	// KubeLB can only be enabled on the cluster when
+	// a) It's either enforced or enabled at the datacenter level.
+	// b) It's enabled for all datacenters at the seed level.
+	if spec.IsKubeLBEnabled() && !kubeLBSeedSettings.EnableForAllDatacenters && (dc.Spec.KubeLB == nil || (!dc.Spec.KubeLB.Enabled && !dc.Spec.KubeLB.Enforced)) {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
 	}
 
@@ -178,10 +180,10 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	return allErrs
 }
 
-func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, versionManager *version.Manager, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
+func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, cloudProvider provider.CloudProvider, versionManager *version.Manager, enabledFeatures features.FeatureGate, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if errs := ValidateClusterSpec(spec, dc, enabledFeatures, versionManager, nil, parentFieldPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(spec, dc, seed.Spec.KubeLB, enabledFeatures, versionManager, nil, parentFieldPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -203,12 +205,12 @@ func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec,
 }
 
 // ValidateClusterUpdate validates the new cluster and if no forbidden changes were attempted.
-func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider, versionManager *version.Manager, features features.FeatureGate) field.ErrorList {
+func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, cloudProvider provider.CloudProvider, versionManager *version.Manager, features features.FeatureGate) field.ErrorList {
 	specPath := field.NewPath("spec")
 	allErrs := field.ErrorList{}
 
 	// perform general basic checks on the new cluster spec
-	if errs := ValidateClusterSpec(&newCluster.Spec, dc, features, versionManager, &oldCluster.Spec.Version, specPath); len(errs) > 0 {
+	if errs := ValidateClusterSpec(&newCluster.Spec, dc, seed.Spec.KubeLB, features, versionManager, &oldCluster.Spec.Version, specPath); len(errs) > 0 {
 		allErrs = append(allErrs, errs...)
 	}
 
@@ -748,6 +750,7 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validateKubevirtCloudSpec(spec.Kubevirt)
 	case spec.Openstack != nil:
 		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc, externalCCM)
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	case spec.Packet != nil:
 		providerErr = validatePacketCloudSpec(spec.Packet)
 	case spec.VSphere != nil:
@@ -910,6 +913,7 @@ func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
 	return nil
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
 	if spec.APIKey == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.PacketAPIKey); err != nil {

@@ -28,18 +28,19 @@ import (
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermaticversion.Versions) {
+func addCommands(cmd *cobra.Command, logger *logrus.Logger, versions kubermatic.Versions) {
 	cmd.AddCommand(
 		ConvertKubeconfigCommand(logger),
 		DeployCommand(logger, versions),
 		PrintCommand(),
 		VersionCommand(logger, versions),
 		MirrorImagesCommand(logger, versions),
+		MirrorBinariesCommand(logger, versions),
 		LocalCommand(logger),
 	)
 }
@@ -55,4 +56,6 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 // flags to be only used in EE edition.
 func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
 	flagset.BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "Reconcile the default Application Catalog (EE only)")
+	flagset.BoolVar(&opt.DeployDefaultPolicyTemplateCatalog, "deploy-default-policy-template-catalog", false, "Reconcile the default Policy Template Catalog (EE only)")
+	flagset.StringSliceVar(&opt.LimitApps, "limit-apps", []string{}, "Limit the app definitions that are to be installed (EE only)")
 }

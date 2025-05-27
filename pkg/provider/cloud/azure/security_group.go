@@ -24,7 +24,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
@@ -60,7 +60,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 		WithCluster(cluster).
 		Build().
 		NodePorts()
-	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange)
+	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Azure.NodePortsAllowedIPRange, nil)
 
 	target := targetSecurityGroup(cluster.Spec.Cloud, location, cluster.Name, lowPort, highPort, nodePortsAllowedIPRanges.GetIPv4CIDRs(), nodePortsAllowedIPRanges.GetIPv6CIDRs())
 
@@ -70,8 +70,7 @@ func reconcileSecurityGroup(ctx context.Context, clients *ClientSet, location st
 	//
 	// Attributes we check:
 	// - defined security rules
-	if !(securityGroup.Properties != nil && securityGroup.Properties.SecurityRules != nil &&
-		compareSecurityRules(securityGroup.Properties.SecurityRules, target.Properties.SecurityRules)) {
+	if securityGroup.Properties == nil || securityGroup.Properties.SecurityRules == nil || !compareSecurityRules(securityGroup.Properties.SecurityRules, target.Properties.SecurityRules) {
 		if err := ensureSecurityGroup(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return cluster, err
 		}

@@ -26,7 +26,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/api/compute/v1"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -124,7 +124,7 @@ func reconcileFirewallRules(ctx context.Context, cluster *kubermaticv1.Cluster, 
 			Ports:      []string{fmt.Sprintf("%d-%d", nodePortRangeLow, nodePortRangeHigh)},
 		},
 	}
-	nodePortsAllowedIPRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRanges, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange)
+	nodePortsAllowedIPRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRanges, cluster.Spec.Cloud.GCP.NodePortsAllowedIPRange, nil)
 	nodePortsIPv4CIDRs := nodePortsAllowedIPRanges.GetIPv4CIDRs()
 	nodePortsIPv6CIDRs := nodePortsAllowedIPRanges.GetIPv6CIDRs()
 	if len(nodePortsIPv4CIDRs) > 0 {

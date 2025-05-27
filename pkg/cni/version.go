@@ -21,19 +21,15 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// CanalCNILastUnspecifiedVersion is the last Canal CNI version applied in KKP user-clusters
-// started in KKP before v2.18 release. If cluster.spec.cniPlugin is not set, it means Canal of this version.
-const CanalCNILastUnspecifiedVersion = "v3.8"
-
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
-		kubermaticv1.CNIPluginTypeCanal:  "v3.28",
-		kubermaticv1.CNIPluginTypeCilium: "1.15.10",
+		kubermaticv1.CNIPluginTypeCanal:  "v3.29",
+		kubermaticv1.CNIPluginTypeCilium: "1.16.9",
 	}
 )
 
@@ -47,13 +43,13 @@ var (
 	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
 	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.26", "v3.27", "v3.28"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.27", "v3.28", "v3.29"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real semver
 			// See pkg/cni/cilium docs for details on introducing a new version.
-			"1.13.14",
 			"1.14.16",
-			"1.15.10",
+			"1.15.16",
+			"1.16.9",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -61,7 +57,7 @@ var (
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
 	// by the validation webhook for backward compatibility.
 	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.19", "v3.20", "v3.21", "v3.22", "v3.23", "v3.24", "v3.25"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.21", "v3.22", "v3.23", "v3.24", "v3.25", "v3.26"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"v1.11",
 			"v1.12",
@@ -71,11 +67,14 @@ var (
 			"1.13.6", // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
 			"1.13.7", // CVE-2023-44487 (High Severity)
 			"1.13.8", // CVE-2024-28860, CVE-2024-28248 (High Severity)
-			"1.14.1", // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
-			"1.14.2", // CVE-2023-44487 (High Severity)
-			"1.14.3", // CVE-2024-28860, CVE-2024-28248 (High Severity)
-			"1.14.9", // CVE-2024-47825 (Moderate Severity)
-			"1.15.3", // CVE-2024-47825 (Moderate Severity)
+			"1.13.14",
+			"1.14.1",  // CVE-2023-39347, CVE-2023-41333 (Moderate Severity), CVE-2023-41332 (Low Severity)
+			"1.14.2",  // CVE-2023-44487 (High Severity)
+			"1.14.3",  // CVE-2024-28860, CVE-2024-28248 (High Severity)
+			"1.14.9",  // CVE-2024-47825 (Moderate Severity)
+			"1.15.3",  // CVE-2024-47825 (Moderate Severity)
+			"1.15.10", // CVE-2025-32793 (Moderate Severity)
+			"1.16.6",  // CVE-2025-32793 (Moderate Severity)
 		),
 	}
 )

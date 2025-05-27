@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,40 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-alertmanager:
-  image:
-    repository: quay.io/prometheus/alertmanager
-    tag: v0.27.0
-    pullPolicy: IfNotPresent
-  configReloaderImage:
-    repository: ghcr.io/jimmidyson/configmap-reload
-    tag: v0.12.0
-    pullPolicy: IfNotPresent
-  # list of image pull secret references, e.g.
-  # imagePullSecrets:
-  #   - name: quay-io-pull-secret
-  #   - name: docker-io-pull-secret
-  imagePullSecrets: []
+# See all the default upstream values here:
+# https://github.com/prometheus-community/helm-charts/blob/alertmanager-1.15.0/charts/alertmanager/values.yaml
+# Below are adjusted values to mimic existing KKP alertmanager setup
 
-  host: ""
-  replicas: 3
-  storageSize: 100Mi
-  storageClass: kubermatic-fast
-  sidecarContainers: {}
-    # specify additional sidecars in format {"name": container_spec}
-    # sidecar-name:
-    #  args: ["command", "args", "here"]
-    #  image: some/image:latest
-  sidecarServicePorts: {}
-    # specify ports to expose in a service in format {"name": port_spec}
-    # port-name:
-    #   port: 8080
-    #   protocol: TCP
-    #   targetPort: 8080
+alertmanager:
+  fullnameOverride: alertmanager
+  replicaCount: 3
+  resources:
+    limits:
+      cpu: 200m
+      memory: 48Mi
+    requests:
+      cpu: 100m
+      memory: 32Mi
+  persistence:
+    size: 100Mi
+    storageClass: kubermatic-fast
+  podDisruptionBudget:
+    minAvailable: 1
+  configmapReload:
+    enabled: true
+    resources:
+      limits:
+        cpu: 150m
+        memory: 32Mi
+      requests:
+        cpu: 50m
+        memory: 24Mi
+  podAntiAffinity: "soft"
 
   config:
     global:
       slack_api_url: https://hooks.slack.com/services/YOUR_KEYS_HERE
+    templates:
+      - '/etc/alertmanager/*.tmpl'
+      # added for kubermatic template
+      - '/etc/alertmanager/templates/*.tmpl'
     route:
       receiver: default
       repeat_interval: 1h
@@ -74,30 +77,11 @@ alertmanager:
     - source_match_re: { alertname: OpenVPNServerDown, cluster: .+ }
       target_match_re: { alertname: (CAdvisorDown|KubernetesNodeDown) }
       equal: [seed_cluster, cluster]
-
-  resources:
-    alertmanager:
-      requests:
-        cpu: 100m
-        memory: 32Mi
-      limits:
-        cpu: 200m
-        memory: 48Mi
-    reloader:
-      requests:
-        cpu: 50m
-        memory: 24Mi
-      limits:
-        cpu: 150m
-        memory: 32Mi
-  nodeSelector: {}
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-      - podAffinityTerm:
-          labelSelector:
-            matchLabels:
-              app: '{{ template "name" . }}'
-          topologyKey: kubernetes.io/hostname
-        weight: 100
-  tolerations: []
+  extraVolumeMounts:
+  - name: templates
+    mountPath: /etc/alertmanager/templates
+    readOnly: true
+  extraVolumes:
+  - name: templates
+    configMap:
+      name: kubermatic-altermanager-templates

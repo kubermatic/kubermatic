@@ -23,8 +23,8 @@ import (
 	"dario.cat/mergo"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -94,11 +94,18 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		return fieldErr
 	}
 
+	// Set the audit logging settings
+	if seed.Spec.AuditLogging != nil {
+		spec.AuditLogging = new(kubermaticv1.AuditLoggingSettings)
+		(*seed.Spec.AuditLogging).DeepCopyInto(spec.AuditLogging)
+	}
+
 	// Enforce audit logging
 	if datacenter.Spec.EnforceAuditLogging {
-		spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-			Enabled: true,
+		if spec.AuditLogging == nil {
+			spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
 		}
+		spec.AuditLogging.Enabled = true
 	}
 
 	// Enforce audit webhook backend
@@ -145,26 +152,6 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
-
-	// If KubeLB is enforced, enable it.
-	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
-		if spec.KubeLB == nil {
-			spec.KubeLB = &kubermaticv1.KubeLB{
-				Enabled: true,
-			}
-		} else {
-			spec.KubeLB.Enabled = true
-		}
-	}
-
-	if datacenter.Spec.KubeLB != nil && spec.KubeLB != nil {
-		if datacenter.Spec.KubeLB.UseLoadBalancerClass && spec.KubeLB.UseLoadBalancerClass == nil {
-			spec.KubeLB.UseLoadBalancerClass = ptr.To(true)
-		}
-		if datacenter.Spec.KubeLB.EnableGatewayAPI && spec.KubeLB.EnableGatewayAPI == nil {
-			spec.KubeLB.EnableGatewayAPI = ptr.To(true)
-		}
-	}
 	return nil
 }
 

@@ -5,6 +5,8 @@ metadata:
   namespace: kubermatic
 # Spec describes the configuration of the Seed cluster.
 spec:
+  # Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
+  auditLogging: null
   # Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
   # For informational purposes in the Kubermatic dashboard only.
   country: ""
@@ -24,7 +26,13 @@ spec:
       # not specified here.
       node:
         # Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
-        containerdRegistryMirrors: null
+        containerdRegistryMirrors:
+          # A map of registries to use to render configs and mirrors for containerd registries
+          registries:
+            docker.io:
+              # List of registry mirrors to use
+              mirrors:
+                - mirror.gcr.io
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure
@@ -145,11 +153,61 @@ spec:
           network: ""
         # Optional: KubeLB holds the configuration for the kubeLB at the data center level.
         # Only available in Enterprise Edition.
-        kubelb: null
+        kubelb:
+          # DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
+          disableIngressClass: false
+          # EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+          # When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+          enableGatewayAPI: false
+          # EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
+          enableSecretSynchronizer: true
+          # Enabled is used to enable/disable kubeLB for the datacenter. This is used to control whether installing kubeLB is allowed or not for the datacenter.
+          enabled: true
+          # Enforced is used to enforce kubeLB installation for all the user clusters belonging to this datacenter. Setting enforced to false will not uninstall kubeLB from the user clusters and it needs to be disabled manually.
+          enforced: false
+          # ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster. These args are propagated to all the user clusters unless overridden at a cluster level.
+          extraArgs: null
+          # Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
+          kubeconfig:
+            # API version of the referent.
+            apiVersion: ""
+            # If referring to a piece of an object instead of an entire object, this string
+            # should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+            # For example, if the object reference is to a container within a pod, this would take on a value like:
+            # "spec.containers{name}" (where "name" refers to the name of the container that triggered
+            # the event) or if no container name is specified "spec.containers[2]" (container with
+            # index 2 in this pod). This syntax is chosen only to have some well-defined way of
+            # referencing a part of an object.
+            fieldPath: ""
+            # Kind of the referent.
+            # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            kind: ""
+            # Name of the referent.
+            # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+            name: ""
+            # Namespace of the referent.
+            # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+            namespace: ""
+            # Specific resourceVersion to which this reference is made, if any.
+            # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+            resourceVersion: ""
+            # UID of the referent.
+            # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+            uid: ""
+          # NodeAddressType is used to configure the address type from node, used for load balancing.
+          # Optional: Defaults to ExternalIP.
+          nodeAddressType: ExternalIP
+          # UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
+          # user cluster irrespective of the load balancer class.
+          useLoadBalancerClass: true
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
+          # Optional: indicates if the ccm should create and manage the clusters load balancers.
+          ccmLoadBalancerEnabled: null
           # Optional: indicates if region and zone labels from the cloud provider should be fetched.
           ccmZoneAndRegionEnabled: null
+          # CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.
+          csiDriverOperator: null
           # Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
           # in the dedicated infra KubeVirt cluster. They are added to the defaults.
           customNetworkPolicies:
@@ -160,6 +218,11 @@ spec:
                 podSelector: {}
                 policyTypes:
                   - Ingress
+          # DisableDefaultInstanceTypes prevents KKP from automatically creating default instance types.
+          # (standard-2, standard-4, standard-8) in KubeVirt environments.
+          disableDefaultInstanceTypes: false
+          # DisableKubermaticPreferences prevents KKP from setting default KubeVirt preferences.
+          disableDefaultPreferences: false
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
           dnsConfig:
@@ -180,6 +243,9 @@ spec:
           # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
           # policy selected with DNSPolicy.
           dnsPolicy: ""
+          # Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
+          # Defaults to false.
+          enableDedicatedCpus: false
           # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
           # Defaults to true.
           enableDefaultNetworkPolicies: true
@@ -218,13 +284,27 @@ spec:
               # VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
               # VolumeBindingImmediate is used.
               volumeBindingMode: null
+              # VolumeProvisioner The **Provider** field specifies whether a storage class will be utilized by the Containerized
+              # Data Importer (CDI) to create VM disk images and/or by the KubeVirt CSI Driver to provision volumes in the
+              # infrastructure cluster. If no storage class in the seed object has this value set, the storage class will be used
+              # for both purposes: CDI will create VM disk images, and the CSI driver will provision and attach volumes in the user
+              # cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
+              # image creation.
+              volumeProvisioner: ""
               # Zones represent a logical failure domain. It is common for Kubernetes clusters to span multiple zones
               # for increased availability
               zones: null
+          # Optional: MatchSubnetAndStorageLocation if set to true, the region and zone of the subnet and storage class must match. For
+          # example, if the storage class has the region `eu` and zone was `central`, the subnet must be in the same region and zone.
+          # otherwise KKP will reject the creation of the machine deployment and eventually the cluster.
+          matchSubnetAndStorageLocation: null
           # NamespacedMode represents the configuration for enabling the single namespace mode for all user-clusters in the KubeVirt datacenter.
           namespacedMode: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used
           providerNetwork: null
+          # VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
+          # value is External and the VM will be protected by a PDB.
+          vmEvictionStrategy: ""
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU
@@ -282,6 +362,8 @@ spec:
             ubuntu: ""
           # Optional: defines if the IPv6 is enabled for the datacenter
           ipv6Enabled: false
+          # Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
+          loadBalancerClasses: null
           # Optional: Gets mapped to the "lb-method" setting in the cloud config.
           # defaults to "ROUND_ROBIN".
           loadBalancerMethod: null
@@ -291,6 +373,9 @@ spec:
           # Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
           # This setting defaults to true.
           manageSecurityGroups: true
+          # A CIDR ranges that will be used to allow access to the node port range in the security group. By default it will be open to 0.0.0.0/0.
+          # Only applies if the security group is generated by KKP and not preexisting and will be applied only if no ranges are set at the cluster level.
+          nodePortsAllowedIPRange: null
           # Optional: Restrict the allowed VM configurations that can be chosen in
           # the KKP dashboard. This setting does not affect the validation webhook for
           # MachineDeployments.
@@ -315,6 +400,8 @@ spec:
           rhel: ""
           rockylinux: ""
           ubuntu: ""
+        # Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+        # This provider is no longer supported. Migrate your configurations away from "packet" immediately.
         # Packet configures an Equinix Metal datacenter.
         packet:
           # The list of enabled facilities, for example "ams1", for a full list of available
@@ -388,13 +475,17 @@ spec:
           storagePolicy: ""
           # A list of VM templates to use for a given operating system. You must
           # define at least one template.
-          # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
+          # See: https://github.com/kubermatic/machine-controller/blob/main/docs/vsphere.md#template-vms-preparation
           templates:
             amzn2: ""
             flatcar: ""
             rhel: ""
             rockylinux: ""
             ubuntu: ""
+  # DefaultAPIServerAllowedIPRanges defines a set of CIDR ranges that are **always appended**
+  # to the API server's allowed IP ranges for all user clusters in this Seed. These ranges
+  # provide a security baseline that cannot be overridden by cluster-specific configurations.
+  defaultAPIServerAllowedIPRanges: null
   # DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
   # to default all new created clusters
   defaultClusterTemplate: ""
@@ -441,6 +532,10 @@ spec:
       hostAntiAffinity: ""
       # NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
       nodeSelector: null
+      # QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+
+      # For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+      quotaBackendGb: null
       # Resources allows to override the resource requirements for etcd Pods.
       resources: null
       # StorageClass is the Kubernetes StorageClass used for persistent storage
@@ -455,6 +550,8 @@ spec:
       zoneAntiAffinity: ""
     # KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
     konnectivityProxy:
+      # Args configures arguments (flags) for the Konnectivity deployments.
+      args: null
       # KeepaliveTime represents a duration of time to check if the transport is still alive.
       # The option is propagated to agents and server.
       # Defaults to 1m.
@@ -549,10 +646,43 @@ spec:
     uid: ""
   # KubeLB holds the configuration for the kubeLB at the Seed level. This component is responsible for managing load balancers.
   # Only available in Enterprise Edition.
-  kubelb: null
+  kubelb:
+    # EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+    # This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+    enableForAllDatacenters: true
+    # Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
+    kubeconfig:
+      # API version of the referent.
+      apiVersion: ""
+      # If referring to a piece of an object instead of an entire object, this string
+      # should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+      # For example, if the object reference is to a container within a pod, this would take on a value like:
+      # "spec.containers{name}" (where "name" refers to the name of the container that triggered
+      # the event) or if no container name is specified "spec.containers[2]" (container with
+      # index 2 in this pod). This syntax is chosen only to have some well-defined way of
+      # referencing a part of an object.
+      fieldPath: ""
+      # Kind of the referent.
+      # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+      kind: ""
+      # Name of the referent.
+      # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+      name: kubelb-management-kubeconfig
+      # Namespace of the referent.
+      # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+      namespace: kubermatic
+      # Specific resourceVersion to which this reference is made, if any.
+      # More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+      resourceVersion: ""
+      # UID of the referent.
+      # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+      uid: ""
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
+  # ManagementProxySettings can be used if the KubeAPI of the user clusters
+  # will not be directly available from kkp and a proxy in between should be used
+  managementProxySettings: null
   # Metering configures the metering tool on user clusters across the seed.
   metering:
     enabled: false

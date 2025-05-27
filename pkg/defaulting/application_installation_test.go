@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -136,7 +136,7 @@ func getApplicationInstallation(deployOpts *appskubermaticv1.DeployOptions, valu
 			Namespace: "kube-system",
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
-			Namespace: appskubermaticv1.AppNamespaceSpec{
+			Namespace: &appskubermaticv1.AppNamespaceSpec{
 				Name: "default",
 			},
 			ApplicationRef: appskubermaticv1.ApplicationRef{

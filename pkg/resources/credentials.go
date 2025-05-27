@@ -20,9 +20,9 @@ import (
 	"context"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	"k8c.io/machine-controller/sdk/providerconfig"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -205,8 +205,9 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.Openstack != nil {
 		return cluster.Spec.Cloud.Openstack.CredentialsReference, nil
 	}
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if cluster.Spec.Cloud.Packet != nil {
-		return cluster.Spec.Cloud.Packet.CredentialsReference, nil
+		return cluster.Spec.Cloud.Packet.CredentialsReference, nil //nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return cluster.Spec.Cloud.Kubevirt.CredentialsReference, nil
@@ -277,6 +278,8 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 			return Credentials{}, err
 		}
 	}
+
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
 			return Credentials{}, err
@@ -381,6 +384,8 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		cluster.Spec.Cloud.Openstack.Password = credentials.Openstack.Password
 		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
 	}
+
+	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 	if data.Cluster().Spec.Cloud.Packet != nil {
 		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
 			return err
@@ -660,6 +665,7 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	return openstackCredentials, nil
 }
 
+//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
 func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
 	spec := data.Cluster().Spec.Cloud.Packet
 	packetCredentials := PacketCredentials{}
@@ -699,38 +705,40 @@ func GetVSphereCredentials(data CredentialsData) (VSphereCredentials, error) {
 	var username, password string
 	var err error
 
-	if spec.InfraManagementUser.Username != "" {
-		username = spec.InfraManagementUser.Username
+	if spec.Username != "" {
+		username = spec.Username
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserUsername)
+		username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername)
 		if err != nil {
 			return VSphereCredentials{}, err
 		}
 	}
+
 	if username == "" {
-		if spec.Username != "" {
-			username = spec.Username
+		if spec.InfraManagementUser.Username != "" {
+			username = spec.InfraManagementUser.Username
 		} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-			username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereUsername)
+			username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserUsername)
 			if err != nil {
 				return VSphereCredentials{}, err
 			}
 		}
 	}
 
-	if spec.InfraManagementUser.Password != "" {
-		password = spec.InfraManagementUser.Password
+	if spec.Password != "" {
+		password = spec.Password
 	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserPassword)
+		password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword)
 		if err != nil {
 			return VSphereCredentials{}, err
 		}
 	}
+
 	if password == "" {
-		if spec.Password != "" {
-			password = spec.Password
+		if spec.InfraManagementUser.Password != "" {
+			password = spec.InfraManagementUser.Password
 		} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-			password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VspherePassword)
+			password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, VsphereInfraManagementUserPassword)
 			if err != nil {
 				return VSphereCredentials{}, err
 			}

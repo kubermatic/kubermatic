@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	openstack "k8c.io/machine-controller/pkg/cloudprovider/provider/openstack/types"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/machine-controller/sdk/cloudprovider/openstack"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 func TestOpenstackConfigBuilder(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	"k8s.io/utils/ptr"
 )
@@ -68,7 +68,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 						CIDRBlocks: []string{"172.25.0.0/16", "fd01::/48"},
 					},
 					Services: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"10.240.16.0/20", "fd02::/120"},
+						CIDRBlocks: []string{"10.240.16.0/20", "fd02::/108"},
 					},
 					ProxyMode: "ipvs",
 					IPVS: &kubermaticv1.IPVSConfiguration{
@@ -97,7 +97,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 						CIDRBlocks: []string{"174.27.0.0/16", "fd05::/48"},
 					},
 					Services: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"10.240.16.0/20", "fd02::/120"},
+						CIDRBlocks: []string{"10.240.16.0/20", "fd02::/108"},
 					},
 					ProxyMode: "ipvs",
 					IPVS: &kubermaticv1.IPVSConfiguration{
@@ -130,7 +130,7 @@ func TestDefaultClusterNetwork(t *testing.T) {
 						CIDRBlocks: []string{"172.26.0.0/16", "fd01::/48"},
 					},
 					Services: kubermaticv1.NetworkRanges{
-						CIDRBlocks: []string{"10.241.0.0/20", "fd02::/120"},
+						CIDRBlocks: []string{"10.241.0.0/20", "fd02::/108"},
 					},
 					ProxyMode: "ipvs",
 					IPVS: &kubermaticv1.IPVSConfiguration{

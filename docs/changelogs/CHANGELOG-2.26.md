@@ -4,6 +4,106 @@
 - [v2.26.1](#v2261)
 - [v2.26.2](#v2262)
 - [v2.26.3](#v2263)
+- [v2.26.4](#v2264)
+- [v2.26.5](#v2265)
+- [v2.26.6](#v2266)
+- [v2.26.7](#v2267)
+- [v2.26.8](#v2268)
+
+## v2.26.8
+
+**GitHub release: [v2.26.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.8)**
+
+### ACTION REQUIRED
+
+- Update cert-manager to v1.16.5. In the cert-manager values.yaml, following updates should be done ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
+    - update  `webhook.replicas` to `webhook.replicaCount`
+    - update  `cainjector.replicas` to `webhook.replicaCount`
+    - remove `webhook.injectAPIServerCA`
+
+### Supported Kubernetes versions
+
+- Add 1.31.8/1.30.12 to the list of supported Kubernetes releases ([#14395](https://github.com/kubermatic/kubermatic/pull/14395))
+
+### Bugfixes
+
+- Fix a bug for KubeLB where disabling the ingress class for a user cluster was not working ([#14396](https://github.com/kubermatic/kubermatic/pull/14396))
+- Add role prioritization: Update logic to return the highest-priority role for members with multiple roles ([#7272](https://github.com/kubermatic/dashboard/pull/7272))
+- Add special characters restriction on Inputs and escape values to avoid rendering as HTML ([#7288](https://github.com/kubermatic/dashboard/pull/7288))
+
+### Updates
+
+- Security: Update Cilium to 1.15.16 because the previous version is affected by CVE-2025-32793 ([#14435](https://github.com/kubermatic/kubermatic/pull/14435))
+- Update oauth2-proxy to v7.8.2 ([#14392](https://github.com/kubermatic/kubermatic/pull/14392))
+- Update OSM version to [v1.6.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.5) ([#14413](https://github.com/kubermatic/kubermatic/pull/14413))
+- Update KubeLB CCM to [v1.1.4](https://docs.kubermatic.com/kubelb/v1.1/release-notes/#v114) ([#14365](https://github.com/kubermatic/kubermatic/pull/14365))
+
+## v2.26.7
+
+**GitHub release: [v2.26.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.7)**
+
+### Updates
+
+- Add 1.31.7/1.30.11 to the list of supported Kubernetes releases ([#14291](https://github.com/kubermatic/kubermatic/pull/14291))
+- Update etcd to 3.5.17 for all supported Kubernetes releases ([#14337](https://github.com/kubermatic/kubermatic/pull/14337))
+- Update OSM to [1.6.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.4) ([#14333](https://github.com/kubermatic/kubermatic/pull/14333))
+
+## v2.26.6
+
+**GitHub release: [v2.26.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.6)**
+
+### Breaking Changes
+
+- VSphere credentials are now handled properly. For existing usercluster this will change the credentials in machine-controller and osm to `infraManagementUser` and  `infraManagementPassword` instead of `username` and `password` when specified. The latter one was always mounted to the before mentioned depl- Edge Provider: Fix a bug where clusters were stuck in `creating` phase due to wrongfully waiting for Machine Controller's health status ([#14257](https://github.com/kubermatic/kubermatic/pull/14257))
+
+### Bugfixes
+
+- Fix a Go panic when using git-source in Applications ([#14231](https://github.com/kubermatic/kubermatic/pull/14231))
+- Fix an issue where the CBSL status was not updating due to the missing cluster-backup-storage-controller in the master controller manager ([#14255](https://github.com/kubermatic/kubermatic/pull/14255))
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7217](https://github.com/kubermatic/dashboard/pull/7217)) 
+
+### Updates
+
+- Security: Update nginx-ingress-controller to 1.11.5, fixing CVE-2025-1097, CVE-2025-1098, CVE-2025-1974, CVE-2025-24513, CVE-2025-24514 ([#14275](https://github.com/kubermatic/kubermatic/pull/14275))
+
+## v2.26.5
+
+**GitHub release: [v2.26.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.5)**
+
+### Supported Kubernetes versions
+
+- Add 1.31.5/1.30.9/1.29.13 to the list of supported Kubernetes releases ([#14069](https://github.com/kubermatic/kubermatic/pull/14069))
+
+### New Features
+
+- Add KubeVirt DS in the charts repo to generate images for the mirrored images command ([#14064](https://github.com/kubermatic/kubermatic/pull/14064))
+
+### Bugfixes
+
+- Fix a bug where ca-bundle was not being used to communicate to minio for metering ([#14072](https://github.com/kubermatic/kubermatic/pull/14072))
+- Fix node label overwriting issue with the initial Machine Deployment ([#14033](https://github.com/kubermatic/kubermatic/pull/14033))
+- Include KubeVirt CCM and Fluent-Bit images in the mirror-images command ([#14063](https://github.com/kubermatic/kubermatic/pull/14063))
+- Fix datacenter creation for Edge provider ([#7165](https://github.com/kubermatic/dashboard/pull/7165))
+- Fix wrong GCP machine deployment values in Edit Machine Deployment dialog ([#7169](https://github.com/kubermatic/dashboard/pull/7169))
+- In the cluster backup feature, fix the issue with restoring a backup that includes all namespaces and add the option to restore all namespaces from a backup ([#7168](https://github.com/kubermatic/dashboard/pull/7168))
+- VSphere: fix a bug where updating replicas of machine deployments was causing machine rotation ([#7130](https://github.com/kubermatic/dashboard/pull/7130))
+
+### Updates
+
+- Update go-git to 5.13.0 [CVE-2025-21613, CVE-2025-21614] ([#14151](https://github.com/kubermatic/kubermatic/pull/14151))
+
+## v2.26.4
+
+**GitHub release: [v2.26.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.4)**
+
+### Bugfixes
+
+- Fix Seed-MLA's Prometheus trying to scrape Kopia job Pods from Velero ([#14007](https://github.com/kubermatic/kubermatic/pull/14007))
+- Ignore reading the storage classes from the infra cluster and only roll out the ones from the seed object ([#14023](https://github.com/kubermatic/kubermatic/pull/14023))
+
+### Updates
+
+- Update OSM to 1.6.2 ([#14025](https://github.com/kubermatic/kubermatic/pull/14025))
 
 ## v2.26.3
 

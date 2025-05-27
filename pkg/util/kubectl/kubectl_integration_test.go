@@ -26,8 +26,8 @@ import (
 	"os/exec"
 	"testing"
 
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
 type kubectlVersionOutput struct {

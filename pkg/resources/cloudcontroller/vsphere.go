@@ -17,11 +17,11 @@ limitations under the License.
 package cloudcontroller
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -129,8 +129,6 @@ func VSphereCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v128:
-		return "1.28.1"
 	case v129:
 		return "1.29.0"
 	case v130:
@@ -138,8 +136,10 @@ func VSphereCCMVersion(version semver.Semver) string {
 	case v131:
 		return "1.31.0"
 	case v132:
+		return "1.32.2"
+	case v133:
 		fallthrough
 	default:
-		return "1.32.0"
+		return "1.33.0"
 	}
 }

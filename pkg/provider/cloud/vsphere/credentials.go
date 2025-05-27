@@ -21,7 +21,7 @@ import (
 	"crypto/x509"
 	"errors"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
@@ -51,7 +51,7 @@ func getUsernameAndPassword(cloud kubermaticv1.CloudSpec, secretKeySelector prov
 	}
 
 	if cloud.VSphere.CredentialsReference == nil {
-		return "", "", errors.New("cluster contains no password an and empty credentialsReference")
+		return "", "", errors.New("cluster contains no password and an empty credentialsReference")
 	}
 
 	if username == "" && infraManagementUser {

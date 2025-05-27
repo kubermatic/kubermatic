@@ -20,7 +20,7 @@ import (
 	"reflect"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 
 	corev1 "k8s.io/api/core/v1"
@@ -578,10 +578,12 @@ func TestSetResourceRequirementsDoesNotChangeDefaults(t *testing.T) {
 
 func TestGetNodePortsAllowedIPRanges(t *testing.T) {
 	testCases := []struct {
-		name            string
-		allowedIPRanges kubermaticv1.NetworkRanges
-		allowedIPRange  string
-		expectedResult  kubermaticv1.NetworkRanges
+		name                string
+		cluster             *kubermaticv1.Cluster
+		allowedIPRanges     kubermaticv1.NetworkRanges
+		allowedIPRange      string
+		seedAllowedIPRanges kubermaticv1.NetworkRanges
+		expectedResult      kubermaticv1.NetworkRanges
 	}{
 		{
 			name: "Duplicate entry in allowedIPRanges",
@@ -613,15 +615,77 @@ func TestGetNodePortsAllowedIPRanges(t *testing.T) {
 				CIDRBlocks: []string{"20.20.20.0/24", "::/0"},
 			},
 		},
+		{
+			name: "No specified IP ranges, IPv4 only cluster",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{
+							CIDRBlocks: []string{"192.168.0.0/16"},
+						},
+					},
+				},
+			},
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{IPv4MatchAnyCIDR},
+			},
+		},
+		{
+			name: "No specified IP ranges, IPv6 only cluster",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{
+							CIDRBlocks: []string{"fd00::/8"},
+						},
+					},
+				},
+			},
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{IPv6MatchAnyCIDR},
+			},
+		},
+		{
+			name: "No specified IP ranges, dual-stack cluster",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+						Pods: kubermaticv1.NetworkRanges{
+							CIDRBlocks: []string{"192.168.0.0/16", "fd00::/8"},
+						},
+					},
+				},
+			},
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{IPv4MatchAnyCIDR, IPv6MatchAnyCIDR},
+			},
+		},
+		{
+			name: "Specified seed allowed IP ranges",
+			seedAllowedIPRanges: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"10.10.10.0/24", "::/0"},
+			},
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"10.10.10.0/24", "::/0"},
+			},
+		},
+		{
+			name: "Specified seed allowed IP ranges but there are set cluster allowed IP ranges",
+			allowedIPRanges: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"20.20.20.0/24", "::/0"},
+			},
+			seedAllowedIPRanges: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"10.10.10.0/24", "::/0"},
+			},
+			expectedResult: kubermaticv1.NetworkRanges{
+				CIDRBlocks: []string{"20.20.20.0/24", "::/0"},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var result kubermaticv1.NetworkRanges
-
-			cluster := &kubermaticv1.Cluster{}
-			result = GetNodePortsAllowedIPRanges(cluster, &tc.allowedIPRanges, tc.allowedIPRange)
-
+			result := GetNodePortsAllowedIPRanges(tc.cluster, &tc.allowedIPRanges, tc.allowedIPRange, &tc.seedAllowedIPRanges)
 			if !reflect.DeepEqual(result, tc.expectedResult) {
 				t.Errorf("wrong result, expected: %s, result: %s", tc.expectedResult, result)
 			}

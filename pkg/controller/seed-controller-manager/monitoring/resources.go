@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/kubestatemetrics"
@@ -73,7 +73,7 @@ func (r *Reconciler) ensureRoles(ctx context.Context, cluster *kubermaticv1.Clus
 		prometheus.RoleReconciler(),
 	}
 
-	return reconciling.ReconcileRoles(ctx, getters, cluster.Status.NamespaceName, r.Client)
+	return reconciling.ReconcileRoles(ctx, getters, cluster.Status.NamespaceName, r)
 }
 
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -81,7 +81,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, cluster *kubermatic
 		prometheus.RoleBindingReconciler(cluster.Status.NamespaceName),
 	}
 
-	return reconciling.ReconcileRoleBindings(ctx, getters, cluster.Status.NamespaceName, r.Client)
+	return reconciling.ReconcileRoleBindings(ctx, getters, cluster.Status.NamespaceName, r)
 }
 
 // GetDeploymentReconcilers returns all DeploymentReconcilers that are currently in use.
@@ -101,7 +101,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 		modifier.ControlplaneComponent(cluster),
 	}
 
-	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r.Client, modifiers...)
+	return reconciling.ReconcileDeployments(ctx, creators, cluster.Status.NamespaceName, r, modifiers...)
 }
 
 // GetSecretReconcilerOperations returns all SecretReconcilers that are currently in use.
@@ -120,7 +120,7 @@ func GetSecretReconcilerOperations(data *resources.TemplateData) []reconciling.N
 func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	namedSecretReconcilerFactories := GetSecretReconcilerOperations(data)
 
-	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactories, cluster.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactories, cluster.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure that the Secret exists: %w", err)
 	}
 
@@ -137,7 +137,7 @@ func GetConfigMapReconcilers(data *resources.TemplateData) []reconciling.NamedCo
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetConfigMapReconcilers(data)
 
-	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, r.Client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, cluster.Status.NamespaceName, r); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %w", err)
 	}
 
@@ -159,7 +159,7 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, cluster *kubermatic
 		modifier.ControlplaneComponent(cluster),
 	}
 
-	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, r.Client, modifiers...)
+	return reconciling.ReconcileStatefulSets(ctx, creators, cluster.Status.NamespaceName, r, modifiers...)
 }
 
 func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -172,7 +172,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 
 	creators, err := resources.GetVerticalPodAutoscalersForAll(
 		ctx,
-		r.Client,
+		r,
 		deploymentNames,
 		statefulSetNames,
 		cluster.Status.NamespaceName,
@@ -180,7 +180,7 @@ func (r *Reconciler) ensureVerticalPodAutoscalers(ctx context.Context, cluster *
 	if err != nil {
 		return fmt.Errorf("failed to create the functions to handle VPA resources: %w", err)
 	}
-	return kkpreconciling.ReconcileVerticalPodAutoscalers(ctx, creators, cluster.Status.NamespaceName, r.Client)
+	return kkpreconciling.ReconcileVerticalPodAutoscalers(ctx, creators, cluster.Status.NamespaceName, r)
 }
 
 // GetServiceReconcilers returns all service creators that are currently in use.
@@ -193,7 +193,7 @@ func GetServiceReconcilers(data *resources.TemplateData) []reconciling.NamedServ
 func (r *Reconciler) ensureServices(ctx context.Context, cluster *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := GetServiceReconcilers(data)
 
-	return reconciling.ReconcileServices(ctx, creators, cluster.Status.NamespaceName, r.Client)
+	return reconciling.ReconcileServices(ctx, creators, cluster.Status.NamespaceName, r)
 }
 
 // GetServiceReconcilers returns all service creators that are currently in use.
@@ -206,5 +206,5 @@ func GetServiceAccountReconcilers() []reconciling.NamedServiceAccountReconcilerF
 func (r *Reconciler) ensureServiceAccounts(ctx context.Context, cluster *kubermaticv1.Cluster, _ *resources.TemplateData) error {
 	creators := GetServiceAccountReconcilers()
 
-	return reconciling.ReconcileServiceAccounts(ctx, creators, cluster.Status.NamespaceName, r.Client)
+	return reconciling.ReconcileServiceAccounts(ctx, creators, cluster.Status.NamespaceName, r)
 }

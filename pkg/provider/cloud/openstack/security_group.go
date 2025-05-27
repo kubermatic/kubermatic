@@ -25,7 +25,7 @@ import (
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	ossecuritygrouprules "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/rules"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"k8s.io/utils/net"
@@ -41,15 +41,6 @@ func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygrou
 		return nil, fmt.Errorf("failed to extract security groups: %w", err)
 	}
 	return secGroups, nil
-}
-
-func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityGroups []string) error {
-	for _, sg := range securityGroups {
-		if err := validateSecurityGroupExists(netClient, sg); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func validateSecurityGroupExists(netClient *gophercloud.ServiceClient, securityGroup string) error {

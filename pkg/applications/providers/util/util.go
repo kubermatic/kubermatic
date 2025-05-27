@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applications/helmclient"
 
 	corev1 "k8s.io/api/core/v1"
@@ -84,7 +84,10 @@ func HelmAuthFromCredentials(
 	source *appskubermaticv1.HelmSource,
 	credentials *appskubermaticv1.HelmCredentials,
 ) (helmclient.AuthSettings, error) {
-	auth := NewAuthSettingsFromHelmSource(source)
+	auth := helmclient.AuthSettings{}
+	if source != nil {
+		auth = NewAuthSettingsFromHelmSource(source)
+	}
 	if credentials != nil {
 		if credentials.Username != nil {
 			username, err := GetCredentialFromSecret(ctx, client, secretNamespace, credentials.Username.Name, credentials.Username.Key)

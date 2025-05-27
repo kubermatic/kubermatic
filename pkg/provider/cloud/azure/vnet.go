@@ -25,7 +25,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
@@ -75,8 +75,7 @@ func reconcileVNet(ctx context.Context, clients *ClientSet, location string, clu
 	//
 	// Attributes we check:
 	// - Address space CIDR
-	if !(vnet.Properties != nil && vnet.Properties.AddressSpace != nil &&
-		reflect.DeepEqual(vnet.Properties.AddressSpace.AddressPrefixes, target.Properties.AddressSpace.AddressPrefixes)) {
+	if vnet.Properties == nil || vnet.Properties.AddressSpace == nil || !reflect.DeepEqual(vnet.Properties.AddressSpace.AddressPrefixes, target.Properties.AddressSpace.AddressPrefixes) {
 		if err := ensureVNet(ctx, clients, cluster.Spec.Cloud, target); err != nil {
 			return nil, err
 		}

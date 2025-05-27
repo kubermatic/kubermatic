@@ -22,7 +22,7 @@ import (
 	"strings"
 	"text/template"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -162,6 +162,12 @@ func seedMonitoringRoleBindingReconciler(seed *kubermaticv1.Seed) reconciling.Na
 func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, credentials *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	name := secretName(seed)
 	host := kubeconfig.Host
+	var proxy string
+	if kubeconfig.Proxy != nil {
+		if proxyURL, err := kubeconfig.Proxy(nil); err == nil && proxyURL != nil {
+			proxy = proxyURL.String()
+		}
+	}
 
 	return func() (string, reconciling.SecretReconciler) {
 		return name, func(s *corev1.Secret) (*corev1.Secret, error) {
@@ -173,7 +179,8 @@ func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, cr
 
 			// convert the service account CA and token into a handy kubeconfig so that
 			// consuming the credentials becomes easier later on
-			kubeconfig, err := convertServiceAccountToKubeconfig(host, credentials)
+			kubeconfig, err := convertServiceAccountToKubeconfig(host, credentials, &proxy)
+
 			if err != nil {
 				return s, fmt.Errorf("failed to create kubeconfig: %w", err)
 			}
@@ -185,7 +192,7 @@ func masterSecretReconciler(seed *kubermaticv1.Seed, kubeconfig *rest.Config, cr
 	}
 }
 
-func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) ([]byte, error) {
+func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret, proxyURL *string) ([]byte, error) {
 	clusterName := "seed"
 	contextName := "default"
 	authName := "token-based"
@@ -193,6 +200,9 @@ func convertServiceAccountToKubeconfig(host string, credentials *corev1.Secret) 
 	cluster := api.NewCluster()
 	cluster.CertificateAuthorityData = credentials.Data[corev1.ServiceAccountRootCAKey]
 	cluster.Server = host
+	if proxyURL != nil {
+		cluster.ProxyURL = *proxyURL
+	}
 
 	context := api.NewContext()
 	context.Cluster = clusterName

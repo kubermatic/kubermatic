@@ -31,9 +31,9 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cequality "k8c.io/kubermatic/v2/pkg/apis/equality"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	k8cequality "k8c.io/kubermatic/sdk/v2/apis/equality"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
@@ -121,14 +121,14 @@ func (r *reconciler) reconcile(ctx context.Context, resourceQuota *kubermaticv1.
 		return nil
 	}
 
-	projectIdReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{resourceQuota.Spec.Subject.Name})
+	projectIDReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{resourceQuota.Spec.Subject.Name})
 	if err != nil {
 		return fmt.Errorf("error creating project id req: %w", err)
 	}
 
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList,
-		&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectIdReq)}); err != nil {
+		&ctrlruntimeclient.ListOptions{LabelSelector: labels.NewSelector().Add(*projectIDReq)}); err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
@@ -169,7 +169,7 @@ func (r *reconciler) ensureLocalUsage(ctx context.Context, log *zap.SugaredLogge
 		"memory", localUsage.Memory.String(),
 		"storage", localUsage.Storage.String())
 
-	return kubermaticv1helper.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
+	return util.UpdateResourceQuotaStatus(ctx, r.seedClient, resourceQuota, func(rq *kubermaticv1.ResourceQuota) {
 		rq.Status.LocalUsage = *localUsage
 	})
 }
@@ -205,13 +205,13 @@ func enqueueResourceQuota(client ctrlruntimeclient.Client, log *zap.SugaredLogge
 		var requests []reconcile.Request
 
 		clusterLabels := a.GetLabels()
-		projectId, ok := clusterLabels[kubermaticv1.ProjectIDLabelKey]
+		projectID, ok := clusterLabels[kubermaticv1.ProjectIDLabelKey]
 		if !ok {
 			log.Debugw("cluster does not have `project-id` label, skipping", "cluster", a.GetName())
 			return requests
 		}
 
-		subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectId})
+		subjectNameReq, err := labels.NewRequirement(kubermaticv1.ResourceQuotaSubjectNameLabelKey, selection.Equals, []string{projectID})
 		if err != nil {
 			utilruntime.HandleError(fmt.Errorf("error creating subject name req: %w", err))
 			return requests

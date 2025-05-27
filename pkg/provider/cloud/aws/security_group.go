@@ -25,7 +25,7 @@ import (
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/smithy-go"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermaticresources "k8c.io/kubermatic/v2/pkg/resources"
 
@@ -129,7 +129,7 @@ func reconcileSecurityGroup(ctx context.Context, client *ec2.Client, cluster *ku
 	permissions := getCommonSecurityGroupPermissions(groupID, ipv4Permissions, ipv6Permissions)
 
 	lowPort, highPort := getNodePortRange(cluster)
-	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange)
+	nodePortsAllowedIPRanges := kubermaticresources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRanges, cluster.Spec.Cloud.AWS.NodePortsAllowedIPRange, nil)
 
 	permissions = append(permissions, getNodePortSecurityGroupPermissions(lowPort, highPort, nodePortsAllowedIPRanges.GetIPv4CIDRs(), nodePortsAllowedIPRanges.GetIPv6CIDRs())...)
 

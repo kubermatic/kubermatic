@@ -20,19 +20,22 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
+	"strings"
 	"time"
 
 	"dario.cat/mergo"
 	"go.uber.org/zap"
 
-	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
-	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1/helper"
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/cni"
-	"k8c.io/kubermatic/v2/pkg/cni/cilium"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -56,6 +59,12 @@ const (
 	ControllerName = "kkp-cni-application-installation-controller"
 
 	cniPluginNamespace = "kube-system"
+)
+
+// Cilium specific constants.
+const (
+	ciliumHelmChartName = "cilium"
+	ciliumImageRegistry = "quay.io/cilium/"
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -130,7 +139,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("cluster", request.NamespacedName.Name)
+	log := r.log.With("cluster", request.Name)
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
@@ -147,9 +156,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 	// Add a wrapping here, so we can emit an event on error
-	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+	result, err := util.ClusterReconcileWrapper(
 		ctx,
-		r.Client,
+		r,
 		r.workerName,
 		cluster,
 		r.versions,
@@ -201,10 +210,7 @@ func (r *Reconciler) reconcile(ctx context.Context, logger *zap.SugaredLogger, c
 	if err := r.parseCNIValuesAnnotation(cluster, initialValues); err != nil {
 		return &reconcile.Result{}, err
 	}
-	removeAnnotation := false
-	if len(initialValues) > 0 {
-		removeAnnotation = true
-	}
+	removeAnnotation := len(initialValues) > 0
 
 	// If initial values were not loaded from the annotation, use the default values from the ApplicationDefinition
 	if len(initialValues) == 0 {
@@ -254,13 +260,13 @@ func (r *Reconciler) ensureLegacyCNIAddonIsRemoved(ctx context.Context, cluster 
 			},
 		}
 		// trigger addon uninstall
-		err := r.Client.Delete(ctx, cniAddon)
+		err := r.Delete(ctx, cniAddon)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return 0, fmt.Errorf("failed to delete CNI addon %s: %w", cniAddon.GetName(), err)
 		}
 
 		// check addon has been uninstalled
-		err = r.Client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cniAddon), cniAddon)
+		err = r.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(cniAddon), cniAddon)
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return 0, fmt.Errorf("failed to check CNI addon %s has been uninstalled: %w", cniAddon.GetName(), err)
@@ -291,7 +297,7 @@ func (r *Reconciler) removeCNIValuesAnnotation(ctx context.Context, cluster *kub
 
 func (r *Reconciler) parseAppDefDefaultValues(ctx context.Context, cluster *kubermaticv1.Cluster) (map[string]any, error) {
 	appDef := &appskubermaticv1.ApplicationDefinition{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: cluster.Spec.CNIPlugin.Type.String()}, appDef); err != nil {
 		return nil, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
@@ -325,14 +331,14 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				Name:    cluster.Spec.CNIPlugin.Type.String(),
 				Version: cluster.Spec.CNIPlugin.Version,
 			}
-			app.Spec.Namespace = appskubermaticv1.AppNamespaceSpec{
+			app.Spec.Namespace = &appskubermaticv1.AppNamespaceSpec{
 				Name: cniPluginNamespace,
 			}
 			app.Spec.DeployOptions = &appskubermaticv1.DeployOptions{
 				Helm: &appskubermaticv1.HelmDeployOptions{
-					// Use non-atomic deployment, as atomic (with fixed retries count) potentially brings more issues
-					// than benefit for CNI, e.g. during the cluster bring-up when the worker nodes join cluster too late.
-					Atomic: false,
+					// Use atomic deployment, as atomic (with fixed retries count) migitates breaking the etcd due to creating events
+					// when retrying on failure without a limit
+					Atomic: true,
 					Wait:   true,
 					Timeout: metav1.Duration{
 						Duration: 10 * time.Minute, // use longer timeout, as it may take some time for the CNI to be fully up
@@ -360,13 +366,6 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 				return app, fmt.Errorf("failed to merge CNI values: %w", err)
 			}
 
-			// Remove deprecated value from older installations
-			if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-				ipam := values["ipam"].(map[string]any)
-				operator := ipam["operator"].(map[string]any)
-				delete(operator, "clusterPoolIPv4PodCIDR")
-			}
-
 			// Set new values
 			rawValues, err := yaml.Marshal(values)
 			if err != nil {
@@ -389,7 +388,129 @@ func ApplicationInstallationReconciler(cluster *kubermaticv1.Cluster, overwriteR
 
 func getCNIOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
 	if cluster.Spec.CNIPlugin.Type == kubermaticv1.CNIPluginTypeCilium {
-		return cilium.GetAppInstallOverrideValues(cluster, overwriteRegistry)
+		return getAppInstallOverrideValues(cluster, overwriteRegistry)
 	}
 	return nil
+}
+
+// getAppInstallOverrideValues returns Helm values to be enforced on the cluster's ApplicationInstallation
+// of the Cilium CNI managed by KKP.
+func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistry string) map[string]any {
+	podSecurityContext := map[string]any{
+		"seccompProfile": map[string]any{
+			"type": "RuntimeDefault",
+		},
+	}
+	defaultValues := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+	values := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+	valuesEnvoy := map[string]any{
+		"podSecurityContext": podSecurityContext,
+	}
+
+	valuesOperator := map[string]any{
+		"securityContext": map[string]any{
+			"seccompProfile": map[string]any{
+				"type": "RuntimeDefault",
+			},
+		},
+		"podSecurityContext": podSecurityContext,
+	}
+	valuesCni := map[string]any{
+		// we run Cilium as non-exclusive CNI to allow for Multus use-cases
+		"exclusive": false,
+	}
+
+	valuesCertGen := maps.Clone(defaultValues)
+	valuesRelay := maps.Clone(defaultValues)
+	valuesFrontend := map[string]any{}
+	valuesBackend := map[string]any{}
+
+	if cluster.Spec.ClusterNetwork.ProxyMode == resources.EBPFProxyMode {
+		values["kubeProxyReplacement"] = "true"
+		values["k8sServiceHost"] = cluster.Status.Address.ExternalName
+		values["k8sServicePort"] = cluster.Status.Address.Port
+
+		nodePortRange := cluster.Spec.ComponentsOverride.Apiserver.NodePortRange
+		if nodePortRange != "" && nodePortRange != resources.DefaultNodePortRange {
+			values["nodePort"] = map[string]any{
+				"range": strings.ReplaceAll(nodePortRange, "-", ","),
+			}
+		}
+	} else {
+		values["kubeProxyReplacement"] = "false"
+		values["sessionAffinity"] = true
+		valuesCni["chainingMode"] = "portmap"
+	}
+
+	ipamOperator := map[string]any{
+		"clusterPoolIPv4PodCIDRList": cluster.Spec.ClusterNetwork.Pods.GetIPv4CIDRs(),
+	}
+
+	if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4 != nil {
+		ipamOperator["clusterPoolIPv4MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv4
+	}
+
+	if cluster.IsDualStack() {
+		values["ipv6"] = map[string]any{"enabled": true}
+		ipamOperator["clusterPoolIPv6PodCIDRList"] = cluster.Spec.ClusterNetwork.Pods.GetIPv6CIDRs()
+		if cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6 != nil {
+			ipamOperator["clusterPoolIPv6MaskSize"] = *cluster.Spec.ClusterNetwork.NodeCIDRMaskSizeIPv6
+		}
+	}
+
+	values["ipam"] = map[string]any{"operator": ipamOperator}
+
+	// Override images if registry override is configured
+	if overwriteRegistry != "" {
+		values["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesOperator["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"operator", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesRelay["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-relay", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesBackend["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui-backend", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesFrontend["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"hubble-ui", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesCertGen["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"certgen", overwriteRegistry)),
+			"useDigest":  false,
+		}
+		valuesEnvoy["image"] = map[string]any{
+			"repository": registry.Must(registry.RewriteImage(ciliumImageRegistry+"cilium-envoy", overwriteRegistry)),
+			"useDigest":  false,
+		}
+	}
+
+	uiSecContext := maps.Clone(podSecurityContext)
+	uiSecContext["enabled"] = true
+
+	values["cni"] = valuesCni
+	values["envoy"] = valuesEnvoy
+	values["operator"] = valuesOperator
+	values["certgen"] = valuesCertGen
+	values["hubble"] = map[string]any{
+		"relay": valuesRelay,
+		"ui": map[string]any{
+			"securityContext": uiSecContext,
+			"frontend":        valuesFrontend,
+			"backend":         valuesBackend,
+		},
+	}
+
+	return values
 }

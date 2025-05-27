@@ -28,7 +28,7 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubelbmanagementresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/kubelb-cluster"
 	kubelbseedresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kubelbuserclusterresources "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/user-cluster"
@@ -55,7 +55,7 @@ func (r *reconciler) handleKubeLBCleanup(ctx context.Context, cluster *kubermati
 
 func (r *reconciler) ensureKubeLBSeedClusterResourcesAreRemoved(ctx context.Context, namespace string) error {
 	for _, resource := range kubelbseedresources.ResourcesForDeletion(namespace) {
-		err := r.Client.Delete(ctx, resource)
+		err := r.Delete(ctx, resource)
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to ensure kubeLB resources are removed/not present on seed cluster: %w", err)
 		}
@@ -76,7 +76,7 @@ func (r *reconciler) ensureKubeLBManagementClusterResourcesAreRemoved(ctx contex
 	}
 
 	// Get kubeLB management cluster client.
-	kubeLBManagementClient, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
+	kubeLBManagementClient, _, err := r.getKubeLBManagementClusterClient(ctx, seed, datacenter)
 	if err != nil {
 		return err
 	}

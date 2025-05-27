@@ -19,8 +19,8 @@ package kubevirt
 import (
 	"context"
 
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	apiv2 "k8c.io/kubermatic/sdk/v2/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -39,7 +39,7 @@ func ListStorageClasses(ctx context.Context, client ctrlruntimeclient.Client, an
 	res := apiv2.StorageClassList{}
 	for _, sc := range storageClassList.Items {
 		if annotationFilter == nil || annotationFilter(sc.Annotations) {
-			res = append(res, apiv2.StorageClass{Name: sc.ObjectMeta.Name})
+			res = append(res, apiv2.StorageClass{Name: sc.Name})
 		}
 	}
 	return res, nil
@@ -53,6 +53,7 @@ func updateInfraStorageClassesInfo(ctx context.Context, client ctrlruntimeclient
 	// this function will fail to list storage classes which means it will fail to create the cluster.
 	if dc.NamespacedMode != nil && dc.NamespacedMode.Enabled {
 		// considering the storage classes in the dc object as the only canonical truth and skip filtering storage classes.
+		spec.StorageClasses = dc.InfraStorageClasses
 		return nil
 	}
 

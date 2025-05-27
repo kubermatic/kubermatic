@@ -28,22 +28,15 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
-	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
-	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
-	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
-	ossubnetpools "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
-	osnetworks "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 	"github.com/gophercloud/gophercloud/pagination"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	providerconfig "k8c.io/machine-controller/pkg/providerconfig/types"
-
-	"k8s.io/apimachinery/pkg/util/sets"
+	"k8c.io/machine-controller/sdk/providerconfig"
 )
 
 const (
@@ -134,7 +127,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 	}
 
 	if spec.Openstack.SecurityGroups != "" {
-		if err := validateSecurityGroupsExist(netClient, splitString(spec.Openstack.SecurityGroups)); err != nil {
+		if err := validateSecurityGroupExists(netClient, spec.Openstack.SecurityGroups); err != nil {
 			return err
 		}
 	}
@@ -240,7 +233,7 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 
 	// Reconcile the security group(s)
 	if force || cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		cluster, err = reconcileSecurityGroups(ctx, netClient, cluster, update)
+		cluster, err = os.reconcileSecurityGroups(ctx, netClient, cluster, update)
 		if err != nil {
 			return nil, err
 		}
@@ -344,27 +337,18 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 	return cluster, err
 }
 
-func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// first ensure we have our cleanup finalizer
-	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-		kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
-	}
-
-	securityGroups := splitString(cluster.Spec.Cloud.Openstack.SecurityGroups)
+func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	securityGroup := cluster.Spec.Cloud.Openstack.SecurityGroups
 
 	// automatically create and fill-in the default security group if none was specified
-	var updateRequired bool
-	if len(securityGroups) == 0 {
-		securityGroups = []string{resourceNamePrefix + cluster.Name}
-		updateRequired = true
+	if securityGroup == "" {
+		securityGroup = resourceNamePrefix + cluster.Name
 	}
 
 	ipv4Network := cluster.IsIPv4Only() || cluster.IsDualStack()
 	ipv6Network := cluster.IsIPv6Only() || cluster.IsDualStack()
-	ipRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange)
+
+	ipRanges := resources.GetNodePortsAllowedIPRanges(cluster, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRanges, cluster.Spec.Cloud.Openstack.NodePortsAllowedIPRange, os.dc.NodePortsAllowedIPRanges)
 
 	lowPort, highPort := resources.NewTemplateDataBuilder().
 		WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
@@ -373,38 +357,43 @@ func reconcileSecurityGroups(ctx context.Context, netClient *gophercloud.Service
 		NodePorts()
 
 	// for each security group, ensure that it exists
-	for _, sgName := range securityGroups {
-		err := validateSecurityGroupExists(netClient, sgName)
-		if err == nil {
-			continue // group exists
-		}
-		if !isNotFoundErr(err) {
+	err := validateSecurityGroupExists(netClient, securityGroup)
+
+	if err != nil {
+		if isNotFoundErr(err) {
+			// group does not yet exist, so we create it
+			req := securityGroupSpec{
+				name:           securityGroup,
+				ipv4Rules:      ipv4Network,
+				ipv6Rules:      ipv6Network,
+				lowPort:        lowPort,
+				highPort:       highPort,
+				nodePortsCIDRs: ipRanges,
+			}
+
+			_, err = ensureSecurityGroup(netClient, req)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create security group: %w", err)
+			}
+
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
+			})
+
+			if err != nil {
+				return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
+			}
+		} else {
 			return cluster, fmt.Errorf("failed to check security group: %w", err)
-		}
-
-		// group does not yet exist, so we create it
-		req := securityGroupSpec{
-			name:           sgName,
-			ipv4Rules:      ipv4Network,
-			ipv6Rules:      ipv6Network,
-			lowPort:        lowPort,
-			highPort:       highPort,
-			nodePortsCIDRs: ipRanges,
-		}
-
-		_, err = ensureSecurityGroup(netClient, req)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create security group: %w", err)
 		}
 	}
 
-	if updateRequired {
-		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Spec.Cloud.Openstack.SecurityGroups = joinStrings(securityGroups)
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to update security groups in cluster: %w", err)
-		}
+	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to update security group in cluster: %w", err)
 	}
 
 	return cluster, nil
@@ -523,7 +512,7 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		}
 		if router != nil {
 			// Router found, attach subnets if not already attached
-			err = attachSubnetsIfNeeded(netClient, cluster)
+			err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 			return cluster, err
 		}
 	}
@@ -542,7 +531,7 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to update RouterID in the cluster spec: %w", err)
 		}
-		err = attachSubnetsIfNeeded(netClient, cluster)
+		err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 		return cluster, err
 	}
 	var routerID string
@@ -562,6 +551,18 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 		}
 	}
 	if routerID != "" {
+		if isManagedRouter(netClient, routerID) {
+			err := ownTheRouter(netClient, routerID, cluster.Name)
+			if err != nil {
+				return nil, fmt.Errorf("failed to add cluster %s as owner to router %s: %w", cluster.Name, routerID, err)
+			}
+			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+				kubernetes.AddFinalizer(cluster, RouterCleanupFinalizer)
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to add finalizer %s to the cluster %s: %w", RouterCleanupFinalizer, cluster.Name, err)
+			}
+		}
 		// Update the cluster spec with the new router ID
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.RouterID = routerID
@@ -587,15 +588,15 @@ func reconcileRouter(ctx context.Context, netClient *gophercloud.ServiceClient, 
 	}
 
 	// Attach the new router to subnets
-	err = attachSubnetsIfNeeded(netClient, cluster)
+	err = attachSubnetsIfNeeded(ctx, netClient, cluster, update)
 
 	return cluster, err
 }
 
-func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster) error {
+func attachSubnetsIfNeeded(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) error {
 	// Check if the router is already attached to the IPv4 subnet and attach to missing subnet if necessary
 	if cluster.Spec.Cloud.Openstack.SubnetID != "" {
-		err := linkSubnetToRouter(netClient, cluster, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterSubnetLinkCleanupFinalizer)
+		err := linkSubnetToRouter(ctx, netClient, cluster, cluster.Spec.Cloud.Openstack.SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterSubnetLinkCleanupFinalizer, update)
 		if err != nil {
 			return err
 		}
@@ -603,7 +604,7 @@ func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kuberm
 
 	// Check if the router is already attached to the IPv6 subnetand attach to missing subnet if necessary
 	if cluster.Spec.Cloud.Openstack.IPv6SubnetID != "" {
-		err := linkSubnetToRouter(netClient, cluster, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterIPv6SubnetLinkCleanupFinalizer)
+		err := linkSubnetToRouter(ctx, netClient, cluster, cluster.Spec.Cloud.Openstack.IPv6SubnetID, cluster.Spec.Cloud.Openstack.RouterID, RouterIPv6SubnetLinkCleanupFinalizer, update)
 		if err != nil {
 			return err
 		}
@@ -612,7 +613,7 @@ func attachSubnetsIfNeeded(netClient *gophercloud.ServiceClient, cluster *kuberm
 	return nil
 }
 
-func linkSubnetToRouter(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, subnetID string, routerID string, finalizer string) error {
+func linkSubnetToRouter(ctx context.Context, netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster, subnetID string, routerID string, finalizer string, update provider.ClusterUpdater) error {
 	var ipAttached bool
 	router, err := getRouterIDForSubnet(netClient, subnetID)
 	ipAttached = err == nil && router != ""
@@ -621,8 +622,15 @@ func linkSubnetToRouter(netClient *gophercloud.ServiceClient, cluster *kubermati
 		if err != nil {
 			return err
 		}
-		kubernetes.AddFinalizer(cluster, finalizer)
+		// Add the Link finalizer
+		_, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+			kubernetes.AddFinalizer(cluster, finalizer)
+		})
+		if err != nil {
+			return fmt.Errorf("failed to add %s in the cluster spec: %w", finalizer, err)
+		}
 	}
+
 	return nil
 }
 
@@ -635,11 +643,10 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 	}
 
 	if kubernetes.HasFinalizer(cluster, SecurityGroupCleanupFinalizer) {
-		for _, g := range splitString(cluster.Spec.Cloud.Openstack.SecurityGroups) {
-			if err := deleteSecurityGroup(netClient, g); err != nil {
-				if !isNotFoundErr(err) {
-					return nil, fmt.Errorf("failed to delete security group %q: %w", g, err)
-				}
+		sg := cluster.Spec.Cloud.Openstack.SecurityGroups
+		if err := deleteSecurityGroup(netClient, sg); err != nil {
+			if !isNotFoundErr(err) {
+				return nil, fmt.Errorf("failed to delete security group %q: %w", sg, err)
 			}
 		}
 	}
@@ -684,11 +691,10 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 		}
 	}
 
+	// Handle the router deletion.
 	if kubernetes.HasFinalizer(cluster, RouterCleanupFinalizer) || kubernetes.HasFinalizer(cluster, OldNetworkCleanupFinalizer) {
-		if err = deleteRouter(netClient, cluster.Spec.Cloud.Openstack.RouterID); err != nil {
-			if !isNotFoundErr(err) {
-				return nil, fmt.Errorf("failed to delete router '%s': %w", cluster.Spec.Cloud.Openstack.RouterID, err)
-			}
+		if err = handleRouterDeletion(netClient, cluster); err != nil {
+			return nil, err
 		}
 	}
 
@@ -714,95 +720,26 @@ func (os *Provider) CleanUpCloudProvider(ctx context.Context, cluster *kubermati
 	return cluster, nil
 }
 
-// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
-func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
-	authClient, err := getAuthClient(authURL, credentials, caBundle)
+// Handle the router deletion.
+func handleRouterDeletion(netClient *gophercloud.ServiceClient, cluster *kubermaticv1.Cluster) error {
+	var err error
+	routerID := cluster.Spec.Cloud.Openstack.RouterID
+	err = removerRouterOwnership(netClient, routerID, cluster.Name)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to remove cluster %s ownership from router %s: %w", cluster.Name, routerID, err)
 	}
-	flavors, err := getFlavors(authClient, region)
+	owners, err := getRouterOwners(netClient, routerID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to get router owners (routerId: %s) : %w", routerID, err)
 	}
-
-	return flavors, nil
-}
-
-// GetTenants lists all available tenents for the given CloudSpec.DatacenterName.
-func GetTenants(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osprojects.Project, error) {
-	authClient, err := getAuthClient(authURL, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
+	if len(owners) == 0 {
+		if err = deleteRouter(netClient, routerID); err != nil {
+			if !isNotFoundErr(err) {
+				return fmt.Errorf("failed to delete router '%s': %w", routerID, err)
+			}
+		}
 	}
-
-	tenants, err := getTenants(authClient, region)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get tenants for region %s: %w", region, err)
-	}
-
-	return tenants, nil
-}
-
-// GetNetworks lists all available networks for the given CloudSpec.DatacenterName.
-func GetNetworks(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
-	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	networks, err := getAllNetworks(authClient, osnetworks.ListOpts{})
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get networks: %w", err)
-	}
-
-	return networks, nil
-}
-
-// GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName.
-func GetSecurityGroups(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
-	netClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	page, err := ossecuritygroups.List(netClient, ossecuritygroups.ListOpts{}).AllPages()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list security groups: %w", err)
-	}
-	secGroups, err := ossecuritygroups.ExtractGroups(page)
-	if err != nil {
-		return nil, fmt.Errorf("failed to extract security groups: %w", err)
-	}
-	return secGroups, nil
-}
-
-// GetAvailabilityZones lists availability zones for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
-func GetAvailabilityZones(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osavailabilityzones.AvailabilityZone, error) {
-	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, err
-	}
-	availabilityZones, err := getAvailabilityZones(computeClient)
-	if err != nil {
-		return nil, err
-	}
-
-	return availabilityZones, nil
-}
-
-// GetSubnetPools lists all available subnet pools.
-func GetSubnetPools(ctx context.Context, authURL, region string, credentials *resources.OpenstackCredentials, ipVersion int, caBundle *x509.CertPool) ([]ossubnetpools.SubnetPool, error) {
-	authClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	subnetPools, err := getAllSubnetPools(authClient, ossubnetpools.ListOpts{IPVersion: ipVersion})
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get subnet pools: %w", err)
-	}
-
-	return subnetPools, nil
+	return nil
 }
 
 func getAuthClient(authURL string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ProviderClient, error) {
@@ -860,42 +797,6 @@ func getNetClient(ctx context.Context, authURL, region string, credentials *reso
 	return serviceClient, err
 }
 
-func getComputeClient(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
-	authClient, err := getAuthClient(authURL, credentials, caBundle)
-	if err != nil {
-		return nil, err
-	}
-
-	serviceClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Region: region})
-	if err != nil {
-		// this is special case for services that span only one region.
-		if isEndpointNotFoundErr(err) {
-			serviceClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	}
-	return serviceClient, err
-}
-
-// GetSubnets list all available subnet ids for a given CloudSpec.
-func GetSubnets(ctx context.Context, authURL, region, networkID string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
-	serviceClient, err := getNetClient(ctx, authURL, region, credentials, caBundle)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't get auth client: %w", err)
-	}
-
-	subnets, err := getSubnetForNetwork(serviceClient, networkID)
-	if err != nil {
-		return nil, err
-	}
-
-	return subnets, nil
-}
-
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted.
 func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	if oldSpec.Openstack == nil || newSpec.Openstack == nil {
@@ -914,12 +815,12 @@ func (os *Provider) ValidateCloudSpecUpdate(_ context.Context, oldSpec kubermati
 		return fmt.Errorf("updating OpenStack subnet ID is not supported (was %s, updated to %s)", oldSpec.Openstack.SubnetID, newSpec.Openstack.SubnetID)
 	}
 
-	if oldSpec.Openstack.RouterID != "" && oldSpec.Openstack.RouterID != newSpec.Openstack.RouterID {
-		return fmt.Errorf("updating OpenStack router ID is not supported (was %s, updated to %s)", oldSpec.Openstack.RouterID, newSpec.Openstack.RouterID)
-	}
-
 	if oldSpec.Openstack.SecurityGroups != "" && oldSpec.Openstack.SecurityGroups != newSpec.Openstack.SecurityGroups {
-		return fmt.Errorf("updating OpenStack security groups is not supported (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
+		if isMultipleSGs(oldSpec.Openstack.SecurityGroups) && !isMultipleSGs(newSpec.Openstack.SecurityGroups) {
+			return nil
+		}
+
+		return fmt.Errorf("updating OpenStack security group is not supported; only migration from multiple (comma-separated) security groups to a single security group is allowed (was %s, updated to %s)", oldSpec.Openstack.SecurityGroups, newSpec.Openstack.SecurityGroups)
 	}
 
 	return nil
@@ -1059,25 +960,18 @@ func firstKey(secretKeySelector provider.SecretKeySelectorValueFunc, configVar *
 	return value, nil
 }
 
-func ignoreRouterAlreadyHasPortInSubnetError(err error, subnetID string) error {
-	matchString := fmt.Sprintf("Router already has a port on subnet %s", subnetID)
-
-	var gopherCloud400Err gophercloud.ErrDefault400
-	if !errors.As(err, &gopherCloud400Err) || !strings.Contains(string(gopherCloud400Err.Body), matchString) {
-		return err
-	}
-
-	return nil
-}
-
-func ValidateCredentials(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) error {
-	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
+// GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region.
+func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = getAvailabilityZones(computeClient)
+	flavors, err := getFlavors(authClient, region)
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	return flavors, nil
 }
 
 func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region string, caBundle *x509.CertPool, flavorName string) (*provider.NodeCapacity, error) {
@@ -1104,21 +998,4 @@ func DescribeFlavor(credentials *resources.OpenstackCredentials, authURL, region
 	}
 
 	return nil, fmt.Errorf("cannot find flavor %q", flavorName)
-}
-
-func splitString(s string) []string {
-	items := sets.New[string]()
-
-	for _, part := range strings.Split(s, ",") {
-		part = strings.TrimSpace(part)
-		if part != "" {
-			items.Insert(part)
-		}
-	}
-
-	return sets.List(items)
-}
-
-func joinStrings(values []string) string {
-	return strings.Join(values, ",")
 }

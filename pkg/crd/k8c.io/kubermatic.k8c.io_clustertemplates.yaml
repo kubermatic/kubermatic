@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.5
     kubermatic.k8c.io/location: master,seed
   name: clustertemplates.kubermatic.k8c.io
 spec:
@@ -116,7 +116,7 @@ spec:
                         config:
                           description: |-
                             AuditSidecarConfiguration defines custom configuration for the fluent-bit sidecar deployed with a kube-apiserver.
-                            Also see https://docs.fluentbit.io/manual/v/1.8/administration/configuring-fluent-bit/configuration-file.
+                            Also see https://docs.fluentbit.io/manual/administration/configuring-fluent-bit/classic-mode/configuration-file.
                           properties:
                             filters:
                               items:
@@ -135,6 +135,120 @@ spec:
                                 type: string
                               type: object
                           type: object
+                        extraEnvs:
+                          description: |-
+                            ExtraEnvs are the additional environment variables that can be set for the audit logging sidecar.
+                            Additional environment variables can be set and passed to the AuditSidecarConfiguration field
+                            to allow passing variables to the fluent-bit configuration.
+                            Only, `Value` field is supported for the environment variables; `ValueFrom` field is not supported.
+                            By default, `CLUSTER_ID` is set as an environment variable in the audit-logging sidecar.
+                          items:
+                            description: EnvVar represents an environment variable present in a Container.
+                            properties:
+                              name:
+                                description: Name of the environment variable. Must be a C_IDENTIFIER.
+                                type: string
+                              value:
+                                description: |-
+                                  Variable references $(VAR_NAME) are expanded
+                                  using the previously defined environment variables in the container and
+                                  any service environment variables. If a variable cannot be resolved,
+                                  the reference in the input string will be unchanged. Double $$ are reduced
+                                  to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+                                  "$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+                                  Escaped references will never be expanded, regardless of whether the variable
+                                  exists or not.
+                                  Defaults to "".
+                                type: string
+                              valueFrom:
+                                description: Source for the environment variable's value. Cannot be used if value is not empty.
+                                properties:
+                                  configMapKeyRef:
+                                    description: Selects a key of a ConfigMap.
+                                    properties:
+                                      key:
+                                        description: The key to select.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the ConfigMap or its key must be defined
+                                        type: boolean
+                                    required:
+                                      - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  fieldRef:
+                                    description: |-
+                                      Selects a field of the pod: supports metadata.name, metadata.namespace, `metadata.labels['<KEY>']`, `metadata.annotations['<KEY>']`,
+                                      spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.
+                                    properties:
+                                      apiVersion:
+                                        description: Version of the schema the FieldPath is written in terms of, defaults to "v1".
+                                        type: string
+                                      fieldPath:
+                                        description: Path of the field to select in the specified API version.
+                                        type: string
+                                    required:
+                                      - fieldPath
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  resourceFieldRef:
+                                    description: |-
+                                      Selects a resource of the container: only resources limits and requests
+                                      (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
+                                    properties:
+                                      containerName:
+                                        description: 'Container name: required for volumes, optional for env vars'
+                                        type: string
+                                      divisor:
+                                        anyOf:
+                                          - type: integer
+                                          - type: string
+                                        description: Specifies the output format of the exposed resources, defaults to "1"
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      resource:
+                                        description: 'Required: resource to select'
+                                        type: string
+                                    required:
+                                      - resource
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    description: Selects a key of a secret in the pod's namespace
+                                    properties:
+                                      key:
+                                        description: The key of the secret to select from.  Must be a valid secret key.
+                                        type: string
+                                      name:
+                                        default: ""
+                                        description: |-
+                                          Name of the referent.
+                                          This field is effectively required, but due to backwards compatibility is
+                                          allowed to be empty. Instances of this type with an empty value here are
+                                          almost certainly wrong.
+                                          More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                        type: string
+                                      optional:
+                                        description: Specify whether the Secret or its key must be defined
+                                        type: boolean
+                                    required:
+                                      - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                            required:
+                              - name
+                            type: object
+                          type: array
                         resources:
                           description: ResourceRequirements describes the compute resource requirements.
                           properties:
@@ -928,6 +1042,13 @@ spec:
                               type: string
                           type: object
                           x-kubernetes-map-type: atomic
+                        csiDriverOperator:
+                          description: CSIDriverOperator configures the kubevirt csi driver operator.
+                          properties:
+                            overwriteRegistry:
+                              description: OverwriteRegistry overwrite the images registry that the operator pulls.
+                              type: string
+                          type: object
                         csiKubeconfig:
                           type: string
                         imageCloningEnabled:
@@ -1002,6 +1123,15 @@ spec:
                                 description: |-
                                   VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
                                   VolumeBindingImmediate is used.
+                                type: string
+                              volumeProvisioner:
+                                description: |-
+                                  VolumeProvisioner The **Provider** field specifies whether a storage class will be utilized by the Containerized
+                                  Data Importer (CDI) to create VM disk images and/or by the KubeVirt CSI Driver to provision volumes in the
+                                  infrastructure cluster. If no storage class in the seed object has this value set, the storage class will be used
+                                  for both purposes: CDI will create VM disk images, and the CSI driver will provision and attach volumes in the user
+                                  cluster. However, if the value is set to `kubevirt-csi-driver`, the storage class cannot be used by CDI for VM disk
+                                  image creation.
                                 type: string
                               zones:
                                 description: |-
@@ -1251,8 +1381,8 @@ spec:
                           type: string
                         securityGroups:
                           description: |-
-                            SecurityGroups is a comma-separated list of group names that shall be used for Machines in the cluster.
-                            If this field is left empty, a single default security group will be created and this field will be filled-in.
+                            SecurityGroups is the name of the security group (only supports a singular security group) that will be used for Machines in the cluster.
+                            If this field is left empty, a default security group will be created and used.
                           type: string
                         subnetID:
                           type: string
@@ -1281,7 +1411,10 @@ spec:
                         - subnetID
                       type: object
                     packet:
-                      description: Packet defines the configuration data of a Packet / Equinix Metal cloud.
+                      description: |-
+                        Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+                        This provider is no longer supported. Migrate your configurations away from "packet" immediately.
+                        Packet defines the configuration data of a Packet / Equinix Metal cloud.
                       properties:
                         apiKey:
                           type: string
@@ -2066,6 +2199,13 @@ spec:
                             type: string
                           description: NodeSelector is a selector which restricts the set of nodes where etcd Pods can run.
                           type: object
+                        quotaBackendGb:
+                          description: |-
+                            QuotaBackendGB is the maximum backend size of etcd in GB (0 means use etcd default).
+
+                            For more details, please see https://etcd.io/docs/v3.5/op-guide/maintenance/
+                          format: int64
+                          type: integer
                         resources:
                           description: Resources allows to override the resource requirements for etcd Pods.
                           properties:
@@ -2184,6 +2324,11 @@ spec:
                     konnectivityProxy:
                       description: KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
                       properties:
+                        args:
+                          description: Args configures arguments (flags) for the Konnectivity deployments.
+                          items:
+                            type: string
+                          type: array
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
@@ -2343,6 +2488,23 @@ spec:
                                 should wait between tries of actions.
                               format: int32
                               type: integer
+                          type: object
+                        proxy:
+                          description: |-
+                            ProxySettings defines optional flags for OperatingSystemManager deployment to allow
+                            setting specific proxy configurations for specific user clusters.
+                          properties:
+                            httpProxy:
+                              description: 'Optional: If set, this proxy will be configured for both HTTP and HTTPS.'
+                              type: string
+                            noProxy:
+                              description: |-
+                                Optional: If set this will be set as NO_PROXY environment variable on the node;
+                                The value must be a comma-separated list of domains for which no proxy
+                                should be used, e.g. "*.example.com,internal.dev".
+                                Note that the in-cluster apiserver URL will be automatically prepended
+                                to this value.
+                              type: string
                           type: object
                         replicas:
                           format: int32
@@ -3008,11 +3170,16 @@ spec:
                     Only available in Enterprise Edition.
                   properties:
                     enableGatewayAPI:
-                      description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+                      description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
                       type: boolean
                     enabled:
                       description: Controls whether kubeLB is deployed or not.
                       type: boolean
+                    extraArgs:
+                      additionalProperties:
+                        type: string
+                      description: ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
+                      type: object
                     useLoadBalancerClass:
                       description: |-
                         UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
@@ -3029,6 +3196,17 @@ spec:
                         Controls whether kubernetes-dashboard is deployed to the user cluster or not.
                         Enabled by default.
                       type: boolean
+                  type: object
+                kyverno:
+                  description: |-
+                    Kyverno holds the configuration for the Kyverno policy management component.
+                    Only available in Enterprise Edition.
+                  properties:
+                    enabled:
+                      description: Controls whether Kyverno is deployed or not.
+                      type: boolean
+                  required:
+                    - enabled
                   type: object
                 machineNetworks:
                   description: 'Optional: MachineNetworks is the list of the networking parameters used for IPAM.'
