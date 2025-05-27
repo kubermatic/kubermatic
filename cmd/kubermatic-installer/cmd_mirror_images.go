@@ -346,8 +346,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					sysChart.Version,
 				)
 
-				fmt.Println(removeOCIPrefix(chartImage))
-				imageSet.Insert(removeOCIPrefix(chartImage))
+				// Check if the chartImage starts with "oci://"
+				if strings.HasPrefix(chartImage, "oci://") {
+					// remove oci:// prefix and insert the chartImage into imageSet.
+					imageSet.Insert(chartImage[len("oci://"):])
+				}
+
 				imageSet.Insert(sysChart.WorkloadImages...)
 			}
 
@@ -397,14 +401,4 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 			return nil
 		}
 	})
-}
-
-func removeOCIPrefix(input string) string {
-	// Check if the string starts with "oci://"
-	if strings.HasPrefix(input, "oci://") {
-		// Remove the "oci://" prefix by slicing the string
-		return input[len("oci://"):]
-	}
-	// Return the original string if it doesn't start with "oci://"
-	return input
 }
