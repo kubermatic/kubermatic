@@ -91,7 +91,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		// Watch for clusters
 		For(&kubermaticv1.Cluster{}).
 		// Watch changes for PolicyTemplates that have been enforced.
-		Watches(&kubermaticv1.PolicyTemplate{}, enqueueClusters(reconciler, log), builder.WithPredicates(withEventFilter())).
+		Watches(&kubermaticv1.PolicyTemplate{}, reconciler.enqueueClusters(), builder.WithPredicates(withEventFilter())).
 		Build(reconciler)
 
 	return err
@@ -160,7 +160,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 
 		// Check if the PolicyTemplate targets this cluster
-		if !isClusterTargeted(cluster, &policyTemplate) {
+		if !r.isClusterTargeted(ctx, cluster, &policyTemplate) {
 			continue
 		}
 
@@ -220,54 +220,136 @@ func policyBindingReconcilerFactory(template kubermaticv1.PolicyTemplate) reconc
 }
 
 // isClusterTargeted checks if the PolicyTemplate targets the given cluster.
-func isClusterTargeted(cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate) bool {
-	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+func (r *Reconciler) isClusterTargeted(ctx context.Context, cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate) bool {
+	clusterProjectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+
 	// If no target is specified, we check the visibility
 	if template.Spec.Target == nil {
-		// Global policies apply to all clusters
-		if template.Spec.Visibility == kubermaticv1.PolicyTemplateVisibilityGlobal {
-			return true
-		}
+		return handleVisibilityOnly(cluster, template, clusterProjectID)
+	}
 
-		// Project policies apply to clusters in the same project
-		if template.Spec.Visibility == kubermaticv1.PolicyTemplateVisibilityProject &&
-			template.Spec.ProjectID != "" &&
-			projectID == template.Spec.ProjectID {
-			return true
-		}
+	// Handle based on visibility and target combinations
+	switch template.Spec.Visibility {
+	case kubermaticv1.PolicyTemplateVisibilityGlobal:
+		return r.handleGlobalWithTarget(ctx, cluster, template, clusterProjectID)
 
+	case kubermaticv1.PolicyTemplateVisibilityProject:
+		return handleProjectWithTarget(cluster, template, clusterProjectID)
+
+	default:
+		return false
+	}
+}
+
+// handleVisibilityOnly handles when no target is specified - uses visibility rules only.
+func handleVisibilityOnly(cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate, clusterProjectID string) bool {
+	switch template.Spec.Visibility {
+	case kubermaticv1.PolicyTemplateVisibilityGlobal:
+		return true
+	case kubermaticv1.PolicyTemplateVisibilityProject:
+		return template.Spec.ProjectID != "" && clusterProjectID == template.Spec.ProjectID
+	default:
+		return false
+	}
+}
+
+// handleGlobalWithTarget handles Global visibility with Target specified, using the provided client.
+func (r *Reconciler) handleGlobalWithTarget(ctx context.Context, cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate, clusterProjectID string) bool {
+	target := template.Spec.Target
+	hasProjectSelector := target.ProjectSelector != nil
+	hasClusterSelector := target.ClusterSelector != nil
+
+	switch {
+	case hasProjectSelector && hasClusterSelector:
+		// Global + Target [ProjectSelector, ClusterSelector]
+		return r.handleGlobalProjectAndClusterSelectors(ctx, cluster, template, clusterProjectID)
+	case hasProjectSelector && !hasClusterSelector:
+		// Global + Target [ProjectSelector]
+		return r.handleGlobalProjectSelectorOnly(ctx, cluster, template, clusterProjectID)
+	case !hasProjectSelector && hasClusterSelector:
+		// Global + Target [ClusterSelector]
+		return handleGlobalClusterSelectorOnly(cluster, template)
+	default:
+		return false
+	}
+}
+
+// handleProjectWithTarget handles Project visibility with Target specified.
+func handleProjectWithTarget(cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate, clusterProjectID string) bool {
+	if template.Spec.ProjectID != "" && clusterProjectID != template.Spec.ProjectID {
 		return false
 	}
 
-	// Check project selector if specified
-	if template.Spec.Target.ProjectSelector != nil && projectID != "" {
-		selector, err := metav1.LabelSelectorAsSelector(template.Spec.Target.ProjectSelector)
-		if err != nil {
-			return false
-		}
-
-		projectLabels := map[string]string{kubermaticv1.ProjectIDLabelKey: projectID}
-		if !selector.Matches(labels.Set(projectLabels)) {
-			return false
-		}
+	if template.Spec.Target.ClusterSelector != nil {
+		return matchesClusterSelector(cluster, template.Spec.Target.ClusterSelector)
 	}
 
-	// Check cluster selector if specified
-	if template.Spec.Target.ClusterSelector != nil {
-		selector, err := metav1.LabelSelectorAsSelector(template.Spec.Target.ClusterSelector)
-		if err != nil {
-			return false
-		}
+	return false
+}
 
-		if !selector.Matches(labels.Set(cluster.Labels)) {
-			return false
-		}
+// handleGlobalProjectAndClusterSelectors handles Global + Project + Cluster selectors (AND filtering).
+func (r *Reconciler) handleGlobalProjectAndClusterSelectors(ctx context.Context, cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate, clusterProjectID string) bool {
+	if !matchesClusterSelector(cluster, template.Spec.Target.ClusterSelector) {
+		return false
+	}
+
+	if !r.matchesProjectSelector(ctx, clusterProjectID, template.Spec.Target.ProjectSelector) {
+		return false
 	}
 
 	return true
 }
 
-func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
+// handleGlobalProjectSelectorOnly handles Global + Project selector only.
+func (r *Reconciler) handleGlobalProjectSelectorOnly(ctx context.Context, cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate, clusterProjectID string) bool {
+	return r.matchesProjectSelector(ctx, clusterProjectID, template.Spec.Target.ProjectSelector)
+}
+
+// handleGlobalClusterSelectorOnly handles Global + Cluster selector only.
+func handleGlobalClusterSelectorOnly(cluster *kubermaticv1.Cluster, template *kubermaticv1.PolicyTemplate) bool {
+	return matchesClusterSelector(cluster, template.Spec.Target.ClusterSelector)
+}
+
+// matchesClusterSelector checks if a cluster matches the given cluster selector.
+func matchesClusterSelector(cluster *kubermaticv1.Cluster, clusterSelector *metav1.LabelSelector) bool {
+	if isLabelSelectorEmpty(clusterSelector) {
+		return true
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(clusterSelector)
+	if err != nil {
+		return false
+	}
+
+	return selector.Matches(labels.Set(cluster.Labels))
+}
+
+// matchesProjectSelector checks if a project (by ID) matches the given project selector.
+func (r *Reconciler) matchesProjectSelector(ctx context.Context, projectID string, projectSelector *metav1.LabelSelector) bool {
+	if isLabelSelectorEmpty(projectSelector) {
+		return true
+	}
+
+	projects := &kubermaticv1.ProjectList{}
+	if err := r.List(ctx, projects); err != nil {
+		return false
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(projectSelector)
+	if err != nil {
+		return false
+	}
+
+	for _, project := range projects.Items {
+		if project.Name == projectID && selector.Matches(labels.Set(project.Labels)) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *Reconciler) enqueueClusters() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 		policyTemplate := obj.(*kubermaticv1.PolicyTemplate)
@@ -279,14 +361,14 @@ func enqueueClusters(client ctrlruntimeclient.Client, log *zap.SugaredLogger) ha
 
 		// List all clusters
 		clusters := &kubermaticv1.ClusterList{}
-		if err := client.List(ctx, clusters); err != nil {
-			log.Error(err)
+		if err := r.List(ctx, clusters); err != nil {
+			r.log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list clusters: %w", err))
 			return requests
 		}
 
 		for _, cluster := range clusters.Items {
-			if isClusterTargeted(&cluster, policyTemplate) {
+			if r.isClusterTargeted(ctx, &cluster, policyTemplate) {
 				requests = append(requests, reconcile.Request{
 					NamespacedName: types.NamespacedName{
 						Name: cluster.Name,
@@ -337,4 +419,12 @@ func withEventFilter() predicate.Predicate {
 			return obj.Spec.Enforced
 		},
 	}
+}
+
+// isLabelSelectorEmpty checks if a LabelSelector is semantically empty.
+func isLabelSelectorEmpty(selector *metav1.LabelSelector) bool {
+	if selector == nil {
+		return true
+	}
+	return len(selector.MatchLabels) == 0 && len(selector.MatchExpressions) == 0
 }
