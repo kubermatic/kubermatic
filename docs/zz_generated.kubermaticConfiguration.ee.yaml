@@ -281,6 +281,14 @@ spec:
     applications: null
     # Disable is used to disable the installation of system application definitions in the master cluster.
     disable: false
+    # ReconciliationInterval is the interval at which to force the reconciliation of the system applications.
+    # By default, System Applications are only reconciled on changes on spec, annotations, or the parent
+    # application definition, and every 1 hour.
+
+    # Setting a value greater than zero force reconciliation even if no changes occurred on application CR.
+    # Setting a value equal to 0 disables the force reconciliation of the application.
+    # Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method.
+    reconciliationInterval: null
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.

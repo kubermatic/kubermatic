@@ -36,6 +36,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -53,8 +54,9 @@ import (
 )
 
 const (
-	ControllerName      = "kkp-default-application-controller"
-	appDefinitionRefKey = ".spec.applicationRef.name"
+	ControllerName                = "kkp-default-application-controller"
+	appDefinitionRefKey           = ".spec.applicationRef.name"
+	defaultReconciliationInterval = 1 * time.Hour
 )
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
@@ -212,11 +214,22 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
+	reconciliationInterval := metav1.Duration{Duration: defaultReconciliationInterval}
+
+	config, err := r.configGetter(ctx)
+	if err == nil {
+		if config != nil {
+			if interval := config.Spec.SystemApplications.ReconciliationInterval; interval != nil {
+				reconciliationInterval = *interval
+			}
+		}
+	}
+
 	// We don't want to fail the reconciliation if one application fails so we collect all the errors and return them as a single error.
 	var errors []error
 	for _, application := range applications {
 		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
-		err := r.ensureApplicationInstallation(ctx, userClusterClient, application)
+		err := r.ensureApplicationInstallation(ctx, userClusterClient, application, reconciliationInterval)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -240,7 +253,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition) error {
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, interval metav1.Duration) error {
 	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
 	// for this we need to list all existing applications installations
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
@@ -287,13 +300,17 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		ApplicationInstallationReconciler(r.log, application),
+		ApplicationInstallationReconciler(r.log, application, interval),
 	}
 
 	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, namespaceName, userClusterClient)
 }
 
-func ApplicationInstallationReconciler(logger *zap.SugaredLogger, application appskubermaticv1.ApplicationDefinition) reconciling.NamedApplicationInstallationReconcilerFactory {
+func ApplicationInstallationReconciler(
+	logger *zap.SugaredLogger,
+	application appskubermaticv1.ApplicationDefinition,
+	reconciliationInterval metav1.Duration,
+) reconciling.NamedApplicationInstallationReconcilerFactory {
 	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		applicationName := application.Name
 
@@ -361,6 +378,13 @@ func ApplicationInstallationReconciler(logger *zap.SugaredLogger, application ap
 			// Both DefaultValues and DefaultValuesBlock can not be set at the same time, our webhooks should prevent this.
 			if len(app.Spec.ValuesBlock) == 0 && application.Spec.DefaultValues != nil {
 				app.Spec.Values = *application.Spec.DefaultValues
+			}
+
+			// add reconciliation interval to the system apps except Cilium, as it is managed by its own controller.
+			if app.Labels[appskubermaticv1.ApplicationManagedByLabel] == appskubermaticv1.ApplicationManagedByKKPValue {
+				if app.Labels[appskubermaticv1.ApplicationTypeLabel] != appskubermaticv1.ApplicationTypeCNIValue {
+					app.Spec.ReconciliationInterval = reconciliationInterval
+				}
 			}
 
 			return app, nil
