@@ -127,6 +127,8 @@ func systemApplicationDefinitionReconcilerFactory(
 				fileAppDef.Spec.DefaultValuesBlock = clusterAppDef.Spec.DefaultValuesBlock
 			}
 
+			clusterAppDef.Name = fileAppDef.Name
+			clusterAppDef.Namespace = fileAppDef.Namespace
 			clusterAppDef.Spec = fileAppDef.Spec
 			return clusterAppDef, nil
 		}
