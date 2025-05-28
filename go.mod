@@ -56,6 +56,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.21.0
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.13
+	github.com/kyverno/kyverno v1.13.4
 	github.com/minio/minio-go/v7 v7.0.69
 	github.com/nutanix-cloud-native/prism-go-client v0.5.1
 	github.com/olekukonko/tablewriter v0.0.5
@@ -121,8 +122,6 @@ require (
 	sigs.k8s.io/controller-tools v0.16.5
 	sigs.k8s.io/yaml v1.4.0
 )
-
-require github.com/kyverno/kyverno v1.13.4
 
 require (
 	cel.dev/expr v0.19.1 // indirect
@@ -254,7 +253,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
