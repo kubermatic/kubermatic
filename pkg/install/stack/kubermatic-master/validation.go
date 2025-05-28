@@ -324,18 +324,51 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 	}
 
 	useNewDexChart, _ := helmValues.GetBool(yamled.Path{"useNewDexChart"})
-	if !config.Spec.FeatureGates[features.HeadlessInstallation] && !useNewDexChart {
-		path := yamled.Path{"dex", "ingress", "host"}
-		if domain, _ := helmValues.GetString(path); domain == "" {
-			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
-			helmValues.Set(path, config.Spec.Ingress.Domain)
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		domainPath := yamled.Path{"dex", "ingress", "host"}
+		connectorsPath := yamled.Path{"dex", "connectors"}
+		staticPasswordsPath := yamled.Path{"dex", "staticPasswords"}
+		clientPath := yamled.Path{"dex", "clients"}
+
+		if useNewDexChart {
+			domainPath = yamled.Path{"dex", "ingress", "hosts", 0, "host"}
+			clientPath = yamled.Path{"dex", "config", "staticClients"}
+			connectorsPath = yamled.Path{"dex", "config", "connectors"}
+			staticPasswordsPath = yamled.Path{"dex", "config", "staticPasswords"}
+		}
+
+		if domain, ok := helmValues.GetString(domainPath); domain == "" {
+			// Validate that the path dex.ingress.hosts[0].host exists in the values.yaml.
+			//
+			// We're not enforcing that the value of "host" be non-empty —
+			// it's valid for it to be an empty string. However, the key itself must be present.
+			//
+			// The GetString(domainPath) call returns two values:
+			// - domain: the string value at the specified path (empty string if not present or empty)
+			// - ok: boolean indicating whether the value at the path could be successfully parsed as a string
+			//
+			// If `ok` is false, it means the path does not exist or does not resolve to a string,
+			// which usually indicates a missing structure like:
+			//   dex:
+			//     ingress:
+			//       hosts:
+			//         - host: ""
+			//
+			// In newer versions of the Dex chart (useNewDexChart == true), this field must be defined,
+			// so we raise a validation error if it's missing entirely.
+			if !ok && useNewDexChart {
+				failures = append(failures, fmt.Errorf("Validation error: dex.ingress.hosts[0].host must be defined (even if an empty string)"))
+				return failures
+			}
+			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", domainPath.String())
+			helmValues.Set(domainPath, config.Spec.Ingress.Domain)
 		}
 
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
 		clients := []dexClient{}
 
-		if err := helmValues.DecodeAtPath(yamled.Path{"dex", "clients"}, &clients); err != nil {
+		if err := helmValues.DecodeAtPath(clientPath, &clients); err != nil {
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
 		} else {
@@ -354,12 +387,19 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			}
 		}
 
-		connectors, _ := helmValues.GetArray(yamled.Path{"dex", "connectors"})
-		staticPasswords, _ := helmValues.GetArray(yamled.Path{"dex", "staticPasswords"})
+		connectors, _ := helmValues.GetArray(connectorsPath)
+		staticPasswords, _ := helmValues.GetArray(staticPasswordsPath)
 
 		if len(connectors) == 0 && len(staticPasswords) == 0 {
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no connectors or static passwords configured for Dex.")
+		}
+
+		if len(staticPasswords) > 0 && useNewDexChart {
+			if passwordDBEnabled, _ := helmValues.GetBool(yamled.Path{"dex", "config", "enablePasswordDB"}); !passwordDBEnabled {
+				hasDexIssues = true
+				logger.Warnf("Static passwords are defined but 'dex.config.enablePasswordDB' is not set to true. Password authentication will NOT work until you set it to true.")
+			}
 		}
 
 		if hasDexIssues {
