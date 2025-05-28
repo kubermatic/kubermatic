@@ -290,8 +290,14 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
+	featureGates := data.Cluster().Spec.GetK8SFeatureGateStrings()
+
 	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
-		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
+		featureGates = append(featureGates, csiMigrationFeatureGates...)
+	}
+
+	if len(featureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(featureGates, ","))
 	}
 
 	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {
