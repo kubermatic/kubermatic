@@ -31,8 +31,8 @@ spec:
           helm:
             chartName: cluster-autoscaler
             chartVersion: 9.46.6
-            url: https://kubernetes.github.io/autoscaler
-      version: 1.32.0
+            url: oci://quay.io/kubermatic/helm-charts
+      version: 9.46.6
   defaultValuesBlock: |
     cloudProvider: clusterapi
     clusterAPIMode: incluster-incluster

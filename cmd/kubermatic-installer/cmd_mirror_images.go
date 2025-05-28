@@ -340,18 +340,18 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					return err
 				}
 
-				chartRepository := sysChart.Template.Source.Helm.URL
-				if copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository != "" {
-					chartRepository = copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository
-				}
-
 				chartImage := fmt.Sprintf("%s/%s:%s",
-					chartRepository,
+					sysChart.Template.Source.Helm.URL,
 					sysChart.Template.Source.Helm.ChartName,
 					sysChart.Version,
 				)
 
-				imageSet.Insert(chartImage)
+				// Check if the chartImage starts with "oci://"
+				if strings.HasPrefix(chartImage, "oci://") {
+					// remove oci:// prefix and insert the chartImage into imageSet.
+					imageSet.Insert(chartImage[len("oci://"):])
+				}
+
 				imageSet.Insert(sysChart.WorkloadImages...)
 			}
 

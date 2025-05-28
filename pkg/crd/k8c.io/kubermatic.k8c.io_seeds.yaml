@@ -1344,6 +1344,9 @@ spec:
                                           items:
                                             description: Subnet a smaller, segmented portion of a larger network, like a Virtual Private Cloud (VPC).
                                             properties:
+                                              cidr:
+                                                description: CIDR is the subnet IPV4 CIDR.
+                                                type: string
                                               name:
                                                 type: string
                                               regions:

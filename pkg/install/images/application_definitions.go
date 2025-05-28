@@ -79,7 +79,7 @@ func SystemAppsHelmCharts(
 	}
 
 	log := kubermaticlog.NewDefault().Sugar()
-	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(log, config)
+	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(log, config, true)
 	if err != nil {
 		return func(yield func(*SystemAppsHelmChart, error) bool) {
 			yield(nil, fmt.Errorf("failed to get system application definition reconciler factories: %w", err))
