@@ -70,6 +70,7 @@ type Features struct {
 	EtcdDataCorruptionChecks     bool
 	KubernetesOIDCAuthentication bool
 	EtcdLauncher                 bool
+	DisableUserSSHKey            bool
 }
 
 // Reconciler is a controller which is responsible for managing clusters.
@@ -322,12 +323,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return nil, fmt.Errorf("failed to sync health: %w", err)
 	}
 
-	conf, err := r.configGetter(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
-	}
-
-	res, err := r.reconcileCluster(ctx, cluster, namespace, conf)
+	res, err := r.reconcileCluster(ctx, cluster, namespace)
 	if err != nil {
 		updateErr := r.updateClusterError(ctx, cluster, kubermaticv1.ReconcileClusterError, err.Error())
 		if updateErr != nil {

@@ -23,7 +23,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
-	"k8c.io/kubermatic/v2/pkg/features"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,7 +37,6 @@ func (r *Reconciler) reconcileCluster(
 	ctx context.Context,
 	cluster *kubermaticv1.Cluster,
 	namespace *corev1.Namespace,
-	conf *kubermaticv1.KubermaticConfiguration,
 ) (*reconcile.Result, error) {
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
 		res, err := r.AddFinalizers(ctx, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
@@ -50,11 +48,7 @@ func (r *Reconciler) reconcileCluster(
 		}
 	}
 
-	userSSHKeyDisabled := false
-	if conf != nil {
-		userSSHKeyDisabled = conf.Spec.FeatureGates[features.DisableUserSSHKey]
-	}
-	if userSSHKeyDisabled {
+	if r.features.DisableUserSSHKey {
 		if kuberneteshelper.HasFinalizer(cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer) {
 			if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer); err != nil {
 				return nil, fmt.Errorf("failed to remove SSH key finalizer: %w", err)
