@@ -18,11 +18,9 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	usersshkeysynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkey-synchronizer"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,20 +43,6 @@ func (r *Reconciler) reconcileCluster(
 		}
 		if !res.IsZero() {
 			return res, nil
-		}
-	}
-
-	if r.features.DisableUserSSHKey {
-		if kuberneteshelper.HasFinalizer(cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer) {
-			if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer); err != nil {
-				return nil, fmt.Errorf("failed to remove SSH key finalizer: %w", err)
-			}
-		}
-	} else {
-		if !kuberneteshelper.HasFinalizer(cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer) {
-			if _, err := r.AddFinalizers(ctx, cluster, usersshkeysynchronizer.UserSSHKeysClusterIDsCleanupFinalizer); err != nil {
-				return nil, fmt.Errorf("failed to add SSH key finalizer: %w", err)
-			}
 		}
 	}
 

@@ -70,7 +70,6 @@ type Features struct {
 	EtcdDataCorruptionChecks     bool
 	KubernetesOIDCAuthentication bool
 	EtcdLauncher                 bool
-	DisableUserSSHKey            bool
 }
 
 // Reconciler is a controller which is responsible for managing clusters.
