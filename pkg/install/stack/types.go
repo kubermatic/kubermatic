@@ -55,7 +55,6 @@ type DeployOptions struct {
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool
 	EnableNginxIngressMigration        bool
-	RemoveOauthRelease                 bool
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
 
