@@ -72,7 +72,7 @@ dex:
     #       redirectURI: https://kkp.example.com/dex/callback
     #       orgs:
     #       - name: kubermatic
-    
+
     enablePasswordDB: true # Enable it if you have staticPasswords.
 
     # For testing purposes, we configure a single static user/password combination.
@@ -97,7 +97,7 @@ dex:
         # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
         secret: <a-random-key>
         RedirectURIs:
-          # ensure the URLs below use the dex.ingress.host configured above
+          # ensure the URLs below use the dex.ingress.hosts[0].host configured above
           - https://kkp.example.com
           - https://kkp.example.com/projects
 
@@ -111,7 +111,7 @@ dex:
         # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
         secret: <a-random-key>
         RedirectURIs:
-          # ensure the URLs below use the dex.ingress.host configured above
+          # ensure the URLs below use the dex.ingress.hosts[0].host configured above
           - https://kkp.example.com/api/v1/kubeconfig
           - https://kkp.example.com/api/v2/kubeconfig/secret
           - https://kkp.example.com/api/v2/dashboard/login
