@@ -21,6 +21,8 @@ dex:
     # uncomment the next line and remove subsequent certIssuer configuration.
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-staging
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+      nginx.ingress.kubernetes.io/proxy-body-size: "25m"
     # configure your base domain, under which the Kubermatic dashboard shall be available
     hosts:
       # Required: host must be set; usually this is the same
