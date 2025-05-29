@@ -31,6 +31,30 @@ This README.md generator
 
 That generates README.md with all scripts from this directory described.
 
+## mirror-system-application-charts.sh
+This script mirrors upstream Helm charts (used by System Applications) to the Kubermatic OCI registry.
+
+#### Adding a New Chart
+
+To add a new chart:  
+1. Add the chart's download URL template to the `CHART_URLS` array in the script:  
+   ```bash
+   ["chart-name"]="https://example.com/chart-%s.tgz"
+   ```
+2. Add the default version for the chart to the `CHART_VERSIONS` array:  
+   ```bash
+   ["chart-name"]="1.0.0"
+   ```
+
+#### Mirroring a Specific Version
+
+To mirror a specific version of a chart, run:  
+```bash
+./mirror-system-application-charts.sh <chart-name> [version]
+```
+
+For more details, refer to the script's comments.
+
 ## release-images.sh
 
 Builds and pushes all KKP container images:

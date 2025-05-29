@@ -14,9 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This helper script can be used to mirror upstream system application Helm charts to Kubermatic OCI registry.
-# When introducing a new helm chart version for our system applications, make sure it is:
-#   - Helm chart is mirrored in Kubermatic OCI registry, use the script hack/mirror-chart.sh <chart-name>
+# This script mirrors upstream Helm charts (used by System Applications) to the Kubermatic OCI registry.
+# For usage instructions and details on adding new charts or mirroring new versions,
+# refer to the accompanying README or the comments below.
+
+# ─── Instructions for Adding New Charts or Versions ───────────────────────────
+# To add a new chart:
+# 1. Add an entry to the `CHART_URLS` associative array below with the chart's download URL template.
+#    Example: ["chart-name"]="https://example.com/chart-%s.tgz" 
+#
+# 2. Add the default version for the chart to the `CHART_VERSIONS` associative array.
+#    Example: ["chart-name"]="1.0.0"
+#
+# To mirror a new version of an existing chart:
+# Run the script with the chart name and the desired version:
+#   ./mirror-system-application-charts.sh <chart-name> <version>
 
 set -euo pipefail
 
@@ -25,12 +37,20 @@ REGISTRY_HOST="${REGISTRY_HOST:-quay.io}"
 REPOSITORY_PREFIX="${REPOSITORY_PREFIX:-kubermatic/helm-charts}"
 
 # ─── Chart-specific configurations ────────────────────────────────────────────
-# Format: key = chart name, value = "<URL_TEMPLATE> <DEFAULT_VERSION>"
-declare -A CHART_CONFIGS=(
-  ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz 9.46.6"
-  ["cilium"]="https://helm.cilium.io/cilium-%s.tgz 1.16.9"
+# Format: key = chart name, value = "<URL_TEMPLATE>"
+declare -A CHART_URLS=(
+  ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz" 
+  ["cilium"]="https://helm.cilium.io/cilium-%s.tgz" 
   # Add more charts here as needed
 )
+
+# Default versions for each chart
+declare -A CHART_VERSIONS=(
+  ["cluster-autoscaler"]="9.46.6"
+  ["cilium"]="1.16.9"
+  # Add more default versions here as needed
+)
+
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
@@ -58,7 +78,7 @@ parse_args() {
   CHART_NAME="$1"
   CHART_VERSION="${2:-}"
 
-  if [[ ! -v "CHART_CONFIGS[$CHART_NAME]" ]]; then
+  if [[ ! -v "CHART_URLS[$CHART_NAME]" ]]; then
     echo "Error: Unsupported chart '$CHART_NAME'"
     usage
   fi
@@ -66,16 +86,20 @@ parse_args() {
 
 # ─── Resolve URL and chart package ────────────────────────────────────────────
 resolve_chart_config() {
-  local config="${CHART_CONFIGS[$CHART_NAME]}"
-  IFS=' ' read -r URL_TEMPLATE DEFAULT_VERSION <<< "$config"
-  CHART_VERSION="${CHART_VERSION:-$DEFAULT_VERSION}"
+  # Get the URL template for the specified chart
+  URL_TEMPLATE="${CHART_URLS[$CHART_NAME]}"
+  
+  # Use the default version if no version is provided
+  CHART_VERSION="${CHART_VERSION:-${CHART_VERSIONS[$CHART_NAME]}}"
+  
+  # Render the URL_Template and replace %s with the selected version
   CHART_SOURCE="${URL_TEMPLATE//%s/$CHART_VERSION}"
   CHART_PACKAGE="${CHART_NAME}-${CHART_VERSION}.tgz"
 }
 
 # ─── Authenticate to OCI registry ─────────────────────────────────────────────
 login_registry() {
-  echo "   → Authenticating to registry..."
+  echo "🌐 Authenticating to registry..."
 
   if [ -z "${VAULT_ADDR:-}" ]; then
     export VAULT_ADDR=https://vault.kubermatic.com/
@@ -87,21 +111,44 @@ login_registry() {
   echo "${REGISTRY_PASSWORD}" | helm registry login "${REGISTRY_HOST}" --username "${REGISTRY_USER}" --password-stdin
 }
 
+# ─── Logout from the OCI registry ─────────────────────────────────────────────
+logout_registry() {
+  echo "🌐 Logging out from registry..."
+
+  helm registry logout ${REGISTRY_HOST}
+}
+
+# ─── Check if chart exists in registry ────────────────────────────────────────
+chart_exists_in_registry() {
+  local oci_repo="oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}/${CHART_NAME}"
+
+  # Use `helm show all` to check if the specific version exists
+  if helm show all "$oci_repo" --version "$CHART_VERSION" >/dev/null 2>&1; then
+    return 0 # Chart exists
+  else
+    return 1 # Chart does not exist
+  fi
+}
+
 # ─── Mirror chart ─────────────────────────────────────────────────────────────
 mirror_chart() {
   echo "🌐 Mirroring ${CHART_NAME}@${CHART_VERSION} helm chart:"
   echo "   → Destination: oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"
 
+  # Check if the chart already exists in the registry
+  if chart_exists_in_registry; then
+    echo "   → Chart already exists in the registry. Skipping mirroring."
+    return
+  fi
+
   echo "   → Downloading chart..."
   helm pull "${CHART_SOURCE}" --destination ./
 
   echo "   → Pushing to registry..."
-  helm push "${CHART_PACKAGE}" "oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"
+  helm push "./${CHART_PACKAGE}" "oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"
 
   echo "   → Cleaning up..."
   rm -f "${CHART_PACKAGE}"
-
-  echo "✅ Successfully mirrored ${CHART_NAME}:${CHART_VERSION}"
 }
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
@@ -110,6 +157,9 @@ main() {
   resolve_chart_config
   login_registry
   mirror_chart
+  logout_registry
+  echo "✅ Successfully mirrored ${CHART_NAME}:${CHART_VERSION}"
+
 }
 
 main "$@"
