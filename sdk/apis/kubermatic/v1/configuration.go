@@ -548,14 +548,6 @@ type SystemApplicationOptions struct {
 	// Applications is a list of system application definition names that should be installed in the master cluster.
 	// If not set, the default system applications will be installed.
 	Applications []string `json:"applications,omitempty"`
-	// ReconciliationInterval is the interval at which to force the reconciliation of the system applications.
-	// By default, System Applications are only reconciled on changes on spec, annotations, or the parent
-	// application definition, and every 1 hour.
-	//
-	// Setting a value greater than zero force reconciliation even if no changes occurred on application CR.
-	// Setting a value equal to 0 disables the force reconciliation of the application.
-	// Setting this too low can cause a heavy load and may disrupt your application workload depending on the template method.
-	ReconciliationInterval *metav1.Duration `json:"reconciliationInterval,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
