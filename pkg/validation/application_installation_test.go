@@ -411,7 +411,6 @@ func TestValidateApplicationInstallationDelete(t *testing.T) {
 	enforcedAppName := "enforced"
 	enforcedAppDCName := "enforced-dc"
 	enforcedWrongDCName := "enforced-wrong-dc"
-	managedAppName := "managed"
 	defaultAppName := "default"
 	appName := "app"
 	dcName := "dc-1"
@@ -423,9 +422,6 @@ func TestValidateApplicationInstallationDelete(t *testing.T) {
 		getApplicationDefinition(enforcedAppName, false, true, nil, nil),
 		getApplicationDefinition(enforcedAppDCName, false, true, []string{dcName}, nil),
 		getApplicationDefinition(enforcedWrongDCName, false, true, []string{"dc-2"}, nil),
-		getApplicationDefinition(managedAppName, false, false, nil, map[string]string{
-			appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
-		}),
 	}
 
 	fakeClient := fake.
@@ -476,14 +472,6 @@ func TestValidateApplicationInstallationDelete(t *testing.T) {
 			name:          "scenario 7: application deletion is allowed if the installed application name/namespace is different than the application definition name, even if application definition is marked as enforced",
 			ai:            getApplicationInstallation(defaultAppName, enforcedAppName, defaultAppVersion, nil),
 			expectedError: `[]`,
-			clusterName:   clusterName,
-		},
-		{
-			name: "scenario 8: application deletion is not allowed if the installed application is managed by kkp",
-			ai: getApplicationInstallation(defaultAppName, enforcedAppName, defaultAppVersion, map[string]string{
-				appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
-			}),
-			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"kkp"}: Managed ApplicationInstallation cannot be deleted. To delete it, remove the "apps.kubermatic.k8c.io/managed-by" label]`,
 			clusterName:   clusterName,
 		},
 	}

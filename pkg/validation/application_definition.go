@@ -58,15 +58,23 @@ func ValidateApplicationDefinitionUpdate(newAd appskubermaticv1.ApplicationDefin
 	return allErrs
 }
 
+func deleteSystemAppErrorMsg() string {
+	return fmt.Sprintf("ApplicationDefinition for system applications are managed by KKP and should not be deleted. "+
+		"Deletion can impact user clusters where these Applications are installed. "+
+		"If you would still like to remove the ApplicationDefinition, remove the %q label and then delete it.",
+		appskubermaticv1.ApplicationManagedByLabel,
+	)
+}
+
 func ValidateApplicationDefinitionDelete(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	labels := ad.GetLabels()
 	if labels != nil {
-		if _, exists := labels[appskubermaticv1.ApplicationManagedByLabel]; exists {
+		if val := labels[appskubermaticv1.ApplicationManagedByLabel]; val == appskubermaticv1.ApplicationManagedByKKPValue {
 			return field.ErrorList{
 				field.Invalid(
 					field.NewPath("metadata").Child("labels"),
 					labels,
-					fmt.Sprintf("Managed ApplicationDefinition cannot be deleted. To delete it, remove the %q label", appskubermaticv1.ApplicationManagedByLabel),
+					deleteSystemAppErrorMsg(),
 				),
 			}
 		}
