@@ -1,1 +1,0 @@
-../../../hack/test-chart-rendering.sh
