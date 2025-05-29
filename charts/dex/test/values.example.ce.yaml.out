@@ -24,7 +24,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 type: Opaque
 data:
-  config.yaml: "ZXhwaXJ5OgogIGlkVG9rZW5zOiAyNGgKICBzaWduaW5nS2V5czogNmgKZnJvbnRlbmQ6CiAgZGlyOiAvc3J2L2RleC93ZWIKICBpc3N1ZXI6IGRleAogIGxvZ29VUkw6IHRoZW1lL2xvZ28uc3ZnCiAgdGhlbWU6IGxpZ2h0Cmlzc3VlcjogaHR0cHM6Ly88ZGV4IGhvc3Q+L2RleApvYXV0aDI6CiAgcmVzcG9uc2VUeXBlczoKICAtIGNvZGUKICAtIHRva2VuCiAgLSBpZF90b2tlbgogIHNraXBBcHByb3ZhbFNjcmVlbjogdHJ1ZQpzdG9yYWdlOgogIGNvbmZpZzoKICAgIGluQ2x1c3RlcjogdHJ1ZQogIHR5cGU6IGt1YmVybmV0ZXM="
+  config.yaml: "ZW5hYmxlUGFzc3dvcmREQjogdHJ1ZQpleHBpcnk6CiAgaWRUb2tlbnM6IDI0aAogIHNpZ25pbmdLZXlzOiA2aApmcm9udGVuZDoKICBkaXI6IC9zcnYvZGV4L3dlYgogIGlzc3VlcjogZGV4CiAgbG9nb1VSTDogdGhlbWUvbG9nby5zdmcKICB0aGVtZTogbGlnaHQKaXNzdWVyOiBodHRwczovL2trcC5leGFtcGxlLmNvbS9kZXgKb2F1dGgyOgogIHJlc3BvbnNlVHlwZXM6CiAgLSBjb2RlCiAgLSB0b2tlbgogIC0gaWRfdG9rZW4KICBza2lwQXBwcm92YWxTY3JlZW46IHRydWUKc3RhdGljQ2xpZW50czoKLSBSZWRpcmVjdFVSSXM6CiAgLSBodHRwczovL2trcC5leGFtcGxlLmNvbQogIC0gaHR0cHM6Ly9ra3AuZXhhbXBsZS5jb20vcHJvamVjdHMKICBpZDoga3ViZXJtYXRpYwogIG5hbWU6IEt1YmVybWF0aWMKICBzZWNyZXQ6IDxhLXJhbmRvbS1rZXk+Ci0gUmVkaXJlY3RVUklzOgogIC0gaHR0cHM6Ly9ra3AuZXhhbXBsZS5jb20vYXBpL3YxL2t1YmVjb25maWcKICAtIGh0dHBzOi8va2twLmV4YW1wbGUuY29tL2FwaS92Mi9rdWJlY29uZmlnL3NlY3JldAogIC0gaHR0cHM6Ly9ra3AuZXhhbXBsZS5jb20vYXBpL3YyL2Rhc2hib2FyZC9sb2dpbgogIGlkOiBrdWJlcm1hdGljSXNzdWVyCiAgbmFtZTogS3ViZXJtYXRpYyBPSURDIElzc3VlcgogIHNlY3JldDogPGEtcmFuZG9tLWtleT4Kc3RhdGljUGFzc3dvcmRzOgotIGVtYWlsOiBrdWJlcm1hdGljQGV4YW1wbGUuY29tCiAgaGFzaDogJDJhJDEwJHpNSmhnLzNheGJtL20wS21vVnhKaU8xZU81Z3ROcmdLRHlzeTVHYWZRRnJYWTkzT0U5THNLCiAgdXNlcklEOiAwOGE4Njg0Yi1kYjg4LTRiNzMtOTBhOS0zY2QxNjYxZjU0NjYKICB1c2VybmFtZTogYWRtaW4Kc3RvcmFnZToKICBjb25maWc6CiAgICBpbkNsdXN0ZXI6IHRydWUKICB0eXBlOiBrdWJlcm5ldGVz"
 ---
 # Source: dex/templates/theme.yaml
 # Copyright 2024 The Kubermatic Kubernetes Platform contributors.
@@ -177,7 +177,7 @@ spec:
     metadata:
       annotations:
       
-        checksum/config: cfa05e7dd55e652c219a9f9b3397f230ba0d7ac408777391e3b2f1af373fc265
+        checksum/config: 2175fca9af2d0514843fbd0294276a6216a00508367df66dd5c032fa6199c91d
       labels:
         app.kubernetes.io/name: dex
         app.kubernetes.io/instance: release-name
@@ -265,10 +265,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - ""
+        - "kkp.example.com"
       secretName: dex-tls
   rules:
-    - host: ""
+    - host: "kkp.example.com"
       http:
         paths:
           - path: /dex
