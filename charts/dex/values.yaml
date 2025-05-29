@@ -39,6 +39,7 @@ dex:
           # Required: must include at least the host chosen above.
           - ""
     annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
       nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
       nginx.ingress.kubernetes.io/proxy-body-size: "25m"
 
