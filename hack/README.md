@@ -48,9 +48,9 @@ To add a new chart:
 
 #### Mirroring a Specific Version
 
-To mirror a specific version of a chart, run:  
+To mirror a specific version (optional) of a chart, run:  
 ```bash
-./mirror-system-application-charts.sh <chart-name> [version]
+./mirror-system-application-charts.sh <chart-name> [version (optional)]
 ```
 
 For more details, refer to the script's comments.

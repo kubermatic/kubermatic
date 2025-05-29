@@ -16,19 +16,7 @@
 
 # This script mirrors upstream Helm charts (used by System Applications) to the Kubermatic OCI registry.
 # For usage instructions and details on adding new charts or mirroring new versions,
-# refer to the accompanying README or the comments below.
-
-# ─── Instructions for Adding New Charts or Versions ───────────────────────────
-# To add a new chart:
-# 1. Add an entry to the `CHART_URLS` associative array below with the chart's download URL template.
-#    Example: ["chart-name"]="https://example.com/chart-%s.tgz"
-#
-# 2. Add the default version for the chart to the `CHART_VERSIONS` associative array.
-#    Example: ["chart-name"]="1.0.0"
-#
-# To mirror a new version of an existing chart:
-# Run the script with the chart name and the desired version:
-#   ./mirror-system-application-charts.sh <chart-name> <version>
+# refer to the accompanying README.
 
 set -euo pipefail
 
@@ -53,7 +41,7 @@ declare -A CHART_VERSIONS=(
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
-  echo "Usage: $0 <chart-name> [version]"
+  echo "Usage: $0 <chart-name> [version (optional)]"
   echo "Supported charts:"
   for key in "${!CHART_CONFIGS[@]}"; do echo "  - $key"; done
   echo
@@ -121,8 +109,8 @@ logout_registry() {
 chart_exists_in_registry() {
   local oci_repo="oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}/${CHART_NAME}"
 
-  # Use `helm show all` to check if the specific version exists
-  if helm show all "$oci_repo" --version "$CHART_VERSION" > /dev/null 2>&1; then
+  # Use `helm show chart` to check if the specific version exists
+  if helm show chart "$oci_repo" --version "$CHART_VERSION" > /dev/null 2>&1; then
     return 0 # Chart exists
   else
     return 1 # Chart does not exist
