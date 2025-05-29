@@ -58,6 +58,27 @@ func ValidateApplicationDefinitionUpdate(newAd appskubermaticv1.ApplicationDefin
 	return allErrs
 }
 
+func ValidateApplicationDefinitionDelete(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
+	labels := ad.GetLabels()
+	if labels != nil {
+		if _, exists := labels[appskubermaticv1.ApplicationManagedByLabel]; exists {
+			return field.ErrorList{
+				field.Invalid(
+					field.NewPath("metadata").Child("labels"),
+					labels,
+					fmt.Sprintf("Managed ApplicationDefinition cannot be deleted. To delete it, remove the %q label", appskubermaticv1.ApplicationManagedByLabel),
+				),
+			}
+		}
+	}
+
+	var parentFieldPath *field.Path = nil
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, ValidateApplicationDefinitionWithOpenAPI(ad, parentFieldPath)...)
+	return allErrs
+}
+
 func ValidateApplicationVersions(vs []appskubermaticv1.ApplicationVersion, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 

@@ -17,6 +17,7 @@ limitations under the License.
 package validation
 
 import (
+	"fmt"
 	"testing"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
@@ -1140,6 +1141,42 @@ func TestValidateApplicationDefinitionUpdate(t *testing.T) {
 
 			if len(errl) != tc.expErrLen {
 				t.Errorf("expected errLen %d, got %d. Errors are %q", tc.expErrLen, len(errl), errl)
+			}
+		})
+	}
+}
+
+func TestValidateApplicationDefinitionDelete(t *testing.T) {
+	notManagedAppName := "not-managed"
+	managedAppName := "managed"
+	appDef := getApplicationDefinition(notManagedAppName, false, false, nil, nil)
+	managedAppDef := getApplicationDefinition(managedAppName, false, false, nil, map[string]string{
+		appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
+	})
+
+	testCases := []struct {
+		name          string
+		ad            *appskubermaticv1.ApplicationDefinition
+		expectedError string
+	}{
+		{
+			name:          "scenario 1: application deletion is allowed for non-managed application definition",
+			ad:            appDef,
+			expectedError: "[]",
+		},
+		{
+			name:          "scenario 2: application deletion is not allowed for managed application definition",
+			ad:            managedAppDef,
+			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"kkp"}: Managed ApplicationDefinition cannot be deleted. To delete it, remove the "apps.kubermatic.k8c.io/managed-by" label]`,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			err := ValidateApplicationDefinitionDelete(*testCase.ad)
+
+			if fmt.Sprint(err) != testCase.expectedError {
+				t.Fatalf("expected error to be %s but got %v", testCase.expectedError, err)
 			}
 		})
 	}
