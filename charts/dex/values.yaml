@@ -15,7 +15,7 @@
 # Set this to true to instruct the KKP installer to install this (new) Chart
 # into the "dex" namespace, instead of installing the legacy "oauth" Chart
 # into the "oauth" namespace.
-# See https://docs.kubermatic.com/kubermatic/v2.26/installation/upgrading/upgrade-from-2.26-to-2.27/
+# See https://docs.kubermatic.com/kubermatic/v2.27/installation/upgrading/upgrade-from-2.26-to-2.27/
 # for more information.
 useNewDexChart: false
 
