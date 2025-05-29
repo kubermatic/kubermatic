@@ -343,7 +343,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				chartImage := fmt.Sprintf("%s/%s:%s",
 					sysChart.Template.Source.Helm.URL,
 					sysChart.Template.Source.Helm.ChartName,
-					sysChart.Version,
+					sysChart.Template.Source.Helm.ChartVersion,
 				)
 
 				// Check if the chartImage starts with "oci://"

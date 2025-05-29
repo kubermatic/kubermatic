@@ -32,7 +32,7 @@ spec:
             chartName: cluster-autoscaler
             chartVersion: 9.46.6
             url: oci://quay.io/kubermatic/helm-charts
-      version: 9.46.6
+      version: 1.32.0
   defaultValuesBlock: |
     cloudProvider: clusterapi
     clusterAPIMode: incluster-incluster
