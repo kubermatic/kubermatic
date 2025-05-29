@@ -21,7 +21,7 @@
 # ─── Instructions for Adding New Charts or Versions ───────────────────────────
 # To add a new chart:
 # 1. Add an entry to the `CHART_URLS` associative array below with the chart's download URL template.
-#    Example: ["chart-name"]="https://example.com/chart-%s.tgz" 
+#    Example: ["chart-name"]="https://example.com/chart-%s.tgz"
 #
 # 2. Add the default version for the chart to the `CHART_VERSIONS` associative array.
 #    Example: ["chart-name"]="1.0.0"
@@ -39,8 +39,8 @@ REPOSITORY_PREFIX="${REPOSITORY_PREFIX:-kubermatic/helm-charts}"
 # ─── Chart-specific configurations ────────────────────────────────────────────
 # Format: key = chart name, value = "<URL_TEMPLATE>"
 declare -A CHART_URLS=(
-  ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz" 
-  ["cilium"]="https://helm.cilium.io/cilium-%s.tgz" 
+  ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz"
+  ["cilium"]="https://helm.cilium.io/cilium-%s.tgz"
   # Add more charts here as needed
 )
 
@@ -50,7 +50,6 @@ declare -A CHART_VERSIONS=(
   ["cilium"]="1.16.9"
   # Add more default versions here as needed
 )
-
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
@@ -88,10 +87,10 @@ parse_args() {
 resolve_chart_config() {
   # Get the URL template for the specified chart
   URL_TEMPLATE="${CHART_URLS[$CHART_NAME]}"
-  
+
   # Use the default version if no version is provided
   CHART_VERSION="${CHART_VERSION:-${CHART_VERSIONS[$CHART_NAME]}}"
-  
+
   # Render the URL_Template and replace %s with the selected version
   CHART_SOURCE="${URL_TEMPLATE//%s/$CHART_VERSION}"
   CHART_PACKAGE="${CHART_NAME}-${CHART_VERSION}.tgz"
@@ -123,7 +122,7 @@ chart_exists_in_registry() {
   local oci_repo="oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}/${CHART_NAME}"
 
   # Use `helm show all` to check if the specific version exists
-  if helm show all "$oci_repo" --version "$CHART_VERSION" >/dev/null 2>&1; then
+  if helm show all "$oci_repo" --version "$CHART_VERSION" > /dev/null 2>&1; then
     return 0 # Chart exists
   else
     return 1 # Chart does not exist
