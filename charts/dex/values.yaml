@@ -28,7 +28,7 @@ dex:
     hosts:
       # Required: host must be set; usually this is the same
       # host as is used for the KKP Dashboard, but it can be
-      # any other name.
+      # any other domain.
       - host: ""
         paths:
           - path: /dex
@@ -36,8 +36,7 @@ dex:
     tls:
       - secretName: dex-tls
         hosts:
-          # Required: must include at least the host chosen
-          # above.
+          # Required: must include at least the host chosen above.
           - ""
 
   config:
