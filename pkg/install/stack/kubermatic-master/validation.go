@@ -337,29 +337,7 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			staticPasswordsPath = yamled.Path{"dex", "config", "staticPasswords"}
 		}
 
-		if domain, ok := helmValues.GetString(domainPath); domain == "" {
-			// Validate that the path dex.ingress.hosts[0].host exists in the values.yaml.
-			//
-			// We're not enforcing that the value of "host" be non-empty —
-			// it's valid for it to be an empty string. However, the key itself must be present.
-			//
-			// The GetString(domainPath) call returns two values:
-			// - domain: the string value at the specified path (empty string if not present or empty)
-			// - ok: boolean indicating whether the value at the path could be successfully parsed as a string
-			//
-			// If `ok` is false, it means the path does not exist or does not resolve to a string,
-			// which usually indicates a missing structure like:
-			//   dex:
-			//     ingress:
-			//       hosts:
-			//         - host: ""
-			//
-			// In newer versions of the Dex chart (useNewDexChart == true), this field must be defined,
-			// so we raise a validation error if it's missing entirely.
-			if !ok && useNewDexChart {
-				failures = append(failures, fmt.Errorf("Validation error: dex.ingress.hosts[0].host must be defined (even if an empty string)"))
-				return failures
-			}
+		if domain, _ := helmValues.GetString(domainPath); domain == "" {
 			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", domainPath.String())
 			helmValues.Set(domainPath, config.Spec.Ingress.Domain)
 		}
