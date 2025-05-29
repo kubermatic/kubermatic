@@ -83,25 +83,5 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 
 	logger.Info("✅ Success.")
 
-	if opt.RemoveOauthRelease && useNewDexChart {
-		release, err := helmClient.GetRelease(LegacyDexNamespace, LegacyDexReleaseName)
-		if err != nil {
-			return fmt.Errorf("failed to check for a previous %s release: %w", LegacyDexReleaseName, err)
-		}
-
-		if release != nil {
-			logger.Infof("🧹 Deleting previous %s Helm release…", LegacyDexReleaseName)
-
-			err := helmClient.UninstallRelease(LegacyDexNamespace, LegacyDexReleaseName)
-			if err != nil {
-				return fmt.Errorf("failed to delete release: %w", err)
-			}
-
-			logger.Info("✅ Success.")
-		} else {
-			logger.Debugf("Found no previous %s Helm release to remove.", LegacyDexReleaseName)
-		}
-	}
-
 	return nil
 }
