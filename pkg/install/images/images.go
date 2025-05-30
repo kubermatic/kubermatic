@@ -328,7 +328,7 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 	return nil
 }
 
-func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
+func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun, insecure bool, images []string, registry string, userAgent string) (int, int, error) {
 	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
@@ -341,7 +341,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 	var failedImages []string
 
 	for index, image := range imageList {
-		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
+		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent, insecure); err != nil {
 			log.Errorf("Failed to copy image: %v", err)
 			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
@@ -355,7 +355,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 	return successCount, len(imageList), nil
 }
 
-func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
+func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string, insecure bool) error {
 	log = log.WithFields(logrus.Fields{
 		"source-image": image.Source,
 		"target-image": image.Destination,
@@ -364,6 +364,10 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	options := []crane.Option{
 		crane.WithContext(ctx),
 		crane.WithUserAgent(userAgent),
+	}
+
+	if insecure {
+		options = append(options, crane.Insecure)
 	}
 
 	log.Info("Copying image…")

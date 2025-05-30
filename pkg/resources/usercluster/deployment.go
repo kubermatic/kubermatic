@@ -266,6 +266,10 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 				args = append(args, "-node-labels", labelArgsValue)
 			}
 
+			if data.Cluster().Spec.IsKyvernoEnabled() {
+				args = append(args, "-kyverno-enabled")
+			}
+
 			if data.Cluster().Spec.ComponentsOverride.UserClusterController != nil && data.Cluster().Spec.ComponentsOverride.UserClusterController.Tolerations != nil {
 				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.UserClusterController.Tolerations
 			}

@@ -174,7 +174,7 @@ TEST_NAME="Install KKP into kind"
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE" \
-  "$INSTALLER_FLAGS"
+  $INSTALLER_FLAGS
 
 # TODO: The installer should wait for everything to finish reconciling.
 echodate "Waiting for Kubermatic Operator to deploy Master components..."

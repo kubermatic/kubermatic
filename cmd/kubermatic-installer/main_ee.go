@@ -56,4 +56,6 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 // flags to be only used in EE edition.
 func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
 	flagset.BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "Reconcile the default Application Catalog (EE only)")
+	flagset.BoolVar(&opt.DeployDefaultPolicyTemplateCatalog, "deploy-default-policy-template-catalog", false, "Reconcile the default Policy Template Catalog (EE only)")
+	flagset.StringSliceVar(&opt.LimitApps, "limit-apps", []string{}, "Limit the app definitions that are to be installed (EE only)")
 }

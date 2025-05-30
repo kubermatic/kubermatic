@@ -79,6 +79,7 @@ var validVeleroConfigKeys = []string{
 	"serverSideEncryption",
 	"signatureVersion",
 	"tagging",
+	"checksumAlgorithm",
 }
 
 func NewBackupStore(cbsl *kubermaticv1.ClusterBackupStorageLocation, credentials *corev1.Secret) (*awsBackupStore, error) {

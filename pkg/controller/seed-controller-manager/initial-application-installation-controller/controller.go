@@ -38,6 +38,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -183,7 +184,12 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, nil
 }
 
-func (r *Reconciler) createInitialApplicationInstallation(ctx context.Context, client ctrlruntimeclient.Client, application apiv1.Application, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) createInitialApplicationInstallation(
+	ctx context.Context,
+	client ctrlruntimeclient.Client,
+	application apiv1.Application,
+	cluster *kubermaticv1.Cluster,
+) error {
 	namespace := application.Namespace
 	if namespace == "" {
 		namespace = application.Spec.Namespace.Name
@@ -208,12 +214,20 @@ func (r *Reconciler) createInitialApplicationInstallation(ctx context.Context, c
 		}
 	}
 
+	applicationDefinition := appskubermaticv1.ApplicationDefinition{}
+
+	err = r.Get(ctx, types.NamespacedName{Name: application.Spec.ApplicationRef.Name}, &applicationDefinition)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get ApplicationDefinition %s: %w", application.Spec.ApplicationRef.Name, err)
+	}
+
 	// Create the application installation resource.
 	applicationInstallation := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        application.Name,
 			Namespace:   namespace,
 			Annotations: application.Annotations,
+			Labels:      applicationDefinition.Labels,
 		},
 		Spec: appskubermaticv1.ApplicationInstallationSpec{
 			Namespace: &appskubermaticv1.AppNamespaceSpec{

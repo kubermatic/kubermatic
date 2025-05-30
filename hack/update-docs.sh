@@ -44,11 +44,15 @@ $sed -i 's/omitgenyaml/omitempty/g' $KKPV1/*.go
 
 # generate docs for ce version
 $sed -i "s/,omitcegenyaml/,omitempty,ce/g" $KKPV1/*.go
-go run -tags ce codegen/example-yaml/main.go . docs
+
+# generate docs for CE version
+go run -tags ce ./codegen/example-yaml . docs
+
+# Restore original tags
 $sed -i "s/omitempty,ce/omitcegenyaml/g" $KKPV1/*.go
 
-# generate docs for ee version
-go run -tags ee codegen/example-yaml/main.go . docs
+# generate docs for EE version
+go run -tags ee ./codegen/example-yaml . docs
 
 # revert our changes
 $sed -i 's/omitempty/omitgenyaml/g' $KKPV1/*.go

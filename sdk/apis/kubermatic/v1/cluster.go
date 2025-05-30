@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"k8c.io/kubermatic/sdk/v2/semver"
@@ -267,6 +268,9 @@ type ClusterSpec struct {
 	// Kyverno holds the configuration for the Kyverno policy management component.
 	// Only available in Enterprise Edition.
 	Kyverno *KyvernoSettings `json:"kyverno,omitempty"`
+
+	// Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now
+	AuthorizationConfig *AuthorizationConfig `json:"authorizationConfig,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -288,12 +292,18 @@ type KubeLB struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
-	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
+	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
+	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
 func (c ClusterSpec) IsKubeLBEnabled() bool {
 	return c.KubeLB != nil && c.KubeLB.Enabled
+}
+
+func (k KubeLB) IsGatewayAPIEnabled() bool {
+	return k.EnableGatewayAPI != nil && *k.EnableGatewayAPI
 }
 
 // CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
@@ -442,6 +452,70 @@ func (c ClusterSpec) IsKyvernoEnabled() bool {
 	return c.Kyverno != nil && c.Kyverno.Enabled
 }
 
+type AuthorizationConfig struct {
+	// Optional: List of enabled Authorization modes (by default 'Node,RBAC')
+	// Important: order matters
+	EnabledModes []string `json:"enabledModes,omitempty"`
+	// Contains the settings for the AuthorizationWebhook if EnabledModes contains Webhook
+	AuthorizationWebhookConfiguration *AuthorizationWebhookConfiguration `json:"authorizationWebhookConfiguration,omitempty"`
+	// Configuration options for mounting the authorization config file from a secret
+	AuthorizationConfigurationFile *AuthorizationConfigurationFile `json:"authorizationConfigurationFile,omitempty"`
+}
+
+type AuthorizationWebhookConfiguration struct {
+	// The secret containing the webhook configuration
+	SecretName string `json:"secretName"`
+	// The secret Key inside the secret
+	SecretKey string `json:"secretKey"`
+	// the Webhook Version, by default "v1"
+	WebhookVersion string `json:"webhookVersion"`
+}
+
+type AuthorizationConfigurationFile struct {
+	// The secret containing the authorizaion configuration
+	SecretName string `json:"secretName"`
+	// The secret Key containing the AuthorizationConfig k8s object
+	SecretKey string `json:"secretKey"`
+	// the path were the secret should be mounted, by default '/etc/kubernetes/authorization-configs'
+	SecretMountPath string `json:"secretMountPath,omitempty"`
+}
+
+func (c ClusterSpec) IsWebhookAuthorizationEnabled() bool {
+	if c.AuthorizationConfig == nil || c.AuthorizationConfig.EnabledModes == nil || c.AuthorizationConfig.AuthorizationWebhookConfiguration == nil {
+		return false
+	}
+
+	if !slices.Contains(c.AuthorizationConfig.EnabledModes, "Webhook") {
+		return false
+	}
+
+	if len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretName) == 0 || len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.SecretKey) == 0 {
+		return false
+	}
+
+	return true
+}
+
+func (c ClusterSpec) GetAuthorizationWebhookVersion() string {
+	if c.AuthorizationConfig != nil && c.AuthorizationConfig.AuthorizationWebhookConfiguration != nil && len(c.AuthorizationConfig.AuthorizationWebhookConfiguration.WebhookVersion) > 0 {
+		return c.AuthorizationConfig.AuthorizationWebhookConfiguration.WebhookVersion
+	}
+
+	return "v1"
+}
+
+func (c ClusterSpec) IsAuthorizationConfigurationFileEnabled() bool {
+	if c.AuthorizationConfig == nil || c.AuthorizationConfig.AuthorizationConfigurationFile == nil {
+		return false
+	}
+
+	if len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretName) == 0 || len(c.AuthorizationConfig.AuthorizationConfigurationFile.SecretKey) == 0 {
+		return false
+	}
+
+	return true
+}
+
 const (
 	// ClusterConditionSeedResourcesUpToDate indicates that all controllers have finished setting up the
 	// resources for a user clusters that run inside the seed cluster, i.e. this ignores
@@ -468,6 +542,8 @@ const (
 	ClusterConditionKubeVirtNetworkControllerSuccess                             ClusterConditionType = "KubeVirtNetworkControllerReconciledSuccessfully"
 	ClusterConditionClusterBackupControllerReconcilingSuccess                    ClusterConditionType = "ClusterBackupControllerReconciledSuccessfully"
 	ClusterConditionKyvernoControllerReconcilingSuccess                          ClusterConditionType = "KyvernoControllerReconciledSuccessfully"
+	ClusterConditionDefaultPolicyControllerReconcilingSuccess                    ClusterConditionType = "DefaultPolicyControllerReconciledSuccessfully"
+	ClusterConditionDefaultPolicyBindingsControllerCreatedSuccessfully           ClusterConditionType = "DefaultPolicyBindingsControllerCreatedSuccessfully"
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 	ClusterConditionEncryptionInitialized  ClusterConditionType = "EncryptionInitialized"

@@ -594,6 +594,11 @@ const (
 	// ServingCertKeySecretKey is the secret key for the key of a generic serving cert.
 	ServingCertKeySecretKey = "serving.key"
 
+	// AuthorizationWebhookVolumeName is the name for the authorization-webhook config mounted volume.
+	AuthorizationWebhookVolumeName = "authorization-webhook"
+	// AuthorizationConfigurationVolumeName is the name for the authorization-configuration mounted volume.
+	AuthorizationConfigurationVolumeName = "authorization-configuration"
+
 	// CloudConfigSecretKey is the secret key for cloud-config.
 	CloudConfigSecretKey = "config"
 	// NutanixCSIConfigSecretKey is the secret key for nutanix csi secret.
@@ -1014,6 +1019,7 @@ const (
 	NetworkPolicyOIDCIssuerAllow                    = "oidc-issuer-allow"
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
+	NetworkPolicyKyvernoWebhookAllow                = "kyverno-webhook-allow"
 )
 
 const (

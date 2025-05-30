@@ -102,6 +102,7 @@ func Add(
 	konnectivityKeepaliveTime string,
 	ccmMigration bool,
 	ccmMigrationCompleted bool,
+	kyvernoEnabled bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		version:                   version,
@@ -133,6 +134,7 @@ func Add(
 		konnectivityKeepaliveTime: konnectivityKeepaliveTime,
 		ccmMigration:              ccmMigration,
 		ccmMigrationCompleted:     ccmMigrationCompleted,
+		kyvernoEnabled:            kyvernoEnabled,
 	}
 
 	var err error
@@ -266,6 +268,7 @@ type reconciler struct {
 	konnectivityKeepaliveTime string
 	ccmMigration              bool
 	ccmMigrationCompleted     bool
+	kyvernoEnabled            bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

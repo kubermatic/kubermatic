@@ -153,6 +153,8 @@ spec:
           network: ""
         # Kubevirt configures a KubeVirt datacenter.
         kubevirt:
+          # Optional: indicates if the ccm should create and manage the clusters load balancers.
+          ccmLoadBalancerEnabled: null
           # Optional: indicates if region and zone labels from the cloud provider should be fetched.
           ccmZoneAndRegionEnabled: null
           # CSIDriverOperator configures the kubevirt csi driver operator in the user cluster such as the csi driver images overwriting.

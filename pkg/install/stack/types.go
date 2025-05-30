@@ -55,7 +55,6 @@ type DeployOptions struct {
 	EnableCertManagerV2Migration       bool
 	EnableCertManagerUpstreamMigration bool
 	EnableNginxIngressMigration        bool
-	RemoveOauthRelease                 bool
 	DisableTelemetry                   bool
 	DisableDependencyUpdate            bool
 
@@ -66,8 +65,11 @@ type DeployOptions struct {
 	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
+	LimitApps               []string
 
 	SkipCharts []string
+
+	DeployDefaultPolicyTemplateCatalog bool
 }
 
 type Stack interface {

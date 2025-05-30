@@ -25,14 +25,37 @@
 package userclusterresources
 
 import (
+	"context"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ResourcesForDeletion returns a list of objects that should be deleted when cleaning up Kyverno.
-func ResourcesForDeletion() []ctrlruntimeclient.Object {
-	resources := []ctrlruntimeclient.Object{}
+func ResourcesForDeletion(cluster *kubermaticv1.Cluster) []ctrlruntimeclient.Object {
+	resources := []ctrlruntimeclient.Object{
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kyverno",
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "kyverno-metrics",
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+	}
 
 	crds, err := KyvernoCRDs()
 	if err != nil {
@@ -47,5 +70,18 @@ func ResourcesForDeletion() []ctrlruntimeclient.Object {
 		})
 	}
 
+	resources = append(resources, WebhooksForDeletion()...)
+
 	return resources
+}
+
+// CleanUpResources deletes all resources created in the user cluster.
+func CleanUpResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	resources := ResourcesForDeletion(cluster)
+	for _, resource := range resources {
+		if err := client.Delete(ctx, resource); err != nil {
+			return err
+		}
+	}
+	return nil
 }

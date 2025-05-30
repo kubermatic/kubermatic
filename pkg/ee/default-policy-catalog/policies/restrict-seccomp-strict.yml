@@ -1,0 +1,55 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  annotations:
+    kyverno.io/kubernetes-version: 1.22-1.23
+    kyverno.io/kyverno-version: 1.6.0
+    policies.kyverno.io/category: Pod Security Standards (Restricted)
+    policies.kyverno.io/description: The seccomp profile in the Restricted group must not be explicitly set to Unconfined but additionally must also not allow an unset value. This policy,  requiring Kubernetes v1.19 or later, ensures that seccomp is  set to `RuntimeDefault` or `Localhost`. A known issue prevents a policy such as this using `anyPattern` from being persisted properly in Kubernetes 1.23.0-1.23.2.
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/title: Restrict Seccomp (Strict)
+  name: restrict-seccomp-strict
+spec:
+  background: true
+  rules:
+    - match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      name: check-seccomp-strict
+      validate:
+        anyPattern:
+          - spec:
+              =(ephemeralContainers):
+                - =(securityContext):
+                    =(seccompProfile):
+                      =(type): RuntimeDefault | Localhost
+              =(initContainers):
+                - =(securityContext):
+                    =(seccompProfile):
+                      =(type): RuntimeDefault | Localhost
+              containers:
+                - =(securityContext):
+                    =(seccompProfile):
+                      =(type): RuntimeDefault | Localhost
+              securityContext:
+                seccompProfile:
+                  type: RuntimeDefault | Localhost
+          - spec:
+              =(ephemeralContainers):
+                - securityContext:
+                    seccompProfile:
+                      type: RuntimeDefault | Localhost
+              =(initContainers):
+                - securityContext:
+                    seccompProfile:
+                      type: RuntimeDefault | Localhost
+              containers:
+                - securityContext:
+                    seccompProfile:
+                      type: RuntimeDefault | Localhost
+        message: Use of custom Seccomp profiles is disallowed. The fields spec.securityContext.seccompProfile.type, spec.containers[*].securityContext.seccompProfile.type, spec.initContainers[*].securityContext.seccompProfile.type, and spec.ephemeralContainers[*].securityContext.seccompProfile.type must be set to `RuntimeDefault` or `Localhost`.
+  validationFailureAction: Enforce

@@ -257,6 +257,10 @@ metadata:
     app.kubernetes.io/instance: release-name
     app.kubernetes.io/version: "2.41.1"
     app.kubernetes.io/managed-by: Helm
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/proxy-body-size: 25m
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 128k
 spec:
   ingressClassName: nginx
   tls:

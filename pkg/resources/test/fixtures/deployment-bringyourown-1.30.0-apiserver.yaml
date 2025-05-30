@@ -131,8 +131,6 @@ spec:
         - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,NodeRestriction,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
         - --admission-control-config-file
         - /etc/kubernetes/adm-control/admission-control.yaml
-        - --authorization-mode
-        - Node,RBAC
         - --external-hostname
         - jh8j81chn.europe-west3-c.dev.kubermatic.io
         - --token-auth-file
@@ -169,6 +167,8 @@ spec:
         - /etc/kubernetes/kubelet/kubelet-client.crt
         - --kubelet-client-key
         - /etc/kubernetes/kubelet/kubelet-client.key
+        - --authorization-mode
+        - Node,RBAC
         - --requestheader-client-ca-file
         - /etc/kubernetes/pki/front-proxy/ca/ca.crt
         - --requestheader-allowed-names

@@ -336,6 +336,50 @@ spec:
                         - auditWebhookConfig
                       type: object
                   type: object
+                authorizationConfig:
+                  description: 'Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now'
+                  properties:
+                    authorizationConfigurationFile:
+                      description: Configuration options for mounting the authorization config file from a secret
+                      properties:
+                        secretKey:
+                          description: The secret Key containing the AuthorizationConfig k8s object
+                          type: string
+                        secretMountPath:
+                          description: the path were the secret should be mounted, by default '/etc/kubernetes/authorization-configs'
+                          type: string
+                        secretName:
+                          description: The secret containing the authorizaion configuration
+                          type: string
+                      required:
+                        - secretKey
+                        - secretName
+                      type: object
+                    authorizationWebhookConfiguration:
+                      description: Contains the settings for the AuthorizationWebhook if EnabledModes contains Webhook
+                      properties:
+                        secretKey:
+                          description: The secret Key inside the secret
+                          type: string
+                        secretName:
+                          description: The secret containing the webhook configuration
+                          type: string
+                        webhookVersion:
+                          description: the Webhook Version, by default "v1"
+                          type: string
+                      required:
+                        - secretKey
+                        - secretName
+                        - webhookVersion
+                      type: object
+                    enabledModes:
+                      description: |-
+                        Optional: List of enabled Authorization modes (by default 'Node,RBAC')
+                        Important: order matters
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 backupConfig:
                   description: 'Optional: BackupConfig contains the configuration options for managing the Cluster Backup Velero integration feature.'
                   properties:
@@ -3176,11 +3220,16 @@ spec:
                     Only available in Enterprise Edition.
                   properties:
                     enableGatewayAPI:
-                      description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+                      description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
                       type: boolean
                     enabled:
                       description: Controls whether kubeLB is deployed or not.
                       type: boolean
+                    extraArgs:
+                      additionalProperties:
+                        type: string
+                      description: ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
+                      type: object
                     useLoadBalancerClass:
                       description: |-
                         UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the

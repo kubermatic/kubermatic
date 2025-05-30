@@ -313,7 +313,7 @@ type SeedSpec struct {
 	//
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitcegenyaml is used by the example-yaml-generator
-	KubeLB *KubeLBSettings `json:"kubelb,omitempty,omitcegenyaml"`
+	KubeLB *KubeLBSeedSettings `json:"kubelb,omitempty,omitcegenyaml"`
 	// DisabledCollectors contains a list of metrics collectors that should be disabled.
 	// Acceptable values are "Addon", "Cluster", "ClusterBackup", "Project", and "None".
 	DisabledCollectors []MetricsCollector `json:"disabledCollectors,omitempty"`
@@ -896,6 +896,9 @@ type DatacenterSpecKubevirt struct {
 	// Optional: indicates if region and zone labels from the cloud provider should be fetched.
 	CCMZoneAndRegionEnabled *bool `json:"ccmZoneAndRegionEnabled,omitempty"`
 
+	// Optional: indicates if the ccm should create and manage the clusters load balancers.
+	CCMLoadBalancerEnabled *bool `json:"ccmLoadBalancerEnabled,omitempty"`
+
 	// VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
 	// value is External and the VM will be protected by a PDB.
 	VMEvictionStrategy kubevirtv1.EvictionStrategy `json:"vmEvictionStrategy,omitempty"`
@@ -957,6 +960,8 @@ type Subnet struct {
 	// Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
 	// to span multiple regions
 	Regions []string `json:"regions,omitempty"`
+	// CIDR is the subnet IPV4 CIDR.
+	CIDR string `json:"cidr,omitempty"`
 }
 
 type NamespacedMode struct {
@@ -1244,6 +1249,14 @@ type OIDCProviderConfiguration struct {
 	SkipTLSVerify *bool `json:"skipTLSVerify,omitempty"`
 }
 
+type KubeLBSeedSettings struct {
+	KubeLBSettings `json:",inline"`
+
+	// EnableForAllDatacenters is used to enable kubeLB for all the datacenters belonging to this seed.
+	// This is only used to control whether installing kubeLB is allowed or not for the datacenter.
+	EnableForAllDatacenters bool `json:"enableForAllDatacenters,omitempty"`
+}
+
 type KubeLBSettings struct {
 	// Kubeconfig is reference to the Kubeconfig for the kubeLB management cluster.
 	Kubeconfig corev1.ObjectReference `json:"kubeconfig,omitempty"`
@@ -1265,11 +1278,14 @@ type KubeLBDatacenterSettings struct {
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass bool `json:"useLoadBalancerClass,omitempty"`
 	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
+	// When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
 	EnableGatewayAPI bool `json:"enableGatewayAPI,omitempty"`
 	// EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`
 	// DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
 	DisableIngressClass bool `json:"disableIngressClass,omitempty"`
+	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster. These args are propagated to all the user clusters unless overridden at a cluster level.
+	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
 }
 
 type ManagementProxySettings struct {

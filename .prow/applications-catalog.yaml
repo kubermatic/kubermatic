@@ -105,7 +105,9 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-cluster-autoscaler
-    run_if_changed: "(pkg/ee/default-application-catalog/cluster-autoscaler.yaml)"
+    # We are testing changes for the cluster-autoscaler application definition and the system applications
+    # reconciler through the same job.
+    run_if_changed: "(pkg/applicationdefinitions)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -628,6 +630,41 @@ presubmits:
               value: "app.kubernetes.io/name"
             - name: NAMES
               value: "trivy-operator"
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-app-definitions
+    run_if_changed: "(pkg/ee/default-application-catalog/application_catalog.go|pkg/ee/default-application-catalog/embed.go|hack/ci/run-application-definitions-e2e-test.sh)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+          command:
+            - "./hack/ci/run-application-definitions-e2e-test.sh"
+          env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
