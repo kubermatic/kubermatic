@@ -38,6 +38,9 @@ spec:
     clusterAPIMode: incluster-incluster
     autoDiscovery:
       namespace: kube-system
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
     image:
       # `Cluster.AutoscalerVersion` is injected by KKP based on the Kubernetes version of the cluster.
       tag: '{{ .Cluster.AutoscalerVersion }}'

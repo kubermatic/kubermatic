@@ -210,7 +210,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	var errors []error
 	for _, application := range applications {
 		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
-		err := r.ensureApplicationInstallation(ctx, userClusterClient, application, cluster)
+		err := r.ensureApplicationInstallation(ctx, userClusterClient, application)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -234,7 +234,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return nil, kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition) error {
 	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
 	// for this we need to list all existing applications installations
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
@@ -281,15 +281,19 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		ApplicationInstallationReconciler(ctx, r.log, application, currentApplicationInstallation, cluster),
+		ApplicationInstallationReconciler(r.log, application),
 	}
+
 	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, namespaceName, userClusterClient)
 }
 
-func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredLogger, application appskubermaticv1.ApplicationDefinition, exisitingApplication *appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) reconciling.NamedApplicationInstallationReconcilerFactory {
+func ApplicationInstallationReconciler(
+	logger *zap.SugaredLogger,
+	application appskubermaticv1.ApplicationDefinition,
+) reconciling.NamedApplicationInstallationReconcilerFactory {
 	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		applicationName := application.Name
-		// generatedApplication, err := generateApplicationInstallation(ctx, application, namespace)
+
 		return applicationName, func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
 			appVersion := application.Spec.DefaultVersion
 			if appVersion == "" {
@@ -316,6 +320,7 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 					}
 				}
 			}
+
 			err := convertDefaultValuesToDefaultValuesBlock(&application)
 			if err != nil {
 				// This is a non-critical error and we can still continue by using the `values` field instead of the `valuesBlock` field.
