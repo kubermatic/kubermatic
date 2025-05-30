@@ -57,10 +57,11 @@ const (
 // assigned UserSSHKeys (on the master cluster) as Secrets into the seed
 // clusters.
 type Reconciler struct {
-	masterClient ctrlruntimeclient.Client
-	log          *zap.SugaredLogger
-	workerName   string
-	seedClients  kubernetes.SeedClientMap
+	masterClient       ctrlruntimeclient.Client
+	log                *zap.SugaredLogger
+	workerName         string
+	seedClients        kubernetes.SeedClientMap
+	disableUserSSHKeys bool
 }
 
 func Add(
@@ -69,6 +70,7 @@ func Add(
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int,
+	disableUserSSHKeys bool,
 ) error {
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -76,10 +78,11 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
-		log:          log.Named(ControllerName),
-		workerName:   workerName,
-		masterClient: mgr.GetClient(),
-		seedClients:  kubernetes.SeedClientMap{},
+		log:                log.Named(ControllerName),
+		workerName:         workerName,
+		masterClient:       mgr.GetClient(),
+		seedClients:        kubernetes.SeedClientMap{},
+		disableUserSSHKeys: disableUserSSHKeys,
 	}
 
 	bldr := builder.ControllerManagedBy(mgr).
@@ -162,7 +165,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return fmt.Errorf("failed to list UserSSHKeys: %w", err)
 	}
 
-	if cluster.DeletionTimestamp != nil {
+	if cluster.DeletionTimestamp != nil || r.disableUserSSHKeys {
 		if err := r.cleanupUserSSHKeys(ctx, userSSHKeys.Items, cluster.Name); err != nil {
 			return fmt.Errorf("failed reconciling keys for a deleted cluster: %w", err)
 		}

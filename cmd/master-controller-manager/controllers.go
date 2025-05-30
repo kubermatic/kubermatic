@@ -83,10 +83,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		policyTemplateSynchronizerFactoryCreator(ctrlCtx),
 	}
 
-	if !ctrlCtx.featureGates[features.DisableUserSSHKey] {
-		controllerFactories = append(controllerFactories, userSSHKeySynchronizerFactoryCreator(ctrlCtx))
-	}
-
+	// Create the user-ssh-key-synchronizer controller even DisableUserSSHKey feature is set
+	// to allow it to handle finalizers during Cluster deletion.
+	controllerFactories = append(controllerFactories, userSSHKeySynchronizerFactoryCreator(ctrlCtx))
 	controllerFactories = append(controllerFactories, setupLifecycleControllerCreators(ctrlCtx)...)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
@@ -181,6 +180,7 @@ func userSSHKeySynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontro
 			ctrlCtx.log,
 			ctrlCtx.workerName,
 			ctrlCtx.workerCount,
+			ctrlCtx.featureGates.Enabled(features.DisableUserSSHKey),
 		)
 	}
 }
