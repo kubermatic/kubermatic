@@ -75,7 +75,7 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	}
 	containerImages = append(containerImages, appImages...)
 
-	if _, _, err := images.CopyImages(context.Background(), log, true, containerImages, "test-registry:5000", "kubermatic-installer/test"); err != nil {
+	if _, _, err := images.CopyImages(context.Background(), log, true, true, containerImages, "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling CopyImages: %v", err)
 	}
 }
