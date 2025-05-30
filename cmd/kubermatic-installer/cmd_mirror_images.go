@@ -56,6 +56,8 @@ type MirrorImagesOptions struct {
 	ArchivePath               string
 	LoadFrom                  string
 	DryRun                    bool
+	ListImagesOnly            bool
+	OutputFile                string
 
 	AddonsPath  string
 	AddonsImage string
@@ -113,7 +115,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
 	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides in the referenced KubermaticConfiguration to reuse a configuration that already specifies overrides (note that custom tags will still be observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
-
+	cmd.PersistentFlags().BoolVar(&opt.ListImagesOnly, "list-images-only", false, "If set, only list the images without performing any other actions.")
+	cmd.PersistentFlags().StringVarP(&opt.OutputFile, "output-file", "f", "", "Save the collected image list to the specified file (requires --list-images-only).")
 	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
 	cmd.PersistentFlags().StringVar(&opt.AddonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
 
@@ -245,8 +248,33 @@ func CollectImageMatrix(
 	return imageList, nil
 }
 
+// listImagesOnly logs all collected images or saves them to a file if specified.
+func listImagesOnly(imageSet sets.Set[string], logger *logrus.Logger, outputFile string) error {
+	var imageList string
+	for _, image := range sets.List(imageSet) {
+		imageList += fmt.Sprintf("  - %s\n", image)
+	}
+
+	if outputFile != "" {
+		logger.Info("📋 Saving collected images to file:", outputFile)
+		err := os.WriteFile(outputFile, []byte(imageList), 0o644)
+		if err != nil {
+			return fmt.Errorf("❌ Failed to save image list to file: %w", err)
+		}
+	} else {
+		logger.Info("📋 Listing all collected images:\n" + imageList)
+	}
+
+	logger.Info("✅ Finished listing images.")
+
+	return nil
+}
 func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions, options *MirrorImagesOptions) cobraFuncE {
 	return handleErrors(logger, func(cmd *cobra.Command, args []string) error {
+		if options.OutputFile != "" && !options.ListImagesOnly {
+			return fmt.Errorf("--output-file can only be used with --list-images-only")
+		}
+
 		ctx := cmd.Context()
 		userAgent := fmt.Sprintf("kubermatic-installer/%s", versions.GitVersion)
 
@@ -353,6 +381,11 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				}
 
 				imageSet.Insert(sysChart.WorkloadImages...)
+			}
+
+			// Log or save all collected images if ListImagesOnly is enabled
+			if options.ListImagesOnly {
+				return listImagesOnly(imageSet, logger, options.OutputFile)
 			}
 
 			if options.Archive && options.ArchivePath == "" {
