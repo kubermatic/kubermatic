@@ -1,0 +1,111 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: kubernetes-dashboard-auth
+  name: kubernetes-dashboard-auth
+  namespace: cluster-de-test-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubernetes-dashboard-auth
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,tmp-volume
+        kubermatic.k8c.io/last-restart: ""
+      creationTimestamp: null
+      labels:
+        app: kubernetes-dashboard-auth
+        cluster: de-test-01
+        kubernetes-dashboard-csrf-secret-revision: "123456"
+        kubernetes-dashboard-kubeconfig-secret-revision: "123456"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/dashboard-auth","args":["--kubeconfig=/opt/kubeconfig/kubeconfig"]}'
+        command:
+        - /http-prober-bin/http-prober
+        env:
+        - name: CSRF_KEY
+          valueFrom:
+            secretKeyRef:
+              key: private.key
+              name: kubernetes-dashboard-csrf
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.cpu
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.memory
+        image: docker.io/kubernetesui/dashboard-auth:1.2.2
+        imagePullPolicy: IfNotPresent
+        name: kubernetes-dashboard-auth
+        ports:
+        - containerPort: 8000
+          name: auth
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 400Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 2001
+          runAsUser: 1001
+        volumeMounts:
+        - mountPath: /opt/kubeconfig
+          name: kubeconfig
+        - mountPath: /tmp
+          name: tmp-volume
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.5.1
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: kubeconfig
+        secret:
+          defaultMode: 420
+          secretName: kubernetes-dashboard-kubeconfig
+      - emptyDir: {}
+        name: tmp-volume
+      - emptyDir: {}
+        name: http-prober-bin
+status: {}

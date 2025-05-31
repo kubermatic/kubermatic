@@ -1,0 +1,16 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  name: kubernetes-dashboard-kong-proxy
+  namespace: cluster-de-test-01
+spec:
+  ports:
+  - name: kong-proxy-tls
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app: kubernetes-dashboard-kong
+status:
+  loadBalancer: {}
