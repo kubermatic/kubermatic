@@ -245,6 +245,7 @@ spec:
           dnsPolicy: ""
           # Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
           # Defaults to false.
+          # Deprecated: Use .kubevirt.useDomainCPU instead.
           enableDedicatedCpus: false
           # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
           # Defaults to true.
@@ -302,6 +303,9 @@ spec:
           namespacedMode: null
           # Optional: ProviderNetwork describes the infra cluster network fabric that is being used
           providerNetwork: null
+          # Optional: UseDomainCPU enables CPU assignment via KubeVirt's spec.domain.cpu.
+          # When false (default), CPUs are assigned via Kubernetes Pod resource requests/limits.
+          useDomainCPU: false
           # VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
           # value is External and the VM will be protected by a PDB.
           vmEvictionStrategy: ""
