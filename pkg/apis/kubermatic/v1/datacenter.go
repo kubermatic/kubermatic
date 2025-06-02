@@ -847,6 +847,9 @@ type DatacenterSpecKubevirt struct {
 	// Optional: indicates if region and zone labels from the cloud provider should be fetched.
 	CCMZoneAndRegionEnabled *bool `json:"ccmZoneAndRegionEnabled,omitempty"`
 
+	// Optional: indicates if the ccm should create and manage the clusters load balancers.
+	CCMLoadBalancerEnabled *bool `json:"ccmLoadBalancerEnabled,omitempty"`
+
 	// VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
 	// value is External and the VM will be protected by a PDB.
 	VMEvictionStrategy v1.EvictionStrategy `json:"vmEvictionStrategy,omitempty"`
