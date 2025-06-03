@@ -14,20 +14,18 @@
 
 ### Bugfixes
 
-- Remove redundant and undocumented/unused `remove-oauth-release` flag for installer ([#14631](https://github.com/kubermatic/kubermatic/pull/14631))
-- Add validation for checks in the installer for the new dex chart ([#14624](https://github.com/kubermatic/kubermatic/pull/14624))
-- Fix `--skip-seed-validation` flag on the KKP installer ([#14589](https://github.com/kubermatic/kubermatic/pull/14589))
+- Add validation for checks in the installer for the new Dex Helm chart ([#14624](https://github.com/kubermatic/kubermatic/pull/14624))
 - Correctly mounts the custom CA bundle ConfigMap to fix reconciliation failures in custom CA environments ([#14575](https://github.com/kubermatic/kubermatic/pull/14575))
+- Fix `--skip-seed-validation` flag on the KKP installer ([#14589](https://github.com/kubermatic/kubermatic/pull/14589))
+- Fix a bug that caused network policies to not be removed from the KubeVirt infra cluster ([#14639](https://github.com/kubermatic/kubermatic/pull/14639))
 - Fix a bug where CSI Snapshot validating webhook was being deployed even if the CSI drivers are disabled for a cluster. When the csi driver is disabled after cluster creation the both mentioned resources will be cleaned up now ([#14466](https://github.com/kubermatic/kubermatic/pull/14466))
+- KubeLB: CCM will adjust the tenant kubeconfig to use API server endpoint and CA certificate from the management kubeconfig that is provided to KKP at the seed/datacenter level ([#14522](https://github.com/kubermatic/kubermatic/pull/14522))
+- Remove redundant and undocumented/unused `remove-oauth-release` flag for installer ([#14631](https://github.com/kubermatic/kubermatic/pull/14631))
+- Use infra management user credentials (if configured) to fetch data for vSphere ([#7397](https://github.com/kubermatic/dashboard/pull/7397))
 
 ### Miscellaneous
 
 - Support KubeVirt CCM Load Balancer Interface Disabling ([#14641](https://github.com/kubermatic/kubermatic/pull/14641))
-- KubeLB: CCM will adjust the tenant kubeconfig to use API server endpoint and CA certificate from the management kubeconfig that is provided to KKP at the seed/datacenter level ([#14522](https://github.com/kubermatic/kubermatic/pull/14522))
-
-### Chores
-
-- A bug that caused network policies to not be removed from the kubevirt infra cluster has been fixed ([#14638](https://github.com/kubermatic/kubermatic/pull/14638))
 
 ### Updates
 
