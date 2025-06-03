@@ -18,6 +18,19 @@
 - [v2.25.15](#v22515)
 - [v2.25.16](#v22516)
 - [v2.25.17](#v22517)
+- [v2.25.18](#v22518)
+
+
+## v2.25.18
+
+**GitHub release: [v2.25.18](https://github.com/kubermatic/kubermatic/releases/tag/v2.25.18)**
+
+### Bugfixes
+
+- Correctly mounts the custom CA bundle ConfigMap to fix reconciliation failures in custom CA environments ([#14575](https://github.com/kubermatic/kubermatic/pull/14575))
+- Fix `--skip-seed-validation` flag on the KKP installer ([#14591](https://github.com/kubermatic/kubermatic/pull/14591))
+- Fix a bug where CSI snapshot validating webhook was being deployed even if the CSI drivers are disabled for a cluster. When the CSI driver is disabled after cluster creation the both mentioned resources will be cleaned up now ([#14466](https://github.com/kubermatic/kubermatic/pull/14466))
+
 
 ## v2.25.17
 
