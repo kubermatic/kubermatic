@@ -9,6 +9,22 @@
 - [v2.26.6](#v2266)
 - [v2.26.7](#v2267)
 - [v2.26.8](#v2268)
+- [v2.26.9](#v2269)
+
+
+## v2.26.9
+
+**GitHub release: [v2.26.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.9)**
+
+### Bugfixes
+
+- Correctly mounts the custom CA bundle ConfigMap to fix reconciliation failures in custom CA environments ([#14575](https://github.com/kubermatic/kubermatic/pull/14575))
+- Fix `--skip-seed-validation` flag on the KKP installer ([#14590](https://github.com/kubermatic/kubermatic/pull/14590))
+- Fix a bug that caused network policies to not be removed from the KubeVirt infra cluster ([#14639](https://github.com/kubermatic/kubermatic/pull/14639))
+- Fix a bug where CSI snapshot validating webhook was being deployed even if the CSI drivers are disabled for a cluster. When the CSI driver is disabled after cluster creation the both mentioned resources will be cleaned up now ([#14466](https://github.com/kubermatic/kubermatic/pull/14466))
+- KubeLB: CCM will adjust the tenant kubeconfig to use apiserver endpoint and CA certificate from the management kubeconfig that is provided to KKP at the seed/datacenter level ([#14522](https://github.com/kubermatic/kubermatic/pull/14522))
+- Use infra management user credentials (if configured) to fetch data for vSphere ([#7397](https://github.com/kubermatic/dashboard/pull/7397))
+
 
 ## v2.26.8
 
@@ -19,7 +35,7 @@
 - Update cert-manager to v1.16.5. In the cert-manager values.yaml, following updates should be done ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
     - update  `webhook.replicas` to `webhook.replicaCount`
     - update  `cainjector.replicas` to `webhook.replicaCount`
-    - remove `webhook.injectAPIServerCA` 
+    - remove `webhook.injectAPIServerCA`
 
 ### Supported Kubernetes versions
 
@@ -60,7 +76,7 @@
 
 - Fix a Go panic when using git-source in Applications ([#14231](https://github.com/kubermatic/kubermatic/pull/14231))
 - Fix an issue where the CBSL status was not updating due to the missing cluster-backup-storage-controller in the master controller manager ([#14255](https://github.com/kubermatic/kubermatic/pull/14255))
-- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7217](https://github.com/kubermatic/dashboard/pull/7217)) 
+- Update Dashboard API to use correct OSP which is selected while creating a cluster ([#7217](https://github.com/kubermatic/dashboard/pull/7217))
 
 ### Updates
 
