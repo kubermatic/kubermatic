@@ -1,5 +1,3 @@
-//go:build ee
-
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
