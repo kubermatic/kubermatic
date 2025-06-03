@@ -160,12 +160,17 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return nil
 	}
 
+	if r.disableUserSSHKeys {
+		log.Debug("Skipping user SSH key reconciliation because it is disabled")
+		return kubernetes.TryRemoveFinalizer(ctx, seedClient, cluster, UserSSHKeysClusterIDsCleanupFinalizer)
+	}
+
 	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
 	if err := r.masterClient.List(ctx, userSSHKeys); err != nil {
 		return fmt.Errorf("failed to list UserSSHKeys: %w", err)
 	}
 
-	if cluster.DeletionTimestamp != nil || r.disableUserSSHKeys {
+	if cluster.DeletionTimestamp != nil {
 		if err := r.cleanupUserSSHKeys(ctx, userSSHKeys.Items, cluster.Name); err != nil {
 			return fmt.Errorf("failed reconciling keys for a deleted cluster: %w", err)
 		}
