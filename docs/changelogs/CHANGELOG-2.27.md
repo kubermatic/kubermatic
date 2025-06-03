@@ -5,6 +5,35 @@
 - [v2.27.2](#v2272)
 - [v2.27.3](#v2273)
 - [v2.27.4](#v2274)
+- [v2.27.5](#v2275)
+
+
+## v2.27.5
+
+**GitHub release: [v2.27.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.5)**
+
+### Bugfixes
+
+- Remove redundant and undocumented/unused `remove-oauth-release` flag for installer ([#14631](https://github.com/kubermatic/kubermatic/pull/14631))
+- Add validation for checks in the installer for the new dex chart ([#14624](https://github.com/kubermatic/kubermatic/pull/14624))
+- Fix `--skip-seed-validation` flag on the KKP installer ([#14589](https://github.com/kubermatic/kubermatic/pull/14589))
+- Correctly mounts the custom CA bundle ConfigMap to fix reconciliation failures in custom CA environments ([#14575](https://github.com/kubermatic/kubermatic/pull/14575))
+- Fix a bug where CSI Snapshot validating webhook was being deployed even if the CSI drivers are disabled for a cluster. When the csi driver is disabled after cluster creation the both mentioned resources will be cleaned up now ([#14466](https://github.com/kubermatic/kubermatic/pull/14466))
+
+### Miscellaneous
+
+- Support KubeVirt CCM Load Balancer Interface Disabling ([#14641](https://github.com/kubermatic/kubermatic/pull/14641))
+- KubeLB: CCM will adjust the tenant kubeconfig to use API server endpoint and CA certificate from the management kubeconfig that is provided to KKP at the seed/datacenter level ([#14522](https://github.com/kubermatic/kubermatic/pull/14522))
+
+### Chores
+
+- A bug that caused network policies to not be removed from the kubevirt infra cluster has been fixed ([#14638](https://github.com/kubermatic/kubermatic/pull/14638))
+
+### Updates
+
+- Update KubeVirt CSI Driver to commit `9ad38f9e49c296acfe7b9d3301ebff8a1056fa68` ([#14640](https://github.com/kubermatic/kubermatic/pull/14640))
+- Update machine controller to version v1.61.2 ([#14644](https://github.com/kubermatic/kubermatic/pull/14644))
+
 
 ## v2.27.4
 
@@ -13,7 +42,7 @@
 ### ACTION REQUIRED
 - Update cert-manager to v1.16.5. In the cert-manager values.yaml, following updates should be done ([#14400](https://github.com/kubermatic/kubermatic/pull/14400))
     - update  `webhook.replicas` to `webhook.replicaCount`
-    - update  `cainjector.replicas` to `webhook.replicaCount` 
+    - update  `cainjector.replicas` to `webhook.replicaCount`
     - remove `webhook.injectAPIServerCA`
 
 ### Supported Kubernetes versions
@@ -36,9 +65,9 @@
 
 ### Updates
 
-- Add Cert-manager version v1.16.5 in the default applications catalog ([#14418](https://github.com/kubermatic/kubermatic/pull/14418))     
+- Add Cert-manager version v1.16.5 in the default applications catalog ([#14418](https://github.com/kubermatic/kubermatic/pull/14418))
 - Security: Update Cilium to 1.15.16 / 1.16.9 because the previous versions are affected by CVE-2025-32793 ([#14436](https://github.com/kubermatic/kubermatic/pull/14436))
-- Support MatchSubnetAndStorageLocation  and Subnets Regions and Zones ([#14414](https://github.com/kubermatic/kubermatic/pull/14414))     
+- Support MatchSubnetAndStorageLocation  and Subnets Regions and Zones ([#14414](https://github.com/kubermatic/kubermatic/pull/14414))
 - Update oauth2-proxy to v7.8.2 ([#14388](https://github.com/kubermatic/kubermatic/pull/14388))
 - Update OSM version to [v1.6.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.5) ([#14412](https://github.com/kubermatic/kubermatic/pull/14412))
 - Update KubeLB CCM to [v1.1.4](https://docs.kubermatic.com/kubelb/v1.1/release-notes/#v114) ([#14366](https://github.com/kubermatic/kubermatic/pull/14366))
@@ -190,7 +219,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### New Features
 
-- Add `mirrorImages` field to KubermaticConfiguration for Image Mirroring ([#14140](https://github.com/kubermatic/kubermatic/pull/14140))  
+- Add `mirrorImages` field to KubermaticConfiguration for Image Mirroring ([#14140](https://github.com/kubermatic/kubermatic/pull/14140))
 - Add `mla-skip-logging` option into `kubermatic-installer` to exclude the logging stack from installation ([#14032](https://github.com/kubermatic/kubermatic/pull/14032))
 - Add AIKit in the default application catalogue ([#14121](https://github.com/kubermatic/kubermatic/pull/14121))
 - Add an early testing version of ArgoCD based GitOps management for various deployments in Seed ([#13705](https://github.com/kubermatic/kubermatic/pull/13705))
@@ -204,7 +233,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 ### Bugfixes
 
 - Turned off the Velero backups as well as snapshots by default ([#13940](https://github.com/kubermatic/kubermatic/pull/13940))
-    * If you have provided configuration for new velero chart in KKP 2.26 for creating etcd backups and/or volume backups, please ensure to set `velero.backupsEnabled: true` and `velero.snapshotsEnabled: true` explicitly in your custom `values.yaml`   
+    * If you have provided configuration for new velero chart in KKP 2.26 for creating etcd backups and/or volume backups, please ensure to set `velero.backupsEnabled: true` and `velero.snapshotsEnabled: true` explicitly in your custom `values.yaml`
     * The node-agent daemonset is by default disabled. If you had configured volume backups via `velero.snapshotsEnabled: true`, you also need to enabled `velero.deployNodeAgent: true` for volume backups to work
 - Mirror system applications helm chart images ([#14126](https://github.com/kubermatic/kubermatic/pull/14126))
     * Update aws-node-termination-handler to v1.24.0
@@ -244,7 +273,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ### Updates
 
-- Bump MC to [v1.61.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.0), OSM to [1.6.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.0)  ([#13811](https://github.com/kubermatic/kubermatic/pull/13811), [#14092](https://github.com/kubermatic/kubermatic/pull/14092))  
+- Bump MC to [v1.61.0](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.0), OSM to [1.6.0](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.0)  ([#13811](https://github.com/kubermatic/kubermatic/pull/13811), [#14092](https://github.com/kubermatic/kubermatic/pull/14092))
     * Add support for Ubuntu 24.04.
     * Update machine-controller to v1.61.0
     * Update operating-system-manager to v1.6.0
@@ -252,7 +281,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update the applications from the default application catalog to newer versions ([#14067](https://github.com/kubermatic/kubermatic/pull/14https://github.com/kubermatic/kubermatic/pull/14067))
 - [EE] The Applications in the Default Application Catalog now use the `defaultValuesBlock` instead of the `defaultValues` ([#13820](https://github.com/kubermatic/kubermatic/pull/13820))
 - Add support for Canal in 3.29 version, deprecating v3.26 ([#14051](https://github.com/kubermatic/kubermatic/pull/14051))
-- Add support for Cilium in 1.16.6 version, deprecating 1.13 version ([#14048](https://github.com/kubermatic/kubermatic/pull/14048))    
+- Add support for Cilium in 1.16.6 version, deprecating 1.13 version ([#14048](https://github.com/kubermatic/kubermatic/pull/14048))
 - Update Cilium and Trivy ([#13832](https://github.com/kubermatic/kubermatic/pull/13832))
     * Security: Update Cilium to 1.14.16 / 1.15.10 because the previous versions are affected by CVE-2024-47825
 - Update cloud-controller-managers to their latest releases. Azure and OpenStack now use the 1.31.x CCMs for 1.31 clusters ([#13854](https://github.com/kubermatic/kubermatic/pull/13854))
