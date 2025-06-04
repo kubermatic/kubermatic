@@ -875,7 +875,12 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
 	// Defaults to false.
+	// Deprecated: Use .kubevirt.usePodResourcesCPU instead.
 	EnableDedicatedCPUs bool `json:"enableDedicatedCpus,omitempty"`
+
+	// Optional: UsePodResourcesCPU enables CPU assignment via Kubernetes Pod resource requests/limits.
+	// When false (default), CPUs are assigned via KubeVirt's spec.domain.cpu.
+	UsePodResourcesCPU bool `json:"usePodResourcesCPU,omitempty"`
 
 	// Optional: CustomNetworkPolicies allows to add some extra custom NetworkPolicies, that are deployed
 	// in the dedicated infra KubeVirt cluster. They are added to the defaults.
