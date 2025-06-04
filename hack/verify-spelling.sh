@@ -40,7 +40,6 @@ skip=(
   ./charts/cert-manager/crd
   ./charts/backup/velero/crd
   ./charts/dex/test
-  ./charts/oauth/test
   ./addons/multus/crds.yaml
   ./charts/local-kubevirt/crds
   ./pkg/applicationdefinitions/system-applications
