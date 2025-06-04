@@ -31,7 +31,11 @@ const (
 	reachableCheckPeriod = 5 * time.Second
 )
 
-func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cluster, namespace *corev1.Namespace) (*reconcile.Result, error) {
+func (r *Reconciler) reconcileCluster(
+	ctx context.Context,
+	cluster *kubermaticv1.Cluster,
+	namespace *corev1.Namespace,
+) (*reconcile.Result, error) {
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer) {
 		res, err := r.AddFinalizers(ctx, cluster, kubermaticv1.EtcdBackupConfigCleanupFinalizer)
 		if err != nil {

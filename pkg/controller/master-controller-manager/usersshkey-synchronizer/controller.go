@@ -57,10 +57,11 @@ const (
 // assigned UserSSHKeys (on the master cluster) as Secrets into the seed
 // clusters.
 type Reconciler struct {
-	masterClient ctrlruntimeclient.Client
-	log          *zap.SugaredLogger
-	workerName   string
-	seedClients  kubernetes.SeedClientMap
+	masterClient       ctrlruntimeclient.Client
+	log                *zap.SugaredLogger
+	workerName         string
+	seedClients        kubernetes.SeedClientMap
+	disableUserSSHKeys bool
 }
 
 func Add(
@@ -69,6 +70,7 @@ func Add(
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int,
+	disableUserSSHKeys bool,
 ) error {
 	workerSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -76,10 +78,11 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
-		log:          log.Named(ControllerName),
-		workerName:   workerName,
-		masterClient: mgr.GetClient(),
-		seedClients:  kubernetes.SeedClientMap{},
+		log:                log.Named(ControllerName),
+		workerName:         workerName,
+		masterClient:       mgr.GetClient(),
+		seedClients:        kubernetes.SeedClientMap{},
+		disableUserSSHKeys: disableUserSSHKeys,
 	}
 
 	bldr := builder.ControllerManagedBy(mgr).
@@ -155,6 +158,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	if cluster.Spec.Pause {
 		log.Debug("Skipping cluster reconciling because it was set to paused")
 		return nil
+	}
+
+	if r.disableUserSSHKeys {
+		log.Debug("Skipping user SSH key reconciliation because it is disabled")
+		return kubernetes.TryRemoveFinalizer(ctx, seedClient, cluster, UserSSHKeysClusterIDsCleanupFinalizer)
 	}
 
 	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
