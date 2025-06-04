@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/applications"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
+	kyvernocommonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -123,6 +124,14 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 			return nil, fmt.Errorf("failed to get KubeLB health: %w", err)
 		}
 		extendedHealth.KubeLB = &status
+	}
+
+	if cluster.Spec.IsKyvernoEnabled() {
+		status, err := r.kyvernoHealthCheck(ctx, cluster, ns)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Kyverno health: %w", err)
+		}
+		extendedHealth.Kyverno = &status
 	}
 
 	return extendedHealth, nil
@@ -303,4 +312,63 @@ func (r *Reconciler) statefulSetHealthCheck(ctx context.Context, c *kubermaticv1
 	updated := statefulSet.Status.Replicas == statefulSet.Status.UpdatedReplicas
 
 	return ready && updated, nil
+}
+
+func (r *Reconciler) kyvernoHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
+	// Kyverno consists of 4 deployments with different replica counts
+	type kyvernoDeployment struct {
+		name     string
+		minReady int32
+	}
+
+	kyvernoDeployments := []kyvernoDeployment{
+		{
+			name:     kyvernocommonseedresources.KyvernoAdmissionControllerDeploymentName,
+			minReady: kyvernocommonseedresources.KyvernoAdmissionControllerReplicas,
+		},
+		{
+			name:     kyvernocommonseedresources.KyvernoBackgroundControllerDeploymentName,
+			minReady: kyvernocommonseedresources.KyvernoBackgroundControllerReplicas,
+		},
+		{
+			name:     kyvernocommonseedresources.KyvernoCleanupControllerDeploymentName,
+			minReady: kyvernocommonseedresources.KyvernoCleanupControllerReplicas,
+		},
+		{
+			name:     kyvernocommonseedresources.KyvernoReportsControllerDeploymentName,
+			minReady: kyvernocommonseedresources.KyvernoReportsControllerReplicas,
+		},
+	}
+
+	allUp := true
+	anyProvisioning := false
+
+	for _, deployment := range kyvernoDeployments {
+		key := types.NamespacedName{Namespace: namespace, Name: deployment.name}
+		status, err := resources.HealthyDeployment(ctx, r, key, deployment.minReady)
+		if err != nil {
+			return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", deployment.name, err)
+		}
+
+		switch status {
+		case kubermaticv1.HealthStatusDown:
+			return kubermaticv1.HealthStatusDown, nil
+		case kubermaticv1.HealthStatusProvisioning:
+			anyProvisioning = true
+			allUp = false
+		case kubermaticv1.HealthStatusUp:
+		}
+	}
+
+	switch {
+	case allUp:
+		status := util.GetHealthStatus(kubermaticv1.HealthStatusUp, cluster, r.versions)
+		return status, nil
+	case anyProvisioning:
+		status := util.GetHealthStatus(kubermaticv1.HealthStatusProvisioning, cluster, r.versions)
+		return status, nil
+	default:
+		status := util.GetHealthStatus(kubermaticv1.HealthStatusDown, cluster, r.versions)
+		return status, nil
+	}
 }
