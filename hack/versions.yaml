@@ -315,7 +315,7 @@ products:
   - name: "Dex"
     source: https://github.com/dexidp/dex
     occurrences:
-      - helmChart: { directory: charts/oauth }
+      - helmChart: { directory: charts/dex }
 
   - name: Flatcar Linux Update Operator
     source: https://github.com/flatcar/flatcar-linux-update-operator

@@ -56,10 +56,6 @@ const (
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
 
-	LegacyDexChartName   = "oauth"
-	LegacyDexReleaseName = LegacyDexChartName
-	LegacyDexNamespace   = LegacyDexChartName
-
 	KubermaticOperatorChartName      = "kubermatic-operator"
 	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
 	KubermaticOperatorReleaseName    = KubermaticOperatorChartName
