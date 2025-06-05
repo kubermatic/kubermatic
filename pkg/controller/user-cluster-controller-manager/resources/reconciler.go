@@ -1072,7 +1072,11 @@ func (r *reconciler) reconcileDeployments(ctx context.Context, data reconcileDat
 		konnectivityResources := resources.GetOverrides(data.cluster.Spec.ComponentsOverride)
 
 		creators := []reconciling.NamedDeploymentReconcilerFactory{
-			konnectivity.DeploymentReconciler(data.clusterVersion, r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime, r.imageRewriter, konnectivityResources),
+			konnectivity.DeploymentReconciler(
+				data.clusterVersion, data.cluster,
+				r.konnectivityServerHost, r.konnectivityServerPort, r.konnectivityKeepaliveTime,
+				r.imageRewriter, konnectivityResources,
+			),
 			metricsserver.DeploymentReconciler(r.imageRewriter), // deploy metrics-server in user cluster
 		}
 		if err := reconciling.ReconcileDeployments(ctx, creators, metav1.NamespaceSystem, r); err != nil {

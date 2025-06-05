@@ -493,7 +493,11 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil))
+		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(
+			templateData.Cluster().Spec.Version, templateData.Cluster(),
+			"dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil,
+		))
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)
