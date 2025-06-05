@@ -400,52 +400,6 @@ func TestReconcile(t *testing.T) {
 				return nil
 			},
 		},
-		// {
-		// 	name:    "scenario 11: no policy bindings created when Kyverno is disabled",
-		// 	cluster: genClusterWithKyvernoDisabled(clusterName, defaultDatacenter, true),
-		// 	policyTemplates: []kubermaticv1.PolicyTemplate{
-		// 		*genPolicyTemplate(policyName, false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
-		// 	},
-		// 	validate: func(cluster *kubermaticv1.Cluster, policyTemplates []kubermaticv1.PolicyTemplate, client ctrlruntimeclient.Client, reconcileErr error) error {
-		// 		if reconcileErr != nil {
-		// 			return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
-		// 		}
-
-		// 		bindings := &kubermaticv1.PolicyBindingList{}
-		// 		if err := client.List(context.Background(), bindings, ctrlruntimeclient.InNamespace(clusterNamespace)); err != nil {
-		// 			return fmt.Errorf("failed to list PolicyBindings: %w", err)
-		// 		}
-
-		// 		if len(bindings.Items) != 0 {
-		// 			return fmt.Errorf("expected 0 policy bindings when Kyverno is disabled, but got %d", len(bindings.Items))
-		// 		}
-
-		// 		return nil
-		// 	},
-		// },
-		// {
-		// 	name:    "scenario 12: default policies ignored when Kyverno is disabled",
-		// 	cluster: genClusterWithKyvernoDisabled(clusterName, defaultDatacenter, true),
-		// 	policyTemplates: []kubermaticv1.PolicyTemplate{
-		// 		*genPolicyTemplate(policyName, true, false, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
-		// 	},
-		// 	validate: func(cluster *kubermaticv1.Cluster, policyTemplates []kubermaticv1.PolicyTemplate, client ctrlruntimeclient.Client, reconcileErr error) error {
-		// 		if reconcileErr != nil {
-		// 			return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
-		// 		}
-
-		// 		bindings := &kubermaticv1.PolicyBindingList{}
-		// 		if err := client.List(context.Background(), bindings, ctrlruntimeclient.InNamespace(clusterNamespace)); err != nil {
-		// 			return fmt.Errorf("failed to list PolicyBindings: %w", err)
-		// 		}
-
-		// 		if len(bindings.Items) != 0 {
-		// 			return fmt.Errorf("expected 0 policy bindings when Kyverno is disabled, but got %d", len(bindings.Items))
-		// 		}
-
-		// 		return nil
-		// 	},
-		// },
 	}
 
 	for _, test := range testCases {
