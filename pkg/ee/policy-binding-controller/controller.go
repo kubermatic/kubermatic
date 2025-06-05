@@ -162,7 +162,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	template := &kubermaticv1.PolicyTemplate{}
 	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.PolicyTemplateRef.Name}, template); err != nil {
 		if apierrors.IsNotFound(err) {
-			return r.deleteKyvernoResourcesForBinding(ctx, binding)
+			return r.handlePolicyBindingCleanup(ctx, binding)
 		}
 		return err
 	}
