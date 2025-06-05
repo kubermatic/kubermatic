@@ -12,29 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/golang:1.24.2 AS builder
+ARG BASE_IMAGE=docker.io/golang:1.24.2
+FROM $BASE_IMAGE AS builder
 
-# import the GOPROXY variable via an arg and then use
-# that arg to define the environment variable later on
 ARG GOPROXY=
-ARG GOCACHE=
 ARG KUBERMATIC_EDITION=ce
 
 ENV GOPROXY=$GOPROXY
-ENV GOCACHE=$GOCACHE
 ENV KUBERMATIC_EDITION=$KUBERMATIC_EDITION
 
 WORKDIR /go/src/k8c.io/kubermatic
 COPY . .
-RUN make -C ./cmd/kubeletdnat-controller build
+RUN make alertmanager-authorization-server
 
-FROM docker.io/alpine:3.19
-LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/kubeletdnat-controller/Dockerfile.multiarch"
+FROM gcr.io/distroless/static-debian12:nonroot
+LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/alertmanager-authorization-server/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-RUN apk add -u --no-cache iptables
+COPY --from=builder /go/src/k8c.io/kubermatic/_build /usr/local/bin/
 
-COPY --from=builder /go/src/k8c.io/kubermatic/cmd/kubeletdnat-controller/_build/kubeletdnat-controller /usr/local/bin/kubeletdnat-controller
-
-ENTRYPOINT [ "kubeletdnat-controller" ]
+ENTRYPOINT ["alertmanager-authorization-server"]
