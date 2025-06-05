@@ -386,7 +386,7 @@ func (r *Reconciler) enqueueClusters() handler.EventHandler {
 	})
 }
 
-// handlePolicyTemplateDeletion handles cleanup when a PolicyTemplate is deleted
+// handlePolicyTemplateDeletion handles cleanup when a PolicyTemplate is deleted.
 func (r *Reconciler) handlePolicyTemplateDeletion(ctx context.Context, policyTemplate *kubermaticv1.PolicyTemplate, log *zap.SugaredLogger) []reconcile.Request {
 	var requests []reconcile.Request
 
@@ -492,19 +492,10 @@ func (r *Reconciler) enqueueClustersOnPolicyBindingDeletion() handler.EventHandl
 
 func withPolicyBindingEventFilter() predicate.Predicate {
 	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			return false
-		},
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			return false
-		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			obj := e.Object.(*kubermaticv1.PolicyBinding)
 
 			return obj.Spec.PolicyTemplateRef.Name != ""
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return false
 		},
 	}
 }
