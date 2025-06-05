@@ -96,7 +96,8 @@ beforeDockerBuild=$(nowms)
   cd cmd/user-ssh-keys-agent
   make build
   IMAGE_NAME="quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
+  # label the image to auto-expire to save storage space on quay and be good netizens
+  time retry 5 docker build --tag "${IMAGE_NAME}" --label "quay.expires-after=24h" .
   # we use docker push here as the agent is pulled by the worker nodes and therefore needs to be available on quay
   time retry 5 docker push "${IMAGE_NAME}"
 )
