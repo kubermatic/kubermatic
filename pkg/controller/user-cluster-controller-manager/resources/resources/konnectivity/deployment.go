@@ -2,6 +2,7 @@
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
+
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
@@ -19,6 +20,7 @@ package konnectivity
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
@@ -52,6 +54,7 @@ var (
 // DeploymentReconciler returns function to reconcile konnectivity agents deployment in user cluster.
 func DeploymentReconciler(
 	clusterVersion semver.Semver,
+	cluster *kubermaticv1.Cluster,
 	kServerHost string,
 	kServerPort int,
 	kKeepaliveTime string,
@@ -77,29 +80,22 @@ func DeploymentReconciler(
 				},
 			}
 
+			args := getArgs(cluster, kServerHost, kKeepaliveTime, kServerPort)
 			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
 			ds.Spec.Template.Spec.ServiceAccountName = resources.KonnectivityServiceAccountName
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:            resources.KonnectivityAgentContainer,
-					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s/kas-network-proxy/proxy-agent:%s", resources.RegistryK8S, konnectivity.NetworkProxyVersion(clusterVersion)))),
+					Name: resources.KonnectivityAgentContainer,
+					Image: registry.Must(imageRewriter(
+						fmt.Sprintf("%s/kas-network-proxy/proxy-agent:%s",
+							resources.RegistryK8S,
+							konnectivity.NetworkProxyVersion(clusterVersion),
+						),
+					)),
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/proxy-agent"},
-					Args: []string{
-						"--logtostderr=true",
-						"-v=3",
-						"--sync-forever=true",
-						"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-						fmt.Sprintf("--proxy-server-host=%s", kServerHost),
-						fmt.Sprintf("--proxy-server-port=%d", kServerPort),
-						"--admin-server-port=8133",
-						"--health-server-port=8134",
-						fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
-						// TODO rastislavs: use "--agent-identifiers=ipv4=$(HOST_IP)" with "--proxy-strategies=destHost,default"
-						// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
-						fmt.Sprintf("--keepalive-time=%s", kKeepaliveTime),
-					},
-					Resources: corev1.ResourceRequirements{},
+					Args:            args,
+					Resources:       corev1.ResourceRequirements{},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      resources.KonnectivityAgentToken,
@@ -174,6 +170,34 @@ func DeploymentReconciler(
 			return ds, nil
 		}
 	}
+}
+
+func getArgs(cluster *kubermaticv1.Cluster, kServerHost, kKeepaliveTime string, kServerPort int) []string {
+	args := []string{
+		"--logtostderr=true",
+		"-v=3",
+		"--sync-forever=true",
+		"--ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+		fmt.Sprintf("--proxy-server-host=%s", kServerHost),
+		fmt.Sprintf("--proxy-server-port=%d", kServerPort),
+		"--admin-server-port=8133",
+		"--health-server-port=8134",
+		fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
+		// TODO rastislavs: use "--agent-identifiers=ipv4=$(HOST_IP)" with "--proxy-strategies=destHost,default"
+		// once the upstream issue is resolved: https://github.com/kubernetes-sigs/apiserver-network-proxy/issues/261
+		fmt.Sprintf("--keepalive-time=%s", kKeepaliveTime),
+	}
+
+	clusterArgs := []string{}
+	if cluster != nil {
+		clusterArgs = cluster.Spec.ComponentsOverride.KonnectivityProxy.Args
+	}
+
+	if len(clusterArgs) > 0 {
+		args = append(args, clusterArgs...)
+	}
+
+	return args
 }
 
 // PodDisruptionBudgetReconciler returns a func to create/update the Konnectivity agent's PodDisruptionBudget.
