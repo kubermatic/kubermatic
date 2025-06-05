@@ -45,7 +45,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -94,7 +93,7 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 		// Watch changes for PolicyTemplates that have been enforced.
 		Watches(&kubermaticv1.PolicyTemplate{}, reconciler.enqueueClusters(), builder.WithPredicates(withEventFilter())).
 		// Watch changes for PolicyBinding resources.
-		Watches(&kubermaticv1.PolicyBinding{}, reconciler.enqueueClustersOnPolicyBindingDeletion(), builder.WithPredicates(withPolicyBindingEventFilter(reconciler))).
+		Watches(&kubermaticv1.PolicyBinding{}, reconciler.enqueueClustersOnPolicyBindingDeletion(), builder.WithPredicates(withPolicyBindingEventFilter())).
 		Build(reconciler)
 
 	return err
@@ -356,9 +355,10 @@ func (r *Reconciler) enqueueClusters() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 		policyTemplate := obj.(*kubermaticv1.PolicyTemplate)
+		log := r.log.With("policyTemplate", policyTemplate.Name)
 
 		if policyTemplate.DeletionTimestamp != nil {
-			return r.handlePolicyTemplateDeletion(ctx, policyTemplate)
+			return r.handlePolicyTemplateDeletion(ctx, policyTemplate, log)
 		}
 
 		// Check if the policy template is enforced
@@ -369,8 +369,7 @@ func (r *Reconciler) enqueueClusters() handler.EventHandler {
 		// List all clusters
 		clusters := &kubermaticv1.ClusterList{}
 		if err := r.List(ctx, clusters); err != nil {
-			r.log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list clusters: %w", err))
+			log.Error("Failed to list clusters", "error", err)
 			return requests
 		}
 
@@ -388,18 +387,19 @@ func (r *Reconciler) enqueueClusters() handler.EventHandler {
 }
 
 // handlePolicyTemplateDeletion handles cleanup when a PolicyTemplate is deleted
-func (r *Reconciler) handlePolicyTemplateDeletion(ctx context.Context, policyTemplate *kubermaticv1.PolicyTemplate) []reconcile.Request {
+func (r *Reconciler) handlePolicyTemplateDeletion(ctx context.Context, policyTemplate *kubermaticv1.PolicyTemplate, log *zap.SugaredLogger) []reconcile.Request {
 	var requests []reconcile.Request
 
 	bindings := &kubermaticv1.PolicyBindingList{}
 	if err := r.List(ctx, bindings); err != nil {
+		log.Error("Failed to list PolicyBindings during template deletion", "error", err)
 		return requests
 	}
 
 	for _, binding := range bindings.Items {
 		if binding.Spec.PolicyTemplateRef.Name == policyTemplate.Name {
 			if err := r.Delete(ctx, &binding); err != nil {
-				r.log.Error("Failed to delete PolicyBinding for deleted template", "error", err)
+				log.Error("Failed to delete PolicyBinding for deleted template", "binding", binding.Name, "namespace", binding.Namespace, "error", err)
 			}
 		}
 	}
@@ -458,11 +458,12 @@ func (r *Reconciler) enqueueClustersOnPolicyBindingDeletion() handler.EventHandl
 			return requests
 		}
 		clusterName := strings.TrimPrefix(clusterNamespace, "cluster-")
+		log := r.log.With("cluster", clusterName, "policyBinding", policyBinding.Name)
 
 		cluster := &kubermaticv1.Cluster{}
 		if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
 			if !apierrors.IsNotFound(err) {
-				r.log.Error("Failed to get cluster for PolicyBinding deletion", "cluster", clusterName, "error", err)
+				log.Error("Failed to get cluster for PolicyBinding deletion", "error", err)
 			}
 			return requests
 		}
@@ -471,7 +472,7 @@ func (r *Reconciler) enqueueClustersOnPolicyBindingDeletion() handler.EventHandl
 			policyTemplate := &kubermaticv1.PolicyTemplate{}
 			if err := r.Get(ctx, types.NamespacedName{Name: policyBinding.Spec.PolicyTemplateRef.Name}, policyTemplate); err != nil {
 				if !apierrors.IsNotFound(err) {
-					r.log.Error("Failed to get PolicyTemplate for PolicyBinding deletion", "template", policyBinding.Spec.PolicyTemplateRef.Name, "error", err)
+					log.Error("Failed to get PolicyTemplate for PolicyBinding deletion", "template", policyBinding.Spec.PolicyTemplateRef.Name, "error", err)
 				}
 				return requests
 			}
@@ -489,7 +490,7 @@ func (r *Reconciler) enqueueClustersOnPolicyBindingDeletion() handler.EventHandl
 	})
 }
 
-func withPolicyBindingEventFilter(reconciler *Reconciler) predicate.Predicate {
+func withPolicyBindingEventFilter() predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return false
