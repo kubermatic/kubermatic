@@ -108,11 +108,11 @@ products:
   - name: Kubernetes Dashboard
     source: https://github.com/kubernetes/dashboard
     occurrences:
-      - goFunction:
-          function: callKubernetesDashboardVersion
-      - goConstant:
-          package: k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard
-          constant: scraperTag
+      - goFunction: { function: callKubernetesDashboardAPIVersion }
+      - goFunction: { function: callKubernetesDashboardAuthVersion }
+      - goFunction: { function: callKubernetesDashboardWebVersion }
+      - goFunction: { function: callKubernetesDashboardMetricsScraperVersion }
+      - goFunction: { function: callKubernetesDashboardKongVersion }
 
   - name: machine-controller (MC)
     source: https://github.com/kubermatic/machine-controller
