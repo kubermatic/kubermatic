@@ -180,7 +180,7 @@ func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ct
 
 		err = upgradeNodeExporterDaemonSet(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare Node Exporter for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Node Exporter daemonset: %s", err)
 		}
 	}
 
@@ -668,25 +668,26 @@ func upgradeNodeExporterDaemonSet(
 
 	key := types.NamespacedName{Name: NodeExporterReleaseName, Namespace: NodeExporterNamespace}
 
-	if err := kubeClient.Get(ctx, key, daemonset); err != nil {
-		return fmt.Errorf("error querying API for the existing DaemonSet object, aborting upgrade process.")
+	err := kubeClient.Get(ctx, key, daemonset)
+	if err == nil {
+		// 2: if deamonset exists, then store the daemonset for backup
+		backupTS := time.Now().Format("2006-01-02T150405")
+		filename := fmt.Sprintf("backup_%s_%s.yaml", NodeExporterReleaseName, backupTS)
+		logger.Infof("Attempting to store the daemonset in file: %s", filename)
+		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*daemonset}); err != nil {
+			return fmt.Errorf("failed to back up the daemonset, it is not removed: %w", err)
+		}
+
+		// 3: delete the daemonset
+		logger.Info("Deleting the daemonset from the cluster")
+		if err := kubeClient.Delete(ctx, daemonset); err != nil {
+			return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
+		return nil
 	}
 
-	// 2: store the daemonset for backup
-	backupTS := time.Now().Format("2006-01-02T150405")
-	filename := fmt.Sprintf("backup_%s_%s.yaml", NodeExporterReleaseName, backupTS)
-	logger.Infof("Attempting to store the daemonset in file: %s", filename)
-	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*daemonset}); err != nil {
-		return fmt.Errorf("failed to back up the daemonset, it is not removed: %w", err)
-	}
-
-	// 3: delete the daemonset
-	logger.Info("Deleting the daemonset from the cluster")
-	if err := kubeClient.Delete(ctx, daemonset); err != nil {
-		return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
-	}
-
-	return nil
+	logger.Warn("Skipping the backup and cleanup of the old Node-Exporter daemonset")
+	return fmt.Errorf("error querying API for the existing DaemonSet object: %w", err)
 }
 
 func upgradeBlackboxExporterDeployment(
