@@ -123,6 +123,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			WithAvailabilityZone(*subnet.AvailabilityZone).
 			WithSubnetID(*subnet.SubnetId).
 			WithSpotInstanceMaxPrice("0.5").
+			WithAMI("ami-028727bd3039c5a1f").
 			Build()
 
 		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)

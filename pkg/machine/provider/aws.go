@@ -206,6 +206,10 @@ func CompleteAWSProviderSpec(config *aws.RawConfig, cluster *kubermaticv1.Cluste
 		if projectID, ok := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; ok {
 			config.Tags["system/project"] = projectID
 		}
+
+		config.AMI = providerconfig.ConfigVarString{
+			Value: "ami-028727bd3039c5a1f",
+		}
 	}
 
 	return config, nil

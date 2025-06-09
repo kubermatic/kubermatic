@@ -144,7 +144,7 @@ func NewAWSCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 			},
 		})
 
-	awsConfig := provider.NewAWSConfig().WithInstanceType("t3.medium")
+	awsConfig := provider.NewAWSConfig().WithInstanceType("t3.medium").WithAMI("ami-028727bd3039c5a1f")
 	if spotMaxPriceUSD != nil {
 		awsConfig.WithSpotInstanceMaxPrice(*spotMaxPriceUSD)
 	}

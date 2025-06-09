@@ -1,5 +1,3 @@
-//go:build dualstack
-
 /*
 Copyright 2022 The Kubermatic Kubernetes Platform contributors.
 
@@ -81,6 +79,9 @@ func newAWSTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) 
 	jig.MachineJig.WithCloudProviderSpecPatch(func(providerSpec interface{}) interface{} {
 		awsSpec := providerSpec.(awstypes.RawConfig)
 		awsSpec.AssignPublicIP = ptr.To(true)
+		awsSpec.AMI = providerconfig.ConfigVarString{
+			Value: "ami-028727bd3039c5a1f",
+		}
 		return awsSpec
 	})
 

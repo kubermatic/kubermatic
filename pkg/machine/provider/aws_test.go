@@ -109,7 +109,8 @@ func TestCompleteAWSProviderSpec(t *testing.T) {
 				},
 				expected: cloneBuilder(goodMachine).
 					WithRegion("testregion-aws").
-					WithAvailabilityZone("testregion-awsa"),
+					WithAvailabilityZone("testregion-awsa").
+					WithAMI("ami-028727bd3039c5a1f"),
 			},
 		},
 		&awsTestcase{
@@ -119,7 +120,7 @@ func TestCompleteAWSProviderSpec(t *testing.T) {
 					Region: "testregion-aws",
 				},
 				inputSpec: cloneBuilder(defaultMachine).WithRegion("keep-me-aws"),
-				expected:  cloneBuilder(goodMachine).WithRegion("keep-me-aws").WithAvailabilityZone("keep-me-awsa"),
+				expected:  cloneBuilder(goodMachine).WithRegion("keep-me-aws").WithAvailabilityZone("keep-me-awsa").WithAMI("ami-028727bd3039c5a1f"),
 			},
 		},
 		&awsTestcase{
@@ -127,10 +128,10 @@ func TestCompleteAWSProviderSpec(t *testing.T) {
 				name: "should select the correct AMI based on the OS",
 				datacenter: &kubermaticv1.DatacenterSpecAWS{
 					Images: kubermaticv1.ImageList{
-						providerconfig.OperatingSystemFlatcar: "testimage",
+						providerconfig.OperatingSystemFlatcar: "ami-028727bd3039c5a1f",
 					},
 				},
-				expected: cloneBuilder(goodMachine).WithAMI("testimage"),
+				expected: cloneBuilder(goodMachine).WithAMI("ami-028727bd3039c5a1f"),
 			},
 			os: providerconfig.OperatingSystemFlatcar,
 		},
