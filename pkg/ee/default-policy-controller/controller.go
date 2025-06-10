@@ -398,7 +398,7 @@ func (r *Reconciler) handlePolicyTemplateDeletion(ctx context.Context, policyTem
 
 	for _, binding := range bindings.Items {
 		if binding.Spec.PolicyTemplateRef.Name == policyTemplate.Name {
-			if err := r.Delete(ctx, &binding); err != nil {
+			if err := r.Delete(ctx, &binding); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 				log.Error("Failed to delete PolicyBinding for deleted template", "binding", binding.Name, "namespace", binding.Namespace, "error", err)
 			}
 		}
