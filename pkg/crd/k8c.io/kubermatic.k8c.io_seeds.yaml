@@ -1211,6 +1211,7 @@ spec:
                                 description: |-
                                   Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
                                   Defaults to false.
+                                  Deprecated: Use .kubevirt.usePodResourcesCPU instead.
                                 type: boolean
                               enableDefaultNetworkPolicies:
                                 description: |-
@@ -1374,6 +1375,11 @@ spec:
                                 required:
                                   - name
                                 type: object
+                              usePodResourcesCPU:
+                                description: |-
+                                  Optional: UsePodResourcesCPU enables CPU assignment via Kubernetes Pod resource requests/limits.
+                                  When false (default), CPUs are assigned via KubeVirt's spec.domain.cpu.
+                                type: boolean
                               vmEvictionStrategy:
                                 description: |-
                                   VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
