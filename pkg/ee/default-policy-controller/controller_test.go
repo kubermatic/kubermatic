@@ -27,6 +27,7 @@ package defaultpolicycontroller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"go.uber.org/zap"
@@ -362,6 +363,38 @@ func TestReconcile(t *testing.T) {
 
 				if binding.Annotations[kubermaticv1.AnnotationPolicyEnforced] != "true" {
 					return fmt.Errorf("binding %s should have enforced annotation, but doesn't", binding.Name)
+				}
+
+				return nil
+			},
+		},
+		{
+			name:    "scenario 10: enforced policy binding is immediately recreated when deleted",
+			cluster: genCluster(clusterName, defaultDatacenter, true),
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate(policyName, false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, policyTemplates []kubermaticv1.PolicyTemplate, client ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				bindings := &kubermaticv1.PolicyBindingList{}
+				if err := client.List(context.Background(), bindings, ctrlruntimeclient.InNamespace(clusterNamespace)); err != nil {
+					return fmt.Errorf("failed to list PolicyBindings: %w", err)
+				}
+
+				if len(bindings.Items) != 1 {
+					return fmt.Errorf("expected 1 policy binding, but got %d", len(bindings.Items))
+				}
+
+				originalBinding := bindings.Items[0]
+				if originalBinding.Name != policyName {
+					return fmt.Errorf("expected policy binding named %s, but got %s", policyName, originalBinding.Name)
+				}
+
+				if originalBinding.Annotations[kubermaticv1.AnnotationPolicyEnforced] != "true" {
+					return fmt.Errorf("binding %s should have enforced annotation", originalBinding.Name)
 				}
 
 				return nil
@@ -798,6 +831,123 @@ func TestSelectorTargeting(t *testing.T) {
 						t.Errorf("cluster %s: unexpected policy binding %s found", cluster.Name, actualPolicy)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestPolicyBindingDeletionMapping(t *testing.T) {
+	log := zap.NewNop().Sugar()
+
+	testCases := []struct {
+		name                 string
+		policyBinding        *kubermaticv1.PolicyBinding
+		cluster              *kubermaticv1.Cluster
+		policyTemplate       *kubermaticv1.PolicyTemplate
+		expectReconciliation bool
+		description          string
+	}{
+		{
+			name: "enforced policy binding deletion should trigger reconciliation",
+			policyBinding: &kubermaticv1.PolicyBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-enforced-policy",
+					Namespace: "cluster-test-cluster",
+				},
+				Spec: kubermaticv1.PolicyBindingSpec{
+					PolicyTemplateRef: corev1.ObjectReference{
+						Name: "test-enforced-policy",
+					},
+				},
+			},
+			cluster: genCluster("test-cluster", defaultDatacenter, true),
+			policyTemplate: genPolicyTemplate("test-enforced-policy", false, true,
+				kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
+			expectReconciliation: true,
+			description:          "Should trigger reconciliation for enforced policy",
+		},
+		{
+			name: "non-enforced policy binding deletion should not trigger reconciliation",
+			policyBinding: &kubermaticv1.PolicyBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-default-policy",
+					Namespace: "cluster-test-cluster",
+				},
+				Spec: kubermaticv1.PolicyBindingSpec{
+					PolicyTemplateRef: corev1.ObjectReference{
+						Name: "test-default-policy",
+					},
+				},
+			},
+			cluster: genCluster("test-cluster", defaultDatacenter, true),
+			policyTemplate: genPolicyTemplate("test-default-policy", true, false,
+				kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
+			expectReconciliation: false,
+			description:          "Should not trigger reconciliation for non-enforced policy",
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			objects := []ctrlruntimeclient.Object{
+				test.cluster,
+				test.policyTemplate,
+			}
+
+			// Create a client with our test objects
+			client := fake.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(objects...).
+				Build()
+
+			ctx := context.Background()
+
+			r := &Reconciler{
+				Client:   client,
+				recorder: &record.FakeRecorder{},
+				log:      log,
+				versions: kubermatic.GetFakeVersions(),
+			}
+
+			var requests []reconcile.Request
+			clusterNamespace := test.policyBinding.Namespace
+			if strings.HasPrefix(clusterNamespace, "cluster-") {
+				clusterName := strings.TrimPrefix(clusterNamespace, "cluster-")
+
+				// Verify the cluster exists
+				cluster := &kubermaticv1.Cluster{}
+				if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err == nil {
+					// Check if the referenced PolicyTemplate is enforced
+					if test.policyBinding.Spec.PolicyTemplateRef.Name != "" {
+						policyTemplate := &kubermaticv1.PolicyTemplate{}
+						if err := r.Get(ctx, types.NamespacedName{Name: test.policyBinding.Spec.PolicyTemplateRef.Name}, policyTemplate); err == nil {
+							if policyTemplate.Spec.Enforced && r.isClusterTargeted(ctx, cluster, policyTemplate) {
+								requests = append(requests, reconcile.Request{
+									NamespacedName: types.NamespacedName{
+										Name: clusterName,
+									},
+								})
+							}
+						}
+					}
+				}
+			}
+
+			if test.expectReconciliation {
+				if len(requests) != 1 {
+					t.Errorf("%s: expected 1 reconcile request, got %d", test.description, len(requests))
+					return
+				}
+				expectedClusterName := strings.TrimPrefix(test.policyBinding.Namespace, "cluster-")
+				if test.policyBinding.Namespace == "cluster-non-existent" {
+					expectedClusterName = "non-existent"
+				}
+				if requests[0].Name != expectedClusterName {
+					t.Errorf("%s: expected cluster name %s, got %s", test.description, expectedClusterName, requests[0].Name)
+				}
+			} else if len(requests) > 0 {
+				t.Errorf("%s: expected 0 reconcile requests, got %d", test.description, len(requests))
 			}
 		})
 	}
