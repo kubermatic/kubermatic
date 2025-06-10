@@ -674,20 +674,18 @@ func upgradeNodeExporterDaemonSet(
 		return fmt.Errorf("failed get daemonset: %w", err)
 	}
 
-	if err == nil {
-		// 2: if deamonset exists, then store the daemonset for backup
-		backupTS := time.Now().Format("2006-01-02T150405")
-		filename := fmt.Sprintf("backup_%s_%s.yaml", NodeExporterReleaseName, backupTS)
-		logger.Infof("Attempting to store the daemonset in file: %s", filename)
-		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*daemonset}); err != nil {
-			return fmt.Errorf("failed to back up the daemonset, it is not removed: %w", err)
-		}
+	// 2: if deamonset exists, then store the daemonset for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", NodeExporterReleaseName, backupTS)
+	logger.Infof("Attempting to store the daemonset in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*daemonset}); err != nil {
+		return fmt.Errorf("failed to back up the daemonset, it is not removed: %w", err)
+	}
 
-		// 3: delete the daemonset
-		logger.Info("Deleting the daemonset from the cluster")
-		if err := kubeClient.Delete(ctx, daemonset); err != nil {
-			return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	// 3: delete the daemonset
+	logger.Info("Deleting the daemonset from the cluster")
+	if err := kubeClient.Delete(ctx, daemonset); err != nil {
+		return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
 
 	return nil
