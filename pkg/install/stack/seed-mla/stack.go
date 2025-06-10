@@ -565,20 +565,18 @@ func upgradeAlertmanagerStatefulset(
 		return fmt.Errorf("failed get statefulset: %w", err)
 	}
 
-	if err == nil {
-		// 2: store the statefulset for backup
-		backupTS := time.Now().Format("2006-01-02T150405")
-		filename := fmt.Sprintf("backup_%s_%s.yaml", AlertManagerReleaseName, backupTS)
-		logger.Infof("Attempting to store the statefulset in file: %s", filename)
-		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*statefulset}); err != nil {
-			return fmt.Errorf("failed to back up the statefulsets, it is not removed: %w", err)
-		}
+	// 2: store the statefulset for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", AlertManagerReleaseName, backupTS)
+	logger.Infof("Attempting to store the statefulset in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*statefulset}); err != nil {
+		return fmt.Errorf("failed to back up the statefulsets, it is not removed: %w", err)
+	}
 
-		// 3: delete the statefulset
-		logger.Info("Deleting the statefulset from the cluster")
-		if err := kubeClient.Delete(ctx, statefulset); err != nil {
-			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	// 3: delete the statefulset
+	logger.Info("Deleting the statefulset from the cluster")
+	if err := kubeClient.Delete(ctx, statefulset); err != nil {
+		return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
 
 	return nil
@@ -611,20 +609,18 @@ func upgradeKubeStateMetricsDeployment(
 		return fmt.Errorf("failed get deployment: %w", err)
 	}
 
-	if err == nil {
-		// 2: store the deployment for backup
-		backupTS := time.Now().Format("2006-01-02T150405")
-		filename := fmt.Sprintf("backup_%s_%s.yaml", KubeStateMetricsReleaseName, backupTS)
-		logger.Infof("Attempting to store the deployments in file: %s", filename)
-		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
-			return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
-		}
+	// 2: store the deployment for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", KubeStateMetricsReleaseName, backupTS)
+	logger.Infof("Attempting to store the deployments in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
+		return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
+	}
 
-		// 3: delete the deployment
-		logger.Info("Deleting the deployment from the cluster")
-		if err := kubeClient.Delete(ctx, deployment); err != nil {
-			return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	// 3: delete the deployment
+	logger.Info("Deleting the deployment from the cluster")
+	if err := kubeClient.Delete(ctx, deployment); err != nil {
+		return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
 
 	return nil
@@ -702,20 +698,18 @@ func upgradeBlackboxExporterDeployment(
 		return fmt.Errorf("failed get deployment: %w", err)
 	}
 
-	if err == nil {
-		// 2: store the deployment for backup
-		backupTS := time.Now().Format("2006-01-02T150405")
-		filename := fmt.Sprintf("backup_%s_%s.yaml", BlackboxExporterReleaseName, backupTS)
-		logger.Infof("Attempting to store the deployment in file: %s", filename)
-		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
-			return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
-		}
+	// 2: store the deployment for backup
+	backupTS := time.Now().Format("2006-01-02T150405")
+	filename := fmt.Sprintf("backup_%s_%s.yaml", BlackboxExporterReleaseName, backupTS)
+	logger.Infof("Attempting to store the deployment in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
+		return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
+	}
 
-		// 3: delete the deployment
-		logger.Info("Deleting the deployment from the cluster")
-		if err := kubeClient.Delete(ctx, deployment); err != nil {
-			return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	// 3: delete the deployment
+	logger.Info("Deleting the deployment from the cluster")
+	if err := kubeClient.Delete(ctx, deployment); err != nil {
+		return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
 
 	return nil
