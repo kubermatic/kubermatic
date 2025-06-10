@@ -222,7 +222,7 @@ func deployKubeStateMetrics(ctx context.Context, logger *logrus.Entry, kubeClien
 
 		err = upgradeKubeStateMetricsDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare kube-state-metrics for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Kube State Metrics deployment: %s", err)
 		}
 	}
 
@@ -295,7 +295,7 @@ func deployBlackboxExporter(ctx context.Context, logger *logrus.Entry, kubeClien
 
 		err = upgradeBlackboxExporterDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare blackbox-exporter for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Blackbox Exporter deployment: %s", err)
 		}
 	}
 
@@ -561,7 +561,7 @@ func upgradeAlertmanagerStatefulset(
 
 	err := kubeClient.Get(ctx, key, statefulset)
 
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("failed get statefulset: %w", err)
 	}
 
@@ -577,7 +577,7 @@ func upgradeAlertmanagerStatefulset(
 		// 3: delete the statefulset
 		logger.Info("Deleting the statefulset from the cluster")
 		if err := kubeClient.Delete(ctx, statefulset); err != nil {
-				return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
+			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
 		}
 	}
 
@@ -605,22 +605,26 @@ func upgradeKubeStateMetricsDeployment(
 	})
 	key := types.NamespacedName{Name: KubeStateMetricsReleaseName, Namespace: KubeStateMetricsNamespace}
 
-	if err := kubeClient.Get(ctx, key, deployment); err != nil {
-		return fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
+	err := kubeClient.Get(ctx, key, deployment)
+
+	if err != nil {
+		return fmt.Errorf("failed get deployment: %w", err)
 	}
 
-	// 2: store the deployment for backup
-	backupTS := time.Now().Format("2006-01-02T150405")
-	filename := fmt.Sprintf("backup_%s_%s.yaml", KubeStateMetricsReleaseName, backupTS)
-	logger.Infof("Attempting to store the deployments in file: %s", filename)
-	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
-		return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
-	}
+	if err == nil {
+		// 2: store the deployment for backup
+		backupTS := time.Now().Format("2006-01-02T150405")
+		filename := fmt.Sprintf("backup_%s_%s.yaml", KubeStateMetricsReleaseName, backupTS)
+		logger.Infof("Attempting to store the deployments in file: %s", filename)
+		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
+			return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
+		}
 
-	// 3: delete the deployment
-	logger.Info("Deleting the deployment from the cluster")
-	if err := kubeClient.Delete(ctx, deployment); err != nil {
-		return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
+		// 3: delete the deployment
+		logger.Info("Deleting the deployment from the cluster")
+		if err := kubeClient.Delete(ctx, deployment); err != nil {
+			return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
 	}
 
 	return nil
@@ -692,22 +696,26 @@ func upgradeBlackboxExporterDeployment(
 	})
 	key := types.NamespacedName{Name: BlackboxExporterReleaseName, Namespace: BlackboxExporterNamespace}
 
-	if err := kubeClient.Get(ctx, key, deployment); err != nil {
-		return fmt.Errorf("error querying API for the existing Deployment object, aborting upgrade process: %w", err)
+	err := kubeClient.Get(ctx, key, deployment)
+
+	if err != nil {
+		return fmt.Errorf("failed get deployment: %w", err)
 	}
 
-	// 2: store the deployment for backup
-	backupTS := time.Now().Format("2006-01-02T150405")
-	filename := fmt.Sprintf("backup_%s_%s.yaml", BlackboxExporterReleaseName, backupTS)
-	logger.Infof("Attempting to store the deployment in file: %s", filename)
-	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
-		return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
-	}
+	if err == nil {
+		// 2: store the deployment for backup
+		backupTS := time.Now().Format("2006-01-02T150405")
+		filename := fmt.Sprintf("backup_%s_%s.yaml", BlackboxExporterReleaseName, backupTS)
+		logger.Infof("Attempting to store the deployment in file: %s", filename)
+		if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*deployment}); err != nil {
+			return fmt.Errorf("failed to back up the deployment, it is not removed: %w", err)
+		}
 
-	// 3: delete the deployment
-	logger.Info("Deleting the deployment from the cluster")
-	if err := kubeClient.Delete(ctx, deployment); err != nil {
-		return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
+		// 3: delete the deployment
+		logger.Info("Deleting the deployment from the cluster")
+		if err := kubeClient.Delete(ctx, deployment); err != nil {
+			return fmt.Errorf("failed to remove the deployment: %w\n\nuse backup file to check the changes and restore if needed", err)
+		}
 	}
 
 	return nil
