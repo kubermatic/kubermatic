@@ -178,9 +178,9 @@ func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	if release != nil && release.Version.LessThan(v28) && !chart.Version.LessThan(v28) {
 		sublogger.Warn("Installation process will temporarily remove and then upgrade DaemonSet used by Node Exporter.")
 
-		err = upgradeNodeExporterDaemonSets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		err = upgradeNodeExporterDaemonSet(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare Node Exporter for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Node Exporter daemonset: %s", err)
 		}
 	}
 
@@ -646,7 +646,7 @@ func upgradeKubeStateMetricsDeployment(
 	return nil
 }
 
-func upgradeNodeExporterDaemonSets(
+func upgradeNodeExporterDaemonSet(
 	ctx context.Context,
 	logger *logrus.Entry,
 	kubeClient ctrlruntimeclient.Client,
@@ -659,35 +659,35 @@ func upgradeNodeExporterDaemonSets(
 	// 1: find the old daemonset
 	logger.Info("Backing up old Node Exporter daemonset…")
 
-	daemonsetsList := &unstructured.UnstructuredList{}
-	daemonsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+	daemonset := &unstructured.Unstructured{}
+	daemonset.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps",
-		Kind:    "DaemonSetList",
+		Kind:    "DaemonSet",
 		Version: "v1",
 	})
 
-	nodeExporterMatcher := ctrlruntimeclient.MatchingLabels{
-		"app.kubernetes.io/name": NodeExporterReleaseName,
-	}
-	if err := kubeClient.List(ctx, daemonsetsList, ctrlruntimeclient.InNamespace(NodeExporterNamespace), nodeExporterMatcher); err != nil {
-		return fmt.Errorf("error querying API for the existing DaemonSet object, aborting upgrade process.")
+	key := types.NamespacedName{Name: NodeExporterReleaseName, Namespace: NodeExporterNamespace}
+
+	err := kubeClient.Get(ctx, key, daemonset)
+
+	if err != nil {
+		return fmt.Errorf("failed get daemonset: %w", err)
 	}
 
-	// 2: store the daemonset for backup
+	// 2: if deamonset exists, then store the daemonset for backup
 	backupTS := time.Now().Format("2006-01-02T150405")
 	filename := fmt.Sprintf("backup_%s_%s.yaml", NodeExporterReleaseName, backupTS)
-	logger.Infof("Attempting to store the daemonsets in file: %s", filename)
-	if err := util.DumpResources(ctx, filename, daemonsetsList.Items); err != nil {
-		return fmt.Errorf("failed to back up the daemonsets, it is not removed: %w", err)
+	logger.Infof("Attempting to store the daemonset in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*daemonset}); err != nil {
+		return fmt.Errorf("failed to back up the daemonset, it is not removed: %w", err)
 	}
 
 	// 3: delete the daemonset
-	logger.Info("Deleting the daemonsets from the cluster")
-	for _, obj := range daemonsetsList.Items {
-		if err := kubeClient.Delete(ctx, &obj); err != nil {
-			return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	logger.Info("Deleting the daemonset from the cluster")
+	if err := kubeClient.Delete(ctx, daemonset); err != nil {
+		return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
+
 	return nil
 }
 
