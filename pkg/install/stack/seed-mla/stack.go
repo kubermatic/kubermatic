@@ -670,7 +670,7 @@ func upgradeNodeExporterDaemonSet(
 
 	err := kubeClient.Get(ctx, key, daemonset)
 
-	if err != nil{
+	if err != nil {
 		return fmt.Errorf("failed get daemonset: %w", err)
 	}
 
