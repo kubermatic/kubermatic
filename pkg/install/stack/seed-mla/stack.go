@@ -669,6 +669,11 @@ func upgradeNodeExporterDaemonSet(
 	key := types.NamespacedName{Name: NodeExporterReleaseName, Namespace: NodeExporterNamespace}
 
 	err := kubeClient.Get(ctx, key, daemonset)
+
+	if err != nil{
+		return fmt.Errorf("failed get daemonset: %w", err)
+	}
+
 	if err == nil {
 		// 2: if deamonset exists, then store the daemonset for backup
 		backupTS := time.Now().Format("2006-01-02T150405")
@@ -683,11 +688,9 @@ func upgradeNodeExporterDaemonSet(
 		if err := kubeClient.Delete(ctx, daemonset); err != nil {
 			return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
 		}
-		return nil
 	}
 
-	logger.Warn("Skipping the backup and cleanup of the old Node-Exporter daemonset")
-	return fmt.Errorf("error querying API for the existing DaemonSet object: %w", err)
+	return nil
 }
 
 func upgradeBlackboxExporterDeployment(
