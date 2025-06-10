@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Dex Is the OpenID Provider for Kubermatic.
-useNewDexChart: true
 dex:
   ingress:
     # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates

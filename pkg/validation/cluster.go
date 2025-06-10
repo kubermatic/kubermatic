@@ -81,7 +81,7 @@ const (
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
 // routine, parentFieldPath can be nil.
 //
-//nolint:gocyclo // there just needs to be a place that validates the spec and the spec is simply large; splitting this function into smaller ones would not help readability
+//gocyclo:ignore // there just needs to be a place that validates the spec and the spec is simply large; splitting this function into smaller ones would not help readability
 func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, kubeLBSeedSettings *kubermaticv1.KubeLBSeedSettings, enabledFeatures features.FeatureGate, versionManager *version.Manager, currentVersion *semver.Semver, parentFieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
@@ -166,13 +166,6 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 		allErrs = append(allErrs, errs...)
 	}
 
-	// KubeLB can only be enabled on the cluster when
-	// a) It's either enforced or enabled at the datacenter level.
-	// b) It's enabled for all datacenters at the seed level.
-	if spec.IsKubeLBEnabled() && !kubeLBSeedSettings.EnableForAllDatacenters && (dc.Spec.KubeLB == nil || (!dc.Spec.KubeLB.Enabled && !dc.Spec.KubeLB.Enforced)) {
-		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
-	}
-
 	if err := validateCoreDNSReplicas(spec, parentFieldPath); err != nil {
 		allErrs = append(allErrs, err)
 	}
@@ -190,6 +183,14 @@ func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec,
 		allErrs = append(allErrs, errs...)
 	}
 
+	// Note: We had to move this out of "ValidateClusterSpec" since it's something that we only want to check for "newly created" clusters.
+	// KubeLB can only be enabled on the cluster when
+	// a) It's either enforced or enabled at the datacenter level.
+	// b) It's enabled for all datacenters at the seed level.
+	if spec.IsKubeLBEnabled() && !seed.Spec.KubeLB.EnableForAllDatacenters && (dc.Spec.KubeLB == nil || (!dc.Spec.KubeLB.Enabled && !dc.Spec.KubeLB.Enforced)) {
+		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
+	}
+
 	// The cloudProvider is built based on the *datacenter*, but does not necessarily match the CloudSpec.
 	// To prevent a cloud provider to accidentally access nil fields, we check here again that the datacenter
 	// type, providerName and provider data all match before calling the provider's validation logic.
@@ -201,6 +202,28 @@ func ValidateNewClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec,
 			// could lead to us leaking credentials that were given in the CloudSpec, so to be safe, we never
 			// reveal the CloudSpec in an error.
 			allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("cloud"), "<redacted>", err.Error()))
+		}
+	}
+
+	return allErrs
+}
+
+func validateKubeLBUpdate(oldCluster, newCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, specPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if !oldCluster.Spec.IsKubeLBEnabled() && newCluster.Spec.IsKubeLBEnabled() {
+		// KubeLB can only be enabled on the cluster when
+		// a) It's either enforced or enabled at the datacenter level.
+		// b) It's enabled for all datacenters at the seed level.
+		if !seed.Spec.KubeLB.EnableForAllDatacenters && (dc.Spec.KubeLB == nil || (!dc.Spec.KubeLB.Enabled && !dc.Spec.KubeLB.Enforced)) {
+			allErrs = append(allErrs, field.Forbidden(specPath.Child("kubeLB"), "KubeLB is not enabled on this datacenter"))
+		}
+	}
+
+	if oldCluster.Spec.IsKubeLBEnabled() && !newCluster.Spec.IsKubeLBEnabled() {
+		// KubeLB can not be disabled if it's enforced on the datacenter.
+		if dc.Spec.KubeLB != nil && dc.Spec.KubeLB.Enforced {
+			allErrs = append(allErrs, field.Forbidden(specPath.Child("kubeLB"), "KubeLB can not be disabled if it's enforced on the datacenter"))
 		}
 	}
 
@@ -292,6 +315,7 @@ func ValidateClusterUpdate(ctx context.Context, newCluster, oldCluster *kubermat
 		allErrs = append(allErrs, field.Invalid(path, *newCluster.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version"))
 	}
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&newCluster.Spec.ClusterNetwork, &oldCluster.Spec.ClusterNetwork, newCluster.Labels, specPath.Child("clusterNetwork"))...)
+	allErrs = append(allErrs, validateKubeLBUpdate(oldCluster, newCluster, dc, seed, specPath)...)
 
 	// even though ErrorList later in ToAggregate() will filter out nil errors, it does so by
 	// stringifying them. A field.Error that is nil will panic when doing so, so one cannot simply

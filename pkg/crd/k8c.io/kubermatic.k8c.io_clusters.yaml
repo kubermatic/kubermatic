@@ -3819,6 +3819,12 @@ spec:
                         - HealthStatusUp
                         - HealthStatusProvisioning
                       type: string
+                    kyverno:
+                      enum:
+                        - HealthStatusDown
+                        - HealthStatusUp
+                        - HealthStatusProvisioning
+                      type: string
                     logging:
                       enum:
                         - HealthStatusDown

@@ -46,7 +46,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 		return commonseedresources.KyvernoAdmissionControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Labels = commonseedresources.KyvernoLabels(commonseedresources.AdmissionControllerComponentNameLabel)
 
-			dep.Spec.Replicas = resources.Int32(3)
+			dep.Spec.Replicas = resources.Int32(commonseedresources.KyvernoAdmissionControllerReplicas)
 			dep.Spec.RevisionHistoryLimit = resources.Int32(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,

@@ -1636,6 +1636,7 @@ type ExtendedClusterHealth struct {
 	OperatingSystemManager       *HealthStatus `json:"operatingSystemManager,omitempty"`
 	KubernetesDashboard          *HealthStatus `json:"kubernetesDashboard,omitempty"`
 	KubeLB                       *HealthStatus `json:"kubelb,omitempty"`
+	Kyverno                      *HealthStatus `json:"kyverno,omitempty"`
 }
 
 // ControlPlaneHealthy returns if all Kubernetes control plane components are healthy.

@@ -260,7 +260,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ce.yaml \
@@ -303,7 +302,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ee.yaml \
