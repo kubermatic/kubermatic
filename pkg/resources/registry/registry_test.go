@@ -80,10 +80,10 @@ func TestImageRewriter(t *testing.T) {
 			expected:  "registry.local/foo/bar",
 		},
 		{
-			name:      "a registry overwrite will remove the digest",
+			name:      "a registry overwrite will not remove the digest",
 			overwrite: "registry.local",
 			input:     addDigest("docker.io/foo/bar:v1.2.3"),
-			expected:  "registry.local/foo/bar:v1.2.3",
+			expected:  addDigest("registry.local/foo/bar:v1.2.3"),
 		},
 		{
 			name:      "a NOP rewrite should keep the digest",

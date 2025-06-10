@@ -79,10 +79,6 @@ func RewriteImage(image, overwriteRegistry string) (string, error) {
 	}
 
 	domain := reference.Domain(named)
-	origDomain := domain
-	if origDomain == "" {
-		origDomain = RegistryDocker
-	}
 
 	if overwriteRegistry != "" {
 		domain = overwriteRegistry
@@ -99,7 +95,7 @@ func RewriteImage(image, overwriteRegistry string) (string, error) {
 	}
 
 	if digested, ok := named.(reference.Digested); ok {
-		image += ":" + digested.Digest().String()
+		image += "@" + digested.Digest().String()
 	}
 
 	return image, nil
