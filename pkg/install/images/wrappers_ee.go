@@ -22,6 +22,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
+	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -34,6 +35,8 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 		kubelb.DeploymentReconciler(templateData),
 		velero.DeploymentReconciler(templateData),
 	}
+
+	deploymentReconcilers = append(deploymentReconcilers, kyverno.GetDeploymentReconcilers(templateData)...)
 
 	for _, createFunc := range deploymentReconcilers {
 		_, dpCreator := createFunc()
