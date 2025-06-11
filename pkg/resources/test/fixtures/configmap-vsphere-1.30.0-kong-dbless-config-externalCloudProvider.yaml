@@ -1,0 +1,49 @@
+# This file has been generated, DO NOT EDIT.
+
+data:
+  kong.yml: |-
+    _format_version: "3.0"
+    services:
+      - name: auth
+        host: kubernetes-dashboard-auth
+        port: 8000
+        protocol: http
+        routes:
+          - name: authLogin
+            paths:
+              - /api/v1/login
+            strip_path: false
+          - name: authCsrf
+            paths:
+              - /api/v1/csrftoken/login
+            strip_path: false
+          - name: authMe
+            paths:
+              - /api/v1/me
+            strip_path: false
+      - name: api
+        host: kubernetes-dashboard-api
+        port: 8000
+        protocol: http
+        routes:
+          - name: api
+            paths:
+              - /api
+            strip_path: false
+          - name: metrics
+            paths:
+              - /metrics
+            strip_path: false
+      - name: web
+        host: kubernetes-dashboard-web
+        port: 8000
+        protocol: http
+        routes:
+          - name: root
+            paths:
+              - /
+            strip_path: false
+metadata:
+  creationTimestamp: null
+  name: kong-dbless-config
+  namespace: cluster-de-test-01

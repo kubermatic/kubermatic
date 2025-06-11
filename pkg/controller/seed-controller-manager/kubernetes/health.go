@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	kyvernocommonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -111,7 +112,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	extendedHealth.OperatingSystemManager = &status
 
 	if cluster.Spec.IsKubernetesDashboardEnabled() {
-		status, err := r.kubernetesDashboardHealthCheck(ctx, cluster, ns)
+		status, err := kubernetesdashboard.HealthStatus(ctx, r, cluster, r.versions)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get kubernetes-dashboard health: %w", err)
 		}
@@ -231,17 +232,6 @@ func (r *Reconciler) kubeLBHealthCheck(ctx context.Context, cluster *kubermaticv
 	status, err := resources.HealthyDeployment(ctx, r, key, 1)
 	if err != nil {
 		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubeLBDeploymentName, err)
-	}
-	status = util.GetHealthStatus(status, cluster, r.versions)
-	return status, nil
-}
-
-func (r *Reconciler) kubernetesDashboardHealthCheck(ctx context.Context, cluster *kubermaticv1.Cluster, namespace string) (kubermaticv1.HealthStatus, error) {
-	// check for the health of kubernetes-dashboard deployment.
-	key := types.NamespacedName{Namespace: namespace, Name: resources.KubernetesDashboardDeploymentName}
-	status, err := resources.HealthyDeployment(ctx, r, key, 1)
-	if err != nil {
-		return kubermaticv1.HealthStatusDown, fmt.Errorf("failed to determine deployment's health %q: %w", resources.KubernetesDashboardDeploymentName, err)
 	}
 	status = util.GetHealthStatus(status, cluster, r.versions)
 	return status, nil
