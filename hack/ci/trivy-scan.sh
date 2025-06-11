@@ -19,63 +19,14 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+export GOCACHE_BASE=$(mktemp -d)
+
 TEST_NAME="Pre-warm Go build cache"
 echodate "Attempting to pre-warm Go build cache"
+TARGET_DIRECTORY=$GOCACHE_BASE/amd64 make download-gocache
 
-beforeGocache=$(nowms)
-make download-gocache
-pushElapsed gocache_download_duration_milliseconds $beforeGocache
-
-export DOCKER_REPO=quay.io/kubermatic
-export TAGS=local          # use a fixed tag
-export ARCHITECTURES=amd64 # save time by skipping building/scanning arm64
-export UIDOCKERTAG=NA      # prevent the need for an SSH key to git ls-remote the dashboard version
-
-TEST_NAME="Create container images"
-echodate "Creating container images"
-NO_PUSH=true hack/ci/release-images.sh
-
-echodate "Images built successfully."
-
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" != "ce" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
-
-images=(
-  "$DOCKER_REPO/kubermatic$REPOSUFFIX:$TAGS"
-  "$DOCKER_REPO/nodeport-proxy:$TAGS"
-  "$DOCKER_REPO/etcd-launcher:$TAGS"
-  "$DOCKER_REPO/addons:$TAGS"
-  "$DOCKER_REPO/user-ssh-keys-agent:$TAGS-amd64"
-  "$DOCKER_REPO/kubeletdnat-controller:$TAGS-amd64"
-  "$DOCKER_REPO/network-interface-manager:$TAGS-amd64"
-)
-
-TRIVY=aquasec/trivy:0.56.2
-
-mkdir -p /tmp/trivy-cache
-
-echodate "Scanning Go dependencies"
-time docker run \
-  --rm \
-  -v "$(realpath .):/go/src/k8c.io/kubermatic" \
-  -v /run/docker.sock:/var/run/docker.sock \
-  -v /tmp/trivy-cache:/cache \
-  -e "TRIVY_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-db" \
-  -e "TRIVY_JAVA_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-java-db" \
-  -w /go/src/k8c.io/kubermatic \
-  $TRIVY --cache-dir /cache fs --quiet .
-
-# improve readability from far away
-echo
-echo
-echo
-
-for image in "${images[@]}"; do
-  TEST_NAME="Scan $image"
-  echodate "Scanning $image"
-
+trivy() {
+  mkdir -p /tmp/trivy-cache
   time docker run \
     --rm \
     -v "$(realpath .):/opt/src" \
@@ -84,7 +35,54 @@ for image in "${images[@]}"; do
     -e "TRIVY_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-db" \
     -e "TRIVY_JAVA_DB_REPOSITORY=public.ecr.aws/aquasecurity/trivy-java-db" \
     -w /opt/src \
-    $TRIVY --cache-dir /cache image --quiet "$image"
+    aquasec/trivy:0.56.2 --cache-dir /cache "$@"
+}
+
+export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
+export DOCKER_REPO=quay.io/kubermatic
+export TAG=local
+export ARCHITECTURES=amd64 # save time by skipping building/scanning arm64
+export UIDOCKERTAG=NA      # prevent the need for an SSH key to git ls-remote the dashboard version
+
+REPOSUFFIX=""
+if [ "$KUBERMATIC_EDITION" != "ce" ]; then
+  REPOSUFFIX="-$KUBERMATIC_EDITION"
+fi
+
+images=(
+  addons
+  etcd-launcher
+  kubeletdnat-controller
+  kubermatic
+  network-interface-manager
+  nodeport-proxy
+  user-ssh-keys-agent
+)
+
+TEST_NAME="Create container images"
+echodate "Creating container images..."
+hack/images/release.sh "${images[@]}"
+
+echodate "Images built successfully."
+
+TEST_NAME="Scan Go dependencies"
+echodate "Scanning Go dependencies..."
+trivy fs --quiet .
+
+# improve readability from far away
+echo
+echo
+echo
+
+for image in "${images[@]}"; do
+  TEST_NAME="Scan $image image"
+  echodate "Scanning $image image..."
+
+  if [[ $image == kubermatic ]]; then
+    image="$image$REPOSUFFIX"
+  fi
+
+  trivy image --quiet "$DOCKER_REPO/$image:$TAG"
 
   # improve readability from far away
   echo
