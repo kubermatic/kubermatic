@@ -4,6 +4,19 @@ apiVersion: policy/v1
 
 kind: PodDisruptionBudget
 metadata:
+  name: iap-alertmanager
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: iap
+      target: alertmanager
+---
+# Source: iap/templates/pdbs.yaml
+apiVersion: policy/v1
+
+kind: PodDisruptionBudget
+metadata:
   name: iap-grafana
 spec:
   maxUnavailable: 1
@@ -11,6 +24,17 @@ spec:
     matchLabels:
       app: iap
       target: grafana
+---
+# Source: iap/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iap-alertmanager-secret
+type: Opaque
+data:
+  OAUTH2_PROXY_CLIENT_ID: YWxlcnRtYW5hZ2Vy
+  OAUTH2_PROXY_CLIENT_SECRET: eHh4
+  OAUTH2_PROXY_COOKIE_SECRET: eHh4
 ---
 # Source: iap/templates/secrets.yaml
 apiVersion: v1
@@ -27,14 +51,46 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  name: iap-alertmanager-configmap
+data:
+  config.toml: |
+    email_domains = ["*"]
+    github_org = "mygithuborg"
+    github_team = "mygroup"
+    scope = "groups openid email"
+    skip_auth_regex = ["/-/healthy"]
+---
+# Source: iap/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
   name: iap-grafana-configmap
 data:
   config.toml: |
-    approval_prompt = "none"
     email_domains = ["*"]
     pass_user_headers = true
     scope = "groups openid email"
     skip_auth_regex = ["/api/health"]
+---
+# Source: iap/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-iap
+  labels:
+    app: iap
+    target: alertmanager
+    kind: proxy
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    name: http
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: iap
+    target: alertmanager
 ---
 # Source: iap/templates/services.yaml
 apiVersion: v1
@@ -60,6 +116,107 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: iap-alertmanager
+  labels:
+    app: iap
+    target: alertmanager
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: iap
+      target: alertmanager
+  template:
+    metadata:
+      labels:
+        app: iap
+        target: alertmanager
+      annotations:
+        checksum/config: 17ed91a5ca15d5e382000192ade7030736b5f2037cc9fbe9020535cef3dbf750
+        checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: "quay.io/oauth2-proxy/oauth2-proxy:v7.7.0"
+        imagePullPolicy: IfNotPresent
+        args:
+        - --provider=oidc
+        - --oidc-issuer-url=https://kubermatic.tld/dex
+        - --http-address=0.0.0.0:3000
+        - --upstream=http://alertmanager.monitoring.svc.cluster.local:9093
+        - --cookie-name=alertmanager_oauth2_proxy
+        - --proxy-prefix=/oauth
+        - --ping-path=/oauth/healthy
+        - --silence-ping-logging=true
+        - --reverse-proxy=true
+        - --skip-provider-button=true
+        - --config=/config/config.toml
+        envFrom:
+        - secretRef:
+            name: iap-alertmanager-secret
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /oauth/healthy
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /oauth/healthy
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 25m
+            memory: 25Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          seccompProfile:
+            type: RuntimeDefault
+      volumes:
+      - name: config
+        configMap:
+          name: iap-alertmanager-configmap
+          items:
+          - key: config.toml
+            path: config.toml
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: iap
+                  target: alertmanager
+              topologyKey: kubernetes.io/hostname
+            weight: 10
+      tolerations:
+        []
+---
+# Source: iap/templates/deployments.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: iap-grafana
   labels:
     app: iap
@@ -76,12 +233,12 @@ spec:
         app: iap
         target: grafana
       annotations:
-        checksum/config: 55e92a9f9dd10b926515346f93654125cab26b0141c58802188dd70203431561
-        checksum/secrets: a61bd91da5fb2369cbc0ba73e52178417ac106a21ef3621f1f212c7a49665749
+        checksum/config: 17ed91a5ca15d5e382000192ade7030736b5f2037cc9fbe9020535cef3dbf750
+        checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
     spec:
       containers:
       - name: oauth2-proxy
-        image: "quay.io/oauth2-proxy/oauth2-proxy:v7.8.2"
+        image: "quay.io/oauth2-proxy/oauth2-proxy:v7.7.0"
         imagePullPolicy: IfNotPresent
         args:
         - --provider=oidc
@@ -116,10 +273,10 @@ spec:
           timeoutSeconds: 2
         resources:
           limits:
-            cpu: 200m
+            cpu: 100m
             memory: 50Mi
           requests:
-            cpu: 50m
+            cpu: 25m
             memory: 25Mi
         volumeMounts:
         - name: config
@@ -161,15 +318,44 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: alertmanager-iap
+  labels:
+    app: iap
+    target: alertmanager
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - secretName: alertmanager-tls
+    hosts:
+    - alertmanager.kubermatic.tld
+  rules:
+  - host: alertmanager.kubermatic.tld
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: alertmanager-iap
+            port:
+              number: 3000
+---
+# Source: iap/templates/ingresses.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: grafana-iap
   labels:
     app: iap
     target: grafana
   annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
   tls:
-  - secretName: custom-tls
+  - secretName: grafana-tls
     hosts:
     - grafana.kubermatic.tld
   rules:
