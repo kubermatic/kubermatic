@@ -48,6 +48,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/dns"
+	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
+
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
@@ -61,7 +64,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
-	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -483,10 +485,11 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, vpa.RecommenderDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, vpa.UpdaterDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
-	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 	deploymentReconcilers = append(deploymentReconcilers, vmwareclouddirector.ControllerDeploymentReconciler(templateData))
+	deploymentReconcilers = append(deploymentReconcilers, metricsserver.DeploymentReconciler(templateData))
+	deploymentReconcilers = append(deploymentReconcilers, dns.DeploymentReconciler(templateData))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
