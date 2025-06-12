@@ -30,8 +30,10 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -97,6 +99,34 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 	logger.Info("✅ Success.")
 
 	return nil
+}
+
+func ApplicationDefinitionReconcilerFactories(
+	logger *zap.SugaredLogger,
+	config *kubermaticv1.KubermaticConfiguration,
+	mirror bool,
+) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
+	appDefFiles, err := GetAppDefFiles()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default application definition files: %w", err)
+	}
+	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(appDefFiles))
+	for _, file := range appDefFiles {
+		b, err := io.ReadAll(file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ApplicationDefinition: %w", err)
+		}
+
+		appDef := &appskubermaticv1.ApplicationDefinition{}
+		err = yaml.Unmarshal(b, appDef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
+		}
+
+		creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+	}
+
+	return creators, nil
 }
 
 func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.ApplicationDefinition) kkpreconciling.NamedApplicationDefinitionReconcilerFactory {

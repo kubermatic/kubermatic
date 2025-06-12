@@ -73,7 +73,12 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling GetImagesFromSystemApplicationDefinitions: %v", err)
 	}
+	defaultAppImages, err := images.GetImagesFromDefaultApplicationDefinitions(log, config, helmClient, 5*time.Minute, "")
+	if err != nil {
+		t.Errorf("Error calling GetImagesFromSystemApplicationDefinitions: %v", err)
+	}
 	containerImages = append(containerImages, appImages...)
+	containerImages = append(containerImages, defaultAppImages...)
 
 	if _, _, err := images.CopyImages(context.Background(), log, true, true, containerImages, "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling CopyImages: %v", err)
