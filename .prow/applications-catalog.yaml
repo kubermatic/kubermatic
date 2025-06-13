@@ -29,7 +29,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -74,7 +74,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -121,7 +121,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -166,7 +166,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -211,7 +211,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -256,7 +256,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -301,7 +301,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -346,7 +346,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -391,7 +391,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -436,7 +436,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -481,7 +481,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -526,7 +526,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -571,7 +571,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -616,7 +616,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-default-application-e2e-test.sh"
           env:
@@ -661,7 +661,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-3
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
           command:
             - "./hack/ci/run-application-definitions-e2e-test.sh"
           env:
