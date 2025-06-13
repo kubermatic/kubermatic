@@ -35,10 +35,10 @@ import (
 
 func GetDeploymentReconcilers(data *resources.TemplateData) []reconciling.NamedDeploymentReconcilerFactory {
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
-		admissioncontrollerresources.DeploymentReconciler(data.Cluster()),
-		backgroundcontrollerresources.DeploymentReconciler(data.Cluster()),
-		cleanupcontrollerresources.DeploymentReconciler(data.Cluster()),
-		reportscontrollerresources.DeploymentReconciler(data.Cluster()),
+		admissioncontrollerresources.DeploymentReconciler(data),
+		backgroundcontrollerresources.DeploymentReconciler(data),
+		cleanupcontrollerresources.DeploymentReconciler(data),
+		reportscontrollerresources.DeploymentReconciler(data),
 	}
 	return deployments
 }

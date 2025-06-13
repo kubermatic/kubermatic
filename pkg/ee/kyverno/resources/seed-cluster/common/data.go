@@ -24,21 +24,26 @@
 
 package common
 
-import "github.com/kyverno/kyverno/api/kyverno"
+import (
+	"context"
 
-func KyvernoLabels(component string) map[string]string {
-	return map[string]string{
-		kyverno.LabelAppComponent:    component,
-		"app.kubernetes.io/instance": kyverno.ValueKyvernoApp,
-		"app.kubernetes.io/part-of":  kyverno.ValueKyvernoApp,
-		"app.kubernetes.io/version":  KyvernoVersion,
-	}
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+type KyvernoData interface {
+	Cluster() *kubermaticv1.Cluster
+	RewriteImage(string) (string, error)
+	DC() *kubermaticv1.Datacenter
 }
 
-func KyvernoSelectorLabels(component string) map[string]string {
-	return map[string]string{
-		kyverno.LabelAppComponent:    component,
-		"app.kubernetes.io/instance": kyverno.ValueKyvernoApp,
-		"app.kubernetes.io/part-of":  kyverno.ValueKyvernoApp,
-	}
+func NewKyvernoData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string) *resources.TemplateData {
+	return resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithCluster(cluster).
+		WithClient(client).
+		WithOverwriteRegistry(overwriteRegistry).
+		Build()
 }
