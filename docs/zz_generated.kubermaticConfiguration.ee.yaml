@@ -8,7 +8,6 @@ spec:
   api:
     # AccessibleAddons is a list of addons that should be enabled in the API.
     accessibleAddons:
-      - cluster-autoscaler
       - node-exporter
       - kube-state-metrics
       - multus
