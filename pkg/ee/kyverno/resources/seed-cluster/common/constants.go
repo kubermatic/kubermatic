@@ -20,7 +20,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package commonseedresources
+package common
 
 const (
 	// Kyverno version and registry.

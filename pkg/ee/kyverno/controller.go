@@ -38,6 +38,7 @@ import (
 	admissioncontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/admission-controller"
 	backgroundcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/background-controller"
 	cleanupcontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/cleanup-controller"
+	"k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -74,16 +75,18 @@ type reconciler struct {
 	recorder                      record.EventRecorder
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
+	overwriteRegistry             string
 	versions                      kubermatic.Versions
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(mgr manager.Manager, numWorkers int, workerName, overwriteRegistry string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
+		overwriteRegistry:             overwriteRegistry,
 		versions:                      versions,
 	}
 
@@ -269,11 +272,12 @@ func (r *reconciler) ensureSeedClusterNamespaceResources(ctx context.Context, cl
 		return fmt.Errorf("failed to reconcile Services: %w", err)
 	}
 
+	data := common.NewKyvernoData(ctx, cluster, r.Client, r.overwriteRegistry)
 	deploymentCreators := []reconciling.NamedDeploymentReconcilerFactory{
-		admissioncontrollerresources.DeploymentReconciler(cluster),
-		backgroundcontrollerresources.DeploymentReconciler(cluster),
-		reportscontrollerresources.DeploymentReconciler(cluster),
-		cleanupcontrollerresources.DeploymentReconciler(cluster),
+		admissioncontrollerresources.DeploymentReconciler(data),
+		backgroundcontrollerresources.DeploymentReconciler(data),
+		reportscontrollerresources.DeploymentReconciler(data),
+		cleanupcontrollerresources.DeploymentReconciler(data),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, deploymentCreators, cluster.Status.NamespaceName, r.Client); err != nil {
