@@ -358,6 +358,26 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				imageSet.Insert(sysChart.WorkloadImages...)
 			}
 
+			for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+				if err != nil {
+					return err
+				}
+
+				chartImage := fmt.Sprintf("%s/%s:%s",
+					defaultChart.Template.Source.Helm.URL,
+					defaultChart.Template.Source.Helm.ChartName,
+					defaultChart.Template.Source.Helm.ChartVersion,
+				)
+
+				// Check if the chartImage starts with "oci://"
+				if strings.HasPrefix(chartImage, "oci://") {
+					// remove oci:// prefix and insert the chartImage into imageSet.
+					imageSet.Insert(chartImage[len("oci://"):])
+				}
+
+				imageSet.Insert(defaultChart.WorkloadImages...)
+			}
+
 			if options.Archive && options.ArchivePath == "" {
 				currentPath, err := os.Getwd()
 				if err != nil {

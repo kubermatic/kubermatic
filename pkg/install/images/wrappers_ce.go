@@ -19,6 +19,13 @@ limitations under the License.
 package images
 
 import (
+	"iter"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
@@ -26,4 +33,14 @@ import (
 // Since this is the Community Edition, this function is no-op and would always return nil,nil.
 func getAdditionalImagesFromReconcilers(_ *resources.TemplateData) ([]string, error) {
 	return nil, nil
+}
+
+func DefaultAppsHelmCharts(
+	config *kubermaticv1.KubermaticConfiguration,
+	logger logrus.FieldLogger,
+	helmClient helm.Client,
+	helmTimeout time.Duration,
+	registryPrefix string,
+) iter.Seq2[*AppsHelmChart, error] {
+	return func(yield func(*AppsHelmChart, error) bool) {}
 }
