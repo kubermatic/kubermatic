@@ -79,7 +79,6 @@ func newSemver(s string) semver.Semver {
 
 var (
 	DefaultAccessibleAddons = []string{
-		"cluster-autoscaler",
 		"node-exporter",
 		"kube-state-metrics",
 		"multus",
