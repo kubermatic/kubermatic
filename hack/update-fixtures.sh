@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.23.2 containerize ./hack/update-fixtures.sh
+CONTAINERIZE_IMAGE=golang:1.23.10 containerize ./hack/update-fixtures.sh
 
 echodate "Updating fixtures..."
 make test-update &> /dev/null
