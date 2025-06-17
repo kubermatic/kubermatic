@@ -22,7 +22,7 @@ set -euo pipefail
 
 # ─── Default registry and repo ────────────────────────────────────────────────
 REGISTRY_HOST="${REGISTRY_HOST:-quay.io}"
-REPOSITORY_PREFIX="${REPOSITORY_PREFIX:-kubermatic/helm-charts}"
+REPOSITORY_PREFIX="${REPOSITORY_PREFIX:-kubermatic-mirror/helm-charts}"
 
 # ─── Chart-specific configurations ────────────────────────────────────────────
 # Format: key = chart name, value = "<URL_TEMPLATE>"
@@ -30,6 +30,18 @@ declare -A CHART_URLS=(
   ["cluster-autoscaler"]="https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-chart-%s/cluster-autoscaler-%s.tgz"
   ["cilium"]="https://helm.cilium.io/cilium-%s.tgz"
   # Add more charts here as needed
+  ["aikit"]="https://sozercan.github.io/aikit/charts/aikit-%s.tgz"
+  ["argo-cd"]="https://github.com/argoproj/argo-helm/releases/download/argo-cd-%s/argo-cd-%s.tgz"
+  ["cert-manager"]="https://charts.jetstack.io/charts/cert-manager-%s.tgz"
+  ["falco"]="https://github.com/falcosecurity/charts/releases/download/falco-%s/falco-%s.tgz"
+  ["flux2"]="https://github.com/fluxcd-community/helm-charts/releases/download/flux2-%s/flux2-%s.tgz"
+  ["k8sgpt-operator"]="https://charts.k8sgpt.ai/k8sgpt-operator-%s.tgz"
+  ["kube-vip"]="https://github.com/kube-vip/helm-charts/releases/download/kube-vip-%s/kube-vip-%s.tgz"
+  ["metallb"]="https://github.com/metallb/metallb/releases/download/metallb-chart-%s/metallb-%s.tgz"
+  ["ingress-nginx"]="https://github.com/kubernetes/ingress-nginx/releases/download/helm-chart-%s/ingress-nginx-%s.tgz"
+  ["gpu-operator"]="https://github.com/NVIDIA/gpu-operator/charts/gpu-operator-%s.tgz"
+  ["trivy"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-%s/trivy-%s.tgz"
+  ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
 )
 
 # Default versions for each chart
@@ -37,6 +49,18 @@ declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
   ["cilium"]="1.16.9"
   # Add more default versions here as needed
+  ["aikit"]="0.18.0"
+  ["argo-cd"]="8.0.0"
+  ["cert-manager"]="v1.17.2"
+  ["falco"]="4.21.2"
+  ["flux2"]="2.15.0"
+  ["k8sgpt-operator"]="0.2.17"
+  ["kube-vip"]="0.6.6"
+  ["metallb"]="0.14.9"
+  ["ingress-nginx"]="4.12.2"
+  ["gpu-operator"]="v25.3.0"
+  ["trivy"]="0.14.1"
+  ["trivy-operator"]="0.28.0"
 )
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
