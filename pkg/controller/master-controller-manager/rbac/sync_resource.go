@@ -364,11 +364,11 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(ctx context.Context
 			continue
 		}
 		var sharedExistingRole rbacv1.Role
-		key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name}
+		key := ctrlruntimeclient.ObjectKey{Namespace: generatedRole.Namespace, Name: generatedRole.Name}
 		if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
 			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRole); err != nil {
-					return nil
+					return err
 				}
 				continue
 			}
@@ -415,11 +415,11 @@ func (c *resourcesController) ensureRBACRoleBindingForNamedResource(ctx context.
 			},
 		)
 		var sharedExistingRoleBinding rbacv1.RoleBinding
-		key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name}
+		key := ctrlruntimeclient.ObjectKey{Namespace: generatedRoleBinding.Namespace, Name: generatedRoleBinding.Name}
 		if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
 			if apierrors.IsNotFound(err) {
 				if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
-					return nil
+					return err
 				}
 				continue
 			}
