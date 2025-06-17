@@ -75,7 +75,7 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	}
 	defaultAppImages, err := images.GetImagesFromDefaultApplicationDefinitions(log, config, helmClient, 5*time.Minute, "")
 	if err != nil {
-		t.Errorf("Error calling GetImagesFromSystemApplicationDefinitions: %v", err)
+		t.Errorf("Error calling GetImagesFromDefaultApplicationDefinitions: %v", err)
 	}
 	containerImages = append(containerImages, appImages...)
 	containerImages = append(containerImages, defaultAppImages...)

@@ -32,28 +32,28 @@ spec:
         helm:
           chartName: flux2
           chartVersion: 2.9.2
-          url: https://fluxcd-community.github.io/helm-charts
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 2.0.1
   - template:
       source:
         helm:
           chartName: flux2
           chartVersion: 2.12.2
-          url: https://fluxcd-community.github.io/helm-charts
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 2.2.2
   - template:
       source:
         helm:
           chartName: flux2
           chartVersion: 2.14.1
-          url: https://fluxcd-community.github.io/helm-charts
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 2.4.0
   - template:
       source:
         helm:
           chartName: flux2
           chartVersion: 2.15.0
-          url: https://fluxcd-community.github.io/helm-charts
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 2.5.1
   documentationURL: https://fluxcd.io/
   sourceURL: https://github.com/fluxcd-community/helm-charts

@@ -32,21 +32,21 @@ spec:
         helm:
           chartName: metallb
           chartVersion: 0.13.10
-          url: https://metallb.github.io/metallb
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: v0.13.10
   - template:
       source:
         helm:
           chartName: metallb
           chartVersion: 0.14.3
-          url: https://metallb.github.io/metallb
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: v0.14.3
   - template:
       source:
         helm:
           chartName: metallb
           chartVersion: 0.14.9
-          url: https://metallb.github.io/metallb
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: v0.14.9
   documentationURL: https://metallb.universe.tf/
   sourceURL: https://github.com/metallb/metallb

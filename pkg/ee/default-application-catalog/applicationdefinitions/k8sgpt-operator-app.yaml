@@ -32,7 +32,7 @@ spec:
           helm:
             chartName: k8sgpt-operator
             chartVersion: 0.2.17
-            url: https://charts.k8sgpt.ai/
+            url: oci://quay.io/kubermatic-mirror/helm-charts
       version: 0.0.26
   defaultValuesBlock: |
     serviceMonitor:

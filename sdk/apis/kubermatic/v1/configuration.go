@@ -376,6 +376,13 @@ type ApplicationsConfiguration struct {
 	// Namespace is the namespace which is set as the default for applications installed via ui
 	// If left empty the default for the application installation namespace is the name of the resource itself
 	Namespace string `json:"namespace,omitempty"`
+	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
+	HelmRepository string `json:"helmRepository,omitempty"`
+	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
