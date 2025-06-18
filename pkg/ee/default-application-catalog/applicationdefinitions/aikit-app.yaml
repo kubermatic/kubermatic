@@ -46,7 +46,7 @@ spec:
       # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
       type: "LoadBalancer"
       port: 8080
-  documentationURL: oci://quay.io/kubermatic-mirror/aikit/docs
+  documentationURL: https://sozercan.github.io/aikit/docs
   sourceURL: https://github.com/sozercan/aikit
   logo: |+
     iVBORw0KGgoAAAANSUhEUgAAAE4AAABOCAYAAACOqiAdAAAABGdBTUEAALGPC/xhBQAAACBjSFJN

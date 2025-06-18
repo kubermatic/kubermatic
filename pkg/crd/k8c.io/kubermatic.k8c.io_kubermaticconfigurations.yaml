@@ -2356,6 +2356,15 @@ spec:
                     applications:
                       description: Applications contains configuration for default Application settings.
                       properties:
+                        namespace:
+                          description: |-
+                            Namespace is the namespace which is set as the default for applications installed via ui
+                            If left empty the default for the application installation namespace is the name of the resource itself
+                          type: string
+                      type: object
+                    defaultApplications:
+                      description: DefaultApplications contains configuration for default Applications from the ee catalog.
+                      properties:
                         helmRegistryConfigFile:
                           description: |-
                             HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
@@ -2384,11 +2393,6 @@ spec:
                           x-kubernetes-map-type: atomic
                         helmRepository:
                           description: HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
-                          type: string
-                        namespace:
-                          description: |-
-                            Namespace is the namespace which is set as the default for applications installed via ui
-                            If left empty the default for the application installation namespace is the name of the resource itself
                           type: string
                       type: object
                     disableApiserverEndpointReconciling:

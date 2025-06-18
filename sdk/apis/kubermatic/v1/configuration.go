@@ -272,6 +272,8 @@ type KubermaticUserClusterConfiguration struct {
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// SystemApplications contains configuration for system Applications (such as CNI).
 	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
+	// DefaultApplications contains configuration for default Applications from the ee catalog.
+	DefaultApplications DefaultApplicationsConfiguration `json:"defaultApplications,omitempty"`
 	// Applications contains configuration for default Application settings.
 	Applications ApplicationsConfiguration `json:"applications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
@@ -371,11 +373,8 @@ type SystemApplicationsConfiguration struct {
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
 }
 
-// ApplicationsConfiguration contains configuration for default Applications configuration settings.
-type ApplicationsConfiguration struct {
-	// Namespace is the namespace which is set as the default for applications installed via ui
-	// If left empty the default for the application installation namespace is the name of the resource itself
-	Namespace string `json:"namespace,omitempty"`
+// DefaultApplications contains configuration for default Applications from the ee catalog.
+type DefaultApplicationsConfiguration struct {
 	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
 	HelmRepository string `json:"helmRepository,omitempty"`
 	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
@@ -383,6 +382,13 @@ type ApplicationsConfiguration struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
+}
+
+// ApplicationsConfiguration contains configuration for default Applications configuration settings.
+type ApplicationsConfiguration struct {
+	// Namespace is the namespace which is set as the default for applications installed via ui
+	// If left empty the default for the application installation namespace is the name of the resource itself
+	Namespace string `json:"namespace,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {

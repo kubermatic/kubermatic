@@ -68,12 +68,12 @@ func GetImagesFromDefaultApplicationDefinitions(
 ) ([]string, error) {
 	var images []string
 
-	for sysApp, err := range DefaultAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
+	for defaultApp, err := range DefaultAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
 		if err != nil {
 			return nil, err
 		}
 
-		images = append(images, sysApp.WorkloadImages...)
+		images = append(images, defaultApp.WorkloadImages...)
 	}
 
 	return images, nil

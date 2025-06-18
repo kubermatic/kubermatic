@@ -175,7 +175,7 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 	}
 
 	var credentials *appskubermaticv1.HelmCredentials
-	appConfig := config.Spec.UserCluster.Applications
+	appConfig := config.Spec.UserCluster.DefaultApplications
 	if appConfig.HelmRegistryConfigFile != nil {
 		credentials = &appskubermaticv1.HelmCredentials{
 			RegistryConfigFile: appConfig.HelmRegistryConfigFile,

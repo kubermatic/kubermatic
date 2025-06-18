@@ -85,7 +85,7 @@ func DefaultAppsHelmCharts(
 	defaultAppDefReconcilers, err := appcat.ApplicationDefinitionReconcilerFactories(log, config, true)
 	if err != nil {
 		return func(yield func(*AppsHelmChart, error) bool) {
-			yield(nil, fmt.Errorf("failed to get system application definition reconciler factories: %w", err))
+			yield(nil, fmt.Errorf("failed to get default application definition reconciler factories: %w", err))
 		}
 	}
 
