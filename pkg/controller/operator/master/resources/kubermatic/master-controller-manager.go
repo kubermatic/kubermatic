@@ -57,6 +57,20 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
+			if len(cfg.Spec.MasterController.NodeSelector) > 0 {
+				d.Spec.Template.Spec.NodeSelector = cfg.Spec.MasterController.NodeSelector
+			}
+
+			if len(cfg.Spec.MasterController.Tolerations) > 0 {
+				d.Spec.Template.Spec.Tolerations = cfg.Spec.MasterController.Tolerations
+			}
+
+			if cfg.Spec.MasterController.Affinity.NodeAffinity != nil ||
+				cfg.Spec.MasterController.Affinity.PodAffinity != nil ||
+				cfg.Spec.MasterController.Affinity.PodAntiAffinity != nil {
+				d.Spec.Template.Spec.Affinity = &cfg.Spec.MasterController.Affinity
+			}
+
 			args := []string{
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
