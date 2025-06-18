@@ -139,6 +139,38 @@ spec:
                           type: object
                       type: object
                   type: object
+                applications:
+                  description: Applications contains configuration for Application settings.
+                  properties:
+                    defaultApplicationCatalog:
+                      description: DefaultApplicationCatalog contains configuration for the default application catalog.
+                      properties:
+                        applications:
+                          description: |-
+                            Applications is a list of application definition names that should be installed in the master cluster.
+                            If not set, all the applications from the catalog are installed.
+                          items:
+                            type: string
+                          type: array
+                        enable:
+                          description: Enable is used to enable the installation of application definitions in the master cluster.
+                          type: boolean
+                      type: object
+                    systemApplications:
+                      description: SystemApplications contains configuration for system applications.
+                      properties:
+                        applications:
+                          description: |-
+                            Applications is a list of application definition names that should be installed in the master cluster.
+                            If not set, all the applications from the catalog are installed.
+                          items:
+                            type: string
+                          type: array
+                        disable:
+                          description: Disable is used to disable the installation of system application definitions in the master cluster.
+                          type: boolean
+                      type: object
+                  type: object
                 auth:
                   description: |-
                     Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
@@ -490,20 +522,6 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                           type: object
                       type: object
-                  type: object
-                systemApplications:
-                  description: SystemApplications contains configuration for system applications.
-                  properties:
-                    applications:
-                      description: |-
-                        Applications is a list of system application definition names that should be installed in the master cluster.
-                        If not set, the default system applications will be installed.
-                      items:
-                        type: string
-                      type: array
-                    disable:
-                      description: Disable is used to disable the installation of system application definitions in the master cluster.
-                      type: boolean
                   type: object
                 ui:
                   description: UI configures the dashboard.

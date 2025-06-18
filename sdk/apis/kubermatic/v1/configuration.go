@@ -133,8 +133,8 @@ type KubermaticConfigurationSpec struct {
 	// MirrorImages is a list of container images that will be mirrored with the `kubermatic-installer  mirror-images` command.
 	// Each entry should be in the format "repository:tag".
 	MirrorImages []string `json:"mirrorImages,omitempty"`
-	// SystemApplications contains configuration for system applications.
-	SystemApplications SystemApplicationOptions `json:"systemApplications,omitempty"`
+	// Applications contains configuration for Application settings.
+	Applications ApplicationDefinitionsConfiguration `json:"applications,omitempty"`
 }
 
 // KubermaticAuthConfiguration defines keys and URLs for Dex.
@@ -555,11 +555,27 @@ type KubermaticProxyConfiguration struct {
 	NoProxy string `json:"noProxy,omitempty"`
 }
 
-type SystemApplicationOptions struct {
+type ApplicationDefinitionsConfiguration struct {
+	// SystemApplications contains configuration for system applications.
+	SystemApplications SystemApplicationsSettings `json:"systemApplications,omitempty"`
+
+	// DefaultApplicationCatalog contains configuration for the default application catalog.
+	DefaultApplicationCatalog DefaultApplicationCatalogSettings `json:"defaultApplicationCatalog,omitempty"`
+}
+
+type SystemApplicationsSettings struct {
 	// Disable is used to disable the installation of system application definitions in the master cluster.
 	Disable bool `json:"disable,omitempty"`
-	// Applications is a list of system application definition names that should be installed in the master cluster.
-	// If not set, the default system applications will be installed.
+	// Applications is a list of application definition names that should be installed in the master cluster.
+	// If not set, all the applications from the catalog are installed.
+	Applications []string `json:"applications,omitempty"`
+}
+
+type DefaultApplicationCatalogSettings struct {
+	// Enable is used to enable the installation of application definitions in the master cluster.
+	Enable bool `json:"enable,omitempty"`
+	// Applications is a list of application definition names that should be installed in the master cluster.
+	// If not set, all the applications from the catalog are installed.
 	Applications []string `json:"applications,omitempty"`
 }
 

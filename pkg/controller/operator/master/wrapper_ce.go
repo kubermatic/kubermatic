@@ -1,7 +1,7 @@
 //go:build !ee
 
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,18 +16,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermaticmaster
+package master
 
 import (
-	"context"
+	"go.uber.org/zap"
 
-	"github.com/sirupsen/logrus"
-
-	"k8c.io/kubermatic/v2/pkg/install/stack"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func deployDefaultPolicyTemplateCatalog(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
-	return nil // NOP
+func DefaultApplicationCatalogReconcilerFactories(logger *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
+	return nil, nil
 }

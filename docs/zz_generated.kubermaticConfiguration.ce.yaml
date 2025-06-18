@@ -47,6 +47,22 @@ spec:
       requests:
         cpu: 200m
         memory: 150Mi
+  # Applications contains configuration for Application settings.
+  applications:
+    # DefaultApplicationCatalog contains configuration for the default application catalog.
+    defaultApplicationCatalog:
+      # Applications is a list of application definition names that should be installed in the master cluster.
+      # If not set, all the applications from the catalog are installed.
+      applications: null
+      # Enable is used to enable the installation of application definitions in the master cluster.
+      enable: false
+    # SystemApplications contains configuration for system applications.
+    systemApplications:
+      # Applications is a list of application definition names that should be installed in the master cluster.
+      # If not set, all the applications from the catalog are installed.
+      applications: null
+      # Disable is used to disable the installation of system application definitions in the master cluster.
+      disable: false
   # Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
   # feature gate is set, which will disable the UI/API and its need for an OIDC provider entirely.
   auth:
@@ -273,13 +289,6 @@ spec:
       requests:
         cpu: 200m
         memory: 100Mi
-  # SystemApplications contains configuration for system applications.
-  systemApplications:
-    # Applications is a list of system application definition names that should be installed in the master cluster.
-    # If not set, the default system applications will be installed.
-    applications: null
-    # Disable is used to disable the installation of system application definitions in the master cluster.
-    disable: false
   # UI configures the dashboard.
   ui:
     # Config sets flags for various dashboard features.

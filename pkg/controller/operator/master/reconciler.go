@@ -483,11 +483,23 @@ func (r *Reconciler) reconcileAddonConfigs(ctx context.Context, logger *zap.Suga
 func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ApplicationDefinitions")
 
+	reconcilers := []kkpreconciling.NamedApplicationDefinitionReconcilerFactory{}
 	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(logger, config, false)
 	if err != nil {
 		return fmt.Errorf("failed to get system application definition reconciler factories: %w", err)
 	}
-	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, sysAppDefReconcilers, "", r.Client); err != nil {
+
+	reconcilers = append(reconcilers, sysAppDefReconcilers...)
+
+	// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
+	defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config)
+	if err != nil {
+		return fmt.Errorf("failed to get default application definition reconciler factories: %w", err)
+	}
+
+	reconcilers = append(reconcilers, defaultAppDefReconcilers...)
+
+	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
 	}
 
