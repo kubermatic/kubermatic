@@ -47,15 +47,12 @@ func GetImagesFromSystemApplicationDefinitions(
 	registryPrefix string,
 ) ([]string, error) {
 	var images []string
-
 	for sysApp, err := range SystemAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
 		if err != nil {
 			return nil, err
 		}
-
 		images = append(images, sysApp.WorkloadImages...)
 	}
-
 	return images, nil
 }
 
@@ -67,15 +64,12 @@ func GetImagesFromDefaultApplicationDefinitions(
 	registryPrefix string,
 ) ([]string, error) {
 	var images []string
-
 	for defaultApp, err := range DefaultAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
 		if err != nil {
 			return nil, err
 		}
-
 		images = append(images, defaultApp.WorkloadImages...)
 	}
-
 	return images, nil
 }
 

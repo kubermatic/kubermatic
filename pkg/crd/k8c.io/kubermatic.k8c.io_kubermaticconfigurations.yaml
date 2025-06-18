@@ -2362,8 +2362,8 @@ spec:
                             If left empty the default for the application installation namespace is the name of the resource itself
                           type: string
                       type: object
-                    defaultApplications:
-                      description: DefaultApplications contains configuration for default Applications from the ee catalog.
+                    defaultApplicationCatalog:
+                      description: DefaultApplicationCatalog contains configuration for default Applications from the ee catalog.
                       properties:
                         helmRegistryConfigFile:
                           description: |-
@@ -2392,7 +2392,7 @@ spec:
                           type: object
                           x-kubernetes-map-type: atomic
                         helmRepository:
-                          description: HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
+                          description: HelmRepository specifies OCI repository containing Helm charts of Applications from the default application catalog e.g. oci://localhost:5000/myrepo.
                           type: string
                       type: object
                     disableApiserverEndpointReconciling:

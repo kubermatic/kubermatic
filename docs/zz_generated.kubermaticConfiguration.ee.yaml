@@ -404,14 +404,14 @@ spec:
       # Namespace is the namespace which is set as the default for applications installed via ui
       # If left empty the default for the application installation namespace is the name of the resource itself
       namespace: ""
-    # DefaultApplications contains configuration for default Applications from the ee catalog.
-    defaultApplications:
+    # DefaultApplicationCatalog contains configuration for default Applications from the ee catalog.
+    defaultApplicationCatalog:
       # HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
       # The value is dockercfg file that follows the same format rules as ~/.docker/config.json
       # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
       # The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
       helmRegistryConfigFile: null
-      # HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
+      # HelmRepository specifies OCI repository containing Helm charts of Applications from the default application catalog e.g. oci://localhost:5000/myrepo.
       helmRepository: ""
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.

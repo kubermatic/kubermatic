@@ -272,8 +272,8 @@ type KubermaticUserClusterConfiguration struct {
 	Addons KubermaticAddonsConfiguration `json:"addons,omitempty"`
 	// SystemApplications contains configuration for system Applications (such as CNI).
 	SystemApplications SystemApplicationsConfiguration `json:"systemApplications,omitempty"`
-	// DefaultApplications contains configuration for default Applications from the ee catalog.
-	DefaultApplications DefaultApplicationsConfiguration `json:"defaultApplications,omitempty"`
+	// DefaultApplicationCatalog contains configuration for default Applications from the ee catalog.
+	DefaultApplicationCatalog DefaultApplicationCatalogConfiguration `json:"defaultApplicationCatalog,omitempty"`
 	// Applications contains configuration for default Application settings.
 	Applications ApplicationsConfiguration `json:"applications,omitempty"`
 	// NodePortRange is the port range for user clusters - this must match the NodePort
@@ -373,9 +373,9 @@ type SystemApplicationsConfiguration struct {
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
 }
 
-// DefaultApplications contains configuration for default Applications from the ee catalog.
-type DefaultApplicationsConfiguration struct {
-	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
+// DefaultApplicationCatalogConfiguration contains configuration for default Applications from the ee catalog.
+type DefaultApplicationCatalogConfiguration struct {
+	// HelmRepository specifies OCI repository containing Helm charts of Applications from the default application catalog e.g. oci://localhost:5000/myrepo.
 	HelmRepository string `json:"helmRepository,omitempty"`
 	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
 	// The value is dockercfg file that follows the same format rules as ~/.docker/config.json
