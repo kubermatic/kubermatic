@@ -37,6 +37,6 @@ spec:
     defaultApplicationCatalog:
       enable: true
       applications:
-        - argo-cd
+        - argocd
         - trivy
         - metallb
