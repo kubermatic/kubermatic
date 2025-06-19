@@ -42,6 +42,7 @@ declare -A CHART_URLS=(
   ["gpu-operator"]="https://github.com/NVIDIA/gpu-operator/charts/gpu-operator-%s.tgz"
   ["trivy"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-%s/trivy-%s.tgz"
   ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
+  ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
 )
 
 # Default versions for each chart
@@ -61,6 +62,7 @@ declare -A CHART_VERSIONS=(
   ["gpu-operator"]="v25.3.0"
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
+  ["local-ai"]="3.4.2"
 )
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
