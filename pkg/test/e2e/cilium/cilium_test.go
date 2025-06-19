@@ -72,7 +72,7 @@ var (
 const (
 	projectName  = "cilium-test-project"
 	ciliumTestNs = "cilium-test"
-	nginxAppName = "nginx"
+	nginxAppName = "nginx-cilium-test"
 )
 
 func init() {
