@@ -37,7 +37,7 @@ spec:
   defaultValuesBlock: |
     service:
       # To Expose local-ai externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-      type: "LoadBalancer"
+      type: "ClusterIP"
       port: 8080
     persistence:
       models:
