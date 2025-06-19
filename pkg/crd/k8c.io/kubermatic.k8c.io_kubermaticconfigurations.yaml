@@ -2362,6 +2362,39 @@ spec:
                             If left empty the default for the application installation namespace is the name of the resource itself
                           type: string
                       type: object
+                    defaultApplicationCatalog:
+                      description: DefaultApplicationCatalog contains configuration for default Applications from the ee catalog.
+                      properties:
+                        helmRegistryConfigFile:
+                          description: |-
+                            HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+                            The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+                            The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+                            The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must be defined
+                              type: boolean
+                          required:
+                            - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        helmRepository:
+                          description: HelmRepository specifies OCI repository containing Helm charts of Applications from the default application catalog e.g. oci://localhost:5000/myrepo.
+                          type: string
+                      type: object
                     disableApiserverEndpointReconciling:
                       description: |-
                         DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for

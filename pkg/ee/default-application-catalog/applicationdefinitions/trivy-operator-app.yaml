@@ -32,28 +32,28 @@ spec:
         helm:
           chartName: trivy-operator
           chartVersion: 0.15.1
-          url: https://aquasecurity.github.io/helm-charts/
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 0.15.1
   - template:
       source:
         helm:
           chartName: trivy-operator
           chartVersion: 0.20.5
-          url: https://aquasecurity.github.io/helm-charts/
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 0.18.4
   - template:
       source:
         helm:
           chartName: trivy-operator
           chartVersion: 0.25.0
-          url: https://aquasecurity.github.io/helm-charts/
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 0.23.0
   - template:
       source:
         helm:
           chartName: trivy-operator
           chartVersion: 0.28.0
-          url: https://aquasecurity.github.io/helm-charts/
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 0.26.0
   defaultValuesBlock: |
     trivy:

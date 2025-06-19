@@ -47,19 +47,33 @@ func GetImagesFromSystemApplicationDefinitions(
 	registryPrefix string,
 ) ([]string, error) {
 	var images []string
-
 	for sysApp, err := range SystemAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
 		if err != nil {
 			return nil, err
 		}
-
 		images = append(images, sysApp.WorkloadImages...)
 	}
-
 	return images, nil
 }
 
-type SystemAppsHelmChart struct {
+func GetImagesFromDefaultApplicationDefinitions(
+	logger logrus.FieldLogger,
+	config *kubermaticv1.KubermaticConfiguration,
+	helmClient helm.Client,
+	helmTimeout time.Duration,
+	registryPrefix string,
+) ([]string, error) {
+	var images []string
+	for defaultApp, err := range DefaultAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
+		if err != nil {
+			return nil, err
+		}
+		images = append(images, defaultApp.WorkloadImages...)
+	}
+	return images, nil
+}
+
+type AppsHelmChart struct {
 	ChartArchive   string
 	WorkloadImages []string
 	appskubermaticv1.ApplicationVersion
@@ -71,7 +85,7 @@ func SystemAppsHelmCharts(
 	helmClient helm.Client,
 	helmTimeout time.Duration,
 	registryPrefix string,
-) iter.Seq2[*SystemAppsHelmChart, error] {
+) iter.Seq2[*AppsHelmChart, error] {
 	// If system applications are disabled we don't need to do anything.
 	if config.Spec.SystemApplications.Disable {
 		logger.Debug("System applications are disabled, skipping deployment of system application definitions.")
@@ -81,15 +95,23 @@ func SystemAppsHelmCharts(
 	log := kubermaticlog.NewDefault().Sugar()
 	sysAppDefReconcilers, err := applicationdefinitions.SystemApplicationDefinitionReconcilerFactories(log, config, true)
 	if err != nil {
-		return func(yield func(*SystemAppsHelmChart, error) bool) {
+		return func(yield func(*AppsHelmChart, error) bool) {
 			yield(nil, fmt.Errorf("failed to get system application definition reconciler factories: %w", err))
 		}
 	}
 
-	defaultKubernetesVersion := defaulting.DefaultKubernetesVersioning.Default
+	return getHelmChartRenderFunc(config, logger, helmClient, helmTimeout, registryPrefix, sysAppDefReconcilers)
+}
 
-	return func(yield func(*SystemAppsHelmChart, error) bool) {
-		for _, createFunc := range sysAppDefReconcilers {
+func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
+	logger logrus.FieldLogger,
+	helmClient helm.Client,
+	helmTimeout time.Duration,
+	registryPrefix string,
+	appDefReconcilers []func() (name string, reconciler func(existing *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error))) func(yield func(*AppsHelmChart, error) bool) {
+	defaultKubernetesVersion := defaulting.DefaultKubernetesVersioning.Default
+	return func(yield func(*AppsHelmChart, error) bool) {
+		for _, createFunc := range appDefReconcilers {
 			appName, creator := createFunc()
 			appDef, err := creator(&appskubermaticv1.ApplicationDefinition{})
 			if err != nil {
@@ -184,7 +206,7 @@ func SystemAppsHelmCharts(
 					return
 				}
 
-				sysChart := SystemAppsHelmChart{
+				sysChart := AppsHelmChart{
 					ChartArchive:       chartPath,
 					WorkloadImages:     chartImages,
 					ApplicationVersion: appVer,

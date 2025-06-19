@@ -30,8 +30,10 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -39,6 +41,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,7 +89,7 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 		}
 
 		if len(opt.LimitApps) == 0 || (len(opt.LimitApps) > 0 && (slices.Contains(opt.LimitApps, appDef.Spec.DisplayName) || slices.Contains(opt.LimitApps, appDef.Name))) {
-			creators = append(creators, applicationDefinitionReconcilerFactory(appDef))
+			creators = append(creators, applicationDefinitionReconcilerFactory(appDef, opt.KubermaticConfiguration, false))
 		}
 	}
 
@@ -99,7 +102,36 @@ func DeployDefaultApplicationCatalog(ctx context.Context, logger *logrus.Entry, 
 	return nil
 }
 
-func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.ApplicationDefinition) kkpreconciling.NamedApplicationDefinitionReconcilerFactory {
+func ApplicationDefinitionReconcilerFactories(
+	logger *zap.SugaredLogger,
+	config *kubermaticv1.KubermaticConfiguration,
+	mirror bool,
+) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
+	appDefFiles, err := GetAppDefFiles()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get default application definition files: %w", err)
+	}
+	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(appDefFiles))
+	for _, file := range appDefFiles {
+		b, err := io.ReadAll(file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read ApplicationDefinition: %w", err)
+		}
+
+		appDef := &appskubermaticv1.ApplicationDefinition{}
+		err = yaml.Unmarshal(b, appDef)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse ApplicationDefinition: %w", err)
+		}
+
+		creators = append(creators, applicationDefinitionReconcilerFactory(appDef, config, mirror))
+	}
+
+	return creators, nil
+}
+
+func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.ApplicationDefinition, config *kubermaticv1.KubermaticConfiguration,
+	mirror bool) kkpreconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, kkpreconciling.ApplicationDefinitionReconciler) {
 		return appDef.Name, func(a *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
 			// Labels and annotations specified in the ApplicationDefinition installed on the cluster are merged with the ones specified in the ApplicationDefinition
@@ -120,8 +152,43 @@ func applicationDefinitionReconcilerFactory(appDef *appskubermaticv1.Application
 				appDef.Spec.Selector.Datacenters = a.Spec.Selector.Datacenters
 			}
 
+			// Update the application definition (fileAppDef) based on the KubermaticConfiguration.
+			// If the KubermaticConfiguration includes HelmRegistryConfigFile, update the application
+			// definition to incorporate the Helm credentials provided by the user in the cluster.
+			//
+			// When running mirror-images, leave the application definition unchanged. This ensures
+			// that charts are downloaded from the default upstream repositories used by KKP,
+			// preserving the original image references for discovery.
+			if !mirror {
+				updateApplicationDefinition(appDef, config)
+			}
+
 			a.Spec = appDef.Spec
 			return a, nil
+		}
+	}
+}
+
+func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition, config *kubermaticv1.KubermaticConfiguration) {
+	if config == nil || appDef == nil {
+		return
+	}
+
+	var credentials *appskubermaticv1.HelmCredentials
+	appConfig := config.Spec.UserCluster.DefaultApplicationCatalog
+	if appConfig.HelmRegistryConfigFile != nil {
+		credentials = &appskubermaticv1.HelmCredentials{
+			RegistryConfigFile: appConfig.HelmRegistryConfigFile,
+		}
+	}
+
+	for i := range appDef.Spec.Versions {
+		if appConfig.HelmRepository != "" {
+			appDef.Spec.Versions[i].Template.Source.Helm.URL = registry.ToOCIURL(appConfig.HelmRepository)
+		}
+
+		if credentials != nil {
+			appDef.Spec.Versions[i].Template.Source.Helm.Credentials = credentials
 		}
 	}
 }
