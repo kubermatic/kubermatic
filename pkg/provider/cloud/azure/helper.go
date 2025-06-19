@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
-// For some reason, creting route table requires a subnetwork's full ID
+// For some reason, creating route table requires a subnetwork's full ID
 // and not just the name and location. We could fetch the subnet by name and get the ID,
 // but that's slow, so we assemble it ourselves.
 func assembleSubnetID(cloud kubermaticv1.CloudSpec) string {
