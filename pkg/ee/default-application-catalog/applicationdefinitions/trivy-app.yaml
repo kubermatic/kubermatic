@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: trivy
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Trivy is a simple and comprehensive vulnerability/misconfiguration/secret scanner for containers and other artifacts.
   displayName: Trivy

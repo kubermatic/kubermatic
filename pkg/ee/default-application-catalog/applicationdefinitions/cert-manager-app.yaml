@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: cert-manager
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: cert-manager is a Kubernetes addon to automate the management and issuance of TLS certificates from various issuing sources.
   displayName: cert-manager

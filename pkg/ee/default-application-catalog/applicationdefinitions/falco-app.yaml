@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: falco
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Falco is a cloud native runtime security tool for Linux operating systems.
   displayName: Falco

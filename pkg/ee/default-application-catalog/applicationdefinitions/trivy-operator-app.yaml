@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: trivy-operator
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Trivy-Operator is a Kubernetes-native security toolkit.
   displayName: Trivy Operator
