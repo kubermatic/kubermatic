@@ -603,7 +603,7 @@ func compareApplications(installedApps []appskubermaticv1.ApplicationInstallatio
 				if appDef.Spec.DefaultNamespace == nil && installedApp.Spec.Namespace.Name != appDef.Name {
 					return fmt.Errorf("installed app %s has incorrect namespace: expected %s, got %s", installedApp.Name, appDef.Name, installedApp.Spec.Namespace.Name)
 				}
-				// when there is a default namespace configured in the related appdef, then this namespae will be used for the applicationinstallation namespace
+				// when there is a default namespace configured in the related appdef, then this namespace will be used for the applicationinstallation namespace
 				if appDef.Spec.DefaultNamespace != nil && installedApp.Spec.Namespace.Name != appDef.Spec.DefaultNamespace.Name {
 					return fmt.Errorf("installed app %s has incorrect namespace: expected %s, got %s", installedApp.Name, appDef.Name, installedApp.Spec.Namespace.Name)
 				}

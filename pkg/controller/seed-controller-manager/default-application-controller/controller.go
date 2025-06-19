@@ -247,15 +247,15 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 		return err
 	}
 	var currentApplicationInstallation *appskubermaticv1.ApplicationInstallation
-	for _, exisitingApplication := range existingApplicationList.Items {
+	for _, existingApplication := range existingApplicationList.Items {
 		// if we find an application installation which is defaulted and enforced we found an existing resource
-		if exisitingApplication.Spec.ApplicationRef.Name == application.Name && exisitingApplication.Name == application.Name {
+		if existingApplication.Spec.ApplicationRef.Name == application.Name && existingApplication.Name == application.Name {
 			// we can suppress the error here because the return value will be false if something cannot be parsed
-			appEnforcedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
-			appDefaultedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
+			appEnforcedEnabled, _ := strconv.ParseBool(existingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
+			appDefaultedEnabled, _ := strconv.ParseBool(existingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
 			// if enforced and defaulted we found the existing default application installation
 			if appEnforcedEnabled && appDefaultedEnabled {
-				currentApplicationInstallation = &exisitingApplication
+				currentApplicationInstallation = &existingApplication
 				break
 			}
 		}
