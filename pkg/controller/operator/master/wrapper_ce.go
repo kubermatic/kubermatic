@@ -25,6 +25,6 @@ import (
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
-func DefaultApplicationCatalogReconcilerFactories(logger *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
+func DefaultApplicationCatalogReconcilerFactories(logger *zap.SugaredLogger, config *kubermaticv1.KubermaticConfiguration, mirror bool) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
 	return nil, nil
 }

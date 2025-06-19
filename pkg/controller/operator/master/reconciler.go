@@ -492,7 +492,7 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 	reconcilers = append(reconcilers, sysAppDefReconcilers...)
 
 	// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
-	defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config)
+	defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config, false)
 	if err != nil {
 		return fmt.Errorf("failed to get default application definition reconciler factories: %w", err)
 	}
