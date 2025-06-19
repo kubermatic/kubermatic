@@ -65,7 +65,6 @@ type DeployOptions struct {
 	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
-	LimitApps               []string
 
 	SkipCharts []string
 

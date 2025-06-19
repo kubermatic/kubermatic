@@ -32,7 +32,7 @@ make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_application_catalog.yaml
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the cluster control plane and in the Kubermatic namespace
@@ -40,7 +40,6 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-con
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
 kubectl apply -f pkg/crd/k8c.io
-export INSTALLER_FLAGS="--deploy-default-app-catalog --limit-apps=argocd,trivy,metallb"
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"

@@ -84,7 +84,6 @@ type DeployOptions struct {
 	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
-	LimitApps               []string
 
 	SkipCharts []string
 
@@ -215,7 +214,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
-			LimitApps:                          opt.LimitApps,
 			SkipSeedValidation:                 opt.SkipSeedValidation,
 		}
 

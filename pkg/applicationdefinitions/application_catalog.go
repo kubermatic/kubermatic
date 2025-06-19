@@ -36,7 +36,7 @@ func SystemApplicationDefinitionReconcilerFactories(
 	config *kubermaticv1.KubermaticConfiguration,
 	mirror bool,
 ) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
-	if config.Spec.SystemApplications.Disable {
+	if config.Spec.Applications.SystemApplications.Disable {
 		logger.Info("System applications are disabled, skipping deployment of system application definitions except Cilium.")
 		return nil, nil
 	}
@@ -46,15 +46,15 @@ func SystemApplicationDefinitionReconcilerFactories(
 		return nil, fmt.Errorf("failed to get system application definition files: %w", err)
 	}
 
-	filterApps := len(config.Spec.SystemApplications.Applications) > 0
+	filterApps := len(config.Spec.Applications.SystemApplications.Applications) > 0
 
 	requestedApps := make(map[string]struct{})
 	if filterApps {
-		for _, appName := range config.Spec.SystemApplications.Applications {
+		for _, appName := range config.Spec.Applications.SystemApplications.Applications {
 			requestedApps[appName] = struct{}{}
 		}
 
-		logger.Debugf("Installing only specified system applications: %+v", config.Spec.SystemApplications.Applications)
+		logger.Debugf("Installing only specified system applications: %+v", config.Spec.Applications.SystemApplications.Applications)
 	}
 
 	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(sysAppDefFiles))

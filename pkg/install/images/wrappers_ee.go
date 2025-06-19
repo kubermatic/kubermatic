@@ -28,7 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
-	appcat "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
+	applicationcatalog "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -82,7 +82,7 @@ func DefaultAppsHelmCharts(
 	registryPrefix string,
 ) iter.Seq2[*AppsHelmChart, error] {
 	log := kubermaticlog.NewDefault().Sugar()
-	defaultAppDefReconcilers, err := appcat.ApplicationDefinitionReconcilerFactories(log, config, true)
+	defaultAppDefReconcilers, err := applicationcatalog.DefaultApplicationCatalogReconcilerFactories(log, config, true)
 	if err != nil {
 		return func(yield func(*AppsHelmChart, error) bool) {
 			yield(nil, fmt.Errorf("failed to get default application definition reconciler factories: %w", err))

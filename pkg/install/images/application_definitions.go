@@ -87,7 +87,7 @@ func SystemAppsHelmCharts(
 	registryPrefix string,
 ) iter.Seq2[*AppsHelmChart, error] {
 	// If system applications are disabled we don't need to do anything.
-	if config.Spec.SystemApplications.Disable {
+	if config.Spec.Applications.SystemApplications.Disable {
 		logger.Debug("System applications are disabled, skipping deployment of system application definitions.")
 		return nil
 	}
