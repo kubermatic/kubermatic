@@ -646,7 +646,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-local-ai
-    run_if_changed: "(pkg/ee/default-application-catalog/local-ai.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/local-ai.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
