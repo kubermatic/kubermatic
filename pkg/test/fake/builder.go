@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func NewScheme() *runtime.Scheme {
@@ -43,8 +43,8 @@ func NewScheme() *runtime.Scheme {
 // treat KKP CRDs with enabled status subresource behaviour.
 // See https://github.com/kubernetes-sigs/controller-runtime/pull/2259
 // for more information.
-func NewClientBuilder() *fakectrlruntimeclient.ClientBuilder {
-	return fakectrlruntimeclient.
+func NewClientBuilder() *ctrlruntimefakeclient.ClientBuilder {
+	return ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithScheme(NewScheme()).
 		WithStatusSubresource(

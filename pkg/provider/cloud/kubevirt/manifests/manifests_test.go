@@ -31,7 +31,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -49,7 +49,7 @@ var (
 func init() {
 	utilruntime.Must(kubevirtv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(kvinstancetypev1alpha1.AddToScheme(scheme.Scheme))
-	fakeclient = fakectrlruntimeclient.
+	fakeclient = ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		Build()

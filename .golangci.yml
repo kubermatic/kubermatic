@@ -103,6 +103,8 @@ linters:
         # Controller Runtime
         - pkg: sigs.k8s.io/controller-runtime/pkg/client
           alias: ctrlruntimeclient
+        - pkg: sigs.k8s.io/controller-runtime/pkg/client/fake
+          alias: ctrlruntimefakeclient
         # Misc
         - pkg: k8c.io/machine-controller/pkg/apis/cluster/v1alpha1
           alias: clusterv1alpha1
