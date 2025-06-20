@@ -671,10 +671,8 @@ func compareApplications(installedApps []appskubermaticv1.ApplicationInstallatio
 				}
 				if appDef.Spec.Enforced {
 					expectedAnnotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
-				} else {
-					if annotationsHasChanged {
-						expectedAnnotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "false"
-					}
+				} else if annotationsHasChanged {
+					expectedAnnotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "false"
 				}
 
 				if !reflect.DeepEqual(installedApp.Annotations, expectedAnnotations) {
