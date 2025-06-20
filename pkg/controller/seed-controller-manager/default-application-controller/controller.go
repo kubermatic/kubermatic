@@ -246,10 +246,6 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) ensureApplicationEnforcedAnnotationIsRemoved(ctx context.Context, userClusterClient ctrlruntimeclient.Client, applicationNames map[string]bool) error {
-	if len(applicationNames) == 0 {
-		return nil
-	}
-
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
 	if err := userClusterClient.List(ctx, existingApplicationList); err != nil {
 		return fmt.Errorf("failed to list installed applications: %w", err)
@@ -257,12 +253,13 @@ func (r *Reconciler) ensureApplicationEnforcedAnnotationIsRemoved(ctx context.Co
 
 	for _, existingApplication := range existingApplicationList.Items {
 		if _, ok := applicationNames[existingApplication.Spec.ApplicationRef.Name]; !ok {
+			if existingApplication.Name == kubermaticv1.CNIPluginTypeCilium.String() {
+				continue
+			}
 			if existingApplication.Annotations == nil {
 				existingApplication.Annotations = map[string]string{}
 			}
-
 			existingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "false"
-
 			if err := userClusterClient.Update(ctx, &existingApplication); err != nil {
 				return fmt.Errorf("failed to update ApplicationInstallation %s in namespace %s: %w", existingApplication.Namespace, existingApplication.Name, err)
 			}
