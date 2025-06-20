@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: argocd
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Argo CD - Declarative, GitOps Continuous Delivery Tool for Kubernetes.
   displayName: Argo CD

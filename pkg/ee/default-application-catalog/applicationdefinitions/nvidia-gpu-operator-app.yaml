@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: nvidia-gpu-operator
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Nvidia GPU management for Kubernetes
   displayName: NVIDIA GPU Operator

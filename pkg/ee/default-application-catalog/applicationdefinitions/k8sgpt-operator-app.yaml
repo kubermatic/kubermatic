@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: k8sgpt-operator
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: K8sGPT Operator is designed to enable K8sGPT within a Kubernetes cluster. It will allow you to create a custom resource that defines the behaviour and scope of a managed K8sGPT workload.
   displayName: K8sGPT Operator
