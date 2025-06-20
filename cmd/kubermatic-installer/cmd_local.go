@@ -271,10 +271,30 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
 
 func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 	return prepareYAMLFile(dir, "values", func(doc *yamled.Document) error {
-		doc.Set(yamled.Path{"dex", "ingress", "scheme"}, "http")
-		doc.Set(yamled.Path{"dex", "ingress", "host"}, kkpEndpoint)
+		doc.Set(yamled.Path{"dex", "config", "enablePasswordDB"}, true)
+		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("%s/dex", kkpEndpoint))
 		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
 		doc.Remove(yamled.Path{"minio"})
+
+		doc.Fill(yamled.Path{"dex", "ingress"}, map[string]interface{}{
+			"className": "nginx",
+			"enabled":   true,
+			"annotations": map[string]interface{}{
+				"cert-manager.io/cluster-issuer": "letsencrypt-staging",
+			},
+			"hosts": []map[string]interface{}{
+				{
+					"host": kkpEndpoint,
+					"paths": []map[string]interface{}{
+						{
+							"path":     "/dex",
+							"pathType": "ImplementationSpecific",
+						},
+					},
+				},
+			},
+			"tls": []map[string]interface{}{},
+		})
 
 		clients, ok := doc.GetArray(yamled.Path{"dex", "clients"})
 		if !ok {
