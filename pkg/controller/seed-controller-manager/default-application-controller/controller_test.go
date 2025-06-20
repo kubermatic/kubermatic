@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -150,7 +150,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -197,7 +197,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -222,7 +222,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -247,7 +247,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -272,7 +272,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -319,7 +319,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -343,7 +343,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -367,7 +367,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), 2)
 				}
 
-				return compareApplications(apps.Items, applications, "")
+				return compareApplications(apps.Items, applications, "", false)
 			},
 		},
 		{
@@ -416,7 +416,7 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), 2)
 				}
 
-				return compareApplications(apps.Items, applications, applicationInstallationNamespace)
+				return compareApplications(apps.Items, applications, applicationInstallationNamespace, false)
 			},
 		},
 		{
@@ -432,8 +432,16 @@ func TestReconcile(t *testing.T) {
 						Annotations: map[string]string{appskubermaticv1.ApplicationEnforcedAnnotation: "true", appskubermaticv1.ApplicationDefaultedAnnotation: "true"},
 					},
 					Spec: appskubermaticv1.ApplicationInstallationSpec{
+						Namespace: &appskubermaticv1.AppNamespaceSpec{
+							Name: "application",
+						},
 						ApplicationRef: appskubermaticv1.ApplicationRef{
 							Name: applicationName,
+						},
+					},
+					Status: appskubermaticv1.ApplicationInstallationStatus{
+						ApplicationVersion: &appskubermaticv1.ApplicationVersion{
+							Version: "v1.0.0",
 						},
 					},
 				},
@@ -455,7 +463,50 @@ func TestReconcile(t *testing.T) {
 					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
 				}
 
-				return compareApplications(apps.Items, applications, changedApplicationInstallationNamespace)
+				return compareApplications(apps.Items, applications, changedApplicationInstallationNamespace, false)
+			},
+		},
+		{
+			name:                        "scenario 15: enforced annotation should be set to false when enforcing was disabled in the related application definition",
+			defaultApplicationNamespace: changedApplicationInstallationNamespace,
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			additionalApplicationInstallations: []appskubermaticv1.ApplicationInstallation{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        applicationName,
+						Namespace:   applicationInstallationNamespace,
+						Annotations: map[string]string{appskubermaticv1.ApplicationEnforcedAnnotation: "true"},
+					},
+					Spec: appskubermaticv1.ApplicationInstallationSpec{
+						Namespace: &appskubermaticv1.AppNamespaceSpec{
+							Name: applicationName,
+						},
+						ApplicationRef: appskubermaticv1.ApplicationRef{
+							Name:    applicationName,
+							Version: "v1.0.0",
+						},
+					},
+				},
+			},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinition(applicationName, applicationInstallationNamespace, "v1.0.0", "", false, false, "", nil, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected couunt %d", len(apps.Items), len(applications))
+				}
+
+				return compareApplications(apps.Items, applications, changedApplicationInstallationNamespace, true)
 			},
 		},
 	}
@@ -575,7 +626,7 @@ func getUserClusterObjects(t *testing.T, systemAppInstallationValues map[string]
 	return userClusterObjects
 }
 
-func compareApplications(installedApps []appskubermaticv1.ApplicationInstallation, declaredApps []appskubermaticv1.ApplicationDefinition, defaultAppNamespace string) error {
+func compareApplications(installedApps []appskubermaticv1.ApplicationInstallation, declaredApps []appskubermaticv1.ApplicationDefinition, defaultAppNamespace string, annotationsHasChanged bool) error {
 	// Verify applications by comparing the apps in the cluster with the application definitions
 	for _, appDef := range declaredApps {
 		found := false
@@ -620,6 +671,10 @@ func compareApplications(installedApps []appskubermaticv1.ApplicationInstallatio
 				}
 				if appDef.Spec.Enforced {
 					expectedAnnotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "true"
+				} else {
+					if annotationsHasChanged {
+						expectedAnnotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "false"
+					}
 				}
 
 				if !reflect.DeepEqual(installedApp.Annotations, expectedAnnotations) {
