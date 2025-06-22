@@ -270,11 +270,31 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
 }
 
 func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
+	var imagePullSecret string
+
+	kubermaticFile := filepath.Join(dir, "kubermatic.example.yaml")
+	if f, err := os.Open(kubermaticFile); err == nil {
+		defer f.Close()
+
+		kubermaticDoc, err := yamled.Load(f)
+		if err == nil {
+			if secret, ok := kubermaticDoc.GetString(yamled.Path{"spec", "imagePullSecret"}); ok && secret != "" {
+				imagePullSecret = secret
+			}
+		}
+	}
+
 	return prepareYAMLFile(dir, "values", func(doc *yamled.Document) error {
 		doc.Set(yamled.Path{"dex", "ingress", "scheme"}, "http")
 		doc.Set(yamled.Path{"dex", "ingress", "host"}, kkpEndpoint)
 		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
 		doc.Remove(yamled.Path{"minio"})
+
+		// Set the imagePullSecret from kubermatic.example.yaml
+		// This ensures both configurations use the same value
+		if imagePullSecret != "" {
+			doc.Set(yamled.Path{"kubermaticOperator", "imagePullSecret"}, imagePullSecret)
+		}
 
 		clients, ok := doc.GetArray(yamled.Path{"dex", "clients"})
 		if !ok {
