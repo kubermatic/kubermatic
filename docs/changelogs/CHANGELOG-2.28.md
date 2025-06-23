@@ -216,9 +216,9 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add new feature gate to disable User SSH key ([#7324](https://github.com/kubermatic/dashboard/pull/7324))
 - Users marked with globalViewer: true now receive read-only access to all projects and clusters via dynamic groups and roles injection. No need to create UserProjectBindings for them ([#7318](https://github.com/kubermatic/dashboard/pull/7318))
 - Allow setting a default checksum algorithm for Velero ([#7231](https://github.com/kubermatic/dashboard/pull/7231))
-- Deprecate Equinix Metal provider ([#7376](https://github.com/kubermatic/dashboard/pull/7376))
 - Add new API endpoints for Kyverno integration ([#7106](https://github.com/kubermatic/dashboard/pull/7106))
 - Dashboard has been upgraded to use Angular 19 ([#7183](https://github.com/kubermatic/dashboard/pull/7183))
+- Support infra storage classes and provider network subnets location compatibilities ([#7301](https://github.com/kubermatic/dashboard/pull/7301))
 
 #### Bugfixes
 
@@ -241,4 +241,4 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 #### Deprecations
 
-- Support infra storage classes and provider network subnets location compatibilities ([#7301](https://github.com/kubermatic/dashboard/pull/7301))
+- Deprecate Equinix Metal provider ([#7376](https://github.com/kubermatic/dashboard/pull/7376))
