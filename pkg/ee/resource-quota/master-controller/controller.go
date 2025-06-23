@@ -98,6 +98,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := r.masterClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Debug("resource quota not found, might be deleted: %w", err)
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, fmt.Errorf("failed to get resource quota: %w", err)
 	}
 
