@@ -30,6 +30,7 @@ import (
 	"reflect"
 
 	"go.uber.org/zap"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	k8cequality "k8c.io/kubermatic/sdk/v2/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -94,6 +95,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Debug("resource quota not found, might be deleted: %w", err)
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, fmt.Errorf("failed to get resource quota: %w", err)
 	}
 
