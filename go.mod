@@ -122,7 +122,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-require k8c.io/machine-controller/sdk v0.0.0-20250609084715-bab47c4563be
+require k8c.io/machine-controller/sdk v1.62.0
 
 require (
 	cel.dev/expr v0.19.1 // indirect
