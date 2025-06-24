@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: kube-vip
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: kube-vip provides Kubernetes clusters with a virtual IP and load balancer for both the control plane (for building a highly-available cluster) and Kubernetes Services of type LoadBalancer without relying on any external hardware or software.
   displayName: kube-vip
