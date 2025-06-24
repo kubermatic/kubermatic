@@ -200,6 +200,18 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 					},
 				}
 
+				var etcdEndpoints []string
+				for i := range 3 {
+					endpoint := fmt.Sprintf(
+						"https://etcd-%d.%s.%s.svc.cluster.local:2379",
+						i,
+						resources.EtcdServiceName,
+						data.Cluster().Status.NamespaceName,
+					)
+					etcdEndpoints = append(etcdEndpoints, endpoint)
+				}
+				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "ETCDCTL_ENDPOINTS", Value: strings.Join(etcdEndpoints, ",")})
+
 				etcdPorts = append(etcdPorts, corev1.ContainerPort{
 					ContainerPort: 2381,
 					Protocol:      corev1.ProtocolTCP,
