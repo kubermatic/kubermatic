@@ -222,6 +222,18 @@ func StatefulSetReconciler(data etcdStatefulSetReconcilerData, enableDataCorrupt
 
 				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "MASTER_ENDPOINT", Value: fmt.Sprintf("https://etcd-0.%s.%s.svc.cluster.local:2379", resources.EtcdServiceName, data.Cluster().Status.NamespaceName)})
 				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "INITIAL_CLUSTER", Value: strings.Join(endpoints, ",")})
+
+				var etcdEndpoints []string
+				for i := range 3 {
+					endpoint := fmt.Sprintf(
+						"https://etcd-%d.%s.%s.svc.cluster.local:2379",
+						i,
+						resources.EtcdServiceName,
+						data.Cluster().Status.NamespaceName,
+					)
+					etcdEndpoints = append(etcdEndpoints, endpoint)
+				}
+				etcdEnv = append(etcdEnv, corev1.EnvVar{Name: "ETCDCTL_ENDPOINTS", Value: strings.Join(etcdEndpoints, ",")})
 			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
