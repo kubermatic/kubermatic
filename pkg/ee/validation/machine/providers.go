@@ -293,9 +293,15 @@ func getKubeVirtResourceRequirements(ctx context.Context, client ctrlruntimeclie
 		if err != nil {
 			return nil, fmt.Errorf("failed to get KubeVirt memory request from machine config: %w", err)
 		}
-		cpuReq, err = resource.ParseQuantity(cpu)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
+		// vCPUs field has a higher priority than CPUs, thus we check first if users chose to use vCPUs and if not,
+		// we validate CPUs.
+		if cores := rawConfig.VirtualMachine.Template.VCPUs.Cores; cores != 0 {
+			cpuReq = *resource.NewQuantity(int64(cores), resource.DecimalSI)
+		} else {
+			cpuReq, err = resource.ParseQuantity(cpu)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse machine cpu request to quantity: %w", err)
+			}
 		}
 		memReq, err = resource.ParseQuantity(memory)
 		if err != nil {
