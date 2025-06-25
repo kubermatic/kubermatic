@@ -27,9 +27,9 @@ package machine
 import (
 	"context"
 	"encoding/json"
-	"k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
 	"testing"
 
+	"k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
 	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
 	"k8c.io/machine-controller/sdk/providerconfig"
 
