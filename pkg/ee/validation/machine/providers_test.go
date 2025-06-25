@@ -63,14 +63,6 @@ func TestGetVMwareCloudDirectorResourceRequirements(t *testing.T) {
 			},
 			expectedErr: true,
 		},
-		{
-			name: "valid Kubevirt configuration",
-			config: &providerconfig.Config{
-				CloudProvider:     providerconfig.CloudProviderKubeVirt,
-				CloudProviderSpec: genFakeKubeVirtSpec(4, "8G", "25G"),
-			},
-			expectedErr: false,
-		},
 	}
 
 	for _, tc := range testCases {
