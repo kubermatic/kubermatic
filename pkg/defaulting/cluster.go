@@ -133,6 +133,20 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		}
 	}
 
+	// Enable KubeLB if it is enforced by the datacenter.
+	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
+		if spec.KubeLB == nil {
+			spec.KubeLB = &kubermaticv1.KubeLB{
+				Enabled:              true,
+				UseLoadBalancerClass: ptr.To(datacenter.Spec.KubeLB.UseLoadBalancerClass),
+				EnableGatewayAPI:     ptr.To(datacenter.Spec.KubeLB.EnableGatewayAPI),
+			}
+		} else {
+			// Enforcement only ensures that the KubeLB is enabled. Users can still change the other settings for KubeLB.
+			spec.KubeLB.Enabled = true
+		}
+	}
+
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
 		if spec.Cloud.Edge != nil {
