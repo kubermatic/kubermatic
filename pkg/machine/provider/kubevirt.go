@@ -44,6 +44,11 @@ func (b *kubevirtConfig) WithCPUs(cpus int) *kubevirtConfig {
 	return b
 }
 
+func (b *kubevirtConfig) WithVCPUs(vCPUs int) *kubevirtConfig {
+	b.VirtualMachine.Template.VCPUs.Cores = vCPUs
+	return b
+}
+
 func (b *kubevirtConfig) WithMemory(memory string) *kubevirtConfig {
 	b.VirtualMachine.Template.Memory.Value = memory
 	return b

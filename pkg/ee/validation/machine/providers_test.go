@@ -29,6 +29,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
 	vmwareclouddirectortypes "k8c.io/machine-controller/sdk/cloudprovider/vmwareclouddirector"
 	"k8c.io/machine-controller/sdk/providerconfig"
 
@@ -81,6 +82,39 @@ func TestGetVMwareCloudDirectorResourceRequirements(t *testing.T) {
 	}
 }
 
+func TestGetKubevirtResourceRequirements(t *testing.T) {
+	testCases := []struct {
+		name        string
+		config      *providerconfig.Config
+		expectedErr bool
+	}{
+		{
+			name: "valid Kubevirt configuration",
+			config: &providerconfig.Config{
+				CloudProvider:     providerconfig.CloudProviderKubeVirt,
+				CloudProviderSpec: genFakeKubeVirtSpec(4, "8G", "25G"),
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockClient := &MockCtrlRuntimeClient{}
+			_, err := getKubeVirtResourceRequirements(context.Background(), mockClient, tc.config)
+			if err != nil {
+				if !tc.expectedErr {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			}
+
+			if err == nil && tc.expectedErr {
+				t.Fatal("expected error, got none")
+			}
+		})
+	}
+}
+
 func genFakeVMWareSpec(cpu, ram, disk int64) runtime.RawExtension {
 	var diskSize *int64
 
@@ -94,6 +128,28 @@ func genFakeVMWareSpec(cpu, ram, disk int64) runtime.RawExtension {
 		DiskSizeGB: diskSize,
 	}
 	rawBytes, _ := json.Marshal(vmwareconfig)
+	return runtime.RawExtension{
+		Raw: rawBytes,
+	}
+}
+
+func genFakeKubeVirtSpec(cpu int, ram, disk string) runtime.RawExtension {
+	kubevirtConfig := &kubevirt.RawConfig{
+		VirtualMachine: kubevirt.VirtualMachine{
+			Template: kubevirt.Template{
+				Memory: providerconfig.ConfigVarString{Value: ram},
+				VCPUs: kubevirt.VCPUs{
+					Cores: cpu,
+				},
+				PrimaryDisk: kubevirt.PrimaryDisk{
+					Disk: kubevirt.Disk{
+						Size: providerconfig.ConfigVarString{Value: disk},
+					},
+				},
+			},
+		},
+	}
+	rawBytes, _ := json.Marshal(kubevirtConfig)
 	return runtime.RawExtension{
 		Raw: rawBytes,
 	}
