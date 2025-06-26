@@ -113,7 +113,7 @@ stringData:
           source_labels:
           - __meta_kubernetes_pod_label_name
         - source_labels:
-          - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          - __meta_kubernetes_pod_label_app
           target_label: __service__
         - source_labels:
           - __meta_kubernetes_pod_node_name
@@ -160,7 +160,7 @@ stringData:
           separator: ''
           source_labels:
           - __meta_kubernetes_pod_label_name
-          - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          - __meta_kubernetes_pod_label_app
         - action: drop
           regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
           source_labels:
@@ -213,7 +213,7 @@ stringData:
           separator: ''
           source_labels:
           - __meta_kubernetes_pod_label_name
-          - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          - __meta_kubernetes_pod_label_app
         - action: keep
           regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
           source_labels:
@@ -411,7 +411,7 @@ spec:
         app.kubernetes.io/name: promtail
         app.kubernetes.io/instance: release-name
       annotations:
-        checksum/config: dc19d75326f828ef2a33e538ea5e027dc46ac5719e2f87d4d0ee65659c32aed3
+        checksum/config: be7da1e1d7b29628cecbe524ed9d54f3b3d6dd9f64a13185876bf8ba78152594
         prometheus.io/port: "3101"
         prometheus.io/scrape: "true"
     spec:
