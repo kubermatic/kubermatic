@@ -153,7 +153,7 @@ promtail:
             source_labels:
             - __meta_kubernetes_pod_label_name
           - source_labels:
-            - __meta_kubernetes_pod_label_app
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
             target_label: __service__
           - source_labels:
             - __meta_kubernetes_pod_node_name
@@ -200,7 +200,7 @@ promtail:
             separator: ''
             source_labels:
             - __meta_kubernetes_pod_label_name
-            - __meta_kubernetes_pod_label_app
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
           - action: drop
             regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
             source_labels:
@@ -253,7 +253,7 @@ promtail:
             separator: ''
             source_labels:
             - __meta_kubernetes_pod_label_name
-            - __meta_kubernetes_pod_label_app
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
           - action: keep
             regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
             source_labels:
