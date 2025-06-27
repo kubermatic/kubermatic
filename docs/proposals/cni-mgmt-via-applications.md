@@ -123,6 +123,6 @@ Within sig-networking, we also considered 2 other approaches to address the goal
 
 2) Generic multi-CNI operator, running in the user cluster independently (similar to machine-controller):
    - If it provided a common high-level  CNI API, it would again become hard to use any arbitrary CNI features + it would be hard to maintain.
-   - If the API was generic (e.g. possible to provide any Helm values), it would eventually be just a Helm operator providing little value - after all, from KKP perspective it would be similar to just re-using the Applications infra, but without the benefit of having it already integrated with the KKP UI etc.
+   - If the API was generic (e.g. possible to provide any Helm values), it would eventually be just a Helm operator providing little value - after all, from KKP perspective it would be similar to just reusing the Applications infra, but without the benefit of having it already integrated with the KKP UI etc.
 
 Considering the fact that KKP users are already familiar with the Applications infra in KKP, it would be also easier for them to interact with the CNI management in a similar way.

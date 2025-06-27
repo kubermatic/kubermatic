@@ -21,7 +21,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-12
           command:
             - make
           args:
@@ -71,7 +71,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-12
           command:
             - ./hack/ci/verify.sh
           resources:
@@ -90,7 +90,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-12
           command:
             - make
             - lint
@@ -131,7 +131,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-12
           command:
             - ./hack/ci/test-github-release.sh
           resources:
@@ -151,7 +151,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-12
           command:
             - "./hack/ci/test-helm-charts.sh"
           env:
@@ -175,7 +175,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-12
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -202,7 +202,7 @@ presubmits:
       preset-docker-mirror: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-12
           command:
             - ./hack/ci/trivy-scan.sh
           env:
@@ -225,7 +225,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.24-4
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.26-12
           command:
             - "./hack/release-utility-images.sh"
           env:
