@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestComparableVersionSuffix(t *testing.T) {
@@ -199,7 +199,7 @@ func TestReconcilingCRDs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			clientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme)
+			clientBuilder := ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme)
 			if tc.existing != nil {
 				clientBuilder.WithObjects(tc.existing)
 			}
