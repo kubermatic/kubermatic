@@ -237,6 +237,12 @@ type KubermaticSeedControllerConfiguration struct {
 	// BackupCount specifies the maximum number of backups to retain (defaults to DefaultKeptBackupsCount).
 	// Oldest backups are automatically deleted when this limit is exceeded. Only applies when Schedule is configured.
 	BackupCount *int `json:"backupCount,omitempty"`
+	// NodeSelector fixes the Master-Controller-Manager node scheduling based on labels.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Affinity fixes the Master-Controller-Manager node scheduling based on labels, PodAffinity & PodAntiAffinity.
+	Affinity corev1.Affinity `json:"affinity,omitempty"`
+	// Toleration fixes the Master-Controller-Manager node scheduling based on taints.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // KubermaticWebhookConfiguration configures the Kubermatic webhook.
@@ -252,6 +258,12 @@ type KubermaticWebhookConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the webhook.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// NodeSelector fixes the Master-Controller-Manager node scheduling based on labels.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Affinity fixes the Master-Controller-Manager node scheduling based on labels, PodAffinity & PodAntiAffinity.
+	Affinity corev1.Affinity `json:"affinity,omitempty"`
+	// Toleration fixes the Master-Controller-Manager node scheduling based on taints.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.
@@ -419,6 +431,12 @@ type KubermaticMasterControllerConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the master-controller-manager.
 	Replicas *int32 `json:"replicas,omitempty"`
+	// NodeSelector fixes the Master-Controller-Manager node scheduling based on labels.
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Affinity fixes the Master-Controller-Manager node scheduling based on labels, PodAffinity & PodAntiAffinity.
+	Affinity corev1.Affinity `json:"affinity,omitempty"`
+	// Toleration fixes the Master-Controller-Manager node scheduling based on taints.
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // KubermaticProjectsMigratorConfiguration configures the Kubermatic master controller-manager.
