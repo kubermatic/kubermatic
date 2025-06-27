@@ -147,23 +147,17 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 	// default cluster networking parameters
 	spec.ClusterNetwork = DefaultClusterNetwork(spec.ClusterNetwork, kubermaticv1.ProviderType(spec.Cloud.ProviderName), spec.ExposeStrategy)
 
-	// If KubeLB is enforced, enable it.
+	// Enable KubeLB if it is enforced by the datacenter.
 	if datacenter.Spec.KubeLB != nil && datacenter.Spec.KubeLB.Enforced {
 		if spec.KubeLB == nil {
 			spec.KubeLB = &kubermaticv1.KubeLB{
-				Enabled: true,
+				Enabled:              true,
+				UseLoadBalancerClass: ptr.To(datacenter.Spec.KubeLB.UseLoadBalancerClass),
+				EnableGatewayAPI:     ptr.To(datacenter.Spec.KubeLB.EnableGatewayAPI),
 			}
 		} else {
+			// Enforcement only ensures that the KubeLB is enabled. Users can still change the other settings for KubeLB.
 			spec.KubeLB.Enabled = true
-		}
-	}
-
-	if datacenter.Spec.KubeLB != nil && spec.KubeLB != nil {
-		if datacenter.Spec.KubeLB.UseLoadBalancerClass && spec.KubeLB.UseLoadBalancerClass == nil {
-			spec.KubeLB.UseLoadBalancerClass = ptr.To(true)
-		}
-		if datacenter.Spec.KubeLB.EnableGatewayAPI && spec.KubeLB.EnableGatewayAPI == nil {
-			spec.KubeLB.EnableGatewayAPI = ptr.To(true)
 		}
 	}
 	return nil
