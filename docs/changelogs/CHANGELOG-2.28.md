@@ -16,7 +16,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Node-exporter chart is now using the upstream helm chart. This means there are some adjustment required to the `values.yaml`. replace the `nodeExporter` with `node-exporter` ([#14176](https://github.com/kubermatic/kubermatic/pull/14176)) ([#14670](https://github.com/kubermatic/kubermatic/pull/14670))
 - Alertmanager chart was replaced with upstream chart. This means, some of the old values might need migration. Please review documentation ([#14175](https://github.com/kubermatic/kubermatic/pull/14175))  ([#14675](https://github.com/kubermatic/kubermatic/pull/14675))
 - Blackbox-exporter chart is now using the upstream helm chart indirectly. So the customizations for blackbox-exporter via helm values.yaml should be moved under key `blackbox-exporter` instead of `blackboxExporter` ([#14170](https://github.com/kubermatic/kubermatic/pull/14170))  ([#14675](https://github.com/kubermatic/kubermatic/pull/14675))
-- Kube-state-metrics chart is now using the upstream helm chart with app version 2.15.0 ([#14357](https://github.com/kubermatic/kubermatic/pull/14357)) ([#14675](https://github.com/kubermatic/kubermatic/pull/14675))
+- Kube-state-metrics chart is now using the upstream helm chart with app version 2.15.0 ([#14174](https://github.com/kubermatic/kubermatic/pull/14174)) ([#14357](https://github.com/kubermatic/kubermatic/pull/14357)) ([#14675](https://github.com/kubermatic/kubermatic/pull/14675))
 - New roles for the Kubevirt csi driver have been added and users must add these role to KubeVirt infra cluster kubeconfig service account ([#14502]( https://github.com/kubermatic/kubermatic/pull/14502))
 
 ### ACTION REQUIRED
@@ -37,6 +37,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add 1.32.4/1.32.3/1.31.8/1.31.7/1.30.12/1.30.11 to the list of supported Kubernetes releases ([#14266](https://github.com/kubermatic/kubermatic/pull/14266)) ([#14385](https://github.com/kubermatic/kubermatic/pull/14385))
 
 #### Supported Versions
+
 * 1.30.11
 * 1.30.12
 * 1.31.7
@@ -45,16 +46,17 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 * 1.32.4
 * 1.33.0
 
-### Cloud Providers 
+### Cloud Providers
+
 #### KubeVirt
 - Support KubeVirt Subnet CIDR in the Seed object ([#14604](https://github.com/kubermatic/kubermatic/pull/14604))
-- The field `enabledDedicatedCPUs` in kubevirt provider spec is now deprecated. A new field called `useDomainCPU` is introduced which is for the same purpose. When set to `true` cpu will be assigned by `spec.domain.cpu` for a kubevirt virtual machine instead of using resource requests and limits ([#14621](https://github.com/kubermatic/kubermatic/pull/14621))
+- The field `enabledDedicatedCPUs` in KubeVirt provider spec is now deprecated. A new field called `useDomainCPU` is introduced which is for the same purpose. When set to `true` CPU will be assigned by `spec.domain.cpu` for a KubeVirt virtual machine instead of using resource requests and limits ([#14621](https://github.com/kubermatic/kubermatic/pull/14621))
 - Update KubeVirt CSI Driver Operator to v0.4.3 ([#14178](https://github.com/kubermatic/kubermatic/pull/14178))
-- A bug that caused network policies to not be removed from the kubevirt infra cluster has been fixed ([#14429](https://github.com/kubermatic/kubermatic/pull/14429))
+- A bug that caused network policies to not be removed from the KubeVirt infra cluster has been fixed ([#14429](https://github.com/kubermatic/kubermatic/pull/14429))
 - Support `infra-csi-driver` as a `volumeProvisioner` for the KubeVirt CSI Driver ([#14199](https://github.com/kubermatic/kubermatic/pull/14199))
-- Add ability to disable automatic installation of default kubevirt instance types and preferences ([#14426](https://github.com/kubermatic/kubermatic/pull/14426))
-- A new field `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` was added to seed crd to control whether kubevirt machine cpus are configured by `spec.template.spec.domain.resources` with requests and limits or `spec.template.spec.domain.cpu` . Later one is required to use kubevirt cpu allocation ratio feature ([#14298](https://github.com/kubermatic/kubermatic/pull/14298))
-- A new field was introduced for kubevirt provider in namespacedmode in enterprise edition to configure a mode for the deployed network policy in kubevirt infrastructure clusters. Default mode is `allow` which allows by default all traffic except to other providernetwork subnets. The other option is `deny` which denies all traffic except to the usercluster apiserver, configured nameservers and between worker nodes ([#14390](https://github.com/kubermatic/kubermatic/pull/14390))
+- Add ability to disable automatic installation of default KubeVirt instance types and preferences ([#14426](https://github.com/kubermatic/kubermatic/pull/14426))
+- A new field `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` was added to Seed CRD to control whether KubeVirt machine cpus are configured by `spec.template.spec.domain.resources` with requests and limits or `spec.template.spec.domain.cpu` . Later one is required to use KubeVirt CPU allocation ratio feature ([#14298](https://github.com/kubermatic/kubermatic/pull/14298))
+- A new field was introduced for KubeVirt provider in namespacedmode in enterprise edition to configure a mode for the deployed network policy in KubeVirt infrastructure clusters. Default mode is `allow` which allows by default all traffic except to other providernetwork subnets. The other option is `deny` which denies all traffic except to the usercluster apiserver, configured nameservers and between worker nodes ([#14390](https://github.com/kubermatic/kubermatic/pull/14390))
 - Support KubeVirt CCM Load Balancer Interface Disabling ([#14521](https://github.com/kubermatic/kubermatic/pull/14521))
 
 #### OpenStack
@@ -77,7 +79,7 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Add support for scheduling options (tolerations, affinity, nodeSelector) to the KKP operator Helm chart, allowing users to control pod placement in their clusters ([#14574](https://github.com/kubermatic/kubermatic/pull/14574))
 - Add nginx config to increase header size for Dashboard and Dex ([#14579](https://github.com/kubermatic/kubermatic/pull/14579))
 - EE: The default Policy Template Catalog can be deployed via `--deploy-default-policy-template-catalog` flag  ([#14472](https://github.com/kubermatic/kubermatic/pull/14472))
-- A new `--limit-apps` flag has been added to the Kubermatic Installer, allowing users to limit which AppDefinitions are installed during the setup process. This flag accepts a comma-separated list of AppDefinition names. If the flag is not provided or the list is empty, all available AppDefinitions will be installed—provided the default app catalog is enabled ([#14569](https://github.com/kubermatic/kubermatic/pull/14569)
+- A new `--limit-apps` flag has been added to the Kubermatic Installer, allowing users to limit which AppDefinitions are installed during the setup process. This flag accepts a comma-separated list of AppDefinition names. If the flag is not provided or the list is empty, all available AppDefinitions will be installed—provided the default app catalog is enabled ([#14569](https://github.com/kubermatic/kubermatic/pull/14569))
 - KubeLB: New field extraArgs has been introduced for KubeLB at the Seed and cluster level. This field can be used to configure extra arguments for the KubeLB CCM ([#14564](https://github.com/kubermatic/kubermatic/pull/14564))
 - KubeLB: The configuration in the Seed seed.spec.kubelb.enableForAllDatacenters can be used to allow KubeLB installation for all the datacenters belonging to the Seed ([#14558](https://github.com/kubermatic/kubermatic/pull/14558))
 - Install cluster-autoscaler by default as a system application via kubermatic-operator ([#14509](https://github.com/kubermatic/kubermatic/pull/14509))
@@ -133,17 +135,19 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Update go-jose to 3.0.4 (CVE-2025-27144) ([#14622](https://github.com/kubermatic/kubermatic/pull/14622))
 - Update the default Kubernetes version to 1.32.4 ([#14634](https://github.com/kubermatic/kubermatic/pull/14634))
 - Update the Helm values example files supplied with the release package to match the new Dex chart ([#14628](https://github.com/kubermatic/kubermatic/pull/14628))
-- Update aikit application to v0.18.0 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update argocd application to v2.14.11 and v3.0.0 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update cert-manager application to v1.17.2 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update cluster-autoscaler application chart version to 9.46.6 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update falco application chart version to 4.21.2 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update flux2 application to 2.5.1 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update gpu-operator application to v25.3.0 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update ingress-nginx application to 4.12.2 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update k8sgpt-operator application chart version to 0.2.17 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update trivy application to 0.62.1 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
-- Update trivy-operator application to 0.26.0 ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
+- Update the application versions in the default applications catalog ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
+    - Deprecated k8sgpt application has been removed and was replaced by the k8sgpt-operator app instead
+    - Update aikit application to v0.18.0
+    - Update argocd application to v2.14.11 and v3.0.0
+    - Update cert-manager application to v1.17.2
+    - Update cluster-autoscaler application chart version to 9.46.6
+    - Update falco application chart version to 4.21.2
+    - Update flux2 application to 2.5.1
+    - Update gpu-operator application to v25.3.0
+    - Update ingress-nginx application to 4.12.2
+    - Update k8sgpt-operator application chart version to 0.2.17
+    - Update trivy application to 0.62.1
+    - Update trivy-operator application to 0.26.0
 - Update fluent-bit container version to v4.0.0 ([#14427](https://github.com/kubermatic/kubermatic/pull/14427))
 - Update etcd to 3.5.21 for all supported Kubernetes releases ([#14417](https://github.com/kubermatic/kubermatic/pull/14417))
 - Update k8s-dns-node-cache to 1.25.0 ([#14409](https://github.com/kubermatic/kubermatic/pull/14409))
@@ -161,24 +165,19 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Security: Update Cilium to 1.15.16 / 1.16.9 because the previous versions are affected by CVE-2025-32793 ([#14434](https://github.com/kubermatic/kubermatic/pull/14434))
 - Add Cert-manager version v1.16.5 in the default applications catalog ([#14418](https://github.com/kubermatic/kubermatic/pull/14418))
 - Support MatchSubnetAndStorageLocation and Subnets Regions and Zones ([#14414](https://github.com/kubermatic/kubermatic/pull/14414))
-- Kube-state-metrics chart is now using the upstream helm chart with app version 2.15.0 ([#14174](https://github.com/kubermatic/kubermatic/pull/14174))
-
-
 
 ### Cleanups
 
 - Cluster-autoscaler has been removed from the default accessible addons list ([#14689](https://github.com/kubermatic/kubermatic/pull/14689))
-- Deprecate Equinix Metal provider ([#14448](https://github.com/kubermatic/kubermatic/pull/14448))
 
 ### Deprecations
 
-- `deploy-default-app-catalog` for kubermatic-installer has been deprecated and would have no affect going forward. The field `.Spec.Applications.DefaultApplicationCatalog` can be used instead to manage default application catalog ([#14697](https://github.com/kubermatic/kubermatic/pull/14697))
-- Default Application Catalog can now be managed via KubermaticConfiguration through the field `.Spec.Applications.DefaultApplicationCatalog` ([#14697](https://github.com/kubermatic/kubermatic/pull/14697))
+- Deprecate Equinix Metal provider ([#14448](https://github.com/kubermatic/kubermatic/pull/14448))
 
-### Miscellaneous
+### Regression
 
-- The deprecated k8sgpt application has been removed and was replaced by the k8sgpt-operator app instead ([#14403](https://github.com/kubermatic/kubermatic/pull/14403))
 - Disable cilium-envoy daemonset, if it was not specified in the chart values ([#14173](https://github.com/kubermatic/kubermatic/pull/14173))
+
 
 ### Dashboard and API 
 
@@ -190,9 +189,10 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 
 ##### KubeVirt
 
-- Add the ability to disable the automatic installation of default kubevirt instance types and preferences ([#7304](https://github.com/kubermatic/dashboard/pull/7304))
+- Add the ability to disable the automatic installation of default KubeVirt instance types and preferences ([#7304](https://github.com/kubermatic/dashboard/pull/7304))
 - Display KubeVirt Subnet CIDRs in UI ([#7369](https://github.com/kubermatic/dashboard/pull/7369))
-- The kkp api is now aware on how to configure cpus for kubevirt virtual machines based on a new introduced field in kkp seed crd called `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` ([#7252](https://github.com/kubermatic/dashboard/pull/7252))
+- The KKP API is now aware on how to configure cpus for KubeVirt virtual machines based on a new introduced field in KKP Seed CRD called `spec.datacenters.<example-dc>.spec.kubevirt.enableDedicatedCpus` ([#7252](https://github.com/kubermatic/dashboard/pull/7252))
+- Support infra storage classes and provider network subnets location compatibilities ([#7301](https://github.com/kubermatic/dashboard/pull/7301))
 
 ##### Openstack
 
@@ -218,7 +218,6 @@ Before upgrading, make sure to read the [general upgrade guidelines](https://doc
 - Allow setting a default checksum algorithm for Velero ([#7231](https://github.com/kubermatic/dashboard/pull/7231))
 - Add new API endpoints for Kyverno integration ([#7106](https://github.com/kubermatic/dashboard/pull/7106))
 - Dashboard has been upgraded to use Angular 19 ([#7183](https://github.com/kubermatic/dashboard/pull/7183))
-- Support infra storage classes and provider network subnets location compatibilities ([#7301](https://github.com/kubermatic/dashboard/pull/7301))
 
 #### Bugfixes
 
