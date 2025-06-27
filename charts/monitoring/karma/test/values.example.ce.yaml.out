@@ -227,7 +227,7 @@ spec:
       serviceAccountName: 'release-name'
       initContainers:
       - name: init-seeds
-        image: 'quay.io/kubermatic/util:2.5.0'
+        image: 'quay.io/kubermatic/util:2.6.0'
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
