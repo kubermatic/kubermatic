@@ -134,6 +134,8 @@ presubmits:
               value: "app.kubernetes.io/name"
             - name: NAMES
               value: "clusterapi-cluster-autoscaler"
+            - name: IS_SYSTEM_APP
+              value: "true"
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
