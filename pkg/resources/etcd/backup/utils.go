@@ -53,7 +53,7 @@ func isInsecureURL(u string) bool {
 	}
 
 	// a hostname like "foo.com:9000" is parsed as {scheme: "foo.com", host: ""},
-	// so we must make sure to not mis-interpret "http:9000" ({scheme: "http", host: ""}) as
+	// so we must make sure to not misinterpret "http:9000" ({scheme: "http", host: ""}) as
 	// an HTTP url
 
 	return strings.ToLower(parsed.Scheme) == "http" && parsed.Host != ""

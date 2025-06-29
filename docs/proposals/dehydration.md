@@ -32,7 +32,7 @@ To make sure this feature is useful for end users, we have made the following ke
 
 * The feature will focus on VMs as the primary driver for cost and energy optimization.
 * Storage and Load Balancers remain untouched, so that application state and public endpoints remain stable over a de-/hydration cycle.
-* Other cloud provider resources (e.g. security groups, route tables, etc) will not be deleted either, as they usually incurr little cost.
+* Other cloud provider resources (e.g. security groups, route tables, etc) will not be deleted either, as they usually incur little cost.
 * The control plane running in the seed will be suspended as well, since a reduction in resource consumption on the seed is also useful and the cluster will not be usable anyway.
 
 ## Implementation

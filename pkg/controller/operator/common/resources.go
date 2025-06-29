@@ -68,7 +68,7 @@ const (
 	// ExternalClusterAdmissionWebhookName is the name of the mutating webhook for ExternalClusters.
 	ExternalClusterAdmissionWebhookName = "kubermatic-externalclusters"
 
-	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefnition.
+	// ApplicationDefinitionAdmissionWebhookName is the name of the validating webhook for ApplicationDefinition.
 	ApplicationDefinitionAdmissionWebhookName = "kubermatic-application-definitions"
 
 	// GroupProjectBindingAdmissionWebhookName is the name of the validating webhook for GroupProjectBindings.
