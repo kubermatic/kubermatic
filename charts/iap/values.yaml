@@ -41,6 +41,9 @@ iap:
     #   client_secret: xxx
     #   encryption_key: xxx
     #   config: ## see https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview
+    #     ## avoid consent screen shown by Dex for applications secured via IAP. e.g. prometheus, grafana, etc
+    #     ## set to "force" for oauth-proxy's default behaviour
+    #     approval_prompt: none
     #     scope: "groups openid email"
     #     email_domains:
     #       - '*'
@@ -67,6 +70,9 @@ iap:
     #   client_secret: xxx
     #   encryption_key: xxx
     #   config: ## see https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview
+    #     ## avoid consent screen shown by Dex for applications secured via IAP. e.g. prometheus, grafana, etc
+    #     ## set to "force" for oauth-proxy's default behaviour
+    #     approval_prompt: none
     #     scope: "groups openid email"
     #     email_domains:
     #       - '*'
@@ -90,6 +96,9 @@ iap:
     #   client_secret: xxx
     #   encryption_key: xxx
     #   config: ## see https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview
+    #     ## avoid consent screen shown by Dex for applications secured via IAP. e.g. prometheus, grafana, etc
+    #     ## set to "force" for oauth-proxy's default behaviour
+    #     approval_prompt: none
     #     scope: "groups openid email"
     #     email_domains:
     #       - '*'
