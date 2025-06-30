@@ -21,6 +21,6 @@ metadata:
 data:
   config.toml: |
 {{- with .config }}
-{{ toToml . | indent 4 }}
+{{ toToml (deepCopy $.Values.iap.default_configuration | merge .) | indent 4 }}
 {{ end }}
 {{ end }}

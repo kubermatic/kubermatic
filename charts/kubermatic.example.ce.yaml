@@ -18,7 +18,6 @@ metadata:
   name: kubermatic
   namespace: kubermatic
 spec:
-
   ingress:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
