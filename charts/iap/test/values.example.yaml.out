@@ -54,6 +54,7 @@ metadata:
   name: iap-alertmanager-configmap
 data:
   config.toml: |
+    approval_prompt = "none"
     email_domains = ["*"]
     github_org = "mygithuborg"
     github_team = "mygroup"
@@ -67,6 +68,7 @@ metadata:
   name: iap-grafana-configmap
 data:
   config.toml: |
+    approval_prompt = "none"
     email_domains = ["*"]
     pass_user_headers = true
     scope = "groups openid email"
@@ -132,7 +134,7 @@ spec:
         app: iap
         target: alertmanager
       annotations:
-        checksum/config: 17ed91a5ca15d5e382000192ade7030736b5f2037cc9fbe9020535cef3dbf750
+        checksum/config: bfef6acd1069e36a2f1d4de5289a013d7ac9a961289aa780a3c1486bcfe75314
         checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
     spec:
       containers:
@@ -233,7 +235,7 @@ spec:
         app: iap
         target: grafana
       annotations:
-        checksum/config: 17ed91a5ca15d5e382000192ade7030736b5f2037cc9fbe9020535cef3dbf750
+        checksum/config: bfef6acd1069e36a2f1d4de5289a013d7ac9a961289aa780a3c1486bcfe75314
         checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
     spec:
       containers:
