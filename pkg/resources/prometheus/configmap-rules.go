@@ -256,6 +256,11 @@ groups:
     labels:
       kubermatic: federate
 
+  - record: job:apiserver_storage_size_bytes:sum
+    expr: sum(apiserver_storage_size_bytes)
+    labels:
+      kubermatic: federate
+
 - name: machine-controller
   rules:
   - alert: MachineControllerTooManyErrors
