@@ -18,11 +18,34 @@
 AKS = "AKS"
 EKS = "EKS"
 GKE = "GKE"
-Ded = "Ded" # because of "ANDed"
+
+[default.extend-identifiers]
+ANDed = "ANDed"
+hel1 = "hel1"
+toByteWithSerOpts = "toByteWithSerOpts"
+8232574ba = "8232574ba"
+ba00 = "ba00"
+HashiCorp = "HashiCorp"
+KubeDaemonSetMisScheduled = "KubeDaemonSetMisScheduled"
+
+# parts of random base64 chunks
+A1UEBxMHSGFtYnVyZzEQMA4GA1UECBMHSGFtYnVyZzELMAkGA1UEBhMCREUwHhcN = "A1UEBxMHSGFtYnVyZzEQMA4GA1UECBMHSGFtYnVyZzELMAkGA1UEBhMCREUwHhcN"
+G8EpzknhVMW8bIUXdctAhF5bVRFdNIyHkcgoE9UFElzvegZes5fREncpRG3y23zf = "G8EpzknhVMW8bIUXdctAhF5bVRFdNIyHkcgoE9UFElzvegZes5fREncpRG3y23zf"
+LmNvbSBDQTEUMBIGA1UEChMLTG9vZHNlIEdtYkgxEDAOBgNVBAcTB0hhbWJ1cmcx = "LmNvbSBDQTEUMBIGA1UEChMLTG9vZHNlIEdtYkgxEDAOBgNVBAcTB0hhbWJ1cmcx"
+b2JhbFNpZ24gUm9vdCBDQTAeFw05ODA5MDExMjAwMDBaFw0yODAxMjgxMjAwMDBaMFcxCzAJBgNV = "b2JhbFNpZ24gUm9vdCBDQTAeFw05ODA5MDExMjAwMDBaFw0yODAxMjgxMjAwMDBaMFcxCzAJBgNV"
+MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkGA1UEBhMCQkUx = "MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkGA1UEBhMCQkUx"
+
+# dummy credentials
+FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0 = "FXcD7s0tFOPuTv6jaZARJDouc2Hal8E0"
+eecheiwahr0Thah9EeNgie0ohnoaruuz = "eecheiwahr0Thah9EeNgie0ohnoaruuz"
+
+# only mention is in the changelog
+CloudControllerReconcilledSuccessfully = "CloudControllerReconcilledSuccessfully"
 
 [files]
 extend-exclude = [
-   "pkg/ee/cluster-backup/resources/user-cluster/static",
+   "go.mod",
+   "pkg/ee/cluster-backup/user-cluster/velero-controller/resources/static",
    "pkg/resources/test/fixtures",
    "charts/local-kubevirt/crds",
    "charts/cert-manager/crd",
@@ -30,4 +53,7 @@ extend-exclude = [
    "charts/backup/velero/crd",
    "charts/kubermatic-operator/crd",
    "codegen/permission-generator/doc/operating_principle.drawio",
+   "pkg/ee/default-application-catalog/applicationdefinitions",
+   "pkg/ee/kyverno/resources/user-cluster/static/kyverno-crds",
+   "pkg/crd/k8s.io",
 ]

@@ -151,7 +151,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 				}
 
 				if cluster.Spec.Cloud.Azure.ResourceGroup != tc.expectedResourceGroupName {
-					t.Fatalf("expected  resource groupin cloud spec to be '%s', got '%s'", tc.expectedResourceGroupName, cluster.Spec.Cloud.Azure.ResourceGroup)
+					t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", tc.expectedResourceGroupName, cluster.Spec.Cloud.Azure.ResourceGroup)
 				}
 
 				if fakeClient.CreateOrUpdateCalledCount != tc.expectedFirstCallCount {
@@ -171,7 +171,7 @@ func TestReconcileResourceGroup(t *testing.T) {
 				}
 
 				if cluster.Spec.Cloud.Azure.ResourceGroup != tc.expectedResourceGroupName {
-					t.Fatalf("expected resource groupin cloud spec to be '%s', got '%s'", tc.expectedResourceGroupName, cluster.Spec.Cloud.Azure.ResourceGroup)
+					t.Fatalf("expected resource group in cloud spec to be '%s', got '%s'", tc.expectedResourceGroupName, cluster.Spec.Cloud.Azure.ResourceGroup)
 				}
 
 				if fakeClient.CreateOrUpdateCalledCount != tc.expectedSecondCallCount {
