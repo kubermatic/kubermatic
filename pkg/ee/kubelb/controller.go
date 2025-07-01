@@ -228,6 +228,12 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 	tenant := &kubelbv1alpha1.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: cluster.Name,
+			Labels: map[string]string{
+				// These labels are used to identify the tenant in the kubelb management cluster.
+				"kubermatic.k8c.io/cluster-name":          cluster.Name,
+				"kubermatic.k8c.io/cluster-external-name": cluster.Status.Address.ExternalName,
+				"kubermatic.k8c.io/cluster-project-id":    cluster.Labels[kubermaticv1.ProjectIDLabelKey],
+			},
 		},
 	}
 	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), tenant); err != nil {
