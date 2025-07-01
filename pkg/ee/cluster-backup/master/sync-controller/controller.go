@@ -150,6 +150,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		if !equality.Semantic.DeepEqual(seedCBSL.Status, cbsl.Status) {
+			seedCBSL.Status = cbsl.Status
 			if err := seedClient.Status().Update(ctx, seedCBSL); err != nil {
 				return fmt.Errorf("failed to update storage location status on seed cluster: %w", err)
 			}
