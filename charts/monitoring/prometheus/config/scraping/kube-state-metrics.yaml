@@ -31,7 +31,7 @@ relabel_configs:
   action: keep
 - source_labels: [__meta_kubernetes_endpoint_port_name]
   separator: ;
-  regex: http-metrics
+  regex: http
   replacement: $1
   action: keep
 - source_labels: [__meta_kubernetes_namespace]
@@ -67,7 +67,7 @@ relabel_configs:
 - separator: ;
   regex: (.*)
   target_label: endpoint
-  replacement: http-metrics
+  replacement: http
   action: replace
 metric_relabel_configs:
 - source_labels: [namespace]
