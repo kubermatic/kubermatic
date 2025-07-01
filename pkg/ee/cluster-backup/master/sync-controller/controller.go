@@ -34,10 +34,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -139,7 +139,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		}
 
 		if cbsl.Spec.Credential != nil {
-			if err := syncCBSLCredentialSecret(ctx, r.masterClient, seedClient, cbsl, log); err != nil {
+			if err := syncCBSLCredentialSecret(ctx, r.masterClient, seedClient, cbsl); err != nil {
 				return fmt.Errorf("failed to sync CBSL credential secret: %w", err)
 			}
 		}
@@ -182,7 +182,6 @@ func syncCBSLCredentialSecret(
 	masterClient ctrlruntimeclient.Client,
 	seedClient ctrlruntimeclient.Client,
 	cbsl *kubermaticv1.ClusterBackupStorageLocation,
-	log *zap.SugaredLogger,
 ) error {
 	cbslKey := types.NamespacedName{
 		Name:      cbsl.Spec.Credential.Name,
@@ -194,39 +193,18 @@ func syncCBSLCredentialSecret(
 		return fmt.Errorf("failed to get credential secret from master: %w", err)
 	}
 
-	seedCBSLSecret := &corev1.Secret{}
-	err := seedClient.Get(ctx, cbslKey, seedCBSLSecret)
-	if apierrors.IsNotFound(err) {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      cbslSecret.Name,
-				Namespace: cbslSecret.Namespace,
-				Labels:    cbslSecret.Labels,
-			},
-			Type: cbslSecret.Type,
-			Data: cbslSecret.Data,
-		}
+	secretReconcilerFactory := []reconciling.NamedSecretReconcilerFactory{
+		secretReconcilerFactory(cbslSecret),
+	}
 
-		if err := seedClient.Create(ctx, secret); err != nil {
-			return fmt.Errorf("failed to create credential secret in seed: %w", err)
-		}
-		log.Infow("Created credential secret in seed", "name", secret.Name, "namespace", secret.Namespace)
-		return nil
-	} else if err != nil {
-		return err
+	seedCBSLSecret := &corev1.Secret{}
+	if err := seedClient.Get(ctx, cbslKey, seedCBSLSecret); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to fetch CBSL credential secret on seed cluster: %w", err)
 	}
 
 	if seedCBSLSecret.UID != "" && seedCBSLSecret.UID == cbslSecret.UID {
 		return nil
 	}
 
-	if !equality.Semantic.DeepEqual(seedCBSLSecret.Data, cbslSecret.Data) {
-		seedCBSLSecret.Data = cbslSecret.Data
-		if err := seedClient.Update(ctx, seedCBSLSecret); err != nil {
-			return fmt.Errorf("failed to update credential secret in seed: %w", err)
-		}
-		log.Infow("Updated credential secret in seed", "name", seedCBSLSecret.Name, "namespace", seedCBSLSecret.Namespace)
-	}
-
-	return nil
+	return reconciling.ReconcileSecrets(ctx, secretReconcilerFactory, cbslSecret.Namespace, seedClient)
 }
