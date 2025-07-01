@@ -39,3 +39,9 @@ rules:
   - /metrics
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - services/node-exporter
+  verbs:
+  - get

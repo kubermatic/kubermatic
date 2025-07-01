@@ -1907,6 +1907,12 @@ rules:
   - /metrics
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - services/node-exporter
+  verbs:
+  - get
 ---
 # Source: prometheus/templates/clusterrolebinding.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
