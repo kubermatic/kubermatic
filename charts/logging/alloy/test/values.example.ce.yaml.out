@@ -1,0 +1,773 @@
+---
+# Source: grafana-alloy/charts/alloy/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+automountServiceAccountToken: true
+metadata:
+  name: release-name-alloy
+  namespace: default
+  labels:
+    helm.sh/chart: alloy-1.1.2
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.9.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: alloy
+    app.kubernetes.io/component: rbac
+---
+# Source: grafana-alloy/charts/alloy/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-alloy
+  namespace: default
+  labels:
+    helm.sh/chart: alloy-1.1.2
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.9.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: alloy
+    app.kubernetes.io/component: config
+data:
+  config.alloy: |-
+    discovery.kubernetes "kubernetes_pods_name" {
+      role = "pod"
+    }
+    
+    discovery.relabel "kubernetes_pods_name" {
+      targets = discovery.kubernetes.kubernetes_pods_name.targets
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_name"]
+        target_label  = "__service__"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "__host__"
+      }
+    
+      rule {
+        source_labels = ["__service__"]
+        regex         = ""
+        action        = "drop"
+      }
+    
+      rule {
+        regex  = "__meta_kubernetes_pod_label_(.+)"
+        action = "labelmap"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__service__"]
+        separator     = "/"
+        target_label  = "job"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "instance"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container_name"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+    
+    local.file_match "kubernetes_pods_name" {
+      path_targets = discovery.relabel.kubernetes_pods_name.output
+    }
+    
+    loki.process "kubernetes_pods_name" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.cri { }
+    }
+    
+    loki.source.file "kubernetes_pods_name" {
+      targets               = local.file_match.kubernetes_pods_name.targets
+      forward_to            = [loki.process.kubernetes_pods_name.receiver]
+      legacy_positions_file = "/run/promtail/positions.yaml"
+    }
+    
+    discovery.kubernetes "kubernetes_pods_app" {
+      role = "pod"
+    }
+    
+    discovery.relabel "kubernetes_pods_app" {
+      targets = discovery.kubernetes.kubernetes_pods_app.targets
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_name"]
+        regex         = ".+"
+        action        = "drop"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        target_label  = "__service__"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "__host__"
+      }
+    
+      rule {
+        source_labels = ["__service__"]
+        regex         = ""
+        action        = "drop"
+      }
+    
+      rule {
+        regex  = "__meta_kubernetes_pod_label_(.+)"
+        action = "labelmap"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__service__"]
+        separator     = "/"
+        target_label  = "job"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "instance"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container_name"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+    
+    local.file_match "kubernetes_pods_app" {
+      path_targets = discovery.relabel.kubernetes_pods_app.output
+    }
+    
+    loki.process "kubernetes_pods_app" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.cri { }
+    
+      stage.match {
+        selector = "{app=\"k8c-events-lokiloader\"}"
+    
+        stage.json {
+          expressions = {
+            clusterID = "clusterID",
+            projectID = "projectID",
+            seed      = "seed",
+          }
+        }
+    
+        stage.labels {
+          values = {
+            clusterID = null,
+            projectID = null,
+            seed      = null,
+          }
+        }
+      }
+    }
+    
+    loki.source.file "kubernetes_pods_app" {
+      targets               = local.file_match.kubernetes_pods_app.targets
+      forward_to            = [loki.process.kubernetes_pods_app.receiver]
+      legacy_positions_file = "/run/promtail/positions.yaml"
+    }
+    
+    discovery.kubernetes "kubernetes_pods_direct_controllers" {
+      role = "pod"
+    }
+    
+    discovery.relabel "kubernetes_pods_direct_controllers" {
+      targets = discovery.kubernetes.kubernetes_pods_direct_controllers.targets
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_name", "__meta_kubernetes_pod_label_app"]
+        separator     = ""
+        regex         = ".+"
+        action        = "drop"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_controller_name"]
+        regex         = "[0-9a-z-.]+-[0-9a-f]{8,10}"
+        action        = "drop"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_controller_name"]
+        target_label  = "__service__"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "__host__"
+      }
+    
+      rule {
+        source_labels = ["__service__"]
+        regex         = ""
+        action        = "drop"
+      }
+    
+      rule {
+        regex  = "__meta_kubernetes_pod_label_(.+)"
+        action = "labelmap"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__service__"]
+        separator     = "/"
+        target_label  = "job"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "instance"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container_name"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+    
+    local.file_match "kubernetes_pods_direct_controllers" {
+      path_targets = discovery.relabel.kubernetes_pods_direct_controllers.output
+    }
+    
+    loki.process "kubernetes_pods_direct_controllers" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.cri { }
+    }
+    
+    loki.source.file "kubernetes_pods_direct_controllers" {
+      targets               = local.file_match.kubernetes_pods_direct_controllers.targets
+      forward_to            = [loki.process.kubernetes_pods_direct_controllers.receiver]
+      legacy_positions_file = "/run/promtail/positions.yaml"
+    }
+    
+    discovery.kubernetes "kubernetes_pods_indirect_controller" {
+      role = "pod"
+    }
+    
+    discovery.relabel "kubernetes_pods_indirect_controller" {
+      targets = discovery.kubernetes.kubernetes_pods_indirect_controller.targets
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_name", "__meta_kubernetes_pod_label_app"]
+        separator     = ""
+        regex         = ".+"
+        action        = "drop"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_controller_name"]
+        regex         = "[0-9a-z-.]+-[0-9a-f]{8,10}"
+        action        = "keep"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_controller_name"]
+        regex         = "([0-9a-z-.]+)-[0-9a-f]{8,10}"
+        target_label  = "__service__"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "__host__"
+      }
+    
+      rule {
+        source_labels = ["__service__"]
+        regex         = ""
+        action        = "drop"
+      }
+    
+      rule {
+        regex  = "__meta_kubernetes_pod_label_(.+)"
+        action = "labelmap"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__service__"]
+        separator     = "/"
+        target_label  = "job"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "instance"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container_name"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+    
+    local.file_match "kubernetes_pods_indirect_controller" {
+      path_targets = discovery.relabel.kubernetes_pods_indirect_controller.output
+    }
+    
+    loki.process "kubernetes_pods_indirect_controller" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.cri { }
+    }
+    
+    loki.source.file "kubernetes_pods_indirect_controller" {
+      targets               = local.file_match.kubernetes_pods_indirect_controller.targets
+      forward_to            = [loki.process.kubernetes_pods_indirect_controller.receiver]
+      legacy_positions_file = "/run/promtail/positions.yaml"
+    }
+    
+    discovery.kubernetes "kubernetes_pods_static" {
+      role = "pod"
+    }
+    
+    discovery.relabel "kubernetes_pods_static" {
+      targets = discovery.kubernetes.kubernetes_pods_static.targets
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror"]
+        regex         = ""
+        action        = "drop"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_component"]
+        target_label  = "__service__"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "__host__"
+      }
+    
+      rule {
+        source_labels = ["__service__"]
+        regex         = ""
+        action        = "drop"
+      }
+    
+      rule {
+        regex  = "__meta_kubernetes_pod_label_(.+)"
+        action = "labelmap"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace", "__service__"]
+        separator     = "/"
+        target_label  = "job"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "instance"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container_name"
+      }
+    
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/*.log"
+      }
+    }
+    
+    local.file_match "kubernetes_pods_static" {
+      path_targets = discovery.relabel.kubernetes_pods_static.output
+    }
+    
+    loki.process "kubernetes_pods_static" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.cri { }
+    }
+    
+    loki.source.file "kubernetes_pods_static" {
+      targets               = local.file_match.kubernetes_pods_static.targets
+      forward_to            = [loki.process.kubernetes_pods_static.receiver]
+      legacy_positions_file = "/run/promtail/positions.yaml"
+    }
+    
+    loki.process "kubelet_journal_logs" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.match {
+        selector = "{unit!=\"kubelet.service\"}"
+        action   = "drop"
+      }
+    }
+    
+    discovery.relabel "kubelet_journal_logs" {
+      targets = []
+    
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+    
+      rule {
+        source_labels = ["__journal__hostname"]
+        target_label  = "hostname"
+      }
+    }
+    
+    loki.source.journal "kubelet_journal_logs" {
+      max_age       = "12h0m0s"
+      path          = "/var/log/journal"
+      relabel_rules = discovery.relabel.kubelet_journal_logs.rules
+      forward_to    = [loki.process.kubelet_journal_logs.receiver]
+      labels        = {
+        job = "systemd-journal",
+      }
+    }
+    
+    discovery.kubernetes "kubernetes_events" {
+      role = "pod"
+    }
+    
+    local.file_match "kubernetes_events" {
+      path_targets = discovery.kubernetes.kubernetes_events.targets
+    }
+    
+    loki.process "kubernetes_events" {
+      forward_to = [loki.write.default.receiver]
+    
+      stage.match {
+        selector = "{app=\"eventrouter\"}"
+    
+        stage.json {
+          expressions = {
+            namespace = "event.metadata.namespace",
+          }
+        }
+    
+        stage.labels {
+          values = {
+            namespace = "",
+          }
+        }
+      }
+    }
+    
+    loki.source.file "kubernetes_events" {
+      targets               = local.file_match.kubernetes_events.targets
+      forward_to            = [loki.process.kubernetes_events.receiver]
+      legacy_positions_file = "/run/promtail/positions.yaml"
+    }
+    
+    loki.write "default" {
+      endpoint {
+        url                 = "http://loki:3100/loki/api/v1/push"
+        batch_size          = "100KiB"
+        min_backoff_period  = "100ms"
+        max_backoff_period  = "5s"
+        max_backoff_retries = 20
+      }
+      external_labels = {}
+    }
+---
+# Source: grafana-alloy/charts/alloy/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: release-name-alloy
+  labels:
+    helm.sh/chart: alloy-1.1.2
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.9.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: alloy
+    app.kubernetes.io/component: rbac
+rules:
+  # Rules which allow discovery.kubernetes to function.
+  - apiGroups:
+      - ""
+      - "discovery.k8s.io"
+      - "networking.k8s.io"
+    resources:
+      - endpoints
+      - endpointslices
+      - ingresses
+      - nodes
+      - nodes/proxy
+      - nodes/metrics
+      - pods
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  # Rules which allow loki.source.kubernetes and loki.source.podlogs to work.
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - pods/log
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "monitoring.grafana.com"
+    resources:
+      - podlogs
+    verbs:
+      - get
+      - list
+      - watch
+  # Rules which allow mimir.rules.kubernetes to work.
+  - apiGroups: ["monitoring.coreos.com"]
+    resources:
+      - prometheusrules
+    verbs:
+      - get
+      - list
+      - watch
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get
+  # Rules for prometheus.kubernetes.*
+  - apiGroups: ["monitoring.coreos.com"]
+    resources:
+      - podmonitors
+      - servicemonitors
+      - probes
+      - scrapeconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  # Rules which allow eventhandler to work.
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+  # needed for remote.kubernetes.*
+  - apiGroups: [""]
+    resources:
+      - "configmaps"
+      - "secrets"
+    verbs:
+      - get
+      - list
+      - watch
+  # needed for otelcol.processor.k8sattributes
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+# Source: grafana-alloy/charts/alloy/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: release-name-alloy
+  labels:
+    helm.sh/chart: alloy-1.1.2
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.9.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: alloy
+    app.kubernetes.io/component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-name-alloy
+subjects:
+  - kind: ServiceAccount
+    name: release-name-alloy
+    namespace: default
+---
+# Source: grafana-alloy/charts/alloy/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-alloy
+  namespace: default
+  labels:
+    helm.sh/chart: alloy-1.1.2
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.9.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: alloy
+    app.kubernetes.io/component: networking
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+  internalTrafficPolicy: Cluster
+  ports:
+    - name: http-metrics
+      port: 12345
+      targetPort: 12345
+      protocol: "TCP"
+---
+# Source: grafana-alloy/charts/alloy/templates/controllers/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: release-name-alloy
+  namespace: default
+  labels:
+    helm.sh/chart: alloy-1.1.2
+    app.kubernetes.io/name: alloy
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.9.2"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: alloy
+spec:
+  minReadySeconds: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+      app.kubernetes.io/instance: release-name
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: alloy
+        checksum/config: c3fee6d0f4518b049ec523f5d8d1bec2e36df0636476a9d1cb365775f8574ee
+      labels:
+        app.kubernetes.io/name: alloy
+        app.kubernetes.io/instance: release-name
+    spec:
+      serviceAccountName: release-name-alloy
+      containers:
+        - name: alloy
+          image: docker.io/grafana/alloy:v1.9.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - run
+            - /etc/alloy/config.alloy
+            - --storage.path=/tmp/alloy
+            - --server.http.listen-addr=0.0.0.0:12345
+            - --server.http.ui-path-prefix=/
+            - --stability.level=generally-available
+          env:
+            - name: ALLOY_DEPLOY_MODE
+              value: "helm"
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          ports:
+            - containerPort: 12345
+              name: http-metrics
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 12345
+              scheme: HTTP
+            initialDelaySeconds: 10
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+            - name: varlog
+              mountPath: /var/log
+              readOnly: true
+        - name: config-reloader
+          image: quay.io/prometheus-operator/prometheus-config-reloader:v0.81.0
+          args:
+            - --watched-dir=/etc/alloy
+            - --reload-url=http://localhost:12345/-/reload
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alloy
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+      volumes:
+        - name: config
+          configMap:
+            name: release-name-alloy
+        - name: varlog
+          hostPath:
+            path: /var/log
