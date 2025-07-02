@@ -1,264 +1,107 @@
 # This file has been generated, DO NOT EDIT.
 
 data:
-  prometheus.yaml: |
-    global:
-      evaluation_interval: 30s
-      scrape_interval: 30s
-      external_labels:
-        cluster: "de-test-01"
-        seed_cluster: "test-seed"
-
-    rule_files:
-    - "/etc/prometheus/config/rules*.yaml"
-
-    alerting:
-      alertmanagers:
-      - dns_sd_configs:
-        # configure the Seed's alertmanager for the user cluster
-        - names:
-          - 'alertmanager.monitoring.svc.cluster.local'
-          type: A
-          port: 9093
-
-    scrape_configs:
-    #######################################################################
-    # These rules will scrape pods running inside the seed cluster.
-
-    # scrape the etcd pods
-    - job_name: etcd
-      scheme: https
-      tls_config:
-        ca_file: /etc/etcd/pki/client/ca.crt
-        cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt
-        key_file: /etc/etcd/pki/client/apiserver-etcd-client.key
-
-      static_configs:
-      - targets:
-        - 'etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379'
-        - 'etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379'
-        - 'etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379'
-
-      relabel_configs:
-      - source_labels: [__address__]
-        regex: (etcd-\d+).+
-        action: replace
-        replacement: $1
-        target_label: instance
-
-    # scrape the cluster's control plane (apiserver, controller-manager, scheduler)
-    - job_name: kubernetes-control-plane
-      scheme: https
-      tls_config:
-        ca_file: /etc/kubernetes/ca.crt
-        cert_file: /etc/kubernetes/prometheus-client.crt
-        key_file: /etc/kubernetes/prometheus-client.key
-        # insecure_skip_verify is needed because the apiservers certificate
-        # does not contain a common name for the pod's ip address
-        insecure_skip_verify: true
-
-      kubernetes_sd_configs:
-      - role: pod
-        namespaces:
-          names:
-          - "cluster-de-test-01"
-
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_with_kube_cert]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: pod
-      - source_labels: [__meta_kubernetes_pod_label_app]
-        action: replace
-        target_label: job
-
-      # drop very expensive apiserver metrics
-      metric_relabel_configs:
-      - source_labels: [__name__]
-        regex: 'apiserver_request_(duration|latencies)_.*'
-        action: drop
-      - source_labels: [__name__]
-        regex: 'apiserver_response_sizes_.*'
-        action: drop
-
-    # scrape other cluster control plane components, like kube-state-metrics, DNS resolver,
-    # machine-controller etcd.
-    - job_name: control-plane-pods
-      kubernetes_sd_configs:
-      - role: pod
-        namespaces:
-          names:
-          - "cluster-de-test-01"
-
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_init]
-        regex: "kube-state-metrics;true"
-        action: drop
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-        action: keep
-        regex: true
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - source_labels: [__meta_kubernetes_pod_label_role, __meta_kubernetes_pod_label_app]
-        action: replace
-        target_label: job
-        separator: ''
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: pod
-
-    #######################################################################
-    # These rules will scrape pods running inside the user cluster itself.
-
-    # scrape node metrics
-    - job_name: nodes
-      scheme: https
-      tls_config:
-        ca_file: /etc/kubernetes/ca.crt
-        cert_file: /etc/kubernetes/prometheus-client.crt
-        key_file: /etc/kubernetes/prometheus-client.key
-
-      kubernetes_sd_configs:
-      - role: node
-        api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'
-        tls_config:
-          ca_file: /etc/kubernetes/ca.crt
-          cert_file: /etc/kubernetes/prometheus-client.crt
-          key_file: /etc/kubernetes/prometheus-client.key
-
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/${1}/proxy/metrics
-
-    # scrape node cadvisor
-    - job_name: cadvisor
-      scheme: https
-      tls_config:
-        ca_file: /etc/kubernetes/ca.crt
-        cert_file: /etc/kubernetes/prometheus-client.crt
-        key_file: /etc/kubernetes/prometheus-client.key
-
-      kubernetes_sd_configs:
-      - role: node
-        api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'
-        tls_config:
-          ca_file: /etc/kubernetes/ca.crt
-          cert_file: /etc/kubernetes/prometheus-client.crt
-          key_file: /etc/kubernetes/prometheus-client.key
-
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
-
-    # scrape pods inside the user cluster with a special annotation
-    - job_name: 'user-cluster-pods'
-      scheme: https
-      tls_config:
-        ca_file: /etc/kubernetes/ca.crt
-        cert_file: /etc/kubernetes/prometheus-client.crt
-        key_file: /etc/kubernetes/prometheus-client.key
-
-      kubernetes_sd_configs:
-      - role: pod
-        api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'
-        tls_config:
-          ca_file: /etc/kubernetes/ca.crt
-          cert_file: /etc/kubernetes/prometheus-client.crt
-          key_file: /etc/kubernetes/prometheus-client.key
-
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port]
-        action: keep
-        regex: \d+
-      - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_path]
-        regex: (.+)
-        action: replace
-        target_label: __metrics_path__
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port, __metrics_path__]
-        action: replace
-        regex: (.*);(.*);(.*);(.*)
-        target_label: __metrics_path__
-        replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}
-      - target_label: __address__
-        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'
-      - source_labels: [__meta_kubernetes_namespace]
-        action: replace
-        target_label: namespace
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: pod
-
-    # scrape kubelet resources
-    - job_name: resources
-      scheme: https
-      tls_config:
-        ca_file: /etc/kubernetes/ca.crt
-        cert_file: /etc/kubernetes/prometheus-client.crt
-        key_file: /etc/kubernetes/prometheus-client.key
-
-      kubernetes_sd_configs:
-      - role: node
-        api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'
-        tls_config:
-          ca_file: /etc/kubernetes/ca.crt
-          cert_file: /etc/kubernetes/prometheus-client.crt
-          key_file: /etc/kubernetes/prometheus-client.key
-
-      relabel_configs:
-      - action: labelmap
-        regex: __meta_kubernetes_node_label_(.+)
-      - target_label: __address__
-        replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'
-      - source_labels: [__meta_kubernetes_node_name]
-        regex: (.+)
-        target_label: __metrics_path__
-        replacement: /api/v1/nodes/${1}/proxy/metrics/resource
-
-    #######################################################################
-    # custom scraping configurations
-
-    - job_name: custom-test-config
-      scheme: https
-      metrics_path: '/metrics'
-      static_configs:
-      - targets:
-        - 'foo.bar:12345'
+  prometheus.yaml: "global:\n  evaluation_interval: 30s\n  scrape_interval: 30s\n
+    \ external_labels:\n    cluster: \"de-test-01\"\n    seed_cluster: \"test-seed\"\n\nrule_files:\n-
+    \"/etc/prometheus/config/rules*.yaml\"\n\nalerting:\n  alertmanagers:\n  - dns_sd_configs:\n
+    \   # configure the Seed's alertmanager for the user cluster\n    - names:\n      -
+    'alertmanager.monitoring.svc.cluster.local'\n      type: A\n      port: 9093\n\nscrape_configs:\n#######################################################################\n#
+    These rules will scrape pods running inside the seed cluster.\n\n# scrape the
+    etcd pods\n- job_name: etcd\n  scheme: https\n  tls_config:\n    ca_file: /etc/etcd/pki/client/ca.crt\n
+    \   cert_file: /etc/etcd/pki/client/apiserver-etcd-client.crt\n    key_file: /etc/etcd/pki/client/apiserver-etcd-client.key\n\n
+    \ static_configs:\n  - targets:\n    - 'etcd-0.etcd.cluster-de-test-01.svc.cluster.local:2379'\n
+    \   - 'etcd-1.etcd.cluster-de-test-01.svc.cluster.local:2379'\n    - 'etcd-2.etcd.cluster-de-test-01.svc.cluster.local:2379'\n\n
+    \ relabel_configs:\n  - source_labels: [__address__]\n    regex: (etcd-\\d+).+\n
+    \   action: replace\n    replacement: $1\n    target_label: instance\n\n# scrape
+    the cluster's control plane (apiserver, controller-manager, scheduler)\n- job_name:
+    kubernetes-control-plane\n  scheme: https\n  tls_config:\n    ca_file: /etc/kubernetes/ca.crt\n
+    \   cert_file: /etc/kubernetes/prometheus-client.crt\n    key_file: /etc/kubernetes/prometheus-client.key\n
+    \   # insecure_skip_verify is needed because the apiservers certificate\n    #
+    does not contain a common name for the pod's ip address\n    insecure_skip_verify:
+    true\n\n  kubernetes_sd_configs:\n  - role: pod\n    namespaces:\n      names:\n
+    \     - \"cluster-de-test-01\"\n\n  relabel_configs:\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape_with_kube_cert]\n
+    \   action: keep\n    regex: true\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n
+    \   action: replace\n    target_label: __metrics_path__\n    regex: (.+)\n  -
+    source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n
+    \   action: replace\n    regex: ([^:]+)(?::\\d+)?;(\\d+)\n    replacement: $1:$2\n
+    \   target_label: __address__\n  - source_labels: [__meta_kubernetes_namespace]\n
+    \   action: replace\n    target_label: namespace\n  - source_labels: [__meta_kubernetes_pod_name]\n
+    \   action: replace\n    target_label: pod\n  - source_labels: [__meta_kubernetes_pod_label_app]\n
+    \   action: replace\n    target_label: job\n\n  # drop very expensive apiserver
+    metrics\n  metric_relabel_configs:\n  - source_labels: [__name__]\n    regex:
+    'apiserver_request_(duration|latencies)_.*'\n    action: drop\n  - source_labels:
+    [__name__]\n    regex: 'apiserver_response_sizes_.*'\n    action: drop\n\n# scrape
+    other cluster control plane components, like kube-state-metrics, DNS resolver,\n#
+    machine-controller etcd.\n- job_name: control-plane-pods\n  kubernetes_sd_configs:\n
+    \ - role: pod\n    namespaces:\n      names:\n      - \"cluster-de-test-01\"\n\n
+    \ relabel_configs:\n  - source_labels: [__meta_kubernetes_pod_label_app, __meta_kubernetes_pod_container_init]\n
+    \   regex: \"kube-state-metrics;true\"\n    action: drop\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n
+    \   action: keep\n    regex: true\n  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n
+    \   action: replace\n    target_label: __metrics_path__\n    regex: (.+)\n  -
+    source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n
+    \   action: replace\n    regex: ([^:]+)(?::\\d+)?;(\\d+)\n    replacement: $1:$2\n
+    \   target_label: __address__\n  - source_labels: [__meta_kubernetes_pod_label_role,
+    __meta_kubernetes_pod_label_app]\n    action: replace\n    target_label: job\n
+    \   separator: ''\n  - source_labels: [__meta_kubernetes_namespace]\n    action:
+    replace\n    target_label: namespace\n  - source_labels: [__meta_kubernetes_pod_name]\n
+    \   action: replace\n    target_label: pod\n\n#######################################################################\n#
+    These rules will scrape pods running inside the user cluster itself.\n\n# scrape
+    node metrics\n- job_name: nodes\n  scheme: https\n  tls_config:\n    ca_file:
+    /etc/kubernetes/ca.crt\n    cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \   key_file: /etc/kubernetes/prometheus-client.key\n\n  kubernetes_sd_configs:\n
+    \ - role: node\n    api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \   tls_config:\n      ca_file: /etc/kubernetes/ca.crt\n      cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \     key_file: /etc/kubernetes/prometheus-client.key\n\n  relabel_configs:\n
+    \ - action: labelmap\n    regex: __meta_kubernetes_node_label_(.+)\n  - target_label:
+    __address__\n    replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \ - source_labels: [__meta_kubernetes_node_name]\n    regex: (.+)\n    target_label:
+    __metrics_path__\n    replacement: /api/v1/nodes/${1}/proxy/metrics\n\n# scrape
+    node cadvisor\n- job_name: cadvisor\n  scheme: https\n  tls_config:\n    ca_file:
+    /etc/kubernetes/ca.crt\n    cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \   key_file: /etc/kubernetes/prometheus-client.key\n\n  kubernetes_sd_configs:\n
+    \ - role: node\n    api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \   tls_config:\n      ca_file: /etc/kubernetes/ca.crt\n      cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \     key_file: /etc/kubernetes/prometheus-client.key\n\n  relabel_configs:\n
+    \ - action: labelmap\n    regex: __meta_kubernetes_node_label_(.+)\n  - target_label:
+    __address__\n    replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \ - source_labels: [__meta_kubernetes_node_name]\n    regex: (.+)\n    target_label:
+    __metrics_path__\n    replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor\n\n#
+    scrape pods inside the user cluster with a special annotation\n- job_name: 'user-cluster-pods'\n
+    \ scheme: https\n  tls_config:\n    ca_file: /etc/kubernetes/ca.crt\n    cert_file:
+    /etc/kubernetes/prometheus-client.crt\n    key_file: /etc/kubernetes/prometheus-client.key\n\n
+    \ kubernetes_sd_configs:\n  - role: pod\n    api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \   tls_config:\n      ca_file: /etc/kubernetes/ca.crt\n      cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \     key_file: /etc/kubernetes/prometheus-client.key\n\n  relabel_configs:\n
+    \ - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port]\n
+    \   action: keep\n    regex: \\d+\n  - source_labels: [__meta_kubernetes_pod_annotation_monitoring_kubermatic_io_path]\n
+    \   regex: (.+)\n    action: replace\n    target_label: __metrics_path__\n  -
+    source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_name, __meta_kubernetes_pod_annotation_monitoring_kubermatic_io_port,
+    __metrics_path__]\n    action: replace\n    regex: (.*);(.*);(.*);(.*)\n    target_label:
+    __metrics_path__\n    replacement: /api/v1/namespaces/${1}/pods/${2}:${3}/proxy${4}\n
+    \ - target_label: __address__\n    replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \ - source_labels: [__meta_kubernetes_namespace]\n    action: replace\n    target_label:
+    namespace\n  - source_labels: [__meta_kubernetes_pod_name]\n    action: replace\n
+    \   target_label: pod\n\n# scrape kubelet resources\n- job_name: kubelet\n  scheme:
+    https\n  tls_config:\n    ca_file: /etc/kubernetes/ca.crt\n    cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \   key_file: /etc/kubernetes/prometheus-client.key\n\n  kubernetes_sd_configs:\n
+    \ - role: node\n    api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'\n\ttls_config:\n
+    \     ca_file: /etc/kubernetes/ca.crt\n      cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \     key_file: /etc/kubernetes/prometheus-client.key\n\n  relabel_configs:\n
+    \ - action: labelmap\n\tregex: __meta_kubernetes_node_label_(.+)\n  - target_label:
+    __address__\n    replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \ - source_labels: [__meta_kubernetes_node_name]\n\tregex: (.+)\n\ttarget_label:
+    __metrics_path__\n\treplacement: /api/v1/nodes/${1}/proxy/metrics\n\n- job_name:
+    resources\n  scheme: https\n  tls_config:\n    ca_file: /etc/kubernetes/ca.crt\n
+    \   cert_file: /etc/kubernetes/prometheus-client.crt\n    key_file: /etc/kubernetes/prometheus-client.key\n\n
+    \ kubernetes_sd_configs:\n  - role: node\n    api_server: 'https://apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \   tls_config:\n      ca_file: /etc/kubernetes/ca.crt\n      cert_file: /etc/kubernetes/prometheus-client.crt\n
+    \     key_file: /etc/kubernetes/prometheus-client.key\n\n  relabel_configs:\n
+    \ - action: labelmap\n    regex: __meta_kubernetes_node_label_(.+)\n  - target_label:
+    __address__\n    replacement: 'apiserver-external.cluster-de-test-01.svc.cluster.local.'\n
+    \ - source_labels: [__meta_kubernetes_node_name]\n    regex: (.+)\n    target_label:
+    __metrics_path__\n    replacement: /api/v1/nodes/${1}/proxy/metrics/resource\n\n#######################################################################\n#
+    custom scraping configurations\n\n- job_name: custom-test-config\n  scheme: https\n
+    \ metrics_path: '/metrics'\n  static_configs:\n  - targets:\n    - 'foo.bar:12345'\n"
   rules.yaml: |
     groups:
     - name: kubermatic.goprocess
