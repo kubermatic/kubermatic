@@ -392,6 +392,27 @@ scrape_configs:
     target_label: pod
 
 # scrape kubelet resources
+- job_name: kubelet
+  scheme: https
+  tls_config:
+{{ .ApiserverTLSConfig | indent 4 }}
+
+  kubernetes_sd_configs:
+  - role: node
+    api_server: 'https://{{ .APIServerHost }}'
+	tls_config:
+{{ .ApiserverTLSConfig | indent 6 }}
+
+  relabel_configs:
+  - action: labelmap
+	regex: __meta_kubernetes_node_label_(.+)
+  - target_label: __address__
+    replacement: '{{ .APIServerHost }}'
+  - source_labels: [__meta_kubernetes_node_name]
+	regex: (.+)
+	target_label: __metrics_path__
+	replacement: /api/v1/nodes/${1}/proxy/metrics
+
 - job_name: resources
   scheme: https
   tls_config:
