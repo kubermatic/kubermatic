@@ -26,11 +26,14 @@ package synccontroller
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/reconciler/pkg/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-func cbslReconcilerFactory(cbsl *kubermaticv1.ClusterBackupStorageLocation) reconciling.NamedClusterBackupStorageLocationReconcilerFactory {
-	return func() (string, reconciling.ClusterBackupStorageLocationReconciler) {
+func cbslReconcilerFactory(cbsl *kubermaticv1.ClusterBackupStorageLocation) kkpreconciling.NamedClusterBackupStorageLocationReconcilerFactory {
+	return func() (string, kkpreconciling.ClusterBackupStorageLocationReconciler) {
 		return cbsl.Name, func(existing *kubermaticv1.ClusterBackupStorageLocation) (*kubermaticv1.ClusterBackupStorageLocation, error) {
 			if existing.Labels == nil {
 				existing.Labels = map[string]string{}
@@ -39,6 +42,17 @@ func cbslReconcilerFactory(cbsl *kubermaticv1.ClusterBackupStorageLocation) reco
 				existing.Labels[k] = v
 			}
 			existing.Spec = cbsl.Spec
+			return existing, nil
+		}
+	}
+}
+
+func secretReconcilerFactory(s *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
+	return func() (name string, create reconciling.SecretReconciler) {
+		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			existing.Labels = s.Labels
+			existing.Annotations = s.Annotations
+			existing.Data = s.Data
 			return existing, nil
 		}
 	}
