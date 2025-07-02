@@ -183,6 +183,9 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 	return strings.TrimSpace(output.String()), nil
 }
 
+// While updating the prometheusConfig template, remember that tab characters in the template (`\t`)
+// that might be used for indentation can cause syntax errors.
+// Please ensure to use spaces instead of tabs to prevent syntax errors in this template.
 const prometheusConfig = `
 global:
   evaluation_interval: 30s
@@ -400,18 +403,18 @@ scrape_configs:
   kubernetes_sd_configs:
   - role: node
     api_server: 'https://{{ .APIServerHost }}'
-	tls_config:
+    tls_config:
 {{ .ApiserverTLSConfig | indent 6 }}
 
   relabel_configs:
   - action: labelmap
-	regex: __meta_kubernetes_node_label_(.+)
+    regex: __meta_kubernetes_node_label_(.+)
   - target_label: __address__
     replacement: '{{ .APIServerHost }}'
   - source_labels: [__meta_kubernetes_node_name]
-	regex: (.+)
-	target_label: __metrics_path__
-	replacement: /api/v1/nodes/${1}/proxy/metrics
+    regex: (.+)
+    target_label: __metrics_path__
+    replacement: /api/v1/nodes/${1}/proxy/metrics
 
 - job_name: resources
   scheme: https

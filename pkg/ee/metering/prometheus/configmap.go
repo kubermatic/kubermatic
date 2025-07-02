@@ -78,7 +78,8 @@ scrape_configs:
       - action: keep
         regex: user
         source_labels:
-          - __meta_kubernetes_service_label_cluster		
+          - __meta_kubernetes_service_label_cluster
+
   - honor_labels: true
     job_name: seed-controller-manager
     kubernetes_sd_configs:
