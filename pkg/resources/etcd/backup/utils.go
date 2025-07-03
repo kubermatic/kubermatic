@@ -42,10 +42,6 @@ func GetEtcdBackupSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
 
-func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
-	return fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name)
-}
-
 func isInsecureURL(u string) bool {
 	parsed, err := url.Parse(u)
 	if err != nil {

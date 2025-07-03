@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -343,7 +344,6 @@ func shouldSkipClusterRBACRoleBindingForNamedResource(projectName string, object
 			Name:       object.GetName(),
 		},
 	)
-
 	if err != nil {
 		return false, generatedRole, err
 	}
@@ -458,7 +458,6 @@ func shouldSkipRBACRoleBindingForNamedResource(projectName string, resourceName 
 			Name:       object.GetName(),
 		},
 	)
-
 	if err != nil {
 		return false, generatedRole, err
 	}
@@ -661,7 +660,6 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 		policyAPIGroups,
 		kind,
 	)
-
 	if err != nil {
 		return false, generatedRole, err
 	}
@@ -1102,7 +1100,7 @@ func (c *resourcesController) ensureClusterRBACRoleForEtcdLauncher(ctx context.C
 		GenerateActualGroupNameFor(projectName, ViewerGroupNamePrefix),
 		"configmaps",
 		"",
-		fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name),
+		resources.BackupCABundleConfigMapName(cluster),
 		metav1.OwnerReference{
 			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
 			Kind:       kubermaticv1.ClusterKindName,
@@ -1195,7 +1193,7 @@ func (c *resourcesController) ensureRBACForEtcdLauncher(ctx context.Context, cli
 	if err := c.ensureClusterRBACRoleBindingForEtcdLauncher(ctx, cluster.Name, kubermaticv1.ClusterKindName, cluster.Status.NamespaceName, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
-	if err := c.ensureClusterRBACRoleBindingForEtcdLauncher(ctx, fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name), "Configmap", cluster.Status.NamespaceName, projectName, cluster); err != nil {
+	if err := c.ensureClusterRBACRoleBindingForEtcdLauncher(ctx, resources.BackupCABundleConfigMapName(cluster), "Configmap", cluster.Status.NamespaceName, projectName, cluster); err != nil {
 		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %w", formatMapping(rmapping), c.providerName, err)
 	}
 	if err := c.ensureRBACRoleForEtcdLauncher(ctx, cluster, kubermaticv1.EtcdRestoreResourceName, kubermaticv1.GroupName, kubermaticv1.EtcdRestoreKindName); err != nil {

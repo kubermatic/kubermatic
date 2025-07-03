@@ -826,12 +826,8 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cl
 	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r, modifier.Ownership(cluster, "", r.scheme))
 }
 
-func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
-	return fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name)
-}
-
 func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	name := caBundleConfigMapName(cluster)
+	name := resources.BackupCABundleConfigMapName(cluster)
 
 	creators := []reconciling.NamedConfigMapReconcilerFactory{
 		certificates.CABundleConfigMapReconciler(name, r.caBundle),
