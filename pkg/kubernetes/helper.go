@@ -428,12 +428,7 @@ func EnsureAnnotationContains(o metav1.Object, annotation string, separator stri
 // set to "true" (case-insensitive).
 func HasAnnotationTrue(obj metav1.Object, key string) bool {
 	annotations := obj.GetAnnotations()
-	if annotations == nil {
-		return false
-	}
-
-	val, exists := annotations[key]
-	return exists && strings.EqualFold(val, "true")
+	return strings.EqualFold(annotations[key], "true")
 }
 
 type SeedClientMap map[string]ctrlruntimeclient.Client
