@@ -78,6 +78,10 @@ const (
 	InitialMachineDeploymentRequestAnnotation        = "kubermatic.io/initial-machinedeployment-request"
 	InitialApplicationInstallationsRequestAnnotation = "kubermatic.io/initial-application-installations-request"
 	InitialCNIValuesRequestAnnotation                = "kubermatic.io/initial-cni-values-request"
+
+	// SkipRouterReconciliationAnnotation is used to indicate that the router reconciliation should be skipped.
+	// This annotation is currently used exclusively for OpenStack provider.
+	SkipRouterReconciliationAnnotation = "reconciliation.kubermatic.k8c.io/skip-router"
 )
 
 type MachineFlavorFilter struct {
