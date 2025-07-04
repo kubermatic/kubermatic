@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: aikit
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: AIKit is a comprehensive platform to quickly get started to host, deploy, build and fine-tune large language models (LLMs).
   displayName: AIKit

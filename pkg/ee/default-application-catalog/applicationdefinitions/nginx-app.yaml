@@ -21,7 +21,9 @@
 apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
-  name: nginx
+  name: 
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer.
   displayName: NGINX Ingress Controller

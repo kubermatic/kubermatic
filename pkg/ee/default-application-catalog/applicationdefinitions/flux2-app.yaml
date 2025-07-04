@@ -22,6 +22,8 @@ apiVersion: apps.kubermatic.k8c.io/v1
 kind: ApplicationDefinition
 metadata:
   name: flux2
+  labels:
+    apps.kubermatic.k8c.io/managed-by: kkp
 spec:
   description: Flux is a tool for keeping Kubernetes clusters in sync with sources of configuration (like Git repositories), and automating updates to configuration when there is new code to deploy.
   displayName: Flux
