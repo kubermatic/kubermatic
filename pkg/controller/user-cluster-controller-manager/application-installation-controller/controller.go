@@ -20,9 +20,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
+	"dario.cat/mergo"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/apis/equality"
@@ -34,6 +37,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -76,9 +80,10 @@ type reconciler struct {
 	clusterIsPaused      userclustercontrollermanager.IsPausedChecker
 	appInstaller         applications.ApplicationInstaller
 	seedClusterNamespace string
+	overwriteRegistry    string
 }
 
-func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, seedClusterNamespace string, appInstaller applications.ApplicationInstaller) error {
+func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, clusterIsPaused userclustercontrollermanager.IsPausedChecker, seedClusterNamespace, overwriteRegistry string, appInstaller applications.ApplicationInstaller) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
@@ -89,6 +94,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		clusterIsPaused:      clusterIsPaused,
 		appInstaller:         appInstaller,
 		seedClusterNamespace: seedClusterNamespace,
+		overwriteRegistry:    overwriteRegistry,
 	}
 
 	_, err := builder.ControllerManagedBy(userMgr).
@@ -215,12 +221,32 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		return err
 	}
 
+	if r.overwriteRegistry != "" {
+		err := r.useOverwriteRegistry(ctx, applicationDef, appInstallation)
+		if err != nil {
+			return fmt.Errorf("failed to overwrite the registry in application installation %w", err)
+		}
+	}
+
 	// install application into the user-cluster
 	if err := r.handleInstallation(ctx, log, applicationDef, appInstallation); err != nil {
 		return fmt.Errorf("handling installation of application installation: %w", err)
 	}
 
 	return nil
+}
+
+func (r *reconciler) useOverwriteRegistry(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	if IsSystemApplication(appDefinition) {
+		return r.updateValuesBlock(ctx, appDefinition, appInstallation)
+	}
+	return nil
+}
+
+// IsSystemApplication checks if the ApplicationDefinition is system application.
+func IsSystemApplication(appDefinition *appskubermaticv1.ApplicationDefinition) bool {
+	labels := appDefinition.GetLabels()
+	return strings.EqualFold(labels["apps.kubermatic.k8c.io/managed-by"], "kkp")
 }
 
 // getApplicationVersion finds the applicationVersion defined by appInstallation into the applicationDef and updates the struct appVersion with it.
@@ -386,4 +412,48 @@ func enqueueAppInstallationForAppDef(userClient ctrlruntimeclient.Client) func(c
 
 func handleAddonCleanup(ctx context.Context, applicationName string, seedClusterNamespace string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	return applicationtemplates.HandleAddonCleanup(ctx, applicationName, seedClusterNamespace, seedClient, log)
+}
+
+// updateValuesBlock updates the valuesBlock of an ApplicationInstallation in-place.
+func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	appName := appDefinition.Name
+	getOverrideValues, exists := SystemAppsValuesGenerators[appName]
+	if !exists {
+		return nil
+	}
+
+	values, err := appInstallation.Spec.GetParsedValues()
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal CNI values: %w", err)
+	}
+
+	// If (and only if) existing values is empty, use the initial values
+	if len(values) == 0 {
+		initialValues, err := appDefinition.Spec.GetParsedDefaultValues()
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal ApplicationDefinition default values: %w", err)
+		}
+		values = initialValues
+	}
+
+	// Generate the Helm values
+	overrideValues := getOverrideValues(appInstallation, r.overwriteRegistry)
+
+	if err := mergo.Merge(&values, overrideValues, mergo.WithOverride); err != nil {
+		return fmt.Errorf("failed to merge application values: %w", err)
+	}
+
+	rawValues, err := yaml.Marshal(values)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Helm values for %s: %w", appName, err)
+	}
+
+	// Update the valuesBlock field in-place
+	appInstallation.Spec.ValuesBlock = string(rawValues)
+	// Clear the deprecated .spec.values field to avoid conflicts
+	appInstallation.Spec.Values = runtime.RawExtension{
+		Raw: []byte("{}"),
+	}
+
+	return r.userClient.Update(ctx, appInstallation)
 }
