@@ -414,7 +414,7 @@ func handleAddonCleanup(ctx context.Context, applicationName string, seedCluster
 	return applicationtemplates.HandleAddonCleanup(ctx, applicationName, seedClusterNamespace, seedClient, log)
 }
 
-// updateValuesBlock updates the valuesBlock of an ApplicationInstallation in-place
+// updateValuesBlock updates the valuesBlock of an ApplicationInstallation in-place.
 func (r *reconciler) updateValuesBlock(ctx context.Context, appDefinition *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
 	appName := appDefinition.Name
 	getOverrideValues, exists := SystemAppsValuesGenerators[appName]
