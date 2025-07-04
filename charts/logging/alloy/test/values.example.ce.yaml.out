@@ -101,15 +101,11 @@ data:
     loki.source.file "kubernetes_pods_name" {
       targets               = local.file_match.kubernetes_pods_name.targets
       forward_to            = [loki.process.kubernetes_pods_name.receiver]
-      legacy_positions_file = "/run/promtail/positions.yaml"
-    }
-    
-    discovery.kubernetes "kubernetes_pods_app" {
-      role = "pod"
+      legacy_positions_file = "/run/alloy/positions.yaml"
     }
     
     discovery.relabel "kubernetes_pods_app" {
-      targets = discovery.kubernetes.kubernetes_pods_app.targets
+      targets = discovery.kubernetes.kubernetes_pods_name.targets
     
       rule {
         source_labels = ["__meta_kubernetes_pod_label_name"]
@@ -200,15 +196,11 @@ data:
     loki.source.file "kubernetes_pods_app" {
       targets               = local.file_match.kubernetes_pods_app.targets
       forward_to            = [loki.process.kubernetes_pods_app.receiver]
-      legacy_positions_file = "/run/promtail/positions.yaml"
-    }
-    
-    discovery.kubernetes "kubernetes_pods_direct_controllers" {
-      role = "pod"
+      legacy_positions_file = "/run/alloy/positions.yaml"
     }
     
     discovery.relabel "kubernetes_pods_direct_controllers" {
-      targets = discovery.kubernetes.kubernetes_pods_direct_controllers.targets
+      targets = discovery.kubernetes.kubernetes_pods_name.targets
     
       rule {
         source_labels = ["__meta_kubernetes_pod_label_name", "__meta_kubernetes_pod_label_app"]
@@ -286,15 +278,11 @@ data:
     loki.source.file "kubernetes_pods_direct_controllers" {
       targets               = local.file_match.kubernetes_pods_direct_controllers.targets
       forward_to            = [loki.process.kubernetes_pods_direct_controllers.receiver]
-      legacy_positions_file = "/run/promtail/positions.yaml"
-    }
-    
-    discovery.kubernetes "kubernetes_pods_indirect_controller" {
-      role = "pod"
+      legacy_positions_file = "/run/alloy/positions.yaml"
     }
     
     discovery.relabel "kubernetes_pods_indirect_controller" {
-      targets = discovery.kubernetes.kubernetes_pods_indirect_controller.targets
+      targets = discovery.kubernetes.kubernetes_pods_name.targets
     
       rule {
         source_labels = ["__meta_kubernetes_pod_label_name", "__meta_kubernetes_pod_label_app"]
@@ -373,15 +361,11 @@ data:
     loki.source.file "kubernetes_pods_indirect_controller" {
       targets               = local.file_match.kubernetes_pods_indirect_controller.targets
       forward_to            = [loki.process.kubernetes_pods_indirect_controller.receiver]
-      legacy_positions_file = "/run/promtail/positions.yaml"
-    }
-    
-    discovery.kubernetes "kubernetes_pods_static" {
-      role = "pod"
+      legacy_positions_file = "/run/alloy/positions.yaml"
     }
     
     discovery.relabel "kubernetes_pods_static" {
-      targets = discovery.kubernetes.kubernetes_pods_static.targets
+      targets = discovery.kubernetes.kubernetes_pods_name.targets
     
       rule {
         source_labels = ["__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror"]
@@ -519,7 +503,7 @@ data:
     loki.source.file "kubernetes_events" {
       targets               = local.file_match.kubernetes_events.targets
       forward_to            = [loki.process.kubernetes_events.receiver]
-      legacy_positions_file = "/run/promtail/positions.yaml"
+      legacy_positions_file = "/run/alloy/positions.yaml"
     }
     
     loki.write "default" {
@@ -704,7 +688,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: alloy
-        checksum/config: c3fee6d0f4518b049ec523f5d8d1bec2e36df0636476a9d1cb365775f8574ee
+        checksum/config: 1d3ea21457632ad7f78046a0030673cda8cd80f8da6c0205920e413eaafe7ce
       labels:
         app.kubernetes.io/name: alloy
         app.kubernetes.io/instance: release-name
