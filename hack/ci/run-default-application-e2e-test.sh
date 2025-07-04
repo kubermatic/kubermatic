@@ -75,7 +75,13 @@ else
   pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATION_NAME-app.yaml"
 fi
 
-echodate "File path: $pathToFile"
+# Check if the file exists
+if [ ! -f "$pathToFile" ]; then
+  echodate "Error: File '$pathToFile' does not exist."
+  exit 1
+else
+  echodate "File path: $pathToFile"
+fi
 
 if [[ -s "$pathToFile" ]]; then
   versions=$(yq eval '.spec.versions[].version' "$pathToFile")
