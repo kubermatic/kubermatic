@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
 # limitations under the License.
 
 apiVersion: v2
-name: loki
+name: grafana-alloy
 version: 9.9.9-dev
-appVersion: v2.9.6
-description: "Loki: like Prometheus, but for logs."
+appVersion: v1.9.2
+description: "Responsible for gathering logs and sending them to Loki"
 keywords:
   - kubermatic
   - logging
@@ -30,6 +30,6 @@ maintainers:
   - name: The Kubermatic Kubernetes Platform contributors
     email: support@kubermatic.com
 dependencies:
-  - name: loki
-    repository: https://grafana.github.io/helm-charts
-    version: 5.47.2
+  - name: alloy
+    version: "1.1.2"
+    repository: "https://grafana.github.io/helm-charts"

@@ -12,24 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v2
-name: promtail
-version: 9.9.9-dev
-appVersion: v2.9.3
-description: "Responsible for gathering logs and sending them to Loki"
-keywords:
-  - kubermatic
-  - logging
-  - grafana
-  - loki
-  - promtail
-home: https://grafana.com/loki
-sources:
-  - https://github.com/grafana/loki
-maintainers:
-  - name: The Kubermatic Kubernetes Platform contributors
-    email: support@kubermatic.com
-dependencies:
-  - name: promtail
-    version: "6.15.5"
-    repository: "https://grafana.github.io/helm-charts"
+# This file is used for the testing, do not remove!
