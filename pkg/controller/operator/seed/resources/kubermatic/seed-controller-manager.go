@@ -62,6 +62,20 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
+			if len(cfg.Spec.SeedController.NodeSelector) > 0 {
+				d.Spec.Template.Spec.NodeSelector = cfg.Spec.SeedController.NodeSelector
+			}
+
+			if len(cfg.Spec.SeedController.Tolerations) > 0 {
+				d.Spec.Template.Spec.Tolerations = cfg.Spec.SeedController.Tolerations
+			}
+
+			if cfg.Spec.SeedController.Affinity.NodeAffinity != nil ||
+				cfg.Spec.SeedController.Affinity.PodAffinity != nil ||
+				cfg.Spec.SeedController.Affinity.PodAntiAffinity != nil {
+				d.Spec.Template.Spec.Affinity = &cfg.Spec.SeedController.Affinity
+			}
+
 			var disabledCollectors string
 			if len(seed.Spec.DisabledCollectors) > 0 {
 				disabledCollectors = join(seed.Spec.DisabledCollectors, ",")
