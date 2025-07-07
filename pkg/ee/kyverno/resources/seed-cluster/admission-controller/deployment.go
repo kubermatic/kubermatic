@@ -27,9 +27,9 @@ package admissioncontrollerresources
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
+	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -41,12 +41,12 @@ import (
 )
 
 // DeploymentReconciler returns the function to create and update the Kyverno admission controller deployment.
-func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return commonseedresources.KyvernoAdmissionControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = commonseedresources.KyvernoLabels(commonseedresources.AdmissionControllerComponentNameLabel)
+		return kyverno.KyvernoAdmissionControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = kyverno.KyvernoLabels(kyverno.AdmissionControllerComponentNameLabel)
 
-			dep.Spec.Replicas = resources.Int32(3)
+			dep.Spec.Replicas = resources.Int32(kyverno.KyvernoAdmissionControllerReplicas)
 			dep.Spec.RevisionHistoryLimit = resources.Int32(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
@@ -57,13 +57,13 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: commonseedresources.KyvernoSelectorLabels(commonseedresources.AdmissionControllerComponentNameLabel),
+				MatchLabels: kyverno.KyvernoSelectorLabels(kyverno.AdmissionControllerComponentNameLabel),
 			}
 
-			dep.Spec.Template.Labels = commonseedresources.KyvernoLabels(commonseedresources.AdmissionControllerComponentNameLabel)
+			dep.Spec.Template.Labels = kyverno.KyvernoLabels(kyverno.AdmissionControllerComponentNameLabel)
 
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
-			dep.Spec.Template.Spec.ServiceAccountName = commonseedresources.KyvernoAdmissionControllerServiceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = kyverno.KyvernoAdmissionControllerServiceAccountName
 
 			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
 				PodAntiAffinity: &corev1.PodAntiAffinity{
@@ -76,7 +76,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 										{
 											Key:      "app.kubernetes.io/component",
 											Operator: metav1.LabelSelectorOpIn,
-											Values:   []string{commonseedresources.AdmissionControllerComponentNameLabel},
+											Values:   []string{kyverno.AdmissionControllerComponentNameLabel},
 										},
 									},
 								},
@@ -103,11 +103,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					},
 				},
 			}
-
+			repository := registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/kyvernopre"))
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:            "kyverno-pre",
-					Image:           "reg.kyverno.io/kyverno/kyvernopre:" + commonseedresources.KyvernoVersion,
+					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
@@ -134,19 +134,19 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KYVERNO_SERVICEACCOUNT_NAME",
-							Value: commonseedresources.KyvernoAdmissionControllerServiceAccountName,
+							Value: kyverno.KyvernoAdmissionControllerServiceAccountName,
 						},
 						{
 							Name:  "KYVERNO_ROLE_NAME",
-							Value: commonseedresources.KyvernoAdmissionControllerRoleName,
+							Value: kyverno.KyvernoAdmissionControllerRoleName,
 						},
 						{
 							Name:  "INIT_CONFIG",
-							Value: commonseedresources.KyvernoConfigMapName,
+							Value: kyverno.KyvernoConfigMapName,
 						},
 						{
 							Name:  "METRICS_CONFIG",
-							Value: commonseedresources.KyvernoMetricsConfigMapName,
+							Value: kyverno.KyvernoMetricsConfigMapName,
 						},
 						{
 							Name: "KYVERNO_NAMESPACE",
@@ -166,21 +166,22 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						{
 							Name:  "KYVERNO_DEPLOYMENT",
-							Value: commonseedresources.KyvernoAdmissionControllerDeploymentName,
+							Value: kyverno.KyvernoAdmissionControllerDeploymentName,
 						},
 						{
 							Name:  "KYVERNO_SVC",
-							Value: commonseedresources.KyvernoAdmissionControllerServiceName,
+							Value: kyverno.KyvernoAdmissionControllerServiceName,
 						},
 					},
 				},
 			}
 
-			namespace := cluster.Status.NamespaceName
+			namespace := data.Cluster().Status.NamespaceName
+			repository = registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/kyverno"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "kyverno",
-					Image:           "reg.kyverno.io/kyverno/kyverno:" + commonseedresources.KyvernoVersion,
+					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Args: []string{
 						"--kubeconfig=/etc/kubernetes/uc-admin-kubeconfig/kubeconfig",
@@ -224,11 +225,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Env: []corev1.EnvVar{
 						{
 							Name:  "INIT_CONFIG",
-							Value: commonseedresources.KyvernoConfigMapName,
+							Value: kyverno.KyvernoConfigMapName,
 						},
 						{
 							Name:  "METRICS_CONFIG",
-							Value: commonseedresources.KyvernoMetricsConfigMapName,
+							Value: kyverno.KyvernoMetricsConfigMapName,
 						},
 						{
 							Name: "KYVERNO_NAMESPACE",
@@ -248,15 +249,15 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						{
 							Name:  "KYVERNO_SERVICEACCOUNT_NAME",
-							Value: commonseedresources.KyvernoAdmissionControllerServiceAccountName,
+							Value: kyverno.KyvernoAdmissionControllerServiceAccountName,
 						},
 						{
 							Name:  "KYVERNO_ROLE_NAME",
-							Value: commonseedresources.KyvernoAdmissionControllerRoleName,
+							Value: kyverno.KyvernoAdmissionControllerRoleName,
 						},
 						{
 							Name:  "KYVERNO_SVC",
-							Value: commonseedresources.KyvernoAdmissionControllerServiceName,
+							Value: kyverno.KyvernoAdmissionControllerServiceName,
 						},
 						{
 							Name:  "TUF_ROOT",
@@ -264,7 +265,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 						},
 						{
 							Name:  "KYVERNO_DEPLOYMENT",
-							Value: commonseedresources.KyvernoAdmissionControllerDeploymentName,
+							Value: kyverno.KyvernoAdmissionControllerDeploymentName,
 						},
 					},
 					StartupProbe: &corev1.Probe{

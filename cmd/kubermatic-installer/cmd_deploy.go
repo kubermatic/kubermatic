@@ -76,7 +76,6 @@ type DeployOptions struct {
 	MigrateCertManager         bool
 	MigrateUpstreamCertManager bool
 	MigrateNginx               bool
-	RemoveOauthRelease         bool
 
 	MLASkipMinio             bool
 	MLASkipMinioLifecycleMgr bool
@@ -85,7 +84,6 @@ type DeployOptions struct {
 	MLASkipLogging           bool
 
 	DeployDefaultAppCatalog bool
-	LimitApps               []string
 
 	SkipCharts []string
 
@@ -144,7 +142,6 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().BoolVar(&opt.MigrateCertManager, "migrate-cert-manager", false, "enable the migration for cert-manager CRDs from v1alpha2 to v1")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
-	cmd.PersistentFlags().BoolVar(&opt.RemoveOauthRelease, "remove-oauth-release", false, "when migrating to the new Dex Helm chart, delete the Helm release for the previous oauth chart after the upgrade")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
@@ -205,7 +202,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			EnableCertManagerV2Migration:       opt.MigrateCertManager,
 			EnableCertManagerUpstreamMigration: opt.MigrateUpstreamCertManager,
 			EnableNginxIngressMigration:        opt.MigrateNginx,
-			RemoveOauthRelease:                 opt.RemoveOauthRelease,
 			DisableTelemetry:                   opt.DisableTelemetry,
 			DisableDependencyUpdate:            opt.SkipDependencies,
 			AllowEditionChange:                 opt.AllowEditionChange,
@@ -218,7 +214,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			SkipCharts:                         opt.SkipCharts,
 			DeployDefaultAppCatalog:            opt.DeployDefaultAppCatalog,
 			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
-			LimitApps:                          opt.LimitApps,
 			SkipSeedValidation:                 opt.SkipSeedValidation,
 		}
 

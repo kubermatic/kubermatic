@@ -19,9 +19,20 @@ limitations under the License.
 package images
 
 import (
+	"fmt"
+	"iter"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
+	applicationcatalog "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
+	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno"
+	"k8c.io/kubermatic/v2/pkg/install/helm"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -34,6 +45,8 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 		kubelb.DeploymentReconciler(templateData),
 		velero.DeploymentReconciler(templateData),
 	}
+
+	deploymentReconcilers = append(deploymentReconcilers, kyverno.GetDeploymentReconcilers(templateData)...)
 
 	for _, createFunc := range deploymentReconcilers {
 		_, dpCreator := createFunc()
@@ -59,4 +72,22 @@ func getAdditionalImagesFromReconcilers(templateData *resources.TemplateData) (i
 	images = append(images, getImagesFromPodSpec(statefulset.Spec.Template.Spec)...)
 
 	return images, err
+}
+
+func DefaultAppsHelmCharts(
+	config *kubermaticv1.KubermaticConfiguration,
+	logger logrus.FieldLogger,
+	helmClient helm.Client,
+	helmTimeout time.Duration,
+	registryPrefix string,
+) iter.Seq2[*AppsHelmChart, error] {
+	log := kubermaticlog.NewDefault().Sugar()
+	defaultAppDefReconcilers, err := applicationcatalog.DefaultApplicationCatalogReconcilerFactories(log, config, true)
+	if err != nil {
+		return func(yield func(*AppsHelmChart, error) bool) {
+			yield(nil, fmt.Errorf("failed to get default application definition reconciler factories: %w", err))
+		}
+	}
+
+	return getHelmChartRenderFunc(config, logger, helmClient, helmTimeout, registryPrefix, defaultAppDefReconcilers)
 }

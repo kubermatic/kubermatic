@@ -25,9 +25,9 @@
 package reportscontrollerresources
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
+	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,13 +39,13 @@ import (
 )
 
 // DeploymentReconciler returns the function to create and update the Kyverno reports controller deployment.
-func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return commonseedresources.KyvernoReportsControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = commonseedresources.KyvernoLabels(commonseedresources.ReportsControllerComponentNameLabel)
+		return kyverno.KyvernoReportsControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = kyverno.KyvernoLabels(kyverno.ReportsControllerComponentNameLabel)
 
 			// Deployment spec
-			dep.Spec.Replicas = resources.Int32(2)
+			dep.Spec.Replicas = resources.Int32(kyverno.KyvernoReportsControllerReplicas)
 			dep.Spec.RevisionHistoryLimit = resources.Int32(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
@@ -57,15 +57,15 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 
 			// Selector must match template labels
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: commonseedresources.KyvernoSelectorLabels(commonseedresources.ReportsControllerComponentNameLabel),
+				MatchLabels: kyverno.KyvernoSelectorLabels(kyverno.ReportsControllerComponentNameLabel),
 			}
 
 			// Pod template
-			dep.Spec.Template.Labels = commonseedresources.KyvernoLabels(commonseedresources.ReportsControllerComponentNameLabel)
+			dep.Spec.Template.Labels = kyverno.KyvernoLabels(kyverno.ReportsControllerComponentNameLabel)
 
 			// Pod spec
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
-			dep.Spec.Template.Spec.ServiceAccountName = commonseedresources.KyvernoReportsControllerServiceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = kyverno.KyvernoReportsControllerServiceAccountName
 
 			// Pod anti-affinity
 			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
@@ -79,7 +79,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 										{
 											Key:      "app.kubernetes.io/component",
 											Operator: metav1.LabelSelectorOpIn,
-											Values:   []string{commonseedresources.ReportsControllerComponentNameLabel},
+											Values:   []string{kyverno.ReportsControllerComponentNameLabel},
 										},
 									},
 								},
@@ -109,10 +109,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			// Main container
+			repository := registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/reports-controller"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "controller",
-					Image:           "reg.kyverno.io/kyverno/reports-controller:" + commonseedresources.KyvernoVersion,
+					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Ports: []corev1.ContainerPort{
 						{
@@ -132,19 +133,19 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KYVERNO_SERVICEACCOUNT_NAME",
-							Value: commonseedresources.KyvernoReportsControllerServiceAccountName,
+							Value: kyverno.KyvernoReportsControllerServiceAccountName,
 						},
 						{
 							Name:  "KYVERNO_DEPLOYMENT",
-							Value: commonseedresources.KyvernoReportsControllerDeploymentName,
+							Value: kyverno.KyvernoReportsControllerDeploymentName,
 						},
 						{
 							Name:  "INIT_CONFIG",
-							Value: commonseedresources.KyvernoConfigMapName,
+							Value: kyverno.KyvernoConfigMapName,
 						},
 						{
 							Name:  "METRICS_CONFIG",
-							Value: commonseedresources.KyvernoMetricsConfigMapName,
+							Value: kyverno.KyvernoMetricsConfigMapName,
 						},
 						{
 							Name: "KYVERNO_POD_NAME",

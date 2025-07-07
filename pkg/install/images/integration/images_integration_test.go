@@ -44,7 +44,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/images"
 )
 
-func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
+const (
+	helmCommandTimeout = 5 * time.Minute
+)
+
+func TestProcessImagesFromHelmChartsAndSystemAppsAndDefaultApps(t *testing.T) {
 	log := logrus.New()
 
 	helmBinary, err := exec.LookPath("helm")
@@ -52,7 +56,7 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 		t.Skip("Skipping test due to missing helm binary")
 	}
 
-	helmClient, err := helm.NewCLI(helmBinary, "", "", 5*time.Minute, log)
+	helmClient, err := helm.NewCLI(helmBinary, "", "", helmCommandTimeout, log)
 	if err != nil {
 		t.Fatalf("failed to create Helm client: %v", err)
 	}
@@ -69,13 +73,18 @@ func TestProcessImagesFromHelmChartsAndSystemApps(t *testing.T) {
 	}
 	containerImages = append(containerImages, chartImages...)
 
-	appImages, err := images.GetImagesFromSystemApplicationDefinitions(log, config, helmClient, 5*time.Minute, "")
+	appImages, err := images.GetImagesFromSystemApplicationDefinitions(log, config, helmClient, helmCommandTimeout, "")
 	if err != nil {
 		t.Errorf("Error calling GetImagesFromSystemApplicationDefinitions: %v", err)
 	}
+	defaultAppImages, err := images.GetImagesFromDefaultApplicationDefinitions(log, config, helmClient, helmCommandTimeout, "")
+	if err != nil {
+		t.Errorf("Error calling GetImagesFromDefaultApplicationDefinitions: %v", err)
+	}
 	containerImages = append(containerImages, appImages...)
+	containerImages = append(containerImages, defaultAppImages...)
 
-	if _, _, err := images.CopyImages(context.Background(), log, true, containerImages, "test-registry:5000", "kubermatic-installer/test"); err != nil {
+	if _, _, err := images.CopyImages(context.Background(), log, true, true, containerImages, "test-registry:5000", "kubermatic-installer/test"); err != nil {
 		t.Errorf("Error calling CopyImages: %v", err)
 	}
 }

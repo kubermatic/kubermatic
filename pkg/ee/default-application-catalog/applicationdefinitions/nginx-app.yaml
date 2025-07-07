@@ -32,28 +32,28 @@ spec:
         helm:
           chartName: ingress-nginx
           chartVersion: 4.7.1
-          url: https://kubernetes.github.io/ingress-nginx
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 1.8.1
   - template:
       source:
         helm:
           chartName: ingress-nginx
           chartVersion: 4.9.1
-          url: https://kubernetes.github.io/ingress-nginx
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 1.9.6
   - template:
       source:
         helm:
           chartName: ingress-nginx
           chartVersion: 4.12.0
-          url: https://kubernetes.github.io/ingress-nginx
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 1.12.0
   - template:
       source:
         helm:
           chartName: ingress-nginx
           chartVersion: 4.12.2
-          url: https://kubernetes.github.io/ingress-nginx
+          url: oci://quay.io/kubermatic-mirror/helm-charts
     version: 1.12.1
   documentationURL: https://kubernetes.github.io/ingress-nginx/
   sourceURL: https://github.com/kubernetes/ingress-nginx

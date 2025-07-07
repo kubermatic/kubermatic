@@ -40,7 +40,7 @@ const (
 
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
 func TestValidateApplicationInstallationSpec(t *testing.T) {
-	ad := getApplicationDefinition(defaultAppName, false, false, nil)
+	ad := getApplicationDefinition(defaultAppName, false, false, nil, nil)
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(ad).
@@ -227,8 +227,8 @@ func TestValidateApplicationInstallationSpec(t *testing.T) {
 
 // TestValidateApplicationInstallationSpec tests the validation for ApplicationInstallation creation.
 func TestValidateApplicationInstallationUpdate(t *testing.T) {
-	ad := getApplicationDefinition(defaultAppName, false, false, nil)
-	updatedAD := getApplicationDefinition("updated-app", false, false, nil)
+	ad := getApplicationDefinition(defaultAppName, false, false, nil, nil)
+	updatedAD := getApplicationDefinition("updated-app", false, false, nil, nil)
 	fakeClient := fake.
 		NewClientBuilder().
 		WithObjects(ad, updatedAD).
@@ -417,11 +417,11 @@ func TestValidateApplicationInstallationDelete(t *testing.T) {
 	clusterName := "cluster-1"
 
 	applicationDefinitions := []ctrlruntimeclient.Object{
-		getApplicationDefinition(appName, false, false, nil),
-		getApplicationDefinition(defaultAppName, true, false, nil),
-		getApplicationDefinition(enforcedAppName, false, true, nil),
-		getApplicationDefinition(enforcedAppDCName, false, true, []string{dcName}),
-		getApplicationDefinition(enforcedWrongDCName, false, true, []string{"dc-2"}),
+		getApplicationDefinition(appName, false, false, nil, nil),
+		getApplicationDefinition(defaultAppName, true, false, nil, nil),
+		getApplicationDefinition(enforcedAppName, false, true, nil, nil),
+		getApplicationDefinition(enforcedAppDCName, false, true, []string{dcName}, nil),
+		getApplicationDefinition(enforcedWrongDCName, false, true, []string{"dc-2"}, nil),
 	}
 
 	fakeClient := fake.
@@ -489,19 +489,43 @@ func TestValidateApplicationInstallationDelete(t *testing.T) {
 	}
 }
 
-func getApplicationDefinition(name string, defaulted bool, enforced bool, datacenters []string) *appskubermaticv1.ApplicationDefinition {
+func getApplicationDefinition(name string, defaulted, enforced bool, datacenters []string, labels map[string]string) *appskubermaticv1.ApplicationDefinition {
 	return &appskubermaticv1.ApplicationDefinition{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ApplicationDefinition",
+			APIVersion: "apps.kubermatic.k8c.io/v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: labels,
 		},
 		Spec: appskubermaticv1.ApplicationDefinitionSpec{
 			Description: "Description",
+			Method:      appskubermaticv1.HelmTemplateMethod,
 			Versions: []appskubermaticv1.ApplicationVersion{
 				{
 					Version: defaultAppVersion,
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "http://example.com/charts",
+								ChartName:    "test-chart",
+								ChartVersion: defaultAppVersion,
+							},
+						},
+					},
 				},
 				{
 					Version: defaultAppSecondaryVersion,
+					Template: appskubermaticv1.ApplicationTemplate{
+						Source: appskubermaticv1.ApplicationSource{
+							Helm: &appskubermaticv1.HelmSource{
+								URL:          "http://example.com/charts",
+								ChartName:    "test-chart",
+								ChartVersion: defaultAppSecondaryVersion,
+							},
+						},
+					},
 				},
 			},
 			Enforced: enforced,

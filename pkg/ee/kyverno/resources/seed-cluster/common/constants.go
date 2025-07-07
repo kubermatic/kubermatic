@@ -1,5 +1,3 @@
-//go:build ee
-
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
@@ -22,7 +20,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package commonseedresources
+package common
 
 const (
 	// Kyverno version and registry.
@@ -36,6 +34,12 @@ const (
 	KyvernoBackgroundControllerDeploymentName = "kyverno-background-controller"
 	KyvernoCleanupControllerDeploymentName    = "kyverno-cleanup-controller"
 	KyvernoReportsControllerDeploymentName    = "kyverno-reports-controller"
+
+	// Kyverno Deployments Replicas.
+	KyvernoAdmissionControllerReplicas  = 3
+	KyvernoBackgroundControllerReplicas = 2
+	KyvernoCleanupControllerReplicas    = 2
+	KyvernoReportsControllerReplicas    = 2
 
 	// Kyverno Services.
 	KyvernoAdmissionControllerServiceName         = "kyverno-svc"

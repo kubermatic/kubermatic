@@ -28,6 +28,7 @@ APPLICATION_NAME="${APPLICATION_NAME:-}"
 APPLICATION_NAMESPACE="${APPLICATION_NAMESPACE:-}"
 APP_LABEL_KEY="${APP_LABEL_KEY:-}"
 NAMES="${NAMES:-}"
+IS_SYSTEM_APP="${IS_SYSTEM_APP:-}"
 
 # Ensure all environment variables are set
 if [[ -z "$APPLICATION_INSTALLATION_NAME" || -z "$APPLICATION_NAME" || -z "$APPLICATION_NAMESPACE" || -z "$APP_LABEL_KEY" || -z "$NAMES" ]]; then
@@ -50,7 +51,6 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-con
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 
 kubectl apply -f pkg/crd/k8c.io
-export INSTALLER_FLAGS="--deploy-default-app-catalog"
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
@@ -69,8 +69,12 @@ fi
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
 echodate "Running $APPLICATION_NAME tests..."
+if [ "$IS_SYSTEM_APP" = "true" ]; then
+  pathToFile="pkg/applicationdefinitions/system-applications/$APPLICATION_NAME.yaml"
+else
+  pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATION_NAME-app.yaml"
+fi
 
-pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATION_NAME-app.yaml"
 echodate "File path: $pathToFile"
 
 if [[ -s "$pathToFile" ]]; then

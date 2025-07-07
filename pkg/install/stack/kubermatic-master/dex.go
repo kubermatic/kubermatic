@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	"k8s.io/utils/strings/slices"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,17 +42,6 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	chartName := DexChartName
 	releaseName := DexReleaseName
 	namespace := DexNamespace
-
-	useNewDexChart, _ := opt.HelmValues.GetBool(yamled.Path{"useNewDexChart"})
-	if !useNewDexChart {
-		logger.Warn("Consider migrating to the new Dex Helm chart by setting useNewDexChart.")
-		logger.Warn("Please see the migration guide at https://docs.kubermatic.com/kubermatic/v2.27/installation/upgrading/upgrade-from-2.26-to-2.27/#dex-v242")
-		logger.Warn("for more information.")
-
-		chartName = LegacyDexChartName
-		releaseName = LegacyDexReleaseName
-		namespace = LegacyDexNamespace
-	}
 
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
@@ -82,26 +70,6 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	}
 
 	logger.Info("✅ Success.")
-
-	if opt.RemoveOauthRelease && useNewDexChart {
-		release, err := helmClient.GetRelease(LegacyDexNamespace, LegacyDexReleaseName)
-		if err != nil {
-			return fmt.Errorf("failed to check for a previous %s release: %w", LegacyDexReleaseName, err)
-		}
-
-		if release != nil {
-			logger.Infof("🧹 Deleting previous %s Helm release…", LegacyDexReleaseName)
-
-			err := helmClient.UninstallRelease(LegacyDexNamespace, LegacyDexReleaseName)
-			if err != nil {
-				return fmt.Errorf("failed to delete release: %w", err)
-			}
-
-			logger.Info("✅ Success.")
-		} else {
-			logger.Debugf("Found no previous %s Helm release to remove.", LegacyDexReleaseName)
-		}
-	}
 
 	return nil
 }

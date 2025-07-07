@@ -56,6 +56,7 @@ require (
 	github.com/hetznercloud/hcloud-go/v2 v2.21.0
 	github.com/jackpal/gateway v1.0.14
 	github.com/kubermatic/grafanasdk v0.9.13
+	github.com/kyverno/kyverno v1.13.4
 	github.com/minio/minio-go/v7 v7.0.69
 	github.com/nutanix-cloud-native/prism-go-client v0.5.1
 	github.com/olekukonko/tablewriter v0.0.5
@@ -98,8 +99,8 @@ require (
 	k8c.io/kubelb v1.1.2
 	k8c.io/kubeone v1.7.3
 	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
-	k8c.io/machine-controller/sdk v0.0.0-20250520212857-7a93ac526de3
-	k8c.io/operating-system-manager v1.6.1-0.20250521122801-3f206c9b0263
+	k8c.io/machine-controller/sdk v1.62.0
+	k8c.io/operating-system-manager v1.7.1-0.20250704091613-71af543cb934
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.32.1
 	k8s.io/apiextensions-apiserver v0.32.1
@@ -122,7 +123,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
-require github.com/kyverno/kyverno v1.13.4
+require gopkg.in/yaml.v2 v2.4.0
 
 require (
 	cel.dev/expr v0.19.1 // indirect
@@ -254,7 +255,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.1 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -481,7 +482,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/validator.v2 v2.0.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/component-base v0.32.1 // indirect
 	k8s.io/gengo/v2 v2.0.0-20240911193312-2b36238f13e9 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect

@@ -270,21 +270,62 @@ func prepareKubermaticConfiguration(dir, kkpEndpoint string) (string, error) {
 }
 
 func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
+	var imagePullSecret string
+
+	kubermaticFile := filepath.Join(dir, "kubermatic.example.yaml")
+	if f, err := os.Open(kubermaticFile); err == nil {
+		defer f.Close()
+
+		kubermaticDoc, err := yamled.Load(f)
+		if err == nil {
+			if secret, ok := kubermaticDoc.GetString(yamled.Path{"spec", "imagePullSecret"}); ok && secret != "" {
+				imagePullSecret = secret
+			}
+		}
+	}
+
 	return prepareYAMLFile(dir, "values", func(doc *yamled.Document) error {
-		doc.Set(yamled.Path{"dex", "ingress", "scheme"}, "http")
-		doc.Set(yamled.Path{"dex", "ingress", "host"}, kkpEndpoint)
+		doc.Set(yamled.Path{"dex", "config", "enablePasswordDB"}, true)
+		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", kkpEndpoint))
 		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
+		doc.Set(yamled.Path{"nginx", "controller", "extraArgs", "update-status"}, "true")
 		doc.Remove(yamled.Path{"minio"})
 
-		clients, ok := doc.GetArray(yamled.Path{"dex", "clients"})
+		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
+			"className": "nginx",
+			"enabled":   true,
+			"annotations": map[string]interface{}{
+				"cert-manager.io/cluster-issuer": "letsencrypt-staging",
+			},
+			"hosts": []map[string]interface{}{
+				{
+					"host": kkpEndpoint,
+					"paths": []map[string]interface{}{
+						{
+							"path":     "/dex",
+							"pathType": "ImplementationSpecific",
+						},
+					},
+				},
+			},
+			"tls": []map[string]interface{}{},
+		})
+
+		// Set the imagePullSecret from kubermatic.example.yaml
+		// This ensures both configurations use the same value
+		if imagePullSecret != "" {
+			doc.Set(yamled.Path{"kubermaticOperator", "imagePullSecret"}, imagePullSecret)
+		}
+
+		clients, ok := doc.GetArray(yamled.Path{"dex", "config", "staticClients"})
 		if !ok {
 			return errors.New("expected to find Dex clients, but got none")
 		}
 
 		for i := range clients {
-			doc.Set(yamled.Path{"dex", "clients", i, "secret"}, randomString(32))
+			doc.Set(yamled.Path{"dex", "config", "staticClients", i, "secret"}, randomString(32))
 
-			redirectURIs, _ := doc.GetArray(yamled.Path{"dex", "clients", i, "RedirectURIs"})
+			redirectURIs, _ := doc.GetArray(yamled.Path{"dex", "config", "staticClients", i, "RedirectURIs"})
 			for j, redirectURI := range redirectURIs {
 				if stringURI, ok := redirectURI.(string); ok {
 					u, err := url.Parse(stringURI)
@@ -295,7 +336,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 					u.Scheme = "http"
 					u.Host = kkpEndpoint
 
-					doc.Set(yamled.Path{"dex", "clients", i, "RedirectURIs", j}, u.String())
+					doc.Set(yamled.Path{"dex", "config", "staticClients", i, "RedirectURIs", j}, u.String())
 				}
 			}
 		}

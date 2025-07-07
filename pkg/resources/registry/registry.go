@@ -79,10 +79,6 @@ func RewriteImage(image, overwriteRegistry string) (string, error) {
 	}
 
 	domain := reference.Domain(named)
-	origDomain := domain
-	if origDomain == "" {
-		origDomain = RegistryDocker
-	}
 
 	if overwriteRegistry != "" {
 		domain = overwriteRegistry
@@ -98,15 +94,8 @@ func RewriteImage(image, overwriteRegistry string) (string, error) {
 		image += ":" + tagged.Tag()
 	}
 
-	// If the registry (domain) has been changed, remove the
-	// digest as it's unlikely that a) the repo digest has
-	// been kept when mirroring the image and b) the chance
-	// of a local registry being poisoned with bad images is
-	// much lower anyhow.
-	if origDomain == domain {
-		if digested, ok := named.(reference.Digested); ok {
-			image += "@" + string(digested.Digest())
-		}
+	if digested, ok := named.(reference.Digested); ok {
+		image += "@" + digested.Digest().String()
 	}
 
 	return image, nil

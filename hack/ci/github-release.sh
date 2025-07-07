@@ -36,7 +36,7 @@ export GITHUB_AUTH="Authorization: token $GITHUB_TOKEN"
 
 # this stops execution when GIT_TAG is not overridden and
 # we are not on a tagged revision
-export GIT_TAG="${GIT_TAG:-$(git describe --tags --exact-match)}"
+export GIT_TAG="${GIT_TAG:-$(git describe --tags --exact-match --match='v*')}"
 export GIT_BRANCH="${GIT_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 export GIT_HEAD="${GIT_HEAD:-$(git rev-parse HEAD)}"
 export GIT_REPO="${GIT_REPO:-kubermatic/kubermatic}"
@@ -260,7 +260,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ce.yaml \
@@ -303,7 +302,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/mla \
     charts/monitoring \
     charts/nginx-ingress-controller \
-    charts/oauth \
     charts/s3-exporter \
     charts/telemetry \
     charts/values.example.ee.yaml \

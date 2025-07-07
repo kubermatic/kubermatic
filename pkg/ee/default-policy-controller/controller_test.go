@@ -27,6 +27,7 @@ package defaultpolicycontroller
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"go.uber.org/zap"
@@ -367,6 +368,38 @@ func TestReconcile(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			name:    "scenario 10: enforced policy binding is immediately recreated when deleted",
+			cluster: genCluster(clusterName, defaultDatacenter, true),
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate(policyName, false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, policyTemplates []kubermaticv1.PolicyTemplate, client ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				bindings := &kubermaticv1.PolicyBindingList{}
+				if err := client.List(context.Background(), bindings, ctrlruntimeclient.InNamespace(clusterNamespace)); err != nil {
+					return fmt.Errorf("failed to list PolicyBindings: %w", err)
+				}
+
+				if len(bindings.Items) != 1 {
+					return fmt.Errorf("expected 1 policy binding, but got %d", len(bindings.Items))
+				}
+
+				originalBinding := bindings.Items[0]
+				if originalBinding.Name != policyName {
+					return fmt.Errorf("expected policy binding named %s, but got %s", policyName, originalBinding.Name)
+				}
+
+				if originalBinding.Annotations[kubermaticv1.AnnotationPolicyEnforced] != "true" {
+					return fmt.Errorf("binding %s should have enforced annotation", originalBinding.Name)
+				}
+
+				return nil
+			},
+		},
 	}
 
 	for _, test := range testCases {
@@ -420,6 +453,501 @@ func TestReconcile(t *testing.T) {
 
 			if err := test.validate(newCluster, test.policyTemplates, seedClient, reconcileErr); err != nil {
 				t.Fatalf("Test failed: %v", err)
+			}
+		})
+	}
+}
+
+// TestSelectorTargeting tests selector scenarios.
+func TestSelectorTargeting(t *testing.T) {
+	log := zap.NewNop().Sugar()
+
+	testCases := []struct {
+		name             string
+		clusters         []*kubermaticv1.Cluster
+		projects         []*kubermaticv1.Project
+		policyTemplates  []kubermaticv1.PolicyTemplate
+		expectedBindings map[string][]string
+	}{
+		{
+			name: "global visibility with project selector only",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project2", map[string]string{"env": "prod"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "frontend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-backend", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil,
+					&metav1.LabelSelector{MatchLabels: map[string]string{"team": "backend"}}),
+				*genPolicyTemplate("policy-frontend", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil,
+					&metav1.LabelSelector{MatchLabels: map[string]string{"team": "frontend"}}),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-backend"},
+				"cluster2": {"policy-frontend"},
+			},
+		},
+		{
+			name: "global visibility with cluster selector only",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test", "tier": "dev"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod", "tier": "production"}),
+				genClusterWithProject("cluster3", "project1", map[string]string{"env": "staging", "tier": "dev"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-dev", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{MatchLabels: map[string]string{"tier": "dev"}}, nil),
+				*genPolicyTemplate("policy-prod", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{MatchLabels: map[string]string{"env": "prod"}}, nil),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-dev"},
+				"cluster2": {"policy-prod"},
+				"cluster3": {"policy-dev"},
+			},
+		},
+		{
+			name: "global visibility with both project and cluster selectors (AND logic)",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test", "critical": "true"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod", "critical": "false"}),
+				genClusterWithProject("cluster3", "project2", map[string]string{"env": "test", "critical": "true"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend", "priority": "high"}),
+				genProject("project2", map[string]string{"team": "frontend", "priority": "low"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-critical-backend", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{MatchLabels: map[string]string{"critical": "true"}},
+					&metav1.LabelSelector{MatchLabels: map[string]string{"team": "backend"}}),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-critical-backend"},
+				"cluster2": {},
+				"cluster3": {},
+			},
+		},
+		{
+			name: "project visibility with cluster selector",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod"}),
+				genClusterWithProject("cluster3", "project2", map[string]string{"env": "test"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "backend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-test", false, true, kubermaticv1.PolicyTemplateVisibilityProject, "project1",
+					&metav1.LabelSelector{MatchLabels: map[string]string{"env": "test"}}, nil),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-test"},
+				"cluster2": {},
+				"cluster3": {},
+			},
+		},
+		{
+			name: "empty selectors should match all",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project2", map[string]string{"env": "prod"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "frontend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-all", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{}, &metav1.LabelSelector{}),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-all"},
+				"cluster2": {"policy-all"},
+			},
+		},
+		{
+			name: "match expressions in selectors",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test", "version": "1.25"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod", "version": "1.24"}),
+				genClusterWithProject("cluster3", "project1", map[string]string{"env": "dev", "version": "1.26"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplateWithExpressions("policy-not-prod", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "env", Operator: metav1.LabelSelectorOpNotIn, Values: []string{"prod"}},
+						},
+					}, nil),
+				*genPolicyTemplateWithExpressions("policy-newer-versions", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "version", Operator: metav1.LabelSelectorOpIn, Values: []string{"1.25", "1.26"}},
+						},
+					}, nil),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-not-prod", "policy-newer-versions"},
+				"cluster2": {},
+				"cluster3": {"policy-not-prod", "policy-newer-versions"},
+			},
+		},
+		{
+			name: "project selector with match expressions",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project2", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster3", "project3", map[string]string{"env": "test"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"tier": "premium", "status": "active"}),
+				genProject("project2", map[string]string{"tier": "basic", "status": "active"}),
+				genProject("project3", map[string]string{"tier": "premium", "status": "inactive"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplateWithExpressions("policy-active-projects", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					nil,
+					&metav1.LabelSelector{
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "status", Operator: metav1.LabelSelectorOpIn, Values: []string{"active"}},
+						},
+					}),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-active-projects"},
+				"cluster2": {"policy-active-projects"},
+				"cluster3": {},
+			},
+		},
+		{
+			name: "no matching selectors",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-staging", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{MatchLabels: map[string]string{"env": "staging"}}, nil),
+				*genPolicyTemplate("policy-frontend", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil,
+					&metav1.LabelSelector{MatchLabels: map[string]string{"team": "frontend"}}),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {},
+				"cluster2": {},
+			},
+		},
+		{
+			name: "complex combined selectors with match labels and expressions",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test", "region": "us-east", "critical": "true"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod", "region": "us-west", "critical": "true"}),
+				genClusterWithProject("cluster3", "project2", map[string]string{"env": "prod", "region": "us-east", "critical": "false"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend", "budget": "unlimited"}),
+				genProject("project2", map[string]string{"team": "frontend", "budget": "limited"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplateWithExpressions("policy-complex", false, true, kubermaticv1.PolicyTemplateVisibilityGlobal, "",
+					&metav1.LabelSelector{
+						MatchLabels: map[string]string{"critical": "true"},
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "region", Operator: metav1.LabelSelectorOpIn, Values: []string{"us-east", "us-west"}},
+						},
+					},
+					&metav1.LabelSelector{
+						MatchLabels: map[string]string{"team": "backend"},
+						MatchExpressions: []metav1.LabelSelectorRequirement{
+							{Key: "budget", Operator: metav1.LabelSelectorOpNotIn, Values: []string{"limited"}},
+						},
+					}),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-complex"},
+				"cluster2": {"policy-complex"},
+				"cluster3": {},
+			},
+		},
+		{
+			name: "project visibility with project ID and empty cluster selector",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project1", map[string]string{"env": "prod"}),
+				genClusterWithProject("cluster3", "project2", map[string]string{"env": "test"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "backend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-project1", false, true, kubermaticv1.PolicyTemplateVisibilityProject, "project1",
+					&metav1.LabelSelector{}, nil),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {"policy-project1"},
+				"cluster2": {"policy-project1"},
+				"cluster3": {},
+			},
+		},
+		{
+			name: "invalid visibility should not match any clusters",
+			clusters: []*kubermaticv1.Cluster{
+				genClusterWithProject("cluster1", "project1", map[string]string{"env": "test"}),
+				genClusterWithProject("cluster2", "project2", map[string]string{"env": "prod"}),
+			},
+			projects: []*kubermaticv1.Project{
+				genProject("project1", map[string]string{"team": "backend"}),
+				genProject("project2", map[string]string{"team": "frontend"}),
+			},
+			policyTemplates: []kubermaticv1.PolicyTemplate{
+				*genPolicyTemplate("policy-invalid", false, true, "InvalidVisibility", "",
+					&metav1.LabelSelector{MatchLabels: map[string]string{"env": "test"}}, nil),
+			},
+			expectedBindings: map[string][]string{
+				"cluster1": {},
+				"cluster2": {},
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			var objects []ctrlruntimeclient.Object
+
+			// Add projects
+			for _, project := range test.projects {
+				objects = append(objects, project)
+			}
+
+			// Add clusters and their namespaces
+			for _, cluster := range test.clusters {
+				objects = append(objects, cluster)
+				objects = append(objects, &corev1.Namespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: cluster.Status.NamespaceName,
+					},
+				})
+			}
+
+			// Add policy templates
+			for _, template := range test.policyTemplates {
+				templateCopy := template
+				objects = append(objects, &templateCopy)
+			}
+
+			// Create a seed client with our test objects
+			seedClient := fake.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(objects...).
+				Build()
+
+			ctx := context.Background()
+
+			r := &Reconciler{
+				Client:       seedClient,
+				recorder:     &record.FakeRecorder{},
+				log:          log,
+				versions:     kubermatic.GetFakeVersions(),
+				configGetter: kubermatictest.NewConfigGetter(nil),
+				seedGetter: func() (*kubermaticv1.Seed, error) {
+					return &kubermaticv1.Seed{
+						Spec: kubermaticv1.SeedSpec{
+							Datacenters: map[string]kubermaticv1.Datacenter{
+								defaultDatacenter: {
+									Spec: kubermaticv1.DatacenterSpec{
+										Hetzner: &kubermaticv1.DatacenterSpecHetzner{
+											Datacenter: "hel1",
+											Network:    "default",
+										},
+									},
+								},
+							},
+						},
+					}, nil
+				},
+			}
+
+			// Reconcile each cluster
+			for _, cluster := range test.clusters {
+				nName := types.NamespacedName{Name: cluster.Name}
+				_, reconcileErr := r.Reconcile(ctx, reconcile.Request{NamespacedName: nName})
+				if reconcileErr != nil {
+					t.Fatalf("reconciling cluster %s should not have caused an error, but did: %v", cluster.Name, reconcileErr)
+				}
+			}
+
+			// Validate expected bindings for each cluster
+			for _, cluster := range test.clusters {
+				expectedPolicies := test.expectedBindings[cluster.Name]
+
+				bindings := &kubermaticv1.PolicyBindingList{}
+				if err := seedClient.List(ctx, bindings, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+					t.Fatalf("failed to list PolicyBindings for cluster %s: %v", cluster.Name, err)
+				}
+
+				if len(bindings.Items) != len(expectedPolicies) {
+					t.Errorf("cluster %s: expected %d policy bindings, but got %d", cluster.Name, len(expectedPolicies), len(bindings.Items))
+					continue
+				}
+
+				// Check that all expected policies are present
+				actualPolicies := make(map[string]bool)
+				for _, binding := range bindings.Items {
+					actualPolicies[binding.Name] = true
+				}
+
+				for _, expectedPolicy := range expectedPolicies {
+					if !actualPolicies[expectedPolicy] {
+						t.Errorf("cluster %s: expected policy binding %s not found", cluster.Name, expectedPolicy)
+					}
+				}
+
+				// Check that no unexpected policies are present
+				for actualPolicy := range actualPolicies {
+					found := false
+					for _, expectedPolicy := range expectedPolicies {
+						if actualPolicy == expectedPolicy {
+							found = true
+							break
+						}
+					}
+					if !found {
+						t.Errorf("cluster %s: unexpected policy binding %s found", cluster.Name, actualPolicy)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestPolicyBindingDeletionMapping(t *testing.T) {
+	log := zap.NewNop().Sugar()
+
+	testCases := []struct {
+		name                 string
+		policyBinding        *kubermaticv1.PolicyBinding
+		cluster              *kubermaticv1.Cluster
+		policyTemplate       *kubermaticv1.PolicyTemplate
+		expectReconciliation bool
+		description          string
+	}{
+		{
+			name: "enforced policy binding deletion should trigger reconciliation",
+			policyBinding: &kubermaticv1.PolicyBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-enforced-policy",
+					Namespace: "cluster-test-cluster",
+				},
+				Spec: kubermaticv1.PolicyBindingSpec{
+					PolicyTemplateRef: corev1.ObjectReference{
+						Name: "test-enforced-policy",
+					},
+				},
+			},
+			cluster: genCluster("test-cluster", defaultDatacenter, true),
+			policyTemplate: genPolicyTemplate("test-enforced-policy", false, true,
+				kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
+			expectReconciliation: true,
+			description:          "Should trigger reconciliation for enforced policy",
+		},
+		{
+			name: "non-enforced policy binding deletion should not trigger reconciliation",
+			policyBinding: &kubermaticv1.PolicyBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-default-policy",
+					Namespace: "cluster-test-cluster",
+				},
+				Spec: kubermaticv1.PolicyBindingSpec{
+					PolicyTemplateRef: corev1.ObjectReference{
+						Name: "test-default-policy",
+					},
+				},
+			},
+			cluster: genCluster("test-cluster", defaultDatacenter, true),
+			policyTemplate: genPolicyTemplate("test-default-policy", true, false,
+				kubermaticv1.PolicyTemplateVisibilityGlobal, "", nil, nil),
+			expectReconciliation: false,
+			description:          "Should not trigger reconciliation for non-enforced policy",
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			objects := []ctrlruntimeclient.Object{
+				test.cluster,
+				test.policyTemplate,
+			}
+
+			// Create a client with our test objects
+			client := fake.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(objects...).
+				Build()
+
+			ctx := context.Background()
+
+			r := &Reconciler{
+				Client:   client,
+				recorder: &record.FakeRecorder{},
+				log:      log,
+				versions: kubermatic.GetFakeVersions(),
+			}
+
+			var requests []reconcile.Request
+			clusterNamespace := test.policyBinding.Namespace
+			if strings.HasPrefix(clusterNamespace, "cluster-") {
+				clusterName := strings.TrimPrefix(clusterNamespace, "cluster-")
+
+				// Verify the cluster exists
+				cluster := &kubermaticv1.Cluster{}
+				if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err == nil {
+					// Check if the referenced PolicyTemplate is enforced
+					if test.policyBinding.Spec.PolicyTemplateRef.Name != "" {
+						policyTemplate := &kubermaticv1.PolicyTemplate{}
+						if err := r.Get(ctx, types.NamespacedName{Name: test.policyBinding.Spec.PolicyTemplateRef.Name}, policyTemplate); err == nil {
+							if policyTemplate.Spec.Enforced && r.isClusterTargeted(ctx, cluster, policyTemplate) {
+								requests = append(requests, reconcile.Request{
+									NamespacedName: types.NamespacedName{
+										Name: clusterName,
+									},
+								})
+							}
+						}
+					}
+				}
+			}
+
+			if test.expectReconciliation {
+				if len(requests) != 1 {
+					t.Errorf("%s: expected 1 reconcile request, got %d", test.description, len(requests))
+					return
+				}
+				expectedClusterName := strings.TrimPrefix(test.policyBinding.Namespace, "cluster-")
+				if test.policyBinding.Namespace == "cluster-non-existent" {
+					expectedClusterName = "non-existent"
+				}
+				if requests[0].Name != expectedClusterName {
+					t.Errorf("%s: expected cluster name %s, got %s", test.description, expectedClusterName, requests[0].Name)
+				}
+			} else if len(requests) > 0 {
+				t.Errorf("%s: expected 0 reconcile requests, got %d", test.description, len(requests))
 			}
 		})
 	}
@@ -511,6 +1039,69 @@ func genClusterWithDefaultPolicyBindingsCreated(name, datacenter string, withNam
 }
 
 func genPolicyTemplate(name string, defaultPolicy, enforced bool, visibility string, projectID string, clusterSelector, projectSelector *metav1.LabelSelector) *kubermaticv1.PolicyTemplate {
+	template := &kubermaticv1.PolicyTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: kubermaticv1.PolicyTemplateSpec{
+			Default:    defaultPolicy,
+			Enforced:   enforced,
+			Visibility: visibility,
+			ProjectID:  projectID,
+		},
+	}
+
+	if clusterSelector != nil || projectSelector != nil {
+		template.Spec.Target = &kubermaticv1.PolicyTemplateTarget{
+			ClusterSelector: clusterSelector,
+			ProjectSelector: projectSelector,
+		}
+	}
+
+	return template
+}
+
+func genClusterWithProject(name, projectID string, labels map[string]string) *kubermaticv1.Cluster {
+	clusterLabels := map[string]string{
+		kubermaticv1.ProjectIDLabelKey: projectID,
+		"environment":                  "test",
+	}
+	// Merge provided labels
+	for k, v := range labels {
+		clusterLabels[k] = v
+	}
+
+	return &kubermaticv1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: clusterLabels,
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Version: *kubernetesVersion,
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: "global",
+			},
+		},
+		Status: kubermaticv1.ClusterStatus{
+			ExtendedHealth: healthy(),
+			NamespaceName:  "cluster-" + name,
+		},
+	}
+}
+
+func genProject(name string, labels map[string]string) *kubermaticv1.Project {
+	return &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: name,
+		},
+	}
+}
+
+func genPolicyTemplateWithExpressions(name string, defaultPolicy, enforced bool, visibility string, projectID string, clusterSelector, projectSelector *metav1.LabelSelector) *kubermaticv1.PolicyTemplate {
 	template := &kubermaticv1.PolicyTemplate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,

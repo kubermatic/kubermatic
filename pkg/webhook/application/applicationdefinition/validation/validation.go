@@ -74,8 +74,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		allErrs = append(allErrs, validation.ValidateApplicationDefinitionUpdate(*ad, *oldAD)...)
 
 	case admissionv1.Delete:
-		// NOP we always allow delete operations
+		if err := h.decoder.DecodeRaw(req.OldObject, oldAD); err != nil {
+			return webhook.Errored(http.StatusBadRequest, err)
+		}
 
+		allErrs = append(allErrs, validation.ValidateApplicationDefinitionDelete(*oldAD)...)
 	default:
 		return webhook.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on ApplicationdDefinition resources", req.Operation))
 	}

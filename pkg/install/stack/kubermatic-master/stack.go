@@ -56,10 +56,6 @@ const (
 	DexReleaseName = DexChartName
 	DexNamespace   = DexChartName
 
-	LegacyDexChartName   = "oauth"
-	LegacyDexReleaseName = LegacyDexChartName
-	LegacyDexNamespace   = LegacyDexChartName
-
 	KubermaticOperatorChartName      = "kubermatic-operator"
 	KubermaticOperatorDeploymentName = "kubermatic-operator" // technically defined in our Helm chart
 	KubermaticOperatorReleaseName    = KubermaticOperatorChartName
@@ -116,10 +112,6 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Telemetry: %w", err)
-	}
-
-	if err := deployDefaultApplicationCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy default Application catalog: %w", err)
 	}
 
 	if err := deployDefaultPolicyTemplateCatalog(ctx, opt.Logger, opt.KubeClient, opt); err != nil {

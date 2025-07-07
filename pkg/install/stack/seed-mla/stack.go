@@ -178,9 +178,9 @@ func deployNodeExporter(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	if release != nil && release.Version.LessThan(v28) && !chart.Version.LessThan(v28) {
 		sublogger.Warn("Installation process will temporarily remove and then upgrade DaemonSet used by Node Exporter.")
 
-		err = upgradeNodeExporterDaemonSets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		err = upgradeNodeExporterDaemonSet(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare Node Exporter for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Node Exporter daemonset: %s", err)
 		}
 	}
 
@@ -222,7 +222,7 @@ func deployKubeStateMetrics(ctx context.Context, logger *logrus.Entry, kubeClien
 
 		err = upgradeKubeStateMetricsDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare kube-state-metrics for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Kube State Metrics deployment: %s", err)
 		}
 	}
 
@@ -295,7 +295,7 @@ func deployBlackboxExporter(ctx context.Context, logger *logrus.Entry, kubeClien
 
 		err = upgradeBlackboxExporterDeployment(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare blackbox-exporter for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Blackbox Exporter deployment: %s", err)
 		}
 	}
 
@@ -333,11 +333,11 @@ func deployAlertManager(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	v28 := semverlib.MustParse("2.28.0")
 
 	if release != nil && release.Version.LessThan(v28) && !chart.Version.LessThan(v28) {
-		sublogger.Warn("Installation process will temporarily remove and then upgrade Alertmanager Statefulsets.")
+		sublogger.Warn("Installation process will temporarily remove and then upgrade Alertmanager Statefulset.")
 
-		err = upgradeAlertmanagerStatefulsets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		err = upgradeAlertmanagerStatefulset(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
-			return fmt.Errorf("failed to prepare Alertmanager for upgrade: %w", err)
+			sublogger.Warnf("Failed to temporarily remove Alertmanager Statefulset: %s", err)
 		}
 	}
 
@@ -537,7 +537,7 @@ func deployPromtail(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 	return nil
 }
 
-func upgradeAlertmanagerStatefulsets(
+func upgradeAlertmanagerStatefulset(
 	ctx context.Context,
 	logger *logrus.Entry,
 	kubeClient ctrlruntimeclient.Client,
@@ -550,58 +550,36 @@ func upgradeAlertmanagerStatefulsets(
 	// 1: find the old deployment
 	logger.Info("Backing up old alertmanager statefulset…")
 
-	statefulsetsList := &unstructured.UnstructuredList{}
-	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+	statefulset := &unstructured.Unstructured{}
+	statefulset.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps",
-		Kind:    "StatefulSetList",
+		Kind:    "StatefulSet",
 		Version: "v1",
 	})
 
-	alertmanagerSts, err := getAlertmanagerStatefulsets(ctx, kubeClient, release, "alertmanager")
-	if err != nil {
-		return err
-	}
+	key := types.NamespacedName{Name: AlertManagerReleaseName, Namespace: AlertManagerNamespace}
 
-	statefulsetsList.Items = append(statefulsetsList.Items, alertmanagerSts.Items...)
+	err := kubeClient.Get(ctx, key, statefulset)
+
+	if err != nil {
+		return fmt.Errorf("failed get statefulset: %w", err)
+	}
 
 	// 2: store the statefulset for backup
 	backupTS := time.Now().Format("2006-01-02T150405")
 	filename := fmt.Sprintf("backup_%s_%s.yaml", AlertManagerReleaseName, backupTS)
 	logger.Infof("Attempting to store the statefulset in file: %s", filename)
-	if err := util.DumpResources(ctx, filename, statefulsetsList.Items); err != nil {
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*statefulset}); err != nil {
 		return fmt.Errorf("failed to back up the statefulsets, it is not removed: %w", err)
 	}
 
 	// 3: delete the statefulset
 	logger.Info("Deleting the statefulset from the cluster")
-	for _, obj := range statefulsetsList.Items {
-		if err := kubeClient.Delete(ctx, &obj); err != nil {
-			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	if err := kubeClient.Delete(ctx, statefulset); err != nil {
+		return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
+
 	return nil
-}
-
-func getAlertmanagerStatefulsets(
-	ctx context.Context,
-	kubeClient ctrlruntimeclient.Client,
-	release *helm.Release,
-	appName string,
-) (*unstructured.UnstructuredList, error) {
-	statefulsetsList := &unstructured.UnstructuredList{}
-	statefulsetsList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apps",
-		Kind:    "StatefulSetList",
-		Version: "v1",
-	})
-
-	alertmanagerMatcher := ctrlruntimeclient.MatchingLabels{
-		"app": appName,
-	}
-	if err := kubeClient.List(ctx, statefulsetsList, ctrlruntimeclient.InNamespace(AlertManagerNamespace), alertmanagerMatcher); err != nil {
-		return nil, fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
-	}
-	return statefulsetsList, nil
 }
 
 func upgradeKubeStateMetricsDeployment(
@@ -625,8 +603,10 @@ func upgradeKubeStateMetricsDeployment(
 	})
 	key := types.NamespacedName{Name: KubeStateMetricsReleaseName, Namespace: KubeStateMetricsNamespace}
 
-	if err := kubeClient.Get(ctx, key, deployment); err != nil {
-		return fmt.Errorf("Error querying API for the existing Deployment object, aborting upgrade process.")
+	err := kubeClient.Get(ctx, key, deployment)
+
+	if err != nil {
+		return fmt.Errorf("failed get deployment: %w", err)
 	}
 
 	// 2: store the deployment for backup
@@ -646,7 +626,7 @@ func upgradeKubeStateMetricsDeployment(
 	return nil
 }
 
-func upgradeNodeExporterDaemonSets(
+func upgradeNodeExporterDaemonSet(
 	ctx context.Context,
 	logger *logrus.Entry,
 	kubeClient ctrlruntimeclient.Client,
@@ -659,35 +639,35 @@ func upgradeNodeExporterDaemonSets(
 	// 1: find the old daemonset
 	logger.Info("Backing up old Node Exporter daemonset…")
 
-	daemonsetsList := &unstructured.UnstructuredList{}
-	daemonsetsList.SetGroupVersionKind(schema.GroupVersionKind{
+	daemonset := &unstructured.Unstructured{}
+	daemonset.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "apps",
-		Kind:    "DaemonSetList",
+		Kind:    "DaemonSet",
 		Version: "v1",
 	})
 
-	nodeExporterMatcher := ctrlruntimeclient.MatchingLabels{
-		"app.kubernetes.io/name": NodeExporterReleaseName,
-	}
-	if err := kubeClient.List(ctx, daemonsetsList, ctrlruntimeclient.InNamespace(NodeExporterNamespace), nodeExporterMatcher); err != nil {
-		return fmt.Errorf("error querying API for the existing DaemonSet object, aborting upgrade process.")
+	key := types.NamespacedName{Name: NodeExporterReleaseName, Namespace: NodeExporterNamespace}
+
+	err := kubeClient.Get(ctx, key, daemonset)
+
+	if err != nil {
+		return fmt.Errorf("failed get daemonset: %w", err)
 	}
 
-	// 2: store the daemonset for backup
+	// 2: if deamonset exists, then store the daemonset for backup
 	backupTS := time.Now().Format("2006-01-02T150405")
 	filename := fmt.Sprintf("backup_%s_%s.yaml", NodeExporterReleaseName, backupTS)
-	logger.Infof("Attempting to store the daemonsets in file: %s", filename)
-	if err := util.DumpResources(ctx, filename, daemonsetsList.Items); err != nil {
-		return fmt.Errorf("failed to back up the daemonsets, it is not removed: %w", err)
+	logger.Infof("Attempting to store the daemonset in file: %s", filename)
+	if err := util.DumpResources(ctx, filename, []unstructured.Unstructured{*daemonset}); err != nil {
+		return fmt.Errorf("failed to back up the daemonset, it is not removed: %w", err)
 	}
 
 	// 3: delete the daemonset
-	logger.Info("Deleting the daemonsets from the cluster")
-	for _, obj := range daemonsetsList.Items {
-		if err := kubeClient.Delete(ctx, &obj); err != nil {
-			return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
-		}
+	logger.Info("Deleting the daemonset from the cluster")
+	if err := kubeClient.Delete(ctx, daemonset); err != nil {
+		return fmt.Errorf("failed to remove the daemonset: %w\n\nuse backup file to check the changes and restore if needed", err)
 	}
+
 	return nil
 }
 
@@ -712,8 +692,10 @@ func upgradeBlackboxExporterDeployment(
 	})
 	key := types.NamespacedName{Name: BlackboxExporterReleaseName, Namespace: BlackboxExporterNamespace}
 
-	if err := kubeClient.Get(ctx, key, deployment); err != nil {
-		return fmt.Errorf("error querying API for the existing Deployment object, aborting upgrade process: %w", err)
+	err := kubeClient.Get(ctx, key, deployment)
+
+	if err != nil {
+		return fmt.Errorf("failed get deployment: %w", err)
 	}
 
 	// 2: store the deployment for backup

@@ -34,8 +34,9 @@ import (
 func SystemApplicationDefinitionReconcilerFactories(
 	logger *zap.SugaredLogger,
 	config *kubermaticv1.KubermaticConfiguration,
+	mirror bool,
 ) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
-	if config.Spec.SystemApplications.Disable {
+	if config.Spec.Applications.SystemApplications.Disable {
 		logger.Info("System applications are disabled, skipping deployment of system application definitions except Cilium.")
 		return nil, nil
 	}
@@ -45,15 +46,15 @@ func SystemApplicationDefinitionReconcilerFactories(
 		return nil, fmt.Errorf("failed to get system application definition files: %w", err)
 	}
 
-	filterApps := len(config.Spec.SystemApplications.Applications) > 0
+	filterApps := len(config.Spec.Applications.SystemApplications.Applications) > 0
 
 	requestedApps := make(map[string]struct{})
 	if filterApps {
-		for _, appName := range config.Spec.SystemApplications.Applications {
+		for _, appName := range config.Spec.Applications.SystemApplications.Applications {
 			requestedApps[appName] = struct{}{}
 		}
 
-		logger.Debugf("Installing only specified system applications: %+v", config.Spec.SystemApplications.Applications)
+		logger.Debugf("Installing only specified system applications: %+v", config.Spec.Applications.SystemApplications.Applications)
 	}
 
 	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(sysAppDefFiles))
@@ -76,7 +77,7 @@ func SystemApplicationDefinitionReconcilerFactories(
 			}
 		}
 
-		creators = append(creators, systemApplicationDefinitionReconcilerFactory(appDef, config))
+		creators = append(creators, systemApplicationDefinitionReconcilerFactory(appDef, config, mirror))
 	}
 
 	return creators, nil
@@ -86,6 +87,7 @@ func SystemApplicationDefinitionReconcilerFactories(
 func systemApplicationDefinitionReconcilerFactory(
 	fileAppDef *appskubermaticv1.ApplicationDefinition,
 	config *kubermaticv1.KubermaticConfiguration,
+	mirror bool,
 ) kkpreconciling.NamedApplicationDefinitionReconcilerFactory {
 	return func() (string, kkpreconciling.ApplicationDefinitionReconciler) {
 		return fileAppDef.Name, func(clusterAppDef *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error) {
@@ -114,10 +116,16 @@ func systemApplicationDefinitionReconcilerFactory(
 				fileAppDef.Spec.Selector.Datacenters = clusterAppDef.Spec.Selector.Datacenters
 			}
 
-			// Update the application definition (fileAppDef) according to the KubermaticConfiguration.
-			// When KubermaticConfiguration includes HelmRegistryConfigFile, we need to update the application definition
-			// to include the Helm credentials provided by the user in the cluster.
-			updateApplicationDefinition(fileAppDef, config)
+			// Update the application definition (fileAppDef) based on the KubermaticConfiguration.
+			// If the KubermaticConfiguration includes HelmRegistryConfigFile, update the application
+			// definition to incorporate the Helm credentials provided by the user in the cluster.
+			//
+			// When running mirror-images, leave the application definition unchanged. This ensures
+			// that charts are downloaded from the default upstream repositories used by KKP,
+			// preserving the original image references for discovery.
+			if !mirror {
+				updateApplicationDefinition(fileAppDef, config)
+			}
 
 			// Also, we need to ensure that the default values are set correctly. To do this:
 			// 1. Get the default values from the currently being reconciled application definition (clusterAppDef)
@@ -127,6 +135,7 @@ func systemApplicationDefinitionReconcilerFactory(
 				fileAppDef.Spec.DefaultValuesBlock = clusterAppDef.Spec.DefaultValuesBlock
 			}
 
+			clusterAppDef.Name = fileAppDef.Name
 			clusterAppDef.Spec = fileAppDef.Spec
 			return clusterAppDef, nil
 		}

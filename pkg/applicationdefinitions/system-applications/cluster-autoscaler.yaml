@@ -31,13 +31,16 @@ spec:
           helm:
             chartName: cluster-autoscaler
             chartVersion: 9.46.6
-            url: https://kubernetes.github.io/autoscaler
+            url: oci://quay.io/kubermatic/helm-charts
       version: 1.32.0
   defaultValuesBlock: |
     cloudProvider: clusterapi
     clusterAPIMode: incluster-incluster
     autoDiscovery:
       namespace: kube-system
+    securityContext:
+      seccompProfile:
+        type: RuntimeDefault
     image:
       # `Cluster.AutoscalerVersion` is injected by KKP based on the Kubernetes version of the cluster.
       tag: '{{ .Cluster.AutoscalerVersion }}'

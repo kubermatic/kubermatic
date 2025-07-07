@@ -18,11 +18,10 @@ metadata:
   name: kubermatic
   namespace: kubermatic
 spec:
-
   ingress:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
-    # this domain must match what you configured as dex.ingress.host
+    # this domain must match what you configured as dex.ingress.hosts[0].host
     # in the values.yaml
     domain: kkp.example.com
     certificateIssuer:

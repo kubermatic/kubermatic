@@ -33,6 +33,13 @@ iap:
   # to override this
   replicas: 2
 
+  # This configuration is merged with the per-deployment configuration when creating the
+  # oauth2-proxy ConfigMaps.
+  default_configuration:
+    ## avoid consent screen shown by Dex for applications secured via IAP. e.g. prometheus, grafana, etc
+    ## set to "force" for oauth-proxy's default behaviour
+    approval_prompt: none
+
   deployments:
     # alertmanager:
     #   name: alertmanager

@@ -25,9 +25,9 @@
 package backgroundcontrollerresources
 
 import (
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	commonseedresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
+	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/common"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,13 +39,13 @@ import (
 )
 
 // DeploymentReconciler returns the function to create and update the Kyverno background controller deployment.
-func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data kyverno.KyvernoData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
-		return commonseedresources.KyvernoBackgroundControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = commonseedresources.KyvernoLabels(commonseedresources.BackgroundControllerComponentNameLabel)
+		return kyverno.KyvernoBackgroundControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = kyverno.KyvernoLabels(kyverno.BackgroundControllerComponentNameLabel)
 
 			// Deployment spec
-			dep.Spec.Replicas = resources.Int32(2)
+			dep.Spec.Replicas = resources.Int32(kyverno.KyvernoBackgroundControllerReplicas)
 			dep.Spec.RevisionHistoryLimit = resources.Int32(10)
 			dep.Spec.Strategy = appsv1.DeploymentStrategy{
 				Type: appsv1.RollingUpdateDeploymentStrategyType,
@@ -57,15 +57,15 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 
 			// Selector must match template labels
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: commonseedresources.KyvernoSelectorLabels(commonseedresources.BackgroundControllerComponentNameLabel),
+				MatchLabels: kyverno.KyvernoSelectorLabels(kyverno.BackgroundControllerComponentNameLabel),
 			}
 
 			// Pod template
-			dep.Spec.Template.Labels = commonseedresources.KyvernoLabels(commonseedresources.BackgroundControllerComponentNameLabel)
+			dep.Spec.Template.Labels = kyverno.KyvernoLabels(kyverno.BackgroundControllerComponentNameLabel)
 
 			// Pod spec
 			dep.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
-			dep.Spec.Template.Spec.ServiceAccountName = commonseedresources.KyvernoBackgroundControllerServiceAccountName
+			dep.Spec.Template.Spec.ServiceAccountName = kyverno.KyvernoBackgroundControllerServiceAccountName
 
 			// Pod anti-affinity
 			dep.Spec.Template.Spec.Affinity = &corev1.Affinity{
@@ -79,7 +79,7 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 										{
 											Key:      "app.kubernetes.io/component",
 											Operator: metav1.LabelSelectorOpIn,
-											Values:   []string{commonseedresources.BackgroundControllerComponentNameLabel},
+											Values:   []string{kyverno.BackgroundControllerComponentNameLabel},
 										},
 									},
 								},
@@ -103,10 +103,11 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 			}
 
 			// Main container
+			repository := registry.Must(data.RewriteImage(kyverno.KyvernoRegistry + "/background-controller"))
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "controller",
-					Image:           "reg.kyverno.io/kyverno/background-controller:" + commonseedresources.KyvernoVersion,
+					Image:           repository + ":" + kyverno.KyvernoVersion,
 					ImagePullPolicy: corev1.PullPolicy("IfNotPresent"),
 					Ports: []corev1.ContainerPort{
 						{
@@ -126,19 +127,19 @@ func DeploymentReconciler(cluster *kubermaticv1.Cluster) reconciling.NamedDeploy
 					Env: []corev1.EnvVar{
 						{
 							Name:  "KYVERNO_SERVICEACCOUNT_NAME",
-							Value: commonseedresources.KyvernoBackgroundControllerServiceAccountName,
+							Value: kyverno.KyvernoBackgroundControllerServiceAccountName,
 						},
 						{
 							Name:  "KYVERNO_DEPLOYMENT",
-							Value: commonseedresources.KyvernoBackgroundControllerDeploymentName,
+							Value: kyverno.KyvernoBackgroundControllerDeploymentName,
 						},
 						{
 							Name:  "INIT_CONFIG",
-							Value: commonseedresources.KyvernoConfigMapName,
+							Value: kyverno.KyvernoConfigMapName,
 						},
 						{
 							Name:  "METRICS_CONFIG",
-							Value: commonseedresources.KyvernoMetricsConfigMapName,
+							Value: kyverno.KyvernoMetricsConfigMapName,
 						},
 						{
 							Name: "KYVERNO_POD_NAME",

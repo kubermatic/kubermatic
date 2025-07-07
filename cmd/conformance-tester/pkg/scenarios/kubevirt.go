@@ -32,7 +32,7 @@ import (
 
 const (
 	kubevirtImageHTTPServerSvc = "http://image-repo.kube-system.svc/images"
-	kubevirtCPUs               = 2
+	kubevirtVCPUs              = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
 	kubevirtStorageClassName   = "local-path"
@@ -86,7 +86,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 	}
 
 	cloudProviderSpec := provider.NewKubevirtConfig().
-		WithCPUs(kubevirtCPUs).
+		WithVCPUs(kubevirtVCPUs).
 		WithMemory(kubevirtMemory).
 		WithPrimaryDiskOSImage(image).
 		WithPrimaryDiskSize(kubevirtDiskSize).

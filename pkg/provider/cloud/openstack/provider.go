@@ -254,10 +254,13 @@ func (os *Provider) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 			return nil, err
 		}
 	}
-	if force || cluster.Spec.Cloud.Openstack.RouterID == "" {
-		cluster, err = reconcileRouter(ctx, netClient, cluster, update)
-		if err != nil {
-			return nil, err
+
+	if !kubernetes.HasAnnotationTrue(cluster, kubermaticv1.SkipRouterReconciliationAnnotation) {
+		if force || cluster.Spec.Cloud.Openstack.RouterID == "" {
+			cluster, err = reconcileRouter(ctx, netClient, cluster, update)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return cluster, nil

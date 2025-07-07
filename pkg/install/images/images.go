@@ -61,7 +61,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
-	"k8c.io/kubermatic/v2/pkg/resources/operatingsystemmanager"
+	"k8c.io/kubermatic/v2/pkg/resources/dns"
+	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 	"k8c.io/kubermatic/v2/pkg/version"
@@ -328,7 +329,7 @@ func LoadImages(ctx context.Context, log logrus.FieldLogger, archivePath string,
 	return nil
 }
 
-func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images []string, registry string, userAgent string) (int, int, error) {
+func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun, insecure bool, images []string, registry string, userAgent string) (int, int, error) {
 	imageList, err := GetImageSourceDestList(ctx, log, images, registry)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to generate list of images: %w", err)
@@ -341,7 +342,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 	var failedImages []string
 
 	for index, image := range imageList {
-		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent); err != nil {
+		if err := copyImage(ctx, log.WithField("image", fmt.Sprintf("%d/%d", index+1, len(imageList))), image, userAgent, insecure); err != nil {
 			log.Errorf("Failed to copy image: %v", err)
 			failedImages = append(failedImages, fmt.Sprintf("  - %s", image.Source))
 		}
@@ -355,7 +356,7 @@ func CopyImages(ctx context.Context, log logrus.FieldLogger, dryRun bool, images
 	return successCount, len(imageList), nil
 }
 
-func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string) error {
+func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDest, userAgent string, insecure bool) error {
 	log = log.WithFields(logrus.Fields{
 		"source-image": image.Source,
 		"target-image": image.Destination,
@@ -364,6 +365,10 @@ func copyImage(ctx context.Context, log logrus.FieldLogger, image ImageSourceDes
 	options := []crane.Option{
 		crane.WithContext(ctx),
 		crane.WithUserAgent(userAgent),
+	}
+
+	if insecure {
+		options = append(options, crane.Insecure)
 	}
 
 	log.Info("Copying image…")
@@ -479,17 +484,22 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, vpa.RecommenderDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, vpa.UpdaterDeploymentReconciler(config, kubermaticVersions))
 	deploymentReconcilers = append(deploymentReconcilers, mla.GatewayDeploymentReconciler(templateData, nil))
-	deploymentReconcilers = append(deploymentReconcilers, operatingsystemmanager.DeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, k8sdashboard.DeploymentReconciler(templateData.RewriteImage))
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 	deploymentReconcilers = append(deploymentReconcilers, vmwareclouddirector.ControllerDeploymentReconciler(templateData))
+	deploymentReconcilers = append(deploymentReconcilers, metricsserver.DeploymentReconciler(templateData))
+	deploymentReconcilers = append(deploymentReconcilers, dns.DeploymentReconciler(templateData))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
 	}
 
 	if templateData.IsKonnectivityEnabled() {
-		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(templateData.Cluster().Spec.Version, "dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime, registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil))
+		deploymentReconcilers = append(deploymentReconcilers, konnectivity.DeploymentReconciler(
+			templateData.Cluster().Spec.Version, templateData.Cluster(),
+			"dummy", 0, kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			registry.GetImageRewriterFunc(templateData.OverwriteRegistry), nil,
+		))
 	}
 
 	cronjobReconcilers := kubernetescontroller.GetCronJobReconcilers(templateData)

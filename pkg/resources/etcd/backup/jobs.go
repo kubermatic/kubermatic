@@ -178,7 +178,7 @@ func BackupJob(data etcdBackupData, config *kubermaticv1.EtcdBackupConfig, statu
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: caBundleConfigMapName(data.Cluster()),
+						Name: resources.BackupCABundleConfigMapName(data.Cluster()),
 					},
 				},
 			},
@@ -277,7 +277,7 @@ func BackupDeleteJob(data etcdBackupData, config *kubermaticv1.EtcdBackupConfig,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: caBundleConfigMapName(data.Cluster()),
+						Name: resources.BackupCABundleConfigMapName(data.Cluster()),
 					},
 				},
 			},

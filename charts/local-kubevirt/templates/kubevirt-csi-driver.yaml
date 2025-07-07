@@ -83,7 +83,7 @@ spec:
               value: /csi/csi.sock
             - name: DRIVER_REG_SOCK_PATH
               value: /var/lib/kubelet/plugins/csi.kubevirt.io/csi.sock
-          image: quay.io/openshift/origin-csi-node-driver-registrar:4.13.0
+          image: quay.io/openshift/origin-csi-node-driver-registrar:4.20.0
           imagePullPolicy: Always
           lifecycle:
             preStop:

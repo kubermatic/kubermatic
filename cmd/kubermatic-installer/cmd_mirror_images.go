@@ -56,6 +56,7 @@ type MirrorImagesOptions struct {
 	ArchivePath               string
 	LoadFrom                  string
 	DryRun                    bool
+	Insecure                  bool
 
 	AddonsPath  string
 	AddonsImage string
@@ -112,6 +113,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
+	cmd.PersistentFlags().BoolVar(&opt.Insecure, "insecure", false, "Insecure option to bypass HTTPS/TLS certificate verification")
+
 	cmd.PersistentFlags().BoolVar(&opt.IgnoreRepositoryOverrides, "ignore-repository-overrides", true, "Ignore any configured registry overrides in the referenced KubermaticConfiguration to reuse a configuration that already specifies overrides (note that custom tags will still be observed and that this does not affect Helm charts configured via values.yaml; defaults to true)")
 
 	cmd.PersistentFlags().StringVar(&opt.AddonsPath, "addons-path", "", "Path to a local directory containing KKP addons. Takes precedence over --addons-image")
@@ -340,19 +343,39 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 					return err
 				}
 
-				chartRepository := sysChart.Template.Source.Helm.URL
-				if copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository != "" {
-					chartRepository = copyKubermaticConfig.Spec.UserCluster.SystemApplications.HelmRepository
+				chartImage := fmt.Sprintf("%s/%s:%s",
+					sysChart.Template.Source.Helm.URL,
+					sysChart.Template.Source.Helm.ChartName,
+					sysChart.Template.Source.Helm.ChartVersion,
+				)
+
+				// Check if the chartImage starts with "oci://"
+				if strings.HasPrefix(chartImage, "oci://") {
+					// remove oci:// prefix and insert the chartImage into imageSet.
+					imageSet.Insert(chartImage[len("oci://"):])
+				}
+
+				imageSet.Insert(sysChart.WorkloadImages...)
+			}
+
+			for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+				if err != nil {
+					return err
 				}
 
 				chartImage := fmt.Sprintf("%s/%s:%s",
-					chartRepository,
-					sysChart.Template.Source.Helm.ChartName,
-					sysChart.Version,
+					defaultChart.Template.Source.Helm.URL,
+					defaultChart.Template.Source.Helm.ChartName,
+					defaultChart.Template.Source.Helm.ChartVersion,
 				)
 
-				imageSet.Insert(chartImage)
-				imageSet.Insert(sysChart.WorkloadImages...)
+				// Check if the chartImage starts with "oci://"
+				if strings.HasPrefix(chartImage, "oci://") {
+					// remove oci:// prefix and insert the chartImage into imageSet.
+					imageSet.Insert(chartImage[len("oci://"):])
+				}
+
+				imageSet.Insert(defaultChart.WorkloadImages...)
 			}
 
 			if options.Archive && options.ArchivePath == "" {
@@ -377,7 +400,7 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				}
 			} else {
 				logger.WithField("registry", options.Registry).Info("🚀 Mirroring images…")
-				count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, sets.List(imageSet), options.Registry, userAgent)
+				count, fullCount, err = images.CopyImages(ctx, logger, options.DryRun, options.Insecure, sets.List(imageSet), options.Registry, userAgent)
 				if err != nil {
 					return fmt.Errorf("failed to mirror all images (successfully copied %d/%d): %w", count, fullCount, err)
 				}

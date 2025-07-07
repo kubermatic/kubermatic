@@ -12,65 +12,107 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Dex Is the OpenID Provider for Kubermatic.
 dex:
   ingress:
+    # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+    # If you want to deploy your own certificate without relying on cert-manager
+    # uncomment the next line and remove subsequent certIssuer configuration.
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+      nginx.ingress.kubernetes.io/proxy-body-size: "25m"
     # configure your base domain, under which the Kubermatic dashboard shall be available
-    host: kkp.example.com
+    hosts:
+      # Required: host must be set; usually this is the same
+      # host as is used for the KKP Dashboard, but it can be
+      # any other domain.
+      - host: "kkp.example.com"
+        paths:
+          - path: /dex
+            pathType: ImplementationSpecific
+    tls:
+      - secretName: dex-tls
+        hosts:
+          # Required: must include at least the host chosen above.
+          - "kkp.example.com"
+  config:
+    issuer: "https://kkp.example.com/dex"
+    expiry:
+      signingKeys: "6h"
+      idTokens: "24h"
+    oauth2:
+      skipApprovalScreen: true
+      responseTypes:
+        - code
+        - token
+        - id_token
+    storage:
+      type: kubernetes
+      config:
+        inCluster: true
+    frontend:
+      issuer: dex
+      dir: /srv/dex/web
+      logoURL: theme/logo.svg
+      theme: light
 
-  clients:
-  # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
-  # needs to be configured.
-  - id: kubermatic
-    name: Kubermatic
-    # Generate a secure secret key
-    # Those can be generated on the shell using:
-    # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
-    secret: <a-random-key>
-    RedirectURIs:
-      # ensure the URLs below use the dex.ingress.host configured above
-      - https://kkp.example.com
-      - https://kkp.example.com/projects
 
-    # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
-    # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
-    # More about this configuration at https://docs.kubermatic.com/kubermatic/latest/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
-  - id: kubermaticIssuer
-    name: Kubermatic OIDC Issuer
-    # Generate a secure secret key
-    # Those can be generated on the shell using:
-    # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
-    secret: <a-random-key>
-    RedirectURIs:
-      # ensure the URLs below use the dex.ingress.host configured above
-      - https://kkp.example.com/api/v1/kubeconfig
-      - https://kkp.example.com/api/v2/kubeconfig/secret
-      - https://kkp.example.com/api/v2/dashboard/login
+    # Depending on your chosen login method, you need to configure either an OAuth provider like
+    # Google or GitHub, or configure a set of static passwords.
 
-  # Depending on your chosen login method, you need to configure either an OAuth provider like
-  # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`
-  # for an overview over all available connectors.
+    # connectors:
+    #   - type: github
+    #     id: github
+    #     name: GitHub
+    #     config:
+    #       clientID: some-client-id
+    #       clientSecret: some-client-secret
+    #       redirectURI: https://kkp.example.com/dex/callback
+    #       orgs:
+    #       - name: kubermatic
 
-  # For testing purposes, we configure a single static user/password combination.
-  staticPasswords:
-  - email: kubermatic@example.com
-    # bcrypt hash of the string "password", can be created using recent versions of htpasswd:
-    # `htpasswd -bnBC 10 "" PASSWORD_HERE | tr -d ':\n' | sed 's/$2y/$2a/'`
-    hash: "$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK"
+    enablePasswordDB: true # Enable it if you have staticPasswords.
 
-    # these are used within Kubermatic to identify the user
-    username: admin
-    userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
+    # For testing purposes, we configure a single static user/password combination.
+    staticPasswords:
+      - email: kubermatic@example.com
+        # bcrypt hash of the string "password", can be created using recent versions of htpasswd:
+        # `htpasswd -bnBC 10 "" PASSWORD_HERE | tr -d ':\n' | sed 's/$2y/$2a/'`
+        hash: "$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK"
 
-  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
-  # If you want to deploy your own certificate without relying on cert-manager
-  # uncomment the next line and remove subsequent certIssuer configuration.
-  # certIssuer: null
-  certIssuer:
-    # For generating a certificate signed by a trusted root authority replace
-    # with "letsencrypt-prod".
-    name: letsencrypt-staging
-    kind: ClusterIssuer
+        # these are used within Kubermatic to identify the user
+        username: admin
+        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
+
+
+    staticClients:
+      # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
+      # needs to be configured.
+      - id: kubermatic
+        name: Kubermatic
+        # Generate a secure secret key
+        # Those can be generated on the shell using:
+        # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
+        secret: <a-random-key>
+        RedirectURIs:
+          # ensure the URLs below use the dex.ingress.hosts[0].host configured above
+          - https://kkp.example.com
+          - https://kkp.example.com/projects
+
+      # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
+      # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
+      # More about this configuration at https://docs.kubermatic.com/kubermatic/latest/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
+      - id: kubermaticIssuer
+        name: Kubermatic OIDC Issuer
+        # Generate a secure secret key
+        # Those can be generated on the shell using:
+        # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
+        secret: <a-random-key>
+        RedirectURIs:
+          # ensure the URLs below use the dex.ingress.hosts[0].host configured above
+          - https://kkp.example.com/api/v1/kubeconfig
+          - https://kkp.example.com/api/v2/kubeconfig/secret
+          - https://kkp.example.com/api/v2/dashboard/login
 
 kubermaticOperator:
   # insert the Docker authentication JSON provided by Kubermatic here

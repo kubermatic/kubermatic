@@ -139,6 +139,67 @@ spec:
                           type: object
                       type: object
                   type: object
+                applications:
+                  description: Applications contains configuration for Application settings.
+                  properties:
+                    defaultApplicationCatalog:
+                      description: DefaultApplicationCatalog contains configuration for the default application catalog.
+                      properties:
+                        applications:
+                          description: |-
+                            Applications is a list of application definition names that should be installed in the master cluster.
+                            If not set, all the applications from the catalog are installed.
+                          items:
+                            type: string
+                          type: array
+                        enable:
+                          description: Enable is used to enable the installation of application definitions in the master cluster.
+                          type: boolean
+                        helmRegistryConfigFile:
+                          description: |-
+                            HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
+                            The value is dockercfg file that follows the same format rules as ~/.docker/config.json
+                            The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
+                            The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
+                          properties:
+                            key:
+                              description: The key of the secret to select from.  Must be a valid secret key.
+                              type: string
+                            name:
+                              default: ""
+                              description: |-
+                                Name of the referent.
+                                This field is effectively required, but due to backwards compatibility is
+                                allowed to be empty. Instances of this type with an empty value here are
+                                almost certainly wrong.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            optional:
+                              description: Specify whether the Secret or its key must be defined
+                              type: boolean
+                          required:
+                            - key
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        helmRepository:
+                          description: HelmRepository specifies OCI repository containing Helm charts of Applications from the default application catalog e.g. oci://localhost:5000/myrepo.
+                          type: string
+                      type: object
+                    systemApplications:
+                      description: SystemApplications contains configuration for system applications.
+                      properties:
+                        applications:
+                          description: |-
+                            Applications is a list of application definition names that should be installed in the master cluster.
+                            If not set, all the applications from the catalog are installed.
+                          items:
+                            type: string
+                          type: array
+                        disable:
+                          description: Disable is used to disable the installation of system application definitions in the master cluster.
+                          type: boolean
+                      type: object
+                  type: object
                 auth:
                   description: |-
                     Auth defines keys and URLs for Dex. These must be defined unless the HeadlessInstallation
@@ -490,20 +551,6 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
                           type: object
                       type: object
-                  type: object
-                systemApplications:
-                  description: SystemApplications contains configuration for system applications.
-                  properties:
-                    applications:
-                      description: |-
-                        Applications is a list of system application definition names that should be installed in the master cluster.
-                        If not set, the default system applications will be installed.
-                      items:
-                        type: string
-                      type: array
-                    disable:
-                      description: Disable is used to disable the installation of system application definitions in the master cluster.
-                      type: boolean
                   type: object
                 ui:
                   description: UI configures the dashboard.

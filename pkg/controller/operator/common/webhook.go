@@ -539,6 +539,7 @@ func ApplicationDefinitionValidatingWebhookConfigurationReconciler(ctx context.C
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,
 								admissionregistrationv1.Update,
+								admissionregistrationv1.Delete,
 							},
 						},
 					},
@@ -621,7 +622,7 @@ func PoliciesWebhookConfigurationReconciler(ctx context.Context, cfg *kubermatic
 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
-					Name:                    appskubermaticv1.ApplicationDefinitionResourceName + "." + appskubermaticv1.GroupName, // this should be a FQDN,
+					Name:                    "policies." + kubermaticv1.GroupName, // this should be a FQDN,
 					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,

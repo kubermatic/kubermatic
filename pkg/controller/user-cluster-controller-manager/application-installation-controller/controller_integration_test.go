@@ -434,7 +434,7 @@ func startTestEnvWithCleanup(t *testing.T, applicationInstaller *fake.Applicatio
 
 	isClusterPausedFunc := func(ctx context.Context) (bool, error) { return false, nil }
 
-	if err := Add(ctx, kubermaticlog.Logger, mgr, mgr, isClusterPausedFunc, ns.Name, applicationInstaller); err != nil {
+	if err := Add(ctx, kubermaticlog.Logger, mgr, mgr, isClusterPausedFunc, ns.Name, "", applicationInstaller); err != nil {
 		t.Fatalf("failed to add controller to manager: %s", err)
 	}
 

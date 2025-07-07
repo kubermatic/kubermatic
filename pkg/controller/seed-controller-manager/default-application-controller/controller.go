@@ -206,11 +206,17 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
+	applicationsNames := make(map[string]bool)
+
 	// We don't want to fail the reconciliation if one application fails so we collect all the errors and return them as a single error.
 	var errors []error
 	for _, application := range applications {
+		// We append every app name that has the enforced annotation set to true.
+		// This way, we can set the enforced annotation to false in other application installations.
+		applicationsNames[application.Name] = true
+
 		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
-		err := r.ensureApplicationInstallation(ctx, userClusterClient, application, cluster)
+		err := r.ensureApplicationInstallation(ctx, userClusterClient, application)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -231,10 +237,39 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		}
 	}
 
+	err = r.ensureApplicationEnforcedAnnotationIsRemoved(ctx, userClusterClient, applicationsNames)
+	if err != nil {
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, fmt.Errorf("failed to ensure the enforced annotation is removed from ApplicationInstallations whose ApplicationDefinitions do not have 'enforced' set to true: %w", err)
+	}
+
 	return nil, kerrors.NewAggregate(errors)
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureApplicationEnforcedAnnotationIsRemoved(ctx context.Context, userClusterClient ctrlruntimeclient.Client, applicationNames map[string]bool) error {
+	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
+	if err := userClusterClient.List(ctx, existingApplicationList); err != nil {
+		return fmt.Errorf("failed to list installed applications: %w", err)
+	}
+
+	for _, existingApplication := range existingApplicationList.Items {
+		if _, ok := applicationNames[existingApplication.Spec.ApplicationRef.Name]; !ok {
+			if existingApplication.Name == kubermaticv1.CNIPluginTypeCilium.String() {
+				continue
+			}
+			if existingApplication.Annotations == nil {
+				existingApplication.Annotations = map[string]string{}
+			}
+			existingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation] = "false"
+			if err := userClusterClient.Update(ctx, &existingApplication); err != nil {
+				return fmt.Errorf("failed to update ApplicationInstallation %s in namespace %s: %w", existingApplication.Namespace, existingApplication.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition) error {
 	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
 	// for this we need to list all existing applications installations
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
@@ -247,15 +282,15 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 		return err
 	}
 	var currentApplicationInstallation *appskubermaticv1.ApplicationInstallation
-	for _, exisitingApplication := range existingApplicationList.Items {
+	for _, existingApplication := range existingApplicationList.Items {
 		// if we find an application installation which is defaulted and enforced we found an existing resource
-		if exisitingApplication.Spec.ApplicationRef.Name == application.Name && exisitingApplication.Name == application.Name {
+		if existingApplication.Spec.ApplicationRef.Name == application.Name && existingApplication.Name == application.Name {
 			// we can suppress the error here because the return value will be false if something cannot be parsed
-			appEnforcedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
-			appDefaultedEnabled, _ := strconv.ParseBool(exisitingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
+			appEnforcedEnabled, _ := strconv.ParseBool(existingApplication.Annotations[appskubermaticv1.ApplicationEnforcedAnnotation])
+			appDefaultedEnabled, _ := strconv.ParseBool(existingApplication.Annotations[appskubermaticv1.ApplicationDefaultedAnnotation])
 			// if enforced and defaulted we found the existing default application installation
 			if appEnforcedEnabled && appDefaultedEnabled {
-				currentApplicationInstallation = &exisitingApplication
+				currentApplicationInstallation = &existingApplication
 				break
 			}
 		}
@@ -281,15 +316,19 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		ApplicationInstallationReconciler(ctx, r.log, application, currentApplicationInstallation, cluster),
+		ApplicationInstallationReconciler(r.log, application),
 	}
+
 	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, namespaceName, userClusterClient)
 }
 
-func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredLogger, application appskubermaticv1.ApplicationDefinition, exisitingApplication *appskubermaticv1.ApplicationInstallation, cluster *kubermaticv1.Cluster) reconciling.NamedApplicationInstallationReconcilerFactory {
+func ApplicationInstallationReconciler(
+	logger *zap.SugaredLogger,
+	application appskubermaticv1.ApplicationDefinition,
+) reconciling.NamedApplicationInstallationReconcilerFactory {
 	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		applicationName := application.Name
-		// generatedApplication, err := generateApplicationInstallation(ctx, application, namespace)
+
 		return applicationName, func(app *appskubermaticv1.ApplicationInstallation) (*appskubermaticv1.ApplicationInstallation, error) {
 			appVersion := application.Spec.DefaultVersion
 			if appVersion == "" {
@@ -316,6 +355,7 @@ func ApplicationInstallationReconciler(ctx context.Context, logger *zap.SugaredL
 					}
 				}
 			}
+
 			err := convertDefaultValuesToDefaultValuesBlock(&application)
 			if err != nil {
 				// This is a non-critical error and we can still continue by using the `values` field instead of the `valuesBlock` field.

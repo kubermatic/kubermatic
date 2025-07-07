@@ -323,19 +323,22 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 		return failures // must stop here, without defaulting the clientID check can be misleading
 	}
 
-	useNewDexChart, _ := helmValues.GetBool(yamled.Path{"useNewDexChart"})
-	if !config.Spec.FeatureGates[features.HeadlessInstallation] && !useNewDexChart {
-		path := yamled.Path{"dex", "ingress", "host"}
-		if domain, _ := helmValues.GetString(path); domain == "" {
-			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", path.String())
-			helmValues.Set(path, config.Spec.Ingress.Domain)
+	if !config.Spec.FeatureGates[features.HeadlessInstallation] {
+		domainPath := yamled.Path{"dex", "ingress", "hosts", 0, "host"}
+		clientPath := yamled.Path{"dex", "config", "staticClients"}
+		connectorsPath := yamled.Path{"dex", "config", "connectors"}
+		staticPasswordsPath := yamled.Path{"dex", "config", "staticPasswords"}
+
+		if domain, _ := helmValues.GetString(domainPath); domain == "" {
+			logger.WithField("domain", config.Spec.Ingress.Domain).Warnf("Helm values: %s is empty, setting to spec.ingress.domain from KubermaticConfiguration", domainPath.String())
+			helmValues.Set(domainPath, config.Spec.Ingress.Domain)
 		}
 
 		clientID := defaultedConfig.Spec.Auth.ClientID
 		hasDexIssues := false
 		clients := []dexClient{}
 
-		if err := helmValues.DecodeAtPath(yamled.Path{"dex", "clients"}, &clients); err != nil {
+		if err := helmValues.DecodeAtPath(clientPath, &clients); err != nil {
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
 		} else {
@@ -354,12 +357,19 @@ func validateHelmValues(config *kubermaticv1.KubermaticConfiguration, helmValues
 			}
 		}
 
-		connectors, _ := helmValues.GetArray(yamled.Path{"dex", "connectors"})
-		staticPasswords, _ := helmValues.GetArray(yamled.Path{"dex", "staticPasswords"})
+		connectors, _ := helmValues.GetArray(connectorsPath)
+		staticPasswords, _ := helmValues.GetArray(staticPasswordsPath)
 
 		if len(connectors) == 0 && len(staticPasswords) == 0 {
 			hasDexIssues = true
 			logger.Warn("Helm values: There are no connectors or static passwords configured for Dex.")
+		}
+
+		if len(staticPasswords) > 0 {
+			if passwordDBEnabled, _ := helmValues.GetBool(yamled.Path{"dex", "config", "enablePasswordDB"}); !passwordDBEnabled {
+				hasDexIssues = true
+				logger.Warnf("Static passwords are defined but 'dex.config.enablePasswordDB' is not set to true. Password authentication will NOT work until you set it to true.")
+			}
 		}
 
 		if hasDexIssues {

@@ -424,6 +424,13 @@ func EnsureAnnotationContains(o metav1.Object, annotation string, separator stri
 	})
 }
 
+// HasAnnotationTrue checks whether the given object has the specified annotation
+// set to "true" (case-insensitive).
+func HasAnnotationTrue(obj metav1.Object, key string) bool {
+	annotations := obj.GetAnnotations()
+	return strings.EqualFold(annotations[key], "true")
+}
+
 type SeedClientMap map[string]ctrlruntimeclient.Client
 
 type SeedVisitorFunc func(seedName string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error

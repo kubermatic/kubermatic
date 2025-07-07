@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package commonseedresources
+package common
 
 import "github.com/kyverno/kyverno/api/kyverno"
 
