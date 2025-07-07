@@ -1610,17 +1610,17 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(KyvernoSettings)
 		**out = **in
 	}
+	if in.AuthorizationConfig != nil {
+		in, out := &in.AuthorizationConfig, &out.AuthorizationConfig
+		*out = new(AuthorizationConfig)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.FeatureGates != nil {
 		in, out := &in.FeatureGates, &out.FeatureGates
 		*out = make(map[string]bool, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
 		}
-	}
-	if in.AuthorizationConfig != nil {
-		in, out := &in.AuthorizationConfig, &out.AuthorizationConfig
-		*out = new(AuthorizationConfig)
-		(*in).DeepCopyInto(*out)
 	}
 }
 
