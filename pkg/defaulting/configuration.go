@@ -229,17 +229,21 @@ var (
 			newSemver("v1.30.9"),
 			newSemver("v1.30.11"),
 			newSemver("v1.30.12"),
+			newSemver("v1.30.14"),
 			// Kubernetes 1.31
 			newSemver("v1.31.1"),
 			newSemver("v1.31.5"),
 			newSemver("v1.31.7"),
 			newSemver("v1.31.8"),
+			newSemver("v1.31.10"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),
 			newSemver("v1.32.4"),
+			newSemver("v1.32.6"),
 			// Kubernetes 1.33
 			newSemver("v1.33.0"),
+			newSemver("v1.33.2"),
 		},
 		Updates: []kubermaticv1.Update{
 			{
