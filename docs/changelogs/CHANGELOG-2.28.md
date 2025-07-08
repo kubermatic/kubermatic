@@ -1,6 +1,41 @@
 # Kubermatic 2.28
 
 - [v2.28.0](#v2280)
+- [v2.28.1](#v2281)
+
+## v2.28.1
+
+**GitHub release: [v2.28.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.1)**
+
+### Supported Kubernetes Versions
+
+- Add 1.33.2/1.32.6/1.31.10/1.30.14 to the list of supported Kubernetes releases ([#14783](https://github.com/kubermatic/kubermatic/pull/14783))
+
+### New Features
+
+- Add the ability to skip router reconciliation in the OpenStack provider ([#14771](https://github.com/kubermatic/kubermatic/pull/14771),[#7483](https://github.com/kubermatic/dashboard/pull/7483))
+- KubeLB: KKP defaulting will now enable KubeLB for a cluster if it's enforced at the datacenter level ([#14732](https://github.com/kubermatic/kubermatic/pull/14732))
+- Overwrite system application images when `overwriteRegistry` is defined ([#14773](https://github.com/kubermatic/kubermatic/pull/14773))
+
+### Bugfixes
+
+- A regression bug regarding node-exporter pod labeling which didn't exclude node-exporter pods from pod discovery was fixed ([#14742](https://github.com/kubermatic/kubermatic/pull/14742))
+- Support KubeVirt vCPUs validation in the resource quota controller ([#14728](https://github.com/kubermatic/kubermatic/pull/14728))
+- A bug which lead to missing kube state metrics scraping was fixed ([#14759](https://github.com/kubermatic/kubermatic/pull/14759))
+- Fix KubeLB checkbox state management and UI flickering issues in cluster creation wizard/edit cluster dialog ([#7458](https://github.com/kubermatic/dashboard/pull/7458))
+- Fix validation error when switching expose strategy from Tunneling to LoadBalancer by clearing tunnelingAgentIP automatically ([#7422](https://github.com/kubermatic/dashboard/pull/7422))
+- KubeLB: Fix a bug where enforcement on a datacenter was not enabling KubeLB for the user clusters in the dashboard ([#7453](https://github.com/kubermatic/dashboard/pull/7453))
+- Project viewers can now only view cluster templates. Create, update, and delete actions are restricted except deletion by the owner ([#7481](https://github.com/kubermatic/dashboard/pull/7481))
+
+### Updates
+
+- Update operating-system-manager to [v1.7.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.4) ([#14793](https://github.com/kubermatic/kubermatic/pull/14793))
+- Update to Go 1.24.4 ([#14665](https://github.com/kubermatic/kubermatic/pull/14665),[#7440](https://github.com/kubermatic/dashboard/pull/7440))
+
+### Cleanup
+
+- By default the oauth2-proxy disables Dex's approval screen now. To return to the old behaviour, set `approval_prompt = "force"` for each IAP deployment in your Helm values.yaml ([#14751](https://github.com/kubermatic/kubermatic/pull/14751))
+
 
 ## v2.28.0
 
