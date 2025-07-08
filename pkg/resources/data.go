@@ -942,6 +942,59 @@ func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
+// getKonnectivityConfigurations returns args based on Konnectivity server configurations
+// based on precedence, where the first one has the highest precedence:
+//  1. Cluster.Spec.ComponentsOverride.KonnectivityProxy.KonnectivityServerConfig.XfrChannelSize
+//  2. ClusterTemplate.Spec.ComponentsOverride.KonnectivityProxy.KonnectivityServerConfig.XfrChannelSize
+//  3. DC.Spec.KonnectivityConfigurations.Server.XfrChannelSize
+//  4. Seed.Spec.DefaultComponentSettings.KonnectivityProxy.KonnectivityServerConfig.XfrChannelSize
+//     though the last one is deprecated and will be removed in the future.
+func (d *TemplateData) getKonnectivityServerConfigurations() ([]string, error) {
+	if cluster := d.Cluster(); cluster != nil {
+		if knpConfigs := cluster.Spec.ComponentsOverride.KonnectivityProxy.KonnectivityConfigurations; knpConfigs != nil {
+			if server := knpConfigs.Server; server != nil && server.XfrChannelSize != nil {
+				return []string{fmt.Sprintf("--xfr-channel-size=%d", *server.XfrChannelSize)}, nil
+			}
+		}
+	}
+
+	if seed := d.Seed(); seed != nil && seed.Spec.DefaultClusterTemplate != "" {
+		tpl := kubermaticv1.ClusterTemplate{}
+		key := types.NamespacedName{Namespace: seed.Namespace, Name: seed.Spec.DefaultClusterTemplate}
+		if err := d.client.Get(d.ctx, key, &tpl); err != nil {
+			return nil, fmt.Errorf("failed to get ClusterTemplate for konnectivity: %w", err)
+		}
+
+		if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
+			return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
+		}
+
+		if knpConfigs := tpl.Spec.ComponentsOverride.KonnectivityProxy.KonnectivityConfigurations; knpConfigs != nil {
+			if server := knpConfigs.Server; server != nil && server.XfrChannelSize != nil {
+				return []string{fmt.Sprintf("--xfr-channel-size=%d", *server.XfrChannelSize)}, nil
+			}
+		}
+	}
+
+	if dc := d.DC(); dc != nil && dc.Spec.KonnectivityConfigurations != nil {
+		if server := dc.Spec.KonnectivityConfigurations.Server; server != nil {
+			if server.XfrChannelSize != nil {
+				return []string{fmt.Sprintf("--xfr-channel-size=%d", *server.XfrChannelSize)}, nil
+			}
+		}
+	}
+
+	if seed := d.Seed(); seed != nil {
+		if knpConfigs := seed.Spec.DefaultComponentSettings.KonnectivityProxy.KonnectivityConfigurations; knpConfigs != nil {
+			if server := knpConfigs.Server; server != nil && server.XfrChannelSize != nil {
+				return []string{fmt.Sprintf("--xfr-channel-size=%d", *server.XfrChannelSize)}, nil
+			}
+		}
+	}
+
+	return []string{}, nil
+}
+
 func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 	if d.Seed() == nil {
 		return nil, fmt.Errorf("invalid cluster template, seed cluster template is nil")
@@ -949,26 +1002,36 @@ func (d *TemplateData) GetKonnectivityServerArgs() ([]string, error) {
 
 	seed := d.Seed()
 
-	r := seed.Spec.DefaultComponentSettings.KonnectivityProxy.Args
-	if r != nil {
-		return r, nil
+	// Get base args from seed default component settings or cluster template
+	var baseArgs []string
+
+	if r := seed.Spec.DefaultComponentSettings.KonnectivityProxy.Args; r != nil {
+		baseArgs = append(baseArgs, r...)
+	} else if seed.Spec.DefaultClusterTemplate != "" {
+		tpl := kubermaticv1.ClusterTemplate{}
+		key := types.NamespacedName{Namespace: seed.Namespace, Name: seed.Spec.DefaultClusterTemplate}
+		if err := d.client.Get(d.ctx, key, &tpl); err != nil {
+			return nil, fmt.Errorf("failed to get ClusterTemplate for konnectivity: %w", err)
+		}
+
+		if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
+			return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
+		}
+
+		if templateArgs := tpl.Spec.ComponentsOverride.KonnectivityProxy.Args; templateArgs != nil {
+			baseArgs = append(baseArgs, templateArgs...)
+		}
 	}
 
-	if seed.Spec.DefaultClusterTemplate == "" {
-		return r, nil
+	// Get configuration flags (mainly xfr-channel-size) based on precedence order
+	xfrChannelSizeArgs, err := d.getKonnectivityServerConfigurations()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get konnectivity server configurations: %w", err)
 	}
 
-	tpl := kubermaticv1.ClusterTemplate{}
-	key := types.NamespacedName{Namespace: seed.Namespace, Name: seed.Spec.DefaultClusterTemplate}
-	if err := d.client.Get(d.ctx, key, &tpl); err != nil {
-		return nil, fmt.Errorf("failed to get ClusterTemplate for konnectivity: %w", err)
-	}
+	finalArgs := append(baseArgs, xfrChannelSizeArgs...)
 
-	if scope := tpl.Labels["scope"]; scope != kubermaticv1.SeedTemplateScope {
-		return nil, fmt.Errorf("invalid scope of default cluster template, is %q but must be %q", scope, kubermaticv1.SeedTemplateScope)
-	}
-
-	return tpl.Spec.ComponentsOverride.KonnectivityProxy.Args, nil
+	return finalArgs, nil
 }
 
 func (d *TemplateData) IsSSHKeysDisabled() bool {

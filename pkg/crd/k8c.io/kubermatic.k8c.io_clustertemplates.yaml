@@ -2373,6 +2373,33 @@ spec:
                           items:
                             type: string
                           type: array
+                        configurations:
+                          properties:
+                            agent:
+                              description: Agent is the configuration for the Konnectivity agent.
+                              properties:
+                                xfrChannelSize:
+                                  description: |-
+                                    XfrChannelSize is the size of the XFR channel for Konnectivity agent.
+                                    If not set, Konnectivity server will use its default value.
+                                    This field is supported only in Kubernetes 1.31.0 and later. The KKP webhook
+                                    will reject requests that set this field when using older Kubernetes versions.
+                                  format: int32
+                                  type: integer
+                              type: object
+                            server:
+                              description: Server is the configuration for the Konnectivity server.
+                              properties:
+                                xfrChannelSize:
+                                  description: |-
+                                    XfrChannelSize is the size of the XFR channel for Konnectivity server.
+                                    If not set, Konnectivity server will use its default value.
+                                    This field is supported only in Kubernetes 1.31.0 and later. The KKP webhook
+                                    will reject requests that set this field when using older Kubernetes versions.
+                                  format: int32
+                                  type: integer
+                              type: object
+                          type: object
                         keepaliveTime:
                           description: |-
                             KeepaliveTime represents a duration of time to check if the transport is still alive.
