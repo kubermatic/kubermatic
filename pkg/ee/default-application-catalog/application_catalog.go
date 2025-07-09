@@ -131,7 +131,11 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 
 	var credentials *appskubermaticv1.HelmCredentials
 	appConfig := config.Spec.Applications.DefaultApplicationCatalog
-	if appConfig.HelmRegistryConfigFile != nil {
+
+	// Use HelmCredentials if provided, otherwise fall back to HelmRegistryConfigFile for backward compatibility
+	if appConfig.HelmCredentials != nil {
+		credentials = appConfig.HelmCredentials
+	} else if appConfig.HelmRegistryConfigFile != nil {
 		credentials = &appskubermaticv1.HelmCredentials{
 			RegistryConfigFile: appConfig.HelmRegistryConfigFile,
 		}
@@ -144,6 +148,16 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 
 		if credentials != nil {
 			appDef.Spec.Versions[i].Template.Source.Helm.Credentials = credentials
+		}
+
+		// Apply Insecure setting if provided
+		if appConfig.Insecure != nil {
+			appDef.Spec.Versions[i].Template.Source.Helm.Insecure = appConfig.Insecure
+		}
+
+		// Apply PlainHTTP setting if provided
+		if appConfig.PlainHTTP != nil {
+			appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = appConfig.PlainHTTP
 		}
 	}
 }
