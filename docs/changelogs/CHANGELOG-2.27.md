@@ -29,6 +29,9 @@
 - Project viewers can now only view cluster templates. Create, update, and delete actions are restricted except deletion by the owner ([#7482](https://github.com/kubermatic/dashboard/pull/7482))
 - Shows custom disk fields when a custom disk is configured in the Machine Deployment edit dialog ([#7415](https://github.com/kubermatic/dashboard/pull/7415))
 - Unset backup sync period if value is empty ([#7444](https://github.com/kubermatic/dashboard/pull/7444))
+- Skip setting custom CPUs field in machine deployment for Kubevirt user clusters. ([#7493](https://github.com/kubermatic/dashboard/pull/7493))
+- A bug  regarding network policy cleanup up in kubevirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed. ([#14803](https://github.com/kubermatic/kubermatic/pull/14803))
+- Fix log spam on deleted ResourceQuota objects. ([#14807](https://github.com/kubermatic/kubermatic/pull/14807))
 
 ### Updates
 
