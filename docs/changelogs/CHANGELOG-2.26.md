@@ -30,6 +30,8 @@
 - KubeLB: Fix a bug where enforcement on a datacenter was not enabling KubeLB for the user clusters in the dashboard ([#7453](https://github.com/kubermatic/dashboard/pull/7453))
 - List all OpenStack networks in the UI wizard during cluster creation ([#7437](https://github.com/kubermatic/dashboard/pull/7437))
 - Shows custom disk fields when a custom disk is configured in the Machine Deployment edit dialog ([#7415](https://github.com/kubermatic/dashboard/pull/7415))
+- A bug  regarding network policy cleanup up in kubevirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed. ([#14804](https://github.com/kubermatic/kubermatic/pull/14804))
+- Fix log spam on deleted ResourceQuota objects. ([#14808](https://github.com/kubermatic/kubermatic/pull/14808))
 
 ### Updates
 
