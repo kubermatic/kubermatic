@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -94,6 +95,10 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	resourceQuota := &kubermaticv1.ResourceQuota{}
 	if err := r.seedClient.Get(ctx, request.NamespacedName, resourceQuota); err != nil {
+		if apierrors.IsNotFound(err) {
+			log.Debug("resource quota not found, might be deleted: %w", err)
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, fmt.Errorf("failed to get resource quota: %w", err)
 	}
 
