@@ -235,7 +235,7 @@ func cleanUpKubevirtCloudProviderNetworkPolicy(ctx context.Context, kvInfraClien
 		},
 	}
 	if err := kvInfraClient.Delete(ctx, networkPolicy); err != nil {
-		if apierrors.IsNotFound(err) {
+		if !apierrors.IsNotFound(err) {
 			return err
 		}
 	}
