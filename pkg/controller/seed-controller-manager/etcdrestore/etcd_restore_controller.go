@@ -346,9 +346,12 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseCompleted
-		kuberneteshelper.RemoveFinalizer(restore, FinishRestoreFinalizer)
 	}); err != nil {
 		return nil, fmt.Errorf("failed to mark restore completed: %w", err)
+	}
+
+	if err := kuberneteshelper.TryRemoveFinalizer(ctx, r, restore, FinishRestoreFinalizer); err != nil {
+		return nil, fmt.Errorf("failed to remove finalizer: %w", err)
 	}
 
 	return nil, nil
