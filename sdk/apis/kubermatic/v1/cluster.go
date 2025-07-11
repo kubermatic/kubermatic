@@ -870,6 +870,31 @@ type KonnectivityProxySettings struct {
 	KeepaliveTime string `json:"keepaliveTime,omitempty"`
 	// Args configures arguments (flags) for the Konnectivity deployments.
 	Args []string `json:"args,omitempty"`
+
+	KonnectivityConfigurations *KonnectivityConfigurations `json:"configurations,omitempty"`
+}
+
+type KonnectivityConfigurations struct {
+	// Server is the configuration for the Konnectivity server.
+	Server *KonnectivityServerConfig `json:"server,omitempty"`
+	// Agent is the configuration for the Konnectivity agent.
+	Agent *KonnectivityAgentConfig `json:"agent,omitempty"`
+}
+
+type KonnectivityServerConfig struct {
+	// XfrChannelSize is the size of the XFR channel for Konnectivity server.
+	// If not set, Konnectivity server will use its default value.
+	// This field is supported only in Kubernetes 1.31.0 and later. The KKP webhook
+	// will reject requests that set this field when using older Kubernetes versions.
+	XfrChannelSize *int32 `json:"xfrChannelSize,omitempty"`
+}
+
+type KonnectivityAgentConfig struct {
+	// XfrChannelSize is the size of the XFR channel for Konnectivity agent.
+	// If not set, Konnectivity server will use its default value.
+	// This field is supported only in Kubernetes 1.31.0 and later. The KKP webhook
+	// will reject requests that set this field when using older Kubernetes versions.
+	XfrChannelSize *int32 `json:"xfrChannelSize,omitempty"`
 }
 
 type OSMControllerSettings struct {

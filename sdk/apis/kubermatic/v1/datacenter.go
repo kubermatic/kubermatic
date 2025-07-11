@@ -515,6 +515,8 @@ type DatacenterSpec struct {
 	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
+
+	KonnectivityConfigurations *KonnectivityConfigurations `json:"konnectivityProxySettings,omitempty"`
 }
 
 var (
