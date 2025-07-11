@@ -32,23 +32,29 @@ This README.md generator
 That generates README.md with all scripts from this directory described.
 
 ## mirror-system-application-charts.sh
+
 This script mirrors upstream Helm charts (used by System Applications) to the Kubermatic OCI registry.
 
 #### Adding a New Chart
 
-To add a new chart:  
-1. Add the chart's download URL template to the `CHART_URLS` array in the script:  
+To add a new chart:
+
+1. Add the chart's download URL template to the `CHART_URLS` array in the script:
+
    ```bash
    ["chart-name"]="https://example.com/chart-%s.tgz"
    ```
-2. Add the default version for the chart to the `CHART_VERSIONS` array:  
+
+2. Add the default version for the chart to the `CHART_VERSIONS` array:
+
    ```bash
    ["chart-name"]="1.0.0"
    ```
 
 #### Mirroring a Specific Version
 
-To mirror a specific version (optional) of a chart, run:  
+To mirror a specific version (optional) of a chart, run:
+
 ```bash
 ./mirror-system-application-charts.sh <chart-name> [version (optional)]
 ```
@@ -245,3 +251,70 @@ TBD
 
 TBD
 
+## run-kubermatic-webhook.sh
+
+The script generates self-signed certificates and starts the Kubermatic webhook. The webhook can then be accessed via curl.
+
+### Using the locally running webhook in your KKP setup
+
+Testing/using the webhook via curl is not feasible and a painful experience. We recommend using this webhook in your KKP setup in the following way:
+
+1. Use tools like ngrok to expose the webhook to the internet. After running the script, run the command: `ngrok http 443`
+2. Create a Validating/Mutating WebhookConfiguration in your KKP setup similar to the following:
+
+```yaml
+# An example of a ValidatingWebhookConfiguration for the ApplicationDefinition resource.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: kubermatic-application-definition
+webhooks:
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      # Replace with your ngrok URL
+      url: https://redacted.ngrok-free.app/validate-application-definition
+    failurePolicy: Fail
+    matchPolicy: Equivalent
+    name: applicationdefinitions.apps.kubermatic.k8c.io
+    namespaceSelector: {}
+    objectSelector:
+      matchLabels:
+        local-test: "true"
+    rules:
+      - apiGroups:
+          - apps.kubermatic.k8c.io
+        apiVersions:
+          - "*"
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - applicationdefinitions
+        scope: "*"
+    sideEffects: None
+    timeoutSeconds: 30
+```
+
+This is it, now all the validating requests will be sent to your webhook for ApplicatioDefinition resources with the label `local-test: "true"`. You can modify the webhook to match your needs.
+
+**NOTE:** If your webhook configuration(ValidatingWebhookConfiguration or MutatingWebhookConfiguration) exists in the user cluster, you might need to add a network policy in the **user cluster namespace in seed** to allow the k8s API server to access the webhook. A general, not so nice and secure, example network policy is as follows:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-traffic
+  namespace: cluster-xyz
+spec:
+  egress:
+    - {}
+  ingress:
+    - {}
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+```
