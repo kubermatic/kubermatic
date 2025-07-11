@@ -419,7 +419,7 @@ data:
         source_labels = ["__meta_kubernetes_pod_annotation_kubernetes_io_config_mirror", "__meta_kubernetes_pod_container_name"]
         separator     = "/"
         target_label  = "__path__"
-        replacement   = "/var/log/pods/*$1/*.log"
+        replacement   = "/var/log/pods/$1/*.log"
       }
     }
     
@@ -688,7 +688,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: alloy
-        checksum/config: 1d3ea21457632ad7f78046a0030673cda8cd80f8da6c0205920e413eaafe7ce
+        checksum/config: 5cfc2433d2a9ad959997328d400fc6758c8b8da8c356d31a4b2bfde8ff51140
       labels:
         app.kubernetes.io/name: alloy
         app.kubernetes.io/instance: release-name
