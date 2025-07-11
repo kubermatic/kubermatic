@@ -40,7 +40,7 @@ const (
 	// ClusterKindName represents "Kind" defined in Kubernetes.
 	ClusterKindName = "Cluster"
 
-	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
+	// CredentialPrefix is the prefix used for the secrets containing cloud provider credentials.
 	CredentialPrefix = "credential"
 
 	// ForceRestartAnnotation is key of the annotation used to restart machine deployments.
@@ -271,6 +271,12 @@ type ClusterSpec struct {
 
 	// Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now
 	AuthorizationConfig *AuthorizationConfig `json:"authorizationConfig,omitempty"`
+
+	// ContainerRuntimeOpts defines optional configuration options to configure container-runtime
+	// that is going to be used in the user cluster.
+	// This will not configure node level settings for container runtime used in user clusters; its only being used
+	// to configure container runtime settings of a particular user cluster.
+	ContainerRuntimeOpts *ContainerRuntimeOpts `json:"containerRuntimeOpts,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.

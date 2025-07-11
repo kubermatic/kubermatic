@@ -1126,7 +1126,12 @@ func (p *ProxySettings) Merge(dst *ProxySettings) {
 type NodeSettings struct {
 	// Optional: Proxy settings for the Nodes in this datacenter.
 	// Defaults to the Proxy settings of the seed.
-	ProxySettings `json:",inline"`
+	ProxySettings        `json:",inline"`
+	ContainerRuntimeOpts `json:",inline"`
+}
+
+// ContainerRuntimeOpts represents a set of options to configure container-runtime binary used in nodes.
+type ContainerRuntimeOpts struct {
 	// Optional: These image registries will be configured as insecure
 	// on the container runtime.
 	InsecureRegistries []string `json:"insecureRegistries,omitempty"`

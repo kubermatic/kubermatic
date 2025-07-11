@@ -3028,6 +3028,49 @@ spec:
                     - docker
                     - containerd
                   type: string
+                containerRuntimeOpts:
+                  description: |-
+                    ContainerRuntimeOpts defines optional configuration options to configure container-runtime
+                    that is going to be used in the user cluster.
+                    This will not configure node level settings for container runtime used in user clusters; its only being used
+                    to configure container runtime settings of a particular user cluster.
+                  properties:
+                    containerdRegistryMirrors:
+                      description: 'Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.'
+                      properties:
+                        registries:
+                          additionalProperties:
+                            description: ContainerdRegistry defines endpoints and security for given container registry.
+                            properties:
+                              mirrors:
+                                description: List of registry mirrors to use
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          description: A map of registries to use to render configs and mirrors for containerd registries
+                          type: object
+                      type: object
+                    insecureRegistries:
+                      description: |-
+                        Optional: These image registries will be configured as insecure
+                        on the container runtime.
+                      items:
+                        type: string
+                      type: array
+                    pauseImage:
+                      description: |-
+                        Optional: Translates to --pod-infra-container-image on the kubelet.
+                        If not set, the kubelet will default it.
+                      type: string
+                    registryMirrors:
+                      description: |-
+                        Optional: These image registries will be configured as registry mirrors
+                        on the container runtime.
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 debugLog:
                   description: Enables more verbose logging in KKP's user-cluster-controller-manager.
                   type: boolean

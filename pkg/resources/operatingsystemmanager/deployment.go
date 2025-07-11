@@ -272,22 +272,9 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 		flags = append(flags, "-external-cloud-provider")
 	}
 
-	nodeSettings := data.DC().Node
-	if nodeSettings != nil {
-		if len(nodeSettings.InsecureRegistries) > 0 {
-			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
-		}
-		if nodeSettings.ContainerdRegistryMirrors != nil {
-			flags = append(flags, getContainerdFlags(nodeSettings.ContainerdRegistryMirrors)...)
-		}
-		if len(nodeSettings.RegistryMirrors) > 0 {
-			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
-		}
-		if nodeSettings.PauseImage != "" {
-			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
-		}
-	}
+	flags = appendContainerRuntimeFlags(flags, data)
 
+	nodeSettings := data.DC().Node
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
 	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
@@ -403,6 +390,10 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 }
 
 func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
+	if crid == nil || len(crid.Registries) == 0 {
+		return []string{}
+	}
+
 	var (
 		registries, flags []string
 	)
@@ -422,4 +413,74 @@ func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string 
 	}
 
 	return flags
+}
+
+// appendContainerRuntimeFlags updates given flags array to include OSM flags for container-runtime configurations.
+// Individual flags in cluster take precedence over the same flags defined in datacenter.
+func appendContainerRuntimeFlags(flags []string, data operatingSystemManagerData) []string {
+	containerRuntimeFlags := make(map[string]string)
+	var nodeSettings *kubermaticv1.NodeSettings
+	if dc := data.DC(); dc != nil {
+		nodeSettings = dc.Node
+	}
+
+	if nodeSettings != nil {
+		if len(nodeSettings.InsecureRegistries) > 0 {
+			containerRuntimeFlags["-node-insecure-registries"] = strings.Join(nodeSettings.InsecureRegistries, ",")
+		}
+
+		if len(nodeSettings.RegistryMirrors) > 0 {
+			containerRuntimeFlags["-node-registry-mirrors"] = strings.Join(nodeSettings.RegistryMirrors, ",")
+		}
+
+		if nodeSettings.PauseImage != "" {
+			containerRuntimeFlags["-pause-image"] = nodeSettings.PauseImage
+		}
+	}
+
+	if c := data.Cluster(); c != nil {
+		ctrOpts := c.Spec.ContainerRuntimeOpts
+		if ctrOpts != nil {
+			if len(ctrOpts.InsecureRegistries) > 0 {
+				containerRuntimeFlags["-node-insecure-registries"] = strings.Join(ctrOpts.InsecureRegistries, ",")
+			}
+
+			if len(ctrOpts.RegistryMirrors) > 0 {
+				containerRuntimeFlags["-node-registry-mirrors"] = strings.Join(ctrOpts.RegistryMirrors, ",")
+			}
+
+			if ctrOpts.PauseImage != "" {
+				containerRuntimeFlags["-pause-image"] = ctrOpts.PauseImage
+			}
+		}
+	}
+
+	for flag, value := range containerRuntimeFlags {
+		flags = append(flags, flag, value)
+	}
+
+	containerdFlags := containerdFlags(nodeSettings, data.Cluster())
+	for _, flag := range containerdFlags {
+		flags = append(flags, flag, "")
+	}
+
+	return flags
+}
+
+func containerdFlags(nodeSettings *kubermaticv1.NodeSettings, cluster *kubermaticv1.Cluster) []string {
+	var containerdConfig *kubermaticv1.ContainerRuntimeContainerd
+
+	if nodeSettings != nil && nodeSettings.ContainerdRegistryMirrors != nil {
+		containerdConfig = nodeSettings.ContainerdRegistryMirrors
+	}
+
+	if cluster != nil && cluster.Spec.ContainerRuntimeOpts != nil && cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors != nil {
+		containerdConfig = cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors
+	}
+
+	if containerdConfig != nil {
+		return getContainerdFlags(containerdConfig)
+	}
+
+	return []string{}
 }
