@@ -87,6 +87,10 @@ const (
 	PromtailChartName   = "promtail"
 	PromtailReleaseName = PromtailChartName
 	PromtailNamespace   = LoggingNamespace
+
+	AlloyChartName   = "alloy"
+	AlloyReleaseName = AlloyChartName
+	AlloyNamespace   = LoggingNamespace
 )
 
 type MonitoringStack struct{}
@@ -144,8 +148,12 @@ func (s *MonitoringStack) Deploy(ctx context.Context, opt stack.DeployOptions) e
 		return fmt.Errorf("failed to deploy Loki: %w", err)
 	}
 
-	if err := deployPromtail(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy Promtail: %w", err)
+	if err := deployAlloy(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to deploy Alloy: %w", err)
+	}
+
+	if err := removePromtail(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		return fmt.Errorf("failed to remove Promtail: %w", err)
 	}
 
 	return nil
@@ -505,30 +513,58 @@ func deployLoki(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntim
 	return nil
 }
 
-func deployPromtail(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+func removePromtail(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	if slices.Contains(opt.SkipCharts, PromtailChartName) || opt.MLASkipLogging {
-		logger.Info("⭕ Skipping Promtail deployment.")
+		logger.Info("⭕ Skipping removal of Promtail deployment.")
 		return nil
 	}
 
-	logger.Info("📦 Deploying Promtail…")
 	sublogger := log.Prefix(logger, "   ")
-
-	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, LoggingChartsPrefix, PromtailChartName))
-	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %w", err)
-	}
-
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, PromtailNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %w", err)
-	}
-
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, PromtailNamespace, PromtailReleaseName)
+
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %w", err)
 	}
 
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, PromtailNamespace, PromtailReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
+	if release == nil {
+		return nil
+	}
+
+	logger.Info("📦 Removing Promtail…")
+
+	if err := helmClient.UninstallRelease(PromtailNamespace, PromtailReleaseName); err != nil {
+		return fmt.Errorf("failed to remove Helm release: %w", err)
+	}
+
+	logger.Info("✅ Success.")
+
+	return nil
+}
+
+func deployAlloy(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	if slices.Contains(opt.SkipCharts, AlloyChartName) || opt.MLASkipLogging {
+		logger.Info("⭕ Skipping Grafana Alloy deployment.")
+		return nil
+	}
+
+	logger.Info("📦 Deploying Grafana Alloy")
+	sublogger := log.Prefix(logger, "   ")
+
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, LoggingChartsPrefix, AlloyChartName))
+	if err != nil {
+		return fmt.Errorf("failed to load Helm chart: %w", err)
+	}
+
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, AlloyNamespace); err != nil {
+		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, AlloyNamespace, AlloyReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check to Helm release: %w", err)
+	}
+
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, AlloyNamespace, AlloyReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 

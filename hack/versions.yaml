@@ -226,10 +226,10 @@ products:
       - helmChart: { directory: charts/logging/loki }
       - helmChart: { directory: charts/mla/loki-distributed }
 
-  - name: Promtail
-    source: https://github.com/grafana/promtail
+  - name: Alloy
+    source: https://github.com/grafana/alloy
     occurrences:
-      - helmChart: { directory: charts/logging/promtail }
+      - helmChart: { directory: charts/logging/alloy }
 
   - name: MinIO
     source: https://github.com/minio/minio
