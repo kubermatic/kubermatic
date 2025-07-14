@@ -157,13 +157,15 @@ func createBaseExampleSeed(config *kubermaticv1.KubermaticConfiguration) *kuberm
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				sampledc: {
 					Node: &kubermaticv1.NodeSettings{
-						ProxySettings:      proxySettings,
-						InsecureRegistries: []string{},
-						RegistryMirrors:    []string{},
-						ContainerdRegistryMirrors: &kubermaticv1.ContainerRuntimeContainerd{
-							Registries: map[string]kubermaticv1.ContainerdRegistry{
-								"docker.io": {
-									Mirrors: []string{"mirror.gcr.io"},
+						ProxySettings: proxySettings,
+						ContainerRuntimeOpts: kubermaticv1.ContainerRuntimeOpts{
+							InsecureRegistries: []string{},
+							RegistryMirrors:    []string{},
+							ContainerdRegistryMirrors: &kubermaticv1.ContainerRuntimeContainerd{
+								Registries: map[string]kubermaticv1.ContainerdRegistry{
+									"docker.io": {
+										Mirrors: []string{"mirror.gcr.io"},
+									},
 								},
 							},
 						},
