@@ -183,9 +183,6 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 	return strings.TrimSpace(output.String()), nil
 }
 
-// While updating the prometheusConfig template, remember that tab characters in the template (`\t`)
-// that might be used for indentation can cause syntax errors.
-// Please ensure to use spaces instead of tabs to prevent syntax errors in this template.
 const prometheusConfig = `
 global:
   evaluation_interval: 30s
