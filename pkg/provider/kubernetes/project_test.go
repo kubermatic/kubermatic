@@ -23,8 +23,8 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/test/diff"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -41,15 +41,7 @@ func TestProjectGetterFactory(t *testing.T) {
 		{
 			name: "scenario 1: should return one existing project",
 			expectedProjectMap: map[string]*kubermaticv1.Project{
-				"test": &kubermaticv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:            testProject,
-						ResourceVersion: "1",
-					},
-					Spec: kubermaticv1.ProjectSpec{
-						Name: testProject,
-					},
-				},
+				testProject: genProject(testProject),
 			},
 			seedClient: fake.
 				NewClientBuilder().
@@ -82,7 +74,6 @@ func TestProjectGetterFactory(t *testing.T) {
 			}
 		})
 	}
-	return
 }
 
 func genProject(name string) *kubermaticv1.Project {

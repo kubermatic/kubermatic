@@ -200,7 +200,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
 	}
 
-	projectsGetter, err := kubernetesprovider.ProjectsGetterFactory(rootCtx, mgr.GetClient(), options.namespace)
+	projectsGetter, err := kubernetesprovider.ProjectsGetterFactory(rootCtx, mgr.GetClient())
 	if err != nil {
 		log.Fatalw("Unable to create the seed getter", zap.Error(err))
 	}

@@ -29,6 +29,7 @@ import (
 	"fmt"
 	"time"
 
+	"dario.cat/mergo"
 	"go.uber.org/zap"
 
 	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
@@ -126,9 +127,9 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 func enqueueClustersForProject(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
 		project := a.(*kubermaticv1.Project)
-		labelReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.ObjectMeta.Name})
+		labelReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
 		if err != nil {
-
+			return nil
 		}
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := client.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{
@@ -301,10 +302,19 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 	}
 
 	// When default tenant spec has changed, we should update it in the kubelb management cluster tenant resource
-	if !equality.Semantic.DeepEqualWithNilDifferentFromEmpty(defaultTenantSpec, tenant.Spec) {
-		tenant.Spec = *defaultTenantSpec
-		if err := client.Update(ctx, tenant); err != nil {
-			return fmt.Errorf("failed to update tenant: %w", err)
+	if defaultTenantSpec != nil {
+		// overwrite default tenant spec with current spec values
+		mergedTenantSpec := tenant.Spec.DeepCopy()
+		err := mergo.Merge(mergedTenantSpec, defaultTenantSpec)
+		if err != nil {
+			return fmt.Errorf("failed to merge default tenant spec and current spec: %w", err)
+		}
+		// if merged spec and current spec are different we need to update the tenant
+		if !equality.Semantic.DeepEqualWithNilDifferentFromEmpty(*mergedTenantSpec, tenant.Spec) {
+			tenant.Spec = *mergedTenantSpec
+			if err := client.Update(ctx, tenant); err != nil {
+				return fmt.Errorf("failed to update tenant: %w", err)
+			}
 		}
 	}
 
