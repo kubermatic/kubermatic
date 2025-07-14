@@ -9,6 +9,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20240110234408-18fa1fc7dc06 // Gatekeeper's desired version
 	github.com/vmware-tanzu/velero v1.14.0
+	k8c.io/kubelb v1.1.2
 	k8c.io/machine-controller/sdk v0.0.0-20250314150330-99a4aa5532ca
 	k8s.io/api v0.31.2
 	k8s.io/apimachinery v0.31.2
@@ -17,8 +18,6 @@ require (
 	kubevirt.io/api v1.3.1
 	sigs.k8s.io/yaml v1.4.0
 )
-
-require k8c.io/kubelb v1.1.5
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
