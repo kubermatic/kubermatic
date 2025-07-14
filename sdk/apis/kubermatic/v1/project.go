@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -71,6 +72,8 @@ type ProjectSpec struct {
 	Name string `json:"name"`
 	// AllowedOperatingSystems defines a map of operating systems that can be used for the machines inside this project.
 	AllowedOperatingSystems allowedOperatingSystems `json:"allowedOperatingSystems,omitempty"`
+	// DefaultTenantSpec
+	DefaultTenantSpec *kubelbv1alpha1.TenantSpec `json:"defaultTenantSpec,omitempty"`
 }
 
 // ProjectStatus represents the current status of a project.

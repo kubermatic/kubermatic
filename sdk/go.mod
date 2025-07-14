@@ -18,6 +18,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0
 )
 
+require k8c.io/kubelb v1.1.5
+
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
@@ -90,6 +92,7 @@ require (
 	kubevirt.io/containerized-data-importer-api v1.60.3 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	sigs.k8s.io/controller-runtime v0.19.0 // indirect
+	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
