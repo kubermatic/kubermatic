@@ -17,9 +17,83 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"testing"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestProjectGetterFactoriesetsDefaults(t *testing.T) {
+const (
+	testProject = "test"
+)
+
+func TestProjectGetterFactory(t *testing.T) {
+	testCases := []struct {
+		name               string
+		expectedProjectMap map[string]*kubermaticv1.Project
+		seedClient         ctrlruntimeclient.Client
+	}{
+		{
+			name: "scenario 1: should return one existing project",
+			expectedProjectMap: map[string]*kubermaticv1.Project{
+				"test": &kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            testProject,
+						ResourceVersion: "1",
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: testProject,
+					},
+				},
+			},
+			seedClient: fake.
+				NewClientBuilder().
+				WithObjects(genProject(testProject)).
+				Build(),
+		},
+		{
+			name:               "scenario 2: should return empty map when no project exists",
+			expectedProjectMap: map[string]*kubermaticv1.Project{},
+			seedClient: fake.
+				NewClientBuilder().
+				WithObjects().
+				Build(),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			projectsGetter, err := ProjectsGetterFactory(context.Background(), tc.seedClient)
+			if err != nil {
+				t.Fatalf("failed getting projectsGetter: %v", err)
+			}
+			projects, err := projectsGetter()
+			if err != nil {
+				t.Fatalf("failed calling projectsGetter: %v", err)
+			}
+
+			if cmp := diff.ObjectDiff(tc.expectedProjectMap, projects); cmp != "" {
+				t.Fatalf("expected projects map is not equal to current one: %s", cmp)
+			}
+		})
+	}
 	return
+}
+
+func genProject(name string) *kubermaticv1.Project {
+	project := &kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            name,
+			ResourceVersion: "1",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: name,
+		},
+	}
+	return project
 }

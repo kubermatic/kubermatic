@@ -300,7 +300,7 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 		}
 	}
 
-	// When default tenant spec has changed, we should update it in the kubelb management cluster
+	// When default tenant spec has changed, we should update it in the kubelb management cluster tenant resource
 	if !equality.Semantic.DeepEqualWithNilDifferentFromEmpty(defaultTenantSpec, tenant.Spec) {
 		tenant.Spec = *defaultTenantSpec
 		if err := client.Update(ctx, tenant); err != nil {

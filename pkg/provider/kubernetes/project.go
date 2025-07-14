@@ -32,7 +32,7 @@ var (
 	emptyProjectMap = map[string]*kubermaticv1.Project{}
 )
 
-func ProjectsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (provider.ProjectsGetter, error) {
+func ProjectsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.ProjectsGetter, error) {
 	return func() (map[string]*kubermaticv1.Project, error) {
 		projectList := &kubermaticv1.ProjectList{}
 		if err := client.List(ctx, projectList); err != nil {
@@ -41,7 +41,7 @@ func ProjectsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client,
 				// empty map.
 				return emptyProjectMap, nil
 			}
-			return nil, fmt.Errorf("failed to get project %q: %w", provider.DefaultSeedName, err)
+			return nil, fmt.Errorf("failed to get projects: %w", err)
 		}
 		projectMap := map[string]*kubermaticv1.Project{}
 		for _, project := range projectList.Items {
