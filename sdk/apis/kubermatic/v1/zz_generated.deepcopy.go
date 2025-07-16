@@ -1197,6 +1197,11 @@ func (in *CloudSpec) DeepCopyInto(out *CloudSpec) {
 		*out = new(OpenstackCloudSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Packet != nil {
+		in, out := &in.Packet, &out.Packet
+		*out = new(PacketCloudSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Hetzner != nil {
 		in, out := &in.Hetzner, &out.Hetzner
 		*out = new(HetznerCloudSpec)
@@ -2318,6 +2323,11 @@ func (in *DatacenterSpec) DeepCopyInto(out *DatacenterSpec) {
 	if in.Openstack != nil {
 		in, out := &in.Openstack, &out.Openstack
 		*out = new(DatacenterSpecOpenstack)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Packet != nil {
+		in, out := &in.Packet, &out.Packet
+		*out = new(DatacenterSpecPacket)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.Hetzner != nil {
