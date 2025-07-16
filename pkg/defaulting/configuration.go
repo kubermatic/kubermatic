@@ -224,12 +224,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.30
-			newSemver("v1.30.5"),
-			newSemver("v1.30.9"),
-			newSemver("v1.30.11"),
-			newSemver("v1.30.12"),
-			newSemver("v1.30.14"),
 			// Kubernetes 1.31
 			newSemver("v1.31.1"),
 			newSemver("v1.31.5"),
@@ -252,22 +246,6 @@ var (
 			newSemver("v1.33.4"),
 		},
 		Updates: []kubermaticv1.Update{
-			{
-				// Allow to next minor release
-				From: "1.29.*",
-				To:   "1.30.*",
-			},
-			// ======= 1.30 =======
-			{
-				// Allow to change to any patch version
-				From: "1.30.*",
-				To:   "1.30.*",
-			},
-			{
-				// Allow to next minor release
-				From: "1.30.*",
-				To:   "1.31.*",
-			},
 			// ======= 1.31 =======
 			{
 				// Allow to change to any patch version
@@ -316,9 +294,6 @@ var (
 		Default: semver.NewSemverOrDie("v1.31"),
 		Versions: []semver.Semver{
 			newSemver("v1.31"),
-			newSemver("v1.30"),
-			newSemver("v1.29"),
-			newSemver("v1.28"),
 		},
 	}
 
@@ -328,9 +303,6 @@ var (
 		Default: semver.NewSemverOrDie("v1.31"),
 		Versions: []semver.Semver{
 			newSemver("v1.31"),
-			newSemver("v1.30"),
-			newSemver("v1.29"),
-			newSemver("v1.28"),
 		},
 	}
 
