@@ -344,7 +344,9 @@ func createUserCluster(
 	testJig.ClusterJig.
 		WithTestName("application-test").
 		WithKonnectivity(true).
-		WithAnnotations(map[string]string{}).
+		WithAnnotations(map[string]string{
+			"env": "dev",
+		}).
 		WithProxyMode("ebpf")
 
 	cleanup := func() {
