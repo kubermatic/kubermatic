@@ -63,12 +63,14 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			dep.Spec.Replicas = resources.Int32(1)
 
-			if data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Replicas != nil {
-				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Replicas
-			}
+			if data.Cluster().Spec.ComponentsOverride.KubeStateMetrics != nil {
+				if data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Replicas != nil {
+					dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Replicas
+				}
 
-			if data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Tolerations != nil {
-				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Tolerations
+				if data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Tolerations != nil {
+					dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.KubeStateMetrics.Tolerations
+				}
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
