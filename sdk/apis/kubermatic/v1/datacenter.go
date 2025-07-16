@@ -30,7 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 type ProviderType string
 
 // +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
@@ -55,7 +55,6 @@ const (
 	KubevirtCloudProvider            ProviderType = "kubevirt"
 	NutanixCloudProvider             ProviderType = "nutanix"
 	OpenstackCloudProvider           ProviderType = "openstack"
-	PacketCloudProvider              ProviderType = "packet"
 	VMwareCloudDirectorCloudProvider ProviderType = "vmwareclouddirector"
 	VSphereCloudProvider             ProviderType = "vsphere"
 
@@ -84,7 +83,6 @@ var (
 		KubevirtCloudProvider,
 		NutanixCloudProvider,
 		OpenstackCloudProvider,
-		PacketCloudProvider,
 		VMwareCloudDirectorCloudProvider,
 		VSphereCloudProvider,
 	}
@@ -440,10 +438,6 @@ type DatacenterSpec struct {
 	Azure *DatacenterSpecAzure `json:"azure,omitempty"`
 	// Openstack configures an Openstack datacenter.
 	Openstack *DatacenterSpecOpenstack `json:"openstack,omitempty"`
-	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-	// Packet configures an Equinix Metal datacenter.
-	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 	// Hetzner configures a Hetzner datacenter.
 	Hetzner *DatacenterSpecHetzner `json:"hetzner,omitempty"`
 	// VSphere configures a VMware vSphere datacenter.
@@ -548,9 +542,6 @@ var (
 		},
 		OpenstackCloudProvider: {
 			ipv6EnabledForAllDatacenters: false,
-		},
-		PacketCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
 		},
 		VSphereCloudProvider: {
 			ipv6EnabledForAllDatacenters: false,
@@ -820,9 +811,7 @@ type DatacenterSpecBringYourOwn struct {
 type DatacenterSpecEdge struct {
 }
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// DatacenterSpecPacket describes a Packet datacenter.
+// NOOP.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
 	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/

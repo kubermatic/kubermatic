@@ -85,7 +85,6 @@ var (
 		kubermaticv1.GCPCloudProvider:          newGCPTestJig,
 		kubermaticv1.HetznerCloudProvider:      newHetznerTestJig,
 		kubermaticv1.OpenstackCloudProvider:    newOpenstackTestJig,
-		kubermaticv1.PacketCloudProvider:       newEquinixMetalTestJig,
 		kubermaticv1.VSphereCloudProvider:      newVSphereTestJig,
 	}
 
@@ -238,28 +237,6 @@ var (
 			},
 			cni:      CanalCNI,
 			ipFamily: net.IPFamilyIPv4IPv6,
-		},
-		{
-			cloudProvider: kubermaticv1.PacketCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRockyLinux,
-			},
-			cni:       CanalCNI,
-			ipFamily:  net.IPFamilyIPv4IPv6,
-			skipNodes: true,
-		},
-		{
-			cloudProvider: kubermaticv1.PacketCloudProvider,
-			operatingSystems: []providerconfig.OperatingSystem{
-				providerconfig.OperatingSystemUbuntu,
-				providerconfig.OperatingSystemFlatcar,
-				providerconfig.OperatingSystemRockyLinux,
-			},
-			cni:       CiliumCNI,
-			ipFamily:  net.IPFamilyIPv4IPv6,
-			skipNodes: true,
 		},
 		{
 			cloudProvider: kubermaticv1.VSphereCloudProvider,
@@ -549,12 +526,6 @@ func parseProviderCredentials(t *testing.T) {
 	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.DigitaloceanCloudProvider)) {
 		if err := digitaloceanCredentials.Parse(); err != nil {
 			t.Fatalf("Failed to get digitalocean credentials: %v", err)
-		}
-	}
-
-	if isAll(enabledProviders) || enabledProviders.Has(string(kubermaticv1.PacketCloudProvider)) {
-		if err := equinixMetalCredentials.Parse(); err != nil {
-			t.Fatalf("Failed to get equinixMetal credentials: %v", err)
 		}
 	}
 

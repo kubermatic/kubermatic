@@ -1103,10 +1103,6 @@ type CloudSpec struct {
 	Azure *AzureCloudSpec `json:"azure,omitempty"`
 	// Openstack defines the configuration data of an OpenStack cloud.
 	Openstack *OpenstackCloudSpec `json:"openstack,omitempty"`
-	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-	// Packet defines the configuration data of a Packet / Equinix Metal cloud.
-	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
 	// VSphere defines the configuration data of the vSphere.
@@ -1470,9 +1466,7 @@ type OpenstackCloudSpec struct {
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
 }
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// PacketCloudSpec specifies access data to a Packet cloud.
+// NOOP.
 type PacketCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
@@ -1746,9 +1740,6 @@ func (c *Cluster) GetSecretName() string {
 	}
 	if c.Spec.Cloud.Openstack != nil {
 		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
-	}
-	if c.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
 	if c.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)
