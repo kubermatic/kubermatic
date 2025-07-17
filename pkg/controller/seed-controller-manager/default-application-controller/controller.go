@@ -19,6 +19,7 @@ package defaultapplicationcontroller
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -371,21 +372,10 @@ func ApplicationInstallationReconciler(
 				logger.Debugf("Failed to convert default values to default values block: %v", err)
 			}
 
-			logger.Info("Default values template1: %s", application.Spec.DefaultValuesBlock)
-			configTemplate := template.New("config")
-			parsedTemplate, err := configTemplate.Parse(application.Spec.DefaultValuesBlock)
+			defaultValuesBlock, err := GenerateDefaultValuesFromTemplate(&application.Spec.DefaultValuesBlock, env)
 			if err != nil {
-				logger.Debugf("Failed to parse the template: %v", err)
+				return nil, err
 			}
-
-			templateData := TemplateData{Env: *env}
-
-			var renderedBuffer bytes.Buffer
-			if err := parsedTemplate.Execute(&renderedBuffer, templateData); err != nil {
-				logger.Debugf("Failed to execute the template: %v", err)
-			}
-
-			defaultValuesBlock := renderedBuffer.String()
 
 			logger.Info("Default values template2: %s", defaultValuesBlock)
 			delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
@@ -531,4 +521,21 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 		app.Spec.DefaultValues = nil
 	}
 	return nil
+}
+
+func GenerateDefaultValuesFromTemplate(defaultValuesBlock *string, env *string) (string, error) {
+	configTemplate := template.New("config")
+	parsedTemplate, err := configTemplate.Parse(*defaultValuesBlock)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to parse the template: %v", err))
+	}
+
+	templateData := TemplateData{Env: *env}
+
+	var renderedBuffer bytes.Buffer
+	if err := parsedTemplate.Execute(&renderedBuffer, templateData); err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to execute the template: %v", err))
+	}
+
+	return renderedBuffer.String(), nil
 }
