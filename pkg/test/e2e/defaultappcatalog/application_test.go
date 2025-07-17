@@ -1,5 +1,3 @@
-//go:build e2e
-
 /*
 Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 
@@ -33,6 +31,7 @@ import (
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	controller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/default-application-controller"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
@@ -126,6 +125,12 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		t.Fatalf("%v", err)
 	}
 
+	env := "string"
+	defaultValuesBlock, err := controller.GenerateDefaultValuesFromTemplate(&defaultValuesBlock, &env)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationInstallationName,
@@ -143,11 +148,10 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 			ValuesBlock: defaultValuesBlock,
 		},
 	}
-	tLogger.Info("Default values template1: %s", defaultValuesBlock)
 
 	tLogger.Infof("Creating an ApplicationInstallation")
 
-	err := client.Create(ctx, &application)
+	err = client.Create(ctx, &application)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -163,8 +167,6 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		if app.Status.ApplicationVersion == nil {
 			return fmt.Errorf("application not yet installed: %v", app.Status), nil
 		}
-
-		tLogger.Info("Default values template2: %s", app.Spec.ValuesBlock)
 
 		return nil, nil
 	})
