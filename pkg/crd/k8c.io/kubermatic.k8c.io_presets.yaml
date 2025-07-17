@@ -573,6 +573,36 @@ spec:
                     username:
                       type: string
                   type: object
+                packet:
+                  description: |-
+                    Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
+                    This provider is no longer supported. Migrate your configurations away from "packet" immediately.
+                    Access data for Packet Cloud.
+                    NOOP.
+                  properties:
+                    apiKey:
+                      type: string
+                    billingCycle:
+                      type: string
+                    datacenter:
+                      description: |-
+                        If datacenter is set, this preset is only applicable to the
+                        configured datacenter.
+                      type: string
+                    enabled:
+                      description: Only enabled presets will be available in the KKP dashboard.
+                      type: boolean
+                    isCustomizable:
+                      description: |-
+                        IsCustomizable marks a preset as editable on the KKP UI; Customizable presets still have the credentials obscured on the UI, but other fields that are not considered private are displayed during cluster creation. Users can then update those fields, if required.
+                        NOTE: This is only supported for OpenStack Cloud Provider in KKP 2.26. Support for other providers will be added later on.
+                      type: boolean
+                    projectID:
+                      type: string
+                  required:
+                    - apiKey
+                    - projectID
+                  type: object
                 projects:
                   description: Projects is a list of project IDs that this preset is limited to.
                   items:
