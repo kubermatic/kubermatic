@@ -45,6 +45,7 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 source hack/ci/setup-kind-cluster.sh
+#test
 
 # gather the logs of all things in the cluster control plane and in the Kubermatic namespace
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
