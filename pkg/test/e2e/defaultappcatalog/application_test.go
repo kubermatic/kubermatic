@@ -143,6 +143,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 			ValuesBlock: defaultValuesBlock,
 		},
 	}
+	tLogger.Info("Default values template1: %s", defaultValuesBlock)
 
 	tLogger.Infof("Creating an ApplicationInstallation")
 
@@ -162,6 +163,9 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		if app.Status.ApplicationVersion == nil {
 			return fmt.Errorf("application not yet installed: %v", app.Status), nil
 		}
+
+		tLogger.Info("Default values template2: %s", app.Spec.ValuesBlock)
+
 		return nil, nil
 	})
 	if err != nil {
