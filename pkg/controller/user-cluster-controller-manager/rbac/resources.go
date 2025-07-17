@@ -22,6 +22,7 @@ import (
 
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/v3/apis/config/v1alpha1"
+	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 
 	appskubermaticv1 "k8c.io/kubermatic/v2/pkg/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -157,6 +158,11 @@ func CreateClusterRole(resourceName string, cr *rbacv1.ClusterRole) (*rbacv1.Clu
 		{
 			APIGroups: []string{configv1alpha1.GroupVersion.Group},
 			Resources: []string{"configs"},
+			Verbs:     verbs,
+		},
+		{
+			APIGroups: []string{velerov1.SchemeGroupVersion.Group},
+			Resources: []string{"backups", "restores", "schedules"},
 			Verbs:     verbs,
 		},
 	}
