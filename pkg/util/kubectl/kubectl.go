@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	kubectl130 = "kubectl-1.30"
-	kubectl132 = "kubectl-1.32"
+	kubectl131 = "kubectl-1.31"
+	kubectl133 = "kubectl-1.33"
 )
 
 // BinaryForClusterVersion returns the full path to a kubectl binary
@@ -40,16 +40,14 @@ func BinaryForClusterVersion(version *semver.Semver) (string, error) {
 	var binary string
 
 	switch version.MajorMinor() {
-	case "1.29":
-		binary = kubectl130
 	case "1.30":
-		binary = kubectl130
+		binary = kubectl131
 	case "1.31":
-		binary = kubectl132
+		binary = kubectl131
 	case "1.32":
-		binary = kubectl132
+		binary = kubectl133
 	case "1.33":
-		binary = kubectl132
+		binary = kubectl133
 	default:
 		return "", fmt.Errorf("unsupported Kubernetes version %v", version)
 	}
