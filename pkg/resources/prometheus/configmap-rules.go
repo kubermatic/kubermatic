@@ -311,6 +311,26 @@ groups:
     labels:
       kubermatic: federate
 
+  - record: job:machine_deployment_available_replicas:user:sum
+    expr: sum(machine_deployment_available_replicas) by (name, namespace)
+    labels:
+      kubermatic: federate
+
+  - record: job:machine_deployment_ready_replicas:user:sum
+    expr: sum(machine_deployment_ready_replicas) by (name, namespace)
+    labels:
+      kubermatic: federate
+
+  - record: job:machine_deployment_replicas:user:sum
+    expr: sum(machine_deployment_replicas) by (name, namespace)
+    labels:
+      kubermatic: federate
+
+  - record: job:machine_deployment_updated_replicas:user:sum
+    expr: sum(machine_deployment_updated_replicas) by (name, namespace)
+    labels:
+      kubermatic: federate
+
 - name: process.filedescriptors
   rules:
   - expr: process_open_fds / process_max_fds
