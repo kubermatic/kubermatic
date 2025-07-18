@@ -1,8 +1,6 @@
 module k8c.io/kubermatic/sdk/v2
 
-go 1.22.3
-
-toolchain go1.23.0
+go 1.23.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
@@ -68,7 +66,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.30.0 // indirect
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/oauth2 v0.23.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
