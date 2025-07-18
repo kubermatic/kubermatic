@@ -17,10 +17,13 @@ limitations under the License.
 package defaultapplicationcontroller
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
+	"text/template"
 	"time"
 
 	"go.uber.org/zap"
@@ -56,6 +59,10 @@ const (
 	ControllerName      = "kkp-default-application-controller"
 	appDefinitionRefKey = ".spec.applicationRef.name"
 )
+
+type TemplateData struct {
+	Env string
+}
 
 // UserClusterClientProvider provides functionality to get a user cluster client.
 type UserClusterClientProvider interface {
@@ -167,6 +174,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		ignoreDefaultApplications = true
 	}
 
+	env := cluster.Annotations[kubermaticv1.EnvironmentAnnotation]
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
@@ -216,7 +225,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		applicationsNames[application.Name] = true
 
 		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
-		err := r.ensureApplicationInstallation(ctx, userClusterClient, application)
+		err := r.ensureApplicationInstallation(ctx, userClusterClient, application, &env)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -269,7 +278,7 @@ func (r *Reconciler) ensureApplicationEnforcedAnnotationIsRemoved(ctx context.Co
 	return nil
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition) error {
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, env *string) error {
 	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
 	// for this we need to list all existing applications installations
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
@@ -316,7 +325,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		ApplicationInstallationReconciler(r.log, application),
+		ApplicationInstallationReconciler(r.log, application, env),
 	}
 
 	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, namespaceName, userClusterClient)
@@ -325,6 +334,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 func ApplicationInstallationReconciler(
 	logger *zap.SugaredLogger,
 	application appskubermaticv1.ApplicationDefinition,
+	env *string,
 ) reconciling.NamedApplicationInstallationReconcilerFactory {
 	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		applicationName := application.Name
@@ -362,6 +372,12 @@ func ApplicationInstallationReconciler(
 				logger.Debugf("Failed to convert default values to default values block: %v", err)
 			}
 
+			defaultValuesBlock, err := GenerateDefaultValuesFromTemplate(&application.Spec.DefaultValuesBlock, env)
+			if err != nil {
+				return nil, err
+			}
+
+			logger.Info("Default values template2: %s", defaultValuesBlock)
 			delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
 
 			annotations := application.Annotations
@@ -385,7 +401,7 @@ func ApplicationInstallationReconciler(
 					Name:    application.Name,
 					Version: appVersion,
 				},
-				ValuesBlock: application.Spec.DefaultValuesBlock,
+				ValuesBlock: defaultValuesBlock,
 				Values:      runtime.RawExtension{Raw: []byte("{}")},
 			}
 
@@ -505,4 +521,21 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 		app.Spec.DefaultValues = nil
 	}
 	return nil
+}
+
+func GenerateDefaultValuesFromTemplate(defaultValuesBlock *string, env *string) (string, error) {
+	configTemplate := template.New("config")
+	parsedTemplate, err := configTemplate.Parse(*defaultValuesBlock)
+	if err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to parse the template: %v", err))
+	}
+
+	templateData := TemplateData{Env: *env}
+
+	var renderedBuffer bytes.Buffer
+	if err := parsedTemplate.Execute(&renderedBuffer, templateData); err != nil {
+		return "", errors.New(fmt.Sprintf("Failed to execute the template: %v", err))
+	}
+
+	return renderedBuffer.String(), nil
 }
