@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -41,12 +42,19 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool)
 		Secure: secure,
 	}
 
-	if secure {
-		options.Transport = &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: caBundle},
-			DisableCompression: true,
-		}
+	customTransport := &http.Transport{
+		MaxIdleConns:          1,
+		MaxConnsPerHost:       1,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
 
+	if secure {
+		customTransport.TLSClientConfig = &tls.Config{RootCAs: caBundle}
+		customTransport.DisableCompression = true
+	}
+
+	options.Transport = customTransport
 	return minio.New(endpoint, options)
 }
