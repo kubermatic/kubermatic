@@ -87,9 +87,10 @@ type SettingSpec struct {
 	DisableAdminKubeconfig bool `json:"disableAdminKubeconfig,omitempty"`
 
 	// UserProjectsLimit is the maximum number of projects a user can create.
-	UserProjectsLimit       int64 `json:"userProjectsLimit"`
-	RestrictProjectCreation bool  `json:"restrictProjectCreation"`
-	RestrictProjectDeletion bool  `json:"restrictProjectDeletion"`
+	UserProjectsLimit           int64 `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool  `json:"restrictProjectCreation"`
+	RestrictProjectDeletion     bool  `json:"restrictProjectDeletion"`
+	RestrictProjectModification bool  `json:"restrictProjectModification"`
 
 	EnableExternalClusterImport bool `json:"enableExternalClusterImport"`
 

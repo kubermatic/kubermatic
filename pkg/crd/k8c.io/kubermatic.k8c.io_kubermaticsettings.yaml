@@ -318,6 +318,8 @@ spec:
                   type: boolean
                 restrictProjectDeletion:
                   type: boolean
+                restrictProjectModification:
+                  type: boolean
                 staticLabels:
                   description: StaticLabels are a list of labels that can be used for the clusters.
                   items:
@@ -476,6 +478,7 @@ spec:
                 - mlaGrafanaPrefix
                 - restrictProjectCreation
                 - restrictProjectDeletion
+                - restrictProjectModification
                 - userProjectsLimit
               type: object
           type: object
