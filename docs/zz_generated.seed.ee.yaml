@@ -562,6 +562,8 @@ spec:
       keepaliveTime: ""
       # Resources configure limits/requests for Konnectivity components.
       resources: null
+    # KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
+    kubeStateMetrics: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
     # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
     # strategy is configured.

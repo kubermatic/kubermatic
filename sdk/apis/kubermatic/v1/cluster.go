@@ -858,6 +858,8 @@ type ComponentSettings struct {
 	OperatingSystemManager *OSMControllerSettings `json:"operatingSystemManager,omitempty"`
 	// CoreDNS configures CoreDNS deployed as part of the cluster control plane.
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
+	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
+	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 }
 
 type APIServerSettings struct {
