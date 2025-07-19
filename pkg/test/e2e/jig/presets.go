@@ -339,35 +339,6 @@ func NewGCPCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, cred
 	}
 }
 
-//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-func NewEquinixMetalCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials EquinixMetalCredentials, replicas int) *TestJig {
-	projectJig := NewProjectJig(client, log)
-
-	clusterJig := NewClusterJig(client, log).
-		WithHumanReadableName("e2e test cluster").
-		WithSSHKeyAgent(false).
-		WithCloudSpec(&kubermaticv1.CloudSpec{
-			DatacenterName: credentials.KKPDatacenter,
-			ProviderName:   string(kubermaticv1.PacketCloudProvider),
-			Packet: &kubermaticv1.PacketCloudSpec{
-				APIKey:    credentials.APIKey,
-				ProjectID: credentials.ProjectID,
-			},
-		})
-
-	machineJig := NewMachineJig(client, log, nil).
-		WithClusterJig(clusterJig).
-		WithReplicas(replicas).
-		AddSSHPublicKey(SSHPublicKey()).
-		WithCloudProviderSpec(provider.NewEquinixMetalConfig().WithInstanceType("c3.small.x86").Build())
-
-	return &TestJig{
-		ProjectJig: projectJig,
-		ClusterJig: clusterJig,
-		MachineJig: machineJig,
-	}
-}
-
 func NewBYOCluster(client ctrlruntimeclient.Client, log *zap.SugaredLogger, credentials BYOCredentials) *TestJig {
 	projectJig := NewProjectJig(client, log)
 

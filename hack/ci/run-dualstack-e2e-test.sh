@@ -80,9 +80,6 @@ export HZ_TOKEN="${HZ_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
 
 export DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
 
-export METAL_AUTH_TOKEN="${METAL_AUTH_TOKEN:-$(vault kv get -field=METAL_AUTH_TOKEN dev/e2e-equinix-metal)}"
-export METAL_PROJECT_ID="${METAL_PROJECT_ID:-$(vault kv get -field=METAL_PROJECT_ID dev/e2e-equinix-metal)}"
-
 export VSPHERE_E2E_USERNAME="${VSPHERE_E2E_USERNAME:-$(vault kv get -field=username dev/e2e-vsphere)}"
 export VSPHERE_E2E_PASSWORD="${VSPHERE_E2E_PASSWORD:-$(vault kv get -field=password dev/e2e-vsphere)}"
 
@@ -101,7 +98,6 @@ go_test dualstack_e2e -race -timeout 90m -tags "dualstack,$KUBERMATIC_EDITION" -
   -aws-kkp-datacenter aws-eu-west-1a \
   -azure-kkp-datacenter azure-westeurope \
   -digitalocean-kkp-datacenter do-fra1 \
-  -equinix-kkp-datacenter packet-am \
   -gcp-kkp-datacenter gcp-westeurope \
   -hetzner-kkp-datacenter hetzner-nbg1 \
   -openstack-kkp-datacenter syseleven-fes1 \

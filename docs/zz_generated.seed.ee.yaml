@@ -407,13 +407,8 @@ spec:
         # Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
         # This provider is no longer supported. Migrate your configurations away from "packet" immediately.
         # Packet configures an Equinix Metal datacenter.
-        packet:
-          # The list of enabled facilities, for example "ams1", for a full list of available
-          # facilities see https://metal.equinix.com/developers/docs/locations/facilities/
-          facilities: []
-          # Metros are facilities that are grouped together geographically and share capacity
-          # and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
-          metro: ""
+        # NOOP.
+        packet: null
         # Optional: ProviderReconciliationInterval is the time that must have passed since a
         # Cluster's status.lastProviderReconciliation to make the cluster controller
         # perform an in-depth provider reconciliation, where for example missing security

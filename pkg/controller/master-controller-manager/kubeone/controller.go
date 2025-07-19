@@ -1356,24 +1356,6 @@ func setEnvForProvider(providerName string, envVar []corev1.EnvVar, credentialSe
 			},
 		)
 	}
-	if providerName == resources.KubeOneEquinix {
-		envVarSource.SecretKeyRef.Key = resources.PacketAPIKey
-		envVar = append(
-			envVar,
-			corev1.EnvVar{
-				Name:      "METAL_AUTH_TOKEN",
-				ValueFrom: envVarSource,
-			},
-		)
-		envVarSource.SecretKeyRef.Key = resources.PacketProjectID
-		envVar = append(
-			envVar,
-			corev1.EnvVar{
-				Name:      "METAL_PROJECT_ID",
-				ValueFrom: envVarSource,
-			},
-		)
-	}
 	if providerName == resources.KubeOneVSphere {
 		envVarSource.SecretKeyRef.Key = resources.VsphereServer
 		envVar = append(

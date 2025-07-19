@@ -90,11 +90,6 @@ elif [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}
     -aws-kkp-datacenter=aws-eu-west-1a"
-elif [[ $provider == "packet" ]]; then
-  maxDuration=90
-  EXTRA_ARGS="-packet-api-key=${METAL_AUTH_TOKEN:-$PACKET_API_KEY}
-    -packet-project-id=${METAL_PROJECT_ID:-$PACKET_PROJECT_ID}
-    -packet-kkp-datacenter=packet-am"
 elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=$(safebase64 "$GOOGLE_SERVICE_ACCOUNT")
     -gcp-kkp-datacenter=gcp-westeurope"
