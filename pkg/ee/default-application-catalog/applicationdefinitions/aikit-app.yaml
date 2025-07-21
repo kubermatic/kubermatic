@@ -44,7 +44,7 @@ spec:
   defaultValuesBlock: |
     service:
       # To Expose AIKit externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-      type: "{{- if eq .Env \"dev\" }}LoadBalancer{{- else }}ClusterIP{{- end }}"
+      type: "{{- if eq .Env "dev" }}LoadBalancer{{- else }}ClusterIP{{- end }}"
       port: 8080
   documentationURL: https://sozercan.github.io/aikit/docs
   sourceURL: https://github.com/sozercan/aikit
