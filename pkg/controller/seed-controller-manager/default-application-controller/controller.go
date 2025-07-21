@@ -524,6 +524,7 @@ func convertDefaultValuesToDefaultValuesBlock(app *appskubermaticv1.ApplicationD
 }
 
 func GenerateDefaultValuesFromTemplate(defaultValuesBlock *string, env *string) (string, error) {
+	fmt.Printf("defaultValuesBlock: %s\n", *defaultValuesBlock)
 	configTemplate := template.New("config")
 	parsedTemplate, err := configTemplate.Parse(*defaultValuesBlock)
 	if err != nil {
@@ -536,6 +537,8 @@ func GenerateDefaultValuesFromTemplate(defaultValuesBlock *string, env *string) 
 	if err := parsedTemplate.Execute(&renderedBuffer, templateData); err != nil {
 		return "", errors.New(fmt.Sprintf("Failed to execute the template: %v", err))
 	}
+
+	fmt.Printf("renderedBuffer: %s\n", renderedBuffer.String())
 
 	return renderedBuffer.String(), nil
 }
