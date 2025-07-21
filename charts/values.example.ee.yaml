@@ -56,7 +56,6 @@ dex:
       logoURL: theme/logo.svg
       theme: light
 
-
     # Depending on your chosen login method, you need to configure either an OAuth provider like
     # Google or GitHub, or configure a set of static passwords.
 
@@ -84,7 +83,6 @@ dex:
         username: admin
         userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 
-
     staticClients:
       # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
       # needs to be configured.
@@ -107,7 +105,7 @@ dex:
         # Generate a secure secret key
         # Those can be generated on the shell using:
         # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
-        secret: <a-random-key>
+        secret: <another-random-key>
         RedirectURIs:
           # ensure the URLs below use the dex.ingress.hosts[0].host configured above
           - https://kkp.example.com/api/v1/kubeconfig
