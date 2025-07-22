@@ -21,6 +21,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"os"
 	"strings"
 	"testing"
@@ -351,7 +352,7 @@ func createUserCluster(
 		WithTestName("application-test").
 		WithKonnectivity(true).
 		WithAnnotations(map[string]string{
-			"env": "dev",
+			kubermaticv1.EnvironmentAnnotation: "dev",
 		}).
 		WithProxyMode("ebpf")
 
