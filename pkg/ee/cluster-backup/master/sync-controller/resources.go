@@ -50,6 +50,9 @@ func cbslReconcilerFactory(cbsl *kubermaticv1.ClusterBackupStorageLocation) kkpr
 func secretReconcilerFactory(s *corev1.Secret) reconciling.NamedSecretReconcilerFactory {
 	return func() (name string, create reconciling.SecretReconciler) {
 		return s.Name, func(existing *corev1.Secret) (*corev1.Secret, error) {
+			if existing.UID != "" && s.UID == existing.UID {
+				return nil, nil
+			}
 			existing.Labels = s.Labels
 			existing.Annotations = s.Annotations
 			existing.Data = s.Data

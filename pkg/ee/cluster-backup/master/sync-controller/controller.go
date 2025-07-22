@@ -197,14 +197,5 @@ func syncCBSLCredentialSecret(
 		secretReconcilerFactory(cbslSecret),
 	}
 
-	seedCBSLSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, cbslKey, seedCBSLSecret); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to fetch CBSL credential secret on seed cluster: %w", err)
-	}
-
-	if seedCBSLSecret.UID != "" && seedCBSLSecret.UID == cbslSecret.UID {
-		return nil
-	}
-
 	return reconciling.ReconcileSecrets(ctx, secretReconcilerFactory, cbslSecret.Namespace, seedClient)
 }
