@@ -29,11 +29,9 @@ import (
 	"fmt"
 	"time"
 
-	"dario.cat/mergo"
 	"go.uber.org/zap"
 
 	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
-	"k8c.io/kubermatic/sdk/v2/apis/equality"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
@@ -53,16 +51,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -117,36 +111,10 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
-		Watches(&kubermaticv1.Project{}, enqueueClustersForProject(reconciler.Client, reconciler.log)).
 		For(&kubermaticv1.Cluster{}, builder.WithPredicates(workerlabel.Predicate(workerName), clusterIsAlive)).
 		Build(reconciler)
 
 	return err
-}
-
-func enqueueClustersForProject(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, a ctrlruntimeclient.Object) []reconcile.Request {
-		project := a.(*kubermaticv1.Project)
-		labelReq, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
-		if err != nil {
-			return nil
-		}
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := client.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{
-			LabelSelector: labels.NewSelector().Add(*labelReq),
-		}); err != nil {
-			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list clusters for project: %w", err))
-		}
-
-		requests := make([]reconcile.Request, len(clusterList.Items))
-
-		for i, cluster := range clusterList.Items {
-			requests[i] = reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}
-		}
-
-		return requests
-	})
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -300,24 +268,6 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 			return fmt.Errorf("failed to create tenant: %w", err)
 		}
 	}
-
-	// When default tenant spec has changed, we should update it in the kubelb management cluster tenant resource
-	if defaultTenantSpec != nil {
-		// overwrite default tenant spec with current spec values
-		mergedTenantSpec := tenant.Spec.DeepCopy()
-		err := mergo.Merge(mergedTenantSpec, defaultTenantSpec)
-		if err != nil {
-			return fmt.Errorf("failed to merge default tenant spec and current spec: %w", err)
-		}
-		// if merged spec and current spec are different we need to update the tenant
-		if !equality.Semantic.DeepEqualWithNilDifferentFromEmpty(*mergedTenantSpec, tenant.Spec) {
-			tenant.Spec = *mergedTenantSpec
-			if err := client.Update(ctx, tenant); err != nil {
-				return fmt.Errorf("failed to update tenant: %w", err)
-			}
-		}
-	}
-
 	return nil
 }
 
