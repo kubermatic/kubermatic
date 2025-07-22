@@ -17,10 +17,12 @@ limitations under the License.
 package defaultapplicationcontroller
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"slices"
 	"strconv"
+	"text/template"
 	"time"
 
 	"go.uber.org/zap"
@@ -28,6 +30,7 @@ import (
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
+	templateDataCluster "k8c.io/kubermatic/v2/pkg/applications/providers/template"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -167,6 +170,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		ignoreDefaultApplications = true
 	}
 
+	env := cluster.Annotations[kubermaticv1.EnvironmentAnnotation]
+
 	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %w", err)
@@ -216,7 +221,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		applicationsNames[application.Name] = true
 
 		// Using reconciler framework here doesn't help since the namespaces are different for the application installations.
-		err := r.ensureApplicationInstallation(ctx, userClusterClient, application)
+		err := r.ensureApplicationInstallation(ctx, userClusterClient, application, &env)
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -269,7 +274,7 @@ func (r *Reconciler) ensureApplicationEnforcedAnnotationIsRemoved(ctx context.Co
 	return nil
 }
 
-func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition) error {
+func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClusterClient ctrlruntimeclient.Client, application appskubermaticv1.ApplicationDefinition, env *string) error {
 	// First check if the installation is already present to avoid to deploy an application twice in different namespaces by mistake
 	// for this we need to list all existing applications installations
 	existingApplicationList := &appskubermaticv1.ApplicationInstallationList{}
@@ -316,7 +321,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 	}
 
 	reconcilers := []reconciling.NamedApplicationInstallationReconcilerFactory{
-		ApplicationInstallationReconciler(r.log, application),
+		ApplicationInstallationReconciler(r.log, application, env),
 	}
 
 	return reconciling.ReconcileApplicationInstallations(ctx, reconcilers, namespaceName, userClusterClient)
@@ -325,6 +330,7 @@ func (r *Reconciler) ensureApplicationInstallation(ctx context.Context, userClus
 func ApplicationInstallationReconciler(
 	logger *zap.SugaredLogger,
 	application appskubermaticv1.ApplicationDefinition,
+	env *string,
 ) reconciling.NamedApplicationInstallationReconcilerFactory {
 	return func() (string, reconciling.ApplicationInstallationReconciler) {
 		applicationName := application.Name
@@ -362,6 +368,11 @@ func ApplicationInstallationReconciler(
 				logger.Debugf("Failed to convert default values to default values block: %v", err)
 			}
 
+			defaultValuesBlock, err := GenerateDefaultValuesFromTemplate(&application.Spec.DefaultValuesBlock, env)
+			if err != nil {
+				return nil, err
+			}
+
 			delete(application.Annotations, corev1.LastAppliedConfigAnnotation)
 
 			annotations := application.Annotations
@@ -385,7 +396,7 @@ func ApplicationInstallationReconciler(
 					Name:    application.Name,
 					Version: appVersion,
 				},
-				ValuesBlock: application.Spec.DefaultValuesBlock,
+				ValuesBlock: defaultValuesBlock,
 				Values:      runtime.RawExtension{Raw: []byte("{}")},
 			}
 
@@ -398,6 +409,27 @@ func ApplicationInstallationReconciler(
 			return app, nil
 		}
 	}
+}
+
+func GenerateDefaultValuesFromTemplate(defaultValuesBlock *string, env *string) (string, error) {
+	configTemplate := template.New("config")
+	parsedTemplate, err := configTemplate.Parse(*defaultValuesBlock)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse the template: %w", err)
+	}
+
+	templateData := templateDataCluster.TemplateData{
+		Cluster: templateDataCluster.ClusterData{
+			Env: *env,
+		},
+	}
+
+	var renderedBuffer bytes.Buffer
+	if err := parsedTemplate.Execute(&renderedBuffer, templateData); err != nil {
+		return "", fmt.Errorf("failed to execute the template: %w", err)
+	}
+
+	return renderedBuffer.String(), nil
 }
 
 func (r *Reconciler) getApplicationInstallationNamespace(ctx context.Context, applicationName string) (string, error) {

@@ -27,6 +27,7 @@ APPLICATION_INSTALLATION_NAME="${APPLICATION_INSTALLATION_NAME:-}"
 APPLICATION_NAME="${APPLICATION_NAME:-}"
 APPLICATION_NAMESPACE="${APPLICATION_NAMESPACE:-}"
 APP_LABEL_KEY="${APP_LABEL_KEY:-}"
+CUSTOM_HELM_VALUES="${CUSTOM_HELM_VALUES:-}"
 NAMES="${NAMES:-}"
 IS_SYSTEM_APP="${IS_SYSTEM_APP:-}"
 
@@ -34,6 +35,13 @@ IS_SYSTEM_APP="${IS_SYSTEM_APP:-}"
 if [[ -z "$APPLICATION_INSTALLATION_NAME" || -z "$APPLICATION_NAME" || -z "$APPLICATION_NAMESPACE" || -z "$APP_LABEL_KEY" || -z "$NAMES" ]]; then
   echo "One or more required environment variables are missing."
   exit 1
+fi
+
+if [[ -n "${CUSTOM_HELM_VALUES:-}" ]]; then
+  echo "Using custom Helm values:"
+  echo "${CUSTOM_HELM_VALUES}"
+else
+  echo "No custom Helm values provided"
 fi
 
 echo "Running test with application name '$APPLICATION_NAME' and version '$APPLICATION_NAME'"
@@ -93,6 +101,13 @@ if [[ -s "$pathToFile" ]]; then
 
   for version in $versions; do
     echodate "Processing version: $version"
+    # Determine which Helm values to use
+    helmValues="${CUSTOM_HELM_VALUES:-}"
+    if [[ -z "$helmValues" ]]; then
+      helmValues="$defaultValuesBlock"
+    fi
+
+    # Run test
     go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/defaultappcatalog \
       -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
       -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
@@ -102,7 +117,7 @@ if [[ -s "$pathToFile" ]]; then
       -application-version "$version" \
       -app-label-key "$APP_LABEL_KEY" \
       -names "$NAMES" \
-      -default-values-block "$defaultValuesBlock"
+      -helm-values "$helmValues"
   done
 else
   echo "File is empty or does not exist."

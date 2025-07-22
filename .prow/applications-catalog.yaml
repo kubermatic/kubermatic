@@ -42,6 +42,8 @@ presubmits:
               value: "app.kubernetes.io/name"
             - name: NAMES
               value: "aikit"
+            - name: CUSTOM_HELM_VALUES
+              value: "service:\n  type: \"{{- if eq .Cluster.Env \\\"dev\\\" }}LoadBalancer{{- else }}ClusterIP{{- end }}\"\n  port: 8080"
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
