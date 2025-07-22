@@ -114,10 +114,10 @@ func TestClusters(t *testing.T) {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
 
-	testUserCluster(ctx, t, tLogger, client)
+	testUserCluster(ctx, t, tLogger, client, "dev")
 }
 
-func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogger, client ctrlruntimeclient.Client, env string) {
 	logger := log.NewLogrus()
 	sublogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
@@ -126,7 +126,6 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		t.Fatalf("%v", err)
 	}
 
-	env := "string"
 	defaultValuesBlock, err := controller.GenerateDefaultValuesFromTemplate(&defaultValuesBlock, &env)
 	if err != nil {
 		t.Fatalf("%v", err)
