@@ -19,6 +19,7 @@ package s3
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -27,16 +28,16 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var defaultTransport = http.Transport{
+var customTransport = &http.Transport{
 	MaxIdleConns:          100,
 	IdleConnTimeout:       90 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
+	DisableCompression:    true,
 }
 
 func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool) (*minio.Client, error) {
 	secure := true
-	customTransport := defaultTransport.Clone()
 
 	if strings.HasPrefix(endpoint, "https://") {
 		endpoint = strings.Replace(endpoint, "https://", "", 1)
@@ -45,15 +46,21 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool)
 		secure = false
 	}
 
-	if secure {
-		customTransport.TLSClientConfig = &tls.Config{RootCAs: caBundle}
-		customTransport.DisableCompression = true
-	}
-
 	options := &minio.Options{
 		Creds:     credentials.NewStaticV4(accessKeyID, secretKey, ""),
 		Secure:    secure,
-		Transport: customTransport,
+		Transport: http.DefaultTransport,
+	}
+
+	if secure {
+		systemCerts, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get system ca certificate pool: %w", err)
+		}
+		if !caBundle.Equal(systemCerts) {
+			customTransport.TLSClientConfig = &tls.Config{RootCAs: caBundle}
+		}
+		options.Transport = customTransport
 	}
 
 	return minio.New(endpoint, options)
