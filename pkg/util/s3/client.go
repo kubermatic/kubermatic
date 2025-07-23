@@ -26,6 +26,15 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
+var defaultTransport = noCompressionTransport()
+
+func noCompressionTransport() *http.Transport {
+	tr := http.DefaultTransport.(*http.Transport).Clone()
+	tr.DisableCompression = true
+
+	return tr
+}
+
 func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool) (*minio.Client, error) {
 	secure := true
 
@@ -37,15 +46,18 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool)
 	}
 
 	options := &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretKey, ""),
-		Secure: secure,
+		Creds:     credentials.NewStaticV4(accessKeyID, secretKey, ""),
+		Secure:    secure,
+		Transport: defaultTransport,
 	}
 
-	if secure {
-		options.Transport = &http.Transport{
-			TLSClientConfig:    &tls.Config{RootCAs: caBundle},
-			DisableCompression: true,
+	if caBundle != nil {
+		tr := defaultTransport.Clone()
+		if tr.TLSClientConfig == nil {
+			tr.TLSClientConfig = &tls.Config{}
 		}
+		tr.TLSClientConfig.RootCAs = caBundle
+		options.Transport = tr
 	}
 
 	return minio.New(endpoint, options)
