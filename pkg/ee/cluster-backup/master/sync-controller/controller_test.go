@@ -35,6 +35,8 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,12 +46,21 @@ import (
 const testNamespace = "kubermatic"
 
 func TestSync(t *testing.T) {
+	secret := &corev1.Secret{
+		Data: map[string][]byte{"accessKey": []byte("test")},
+	}
+	secret.Name = "test-cbsl-secret"
+	secret.Namespace = testNamespace
+
 	cbsl := &kubermaticv1.ClusterBackupStorageLocation{}
 	cbsl.Name = "test-location"
 	cbsl.Namespace = testNamespace
 	cbsl.UID = types.UID("1234-5678")
 	cbsl.Spec = velerov1.BackupStorageLocationSpec{
 		Provider: "test",
+		Credential: &corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{
+			Name: "test-cbsl-secret",
+		}},
 	}
 
 	// When master and seed are the same cluster, the controller detects this by
@@ -68,7 +79,7 @@ func TestSync(t *testing.T) {
 
 	masterClient := fake.
 		NewClientBuilder().
-		WithObjects(cbsl).
+		WithObjects(cbsl, secret).
 		Build()
 
 	seedClients := kuberneteshelper.SeedClientMap{
@@ -115,5 +126,15 @@ func TestSync(t *testing.T) {
 
 	if remoteCBSL.Spec.Provider != cbsl.Spec.Provider {
 		t.Fatalf("CBSL was created on remote seed, but provider was not set correctly, should be %q, but is %q.", cbsl.Spec.Provider, remoteCBSL.Spec.Provider)
+	}
+
+	// check that a copy of the CBSL secret has been created on the remote seed
+	remoteCBSLSecret := &corev1.Secret{}
+	if err := seedClients["remote"].Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(secret), remoteCBSLSecret); err != nil {
+		t.Fatalf("Failed to fetch CBSL credential secret on remote seed: %v", err)
+	}
+
+	if !equality.Semantic.DeepEqual(remoteCBSLSecret.Data, secret.Data) {
+		t.Fatalf("CBSL secret was created on remote seed, but data was not set correctly, should be %q, but is %q.", secret.Data, remoteCBSLSecret.Data)
 	}
 }
