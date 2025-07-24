@@ -65,11 +65,6 @@ type Secrets struct {
 		Username      string
 		Password      string
 	}
-	Packet struct {
-		KKPDatacenter string
-		APIKey        string
-		ProjectID     string
-	}
 	GCP struct {
 		KKPDatacenter string
 		// ServiceAccount is the plaintext Service account (as JSON) without any (base64) encoding.
@@ -146,9 +141,6 @@ func (s *Secrets) AddFlags() {
 	flag.StringVar(&s.Azure.TenantID, "azure-tenant-id", "", "Azure: TenantID")
 	flag.StringVar(&s.Azure.SubscriptionID, "azure-subscription-id", "", "Azure: SubscriptionID")
 	flag.StringVar(&s.Azure.KKPDatacenter, "azure-kkp-datacenter", "", "Azure: KKP datacenter to use")
-	flag.StringVar(&s.Packet.APIKey, "packet-api-key", "", "Packet: APIKey")
-	flag.StringVar(&s.Packet.ProjectID, "packet-project-id", "", "Packet: ProjectID")
-	flag.StringVar(&s.Packet.KKPDatacenter, "packet-kkp-datacenter", "", "Packet: KKP datacenter to use")
 	flag.StringVar(&s.GCP.ServiceAccount, "gcp-service-account", "", "GCP: Service Account")
 	flag.StringVar(&s.GCP.Network, "gcp-network", "", "GCP: Network")
 	flag.StringVar(&s.GCP.Subnetwork, "gcp-subnetwork", "", "GCP: Subnetwork")

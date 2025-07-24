@@ -578,6 +578,7 @@ spec:
                     Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
                     This provider is no longer supported. Migrate your configurations away from "packet" immediately.
                     Access data for Packet Cloud.
+                    NOOP.
                   properties:
                     apiKey:
                       type: string

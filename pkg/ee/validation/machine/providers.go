@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/kubevirt"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	clusterv1alpha1 "k8c.io/machine-controller/sdk/apis/cluster/v1alpha1"
@@ -47,7 +46,6 @@ import (
 	awstypes "k8c.io/machine-controller/sdk/cloudprovider/aws"
 	azuretypes "k8c.io/machine-controller/sdk/cloudprovider/azure"
 	digitaloceantypes "k8c.io/machine-controller/sdk/cloudprovider/digitalocean"
-	equinixtypes "k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
 	gcptypes "k8c.io/machine-controller/sdk/cloudprovider/gce"
 	hetznertypes "k8c.io/machine-controller/sdk/cloudprovider/hetzner"
 	kubevirttypes "k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
@@ -86,9 +84,6 @@ const (
 	// Alibaba credential env.
 	envAlibabaAccessKeyID     = "ALIBABA_ACCESS_KEY_ID"
 	envAlibabaAccessKeySecret = "ALIBABA_ACCESS_KEY_SECRET"
-	// Equinix Metal credential env.
-	envMetalToken     = "METAL_AUTH_TOKEN"
-	envMetalProjectID = "METAL_PROJECT_ID"
 	// KubeVirt credential env.
 	envKubeVirtKubeconfig = "KUBEVIRT_KUBECONFIG"
 )
@@ -127,10 +122,6 @@ func GetMachineResourceUsage(ctx context.Context, userClient ctrlruntimeclient.C
 		quotaUsage, err = getVMwareCloudDirectorResourceRequirements(ctx, userClient, config)
 	case providerconfig.CloudProviderAnexia:
 		quotaUsage, err = getAnexiaResourceRequirements(ctx, userClient, config)
-	case providerconfig.CloudProviderEquinixMetal, providerconfig.CloudProviderPacket:
-		// Name Packet has been replaced at some point by Equinix Metal.
-		// We are in the process of migration to the new name, meaning that both names appear in our sourcecode.
-		quotaUsage, err = getPacketResourceRequirements(ctx, userClient, config)
 	default:
 		return nil, fmt.Errorf("Provider %s not supported", config.CloudProvider)
 	}
@@ -628,34 +619,4 @@ func getAnexiaResourceRequirements(ctx context.Context, userClient ctrlruntimecl
 	}
 
 	return NewResourceDetails(cpuReq, memReq, storageReq), nil
-}
-
-func getPacketResourceRequirements(ctx context.Context, client ctrlruntimeclient.Client, config *providerconfig.Config) (*ResourceDetails, error) {
-	configVarResolver := configvar.NewResolver(ctx, client)
-	rawConfig, err := equinixtypes.GetConfig(*config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get packet raw config: %w", err)
-	}
-
-	token, err := configVarResolver.GetStringValueOrEnv(rawConfig.Token, envMetalToken)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of packet \"token\": %w", err)
-	}
-
-	projectID, err := configVarResolver.GetStringValueOrEnv(rawConfig.ProjectID, envMetalProjectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of packet \"projectID\": %w", err)
-	}
-
-	instanceType, err := configVarResolver.GetStringValue(rawConfig.InstanceType)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get the value of packet \"instanceType\": %w", err)
-	}
-
-	capacity, err := packet.DescribeSize(ctx, token, projectID, instanceType)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewResourceDetailsFromCapacity(capacity)
 }

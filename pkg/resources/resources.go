@@ -643,7 +643,6 @@ const (
 	KubeOneNutanix             = "nutanix"
 	KubeOneVMwareCloudDirector = "vmwareCloudDirector"
 	KubeOneOpenStack           = "openstack"
-	KubeOneEquinix             = "equinix"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
 	KubeOneImageTag            = "v1.7.2"
@@ -688,9 +687,6 @@ const (
 	// Below OpenStack constant is added for KubeOne Clusters.
 	OpenstackAuthURL = "authURL"
 	OpenstackRegion  = "region"
-
-	PacketAPIKey    = "apiKey"
-	PacketProjectID = "projectID"
 
 	KubeVirtKubeconfig = "kubeConfig"
 

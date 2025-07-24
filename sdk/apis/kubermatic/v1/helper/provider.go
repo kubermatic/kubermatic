@@ -91,10 +91,6 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.Openstack != nil {
 		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
 	}
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if spec.Packet != nil {
-		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
-	}
 	if spec.VSphere != nil {
 		clouds = append(clouds, kubermaticv1.VSphereCloudProvider)
 	}
@@ -136,10 +132,6 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	}
 	if spec.Openstack != nil {
 		clouds = append(clouds, kubermaticv1.OpenstackCloudProvider)
-	}
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if spec.Packet != nil {
-		clouds = append(clouds, kubermaticv1.PacketCloudProvider)
 	}
 	if spec.Hetzner != nil {
 		clouds = append(clouds, kubermaticv1.HetznerCloudProvider)

@@ -57,10 +57,6 @@ func createOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Openstack != nil {
 		return createOrUpdateOpenstackSecret(ctx, seedClient, cluster)
 	}
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if cluster.Spec.Cloud.Packet != nil {
-		return createOrUpdatePacketSecret(ctx, seedClient, cluster)
-	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return createOrUpdateKubevirtSecret(ctx, seedClient, cluster)
 	}
@@ -355,34 +351,6 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = ""
 	cluster.Spec.Cloud.Openstack.ApplicationCredentialID = ""
 	cluster.Spec.Cloud.Openstack.UseToken = false
-
-	return true, nil
-}
-
-//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (bool, error) {
-	spec := cluster.Spec.Cloud.Packet
-
-	// already migrated
-	if spec.APIKey == "" && spec.ProjectID == "" {
-		return false, nil
-	}
-
-	// move credentials into dedicated Secret
-	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.PacketAPIKey:    []byte(spec.APIKey),
-		resources.PacketProjectID: []byte(spec.ProjectID),
-	})
-	if err != nil {
-		return false, err
-	}
-
-	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Packet.CredentialsReference = credentialRef
-
-	// clean old inline credentials
-	cluster.Spec.Cloud.Packet.APIKey = ""
-	cluster.Spec.Cloud.Packet.ProjectID = ""
 
 	return true, nil
 }

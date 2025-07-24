@@ -40,7 +40,6 @@ var (
 	awsCredentials          jig.AWSCredentials
 	azureCredentials        jig.AzureCredentials
 	digitaloceanCredentials jig.DigitaloceanCredentials
-	equinixMetalCredentials jig.EquinixMetalCredentials
 	gcpCredentials          jig.GCPCredentials
 	hetznerCredentials      jig.HetznerCredentials
 	openstackCredentials    jig.OpenstackCredentials
@@ -93,10 +92,6 @@ func newAzureTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger
 
 func newDigitaloceanTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
 	return jig.NewDigitaloceanCluster(seedClient, log, digitaloceanCredentials, 1)
-}
-
-func newEquinixMetalTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
-	return jig.NewEquinixMetalCluster(seedClient, log, equinixMetalCredentials, 1)
 }
 
 func newGCPTestJig(seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) *jig.TestJig {
