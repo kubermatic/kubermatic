@@ -9,6 +9,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20240110234408-18fa1fc7dc06 // Gatekeeper's desired version
 	github.com/vmware-tanzu/velero v1.14.0
+	k8c.io/kubelb v1.1.2
 	k8c.io/machine-controller/sdk v0.0.0-20250314150330-99a4aa5532ca
 	k8s.io/api v0.31.2
 	k8s.io/apimachinery v0.31.2
@@ -90,6 +91,7 @@ require (
 	kubevirt.io/containerized-data-importer-api v1.60.3 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	sigs.k8s.io/controller-runtime v0.19.0 // indirect
+	sigs.k8s.io/gateway-api v1.1.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 )
