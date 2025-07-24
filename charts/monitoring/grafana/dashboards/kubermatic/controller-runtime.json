@@ -38,7 +38,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "Total number of reconciliations per controller",
       "editable": true,
@@ -120,7 +120,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -139,7 +139,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "Total number of reconciliation errors per controller",
       "editable": true,
@@ -217,7 +217,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -262,7 +262,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "How long in seconds an item stays in workqueue before being requested",
       "editable": true,
@@ -343,7 +343,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -356,7 +356,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -370,7 +370,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -390,7 +390,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -468,7 +468,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -487,7 +487,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "How long in seconds processing an item from workqueue takes.",
       "editable": true,
@@ -568,7 +568,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -581,7 +581,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -595,7 +595,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -615,7 +615,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "Total number of retries handled by workqueue",
       "editable": true,
@@ -693,7 +693,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "exemplar": true,
@@ -717,6 +717,21 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "hide": 2,
         "name": "namespace",
         "query": "kubermatic",
@@ -728,7 +743,7 @@
         "current": {},
         "datasource": {
           "type": "prometheus",
-          "uid": "P1809F7CD0C75ACF3"
+          "uid": "$datasource"
         },
         "definition": "label_values(controller_runtime_reconcile_total{namespace=\"$namespace\"},app_kubernetes_io_name)",
         "hide": 0,
