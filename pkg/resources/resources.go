@@ -1552,6 +1552,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.CoreDNS != nil && componentSettings.CoreDNS.Resources != nil {
 		r[CoreDNSDeploymentName] = componentSettings.CoreDNS.Resources.DeepCopy()
 	}
+	if componentSettings.KubeStateMetrics != nil && componentSettings.KubeStateMetrics.Resources != nil {
+		r[KubeStateMetricsDeploymentName] = componentSettings.KubeStateMetrics.Resources.DeepCopy()
+	}
 
 	return r
 }
