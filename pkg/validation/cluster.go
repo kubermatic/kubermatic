@@ -76,6 +76,8 @@ const (
 	EARKeyLength = 32
 
 	podSecurityPolicyAdmissionPluginName = "PodSecurityPolicy"
+
+	leastK8sVersionForKonnectivityXfr = "1.31.0"
 )
 
 // ValidateClusterSpec validates the given cluster spec. If this is not called from within another validation
@@ -173,6 +175,55 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	if spec.IsAuthorizationConfigurationFileEnabled() && spec.IsWebhookAuthorizationEnabled() {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("authorizationConfig"), "AuthorizationWebhookConfiguration and AuthorizationConfigurationFile cannot be used together"))
 	}
+
+	if errs := ValidateKonnectivityConfig(
+		spec.ComponentsOverride.KonnectivityProxy.KonnectivityConfigurations,
+		field.NewPath("componentsOverride", "konnectivityProxy", "configurations"),
+		&spec.Version,
+	); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	return allErrs
+}
+
+func ValidateKonnectivityConfig(
+	conf *kubermaticv1.KonnectivityConfigurations,
+	fldPath *field.Path,
+	clusterVersion *semver.Semver,
+) field.ErrorList {
+	if conf == nil || clusterVersion == nil {
+		return nil
+	}
+
+	allErrs := field.ErrorList{}
+
+	if conf.Server.XfrChannelSize != nil {
+		if clusterVersion.Semver().Compare(semverlib.MustParse(leastK8sVersionForKonnectivityXfr)) < 0 {
+			allErrs = append(allErrs, field.Invalid(
+				fldPath.Child("konnectivityServerConfig", "xfrChannelSize"),
+				conf.Server.XfrChannelSize,
+				fmt.Sprintf(
+					"XfrChannelSize configuration is available for clusters with version >= %s",
+					leastK8sVersionForKonnectivityXfr,
+				),
+			))
+		}
+	}
+
+	if conf.Agent.XfrChannelSize != nil {
+		if clusterVersion.Semver().Compare(semverlib.MustParse(leastK8sVersionForKonnectivityXfr)) < 0 {
+			allErrs = append(allErrs, field.Invalid(
+				fldPath.Child("konnectivityAgentConfig", "xfrChannelSize"),
+				conf.Agent.XfrChannelSize,
+				fmt.Sprintf(
+					"XfrChannelSize configuration is available for clusters with version >= %s",
+					leastK8sVersionForKonnectivityXfr,
+				),
+			))
+		}
+	}
+
 	return allErrs
 }
 
