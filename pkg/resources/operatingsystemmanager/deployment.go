@@ -74,10 +74,10 @@ type operatingSystemManagerData interface {
 }
 
 // DeploymentReconciler returns the function to create and update the operating system manager deployment.
-func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data operatingSystemManagerData, dra bool) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(in *appsv1.Deployment) (*appsv1.Deployment, error) {
-			_, creator := DeploymentReconcilerWithoutInitWrapper(data)()
+			_, creator := DeploymentReconcilerWithoutInitWrapper(data, dra)()
 			deployment, err := creator(in)
 			if err != nil {
 				return nil, err
@@ -95,7 +95,7 @@ func DeploymentReconciler(data operatingSystemManagerData) reconciling.NamedDepl
 
 // DeploymentReconcilerWithoutInitWrapper returns the function to create and update the operating system manager deployment without the
 // wrapper that checks for apiserver availability. This allows to adjust the command.
-func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData, dra bool) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.OperatingSystemManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			var err error
@@ -176,7 +176,7 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 					Name:    resources.OperatingSystemManagerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/osm-controller"},
-					Args:    getFlags(data, cs),
+					Args:    getFlags(data, cs, dra),
 					Env:     envVars,
 					LivenessProbe: &corev1.Probe{
 						ProbeHandler: corev1.ProbeHandler{
@@ -252,7 +252,7 @@ type clusterSpec struct {
 	podCidr          string
 }
 
-func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
+func getFlags(data operatingSystemManagerData, cs *clusterSpec, dra bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-health-probe-address", "0.0.0.0:8085",
@@ -277,8 +277,17 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 	nodeSettings := data.DC().Node
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
+	kubeletFeatureGates := []string{}
 	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
-		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
+		kubeletFeatureGates = append(kubeletFeatureGates, csiMigrationFeatureGates...)
+	}
+
+	if dra {
+		kubeletFeatureGates = append(kubeletFeatureGates, "DynamicResourceAllocation=true")
+	}
+
+	if len(kubeletFeatureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(kubeletFeatureGates, ","))
 	}
 
 	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {
