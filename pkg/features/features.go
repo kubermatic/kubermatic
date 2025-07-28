@@ -65,6 +65,9 @@ const (
 	// and disable related controllers and components such as the userSSHKeySynchronizerFactoryCreator and
 	// usersshkeyprojectownershipcontroller.
 	DisableUserSSHKey = "DisableUserSSHKey"
+
+	// DynamicResourceAllocation if enabled, it lets Kubernetes allocate resources to your Pods with DRA.
+	DynamicResourceAllocation = "DynamicResourceAllocation"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

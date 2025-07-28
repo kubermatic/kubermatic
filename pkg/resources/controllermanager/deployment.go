@@ -58,7 +58,7 @@ const (
 )
 
 // DeploymentReconciler returns the function to create and update the controller manager deployment.
-func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data *resources.TemplateData, dra bool) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.ControllerManagerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			baseLabels := resources.BaseAppLabels(name, nil)
@@ -66,7 +66,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 
 			version := data.Cluster().Status.Versions.ControllerManager.Semver()
 
-			flags, err := getFlags(data, version)
+			flags, err := getFlags(data, version, dra)
 			if err != nil {
 				return nil, err
 			}
@@ -203,7 +203,7 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 	}
 }
 
-func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]string, error) {
+func getFlags(data *resources.TemplateData, version *semverlib.Version, dra bool) ([]string, error) {
 	cluster := data.Cluster()
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
 
@@ -254,6 +254,9 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
 	featureGates = append(featureGates, data.GetCSIMigrationFeatureGates(cluster.Status.Versions.ControllerManager.Semver())...)
+	if dra {
+		featureGates = append(featureGates, "DynamicResourceAllocation=true")
+	}
 
 	flags = append(flags, "--feature-gates")
 	flags = append(flags, strings.Join(featureGates, ","))

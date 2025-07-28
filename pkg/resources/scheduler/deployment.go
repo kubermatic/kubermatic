@@ -53,7 +53,7 @@ const (
 )
 
 // DeploymentReconciler returns the function to create and update the scheduler deployment.
-func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data *resources.TemplateData, dra bool) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			baseLabels := resources.BaseAppLabels(name, nil)
@@ -69,6 +69,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 				// this can't be passed as two strings as the other parameters
 				"--profiling=false",
+			}
+			if dra {
+				flags = append(flags, "--feature-flags=DynamicResourceAllocation=true")
 			}
 
 			// Apply leader election settings
