@@ -71,7 +71,7 @@ func DeploymentReconciler(data *resources.TemplateData, dra bool) reconciling.Na
 				"--profiling=false",
 			}
 			if dra {
-				flags = append(flags, "--feature-flags=DynamicResourceAllocation=true")
+				flags = append(flags, "--feature-gates=DynamicResourceAllocation=true")
 			}
 
 			// Apply leader election settings

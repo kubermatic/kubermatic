@@ -283,8 +283,12 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 	}
 }
 
-// nolint:gocyclo
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled, dra bool) ([]string, error) {
+//nolint:gocyclo
+func getApiserverFlags(
+	data *resources.TemplateData,
+	etcdEndpoints []string,
+	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled, dra bool,
+) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -464,6 +468,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	if dra {
 		featureGates = append(featureGates, "DynamicResourceAllocation=true")
+		flags = append(flags, "--runtime-config=resource.k8s.io/v1beta1=true")
 	}
 
 	version := cluster.Status.Versions.Apiserver.Semver()
