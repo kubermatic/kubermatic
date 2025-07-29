@@ -190,6 +190,12 @@ func getArgs(cluster *kubermaticv1.Cluster, kServerHost, kKeepaliveTime string, 
 	clusterArgs := []string{}
 	if cluster != nil {
 		clusterArgs = cluster.Spec.ComponentsOverride.KonnectivityProxy.Args
+
+		if knpConf := cluster.Spec.ComponentsOverride.KonnectivityProxy.KonnectivityConfigurations; knpConf != nil {
+			if agentConf := knpConf.Agent; agentConf != nil && agentConf.XfrChannelSize != nil {
+				clusterArgs = append(clusterArgs, fmt.Sprintf("--xfr-channel-size=%d", *agentConf.XfrChannelSize))
+			}
+		}
 	}
 
 	if len(clusterArgs) > 0 {
