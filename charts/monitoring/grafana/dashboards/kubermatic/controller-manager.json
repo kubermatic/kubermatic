@@ -25,7 +25,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "editable": true,
       "fieldConfig": {
@@ -132,7 +132,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "sum(rate(controller_runtime_reconcile_errors_total{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m]))",
@@ -143,7 +143,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "sum(rate(controller_runtime_reconcile_total{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m]))",
@@ -161,7 +161,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "",
       "editable": true,
@@ -238,7 +238,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.5, sum(rate(controller_runtime_reconcile_time_seconds_bucket{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m])) by (le, controller))",
@@ -249,7 +249,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(controller_runtime_reconcile_time_seconds_bucket{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",controller=~\"$controller\"}[5m])) by (le, controller))",
@@ -280,7 +280,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "This metric measures the number of additions handled by the workqueue. A high value might indicate problems in the cluster, or in some of the nodes. ",
       "editable": true,
@@ -357,7 +357,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "sum(rate(workqueue_adds_total{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",name=~\"$controller\"}[5m])) by (name)",
@@ -374,7 +374,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "his metric enables you to verify how big the workqueue is. How many actions in the workqueue are waiting to be processed? It should remain a low value. The following query will allow you to easily see the increase rate in the kube-controller-manager queue. The bigger the workqueue is, the more has to process. Thus, a workqueue growing trend may indicate problems in your Kubernetes cluster. ",
       "editable": true,
@@ -451,7 +451,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "sum(rate(workqueue_depth{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",name=~\"$controller\"}[5m])) by (name)",
@@ -468,7 +468,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "P1809F7CD0C75ACF3"
+        "uid": "$datasource"
       },
       "description": "The time that kube-controller-manager is taking to fulfill the different actions to keep the desired status of the cluster. ",
       "editable": true,
@@ -545,7 +545,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "P1809F7CD0C75ACF3"
+            "uid": "$datasource"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.7, sum(rate(workqueue_queue_duration_seconds_bucket{namespace=\"$namespace\",app_kubernetes_io_name=~\"$controller_manager\",name=~\"$controller\"}[5m])) by (name, le))",
