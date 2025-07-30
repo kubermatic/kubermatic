@@ -200,6 +200,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
 	}
 
+	projectsGetter, err := kubernetesprovider.ProjectsGetterFactory(rootCtx, mgr.GetClient())
+	if err != nil {
+		log.Fatalw("Unable to create the seed getter", zap.Error(err))
+	}
+
 	var clientProvider *client.Provider
 	if isInternalConfig(cfg) {
 		clientProvider, err = client.NewInternal(mgr.GetClient())
@@ -216,6 +221,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
 		seedGetter:           seedGetter,
+		projectsGetter:       projectsGetter,
 		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
