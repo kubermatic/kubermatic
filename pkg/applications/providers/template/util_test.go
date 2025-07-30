@@ -166,6 +166,21 @@ func TestRenderValueTemplate(t *testing.T) {
 			want:    nil,
 			wantErr: ErrBadTemplate,
 		},
+		{
+			name: "case 3: rendering helm values for the certain environment should succeed",
+			values: map[string]any{
+				"key1": "{{ .Cluster.Env }}",
+			},
+			templateData: TemplateData{
+				Cluster: ClusterData{
+					Env: "dev",
+				},
+			},
+			want: map[string]any{
+				"key1": "dev",
+			},
+			wantErr: nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
