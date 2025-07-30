@@ -358,6 +358,12 @@ spec:
                     authorizationWebhookConfiguration:
                       description: Contains the settings for the AuthorizationWebhook if EnabledModes contains Webhook
                       properties:
+                        cacheAuthorizedTTL:
+                          description: 'Optional: The duration to cache authorization decisions for successful authorization webhook calls.'
+                          type: string
+                        cacheUnauthorizedTTL:
+                          description: 'Optional: The duration to cache authorization decisions for failed authorization webhook calls.'
+                          type: string
                         secretKey:
                           description: The secret Key inside the secret
                           type: string
