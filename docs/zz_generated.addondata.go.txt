@@ -38,7 +38,7 @@ type ClusterData struct {
 
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
-	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
+	// "hetzner", "kubevirt", "openstack", "vsphere" depending on
 	// the configured datacenters.
 	CloudProviderName string
 	// Version is the exact current cluster version.
@@ -151,7 +151,6 @@ type Credentials struct {
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
 	Openstack           OpenstackCredentials
-	Packet              PacketCredentials
 	Kubevirt            KubevirtCredentials
 	VSphere             VSphereCredentials
 	Alibaba             AlibabaCredentials
@@ -204,11 +203,6 @@ type OpenstackCredentials struct {
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
 	Token                       string
-}
-
-type PacketCredentials struct {
-	APIKey    string
-	ProjectID string
 }
 
 type KubevirtCredentials struct {

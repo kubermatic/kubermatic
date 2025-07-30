@@ -72,7 +72,6 @@ func init() {
 	awsCredentials.AddFlags(flag.CommandLine)
 	azureCredentials.AddFlags(flag.CommandLine)
 	digitaloceanCredentials.AddFlags(flag.CommandLine)
-	equinixMetalCredentials.AddFlags(flag.CommandLine)
 	gcpCredentials.AddFlags(flag.CommandLine)
 	hetznerCredentials.AddFlags(flag.CommandLine)
 	openstackCredentials.AddFlags(flag.CommandLine)

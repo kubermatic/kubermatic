@@ -66,6 +66,7 @@ type PresetSpec struct {
 	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
 	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Access data for Packet Cloud.
+	// NOOP.
 	Packet *Packet `json:"packet,omitempty"`
 	// Access data for Google Cloud Platform(GCP).
 	GCP *GCP `json:"gcp,omitempty"`
@@ -371,6 +372,7 @@ func (s Openstack) IsValid() bool {
 
 // Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
 // This provider is no longer supported. Migrate your configurations away from "packet" immediately.
+// NOOP.
 type Packet struct {
 	ProviderPreset `json:",inline"`
 

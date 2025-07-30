@@ -127,12 +127,6 @@ spec:
           region: europe-west3
           zoneSuffixes:
             - c
-    packet-am:
-      location: "Packet AM (Amsterdam)"
-      country: NL
-      spec:
-        packet:
-          metro: AM
     do-ams3:
       location: Amsterdam
       country: NL

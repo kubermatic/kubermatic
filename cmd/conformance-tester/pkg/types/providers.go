@@ -33,7 +33,6 @@ var AllProviders = sets.New(
 	string(kubermaticv1.KubevirtCloudProvider),
 	string(kubermaticv1.NutanixCloudProvider),
 	string(kubermaticv1.OpenstackCloudProvider),
-	string(kubermaticv1.PacketCloudProvider),
 	string(kubermaticv1.VMwareCloudDirectorCloudProvider),
 	string(kubermaticv1.VSphereCloudProvider),
 )

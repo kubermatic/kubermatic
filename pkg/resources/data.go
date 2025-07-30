@@ -885,11 +885,6 @@ func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 		}
 	}
 
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if cluster.Spec.Cloud.Packet != nil {
-		vars = append(vars, corev1.EnvVar{Name: "METAL_AUTH_TOKEN", ValueFrom: refTo(PacketAPIKey)})
-		vars = append(vars, corev1.EnvVar{Name: "METAL_PROJECT_ID", ValueFrom: refTo(PacketProjectID)})
-	}
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_SERVICE_ACCOUNT", ValueFrom: refTo(GCPServiceAccount)})
 	}

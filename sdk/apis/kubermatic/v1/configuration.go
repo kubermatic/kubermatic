@@ -497,7 +497,7 @@ type Update struct {
 type Incompatibility struct {
 	// Provider to which to apply the compatibility check.
 	// Empty string matches all providers
-	// +kubebuilder:validation:Enum="";digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
+	// +kubebuilder:validation:Enum="";digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 	Provider string `json:"provider,omitempty"`
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
 	Version string `json:"version,omitempty"`
