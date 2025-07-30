@@ -135,3 +135,11 @@ telemetry:
   # This field is required and will print an error message when that entry is missing.
   # You can generate uuid using command `uuidgen` on your linux machine
   uuid: ""
+
+velero:
+  kubectl:
+    image:
+      # Overwrite the default kubectl image repository to use the official Kubernetes registry
+      # As velero uses bitnami/kubectl by default, and bitnami is going to discontinue the support for it, i.e https://github.com/bitnami/containers/issues/83267
+      # we set the repository to the official Kubernetes registry till velero updates their default image.
+      repository: alpine/k8s
