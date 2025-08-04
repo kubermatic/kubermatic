@@ -68,6 +68,9 @@ type SeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
 // SeedClientGetter is used to get a ctrlruntimeclient for a given seed.
 type SeedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error)
 
+// ProjectsGetter is a function to retrieve a list of projects.
+type ProjectsGetter = func() (map[string]*kubermaticv1.Project, error)
+
 // CloudProvider declares a set of methods for interacting with a cloud provider.
 type CloudProvider interface {
 	InitializeCloudProvider(context.Context, *kubermaticv1.Cluster, ClusterUpdater) (*kubermaticv1.Cluster, error)
