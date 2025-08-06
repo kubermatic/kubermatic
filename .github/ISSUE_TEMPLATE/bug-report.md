@@ -44,7 +44,7 @@ Please make sure to redact all secrets (e.g. passwords, URLs...)! -->
 
 ### What cloud provider are you running on?
 
-<!-- AWS, Azure, DigitalOcean, GCP, Hetzner Cloud, Nutanix, OpenStack, Equinix Metal (Packet), VMware vSphere, Other (e.g. baremetal or non-natively supported provider) -->
+<!-- AWS, Azure, DigitalOcean, GCP, Hetzner Cloud, Nutanix, OpenStack, VMware vSphere, Other (e.g. baremetal or non-natively supported provider) -->
 
 
 

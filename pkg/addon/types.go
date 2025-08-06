@@ -206,7 +206,7 @@ type ClusterData struct {
 
 	// CloudProviderName is the name of the cloud provider used, one of
 	// "alibaba", "aws", "azure", "bringyourown", "digitalocean", "gcp",
-	// "hetzner", "kubevirt", "openstack", "packet", "vsphere" depending on
+	// "hetzner", "kubevirt", "openstack", "vsphere" depending on
 	// the configured datacenters.
 	CloudProviderName string
 	// Version is the exact current cluster version.

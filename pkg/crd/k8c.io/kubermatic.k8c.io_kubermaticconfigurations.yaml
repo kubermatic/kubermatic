@@ -2603,7 +2603,6 @@ spec:
                               - vsphere
                               - aws
                               - openstack
-                              - packet
                               - gcp
                               - kubevirt
                               - nutanix

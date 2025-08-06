@@ -154,11 +154,12 @@ type KubeOneSSHKey struct {
 }
 
 type KubeOneCloudSpec struct {
-	AWS                 *KubeOneAWSCloudSpec                 `json:"aws,omitempty"`
-	GCP                 *KubeOneGCPCloudSpec                 `json:"gcp,omitempty"`
-	Azure               *KubeOneAzureCloudSpec               `json:"azure,omitempty"`
-	DigitalOcean        *KubeOneDigitalOceanCloudSpec        `json:"digitalocean,omitempty"`
-	OpenStack           *KubeOneOpenStackCloudSpec           `json:"openstack,omitempty"`
+	AWS          *KubeOneAWSCloudSpec          `json:"aws,omitempty"`
+	GCP          *KubeOneGCPCloudSpec          `json:"gcp,omitempty"`
+	Azure        *KubeOneAzureCloudSpec        `json:"azure,omitempty"`
+	DigitalOcean *KubeOneDigitalOceanCloudSpec `json:"digitalocean,omitempty"`
+	OpenStack    *KubeOneOpenStackCloudSpec    `json:"openstack,omitempty"`
+	// NOOP.
 	Equinix             *KubeOneEquinixCloudSpec             `json:"equinix,omitempty"`
 	Hetzner             *KubeOneHetznerCloudSpec             `json:"hetzner,omitempty"`
 	VSphere             *KubeOneVSphereCloudSpec             `json:"vsphere,omitempty"`
@@ -222,7 +223,7 @@ type KubeOneVMwareCloudDirectorCloudSpec struct {
 	VDC          string `json:"vdc"`
 }
 
-// KubeOneEquinixCloudSpec specifies access data to a Equinix cloud.
+// NOOP.
 type KubeOneEquinixCloudSpec struct {
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectID"`

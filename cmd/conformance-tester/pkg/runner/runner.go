@@ -447,12 +447,6 @@ func (r *TestRunner) executeTests(
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		overallTimeout += 5 * time.Minute
 	}
-	// Packet is slower at provisioning the instances, presumably because those are actual
-	// physical hosts.
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if cluster.Spec.Cloud.Packet != nil {
-		overallTimeout += 45 * time.Minute
-	}
 
 	var timeoutRemaining time.Duration
 

@@ -130,12 +130,6 @@ openstack)
     -openstack-kkp-datacenter=syseleven-dbl1"
   ;;
 
-packet)
-  extraArgs="-packet-api-key=${METAL_AUTH_TOKEN:-$PACKET_API_KEY}
-    -packet-project-id=${METAL_PROJECT_ID:-$PACKET_PROJECT_ID}
-    -packet-kkp-datacenter=packet-am"
-  ;;
-
 vsphere)
   VSPHERE_USERNAME="${VSPHERE_USERNAME:-$(vault kv get -field=username dev/vsphere)}"
   VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
