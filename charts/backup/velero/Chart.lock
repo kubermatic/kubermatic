@@ -1,6 +1,6 @@
 dependencies:
 - name: velero
-  repository: https://vmware-tanzu.github.io/helm-charts
+  repository: oci://quay.io/kubermatic-mirror/helm-charts
   version: 7.1.0
-digest: sha256:cbe2e0ff8def6233ad51a947f20faac0ca9a90c605bcb1c4927c5e27e533e6dc
-generated: "2024-07-08T11:43:53.5218859+02:00"
+digest: sha256:4305f756b496ce15310f4f6b9ef10eff30e63d322d72b26d3c21cdc465fb1189
+generated: "2025-08-10T15:05:27.028799922+05:00"
