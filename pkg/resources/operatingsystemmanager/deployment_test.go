@@ -587,25 +587,26 @@ func TestAppendContainerRuntimeFlags(t *testing.T) {
 
 func TestGetContainerdFlags(t *testing.T) {
 	tests := []struct {
-		name     string
-		input    *kubermaticv1.ContainerRuntimeContainerd
-		expected []string
+		name                         string
+		containerRuntimeContainerd   *kubermaticv1.ContainerRuntimeContainerd
+		enableNonRootDeviceOwnership bool
+		expected                     []string
 	}{
 		{
-			name:     "nil input returns empty slice",
-			input:    nil,
-			expected: []string{},
+			name:                       "nil input returns empty slice",
+			containerRuntimeContainerd: nil,
+			expected:                   []string{},
 		},
 		{
 			name: "empty registries map returns empty slice",
-			input: &kubermaticv1.ContainerRuntimeContainerd{
+			containerRuntimeContainerd: &kubermaticv1.ContainerRuntimeContainerd{
 				Registries: map[string]kubermaticv1.ContainerdRegistry{},
 			},
 			expected: []string{},
 		},
 		{
 			name: "single registry with single mirror",
-			input: &kubermaticv1.ContainerRuntimeContainerd{
+			containerRuntimeContainerd: &kubermaticv1.ContainerRuntimeContainerd{
 				Registries: map[string]kubermaticv1.ContainerdRegistry{
 					"docker.io": {
 						Mirrors: []string{"mirror1.docker.io"},
@@ -618,7 +619,7 @@ func TestGetContainerdFlags(t *testing.T) {
 		},
 		{
 			name: "single registry with multiple mirrors",
-			input: &kubermaticv1.ContainerRuntimeContainerd{
+			containerRuntimeContainerd: &kubermaticv1.ContainerRuntimeContainerd{
 				Registries: map[string]kubermaticv1.ContainerdRegistry{
 					"docker.io": {
 						Mirrors: []string{"mirror1.docker.io", "mirror2.docker.io"},
@@ -632,7 +633,7 @@ func TestGetContainerdFlags(t *testing.T) {
 		},
 		{
 			name: "multiple registries with mirrors are sorted",
-			input: &kubermaticv1.ContainerRuntimeContainerd{
+			containerRuntimeContainerd: &kubermaticv1.ContainerRuntimeContainerd{
 				Registries: map[string]kubermaticv1.ContainerdRegistry{
 					"quay.io": {
 						Mirrors: []string{"mirror.quay.io"},
@@ -654,7 +655,7 @@ func TestGetContainerdFlags(t *testing.T) {
 		},
 		{
 			name: "registry with empty mirrors is excluded from output",
-			input: &kubermaticv1.ContainerRuntimeContainerd{
+			containerRuntimeContainerd: &kubermaticv1.ContainerRuntimeContainerd{
 				Registries: map[string]kubermaticv1.ContainerdRegistry{
 					"docker.io": {
 						Mirrors: []string{},
@@ -668,11 +669,19 @@ func TestGetContainerdFlags(t *testing.T) {
 				"-node-containerd-registry-mirrors=gcr.io=mirror.gcr.io",
 			},
 		},
+		{
+			name:                         "enable non-root device ownership in containerd",
+			containerRuntimeContainerd:   nil,
+			enableNonRootDeviceOwnership: true,
+			expected: []string{
+				"-device-ownership-from-security-context",
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := getContainerdFlags(tt.input)
+			result := getContainerdFlags(tt.containerRuntimeContainerd, tt.enableNonRootDeviceOwnership)
 			if !reflect.DeepEqual(result, tt.expected) {
 				t.Errorf("getContainerdFlags() = %v, want %v", result, tt.expected)
 			}

@@ -272,9 +272,10 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 		flags = append(flags, "-external-cloud-provider")
 	}
 
+	nodeSettings := data.DC().Node
+
 	flags = appendContainerRuntimeFlags(flags, data)
 
-	nodeSettings := data.DC().Node
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
 	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
@@ -389,13 +390,19 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 	return resources.SanitizeEnvVars(vars), nil
 }
 
-func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd, enableNonRootDeviceOwnership bool) []string {
+	flags := make([]string, 0)
+	// If enableNonRootDeviceOwnership is true, we add the flag to enable device ownership from security context.
+	if enableNonRootDeviceOwnership {
+		flags = append(flags, "-device-ownership-from-security-context")
+	}
+
 	if crid == nil || len(crid.Registries) == 0 {
-		return []string{}
+		return flags
 	}
 
 	var (
-		registries, flags []string
+		registries []string
 	)
 
 	// fetch all keys from the map and sort them
@@ -478,8 +485,14 @@ func containerdFlags(nodeSettings *kubermaticv1.NodeSettings, cluster *kubermati
 		containerdConfig = cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors
 	}
 
+	enableRootDeviceOwnership := false
+	if nodeSettings != nil {
+		// Use promoted field directly to satisfy linter (QF1008)
+		enableRootDeviceOwnership = nodeSettings.EnableNonRootDeviceOwnership
+	}
+
 	if containerdConfig != nil {
-		return getContainerdFlags(containerdConfig)
+		return getContainerdFlags(containerdConfig, enableRootDeviceOwnership)
 	}
 
 	return []string{}

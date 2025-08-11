@@ -3156,6 +3156,9 @@ spec:
                           description: A map of registries to use to render configs and mirrors for containerd registries
                           type: object
                       type: object
+                    enableNonRootDeviceOwnership:
+                      description: 'Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.'
+                      type: boolean
                     insecureRegistries:
                       description: |-
                         Optional: These image registries will be configured as insecure

@@ -1137,6 +1137,8 @@ type ContainerRuntimeOpts struct {
 	PauseImage string `json:"pauseImage,omitempty"`
 	// Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
 	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+	// Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.
+	EnableNonRootDeviceOwnership bool `json:"enableNonRootDeviceOwnership,omitempty"`
 }
 
 // ContainerRuntimeContainerd defines containerd container runtime registries configs.
