@@ -33,6 +33,8 @@ spec:
               # List of registry mirrors to use
               mirrors:
                 - mirror.gcr.io
+        # Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.
+        enableNonRootDeviceOwnership: false
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         httpProxy: ""
         # Optional: These image registries will be configured as insecure
