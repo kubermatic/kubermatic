@@ -390,14 +390,17 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 	return resources.SanitizeEnvVars(vars), nil
 }
 
-func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd, enableNonRootDeviceOwnership bool) []string {
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeOpts) []string {
 	flags := make([]string, 0)
+	if crid == nil {
+		return flags
+	}
 	// If enableNonRootDeviceOwnership is true, we add the flag to enable device ownership from security context.
-	if enableNonRootDeviceOwnership {
+	if crid.EnableNonRootDeviceOwnership {
 		flags = append(flags, "-device-ownership-from-security-context")
 	}
 
-	if crid == nil || len(crid.Registries) == 0 {
+	if crid.ContainerdRegistryMirrors == nil || len(crid.ContainerdRegistryMirrors.Registries) == 0 {
 		return flags
 	}
 
@@ -407,14 +410,14 @@ func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd, enableNon
 
 	// fetch all keys from the map and sort them
 	// for stable order.
-	for registry := range crid.Registries {
+	for registry := range crid.ContainerdRegistryMirrors.Registries {
 		registries = append(registries, registry)
 	}
 
 	slices.Sort(registries)
 
 	for _, registry := range registries {
-		for _, endpoint := range crid.Registries[registry].Mirrors {
+		for _, endpoint := range crid.ContainerdRegistryMirrors.Registries[registry].Mirrors {
 			flags = append(flags, fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint))
 		}
 	}
@@ -475,25 +478,11 @@ func appendContainerRuntimeFlags(flags []string, data operatingSystemManagerData
 }
 
 func containerdFlags(nodeSettings *kubermaticv1.NodeSettings, cluster *kubermaticv1.Cluster) []string {
-	var containerdConfig *kubermaticv1.ContainerRuntimeContainerd
-
-	if nodeSettings != nil && nodeSettings.ContainerdRegistryMirrors != nil {
-		containerdConfig = nodeSettings.ContainerdRegistryMirrors
+	if cluster != nil && cluster.Spec.ContainerRuntimeOpts != nil {
+		return getContainerdFlags(cluster.Spec.ContainerRuntimeOpts)
 	}
-
-	if cluster != nil && cluster.Spec.ContainerRuntimeOpts != nil && cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors != nil {
-		containerdConfig = cluster.Spec.ContainerRuntimeOpts.ContainerdRegistryMirrors
-	}
-
-	enableRootDeviceOwnership := false
 	if nodeSettings != nil {
-		// Use promoted field directly to satisfy linter (QF1008)
-		enableRootDeviceOwnership = nodeSettings.EnableNonRootDeviceOwnership
+		return getContainerdFlags(&nodeSettings.ContainerRuntimeOpts)
 	}
-
-	if containerdConfig != nil {
-		return getContainerdFlags(containerdConfig, enableRootDeviceOwnership)
-	}
-
 	return []string{}
 }
