@@ -63,6 +63,12 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 	}
 
 	for idx, dep := range chart.Dependencies {
+		// Skip OCI repositories as they don't need to be added to helm repos
+		if strings.HasPrefix(dep.Repository, "oci://") {
+			c.logger.Debugf("Skipping OCI repository: %s", dep.Repository)
+			continue
+		}
+
 		repoName := fmt.Sprintf("dep-%s-%d", chart.Name, idx)
 		repoAddFlags := []string{
 			"repo",
