@@ -28,6 +28,7 @@
 
 - Update Helm v3.17.4 ([#14854](https://github.com/kubermatic/kubermatic/pull/14854))
 - Update OSM to [v1.6.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.8) ([#14888](https://github.com/kubermatic/kubermatic/pull/14888))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
 
 ## v2.27.6
 
