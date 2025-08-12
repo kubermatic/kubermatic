@@ -3,4 +3,4 @@ dependencies:
   repository: oci://quay.io/kubermatic-mirror/helm-charts
   version: 7.1.0
 digest: sha256:4305f756b496ce15310f4f6b9ef10eff30e63d322d72b26d3c21cdc465fb1189
-generated: "2025-08-10T15:05:27.028799922+05:00"
+generated: "2025-08-12T17:08:20.242238335+05:00"
