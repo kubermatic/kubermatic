@@ -243,7 +243,7 @@ spec:
       terminationGracePeriodSeconds: 3600
       containers:
         - name: velero
-          image: "velero/velero:v1.14.0"
+          image: "quay.io/kubermatic-mirror/images/velero:v1.14.0"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
@@ -484,7 +484,7 @@ spec:
               name: crds
       containers:
         - name: velero
-          image: "velero/velero:v1.14.0"
+          image: "quay.io/kubermatic-mirror/images/velero:v1.14.0"
           imagePullPolicy: IfNotPresent
           command:
             - /tmp/sh
