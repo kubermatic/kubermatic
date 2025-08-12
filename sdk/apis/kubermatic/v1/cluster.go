@@ -475,6 +475,10 @@ type AuthorizationWebhookConfiguration struct {
 	SecretKey string `json:"secretKey"`
 	// the Webhook Version, by default "v1"
 	WebhookVersion string `json:"webhookVersion"`
+	// Optional: The duration to cache authorization decisions for successful authorization webhook calls.
+	CacheAuthorizedTTL *metav1.Duration `json:"cacheAuthorizedTTL,omitempty"`
+	// Optional: The duration to cache authorization decisions for failed authorization webhook calls.
+	CacheUnauthorizedTTL *metav1.Duration `json:"cacheUnauthorizedTTL,omitempty"`
 }
 
 type AuthorizationConfigurationFile struct {
