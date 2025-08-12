@@ -24,6 +24,7 @@
 - Add support for k8s patch releases 1.33.3/1.32.7/1.31.11 ([#14830](https://github.com/kubermatic/kubermatic/pull/14830))
 - Update helm to v3.17.4 ([#14831](https://github.com/kubermatic/kubermatic/pull/14831))
 - Update OSM to [v1.7.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.5) ([#14887](https://github.com/kubermatic/kubermatic/pull/14887))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
 
 ## v2.28.1
 
