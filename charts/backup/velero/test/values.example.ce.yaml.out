@@ -153,7 +153,7 @@ spec:
       dnsPolicy: ClusterFirst
       containers:
         - name: node-agent
-          image: "velero/velero:v1.14.0"
+          image: "quay.io/kubermatic-mirror/images/velero:v1.14.0"
           imagePullPolicy: IfNotPresent
           ports:
             - name: http-monitoring
