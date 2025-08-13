@@ -95,10 +95,6 @@ cortex:
         bucket_name: "cortex-ruler"
         endpoint: "minio:9000"
         insecure: true
-    runtime_config:
-      # TODO: review if we customized below or are defaults from helmchart v1.7.0 - folder name changed
-      file: "/etc/cortex-runtime-cfg/runtime-config.yaml"
-      period: "10s"
     alertmanager:
       # Note: These are customized in kubermatic. Not sure if they are really needed. But will keep them.
       enable_api: true
@@ -130,11 +126,6 @@ cortex:
         close_idle_tsdb_timeout: 365m
         wal_compression_enabled: true
         flush_blocks_on_shutdown: true
-  runtimeconfigmap:
-    # -- If true, a configmap for the `runtime_config` will be created.
-    # If false, the configmap _must_ exist already on the cluster or pods will fail to create.
-    # TODO: review if we customized below or are defaults from helmchart v1.7.0
-    create: false
   alertmanager:
     replicas: 2
     statefulSet:
