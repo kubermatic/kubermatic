@@ -462,7 +462,12 @@ set_helm_charts_version() {
     chartRepoURL=$(yq eval '.dependencies[0].repository' $chartFile)
     if [ "$chartRepoURL" != "null" ]; then
       chartDepName=$(yq eval '.dependencies[0].name' $chartFile)
-      helm repo add $chartDepName $chartRepoURL
+      # Skip OCI repositories as they don't need to be added to helm repos
+      if [[ "$chartRepoURL" == oci://* ]]; then
+        echodate "Skipping OCI repository: $chartRepoURL"
+      else
+        helm repo add $chartDepName $chartRepoURL
+      fi
 
       chartDirParent=$(dirname "$chartFile")
       helm dependency build $chartDirParent --skip-refresh
