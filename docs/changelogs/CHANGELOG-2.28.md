@@ -2,6 +2,29 @@
 
 - [v2.28.0](#v2280)
 - [v2.28.1](#v2281)
+- [v2.28.2](#v2282)
+
+## v2.28.2
+
+**GitHub release: [v2.28.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.2)**
+
+### New Features
+
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+
+### Bugfixes
+
+- Add RBAC rules for Velero Backup resources to allow get, list, and watch operations ([#14822](https://github.com/kubermatic/kubermatic/pull/14822))
+- Fix issue with CBSL credentials and status not syncing to seed clusters ([#14703](https://github.com/kubermatic/kubermatic/pull/14703))
+- Update `kubermatic-installer local kind` Dex static client configurations ([#14735](https://github.com/kubermatic/kubermatic/pull/14735))
+- Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
+
+### Updates
+
+- Add support for k8s patch releases 1.33.3/1.32.7/1.31.11 ([#14830](https://github.com/kubermatic/kubermatic/pull/14830))
+- Update helm to v3.17.4 ([#14831](https://github.com/kubermatic/kubermatic/pull/14831))
+- Update OSM to [v1.7.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.5) ([#14887](https://github.com/kubermatic/kubermatic/pull/14887))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
 
 ## v2.28.1
 
