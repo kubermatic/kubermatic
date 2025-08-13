@@ -72,6 +72,5 @@ resourceTypes:
   - {package: github.com/vmware-tanzu/velero/pkg/apis/velero/v1, resourceName: BackupStorageLocation, importAlias: velerov1 }
 
   # kyverno/v1
-  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: ClusterPolicy, apiVersionPrefix: Kyverno }
-  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: Policy, apiVersionPrefix: Kyverno }
-  
+  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: ClusterPolicy, apiVersionPrefix: Kyverno, resourceNamePlural: ClusterPolicies }
+  - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: Policy, apiVersionPrefix: Kyverno, resourceNamePlural: Policies }
