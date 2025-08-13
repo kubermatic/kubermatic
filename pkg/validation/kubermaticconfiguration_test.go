@@ -19,9 +19,12 @@ package validation
 import (
 	"testing"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/ptr"
 )
 
@@ -277,6 +280,141 @@ func TestValidateMirrorImages(t *testing.T) {
 				if len(errs) == 0 {
 					t.Fatal("Expected configuration to be invalid, but it was accepted.")
 				}
+			}
+		})
+	}
+}
+
+func TestValidateApplicationDefinitionsConfiguration(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  kubermaticv1.ApplicationDefinitionsConfiguration
+		wantErr bool
+	}{
+		{
+			name:   "valid empty configuration",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{},
+		},
+		{
+			name: "valid default application catalog with helm credentials",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:         true,
+					HelmRepository: "oci://localhost:5000/myrepo",
+					HelmCredentials: &appskubermaticv1.HelmCredentials{
+						Username: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+							Key:                  "username",
+						},
+						Password: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+							Key:                  "password",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "valid default application catalog with registry config file",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:         true,
+					HelmRepository: "oci://localhost:5000/myrepo",
+					HelmRegistryConfigFile: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+						Key:                  "config.json",
+					},
+				},
+			},
+		},
+		{
+			name: "invalid: both helm credentials and registry config file",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:         true,
+					HelmRepository: "oci://localhost:5000/myrepo",
+					HelmCredentials: &appskubermaticv1.HelmCredentials{
+						Username: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+							Key:                  "username",
+						},
+						Password: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+							Key:                  "password",
+						},
+					},
+					HelmRegistryConfigFile: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+						Key:                  "config.json",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid: helm credentials with username but no password",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:         true,
+					HelmRepository: "oci://localhost:5000/myrepo",
+					HelmCredentials: &appskubermaticv1.HelmCredentials{
+						Username: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+							Key:                  "username",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid: helm credentials with password but no username",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:         true,
+					HelmRepository: "oci://localhost:5000/myrepo",
+					HelmCredentials: &appskubermaticv1.HelmCredentials{
+						Password: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: "test-secret"},
+							Key:                  "password",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid: helm credentials with neither username/password nor registry config",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:          true,
+					HelmRepository:  "oci://localhost:5000/myrepo",
+					HelmCredentials: &appskubermaticv1.HelmCredentials{},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid default application catalog with insecure and plainHTTP settings",
+			config: kubermaticv1.ApplicationDefinitionsConfiguration{
+				DefaultApplicationCatalog: kubermaticv1.DefaultApplicationCatalogSettings{
+					Enable:         true,
+					HelmRepository: "oci://localhost:5000/myrepo",
+					Insecure:       &[]bool{true}[0],
+					PlainHTTP:      &[]bool{true}[0],
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			errs := ValidateApplicationDefinitionsConfiguration(tt.config, field.NewPath("spec", "applications"))
+			if tt.wantErr && len(errs) == 0 {
+				t.Errorf("ValidateApplicationDefinitionsConfiguration() expected errors but got none")
+			}
+			if !tt.wantErr && len(errs) > 0 {
+				t.Errorf("ValidateApplicationDefinitionsConfiguration() unexpected errors: %v", errs)
 			}
 		})
 	}

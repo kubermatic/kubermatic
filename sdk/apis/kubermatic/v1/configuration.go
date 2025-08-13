@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -574,6 +575,18 @@ type DefaultApplicationCatalogSettings struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
+
+	// HelmCredentials optionally holds the credentials for the Helm registry.
+	// Either username/password or registryConfigFile can be defined.
+	HelmCredentials *appskubermaticv1.HelmCredentials `json:"helmCredentials,omitempty"`
+
+	// Insecure disables certificate validation when using an HTTPS registry. This setting has no
+	// effect when using a plaintext connection.
+	Insecure *bool `json:"insecure,omitempty"`
+
+	// PlainHTTP will enable HTTP-only (i.e. unencrypted) traffic for oci:// URLs. By default HTTPS
+	// is used when communicating with an oci:// URL.
+	PlainHTTP *bool `json:"plainHTTP,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
