@@ -12,10 +12,11 @@
 - [v2.26.9](#v2269)
 - [v2.26.10](#v22610)
 - [v2.26.11](#v22611)
+- [v2.26.12](#v22612)
 
-## v2.26.11
+## v2.26.12
 
-**GitHub release: [v2.26.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.11)**
+**GitHub release: [v2.26.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.12)**
 
 ### New Features
 
@@ -32,6 +33,10 @@
 - Update Helm v3.17.4 ([#14855](https://github.com/kubermatic/kubermatic/pull/14855))
 - Update OSM to [v1.6.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.8) ([#14890](https://github.com/kubermatic/kubermatic/pull/14890))
 - Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14900](https://github.com/kubermatic/kubermatic/pull/14900))
+
+## v2.26.11
+
+This release contains a mistake, please use **GitHub release: [v2.26.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.12)** instead.
 
 ## v2.26.10
 
