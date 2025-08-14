@@ -51,19 +51,21 @@ import (
 )
 
 var (
-	applicationInstallationName string
-	applicationName             string
-	applicationNamespace        string
-	applicationVersion          string
-	key                         string
-	names                       string
-	defaultValuesBlock          string
-	credentials                 jig.AWSCredentials
-	logOptions                  = utils.DefaultLogOptions
+	applicationInstallationName              string
+	applicationName                          string
+	applicationNamespace                     string
+	applicationVersion                       string
+	key                                      string
+	names                                    string
+	defaultValuesBlock                       string
+	credentials                              jig.AWSCredentials
+	logOptions                               = utils.DefaultLogOptions
+	excludeApplicationsFromTestingTemplating = []string{"cert-manager"}
 )
 
 const (
-	projectName = "def-app-catalog-test-project"
+	projectName       = "def-app-catalog-test-project"
+	customVarTemplate = `"{{- if eq (index .Cluster.Annotations \"env\") \"dev\" }}custom1{{ else }}custom2{{ end }}"`
 )
 
 func init() {
@@ -126,6 +128,8 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		t.Fatalf("%v", err)
 	}
 
+	valuesBlock := makeValuesBlockWithTemplating(applicationInstallationName, defaultValuesBlock)
+
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationInstallationName,
@@ -140,7 +144,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 				Name:    applicationName,
 				Version: applicationVersion,
 			},
-			ValuesBlock: defaultValuesBlock,
+			ValuesBlock: valuesBlock,
 		},
 	}
 
@@ -359,4 +363,32 @@ func createUserCluster(
 	clusterClient, err := testJig.ClusterClient(ctx)
 
 	return clusterClient, cleanup, log, err
+}
+
+// makeValuesBlockWithTemplating takes a string of values and returns a string in order to be used for templating.
+func makeValuesBlockWithTemplating(name string, values string) string {
+	var customLine string
+	if strings.Contains(defaultValuesBlock, "null") || defaultValuesBlock == "" {
+		defaultValuesBlock = ""
+		customLine = fmt.Sprintf("customVar: %s\n", customVarTemplate)
+	} else {
+		// Ensure proper newline separation if appending
+		customLine = fmt.Sprintf("\ncustomVar: %s\n", customVarTemplate)
+	}
+
+	if !isExcluded(names, excludeApplicationsFromTestingTemplating) {
+		return values + customLine
+	}
+
+	return values
+}
+
+func isExcluded(name string, excludes []string) bool {
+	for _, excludedName := range excludes {
+		if name == excludedName {
+			return true
+		}
+	}
+
+	return false
 }
