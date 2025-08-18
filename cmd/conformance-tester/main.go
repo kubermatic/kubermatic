@@ -29,9 +29,11 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
+	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
+	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/config"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/metrics"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/runner"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/scenarios"
@@ -53,101 +55,142 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
+var (
+	options    *types.Options
+	logOptions kubermaticlog.Options
+)
+
 func main() {
+	rootCmd := &cobra.Command{
+		Use:   "conformance-tester",
+		Short: "A tool for running Kubermatic conformance tests.",
+		RunE:  runTests,
+	}
+
+	options = types.NewDefaultOptions()
+	options.AddFlags(rootCmd.Flags())
+
+	logOptions = kubermaticlog.NewDefaultOptions()
+	goFlags := flag.NewFlagSet("goflags", flag.ContinueOnError)
+	logOptions.AddFlags(goFlags)
+	rootCmd.Flags().AddGoFlagSet(goFlags)
+
+	var (
+		generateTemplateFile string
+		generateOutputFile   string
+	)
+
+	generateCmd := &cobra.Command{
+		Use:   "generate",
+		Short: "Generate a scenario file from a template.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return scenarios.GenerateScenarios(generateTemplateFile, generateOutputFile)
+		},
+	}
+	generateCmd.Flags().StringVar(&generateTemplateFile, "from", "", "The template file to generate scenarios from.")
+	generateCmd.Flags().StringVar(&generateOutputFile, "to", "scenarios.yaml", "The output file for the generated scenarios.")
+	rootCmd.AddCommand(generateCmd)
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Printf("Failed to execute command: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func runTests(cmd *cobra.Command, args []string) error {
 	rootCtx := signals.SetupSignalHandler()
 
-	// setup flags
-	opts := types.NewDefaultOptions()
-	opts.AddFlags()
-
-	logOpts := kubermaticlog.NewDefaultOptions()
-	logOpts.AddFlags(flag.CommandLine)
-
-	flag.Parse()
-
 	// setup logging
-	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	rawLog := kubermaticlog.New(logOptions.Debug, logOptions.Format)
 	log := rawLog.Sugar()
 
 	// set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	// parse our CLI flags
-	if err := opts.ParseFlags(log); err != nil {
-		log.Fatalw("Invalid flags", zap.Error(err))
+	if err := options.ParseFlags(log); err != nil {
+		return fmt.Errorf("invalid flags: %w", err)
 	}
 
 	reconciling.Configure(log)
 
 	// collect runtime metrics if there is a pushgateway URL configured
 	// and these variables are set
-	metrics.Setup(opts.PushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
+	metrics.Setup(options.PushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
 	defer metrics.UpdateMetrics(log)
 
 	// say hello
 	cli.Hello(log, "Conformance Tests", nil)
 	log.Infow("Runner configuration",
-		"providers", sets.List(opts.Providers),
-		"operatingsystems", sets.List(opts.Distributions),
-		"versions", opts.Versions,
-		"tests", sets.List(opts.Tests),
-		"dualstack", opts.DualStackEnabled,
-		"konnectivity", opts.KonnectivityEnabled,
-		"updates", opts.TestClusterUpdate,
+		"providers", sets.List(options.Providers),
+		"operatingsystems", sets.List(options.Distributions),
+		"versions", options.Versions,
+		"tests", sets.List(options.Tests),
+		"dualstack", options.DualStackEnabled,
+		"konnectivity", options.KonnectivityEnabled,
+		"updates", options.TestClusterUpdate,
 	)
 
 	// setup kube client, ctrl-runtime client, clientgetter, seedgetter etc.
-	if err := setupKubeClients(rootCtx, opts); err != nil {
-		log.Fatalw("Failed to setup kube clients", zap.Error(err))
+	if err := setupKubeClients(rootCtx, options); err != nil {
+		return fmt.Errorf("failed to setup kube clients: %w", err)
 	}
 
 	// create a temporary home directory and a fresh SSH key
 	homeDir, dynamicSSHPublicKey, err := setupHomeDir(log)
 	if err != nil {
-		log.Fatalw("Failed to setup temporary home dir", zap.Error(err))
+		return fmt.Errorf("failed to setup temporary home dir: %w", err)
 	}
-	opts.PublicKeys = append(opts.PublicKeys, dynamicSSHPublicKey)
-	opts.HomeDir = homeDir
+	options.PublicKeys = append(options.PublicKeys, dynamicSSHPublicKey)
+	options.HomeDir = homeDir
 
 	// setup runner and KKP clients
 	log.Info("Preparing project...")
-	testRunner := runner.NewKubeRunner(opts, log)
+	testRunner := runner.NewKubeRunner(options, log)
 	if err := testRunner.Setup(rootCtx); err != nil {
-		log.Fatalw("Failed to setup runner", zap.Error(err))
+		return fmt.Errorf("failed to setup runner: %w", err)
 	}
 
 	// determine what's to do
-	scenarios, err := scenarios.NewGenerator().
-		WithCloudProviders(sets.List(opts.Providers)...).
-		WithOperatingSystems(sets.List(opts.Distributions)...).
-		WithDualstack(opts.DualStackEnabled).
-		WithVersions(opts.Versions...).
-		Scenarios(rootCtx, opts, log)
+	generator := scenarios.NewGenerator()
+	if options.ScenarioFile != "" {
+		cfg, err := config.Load(options.ScenarioFile)
+		if err != nil {
+			return fmt.Errorf("failed to load scenario file %q: %w", options.ScenarioFile, err)
+		}
+		generator.WithConfig(cfg)
+	} else {
+		generator.WithCloudProviders(sets.List(options.Providers)...).
+			WithOperatingSystems(sets.List(options.Distributions)...).
+			WithDualstack(options.DualStackEnabled).
+			WithVersions(options.Versions...)
+	}
+
+	scenarios, err := generator.Scenarios(rootCtx, options, log)
 	if err != nil {
-		log.Fatalw("Failed to determine test scenarios", zap.Error(err))
+		return fmt.Errorf("failed to determine test scenarios: %w", err)
 	}
 
 	if len(scenarios) == 0 {
-		// Fatalw() because Fatal() trips up the linter because of the previous defer.
-		log.Fatalw("No scenarios match the given criteria.")
+		return fmt.Errorf("no scenarios match the given criteria")
 	}
 
 	// optionally restrict the full set of scenarios to those that previously did not succeed
 	var previousResults *runner.ResultsFile
-	if opts.RetryFailedScenarios {
-		previousResults, err = loadPreviousResults(opts)
+	if options.RetryFailedScenarios {
+		previousResults, err = loadPreviousResults(options)
 		if err != nil {
-			log.Fatalw("Failed to load previous test results", zap.Error(err))
+			return fmt.Errorf("failed to load previous test results: %w", err)
 		}
 
-		scenarios = keepOnlyFailedScenarios(log, scenarios, previousResults, *opts)
+		scenarios = keepOnlyFailedScenarios(log, scenarios, previousResults, *options)
 	}
 
 	if err := testRunner.SetupProject(rootCtx); err != nil {
-		log.Fatalw("Failed to setup project", zap.Error(err))
+		return fmt.Errorf("failed to setup project: %w", err)
 	}
 
-	log.Infow("Using project", "project", opts.KubermaticProject)
+	log.Infow("Using project", "project", options.KubermaticProject)
 
 	// let the magic happen!
 	log.Info("Running E2E tests...")
@@ -160,7 +203,7 @@ func main() {
 		results.PrintJUnitDetails()
 		results.PrintSummary()
 
-		if filename := opts.ResultsFile; filename != "" {
+		if filename := options.ResultsFile; filename != "" {
 			log.Infow("Writing results file", "filename", filename)
 
 			// Merge the previous tests with the new, current results; otherwise if we'd only
@@ -177,15 +220,15 @@ func main() {
 	}
 
 	if err != nil {
-		log.Fatalw("Failed to execute tests", zap.Error(err))
+		return fmt.Errorf("failed to execute tests: %w", err)
 	}
 
 	if results.HasFailures() {
-		// Fatalw() because Fatal() trips up the linter because of the previous defer.
-		log.Fatalw("Not all tests have passed")
+		return fmt.Errorf("not all tests have passed")
 	}
 
 	log.Infow("Test suite has completed successfully", "runtime", time.Since(start))
+	return nil
 }
 
 func setupKubeClients(ctx context.Context, opts *types.Options) error {

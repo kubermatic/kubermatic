@@ -236,7 +236,7 @@ var (
 			newSemver("v1.31.7"),
 			newSemver("v1.31.8"),
 			newSemver("v1.31.10"),
-			newSemver("v1.31.11"),
+			// newSemver("v1.31.11"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),

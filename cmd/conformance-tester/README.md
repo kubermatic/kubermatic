@@ -123,3 +123,96 @@ cluster after testing.
 
 In case a previous run left some clusters behind - maybe due to the use of `-kubermatic-delete-cluster=false` -
 they can be deleting during the next execution by setting `-cleanup-on-start=true`.
+
+### Scenario-based testing
+
+Instead of providing all test matrix options via the command line, it's possible to define test scenarios in a YAML file. This is useful for running a fixed set of tests or for complex test configurations.
+
+Use the `-scenarios-file` flag to specify the path to the scenario file.
+
+Execution model with scenarios-file:
+- One cluster is created per scenario (provider + operatingSystem + version).
+- All configured flavors for that scenario are created as separate MachineDeployments in the same cluster.
+- If a provider does not support flavors, its scenario will produce the default MachineDeployment(s).
+- Versions can be specified as minors (e.g. "1.31"); at runtime they are resolved to the latest supported patch version.
+
+Example `scenarios.yaml`:
+
+```yaml
+versions:
+  - "1.31"
+  - "1.32"
+scenarios:
+  - provider: kubevirt
+    operatingSystem: ubuntu
+    flavors:
+      - name: small
+        value:
+          virtualMachine:
+            template:
+              cpus: "2"
+              memory: "2Gi"
+              primaryDisk:
+                size: "20Gi"
+                storageClassName: "local"
+                osImage: "http://image-repo.kube-system.svc/images/ubuntu-22.04.qcow2"
+      - name: medium
+        value:
+          virtualMachine:
+            template:
+              cpus: "4"
+              memory: "4Gi"
+              primaryDisk:
+                size: "40Gi"
+                storageClassName: "local"
+                osImage: "http://image-repo.kube-system.svc/images/ubuntu-22.04.qcow2"
+  - provider: hetzner
+    operatingSystem: ubuntu
+    # no flavors: uses provider defaults
+```
+
+### Generating Scenarios
+
+The conformance tester can generate a scenario file from a template. This is useful for creating a comprehensive test plan that covers all possible combinations of providers, operating systems, versions, and provider-specific flavors.
+
+The `generate` subcommand is used for this purpose. It takes a template file and generates a `scenarios.yaml` file.
+
+Usage:
+
+```bash
+_build/conformance-tester generate --from template.yaml --to scenarios.yaml
+```
+
+Template example (excerpt):
+
+```yaml
+providers:
+  - kubevirt
+  - hetzner
+
+distributions:  # operating systems
+  - ubuntu
+  - rockylinux
+
+versions:       # minors; resolved to latest patches at runtime
+  - "1.31"
+  - "1.32"
+
+kubevirt:
+  virtualMachine:
+    template:
+      cpus: ["2", "4"]
+      memory: ["2Gi", "4Gi"]
+      primaryDisk:
+        size: ["20Gi", "40Gi"]
+        storageClassName: ["local"]
+        osImage: [
+          "http://image-repo.kube-system.svc/images/ubuntu-22.04.qcow2"
+        ]
+```
+
+Behavior:
+- The generator computes the Cartesian product of providers × distributions and expands any lists under provider-specific sections into flavor combinations.
+- For KubeVirt flavors, the image should be provided at `virtualMachine.template.primaryDisk.osImage`.
+- The generated `scenarios.yaml` contains a top-level `versions:` list and per-scenario `flavors:`.
+- YAML keys are sanitized to strings to avoid invalid keys.

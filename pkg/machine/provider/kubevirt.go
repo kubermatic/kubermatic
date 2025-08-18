@@ -17,6 +17,7 @@ limitations under the License.
 package provider
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -44,8 +45,9 @@ func (b *kubevirtConfig) WithCPUs(cpus int) *kubevirtConfig {
 	return b
 }
 
-func (b *kubevirtConfig) WithVCPUs(vCPUs int) *kubevirtConfig {
-	b.VirtualMachine.Template.VCPUs.Cores = vCPUs
+func (b *kubevirtConfig) WithVCPUs(vCPUs string) *kubevirtConfig {
+	vCPUsInt, _ := strconv.Atoi(vCPUs)
+	b.VirtualMachine.Template.VCPUs.Cores = vCPUsInt
 	return b
 }
 
@@ -66,6 +68,11 @@ func (b *kubevirtConfig) WithPrimaryDiskSize(size string) *kubevirtConfig {
 
 func (b *kubevirtConfig) WithPrimaryDiskStorageClassName(className string) *kubevirtConfig {
 	b.VirtualMachine.Template.PrimaryDisk.StorageClassName.Value = className
+	return b
+}
+
+func (b *kubevirtConfig) WithKubeconfig(kubeconfig string) *kubevirtConfig {
+	b.Auth.Kubeconfig.Value = base64.StdEncoding.EncodeToString([]byte(kubeconfig))
 	return b
 }
 

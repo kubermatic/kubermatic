@@ -26,7 +26,7 @@ import (
 func TestKubevirtConfigBuilder(t *testing.T) {
 	// call all With* functions once to ensure they all work...
 	config := NewKubevirtConfig().
-		WithVCPUs(2).
+		WithVCPUs("2").
 		WithMemory("memory").
 		WithPrimaryDiskOSImage("image").
 		WithPrimaryDiskSize("size").

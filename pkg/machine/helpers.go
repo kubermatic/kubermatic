@@ -163,31 +163,31 @@ func OperatingSystemFromSpec(osSpec interface{}) (providerconfig.OperatingSystem
 
 func ProviderTypeFromSpec(cloudProviderSpec interface{}) (kubermaticv1.ProviderType, error) {
 	switch cloudProviderSpec.(type) {
-	case alibaba.RawConfig:
+	case alibaba.RawConfig, *alibaba.RawConfig:
 		return kubermaticv1.AlibabaCloudProvider, nil
-	case anexia.RawConfig:
+	case anexia.RawConfig, *anexia.RawConfig:
 		return kubermaticv1.AnexiaCloudProvider, nil
-	case aws.RawConfig:
+	case aws.RawConfig, *aws.RawConfig:
 		return kubermaticv1.AWSCloudProvider, nil
-	case azure.RawConfig:
+	case azure.RawConfig, *azure.RawConfig:
 		return kubermaticv1.AzureCloudProvider, nil
-	case digitalocean.RawConfig:
+	case digitalocean.RawConfig, *digitalocean.RawConfig:
 		return kubermaticv1.DigitaloceanCloudProvider, nil
-	case gce.RawConfig:
+	case gce.RawConfig, *gce.RawConfig:
 		return kubermaticv1.GCPCloudProvider, nil
-	case hetzner.RawConfig:
+	case hetzner.RawConfig, *hetzner.RawConfig:
 		return kubermaticv1.HetznerCloudProvider, nil
-	case kubevirt.RawConfig:
+	case kubevirt.RawConfig, *kubevirt.RawConfig:
 		return kubermaticv1.KubevirtCloudProvider, nil
-	case nutanix.RawConfig:
+	case nutanix.RawConfig, *nutanix.RawConfig:
 		return kubermaticv1.NutanixCloudProvider, nil
-	case openstack.RawConfig:
+	case openstack.RawConfig, *openstack.RawConfig:
 		return kubermaticv1.OpenstackCloudProvider, nil
-	case vmwareclouddirector.RawConfig:
+	case vmwareclouddirector.RawConfig, *vmwareclouddirector.RawConfig:
 		return kubermaticv1.VMwareCloudDirectorCloudProvider, nil
-	case vsphere.RawConfig:
+	case vsphere.RawConfig, *vsphere.RawConfig:
 		return kubermaticv1.VSphereCloudProvider, nil
-	case baremetal.RawConfig:
+	case baremetal.RawConfig, *baremetal.RawConfig:
 		return kubermaticv1.BaremetalCloudProvider, nil
 	default:
 		return "", fmt.Errorf("cannot handle unknown cloud provider %T", cloudProviderSpec)
