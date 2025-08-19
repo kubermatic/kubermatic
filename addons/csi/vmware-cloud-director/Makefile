@@ -1,4 +1,4 @@
-# Copyright 2022 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2024 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Sourced from:
-# - https://github.com/vmware/cloud-director-named-disk-csi-driver/blob/1.6.0/manifests/csi-driver.yaml
+OUTPUT_FILE = driver.yaml
 
-{{ if eq .Cluster.CloudProviderName "vmwareclouddirector" }}
-
----
-apiVersion: storage.k8s.io/v1
-kind: CSIDriver
-metadata:
-  name: named-disk.csi.cloud-director.vmware.com
-spec:
-  attachRequired: true
-  podInfoOnMount: false
-
-{{ end }}
+.PHONY: default
+default:
+	kubectl kustomize . > $(OUTPUT_FILE).tmp
+	../../templatify.sh $(OUTPUT_FILE).tmp
+	cat _header.txt $(OUTPUT_FILE).tmp _footer.txt > $(OUTPUT_FILE)
+	rm $(OUTPUT_FILE).tmp
