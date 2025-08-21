@@ -26,6 +26,7 @@ import (
 	applicationdefinitionsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-definition-synchronizer"
 	applicationsecretsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/application-secret-synchronizer"
 	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
+	encryptionsecretsynchonizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/encryption-secret-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
 	kcstatuscontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kc-status-controller"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/kubeone"
@@ -81,6 +82,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		resourceQuotaSynchronizerFactoryCreator(ctrlCtx),
 		resourceQuotaControllerFactoryCreator(ctrlCtx),
 		policyTemplateSynchronizerFactoryCreator(ctrlCtx),
+		encryptionSecretSynchronizerFactoryCreator(ctrlCtx),
 	}
 
 	// Create the user-ssh-key-synchronizer controller even DisableUserSSHKey feature is set
@@ -290,6 +292,18 @@ func policyTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedco
 		return policytemplatesynchronizer.ControllerName, policytemplatesynchronizer.Add(
 			masterMgr,
 			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func encryptionSecretSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return encryptionsecretsynchonizer.ControllerName, encryptionsecretsynchonizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.namespace,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
 		)
