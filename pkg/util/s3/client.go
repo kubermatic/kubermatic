@@ -21,16 +21,48 @@ import (
 	"crypto/x509"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var defaultTransport = noCompressionTransport()
+// transportKey is used as a key for the transport cache.
+// It ensures that we reuse transports only when the configuration is identical.
+type transportKey struct {
+	caBundle *x509.CertPool
+	hostname string
+}
 
-func noCompressionTransport() *http.Transport {
+var (
+	transportCache = make(map[transportKey]*http.Transport)
+	cacheMutex     = &sync.Mutex{}
+)
+
+// getTransport returns a cached or new http.Transport.
+// This is essential to prevent connection leaks by reusing transports.
+func getTransport(hostname string, caBundle *x509.CertPool) *http.Transport {
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+
+	key := transportKey{hostname: hostname, caBundle: caBundle}
+
+	// If a transport for this exact key already exists, reuse it.
+	if transport, ok := transportCache[key]; ok {
+		return transport
+	}
+
+	// Create a new transport, cloning the default to inherit basic settings.
 	tr := http.DefaultTransport.(*http.Transport).Clone()
 	tr.DisableCompression = true
+
+	// If a caBundle is provided, configure TLS. Otherwise, it will use system defaults.
+	if caBundle != nil {
+		tr.TLSClientConfig = &tls.Config{RootCAs: caBundle}
+	}
+
+	// Cache the newly created transport.
+	transportCache[key] = tr
 
 	return tr
 }
@@ -45,19 +77,16 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool)
 		secure = false
 	}
 
+	// The hostname is used as part of the cache key for the transport.
+	hostname := endpoint
+	if parts := strings.Split(hostname, ":"); len(parts) > 0 {
+		hostname = parts[0]
+	}
+
 	options := &minio.Options{
 		Creds:     credentials.NewStaticV4(accessKeyID, secretKey, ""),
 		Secure:    secure,
-		Transport: defaultTransport,
-	}
-
-	if caBundle != nil {
-		tr := defaultTransport.Clone()
-		if tr.TLSClientConfig == nil {
-			tr.TLSClientConfig = &tls.Config{}
-		}
-		tr.TLSClientConfig.RootCAs = caBundle
-		options.Transport = tr
+		Transport: getTransport(hostname, caBundle),
 	}
 
 	return minio.New(endpoint, options)
