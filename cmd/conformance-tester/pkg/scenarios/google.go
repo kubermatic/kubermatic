@@ -18,7 +18,6 @@ package scenarios
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -31,22 +30,24 @@ import (
 )
 
 type googleScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *googleScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
 	)
 }
 
 func (s *googleScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -58,24 +59,22 @@ func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{
-				ServiceAccount: base64.StdEncoding.EncodeToString([]byte(secrets.GCP.ServiceAccount)),
-				Network:        secrets.GCP.Network,
-				Subnetwork:     secrets.GCP.Subnetwork,
+				ServiceAccount: secrets.GCP.ServiceAccount,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
 }
 
 func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewGCPConfig().
 		WithMachineType("n1-standard-2").
-		WithDiskType("pd-standard").
 		WithDiskSize(50).
-		WithPreemptible(false).
+		WithDiskType("pd-standard").
+		WithZone(s.Datacenter().Spec.GCP.Region).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

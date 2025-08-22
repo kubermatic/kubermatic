@@ -31,18 +31,23 @@ import (
 )
 
 const (
-	kubevirtImageHTTPServerSvc = "http://image-repo.kube-system.svc/images"
+	kubevirtImageHTTPServerSvc = "https://cloud-images.ubuntu.com/noble/current"
 	kubevirtVCPUs              = 2
 	kubevirtMemory             = "4Gi"
 	kubevirtDiskSize           = "25Gi"
-	kubevirtStorageClassName   = "local-path"
+	kubevirtStorageClassName   = "longhorn"
 )
 
-type kubevirtScenario struct {
-	baseScenario
+type KubevirtScenario struct {
+	BaseScenario
+	cpu      string
+	memory   string
+	pvcSize  string
+	pvcSC    string
+	template string
 }
 
-func (s *kubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
+func (s *KubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New(
 		providerconfig.OperatingSystemUbuntu,
 		providerconfig.OperatingSystemRHEL,
@@ -51,8 +56,8 @@ func (s *kubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.
 	)
 }
 
-func (s *kubevirtScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+func (s *KubevirtScenario) IsValid() error {
+	if err := s.IsValid(); err != nil {
 		return err
 	}
 
@@ -63,7 +68,7 @@ func (s *kubevirtScenario) IsValid() error {
 	return nil
 }
 
-func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
+func (s *KubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
 	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Kubevirt.KKPDatacenter,
@@ -79,7 +84,7 @@ func (s *kubevirtScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterS
 	}
 }
 
-func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
+func (s *KubevirtScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	image, err := s.getOSImage()
 	if err != nil {
 		return nil, err
@@ -93,7 +98,7 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 		WithPrimaryDiskStorageClassName(kubevirtStorageClassName).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}
@@ -101,10 +106,10 @@ func (s *kubevirtScenario) MachineDeployments(_ context.Context, num int, secret
 	return []clusterv1alpha1.MachineDeployment{md}, nil
 }
 
-func (s *kubevirtScenario) getOSImage() (string, error) {
+func (s *KubevirtScenario) getOSImage() (string, error) {
 	switch s.operatingSystem {
 	case providerconfig.OperatingSystemUbuntu:
-		return kubevirtImageHTTPServerSvc + "/ubuntu-22.04.img", nil
+		return kubevirtImageHTTPServerSvc + "/noble-server-cloudimg-amd64.img", nil
 	default:
 		return "", fmt.Errorf("unsupported OS %q selected", s.operatingSystem)
 	}

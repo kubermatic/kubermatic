@@ -38,6 +38,7 @@ type Client interface {
 	EnsureSSHKeys(ctx context.Context, log *zap.SugaredLogger) error
 	CreateCluster(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario) (*kubermaticv1.Cluster, error)
 	CreateMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error
+	DeleteMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error
 	DeleteCluster(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, timeout time.Duration) error
 	DeleteProject(ctx context.Context, log *zap.SugaredLogger, id string, timeout time.Duration) error
 }

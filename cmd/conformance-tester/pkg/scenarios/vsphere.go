@@ -30,8 +30,7 @@ import (
 )
 
 type vSphereScenario struct {
-	baseScenario
-
+	BaseScenario
 	customFolder     bool
 	basePath         bool
 	datastoreCluster bool
@@ -47,11 +46,11 @@ func (s *vSphereScenario) compatibleOperatingSystems() sets.Set[providerconfig.O
 }
 
 func (s *vSphereScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -59,42 +58,39 @@ func (s *vSphereScenario) IsValid() error {
 }
 
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
-	spec := &kubermaticv1.ClusterSpec{
+	return &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
-				Username:  secrets.VSphere.Username,
-				Password:  secrets.VSphere.Password,
-				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
+				Username: secrets.VSphere.Username,
+				Password: secrets.VSphere.Password,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
-
-	if s.customFolder {
-		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
-	}
-
-	if s.basePath {
-		spec.Cloud.VSphere.BasePath = "basepath_subfolder"
-	}
-
-	if s.datastoreCluster {
-		spec.Cloud.VSphere.DatastoreCluster = "Datastore0-truenas"
-		spec.Cloud.VSphere.Datastore = ""
-	}
-
-	return spec
 }
 
 func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
-	cloudProviderSpec := provider.NewVSphereConfig().
+	config := provider.NewVSphereConfig().
 		WithCPUs(2).
-		WithMemoryMB(4096).
-		WithDiskSizeGB(10).
-		Build()
+		WithMemoryMB(2048).
+		WithDiskSizeGB(20)
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	if s.customFolder {
+		config.WithFolder("custom-folder")
+	}
+
+	if s.basePath {
+		config.WithDatastore("shared-ds-for-kubermatic")
+	}
+
+	if s.datastoreCluster {
+		config.WithDatastore("dsc-1")
+	}
+
+	cloudProviderSpec := config.Build()
+
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

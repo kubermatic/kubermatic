@@ -30,7 +30,7 @@ import (
 )
 
 type alibabaScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *alibabaScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -43,11 +43,11 @@ func (s *alibabaScenario) compatibleOperatingSystems() sets.Set[providerconfig.O
 }
 
 func (s *alibabaScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -63,7 +63,7 @@ func (s *alibabaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				AccessKeyID:     secrets.Alibaba.AccessKeyID,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
 }
 
@@ -75,7 +75,7 @@ func (s *alibabaScenario) MachineDeployments(_ context.Context, replicas int, se
 		WithVSwitchID("vsw-gw8g8mn4ohmj483hsylmn").
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, replicas, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, replicas, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

@@ -211,7 +211,7 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		return nil, fmt.Errorf("failed waiting for the new cluster to appear in the cache: %w", err)
 	}
 
-	// In the future, this hack should not be required anymore, until then we sadly have
+	// In the future, this hack kubevirtKubeconfigFileshould not be required anymore, until then we sadly have
 	// to manually ensure that the owner email is set correctly
 	err := util.UpdateClusterStatus(ctx, c.opts.SeedClusterClient, cluster, func(c *kubermaticv1.Cluster) {
 		c.Status.UserEmail = "e2e@kubermatic.com"
@@ -263,6 +263,23 @@ func (c *kubeClient) getAssignedSSHKeys(ctx context.Context) ([]kubermaticv1.Use
 	}
 
 	return projectKeys, nil
+}
+
+func (c *kubeClient) DeleteMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	c.log(log).Info("Removing existing MachineDeployments...")
+
+	mdList := &clusterv1alpha1.MachineDeploymentList{}
+	if err := userClusterClient.List(ctx, mdList); err != nil {
+		return fmt.Errorf("failed to list existing MachineDeployments: %w", err)
+	}
+
+	for _, md := range mdList.Items {
+		if err := userClusterClient.Delete(ctx, &md); err != nil {
+			return fmt.Errorf("failed to delete MachineDeployment %s: %w", md.Name, err)
+		}
+	}
+
+	return nil
 }
 
 func (c *kubeClient) CreateMachineDeployments(ctx context.Context, log *zap.SugaredLogger, scenario scenarios.Scenario, userClusterClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {

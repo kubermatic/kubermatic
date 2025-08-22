@@ -29,27 +29,25 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	hetznerServerType = "cx32"
-)
-
 type hetznerScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *hetznerScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New(
-		providerconfig.OperatingSystemRockyLinux,
+	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemRHEL,
+		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
 	)
 }
 
 func (s *hetznerScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -64,16 +62,16 @@ func (s *hetznerScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 				Token: secrets.Hetzner.Token,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
 }
 
 func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewHetznerConfig().
-		WithServerType(hetznerServerType).
+		WithServerType("cpx11").
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

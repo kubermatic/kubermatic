@@ -36,8 +36,7 @@ import (
 )
 
 type Scenario interface {
-	// these are all satisfied by the baseScenario
-
+	// these are all satisfied by the BaseScenario
 	CloudProvider() kubermaticv1.ProviderType
 	OperatingSystem() providerconfig.OperatingSystem
 	ClusterVersion() semver.Semver
@@ -51,7 +50,7 @@ type Scenario interface {
 	MachineDeployments(ctx context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error)
 }
 
-type baseScenario struct {
+type BaseScenario struct {
 	cloudProvider    kubermaticv1.ProviderType
 	operatingSystem  providerconfig.OperatingSystem
 	clusterVersion   semver.Semver
@@ -59,23 +58,48 @@ type baseScenario struct {
 	datacenter       *kubermaticv1.Datacenter
 }
 
-func (s *baseScenario) CloudProvider() kubermaticv1.ProviderType {
+func (s *BaseScenario) WithCloudProvider(provider kubermaticv1.ProviderType) *BaseScenario {
+	s.cloudProvider = provider
+	return s
+}
+
+func (s *BaseScenario) WithOperatingSystem(os providerconfig.OperatingSystem) *BaseScenario {
+	s.operatingSystem = os
+	return s
+}
+
+func (s *BaseScenario) WithClusterVersion(version semver.Semver) *BaseScenario {
+	s.clusterVersion = version
+	return s
+}
+
+func (s *BaseScenario) WithDualstackEnabled(enabled bool) *BaseScenario {
+	s.dualstackEnabled = enabled
+	return s
+}
+
+func (s *BaseScenario) WithDatacenter(dc *kubermaticv1.Datacenter) *BaseScenario {
+	s.datacenter = dc
+	return s
+}
+
+func (s *BaseScenario) CloudProvider() kubermaticv1.ProviderType {
 	return s.cloudProvider
 }
 
-func (s *baseScenario) OperatingSystem() providerconfig.OperatingSystem {
+func (s *BaseScenario) OperatingSystem() providerconfig.OperatingSystem {
 	return s.operatingSystem
 }
 
-func (s *baseScenario) ClusterVersion() semver.Semver {
+func (s *BaseScenario) ClusterVersion() semver.Semver {
 	return s.clusterVersion
 }
 
-func (s *baseScenario) Datacenter() *kubermaticv1.Datacenter {
+func (s *BaseScenario) Datacenter() *kubermaticv1.Datacenter {
 	return s.datacenter
 }
 
-func (s *baseScenario) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
+func (s *BaseScenario) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 	return log.With(
 		"provider", s.cloudProvider,
 		"os", s.operatingSystem,
@@ -83,22 +107,22 @@ func (s *baseScenario) Log(log *zap.SugaredLogger) *zap.SugaredLogger {
 	)
 }
 
-func (s *baseScenario) NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger {
+func (s *BaseScenario) NamedLog(log *zap.SugaredLogger) *zap.SugaredLogger {
 	return log.With("scenario", s.Name())
 }
 
-func (s *baseScenario) Name() string {
+func (s *BaseScenario) Name() string {
 	return fmt.Sprintf("%s-%s-%s", s.cloudProvider, s.operatingSystem, s.clusterVersion.String())
 }
 
-func (s *baseScenario) IsValid() error {
+func (s *BaseScenario) IsValid() error {
 	return nil
 }
 
-func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}, sshPubKeys []string, secrets types.Secrets) (clusterv1alpha1.MachineDeployment, error) {
+func (s *BaseScenario) CreateMachineDeployment(cluster *kubermaticv1.Cluster, replicas int, cloudProviderSpec interface{}, sshPubKeys []string, secrets types.Secrets) (clusterv1alpha1.MachineDeployment, error) {
 	replicas32 := int32(replicas)
 
-	osSpec, err := s.getOperatingSystemSpec(secrets)
+	osSpec, err := s.GetOperatingSystemSpec(secrets)
 	if err != nil {
 		return clusterv1alpha1.MachineDeployment{}, err
 	}
@@ -149,7 +173,7 @@ func (s *baseScenario) createMachineDeployment(cluster *kubermaticv1.Cluster, re
 	}, nil
 }
 
-func (s *baseScenario) getOperatingSystemSpec(secrets types.Secrets) (interface{}, error) {
+func (s *BaseScenario) GetOperatingSystemSpec(secrets types.Secrets) (interface{}, error) {
 	// inject RHEL credentials when needed
 	if s.operatingSystem == providerconfig.OperatingSystemRHEL {
 		return operatingsystem.NewRHELSpecBuilder(s.cloudProvider).

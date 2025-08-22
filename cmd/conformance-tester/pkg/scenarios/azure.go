@@ -29,12 +29,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	azureVMSize = "Standard_F2"
-)
-
 type azureScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *azureScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -47,11 +43,11 @@ func (s *azureScenario) compatibleOperatingSystems() sets.Set[providerconfig.Ope
 }
 
 func (s *azureScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -63,23 +59,23 @@ func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Azure.KKPDatacenter,
 			Azure: &kubermaticv1.AzureCloudSpec{
-				ClientID:        secrets.Azure.ClientID,
-				ClientSecret:    secrets.Azure.ClientSecret,
-				SubscriptionID:  secrets.Azure.SubscriptionID,
-				TenantID:        secrets.Azure.TenantID,
-				LoadBalancerSKU: kubermaticv1.AzureStandardLBSKU,
+				TenantID:       secrets.Azure.TenantID,
+				SubscriptionID: secrets.Azure.SubscriptionID,
+				ClientID:       secrets.Azure.ClientID,
+				ClientSecret:   secrets.Azure.ClientSecret,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
 }
 
 func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewAzureConfig().
-		WithVMSize(azureVMSize).
+		WithLocation(s.Datacenter().Spec.Azure.Location).
+		WithVMSize("Standard_F2").
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

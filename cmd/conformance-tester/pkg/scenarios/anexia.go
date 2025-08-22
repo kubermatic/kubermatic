@@ -29,28 +29,25 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	nodeCPU      = 2
-	nodeDiskSize = 60
-	nodeMemory   = 2048
-)
-
 type anexiaScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *anexiaScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New(
+	return sets.New[providerconfig.OperatingSystem](
+		providerconfig.OperatingSystemUbuntu,
+		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
+		providerconfig.OperatingSystemRockyLinux,
 	)
 }
 
 func (s *anexiaScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -65,20 +62,20 @@ func (s *anexiaScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 				Token: secrets.Anexia.Token,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
 }
 
 func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewAnexiaConfig().
-		WithCPUs(nodeCPU).
-		WithMemory(nodeMemory).
-		AddDisk(nodeDiskSize, "ENT6").
-		WithTemplateID(secrets.Anexia.TemplateID).
-		WithVlanID(secrets.Anexia.VlanID).
+		WithVlanID("a43c232c-9a44-4b62-b063-31b2b2e7443c").
+		WithTemplateID("93cce9aa-351a-4356-9b36-e88528452517").
+		WithCPUs(1).
+		WithMemory(2048).
+		WithDiskSize(20).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

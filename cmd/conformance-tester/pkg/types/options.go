@@ -120,6 +120,7 @@ func NewDefaultOptions() *Options {
 		NodeReadyTimeout:             20 * time.Minute,
 		CustomTestTimeout:            10 * time.Minute,
 		UserClusterPollInterval:      5 * time.Second,
+		NamePrefix:                   "conformance-tester-",
 	}
 }
 
@@ -180,7 +181,7 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	}
 
 	var err error
-	o.Tests, err = o.effectiveTests()
+	o.Tests, err = o.EffectiveTests()
 	if err != nil {
 		return err
 	}
@@ -205,7 +206,7 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", o.Versions[0])
 	}
 
-	o.Distributions, err = o.effectiveDistributions()
+	o.Distributions, err = o.EffectiveDistributions()
 	if err != nil {
 		return err
 	}
@@ -234,16 +235,16 @@ func (o *Options) ParseFlags(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func (o *Options) effectiveDistributions() (sets.Set[string], error) {
+func (o *Options) EffectiveDistributions() (sets.Set[string], error) {
 	all := sets.New[string]()
 	for _, os := range providerconfig.AllOperatingSystems {
 		all.Insert(string(os))
 	}
 
-	return combineSets(o.EnableDistributions, o.ExcludeDistributions, all, "distributions")
+	return CombineSets(o.EnableDistributions, o.ExcludeDistributions, all, "distributions")
 }
 
-func (o *Options) effectiveTests() (sets.Set[string], error) {
+func (o *Options) EffectiveTests() (sets.Set[string], error) {
 	// Do not force all scripts to keep a list of all tests, just default to running all tests
 	// when no relevant CLI flag was given.
 	if o.EnableTests.Len() == 0 && o.ExcludeTests.Len() == 0 {
@@ -255,10 +256,10 @@ func (o *Options) effectiveTests() (sets.Set[string], error) {
 		return sets.New[string](), nil
 	}
 
-	return combineSets(o.EnableTests, o.ExcludeTests, AllTests, "tests")
+	return CombineSets(o.EnableTests, o.ExcludeTests, AllTests, "tests")
 }
 
-func combineSets(include, exclude, all sets.Set[string], flagname string) (sets.Set[string], error) {
+func CombineSets(include, exclude, all sets.Set[string], flagname string) (sets.Set[string], error) {
 	if include.Len() == 0 && exclude.Len() == 0 {
 		return nil, fmt.Errorf("either -%s or -exclude-%s must be given (each is a comma-separated list of %v)", flagname, flagname, sets.List(all))
 	}

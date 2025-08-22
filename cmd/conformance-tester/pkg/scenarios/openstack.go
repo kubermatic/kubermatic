@@ -30,15 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	openStackFlavor                    = "m1.small"
-	openStackFloatingIPPool            = "ext-net"
-	openStackInstanceReadyCheckPeriod  = 5 * time.Second
-	openStackInstanceReadyCheckTimeout = 2 * time.Minute
-)
-
 type openStackScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *openStackScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -51,11 +44,11 @@ func (s *openStackScenario) compatibleOperatingSystems() sets.Set[providerconfig
 }
 
 func (s *openStackScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -67,26 +60,25 @@ func (s *openStackScenario) Cluster(secrets types.Secrets) *kubermaticv1.Cluster
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.OpenStack.KKPDatacenter,
 			Openstack: &kubermaticv1.OpenstackCloudSpec{
-				Domain:         secrets.OpenStack.Domain,
-				Project:        secrets.OpenStack.Project,
-				ProjectID:      secrets.OpenStack.ProjectID,
-				Username:       secrets.OpenStack.Username,
-				Password:       secrets.OpenStack.Password,
-				FloatingIPPool: openStackFloatingIPPool,
+				Username:  secrets.OpenStack.Username,
+				Password:  secrets.OpenStack.Password,
+				Project:   secrets.OpenStack.Project,
+				ProjectID: secrets.OpenStack.ProjectID,
+				Domain:    secrets.OpenStack.Domain,
 			},
 		},
-		Version: s.clusterVersion,
+		Version: s.ClusterVersion(),
 	}
 }
 
 func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewOpenstackConfig().
-		WithFlavor(openStackFlavor).
-		WithInstanceReadyCheckPeriod(openStackInstanceReadyCheckPeriod).
-		WithInstanceReadyCheckTimeout(openStackInstanceReadyCheckTimeout).
+		WithFlavor("m1.small").
+		WithInstanceReadyCheckPeriod(5 * time.Second).
+		WithInstanceReadyCheckTimeout(2 * time.Minute).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

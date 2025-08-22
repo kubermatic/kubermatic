@@ -25,89 +25,115 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test"
 )
 
+type AnexiaSecrets struct {
+	KKPDatacenter string `yaml:"kkpDatacenter,omitempty"`
+	Token         string `yaml:"token,omitempty"`
+	TemplateID    string `yaml:"templateID,omitempty"`
+	VlanID        string `yaml:"vlanID,omitempty"`
+}
+
+type AWSSecrets struct {
+	KKPDatacenter   string `yaml:"kkpDatacenter,omitempty"`
+	AccessKeyID     string `yaml:"accessKeyID,omitempty"`
+	SecretAccessKey string `yaml:"secretAccessKey,omitempty"`
+}
+
+type AzureSecrets struct {
+	KKPDatacenter  string `yaml:"kkpDatacenter,omitempty"`
+	ClientID       string `yaml:"clientID,omitempty"`
+	ClientSecret   string `yaml:"clientSecret,omitempty"`
+	TenantID       string `yaml:"tenantID,omitempty"`
+	SubscriptionID string `yaml:"subscriptionID,omitempty"`
+}
+
+type DigitaloceanSecrets struct {
+	KKPDatacenter string `yaml:"kkpDatacenter,omitempty"`
+	Token         string `yaml:"token,omitempty"`
+}
+
+type HetznerSecrets struct {
+	KKPDatacenter string `yaml:"kkpDatacenter,omitempty"`
+	Token         string `yaml:"token,omitempty"`
+}
+
+type OpenStackSecrets struct {
+	KKPDatacenter string `yaml:"kkpDatacenter,omitempty"`
+	Domain        string `yaml:"domain,omitempty"`
+	Project       string `yaml:"project,omitempty"`
+	ProjectID     string `yaml:"projectID,omitempty"`
+	Username      string `yaml:"username,omitempty"`
+	Password      string `yaml:"password,omitempty"`
+}
+
+type VSphereSecrets struct {
+	KKPDatacenter string `yaml:"kkpDatacenter,omitempty"`
+	Username      string `yaml:"username,omitempty"`
+	Password      string `yaml:"password,omitempty"`
+}
+
+type GCPSecrets struct {
+	KKPDatacenter      string `yaml:"kkpDatacenter,omitempty"`
+	ServiceAccountFile string `yaml:"serviceAccountFile,omitempty"`
+	ServiceAccount     string `yaml:"-"`
+	Network            string `yaml:"network,omitempty"`
+	Subnetwork         string `yaml:"subnetwork,omitempty"`
+}
+
+type KubevirtSecrets struct {
+	KKPDatacenter  string `yaml:"kkpDatacenter,omitempty"`
+	KubeconfigFile string `yaml:"kubeconfigFile,omitempty"`
+	Kubeconfig     string `yaml:"-"`
+}
+
+type AlibabaSecrets struct {
+	KKPDatacenter   string `yaml:"kkpDatacenter,omitempty"`
+	AccessKeyID     string `yaml:"accessKeyID,omitempty"`
+	AccessKeySecret string `yaml:"accessKeySecret,omitempty"`
+}
+
+type NutanixSecrets struct {
+	KKPDatacenter string `yaml:"kkpDatacenter,omitempty"`
+	Username      string `yaml:"username,omitempty"`
+	Password      string `yaml:"password,omitempty"`
+	CSIUsername   string `yaml:"csiUsername,omitempty"`
+	CSIPassword   string `yaml:"csiPassword,omitempty"`
+	CSIEndpoint   string `yaml:"csiEndpoint,omitempty"`
+	CSIPort       int32  `yaml:"csiPort,omitempty"`
+	ProxyURL      string `yaml:"proxyURL,omitempty"`
+	ClusterName   string `yaml:"clusterName,omitempty"`
+	ProjectName   string `yaml:"projectName,omitempty"`
+	SubnetName    string `yaml:"subnetName,omitempty"`
+}
+
+type VMwareCloudDirectorSecrets struct {
+	KKPDatacenter string   `yaml:"kkpDatacenter,omitempty"`
+	Username      string   `yaml:"username,omitempty"`
+	Password      string   `yaml:"password,omitempty"`
+	Organization  string   `yaml:"organization,omitempty"`
+	VDC           string   `yaml:"vdc,omitempty"`
+	OVDCNetworks  []string `yaml:"ovdcNetworks,omitempty"`
+}
+
+type RHELSecrets struct {
+	SubscriptionUser     string `yaml:"subscriptionUser,omitempty"`
+	SubscriptionPassword string `yaml:"subscriptionPassword,omitempty"`
+	OfflineToken         string `yaml:"offlineToken,omitempty"`
+}
+
 type Secrets struct {
-	Anexia struct {
-		KKPDatacenter string
-		Token         string
-		TemplateID    string
-		VlanID        string
-	}
-	AWS struct {
-		KKPDatacenter   string
-		AccessKeyID     string
-		SecretAccessKey string
-	}
-	Azure struct {
-		KKPDatacenter  string
-		ClientID       string
-		ClientSecret   string
-		TenantID       string
-		SubscriptionID string
-	}
-	Digitalocean struct {
-		KKPDatacenter string
-		Token         string
-	}
-	Hetzner struct {
-		KKPDatacenter string
-		Token         string
-	}
-	OpenStack struct {
-		KKPDatacenter string
-		Domain        string
-		Project       string
-		ProjectID     string
-		Username      string
-		Password      string
-	}
-	VSphere struct {
-		KKPDatacenter string
-		Username      string
-		Password      string
-	}
-	GCP struct {
-		KKPDatacenter string
-		// ServiceAccount is the plaintext Service account (as JSON) without any (base64) encoding.
-		ServiceAccount string
-		Network        string
-		Subnetwork     string
-	}
-	Kubevirt struct {
-		KKPDatacenter string
-		// Kubeconfig is the plaintext kubeconfig without any (base64) encoding.
-		Kubeconfig string
-	}
-	Alibaba struct {
-		KKPDatacenter   string
-		AccessKeyID     string
-		AccessKeySecret string
-	}
-	Nutanix struct {
-		KKPDatacenter string
-		Username      string
-		Password      string
-		CSIUsername   string
-		CSIPassword   string
-		CSIEndpoint   string
-		CSIPort       int32
-		ProxyURL      string
-		ClusterName   string
-		ProjectName   string
-		SubnetName    string
-	}
-	VMwareCloudDirector struct {
-		KKPDatacenter string
-		Username      string
-		Password      string
-		Organization  string
-		VDC           string
-		OVDCNetworks  []string
-	}
-	RHEL struct {
-		SubscriptionUser     string
-		SubscriptionPassword string
-		OfflineToken         string
-	}
+	Anexia              AnexiaSecrets              `yaml:"anexia,omitempty"`
+	AWS                 AWSSecrets                 `yaml:"aws,omitempty"`
+	Azure               AzureSecrets               `yaml:"azure,omitempty"`
+	Digitalocean        DigitaloceanSecrets        `yaml:"digitalocean,omitempty"`
+	Hetzner             HetznerSecrets             `yaml:"hetzner,omitempty"`
+	OpenStack           OpenStackSecrets           `yaml:"openstack,omitempty"`
+	VSphere             VSphereSecrets             `yaml:"vsphere,omitempty"`
+	GCP                 GCPSecrets                 `yaml:"gcp,omitempty"`
+	Kubevirt            KubevirtSecrets            `yaml:"kubevirt,omitempty"`
+	Alibaba             AlibabaSecrets             `yaml:"alibaba,omitempty"`
+	Nutanix             NutanixSecrets             `yaml:"nutanix,omitempty"`
+	VMwareCloudDirector VMwareCloudDirectorSecrets `yaml:"vmwareCloudDirector,omitempty"`
+	RHEL                RHELSecrets                `yaml:"rhel,omitempty"`
 }
 
 var (
@@ -169,6 +195,26 @@ func (s *Secrets) AddFlags() {
 	flag.StringVar(&s.RHEL.SubscriptionUser, "rhel-subscription-user", "", "RedHat Enterprise subscription user")
 	flag.StringVar(&s.RHEL.SubscriptionPassword, "rhel-subscription-password", "", "RedHat Enterprise subscription password")
 	flag.StringVar(&s.RHEL.OfflineToken, "rhel-offline-token", "", "RedHat Enterprise offlien token")
+}
+
+func (s *Secrets) ProcessFileSecrets() error {
+	if s.Kubevirt.KubeconfigFile != "" {
+		content, err := os.ReadFile(s.Kubevirt.KubeconfigFile)
+		if err != nil {
+			return fmt.Errorf("failed to read kubevirt kubeconfig file: %w", err)
+		}
+		s.Kubevirt.Kubeconfig = string(content)
+	}
+
+	if s.GCP.ServiceAccountFile != "" {
+		content, err := os.ReadFile(s.GCP.ServiceAccountFile)
+		if err != nil {
+			return fmt.Errorf("failed to read gcp service account file: %w", err)
+		}
+		s.GCP.ServiceAccount = string(content)
+	}
+
+	return nil
 }
 
 func (s *Secrets) ParseFlags() error {
