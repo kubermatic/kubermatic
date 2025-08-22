@@ -507,9 +507,6 @@ spec:
         # Versions lists the available versions.
         versions:
           - v1.31
-          - v1.30
-          - v1.29
-          - v1.28
       eks:
         # Default is the default version to offer users.
         default: v1.31
@@ -518,9 +515,6 @@ spec:
         # Versions lists the available versions.
         versions:
           - v1.31
-          - v1.30
-          - v1.29
-          - v1.28
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -549,16 +543,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.29.*
+        from: 1.31.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.30.*
-      - from: 1.30.*
-        to: 1.30.*
-      - from: 1.30.*
-        to: 1.31.*
-      - from: 1.31.*
         to: 1.31.*
       - from: 1.31.*
         to: 1.32.*
@@ -570,11 +558,6 @@ spec:
         to: 1.33.*
     # Versions lists the available versions.
     versions:
-      - v1.30.5
-      - v1.30.9
-      - v1.30.11
-      - v1.30.12
-      - v1.30.14
       - v1.31.1
       - v1.31.5
       - v1.31.7
