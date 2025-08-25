@@ -3377,7 +3377,7 @@ spec:
                     Only available in Enterprise Edition.
                   properties:
                     enableGatewayAPI:
-                      description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
+                      description: EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
                       type: boolean
                     enabled:
                       description: Controls whether kubeLB is deployed or not.

@@ -136,6 +136,11 @@ func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Clu
 						Resources: []string{"gateways/status", "grpcroutes/status", "httproutes/status", "tcproutes/status", "udproutes/status", "tlsroutes/status"},
 						Verbs:     []string{"get", "patch", "update"},
 					})
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{"apiextensions.k8s.io"},
+						Resources: []string{"customresourcedefinitions"},
+						Verbs:     []string{"get", "list", "watch", "create", "update"},
+					})
 				}
 				return r, nil
 			}
