@@ -274,6 +274,11 @@ var (
 				From: "1.33.*",
 				To:   "1.33.*",
 			},
+			{
+				// Allow to next minor release
+				From: "1.33.*",
+				To:   "1.34.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			// In-tree cloud providers have been fully removed in Kubernetes 1.30.
