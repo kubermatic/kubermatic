@@ -41,7 +41,7 @@ func RetryN(delay time.Duration, maxAttempts int, f func(attempt int) error) err
 	return fmt.Errorf("function did not succeed after %d attempts: %w", maxAttempts, err)
 }
 
-// measuredRetryN wraps retryNAttempts with code that counts
+// MeasuredRetryN wraps retryNAttempts with code that counts
 // the executed number of attempts and the runtimes for each
 // attempt.
 func MeasuredRetryN(
@@ -70,4 +70,30 @@ func MeasuredRetryN(
 
 		return err
 	}
+}
+
+// MeasuredRetryNWithSummary wraps a retry loop,
+// measuring the duration of each attempt using a provided observer function
+// and incrementing a Prometheus counter for each attempt.
+// It is designed for use with metrics types like SummaryVec and CounterVec.
+func MeasuredRetryNWithSummary(
+	observeFunc func(float64),
+	attemptsMetric prometheus.Counter,
+	log *zap.SugaredLogger,
+	delay time.Duration,
+	maxAttempts int,
+	f func(attempt int) error,
+) error {
+	attempts := 0
+	err := RetryN(delay, maxAttempts, func(attempt int) error {
+		attempts++
+		start := time.Now()
+		err := f(attempt)
+		observeFunc(time.Since(start).Seconds())
+		return err
+	})
+	for i := 0; i < attempts; i++ {
+		attemptsMetric.Inc()
+	}
+	return err
 }

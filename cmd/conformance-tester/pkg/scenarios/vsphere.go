@@ -35,6 +35,7 @@ type vSphereScenario struct {
 	customFolder     bool
 	basePath         bool
 	datastoreCluster bool
+	resourcePool     bool
 }
 
 func (s *vSphereScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -82,6 +83,12 @@ func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 	if s.datastoreCluster {
 		spec.Cloud.VSphere.DatastoreCluster = "Datastore0-truenas"
 		spec.Cloud.VSphere.Datastore = ""
+	}
+
+	fmt.Println("resource pool0")
+	if s.resourcePool {
+		fmt.Println("resource pool1")
+		spec.Cloud.VSphere.ResourcePool = "ResourcePool0"
 	}
 
 	return spec

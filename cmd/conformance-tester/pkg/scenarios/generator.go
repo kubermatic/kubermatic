@@ -181,9 +181,14 @@ func providerScenario(
 		scenario.customFolder = opts.ScenarioOptions.Has("custom-folder")
 		scenario.basePath = opts.ScenarioOptions.Has("basepath")
 		scenario.datastoreCluster = opts.ScenarioOptions.Has("datastore-cluster")
+		scenario.resourcePool = opts.ScenarioOptions.Has("resource-pool")
 
 		if scenario.customFolder && scenario.basePath {
 			return nil, fmt.Errorf("cannot run mutually exclusive %q scenarios 'custom-folder' and 'basepath' together", provider)
+		}
+
+		if scenario.resourcePool && (scenario.customFolder || scenario.basePath) {
+			return nil, fmt.Errorf("cannot use resource pool with custom folder or base path")
 		}
 
 		return scenario, nil

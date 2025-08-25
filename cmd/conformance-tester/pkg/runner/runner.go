@@ -489,6 +489,32 @@ func (r *TestRunner) executeTests(
 		return fmt.Errorf("failed waiting for addons to become ready: %w", err)
 	}
 
+	const maxTestAttempts = 3
+	if err := util.JUnitWrapper("[KKP] Test Network Policy Enforcement", report, func() error {
+		return util.MeasuredRetryNWithSummary(
+			func(v float64) {
+				metrics.NetworkPolicyTestRuntimeMetric.With(prometheus.Labels{"scenario": scenario.Name()}).Observe(v)
+			},
+			metrics.NetworkPolicyTestAttemptsMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
+			log,
+			3*time.Second,
+			maxTestAttempts,
+			func(attempt int) error {
+				return tests.TestNetworkPolicy(ctx, userClusterClient)
+			},
+		)
+	}); err != nil {
+		log.Errorf("Failed to verify network policy enforcement: %v", err)
+	}
+
+	if err := util.JUnitWrapper("[KKP] Test Pod Disruption Budget enforcement", report, func() error {
+		return util.RetryN(5*time.Second, maxTestAttempts, func(attempt int) error {
+			return tests.TestPodDisruptionBudget(ctx, userClusterClient)
+		})
+	}); err != nil {
+		log.Errorf("Failed to verify PodDisruptionBudget enforcement: %v", err)
+	}
+
 	if err := r.testCluster(ctx, log, scenario, cluster, userClusterClient, kubeconfigFilename, cloudConfigFilename, report); err != nil {
 		return fmt.Errorf("failed to test cluster: %w", err)
 	}

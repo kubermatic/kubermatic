@@ -168,7 +168,7 @@ timeout -s 9 "${maxDuration}m" ./_build/conformance-tester $EXTRA_ARGS \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -reports-root="$ARTIFACTS/conformance" \
-  -log-directory="$ARTIFACTS/logs" \
+  -log-directory="" \
   -releases="${RELEASES_TO_TEST:-}" \
   -providers=$provider \
   -node-ssh-pub-key="$E2E_SSH_PUBKEY" \

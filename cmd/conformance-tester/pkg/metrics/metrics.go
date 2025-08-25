@@ -108,6 +108,18 @@ var (
 		Name:      "lbtest_attempts",
 		Help:      "Number of times a job has been run for a given scenario",
 	}, []string{"prowjob", "scenario"})
+
+	NetworkPolicyTestRuntimeMetric = prometheus.NewSummaryVec(
+		prometheus.SummaryOpts{
+			Name: "network_policy_test_runtime_seconds",
+			Help: "Runtime of network policy tests.",
+		}, []string{"scenario"})
+
+	NetworkPolicyTestAttemptsMetric = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "network_policy_test_attempts_total",
+			Help: "Number of attempts for network policy tests.",
+		}, []string{"scenario"})
 )
 
 func Setup(endpoint string, prowjob string, instance string) {
