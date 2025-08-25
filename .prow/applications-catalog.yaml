@@ -14,7 +14,7 @@
 
 presubmits:
   - name: pre-kubermatic-appcatalog-aikit
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/aikit-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/aikit-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -59,7 +59,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-argocd
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/argocd-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/argocd-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -106,7 +106,7 @@ presubmits:
   - name: pre-kubermatic-appcatalog-cluster-autoscaler
     # We are testing changes for the cluster-autoscaler application definition and the system applications
     # reconciler through the same job.
-    run_if_changed: "(pkg/applicationdefinitions)"
+    run_if_changed: "(pkg/applicationdefinitions|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -153,7 +153,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-cert-manager
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/cert-manager-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/cert-manager-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -198,7 +198,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-falco
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/falco-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/falco-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -243,7 +243,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-flux
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/flux2-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/flux2-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -288,7 +288,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-k8sgpt-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/k8sgpt-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/k8sgpt-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -333,7 +333,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kube-vip
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kube-vip-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kube-vip-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -378,7 +378,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-kubevirt
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kubevirt-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kubevirt-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -423,7 +423,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-metallb
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/metallb-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/metallb-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -468,7 +468,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-nginx-ingress-controller
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nginx-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nginx-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -513,7 +513,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-nvidia-gpu-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nvidia-gpu-operator-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/nvidia-gpu-operator-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -558,7 +558,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-trivy
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -603,7 +603,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-trivy-operator
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-operator-app.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/trivy-operator-app.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -648,7 +648,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-appcatalog-local-ai
-    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/local-ai.yaml)"
+    run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/local-ai.yaml|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -693,7 +693,7 @@ presubmits:
               memory: 6Gi
 
   - name: pre-kubermatic-app-definitions
-    run_if_changed: "(pkg/ee/default-application-catalog/application_catalog.go|pkg/ee/default-application-catalog/embed.go|hack/ci/run-application-definitions-e2e-test.sh)"
+    run_if_changed: "(pkg/ee/default-application-catalog/application_catalog.go|pkg/ee/default-application-catalog/embed.go|hack/ci/run-application-definitions-e2e-test.|pkg/ee/default-application-catalog/application_test.go)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
