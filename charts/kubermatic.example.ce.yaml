@@ -47,7 +47,7 @@ spec:
 
     # This must match the secret configured for the kubermaticIssuer client from
     # the dex clients in values.yaml.
-    # Needed if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting
+    # Needed if the "OIDCKubeconfigOptions" is enabled in the KubermaticSetting.
     issuerClientSecret: <dex-kubermatic-issuer-oauth-secret-here>
 
     # these need to be randomly generated. Those can be generated on the

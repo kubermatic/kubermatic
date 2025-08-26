@@ -199,8 +199,6 @@ spec:
                   type: boolean
                 enableExternalClusterImport:
                   type: boolean
-                enableOIDCKubeconfig:
-                  type: boolean
                 enableShareCluster:
                   default: true
                   description: EnableShareCluster enables the Share Cluster feature for the user clusters.
@@ -283,6 +281,18 @@ spec:
                     hideErrors:
                       description: HideErrors will silence error notifications for the dashboard.
                       type: boolean
+                  type: object
+                oidcKubeconfigOptions:
+                  description: Controls generation of OIDC-based kubeconfigs.
+                  properties:
+                    enabled:
+                      description: Enable OIDC authentication in the generated kubeconfig.
+                      type: boolean
+                    kubeLoginCompatibility:
+                      description: If true, Generate the kubeconfig in a format compatible with the kubelogin exec plugin.
+                      type: boolean
+                  required:
+                    - enabled
                   type: object
                 opaOptions:
                   properties:
@@ -473,9 +483,9 @@ spec:
                 - displayTermsOfService
                 - enableDashboard
                 - enableExternalClusterImport
-                - enableOIDCKubeconfig
                 - mlaAlertmanagerPrefix
                 - mlaGrafanaPrefix
+                - oidcKubeconfigOptions
                 - restrictProjectCreation
                 - restrictProjectDeletion
                 - restrictProjectModification

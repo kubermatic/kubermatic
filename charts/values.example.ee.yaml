@@ -100,7 +100,7 @@ dex:
           - https://kkp.example.com/projects
 
       # The "kubermaticIssuer" client is used for providing OIDC access to User Clusters.
-      # This configuration is optional, used if the "enableOIDCKubeconfig: true" option is used in KubermaticSetting.
+      # This configuration is optional, used if the "OIDCKubeconfigOptions" is enabled in the KubermaticSetting.
       # More about this configuration at https://docs.kubermatic.com/kubermatic/latest/tutorials-howtos/oidc-provider-configuration/share-clusters-via-delegated-oidc-authentication/
       - id: kubermaticIssuer
         name: Kubermatic OIDC Issuer

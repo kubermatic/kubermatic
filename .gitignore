@@ -22,3 +22,6 @@ _certs
 
 # this is filled during release
 charts/kubermatic-operator/crd/k8c.io
+
+# VSCode plugins
+.history

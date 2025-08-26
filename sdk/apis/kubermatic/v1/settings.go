@@ -75,7 +75,7 @@ type SettingSpec struct {
 	// EnableShareCluster enables the Share Cluster feature for the user clusters.
 	EnableShareCluster *bool `json:"enableShareCluster,omitempty"`
 
-	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig"` //nolint:tagliatelle
+	OIDCKubeconfigOptions OIDCKubeconfigOptions `json:"oidcKubeconfigOptions"` //nolint:tagliatelle
 
 	// EnableClusterBackup enables the Cluster Backup feature in the dashboard.
 	EnableClusterBackups *bool `json:"enableClusterBackup,omitempty"`
@@ -174,6 +174,14 @@ type CustomLink struct {
 	URL      string `json:"url"`
 	Icon     string `json:"icon"`
 	Location string `json:"location"`
+}
+
+// Controls generation of OIDC-based kubeconfigs.
+type OIDCKubeconfigOptions struct {
+	// Enable OIDC authentication in the generated kubeconfig.
+	Enabled bool `json:"enabled"`
+	// If true, Generate the kubeconfig in a format compatible with the kubelogin exec plugin.
+	KubeLoginCompatibility bool `json:"kubeLoginCompatibility,omitempty"`
 }
 
 type CleanupOptions struct {
