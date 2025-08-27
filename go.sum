@@ -1601,6 +1601,7 @@ k8c.io/kubeone v1.7.3 h1:KZ2Q6LQMxoiFf9UQ3ugqjid39NccduhJ50bdbP5tdIU=
 k8c.io/kubeone v1.7.3/go.mod h1:9v2VFz/+l36cW65kd5YufEYHunbKlJ6P8SBakj05xgM=
 k8c.io/machine-controller/sdk v1.62.0 h1:wZpae3Sv3JB8eifaJbsw0sdrd6L4RSb9Y9MkPlqCTww=
 k8c.io/machine-controller/sdk v1.62.0/go.mod h1:/5eWTMcfa7mTQUQoqziaalViiHSVzqzy3fXjejT1qLg=
+k8c.io/machine-controller/sdk v1.63.0/go.mod h1:/5eWTMcfa7mTQUQoqziaalViiHSVzqzy3fXjejT1qLg=
 k8c.io/operating-system-manager v1.7.1-0.20250704091613-71af543cb934 h1:xd8Ylqnm+W83NCF9uL3jd61NOHBjjC0y1Uhvn23IEX8=
 k8c.io/operating-system-manager v1.7.1-0.20250704091613-71af543cb934/go.mod h1:FpkUHaKko9ZPBIxPY0CD1eOP37VuVAzme0MXLxhWVhI=
 k8c.io/reconciler v0.5.0 h1:BHpelg1UfI/7oBFctqOq8sX6qzflXpl3SlvHe7e8wak=
