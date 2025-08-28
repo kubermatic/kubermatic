@@ -19,6 +19,7 @@ package vsphere
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 
@@ -82,6 +83,12 @@ func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, clust
 			if cluster.DeletionTimestamp == nil {
 				continue
 			}
+		}
+
+		// Since we fetch all tags for the given category, we should skip the deletion of tags which do not belong to the cluster spec.
+		// This is important to avoid accidentally deleting tags that are not yet attached to any object but are used by other clusters.
+		if !slices.Contains(cluster.Spec.Cloud.VSphere.Tags.Tags, vsphereTag.Name) {
+			continue
 		}
 
 		// Fetch all objects attached to the tag.
