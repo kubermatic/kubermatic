@@ -491,13 +491,18 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 
 	reconcilers = append(reconcilers, sysAppDefReconcilers...)
 
-	// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
-	defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config, false)
-	if err != nil {
-		return fmt.Errorf("failed to get default application definition reconciler factories: %w", err)
-	}
+	// we do not want to reconcile ApplicationDefinitions if the Feature Flag for the new application-catalog
+	// manager is set because this feature flags gives the reconciliation responsibility to the new
+	// out-tree application-catalog manager
+	if !config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
+		defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config, false)
+		if err != nil {
+			return fmt.Errorf("failed to get default application definition reconciler factories: %w", err)
+		}
 
-	reconcilers = append(reconcilers, defaultAppDefReconcilers...)
+		reconcilers = append(reconcilers, defaultAppDefReconcilers...)
+	}
 
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
