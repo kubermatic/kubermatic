@@ -65,6 +65,12 @@ const (
 	// and disable related controllers and components such as the userSSHKeySynchronizerFactoryCreator and
 	// usersshkeyprojectownershipcontroller.
 	DisableUserSSHKey = "DisableUserSSHKey"
+
+	// ExternalApplicationCatalogManager enables the external application catalog manager.
+	// It allows the new Application Catalog manager to work, and prevent the current controllers in KKP master to
+	// reconcile ApplicationDefinitions. Setting this feature flag to true will delegate the ApplicationDefinition reconciliation
+	// responsibility to the new external (out-tree) application catalog controller manager.
+	ExternalApplicationCatalogManager = "ExternalApplicationCatalogManager"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.
