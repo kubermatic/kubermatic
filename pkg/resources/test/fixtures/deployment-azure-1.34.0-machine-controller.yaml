@@ -1,0 +1,155 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: machine-controller
+  name: machine-controller
+  namespace: cluster-de-test-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: machine-controller
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,temp
+        kubermatic.k8c.io/last-restart: ""
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: machine-controller
+        ca-bundle-configmap-revision: "123456"
+        cloud-credentials-secret-revision: "123456"
+        cluster: de-test-01
+        machinecontroller-kubeconfig-secret-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem","-node-csr-approver"]}'
+        - --crd-to-wait-for
+        - cluster.k8s.io,v1alpha1,machines,kube-system
+        command:
+        - /http-prober-bin/http-prober
+        env:
+        - name: AZURE_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: clientID
+              name: cloud-credentials
+        - name: AZURE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: clientSecret
+              name: cloud-credentials
+        - name: AZURE_TENANT_ID
+          valueFrom:
+            secretKeyRef:
+              key: tenantID
+              name: cloud-credentials
+        - name: AZURE_SUBSCRIPTION_ID
+          valueFrom:
+            secretKeyRef:
+              key: subscriptionID
+              name: cloud-credentials
+        - name: HTTP_PROXY
+          value: http://my-corp
+        - name: HTTPS_PROXY
+          value: http://my-corp
+        - name: http_proxy
+          value: http://my-corp
+        - name: https_proxy
+          value: http://my-corp
+        - name: NO_PROXY
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: no_proxy
+          value: apiserver-external.cluster-de-test-01.svc.cluster.local.
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: PROBER_KUBECONFIG
+          value: /etc/kubernetes/kubeconfig/kubeconfig
+        image: quay.io/kubermatic/machine-controller:bfda6d694538ed85c97d8d2bc99887ca11b542a3
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: 8085
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: machine-controller
+        resources:
+          limits:
+            cpu: "2"
+            memory: 512Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: machinecontroller-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
+          readOnly: true
+        - mountPath: /tmp
+          name: temp
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      imagePullSecrets:
+      - name: dockercfg
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.5.1
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      securityContext:
+        fsGroup: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: kubermatic-machine-controller
+      volumes:
+      - name: machinecontroller-kubeconfig
+        secret:
+          secretName: machinecontroller-kubeconfig
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
+      - emptyDir: {}
+        name: temp
+      - emptyDir: {}
+        name: http-prober-bin
+status: {}

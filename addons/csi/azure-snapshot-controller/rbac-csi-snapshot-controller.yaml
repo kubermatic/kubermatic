@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.29.2/deploy/v1.29.2/rbac-csi-snapshot-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.33.4/deploy/v1.33.4/rbac-csi-snapshot-controller.yaml
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
+---
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -24,8 +25,8 @@ metadata:
   namespace: kube-system
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-snapshot-controller-role
 rules:
@@ -52,14 +53,14 @@ rules:
     verbs: ["patch"]
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshots"]
-    verbs: ["get", "list", "watch", "update", "patch"]
+    verbs: ["get", "list", "watch", "update", "patch", "create"]
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshots/status"]
     verbs: ["update", "patch"]
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-snapshot-controller-binding
 subjects:
@@ -72,8 +73,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-snapshot-controller-leaderelection-role
 rules:
@@ -82,8 +83,8 @@ rules:
     verbs: ["get", "watch", "list", "delete", "update", "create", "patch"]
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: csi-snapshot-controller-leaderelection-binding
 subjects:

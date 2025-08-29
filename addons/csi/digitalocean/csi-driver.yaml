@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/digitalocean/csi-digitalocean/blob/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.1/driver.yaml
+# - https://github.com/digitalocean/csi-digitalocean/blob/v4.14.0/deploy/kubernetes/releases/csi-digitalocean-v4.14.0/driver.yaml
 # Modifications:
 # - image source includes registry templating
 # - add a securityContext
@@ -34,6 +34,12 @@
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
 {{ $version = "v4.12.0" }}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.33" }}
+{{ $version = "v4.12.0" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.34" }}
+{{ $version = "v4.14.0" }}
+{{ end }}
 
 {{ if not (eq $version "UNSUPPORTED") }}
 ---
@@ -45,6 +51,7 @@ metadata:
 data:
   token: {{ .Credentials.Digitalocean.Token | b64enc }}
 ---
+---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
@@ -52,6 +59,7 @@ metadata:
 spec:
   attachRequired: true
   podInfoOnMount: true
+
 ---
 kind: StatefulSet
 apiVersion: apps/v1
@@ -80,7 +88,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-provisioner
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v3.5.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.2.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--default-fstype=ext4"
@@ -93,7 +101,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-attacher
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.3.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.8.1" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -107,7 +115,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.2.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.2.0" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -119,12 +127,11 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-resizer
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.8.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.13.2" }}'
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=30s"
             - "--v=5"
-            # DO volumes support online resize.
             - "--handle-volume-inuse-error=false"
           env:
             - name: ADDRESS
@@ -134,7 +141,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-do-plugin
-          image: '{{ Image (print "digitalocean/do-csi-plugin:" $version) }}'
+          image: '{{ Image "digitalocean/do-csi-plugin:v4.14.0" }}'
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--token=$(DIGITALOCEAN_ACCESS_TOKEN)"
@@ -157,12 +164,15 @@ spec:
       volumes:
         - name: socket-dir
           emptyDir: {}
+
 ---
+
 kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: csi-do-controller-sa
   namespace: kube-system
+
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -196,7 +206,9 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
     verbs: ["get", "list", "watch"]
+
 ---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -209,6 +221,7 @@ roleRef:
   kind: ClusterRole
   name: csi-do-provisioner-role
   apiGroup: rbac.authorization.k8s.io
+
 ---
 # Attacher must be able to work with PVs, nodes and VolumeAttachments
 kind: ClusterRole
@@ -231,6 +244,7 @@ rules:
   - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments/status"]
     verbs: ["patch"]
+
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -244,8 +258,11 @@ roleRef:
   kind: ClusterRole
   name: csi-do-attacher-role
   apiGroup: rbac.authorization.k8s.io
+
 ---
+
 # Snapshotter sidecar
+
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -263,6 +280,7 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshotcontents/status"]
     verbs: ["update", "patch"]
+
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -276,7 +294,9 @@ roleRef:
   kind: ClusterRole
   name: csi-do-snapshotter-role
   apiGroup: rbac.authorization.k8s.io
+
 ---
+
 # Resizer must be able to work with PVCs, PVs, SCs.
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -295,7 +315,9 @@ rules:
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["list", "watch", "create", "update", "patch"]
+
 ---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -308,6 +330,7 @@ roleRef:
   kind: ClusterRole
   name: csi-do-resizer-role
   apiGroup: rbac.authorization.k8s.io
+
 ---
 kind: DaemonSet
 apiVersion: apps/v1
@@ -347,7 +370,7 @@ spec:
               mountPath: /etc/udev/rules.d/
       containers:
         - name: csi-node-driver-registrar
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0" }}'
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -367,7 +390,7 @@ spec:
             - name: registration-dir
               mountPath: /registration/
         - name: csi-do-plugin
-          image: '{{ Image (print "digitalocean/do-csi-plugin:" $version) }}'
+          image: '{{ Image "digitalocean/do-csi-plugin:v4.14.0" }}'
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--url=$(DIGITALOCEAN_API_URL)"
@@ -412,12 +435,15 @@ spec:
           hostPath:
             path: /etc/udev/rules.d/
 ---
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: csi-do-node-sa
   namespace: kube-system
+
 ---
+
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -427,7 +453,9 @@ rules:
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["get", "list", "watch", "create", "update", "patch"]
+
 ---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
