@@ -50,7 +50,7 @@ spec:
               name: cloud-credentials
         - name: REGION
           value: fra1
-        image: docker.io/digitalocean/digitalocean-cloud-controller-manager:v0.1.56
+        image: docker.io/digitalocean/digitalocean-cloud-controller-manager:v0.1.63
         name: cloud-controller-manager
         resources:
           limits:

@@ -1,0 +1,110 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: prometheus
+    cluster: de-test-01
+  name: prometheus
+  namespace: cluster-de-test-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      cluster: de-test-01
+  serviceName: ""
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
+        kubermatic.k8c.io/last-restart: ""
+      creationTimestamp: null
+      labels:
+        apiserver-etcd-client-certificate-secret-revision: "123456"
+        app: prometheus
+        cluster: de-test-01
+        prometheus-apiserver-certificate-secret-revision: "123456"
+        prometheus-configmap-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - --config.file=/etc/prometheus/config/prometheus.yaml
+        - --storage.tsdb.path=/var/prometheus/data
+        - --storage.tsdb.min-block-duration=15m
+        - --storage.tsdb.max-block-duration=30m
+        - --storage.tsdb.retention.time=1h
+        - --web.enable-lifecycle
+        - --storage.tsdb.no-lockfile
+        - --web.route-prefix=/
+        image: quay.io/prometheus/prometheus:v2.51.1
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /-/healthy
+            port: web
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        name: prometheus
+        ports:
+        - containerPort: 9090
+          name: web
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 6
+          httpGet:
+            path: /-/ready
+            port: web
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 3
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        volumeMounts:
+        - mountPath: /etc/prometheus/config
+          name: config
+          readOnly: true
+        - mountPath: /var/prometheus/data
+          name: data
+        - mountPath: /etc/etcd/pki/client
+          name: apiserver-etcd-client-certificate
+          readOnly: true
+        - mountPath: /etc/kubernetes
+          name: prometheus-apiserver-certificate
+          readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 1000
+      serviceAccountName: prometheus
+      terminationGracePeriodSeconds: 0
+      volumes:
+      - configMap:
+          name: prometheus
+        name: config
+      - emptyDir: {}
+        name: data
+      - name: apiserver-etcd-client-certificate
+        secret:
+          secretName: apiserver-etcd-client-certificate
+      - name: prometheus-apiserver-certificate
+        secret:
+          secretName: prometheus-apiserver-certificate
+  updateStrategy:
+    type: RollingUpdate
+status:
+  availableReplicas: 0
+  replicas: 0
