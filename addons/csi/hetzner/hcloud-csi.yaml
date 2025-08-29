@@ -13,11 +13,14 @@
 # limitations under the License.
 
 # This is based on
-# https://github.com/hetznercloud/csi-driver/blob/v2.6.0/deploy/kubernetes/hcloud-csi.yml
-# and is applicable for k8s 1.25+ clusters.
+# https://github.com/hetznercloud/csi-driver/blob/v2.17.0/deploy/kubernetes/hcloud-csi.yml
+# and is applicable for k8s 1.30+ clusters.
 # modifications:
+# - image source includes registry templating
+# - add a dedicated secret for csi
 # - seccomp profile in DaemonSet hcloud-csi-node
 # - seccomp profile in Deployment hcloud-csi-controller
+# - StorageClasses have been moved to the default-storage-class addon
 # - add "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir" annotation to template
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -30,7 +33,9 @@ metadata:
   namespace: kube-system
 data:
   token: {{ .Credentials.Hetzner.Token | b64enc }}
+
 ---
+# Source: hcloud-csi/templates/controller/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -42,17 +47,7 @@ metadata:
     app.kubernetes.io/component: controller
 automountServiceAccountToken: true
 ---
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: hcloud-volumes
-  annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
-provisioner: csi.hetzner.cloud
-volumeBindingMode: WaitForFirstConsumer
-allowVolumeExpansion: true
-reclaimPolicy: "Delete"
----
+# Source: hcloud-csi/templates/controller/clusterrole.yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -62,56 +57,57 @@ metadata:
     app.kubernetes.io/instance: hcloud-csi
     app.kubernetes.io/component: controller
 rules:
-# attacher
-- apiGroups: [""]
-  resources: [persistentvolumes]
-  verbs: [get, list, watch, update, patch]
-- apiGroups: [""]
-  resources: [nodes]
-  verbs: [get, list, watch]
-- apiGroups: [csi.storage.k8s.io]
-  resources: [csinodeinfos]
-  verbs: [get, list, watch]
-- apiGroups: [storage.k8s.io]
-  resources: [csinodes]
-  verbs: [get, list, watch]
-- apiGroups: [storage.k8s.io]
-  resources: [volumeattachments]
-  verbs: [get, list, watch, update, patch]
-- apiGroups: [storage.k8s.io]
-  resources: [volumeattachments/status]
-  verbs: [patch]
-# provisioner
-- apiGroups: [""]
-  resources: [secrets]
-  verbs: [get, list]
-- apiGroups: [""]
-  resources: [persistentvolumes]
-  verbs: [get, list, watch, create, delete, patch]
-- apiGroups: [""]
-  resources: [persistentvolumeclaims, persistentvolumeclaims/status]
-  verbs: [get, list, watch, update, patch]
-- apiGroups: [storage.k8s.io]
-  resources: [storageclasses]
-  verbs: [get, list, watch]
-- apiGroups: [""]
-  resources: [events]
-  verbs: [list, watch, create, update, patch]
-- apiGroups: [snapshot.storage.k8s.io]
-  resources: [volumesnapshots]
-  verbs: [get, list]
-- apiGroups: [snapshot.storage.k8s.io]
-  resources: [volumesnapshotcontents]
-  verbs: [get, list]
-# resizer
-- apiGroups: [""]
-  resources: [pods]
-  verbs: [get, list, watch]
-# node
-- apiGroups: [""]
-  resources: [events]
-  verbs: [get, list, watch, create, update, patch]
+  # attacher
+  - apiGroups: [""]
+    resources: [persistentvolumes]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list, watch]
+  - apiGroups: [csi.storage.k8s.io]
+    resources: [csinodeinfos]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [csinodes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [volumeattachments]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [storage.k8s.io]
+    resources: [volumeattachments/status]
+    verbs: [patch]
+  # provisioner
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list]
+  - apiGroups: [""]
+    resources: [persistentvolumes]
+    verbs: [get, list, watch, create, delete, patch]
+  - apiGroups: [""]
+    resources: [persistentvolumeclaims, persistentvolumeclaims/status]
+    verbs: [get, list, watch, update, patch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses]
+    verbs: [get, list, watch]
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [list, watch, create, update, patch]
+  - apiGroups: [snapshot.storage.k8s.io]
+    resources: [volumesnapshots]
+    verbs: [get, list]
+  - apiGroups: [snapshot.storage.k8s.io]
+    resources: [volumesnapshotcontents]
+    verbs: [get, list]
+  # resizer
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, watch]
+  # node
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [get, list, watch, create, update, patch]
 ---
+# Source: hcloud-csi/templates/controller/clusterrolebinding.yaml
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -129,6 +125,7 @@ subjects:
     name: hcloud-csi-controller
     namespace: "kube-system"
 ---
+# Source: hcloud-csi/templates/controller/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -147,6 +144,7 @@ spec:
     app.kubernetes.io/instance: hcloud-csi
     app.kubernetes.io/component: controller
 ---
+# Source: hcloud-csi/templates/node/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -165,6 +163,7 @@ spec:
     app.kubernetes.io/instance: hcloud-csi
     app.kubernetes.io/component: node
 ---
+# Source: hcloud-csi/templates/node/daemonset.yaml
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -198,6 +197,10 @@ spec:
                 operator: NotIn
                 values:
                 - "true"
+              - key: instance.hetzner.cloud/provided-by
+                operator: NotIn
+                values:
+                - robot
       tolerations:
         - effect: NoExecute
           operator: Exists
@@ -212,7 +215,7 @@ spec:
       initContainers:
       containers:
         - name: csi-node-driver-registrar
-          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.14.0" }}
           imagePullPolicy: IfNotPresent
           args:
             - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.hetzner.cloud/socket
@@ -225,7 +228,7 @@ spec:
             limits: {}
             requests: {}
         - name: liveness-probe
-          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.15.0" }}
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.16.0" }}
           imagePullPolicy: IfNotPresent
           volumeMounts:
           - mountPath: /run/csi
@@ -234,9 +237,10 @@ spec:
             limits: {}
             requests: {}
         - name: hcloud-csi-driver
-          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.11.0" }}
+          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.17.0" }}
           imagePullPolicy: IfNotPresent
-          command: [/bin/hcloud-csi-driver-node]
+          args:
+            - -node
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
@@ -290,6 +294,7 @@ spec:
             path: /dev
             type: Directory
 ---
+# Source: hcloud-csi/templates/controller/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -321,11 +326,21 @@ spec:
       securityContext:
         fsGroup: 1001
         seccompProfile:
-          type: RuntimeDefault
+          type: RuntimeDefault      
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: instance.hetzner.cloud/provided-by
+                operator: In
+                values:
+                - cloud
+            weight: 1
       initContainers:
       containers:
         - name: csi-attacher
-          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.8.0" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.9.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -337,17 +352,19 @@ spec:
             mountPath: /run/csi
 
         - name: csi-resizer
-          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.12.0" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.14.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
             requests: {}
+          args:
+            - --feature-gates=RecoverVolumeExpansionFailure=false
           volumeMounts:
           - name: socket-dir
             mountPath: /run/csi
 
         - name: csi-provisioner
-          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.1.0" }}
+          image: {{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.3.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -355,12 +372,13 @@ spec:
           args:
             - --feature-gates=Topology=true
             - --default-fstype=ext4
+            - --extra-create-metadata
           volumeMounts:
           - name: socket-dir
             mountPath: /run/csi
 
         - name: liveness-probe
-          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.15.0" }}
+          image: {{ Image "registry.k8s.io/sig-storage/livenessprobe:v2.16.0" }}
           imagePullPolicy: IfNotPresent
           resources:
             limits: {}
@@ -370,9 +388,10 @@ spec:
             name: socket-dir
 
         - name: hcloud-csi-driver
-          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.11.0" }}
+          image: {{ Image "docker.io/hetznercloud/hcloud-csi-driver:v2.17.0" }}
           imagePullPolicy: IfNotPresent
-          command: [/bin/hcloud-csi-driver-controller]
+          args:
+            - -controller
           env:
             - name: CSI_ENDPOINT
               value: unix:///run/csi/socket
@@ -416,6 +435,7 @@ spec:
         - name: socket-dir
           emptyDir: {}
 ---
+# Source: hcloud-csi/templates/core/csidriver.yaml
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
@@ -424,6 +444,7 @@ spec:
   attachRequired: true
   fsGroupPolicy: File
   podInfoOnMount: true
+  seLinuxMount: true
   volumeLifecycleModes:
   - Persistent
 {{ end }}

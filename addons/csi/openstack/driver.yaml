@@ -399,7 +399,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0-alpha.0
+    chart: openstack-cinder-csi-2.33.0
     component: controllerplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -423,7 +423,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0-alpha.0
+        chart: openstack-cinder-csi-2.33.0
         component: controllerplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -524,7 +524,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/config
+              value: /etc/config/config
             - name: CLUSTER_NAME
               value: '{{ .Cluster.Name }}'
             - name: SSL_CERT_FILE
@@ -578,7 +578,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0-alpha.0
+    chart: openstack-cinder-csi-2.33.0
     component: nodeplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -596,7 +596,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0-alpha.0
+        chart: openstack-cinder-csi-2.33.0
         component: nodeplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -651,7 +651,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/config
+              value: /etc/config/config
             - name: SSL_CERT_FILE
               value: /etc/kubermatic/certs/ca-bundle.pem
           image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'

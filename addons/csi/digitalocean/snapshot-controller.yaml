@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Sourced from:
-# - https://github.com/digitalocean/csi-digitalocean/blob/master/deploy/kubernetes/releases/csi-digitalocean-v4.7.1/snapshot-controller.yaml
+# - https://github.com/digitalocean/csi-digitalocean/blob/v4.14.0/deploy/kubernetes/releases/csi-digitalocean-v4.14.0/snapshot-controller.yaml
 # Modifications:
 # - image source includes registry templating
 # - add a securityContext
@@ -43,17 +43,21 @@ spec:
           type: RuntimeDefault
       containers:
         - name: snapshot-controller
-          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-controller:v6.2.2" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/snapshot-controller:v8.2.0" }}'
           args:
             - "--v=5"
           imagePullPolicy: IfNotPresent
+
 ---
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: snapshot-controller
   namespace: kube-system
+
 ---
+
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -83,7 +87,9 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshots/status"]
     verbs: ["update", "patch"]
+
 ---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
