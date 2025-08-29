@@ -137,6 +137,8 @@ func AWSCCMVersion(version semver.Semver) string {
 		return "v1.32.1"
 	case v133:
 		fallthrough
+	case v134:
+		fallthrough
 	default:
 		return "v1.33.0"
 	}
