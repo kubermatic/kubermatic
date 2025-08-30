@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	applicationcatalogmanager "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/application-catalog"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -255,6 +256,7 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 	reconcilers := []reconciling.NamedServiceAccountReconcilerFactory{
 		kubermatic.ServiceAccountReconciler(config),
 		kubermatic.APIServiceAccountReconciler(),
+		applicationcatalogmanager.ServiceAccountReconciler(),
 		common.WebhookServiceAccountReconciler(config),
 	}
 
@@ -271,6 +273,7 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.Ku
 	reconcilers := []reconciling.NamedRoleReconcilerFactory{
 		common.WebhookRoleReconciler(config),
 		kubermatic.APIRoleReconciler(),
+		applicationcatalogmanager.RoleReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, reconcilers, config.Namespace, r.Client); err != nil {
@@ -286,6 +289,7 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 	reconcilers := []reconciling.NamedRoleBindingReconcilerFactory{
 		common.WebhookRoleBindingReconciler(config),
 		kubermatic.APIRoleBindingReconciler(),
+		applicationcatalogmanager.RoleBindingReconciler(),
 	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, reconcilers, config.Namespace, r.Client); err != nil {
@@ -300,6 +304,7 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 
 	reconcilers := []reconciling.NamedClusterRoleReconcilerFactory{
 		kubermatic.APIClusterRoleReconciler(config),
+		applicationcatalogmanager.ClusterRoleReconciler(config),
 		common.WebhookClusterRoleReconciler(config),
 	}
 
@@ -316,6 +321,7 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 	reconcilers := []reconciling.NamedClusterRoleBindingReconcilerFactory{
 		kubermatic.ClusterRoleBindingReconciler(config),
 		kubermatic.APIClusterRoleBindingReconciler(config),
+		applicationcatalogmanager.ClusterRoleBindingReconciler(config),
 		common.WebhookClusterRoleBindingReconciler(config),
 	}
 
@@ -338,6 +344,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 		reconcilers = append(reconcilers,
 			kubermatic.APIDeploymentReconciler(config, r.workerName, r.versions),
 			kubermatic.UIDeploymentReconciler(config, r.versions),
+			applicationcatalogmanager.CatalogManagerDeploymentReconciler(config),
 		)
 	}
 
