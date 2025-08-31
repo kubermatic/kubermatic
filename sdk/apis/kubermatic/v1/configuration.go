@@ -549,15 +549,16 @@ type ApplicationDefinitionsConfiguration struct {
 	// DefaultApplicationCatalog contains configuration for the default application catalog.
 	DefaultApplicationCatalog DefaultApplicationCatalogSettings `json:"defaultApplicationCatalog,omitempty"`
 
-	// Manager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
+	// CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
 	// in the cluster from specified OCI registries.
-	// Note: The Application Catalog Manager requires its feature flag to be enabled as it is currently in beta.
-	Manager ManagerSettings `json:"catalogManager,omitempty"`
+	// Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
+	CatalogManager CatalogManagerConfiguration `json:"catalogManager,omitempty"`
 }
 
-type ManagerSettings struct {
+type CatalogManagerConfiguration struct {
 	// LogLevel specifies the logging verbosity level for the Application Catalog Manager.
 	LogLevel string `json:"logLevel,omitempty"`
+
 	// RegistrySettings configures the OCI registry from which the Application Catalog Manager
 	// retrieves ApplicationDefinition manifests.
 	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`

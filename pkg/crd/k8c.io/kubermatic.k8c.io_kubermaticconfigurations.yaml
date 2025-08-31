@@ -144,9 +144,9 @@ spec:
                   properties:
                     catalogManager:
                       description: |-
-                        Manager configures the Application Catalog Manager, which is responsible for managing ApplicationDefinitions
+                        CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
                         in the cluster from specified OCI registries.
-                        Note: The Application Catalog Manager requires its feature flag to be enabled as it is currently in beta.
+                        Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
                       properties:
                         limit:
                           description: |-
