@@ -7,6 +7,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/reconciler/pkg/reconciling"
+	"k8s.io/utils/ptr"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -168,7 +169,7 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 		return ApplicationCatalogManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := catalogManagerPodLabels()
 
-			d.Spec.Replicas = cfg.Spec.API.Replicas
+			d.Spec.Replicas = ptr.To(int32(1))
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: labels,
 			}
@@ -184,8 +185,8 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 
 			// TODO (buraksekili): debug log should come from cfg.
 			args := []string{
-				"--health-probe-address=0.0.0.0:8085",
-				"--metrics-address=0.0.0.0:8080",
+				"--health-probe-address=0.0.0.0:8080",
+				"--metrics-address=0.0.0.0:8085",
 				fmt.Sprintf("--log-debug=%v", true),
 			}
 
