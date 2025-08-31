@@ -548,6 +548,9 @@ type ApplicationDefinitionsConfiguration struct {
 
 	// DefaultApplicationCatalog contains configuration for the default application catalog.
 	DefaultApplicationCatalog DefaultApplicationCatalogSettings `json:"defaultApplicationCatalog,omitempty"`
+
+	// CatalogManager configures the application-catalog manager deployment.
+	CatalogManager CatalogManagerConfiguration `json:"catalogManager,omitempty"`
 }
 
 type SystemApplicationsSettings struct {
@@ -574,6 +577,23 @@ type DefaultApplicationCatalogSettings struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
+}
+
+// CatalogManagerConfiguration configures the application-catalog manager deployment.
+type CatalogManagerConfiguration struct {
+	// Image configures the container image for the application-catalog manager.
+	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+// CatalogManagerImageConfiguration configures the container image settings.
+type CatalogManagerImageConfiguration struct {
+	// Repository is used to override the application-catalog manager image repository.
+	// The default value is "quay.io/kubermatic/application-catalog-manager"
+	Repository string `json:"repository,omitempty"`
+	// Tag is used to override the application-catalog manager image tag.
+	Tag string `json:"tag,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

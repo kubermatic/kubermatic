@@ -49,6 +49,33 @@ spec:
         memory: 150Mi
   # Applications contains configuration for Application settings.
   applications:
+    # CatalogManager configures the application-catalog manager deployment.
+    catalogManager:
+      # Image configures the container image for the application-catalog manager.
+      image:
+        # Repository is used to override the application-catalog manager image repository.
+        # The default value is "quay.io/kubermatic/application-catalog-manager"
+        repository: ""
+        # Tag is used to override the application-catalog manager image tag.
+        tag: ""
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable. It can only be set for containers.
+        claims: null
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits: null
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests: null
     # DefaultApplicationCatalog contains configuration for the default application catalog.
     defaultApplicationCatalog:
       # Applications is a list of application definition names that should be installed in the master cluster.

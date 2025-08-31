@@ -11,6 +11,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -19,6 +20,24 @@ const (
 	ApplicationCatalogManagerDeploymentName = "application-catalog-manager"
 
 	ApplicationCatalogServiceAccountName = "application-catalog-manager"
+
+	// Default image repository and tag
+	DefaultImageRepository = "quay.io/kubermatic/application-catalog-manager"
+	DefaultImageTag        = "c3221135593524a8641fdb5b4e18682f45465922"
+)
+
+var (
+	// Default resource requirements for application-catalog-manager deployment.
+	defaultResourceRequirements = corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("500Mi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+		},
+	}
 )
 
 func catalogManagerPodLabels() map[string]string {
@@ -171,8 +190,10 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 			}
 
 			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
+
 			image := getImage(cfg)
-			var resources corev1.ResourceRequirements = getResources(cfg)
+			resources := getResources(cfg)
+
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "application-catalog-manager",
@@ -230,12 +251,24 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 	}
 }
 
-// TODO: Update it, and get resource requirements from kubermaticconfiguration
 func getResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{}
+	if cfg.Spec.Applications.CatalogManager.Resources.Requests != nil || cfg.Spec.Applications.CatalogManager.Resources.Limits != nil {
+		return cfg.Spec.Applications.CatalogManager.Resources
+	}
+
+	return defaultResourceRequirements
 }
 
 func getImage(cfg *kubermaticv1.KubermaticConfiguration) string {
-	// TODO (buraksekili): generate image name based on configurations in KubermaticConfiguration
-	return "quay.io/kubermatic/application-catalog-manager:c3221135593524a8641fdb5b4e18682f45465922"
+	repository := DefaultImageRepository
+	if cfg.Spec.Applications.CatalogManager.Image.Repository != "" {
+		repository = cfg.Spec.Applications.CatalogManager.Image.Repository
+	}
+
+	tag := DefaultImageTag
+	if cfg.Spec.Applications.CatalogManager.Image.Tag != "" {
+		tag = cfg.Spec.Applications.CatalogManager.Image.Tag
+	}
+
+	return repository + ":" + tag
 }
