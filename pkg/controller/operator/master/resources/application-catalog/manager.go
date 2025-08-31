@@ -92,7 +92,7 @@ func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 				},
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
-					Resources: []string{"kubermaticconfiguration"},
+					Resources: []string{"kubermaticconfigurations"},
 					Verbs:     []string{"get", "update", "list", "watch", "patch"},
 				},
 			}
