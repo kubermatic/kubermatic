@@ -49,33 +49,43 @@ spec:
         memory: 150Mi
   # Applications contains configuration for Application settings.
   applications:
-    # CatalogManager configures the application-catalog manager deployment.
+    # CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
+    # in the cluster from specified OCI registries.
+    # Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
     catalogManager:
-      # Image configures the container image for the application-catalog manager.
-      image:
-        # Repository is used to override the application-catalog manager image repository.
-        # The default value is "quay.io/kubermatic/application-catalog-manager"
-        repository: ""
-        # Tag is used to override the application-catalog manager image tag.
+      # Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
+      # When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
+      # When defined, only ApplicationDefinitions matching the specified criteria are processed.
+      limit:
+        # MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+        # For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
+        # specify that tier here.
+        # When multiple tiers are specified, the Application Catalog Manager uses additive logic
+        # to determine which ApplicationDefinitions to retrieve from the OCI registry.
+        metadataSelector:
+          # Tiers specifies the support tiers to filter ApplicationDefinitions.
+          # ApplicationDefinitions matching any of the specified tiers will be selected.
+          tiers: null
+        # NameSelector defines criteria for selecting ApplicationDefinitions by name.
+        # Each name must correspond to an ApplicationDefinition's `metadata.name` field.
+        # When multiple names are specified, the Application Catalog Manager uses additive logic
+        # to retrieve all matching ApplicationDefinitions from the OCI registry.
+        # Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
+        nameSelector: null
+      # LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+      logLevel: ""
+      # RegistrySettings configures the OCI registry from which the Application Catalog Manager
+      # retrieves ApplicationDefinition manifests.
+      registrySettings:
+        # Credentials optionally references a secret containing Helm registry authentication credentials.
+        # Either username/password or registryConfigFile can be specified, but not both.
+        credentials: null
+        # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+        # Example: oci://localhost:5000/myrepo
+        registryURL: ""
+        # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+        # Example: v1.0.0
         tag: ""
-      # Resources describes the requested and maximum allowed CPU/memory usage.
-      resources:
-        # Claims lists the names of resources, defined in spec.resourceClaims,
-        # that are used by this container.
-
-        # This is an alpha field and requires enabling the
-        # DynamicResourceAllocation feature gate.
-
-        # This field is immutable. It can only be set for containers.
-        claims: null
-        # Limits describes the maximum amount of compute resources allowed.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        limits: null
-        # Requests describes the minimum amount of compute resources required.
-        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
-        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-        requests: null
     # DefaultApplicationCatalog contains configuration for the default application catalog.
     defaultApplicationCatalog:
       # Applications is a list of application definition names that should be installed in the master cluster.

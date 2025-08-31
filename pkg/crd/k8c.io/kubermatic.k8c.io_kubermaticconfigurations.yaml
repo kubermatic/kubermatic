@@ -143,78 +143,141 @@ spec:
                   description: Applications contains configuration for Application settings.
                   properties:
                     catalogManager:
-                      description: CatalogManager configures the application-catalog manager deployment.
+                      description: |-
+                        CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
+                        in the cluster from specified OCI registries.
+                        Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
                       properties:
-                        image:
-                          description: Image configures the container image for the application-catalog manager.
+                        limit:
+                          description: |-
+                            Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
+                            When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
+                            When defined, only ApplicationDefinitions matching the specified criteria are processed.
                           properties:
-                            repository:
+                            metadataSelector:
                               description: |-
-                                Repository is used to override the application-catalog manager image repository.
-                                The default value is "quay.io/kubermatic/application-catalog-manager"
+                                MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+                                For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
+                                specify that tier here.
+                                When multiple tiers are specified, the Application Catalog Manager uses additive logic
+                                to determine which ApplicationDefinitions to retrieve from the OCI registry.
+                              properties:
+                                tiers:
+                                  description: |-
+                                    Tiers specifies the support tiers to filter ApplicationDefinitions.
+                                    ApplicationDefinitions matching any of the specified tiers will be selected.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            nameSelector:
+                              description: |-
+                                NameSelector defines criteria for selecting ApplicationDefinitions by name.
+                                Each name must correspond to an ApplicationDefinition's `metadata.name` field.
+                                When multiple names are specified, the Application Catalog Manager uses additive logic
+                                to retrieve all matching ApplicationDefinitions from the OCI registry.
+                                Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        logLevel:
+                          description: LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+                          type: string
+                        registrySettings:
+                          description: |-
+                            RegistrySettings configures the OCI registry from which the Application Catalog Manager
+                            retrieves ApplicationDefinition manifests.
+                          properties:
+                            credentials:
+                              description: |-
+                                Credentials optionally references a secret containing Helm registry authentication credentials.
+                                Either username/password or registryConfigFile can be specified, but not both.
+                              properties:
+                                password:
+                                  description: |-
+                                    Password references the secret containing the registry password credential.
+                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                registryConfigFile:
+                                  description: |-
+                                    RegistryConfigFile references the secret containing the Docker registry configuration file.
+                                    The value must be a dockercfg file following the same format as ~/.docker/config.json.
+                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                username:
+                                  description: |-
+                                    Username references the secret containing the registry username credential.
+                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                            registryURL:
+                              description: |-
+                                RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+                                Example: oci://localhost:5000/myrepo
                               type: string
                             tag:
-                              description: Tag is used to override the application-catalog manager image tag.
+                              description: |-
+                                Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+                                Example: v1.0.0
                               type: string
-                          type: object
-                        resources:
-                          description: Resources describes the requested and maximum allowed CPU/memory usage.
-                          properties:
-                            claims:
-                              description: |-
-                                Claims lists the names of resources, defined in spec.resourceClaims,
-                                that are used by this container.
-
-                                This is an alpha field and requires enabling the
-                                DynamicResourceAllocation feature gate.
-
-                                This field is immutable. It can only be set for containers.
-                              items:
-                                description: ResourceClaim references one entry in PodSpec.ResourceClaims.
-                                properties:
-                                  name:
-                                    description: |-
-                                      Name must match the name of one entry in pod.spec.resourceClaims of
-                                      the Pod where this field is used. It makes that resource available
-                                      inside a container.
-                                    type: string
-                                  request:
-                                    description: |-
-                                      Request is the name chosen for a request in the referenced claim.
-                                      If empty, everything from the claim is made available, otherwise
-                                      only the result of this request.
-                                    type: string
-                                required:
-                                  - name
-                                type: object
-                              type: array
-                              x-kubernetes-list-map-keys:
-                                - name
-                              x-kubernetes-list-type: map
-                            limits:
-                              additionalProperties:
-                                anyOf:
-                                  - type: integer
-                                  - type: string
-                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                x-kubernetes-int-or-string: true
-                              description: |-
-                                Limits describes the maximum amount of compute resources allowed.
-                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                              type: object
-                            requests:
-                              additionalProperties:
-                                anyOf:
-                                  - type: integer
-                                  - type: string
-                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                                x-kubernetes-int-or-string: true
-                              description: |-
-                                Requests describes the minimum amount of compute resources required.
-                                If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
-                                otherwise to an implementation-defined value. Requests cannot exceed Limits.
-                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
-                              type: object
                           type: object
                       type: object
                     defaultApplicationCatalog:
