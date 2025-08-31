@@ -237,5 +237,5 @@ func getResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequ
 
 func getImage(cfg *kubermaticv1.KubermaticConfiguration) string {
 	// TODO (buraksekili): generate image name based on configurations in KubermaticConfiguration
-	return "quay.io/application-catalog-manager:c3221135593524a8641fdb5b4e18682f45465922"
+	return "quay.io/kubermatic/application-catalog-manager:c3221135593524a8641fdb5b4e18682f45465922"
 }
