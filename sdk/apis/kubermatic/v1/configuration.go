@@ -567,6 +567,12 @@ type CatalogManagerConfiguration struct {
 	// When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
 	// When defined, only ApplicationDefinitions matching the specified criteria are processed.
 	Limit ApplicationCatalogLimit `json:"limit,omitempty"`
+
+	// Image configures the container image for the application-catalog manager.
+	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
+
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 type ApplicationCatalogLimit struct {
@@ -643,14 +649,6 @@ type DefaultApplicationCatalogSettings struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
-}
-
-// CatalogManagerConfiguration configures the application-catalog manager deployment.
-type CatalogManagerConfiguration struct {
-	// Image configures the container image for the application-catalog manager.
-	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
-	// Resources describes the requested and maximum allowed CPU/memory usage.
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // CatalogManagerImageConfiguration configures the container image settings.
