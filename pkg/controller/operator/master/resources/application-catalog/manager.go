@@ -183,11 +183,15 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 
 			d.Spec.Template.Spec.ServiceAccountName = ApplicationCatalogServiceAccountName
 
-			// TODO (buraksekili): debug log should come from cfg.
 			args := []string{
 				"--health-probe-address=0.0.0.0:8080",
 				"--metrics-address=0.0.0.0:8085",
-				fmt.Sprintf("--log-debug=%v", true),
+			}
+
+			if cfg.Spec.Applications.CatalogManager.LogLevel == "debug" {
+				args = append(args, "--log-debug=true")
+			} else {
+				args = append(args, "--log-debug=false")
 			}
 
 			d.Spec.Template.Spec.SecurityContext = &common.PodSecurityContext
