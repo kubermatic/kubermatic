@@ -22,6 +22,7 @@ import (
 
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -41,6 +42,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -262,6 +264,11 @@ func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Conte
 	err = r.cleanupNamespacedResource(ctx, &appsv1.Deployment{}, cfg.Namespace, deploymentName)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to clean up application catalog manager Deployment: %w", err)
+	}
+
+	err = r.reconcileAppDefManagementMeta(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update ApplicationDefinitions metadata: %w", err)
 	}
 
 	return nil
@@ -598,6 +605,48 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
+	}
+
+	return nil
+}
+
+// reconcileAppDefManagementMeta reconciles existing ApplicationDefinition resources in the cluster
+// when the out-tree application-catalog manager is being deleted.
+// It sets "apps.k8c.io/managed-by-external-manager" annotation to false since the application-catalog
+// is being removed.
+func (r *Reconciler) reconcileAppDefManagementMeta(ctx context.Context) error {
+	apps := appskubermaticv1.ApplicationDefinitionList{}
+
+	err := r.Client.List(ctx, &apps)
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+	for i := range apps.Items {
+		app := apps.Items[i]
+		oldApp := app.DeepCopy()
+
+		anns := app.Annotations
+		if anns == nil {
+			continue
+		}
+
+		_, exists := app.Annotations[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation]
+		if !exists {
+			continue
+		}
+
+		anns[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation] = "false"
+		app.SetAnnotations(anns)
+
+		err = r.Client.Patch(ctx, &app, ctrlruntimeclient.MergeFrom(oldApp))
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
 	}
 
 	return nil
