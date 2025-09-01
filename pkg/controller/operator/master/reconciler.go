@@ -174,7 +174,7 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 
 	// Clean up application catalog manager resources if feature gate is disabled
 	if !defaulted.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
-		if err := r.cleanupApplicationCatalogManager(ctx, defaulted, logger); err != nil {
+		if err := r.cleanupApplicationCatalogManagerResources(ctx, defaulted, logger); err != nil {
 			return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
 		}
 	}
@@ -189,7 +189,7 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 
 	logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
-	err := r.cleanupApplicationCatalogManager(ctx, config, logger)
+	err := r.cleanupApplicationCatalogManagerResources(ctx, config, logger)
 	if err != nil {
 		return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
 	}
@@ -225,17 +225,13 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
 }
 
-func (r *Reconciler) cleanupApplicationCatalogManager(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, l *zap.SugaredLogger) error {
-	if !cfg.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
-		return nil
-	}
-
+func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, l *zap.SugaredLogger) error {
 	l.Debug("Cleaning up application catalog manager resources")
 
 	clusterRoleName, _ := applicationcatalogmanager.ClusterRoleReconciler(cfg)()
-	err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, clusterRoleName)
+	err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRole{}, clusterRoleName)
 	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to clean up application catalog manager ClusterRoleBinding: %w", err)
+		return fmt.Errorf("failed to clean up application catalog manager ClusterRole: %w", err)
 	}
 
 	clusterRoleBindingName, _ := applicationcatalogmanager.ClusterRoleBindingReconciler(cfg)()
@@ -585,6 +581,8 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 	// manager is set because this feature flags gives the reconciliation responsibility to the new
 	// out-tree application-catalog manager
 	if !config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		logger.Debug("Default ApplicationsDefinitions will be reconciled by KKP master controller")
+
 		// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
 		defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config, false)
 		if err != nil {
@@ -592,6 +590,10 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 		}
 
 		reconcilers = append(reconcilers, defaultAppDefReconcilers...)
+	} else {
+		logger.Debug(
+			"Default ApplicationDefinitions will be reconciled by the external (out-tree) Application Catalog Manager",
+		)
 	}
 
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
