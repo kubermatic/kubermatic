@@ -36,6 +36,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -171,6 +172,13 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, r, logger, defaulted.Namespace)
 
+	// Clean up application catalog manager resources if feature gate is disabled
+	if !defaulted.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		if err := r.cleanupApplicationCatalogManager(ctx, defaulted, logger); err != nil {
+			return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -181,8 +189,9 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 
 	logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
-	if err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
-		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
+	err := r.cleanupApplicationCatalogManager(ctx, config, logger)
+	if err != nil {
+		return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
 	}
 
 	validating := []string{
@@ -214,6 +223,68 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 	}
 
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
+}
+
+func (r *Reconciler) cleanupApplicationCatalogManager(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, l *zap.SugaredLogger) error {
+	if !cfg.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		return nil
+	}
+
+	l.Debug("Cleaning up application catalog manager resources")
+
+	clusterRoleName, _ := applicationcatalogmanager.ClusterRoleReconciler(cfg)()
+	err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, clusterRoleName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager ClusterRoleBinding: %w", err)
+	}
+
+	clusterRoleBindingName, _ := applicationcatalogmanager.ClusterRoleBindingReconciler(cfg)()
+	err = common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, clusterRoleBindingName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
+	}
+
+	serviceAccountName, _ := applicationcatalogmanager.ServiceAccountReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &corev1.ServiceAccount{}, cfg.Namespace, serviceAccountName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager ServiceAccount: %w", err)
+	}
+
+	roleName, _ := applicationcatalogmanager.RoleReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &rbacv1.Role{}, cfg.Namespace, roleName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager Role: %w", err)
+	}
+
+	roleBindingName, _ := applicationcatalogmanager.RoleBindingReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &rbacv1.RoleBinding{}, cfg.Namespace, roleBindingName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager RoleBinding: %w", err)
+	}
+
+	deploymentName, _ := applicationcatalogmanager.CatalogManagerDeploymentReconciler(cfg)()
+	err = r.cleanupNamespacedResource(ctx, &appsv1.Deployment{}, cfg.Namespace, deploymentName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager Deployment: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) cleanupNamespacedResource(ctx context.Context, obj ctrlruntimeclient.Object, namespace, name string) error {
+	key := ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: name}
+	if err := r.Get(ctx, key, obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to probe for %s: %w", key, err)
+	}
+
+	if err := r.Delete(ctx, obj); err != nil {
+		return fmt.Errorf("failed to delete %s: %w", key, err)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
