@@ -19,7 +19,7 @@ package vsphere
 import (
 	"context"
 	"fmt"
-	"slices"
+	"strings"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 
@@ -30,84 +30,148 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	// managedTagsAnnotation is an annotation on the KKP Cluster object that stores a comma-separated list of vSphere tag IDs
+	// managed by this cluster.
+	managedTagsAnnotation = "kubermatic.io/vsphere-managed-tags"
+)
+
 func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	if err := syncCreatedClusterTags(ctx, restSession, cluster); err != nil {
-		return nil, fmt.Errorf("failed to sync created tags %w", err)
+	// The update function can be called multiple times, so we need to ensure we have the latest version of the cluster object.
+	var err error
+	managedTags, err := syncCreatedClusterTags(ctx, restSession, cluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sync created tags: %w", err)
 	}
 
-	if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
-		return nil, fmt.Errorf("failed to sync deleted tags %w", err)
+	managedTags, err = syncDeletedClusterTags(ctx, restSession, cluster, managedTags)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sync deleted tags: %w", err)
 	}
 
-	cluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	updatedTags := strings.Join(sets.List(managedTags), ",")
+
+	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 			kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
 		}
+		if cluster.Annotations == nil {
+			cluster.Annotations = make(map[string]string)
+		}
+		cluster.Annotations[managedTagsAnnotation] = updatedTags
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to add finalizer %s on vsphere cluster object: %w", tagCleanupFinalizer, err)
-	}
-
-	return cluster, nil
 }
 
-func syncCreatedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) error {
+func syncCreatedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) (sets.Set[string], error) {
 	tagManager := vapitags.NewManager(restSession.Client)
 	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.Tags.CategoryID)
 	if err != nil {
-		return fmt.Errorf("failed to get tag category %s: %w", cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
+		return nil, fmt.Errorf("failed to get tag category %s: %w", cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
 	}
 
-	for _, vsphereTag := range cluster.Spec.Cloud.VSphere.Tags.Tags {
-		if filterTag(categoryTags, vsphereTag) == "" {
-			_, err := createTag(ctx, restSession, cluster.Spec.Cloud.VSphere.Tags.CategoryID, vsphereTag)
-			if err != nil {
-				return fmt.Errorf("failed to create tag %s against category %s: %w", vsphereTag, cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
+	managedTags := getManagedTags(cluster)
+	specTags := sets.NewString(cluster.Spec.Cloud.VSphere.Tags.Tags...)
+
+	// 1. Ensure all tags in the spec are present in vSphere and tracked in the annotation.
+	for _, tagName := range specTags.List() {
+		// Check if the tag from the spec already exists in vSphere for this category.
+		if tagID := filterTag(categoryTags, tagName); tagID != "" {
+			// If it exists, ensure it's in our managed list.
+			if !managedTags.Has(tagID) {
+				managedTags.Insert(tagID)
 			}
+			continue
+		}
+
+		// If the tag does not exist, create it.
+		tagID, err := createTag(ctx, restSession, cluster.Spec.Cloud.VSphere.Tags.CategoryID, tagName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create tag %s against category %s: %w", tagName, cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
+		}
+		managedTags.Insert(tagID)
+	}
+
+	return managedTags, nil
+}
+
+func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, managedTags sets.Set[string]) (sets.Set[string], error) {
+	// If there are no managed tags, there's nothing to delete.
+	if managedTags.Len() == 0 {
+		return managedTags, nil
+	}
+
+	tagManager := vapitags.NewManager(restSession.Client)
+	// We need all tags from the category to map managed tag IDs back to tag names.
+	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.Tags.CategoryID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tag category %s: %w", cluster.Spec.Cloud.VSphere.Tags.CategoryID, err)
+	}
+
+	specTags := sets.NewString(cluster.Spec.Cloud.VSphere.Tags.Tags...)
+
+	clusterIsDeleting := cluster.DeletionTimestamp != nil
+	tagsToDelete := sets.New[string]()
+
+	// Determine which tags to delete.
+	for tagID := range managedTags {
+		// Find the name of the tag corresponding to the managed ID.
+		var tagName string
+		for _, categoryTag := range categoryTags {
+			if categoryTag.ID == tagID {
+				tagName = categoryTag.Name
+				break
+			}
+		}
+
+		// If the tag is no longer in the spec (or the cluster is deleting), mark it for deletion.
+		if !specTags.Has(tagName) || clusterIsDeleting {
+			tagsToDelete.Insert(tagID)
 		}
 	}
 
-	return nil
-}
-
-func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) error {
-	tagManager := vapitags.NewManager(restSession.Client)
-	categoryTags, err := tagManager.GetTagsForCategory(ctx, cluster.Spec.Cloud.VSphere.Tags.CategoryID)
-	if err != nil {
-		return fmt.Errorf("failed to get tag %w", err)
+	if tagsToDelete.Len() == 0 {
+		return managedTags, nil
 	}
 
-	clusterTags := sets.NewString(cluster.Spec.Cloud.VSphere.Tags.Tags...)
-	for _, vsphereTag := range categoryTags {
-		if _, ok := clusterTags[vsphereTag.Name]; ok {
-			if cluster.DeletionTimestamp == nil {
+	// Attempt to delete the tags from vSphere.
+	for tagID := range tagsToDelete {
+		tag, err := tagManager.GetTag(ctx, tagID)
+		if err != nil {
+			// If the tag is already gone, just remove it from our managed list.
+			if isNotFound(err) {
+				managedTags.Delete(tagID)
 				continue
 			}
+			return nil, fmt.Errorf("failed to get tag %s: %w", tagID, err)
 		}
 
-		// Since we fetch all tags for the given category, we should skip the deletion of tags which do not belong to the cluster spec.
-		// This is important to avoid accidentally deleting tags that are not yet attached to any object but are used by other clusters.
-		if !slices.Contains(cluster.Spec.Cloud.VSphere.Tags.Tags, vsphereTag.Name) {
-			continue
-		}
-
-		// Fetch all objects attached to the tag.
-		attachedObjs, err := tagManager.ListAttachedObjects(ctx, vsphereTag.ID)
+		// Before deleting from vSphere, ensure it's not attached to any objects.
+		attachedObjs, err := tagManager.ListAttachedObjects(ctx, tag.ID)
 		if err != nil {
-			return fmt.Errorf("failed to list attached objects for the given tag %s: %w", vsphereTag.Name, err)
+			return nil, fmt.Errorf("failed to list attached objects for tag %s: %w", tag.Name, err)
 		}
 
-		// if there are still objects attached to the tag, we can't delete it.
 		if len(attachedObjs) > 0 {
+			// Cannot delete a tag that is still in use. We'll retry on the next reconcile.
 			continue
 		}
 
-		if err := tagManager.DeleteTag(ctx, &vsphereTag); err != nil {
-			return fmt.Errorf("failed to delete tag %s: %w", vsphereTag.Name, err)
+		if err := tagManager.DeleteTag(ctx, tag); err != nil {
+			return nil, fmt.Errorf("failed to delete tag %s: %w", tag.Name, err)
 		}
+
+		// On successful deletion from vSphere, remove it from our managed list.
+		managedTags.Delete(tagID)
 	}
 
-	return nil
+	return managedTags, nil
+}
+
+func getManagedTags(cluster *kubermaticv1.Cluster) sets.Set[string] {
+	if cluster.Annotations == nil || cluster.Annotations[managedTagsAnnotation] == "" {
+		return sets.New[string]()
+	}
+	return sets.New(strings.Split(cluster.Annotations[managedTagsAnnotation], ",")...)
 }
 
 func filterTag(categoryTags []vapitags.Tag, tagName string) string {

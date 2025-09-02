@@ -253,7 +253,11 @@ func (v *VSphere) CleanUpCloudProvider(ctx context.Context, cluster *kubermaticv
 	}
 
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
-		if err := syncDeletedClusterTags(ctx, restSession, cluster); err != nil {
+		// During cleanup, we only care about the side effect of deleting the tags from vSphere.
+		// We can safely ignore the returned list of managed tags because the cluster is being
+		// deleted, so there's no need to update its annotations.
+		_, err = syncDeletedClusterTags(ctx, restSession, cluster, getManagedTags(cluster))
+		if err != nil {
 			return nil, fmt.Errorf("failed to cleanup cluster tags: %w", err)
 		}
 	}
