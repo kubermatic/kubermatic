@@ -68,7 +68,8 @@ const (
 
 	// ExternalApplicationCatalogManager enables the external application catalog manager.
 	// It allows the new Application Catalog manager to work, and prevent the current controllers in KKP master to
-	// reconcile ApplicationDefinitions. Setting this feature flag to true will delegate the ApplicationDefinition reconciliation
+	// reconcile ApplicationDefinitions of the default catalog. 
+	// Setting this feature flag to true will delegate the ApplicationDefinition reconciliation
 	// responsibility to the new external (out-tree) application catalog controller manager.
 	ExternalApplicationCatalogManager = "ExternalApplicationCatalogManager"
 )
