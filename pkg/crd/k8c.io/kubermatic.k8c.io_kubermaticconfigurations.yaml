@@ -196,6 +196,12 @@ spec:
                         logLevel:
                           description: LogLevel specifies the logging verbosity level for the Application Catalog Manager.
                           type: string
+                        reconciliationInterval:
+                          description: |-
+                            ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+                            By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+                            Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+                          type: string
                         registrySettings:
                           description: |-
                             RegistrySettings configures the OCI registry from which the Application Catalog Manager

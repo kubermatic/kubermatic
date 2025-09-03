@@ -186,6 +186,10 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 			args := []string{
 				"--health-probe-address=0.0.0.0:8080",
 				"--metrics-address=0.0.0.0:8085",
+				fmt.Sprintf(
+					"--reconciliation-interval=%s",
+					cfg.Spec.Applications.CatalogManager.ReconciliationInterval.Duration,
+				),
 			}
 
 			if cfg.Spec.Applications.CatalogManager.LogLevel == "debug" {

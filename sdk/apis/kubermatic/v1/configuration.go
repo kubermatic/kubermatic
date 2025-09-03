@@ -573,6 +573,11 @@ type CatalogManagerConfiguration struct {
 
 	// Resources describes the requested and maximum allowed CPU/memory usage.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+	// By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+	// Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
 }
 
 type ApplicationCatalogLimit struct {
