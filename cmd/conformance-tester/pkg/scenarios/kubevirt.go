@@ -40,11 +40,6 @@ const (
 
 type KubevirtScenario struct {
 	BaseScenario
-	cpu      string
-	memory   string
-	pvcSize  string
-	pvcSC    string
-	template string
 }
 
 func (s *KubevirtScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {

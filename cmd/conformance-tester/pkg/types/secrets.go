@@ -237,3 +237,34 @@ func (s *Secrets) ParseFlags() error {
 
 	return nil
 }
+
+// AreAnySet checks if any of the secret fields have been set to a non-zero value.
+func (s *Secrets) AreAnySet() bool {
+	return s.Anexia.Token != "" ||
+		s.Azure.ClientID != "" ||
+		s.Azure.ClientSecret != "" ||
+		s.Azure.SubscriptionID != "" ||
+		s.Azure.TenantID != "" ||
+		s.Digitalocean.Token != "" ||
+		s.GCP.ServiceAccount != "" ||
+		s.Hetzner.Token != "" ||
+		s.OpenStack.Username != "" ||
+		s.OpenStack.Password != "" ||
+		s.VSphere.Username != "" ||
+		s.VSphere.Password != "" ||
+		s.AWS.AccessKeyID != "" ||
+		s.AWS.SecretAccessKey != "" ||
+		s.Nutanix.Username != "" ||
+		s.Nutanix.Password != "" ||
+		s.Nutanix.ProxyURL != "" ||
+		s.Nutanix.CSIEndpoint != "" ||
+		s.Nutanix.CSIPassword != "" ||
+		s.Nutanix.CSIUsername != "" ||
+		s.VMwareCloudDirector.Username != "" ||
+		s.VMwareCloudDirector.Password != "" ||
+		s.VMwareCloudDirector.Organization != "" ||
+		s.VMwareCloudDirector.VDC != "" ||
+		s.Alibaba.AccessKeyID != "" ||
+		s.Alibaba.AccessKeySecret != "" ||
+		s.Kubevirt.Kubeconfig != ""
+}

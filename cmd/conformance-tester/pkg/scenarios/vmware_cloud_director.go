@@ -29,6 +29,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	vmwareCloudDirectorIPAllocationMode = "DHCP"
+	vmwareCloudDirectorCPUs             = 2
+	vmwareCloudDirectorCPUCores         = 1
+	vmwareCloudDirectorMemoryMB         = 4096
+	vmwareCloudDirectoDiskSize          = 20
+	vmwareCloudDirectorCatalog          = "kubermatic"
+	vmwareCloudDirectorStorageProfile   = "Intermediate"
+)
+
 type vmwareCloudDirectorScenario struct {
 	BaseScenario
 }
@@ -36,9 +46,7 @@ type vmwareCloudDirectorScenario struct {
 func (s *vmwareCloudDirectorScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
-		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
-		providerconfig.OperatingSystemRockyLinux,
 	)
 }
 
@@ -47,7 +55,7 @@ func (s *vmwareCloudDirectorScenario) IsValid() error {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -55,7 +63,7 @@ func (s *vmwareCloudDirectorScenario) IsValid() error {
 }
 
 func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
-	return &kubermaticv1.ClusterSpec{
+	spec := &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VMwareCloudDirector.KKPDatacenter,
 			VMwareCloudDirector: &kubermaticv1.VMwareCloudDirectorCloudSpec{
@@ -63,19 +71,26 @@ func (s *vmwareCloudDirectorScenario) Cluster(secrets types.Secrets) *kubermatic
 				Password:     secrets.VMwareCloudDirector.Password,
 				Organization: secrets.VMwareCloudDirector.Organization,
 				VDC:          secrets.VMwareCloudDirector.VDC,
+				OVDCNetworks: secrets.VMwareCloudDirector.OVDCNetworks,
+				CSI: &kubermaticv1.VMwareCloudDirectorCSIConfig{
+					StorageProfile: vmwareCloudDirectorStorageProfile,
+				},
 			},
 		},
-		Version: s.ClusterVersion(),
+		Version: s.clusterVersion,
 	}
+
+	return spec
 }
 
 func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewVMwareCloudDirectorConfig().
-		WithCPUs(2).
-		WithCPUCores(1).
-		WithMemoryMB(2048).
-		WithDiskSizeGB(20).
-		WithIPAllocationMode("DHCP").
+		WithCatalog(vmwareCloudDirectorCatalog).
+		WithCPUs(vmwareCloudDirectorCPUs).
+		WithCPUCores(vmwareCloudDirectorCPUCores).
+		WithMemoryMB(vmwareCloudDirectorMemoryMB).
+		WithDiskSizeGB(vmwareCloudDirectoDiskSize).
+		WithIPAllocationMode(vmwareCloudDirectorIPAllocationMode).
 		Build()
 
 	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)

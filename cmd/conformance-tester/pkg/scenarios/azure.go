@@ -29,6 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	azureVMSize = "Standard_F2"
+)
+
 type azureScenario struct {
 	BaseScenario
 }
@@ -43,11 +47,11 @@ func (s *azureScenario) compatibleOperatingSystems() sets.Set[providerconfig.Ope
 }
 
 func (s *azureScenario) IsValid() error {
-	if err := s.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -59,20 +63,20 @@ func (s *azureScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.Azure.KKPDatacenter,
 			Azure: &kubermaticv1.AzureCloudSpec{
-				TenantID:       secrets.Azure.TenantID,
-				SubscriptionID: secrets.Azure.SubscriptionID,
-				ClientID:       secrets.Azure.ClientID,
-				ClientSecret:   secrets.Azure.ClientSecret,
+				ClientID:        secrets.Azure.ClientID,
+				ClientSecret:    secrets.Azure.ClientSecret,
+				SubscriptionID:  secrets.Azure.SubscriptionID,
+				TenantID:        secrets.Azure.TenantID,
+				LoadBalancerSKU: kubermaticv1.AzureStandardLBSKU,
 			},
 		},
-		Version: s.ClusterVersion(),
+		Version: s.clusterVersion,
 	}
 }
 
 func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewAzureConfig().
-		WithLocation(s.Datacenter().Spec.Azure.Location).
-		WithVMSize("Standard_F2").
+		WithVMSize(azureVMSize).
 		Build()
 
 	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)

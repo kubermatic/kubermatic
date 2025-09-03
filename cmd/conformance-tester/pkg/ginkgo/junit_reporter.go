@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/onsi/ginkgo/v2/types"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/runner"
@@ -53,10 +52,8 @@ type Failure struct {
 // JUnitReporter is a Ginkgo reporter that creates a JUnit XML file for each completed spec.
 // This mimics the per-scenario reporting of the original `main.go`-based runner.
 type JUnitReporter struct {
-	name      string
 	outputDir string
 	suite     JUnitTestSuite
-	specCases []JUnitTestCase
 	result    runner.ScenarioResult
 	failures  []Failure
 }
@@ -72,8 +69,7 @@ func NewJUnitReporter(outputDir string) *JUnitReporter {
 	}
 }
 
-// SpecDidComplete is called by Ginkgo whenever a spec finishes.
-func (r *JUnitReporter) SpecDidComplete(report types.SpecReport) {
+func (r *JUnitReporter) AfterSpec(report types.SpecReport) {
 	// We only generate reports for specs that have actually run.
 	if report.State == types.SpecStatePending {
 		return
@@ -81,16 +77,10 @@ func (r *JUnitReporter) SpecDidComplete(report types.SpecReport) {
 
 	r.suite = JUnitTestSuite{}
 
-	// className := strings.Join(report.ContainerHierarchyTexts, " ")
-
-	var systemOutBuilder strings.Builder
-	systemOutBuilder.WriteString(report.CapturedGinkgoWriterOutput)
-
 	r.suite.Name = report.ContainerHierarchyTexts[len(report.ContainerHierarchyTexts)-1]
 	r.suite.XMLName = xml.Name{Local: r.suite.Name}
 
 	if len(report.SpecEvents) > 0 {
-		systemOutBuilder.WriteString("\n\nSpec Events:\n")
 		for _, event := range report.SpecEvents {
 			if event.SpecEventType != types.SpecEventByEnd {
 				continue
@@ -103,37 +93,7 @@ func (r *JUnitReporter) SpecDidComplete(report types.SpecReport) {
 		}
 	}
 
-	// r.suite.Tests++
-	// r.suite.Time += testCase.Time
-
-	// switch report.State {
-	// case types.SpecStateFailed:
-	// 	r.suite.Failures++
-	// 	testCase.Failure = &JUnitFailure{
-	// 		Message: report.Failure.Message,
-	// 		Type:    report.Failure.FailureNodeType.String(),
-	// 		Value:   fmt.Sprintf("%s\n%s", report.Failure.Location.String(), report.Failure.Location.FullStackTrace),
-	// 	}
-	// case types.SpecStateSkipped:
-	// 	r.suite.Skipped++
-	// 	testCase.Skipped = &JUnitSkipped{Message: report.Failure.Message}
-	// case types.SpecStatePanicked:
-	// 	r.suite.Errors++
-	// 	testCase.Failure = &JUnitFailure{
-	// 		Message: "Panic",
-	// 		Type:    "Panic",
-	// 		Value:   fmt.Sprintf("%s\n%s", report.Failure.Message, report.LeafNodeLocation.FullStackTrace),
-	// 	}
-	// }
-}
-
-// A V2 reporter is any object that implements one or more of the reporter methods.
-func (r *JUnitReporter) SpecWillRun(report types.SpecReport) {}
-func (r *JUnitReporter) BeforeSuite(report types.Report) {
-	// r.suite.Name = report.SuiteDescription
-}
-func (r *JUnitReporter) AfterSuite(report types.SpecReport) {
-	filename := fmt.Sprintf("junit.%s.xml", r.name)
+	filename := fmt.Sprintf("junit.%s.xml", r.suite.Name)
 	path := filepath.Join(r.outputDir, filename)
 
 	file, err := os.Create(path)

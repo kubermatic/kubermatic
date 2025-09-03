@@ -18,7 +18,7 @@ package ginkgo
 
 import (
 	"context"
-	"errors"
+	"flag"
 	"fmt"
 	"os"
 	"time"
@@ -27,12 +27,12 @@ import (
 
 	"gopkg.in/yaml.v3"
 	"k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
+	legacytypes "k8c.io/kubermatic/v2/cmd/conformance-tester/pkg/types"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermativsemver "k8c.io/kubermatic/sdk/v2/semver"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/test"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
@@ -114,6 +114,31 @@ type RuntimeOptions struct {
 	KubermaticConfiguration *kubermaticv1.KubermaticConfiguration
 }
 
+func MergeOptions(base Options, override *types.Options) *types.Options {
+	return &types.Options{
+		Client:                       override.Client,
+		Providers:                    override.Providers,
+		Releases:                     override.Releases,
+		EnableDistributions:          override.EnableDistributions,
+		ExcludeDistributions:         override.ExcludeDistributions,
+		EnableTests:                  override.EnableTests,
+		ExcludeTests:                 override.ExcludeTests,
+		KubermaticNamespace:          override.KubermaticNamespace,
+		KubermaticSeedName:           override.KubermaticSeedName,
+		KonnectivityEnabled:          override.KonnectivityEnabled,
+		NodeCount:                    override.NodeCount,
+		ControlPlaneReadyWaitTimeout: override.ControlPlaneReadyWaitTimeout,
+		NodeReadyTimeout:             override.NodeReadyTimeout,
+		CustomTestTimeout:            override.CustomTestTimeout,
+		UserClusterPollInterval:      override.UserClusterPollInterval,
+		NamePrefix:                   override.NamePrefix,
+		Secrets:                      override.Secrets,
+		LogDirectory:                 override.LogDirectory,
+		ReportsRoot:                  override.ReportsRoot,
+		DeleteClusterAfterTests:      override.DeleteClusterAfterTests,
+	}
+}
+
 func NewDefaultOptions() *Options {
 	return &Options{
 		Client:                       "kube",
@@ -178,62 +203,6 @@ func newOptionsFromYAML(log *zap.SugaredLogger) (*Options, error) {
 		return nil, fmt.Errorf("failed to process secrets from files: %w", err)
 	}
 
-	releases := opts.Releases
-	log.Infof("Using releases: %v", releases)
-
-	runtimeOpts, err := NewRuntimeOptions(context.Background(), log, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create runtime options: %w", err)
-	}
-	legacyTypes := toLegacyOptions(opts, runtimeOpts)
-
-	legacyTypes.Providers = types.AllProviders.Intersection(legacyTypes.Providers)
-	if legacyTypes.Providers.Len() == 0 {
-		return nil, errors.New("no cloud provider was enabled")
-	}
-
-	legacyTypes.Tests, err = legacyTypes.EffectiveTests()
-	if err != nil {
-		return nil, err
-	}
-
-	if legacyTypes.Tests.Len() == 0 {
-		log.Warn("All tests have been disabled, will only test cluster creation and whether nodes come up successfully.")
-	}
-
-	opts.EnableTests = sets.List(legacyTypes.EnableTests)
-	opts.ExcludeTests = sets.List(legacyTypes.ExcludeTests)
-	opts.Tests = sets.List(legacyTypes.Tests)
-
-	for _, release := range sets.List(legacyTypes.Releases) {
-		version := test.LatestKubernetesVersionForRelease(release, nil)
-		if version == nil {
-			return nil, fmt.Errorf("no version found for release %q", release)
-		}
-
-		opts.Versions = append(opts.Versions, version)
-	}
-
-	if len(opts.Versions) == 0 {
-		opts.Versions = append(opts.Versions, test.LatestStableKubernetesVersion(nil))
-		log.Infow("No -releases specified, defaulting to latest stable Kubernetes version", "version", opts.Versions[0])
-	}
-
-	legacyTypes.Distributions, err = legacyTypes.EffectiveDistributions()
-	if err != nil {
-		return nil, err
-	}
-
-	opts.Distributions = sets.List(legacyTypes.Distributions)
-
-	if opts.LogDirectory != "" {
-		if _, err := os.Stat(opts.LogDirectory); err != nil {
-			if err := os.MkdirAll(opts.LogDirectory, 0755); err != nil {
-				return nil, fmt.Errorf("log-directory %q is not a valid directory and could not be created", opts.LogDirectory)
-			}
-		}
-	}
-
 	return opts, nil
 }
 
@@ -293,11 +262,96 @@ func NewRuntimeOptions(ctx context.Context, log *zap.SugaredLogger, o *Options) 
 	return runtimeOpts, nil
 }
 
+func mergeOptions(log *zap.SugaredLogger, yamlOpts *Options, flagOpts *legacytypes.Options, runtimeOpts *RuntimeOptions) *legacytypes.Options {
+	// Start with a base of legacy options derived from the YAML file.
+	merged := toLegacyOptions(yamlOpts, runtimeOpts)
+
+	// Now, selectively override with values from the command-line flags,
+	// but only if the flags were actually set by the user.
+	flag.Visit(func(f *flag.Flag) {
+		log.Debugw("Merging command-line flag", "flag", f.Name, "value", f.Value)
+		switch f.Name {
+		case "client":
+			merged.Client = flagOpts.Client
+		case "existing-cluster-label":
+			merged.ExistingClusterLabel = flagOpts.ExistingClusterLabel
+		case "name-prefix":
+			merged.NamePrefix = flagOpts.NamePrefix
+		case "providers":
+			merged.Providers = flagOpts.Providers
+		case "releases":
+			merged.Releases = flagOpts.Releases
+		case "distributions":
+			merged.EnableDistributions = flagOpts.EnableDistributions
+		case "exclude-distributions":
+			merged.ExcludeDistributions = flagOpts.ExcludeDistributions
+		case "tests":
+			merged.EnableTests = flagOpts.EnableTests
+		case "exclude-tests":
+			merged.ExcludeTests = flagOpts.ExcludeTests
+		case "scenario-options":
+			merged.ScenarioOptions = flagOpts.ScenarioOptions
+		case "repo-root":
+			merged.RepoRoot = flagOpts.RepoRoot
+		case "kubermatic-project":
+			merged.KubermaticProject = flagOpts.KubermaticProject
+		case "kubermatic-seed-cluster":
+			merged.KubermaticSeedName = flagOpts.KubermaticSeedName
+		case "kubermatic-namespace":
+			merged.KubermaticNamespace = flagOpts.KubermaticNamespace
+		case "kubermatic-nodes":
+			merged.NodeCount = flagOpts.NodeCount
+		case "kubermatic-parallel-clusters":
+			merged.ClusterParallelCount = flagOpts.ClusterParallelCount
+		case "reports-root":
+			merged.ReportsRoot = flagOpts.ReportsRoot
+		case "log-directory":
+			merged.LogDirectory = flagOpts.LogDirectory
+		case "kubermatic-cluster-timeout":
+			merged.ControlPlaneReadyWaitTimeout = flagOpts.ControlPlaneReadyWaitTimeout
+		case "node-ready-timeout":
+			merged.NodeReadyTimeout = flagOpts.NodeReadyTimeout
+		case "custom-test-timeout":
+			merged.CustomTestTimeout = flagOpts.CustomTestTimeout
+		case "user-cluster-poll-interval":
+			merged.UserClusterPollInterval = flagOpts.UserClusterPollInterval
+		case "kubermatic-delete-cluster":
+			merged.DeleteClusterAfterTests = flagOpts.DeleteClusterAfterTests
+		case "wait-for-cluster-deletion":
+			merged.WaitForClusterDeletion = flagOpts.WaitForClusterDeletion
+		case "node-ssh-pub-key":
+			// This is handled by pubKeyPath and loaded in ParseFlags, so we just copy the result.
+			merged.PublicKeys = flagOpts.PublicKeys
+		case "enable-dualstack":
+			merged.DualStackEnabled = flagOpts.DualStackEnabled
+		case "enable-konnectivity":
+			merged.KonnectivityEnabled = flagOpts.KonnectivityEnabled
+		case "update-cluster":
+			merged.TestClusterUpdate = flagOpts.TestClusterUpdate
+		case "pushgateway-endpoint":
+			merged.PushgatewayEndpoint = flagOpts.PushgatewayEndpoint
+		case "results-file":
+			merged.ResultsFile = flagOpts.ResultsFile
+		case "retry":
+			merged.RetryFailedScenarios = flagOpts.RetryFailedScenarios
+		}
+	})
+
+	// Secrets are complex; for now, we assume flags override the entire secret structure if provided.
+	// A more granular merge might be needed if users can specify partial secrets via flags.
+	if flagOpts.Secrets.AreAnySet() {
+		merged.Secrets = flagOpts.Secrets
+	}
+
+	return merged
+}
+
 // toLegacyOptions converts the ginkgo options to the old ctypes options for compatibility.
 func toLegacyOptions(opts *Options, runtimeOpts *RuntimeOptions) *types.Options {
 	// The various scenario and test functions have not been updated to the new
 	// ginkgo.Options struct yet, so we need to convert.
 	legacyOpts := &types.Options{
+		Client:                       opts.Client,
 		NamePrefix:                   opts.NamePrefix,
 		Providers:                    sets.New[string](opts.Providers...),
 		Releases:                     sets.New[string](opts.Releases...),

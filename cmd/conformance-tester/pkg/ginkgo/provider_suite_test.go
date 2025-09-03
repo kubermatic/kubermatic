@@ -3,6 +3,7 @@ package ginkgo
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"testing"
@@ -35,10 +36,9 @@ var (
 	client             clients.Client
 	testSuiteScenarios []scenarios.Scenario
 	scenarioFailureMap map[string][]Failure
-	// junitReporter      *JUnitReporter
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	// setup logging
 	logOpts := kubermaticlog.NewDefaultOptions()
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -46,27 +46,36 @@ func init() {
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 	kkpreconciling.Configure(log)
 
-	// load options
 	var err error
+
+	// setup context
+	rootCtx = signals.SetupSignalHandler()
+
+	// setup options
 	opts, err = newOptionsFromYAML(log)
 	if err != nil {
 		log.Fatalw("Failed to load options", zap.Error(err))
 	}
-
-	// setup context
-	rootCtx = signals.SetupSignalHandler()
 	runtimeOpts, err = NewRuntimeOptions(rootCtx, log, opts)
 	if err != nil {
 		log.Fatalw("Failed to create runtime options", zap.Error(err))
 	}
 
-	legacyOpts = toLegacyOptions(opts, runtimeOpts)
-	// testSuiteScenarios, err = scenarios.NewGenerator().
-	// 	WithCloudProviders(string(providerconfig.CloudProviderKubeVirt), string(providerconfig.CloudProviderHetzner)).
-	// 	WithDualstack(opts.DualStackEnabled).
-	// 	WithOperatingSystems(string(providerconfig.OperatingSystemUbuntu), string(providerconfig.OperatingSystemRockyLinux)).
-	// 	WithVersions(semver.NewSemverOrDie("v1.33.3"), semver.NewSemverOrDie("v1.32.7"), semver.NewSemverOrDie("v1.31.11")).
-	// 	Scenarios(rootCtx, legacyOpts, log)
+	// load cli-flags
+	legacyOpts = legacytypes.NewDefaultOptions()
+	legacyOpts.AddFlags()
+
+	scenarioFailureMap = make(map[string][]Failure)
+	flag.Parse()
+
+	// merge options by file and cli flags
+	legacyOpts = mergeOptions(log, opts, legacyOpts, runtimeOpts)
+
+	// parse our CLI flags
+	if err := legacyOpts.ParseFlags(log); err != nil {
+		log.Warnf("Invalid flags", zap.Error(err))
+	}
+
 	testSuiteScenarios, err = scenarios.NewGenerator().
 		WithCloudProviders(legacyOpts.Providers.UnsortedList()...).
 		WithDualstack(opts.DualStackEnabled).
@@ -77,8 +86,7 @@ func init() {
 		log.Fatalw("Failed to generate scenarios", zap.Error(err))
 	}
 
-	scenarioFailureMap = make(map[string][]Failure)
-	// junitReporter = NewJUnitReporter(opts.ReportsRoot)
+	os.Exit(m.Run())
 }
 
 func TestScenarios(t *testing.T) {
@@ -103,11 +111,11 @@ func CustomFailHandler(message string, callerSkip ...int) {
 		skip = callerSkip[0]
 	}
 	currentSpecReport := CurrentSpecReport()
-	scenarioFailureMap[currentSpecReport.ContainerHierarchyTexts[len(currentSpecReport.ContainerHierarchyTexts)-1]] = append(scenarioFailureMap[currentSpecReport.ContainerHierarchyTexts[len(currentSpecReport.ContainerHierarchyTexts)-1]], Failure{
+	scenarioFailureMapKey := currentSpecReport.ContainerHierarchyTexts[len(currentSpecReport.ContainerHierarchyTexts)-1]
+	scenarioFailureMap[scenarioFailureMapKey] = append(scenarioFailureMap[scenarioFailureMapKey], Failure{
 		Message: message,
 		Step:    currentSpecReport.SpecEvents[len(currentSpecReport.SpecEvents)-1].Message,
 	})
-	// currentSpecReport = append(currentSpecReport.Failure.AdditionalFailures, types.AdditionalFailure{Failure: types.Failure{Message: message}})
 	log.Infof("Skipping %d message %v", skip, message)
 }
 
@@ -125,28 +133,32 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	// This function runs once on a single process.
 	// It's responsible for setting up the global environment, like creating
 	// the KKP project and ensuring SSH keys exist.
-	By(KKP("Setting up metrics"))
-	if legacyOpts.PushgatewayEndpoint != "" {
-		metrics.Setup(legacyOpts.PushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
-	}
+	By(KKP("Setting up metrics"), func() {
+		if legacyOpts.PushgatewayEndpoint != "" {
+			metrics.Setup(legacyOpts.PushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
+		}
+	})
 
-	By(KKP("Creating a KKP client"))
-	client = clients.NewKubeClient(legacyOpts)
-	Expect(client.Setup(rootCtx, log)).To(Succeed())
+	By(KKP("Creating a KKP client"), func() {
+		client = clients.NewKubeClient(legacyOpts)
+		Expect(client.Setup(rootCtx, log)).To(Succeed())
+	})
 
-	By(KKP("Ensuring a project exists"))
-	if opts.KubermaticProject == "" {
-		projectName := "e2e-" + rand.String(5)
-		p, err := client.CreateProject(rootCtx, log, projectName)
-		Expect(err).NotTo(HaveOccurred())
-		projectName = p
-		opts.KubermaticProject = projectName
-		legacyOpts.KubermaticProject = projectName
-	}
+	By(KKP("Ensuring a project exists"), func() {
+		if opts.KubermaticProject == "" {
+			projectName := "e2e-" + rand.String(5)
+			p, err := client.CreateProject(rootCtx, log, projectName)
+			Expect(err).NotTo(HaveOccurred())
+			projectName = p
+			opts.KubermaticProject = projectName
+			legacyOpts.KubermaticProject = projectName
+		}
+		fmt.Fprintf(GinkgoWriter, "Using project %q\n", opts.KubermaticProject)
+	})
 
-	By(KKP("Ensuring SSH keys exist"))
-	Expect(client.EnsureSSHKeys(rootCtx, log)).To(Succeed())
-
+	By(KKP("Ensuring SSH keys exist"), func() {
+		Expect(client.EnsureSSHKeys(rootCtx, log)).To(Succeed())
+	})
 	kubermaticProject := ptr.String(legacyOpts.KubermaticProject)
 	data, err := json.Marshal(kubermaticProject)
 	Expect(err).NotTo(HaveOccurred())
@@ -160,7 +172,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	legacyOpts.KubermaticProject = *kubermaticProject
 	client = clients.NewKubeClient(legacyOpts)
 	Expect(client.Setup(rootCtx, log)).To(Succeed())
-	// fmt.Fprintf(GinkgoWriter, "Using project %q\n", *kubermaticProject)
 })
 
 var _ = SynchronizedAfterSuite(func() {
@@ -169,22 +180,15 @@ var _ = SynchronizedAfterSuite(func() {
 }, func() {
 	// This function runs once on a single process after all tests have finished.
 	if opts.KubermaticProject == "" {
-		By(KKP("Deleting the project"))
-		deleteTimeout := 15 * time.Minute
-		Expect(client.DeleteProject(rootCtx, log, opts.KubermaticProject, deleteTimeout)).To(Succeed())
+		By(KKP("Deleting the project"), func() {
+			deleteTimeout := 15 * time.Minute
+			Expect(client.DeleteProject(rootCtx, log, opts.KubermaticProject, deleteTimeout)).To(Succeed())
+		})
 	}
 
-	By(KKP("Updating metrics"))
-	// if legacyOpts.PushgatewayEndpoint != "" {
-	// 	metrics.UpdateMetrics(log)
-	// }
-})
-
-// var _ = ReportBeforeSuite(func(r Report) {
-
-// })
-
-var _ = ReportAfterSuite("ReportAfterSuite", func(r Report) {
-	By("Report after smoke tests")
-	// junitReporter.AfterSuite(r)
+	By(KKP("Updating metrics"), func() {
+		// if legacyOpts.PushgatewayEndpoint != "" {
+		// 	metrics.UpdateMetrics(log)
+		// }
+	})
 })

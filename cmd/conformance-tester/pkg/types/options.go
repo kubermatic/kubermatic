@@ -134,7 +134,7 @@ func (o *Options) AddFlags() {
 
 	flag.StringVar(&o.Client, "client", o.Client, "controls how to interact with KKP; can be either `api` or `kube`")
 	flag.StringVar(&o.ExistingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
-	flag.StringVar(&o.NamePrefix, "name-prefix", "", "prefix used for all cluster names")
+	flag.StringVar(&o.NamePrefix, "name-prefix", o.NamePrefix, "prefix used for all cluster names")
 	flag.Var(flagopts.SetFlag(o.Providers), "providers", "Comma-separated list of providers to test")
 	flag.Var(flagopts.SetFlag(o.Releases), "releases", "Comma-separated list of Kubernetes releases (e.g. '1.24') to test")
 	flag.Var(flagopts.SetFlag(o.EnableDistributions), "distributions", "Comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")

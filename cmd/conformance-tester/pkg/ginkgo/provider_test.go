@@ -69,8 +69,7 @@ var _ = Describe("[provider]", func() {
 						}
 						r := NewJUnitReporter(opts.ReportsRoot)
 						r.failures = scenarioFailureMap[currentSpecReport.ContainerHierarchyTexts[len(currentSpecReport.ContainerHierarchyTexts)-1]]
-						r.SpecDidComplete(currentSpecReport)
-						r.AfterSuite(currentSpecReport)
+						r.AfterSpec(currentSpecReport)
 					})
 
 					It("should succeed", func() {
@@ -78,16 +77,44 @@ var _ = Describe("[provider]", func() {
 						machineSetup(rootCtx, log, clients.NewKubeClient(legacyOpts), scenario, userClusterClient, cluster, legacyOpts)
 
 						// Individual smoke tests are wrapped in `By` to clearly delineate them in the test report.
-						By(KKP(CloudProvider("Test container images not containing k8s.gcr.io on seed cluster")), func() {
-							Expect(tests.TestNoK8sGcrImages(rootCtx, log, legacyOpts, cluster)).NotTo(HaveOccurred())
-						})
-
 						By(KKP(CloudProvider("Test PersistentVolumes")), func() {
 							Expect(tests.TestStorage(rootCtx, log, legacyOpts, cluster, userClusterClient, 1)).NotTo(HaveOccurred())
 						})
 
+						By(KKP(CloudProvider("Test LoadBalancers")), func() {
+							Expect(tests.TestLoadBalancer(rootCtx, log, legacyOpts, cluster, userClusterClient, 1)).NotTo(HaveOccurred())
+						})
+
 						By(KKP("Test user cluster RBAC controller"), func() {
 							Expect(tests.TestUserclusterControllerRBAC(rootCtx, log, legacyOpts, cluster, userClusterClient, legacyOpts.SeedClusterClient)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test prometheus metrics availability"), func() {
+							Expect(tests.TestUserClusterMetrics(rootCtx, log, legacyOpts, cluster, legacyOpts.SeedClusterClient)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test pod and node metrics availability"), func() {
+							Expect(tests.TestUserClusterPodAndNodeMetrics(rootCtx, log, legacyOpts, cluster, userClusterClient)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test pod seccomp profiles on user cluster"), func() {
+							Expect(tests.TestUserClusterSeccompProfiles(rootCtx, log, legacyOpts, cluster, userClusterClient)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test container images not containing k8s.gcr.io on user cluster"), func() {
+							Expect(tests.TestUserClusterNoK8sGcrImages(rootCtx, log, legacyOpts, cluster, userClusterClient)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test pod security context on seed cluster"), func() {
+							Expect(tests.TestUserClusterControlPlaneSecurityContext(rootCtx, log, legacyOpts, cluster)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test container images not containing k8s.gcr.io on seed cluster"), func() {
+							Expect(tests.TestNoK8sGcrImages(rootCtx, log, legacyOpts, cluster)).NotTo(HaveOccurred())
+						})
+
+						By(KKP("Test telemetry"), func() {
+							Expect(tests.TestTelemetry(rootCtx, log, legacyOpts)).NotTo(HaveOccurred())
 						})
 					})
 				},

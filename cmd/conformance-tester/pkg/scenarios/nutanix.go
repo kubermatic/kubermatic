@@ -29,6 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	nutanixCPUs     = 2
+	nutanixMemoryMB = 4096
+	nutanixDiskSize = 40
+)
+
 type nutanixScenario struct {
 	BaseScenario
 }
@@ -43,11 +49,11 @@ func (s *nutanixScenario) compatibleOperatingSystems() sets.Set[providerconfig.O
 }
 
 func (s *nutanixScenario) IsValid() error {
-	if err := s.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -61,19 +67,26 @@ func (s *nutanixScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSp
 			Nutanix: &kubermaticv1.NutanixCloudSpec{
 				Username: secrets.Nutanix.Username,
 				Password: secrets.Nutanix.Password,
-				ProxyURL: secrets.Nutanix.ProxyURL,
+				CSI: &kubermaticv1.NutanixCSIConfig{
+					Endpoint: secrets.Nutanix.CSIEndpoint,
+					Password: secrets.Nutanix.CSIPassword,
+					Username: secrets.Nutanix.CSIUsername,
+				},
+				ProxyURL:    secrets.Nutanix.ProxyURL,
+				ClusterName: secrets.Nutanix.ClusterName,
+				ProjectName: secrets.Nutanix.ProjectName,
 			},
 		},
-		Version: s.ClusterVersion(),
+		Version: s.clusterVersion,
 	}
 }
 
 func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewNutanixConfig().
-		WithCPUs(2).
-		WithMemoryMB(4096).
-		WithDiskSize(40).
 		WithSubnetName(secrets.Nutanix.SubnetName).
+		WithCPUs(nutanixCPUs).
+		WithMemoryMB(nutanixMemoryMB).
+		WithDiskSize(nutanixDiskSize).
 		Build()
 
 	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)

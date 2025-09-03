@@ -29,25 +29,27 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	dropletSize = "4gb"
+)
+
 type digitaloceanScenario struct {
 	BaseScenario
 }
 
 func (s *digitaloceanScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
-	return sets.New[providerconfig.OperatingSystem](
-		providerconfig.OperatingSystemUbuntu,
-		providerconfig.OperatingSystemRHEL,
-		providerconfig.OperatingSystemFlatcar,
+	return sets.New(
 		providerconfig.OperatingSystemRockyLinux,
+		providerconfig.OperatingSystemUbuntu,
 	)
 }
 
 func (s *digitaloceanScenario) IsValid() error {
-	if err := s.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -62,13 +64,13 @@ func (s *digitaloceanScenario) Cluster(secrets types.Secrets) *kubermaticv1.Clus
 				Token: secrets.Digitalocean.Token,
 			},
 		},
-		Version: s.ClusterVersion(),
+		Version: s.clusterVersion,
 	}
 }
 
 func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewDigitaloceanConfig().
-		WithSize("s-2vcpu-4gb").
+		WithSize(dropletSize).
 		Build()
 
 	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)

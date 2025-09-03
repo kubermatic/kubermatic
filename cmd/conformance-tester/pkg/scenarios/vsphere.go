@@ -31,6 +31,7 @@ import (
 
 type vSphereScenario struct {
 	BaseScenario
+
 	customFolder     bool
 	basePath         bool
 	datastoreCluster bool
@@ -50,7 +51,7 @@ func (s *vSphereScenario) IsValid() error {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -58,37 +59,40 @@ func (s *vSphereScenario) IsValid() error {
 }
 
 func (s *vSphereScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpec {
-	return &kubermaticv1.ClusterSpec{
+	spec := &kubermaticv1.ClusterSpec{
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.VSphere.KKPDatacenter,
 			VSphere: &kubermaticv1.VSphereCloudSpec{
-				Username: secrets.VSphere.Username,
-				Password: secrets.VSphere.Password,
+				Username:  secrets.VSphere.Username,
+				Password:  secrets.VSphere.Password,
+				Datastore: s.datacenter.Spec.VSphere.DefaultDatastore,
 			},
 		},
-		Version: s.ClusterVersion(),
+		Version: s.clusterVersion,
 	}
-}
-
-func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
-	config := provider.NewVSphereConfig().
-		WithCPUs(2).
-		WithMemoryMB(2048).
-		WithDiskSizeGB(20)
 
 	if s.customFolder {
-		config.WithFolder("custom-folder")
+		spec.Cloud.VSphere.Folder = fmt.Sprintf("%s/custom_folder_test", s.datacenter.Spec.VSphere.RootPath)
 	}
 
 	if s.basePath {
-		config.WithDatastore("shared-ds-for-kubermatic")
+		spec.Cloud.VSphere.BasePath = "basepath_subfolder"
 	}
 
 	if s.datastoreCluster {
-		config.WithDatastore("dsc-1")
+		spec.Cloud.VSphere.DatastoreCluster = "Datastore0-truenas"
+		spec.Cloud.VSphere.Datastore = ""
 	}
 
-	cloudProviderSpec := config.Build()
+	return spec
+}
+
+func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
+	cloudProviderSpec := provider.NewVSphereConfig().
+		WithCPUs(2).
+		WithMemoryMB(4096).
+		WithDiskSizeGB(10).
+		Build()
 
 	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {

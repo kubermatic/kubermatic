@@ -18,6 +18,7 @@ package scenarios
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -36,18 +37,16 @@ type googleScenario struct {
 func (s *googleScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
 	return sets.New[providerconfig.OperatingSystem](
 		providerconfig.OperatingSystemUbuntu,
-		providerconfig.OperatingSystemRHEL,
 		providerconfig.OperatingSystemFlatcar,
-		providerconfig.OperatingSystemRockyLinux,
 	)
 }
 
 func (s *googleScenario) IsValid() error {
-	if err := s.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
-	if compat := s.compatibleOperatingSystems(); !compat.Has(s.OperatingSystem()) {
+	if compat := s.compatibleOperatingSystems(); !compat.Has(s.operatingSystem) {
 		return fmt.Errorf("provider supports only %v", sets.List(compat))
 	}
 
@@ -59,19 +58,21 @@ func (s *googleScenario) Cluster(secrets types.Secrets) *kubermaticv1.ClusterSpe
 		Cloud: kubermaticv1.CloudSpec{
 			DatacenterName: secrets.GCP.KKPDatacenter,
 			GCP: &kubermaticv1.GCPCloudSpec{
-				ServiceAccount: secrets.GCP.ServiceAccount,
+				ServiceAccount: base64.StdEncoding.EncodeToString([]byte(secrets.GCP.ServiceAccount)),
+				Network:        secrets.GCP.Network,
+				Subnetwork:     secrets.GCP.Subnetwork,
 			},
 		},
-		Version: s.ClusterVersion(),
+		Version: s.clusterVersion,
 	}
 }
 
 func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets types.Secrets, cluster *kubermaticv1.Cluster, sshPubKeys []string) ([]clusterv1alpha1.MachineDeployment, error) {
 	cloudProviderSpec := provider.NewGCPConfig().
 		WithMachineType("n1-standard-2").
-		WithDiskSize(50).
 		WithDiskType("pd-standard").
-		WithZone(s.Datacenter().Spec.GCP.Region).
+		WithDiskSize(50).
+		WithPreemptible(false).
 		Build()
 
 	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
