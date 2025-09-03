@@ -617,7 +617,7 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 func (r *Reconciler) reconcileAppDefManagementMeta(ctx context.Context) error {
 	apps := appskubermaticv1.ApplicationDefinitionList{}
 
-	err := r.Client.List(ctx, &apps)
+	err := r.List(ctx, &apps)
 	if err != nil {
 		return err
 	}
@@ -640,7 +640,7 @@ func (r *Reconciler) reconcileAppDefManagementMeta(ctx context.Context) error {
 		anns[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation] = "false"
 		app.SetAnnotations(anns)
 
-		err = r.Client.Patch(ctx, &app, ctrlruntimeclient.MergeFrom(oldApp))
+		err = r.Patch(ctx, &app, ctrlruntimeclient.MergeFrom(oldApp))
 		if err != nil {
 			errs = append(errs, err)
 		}
