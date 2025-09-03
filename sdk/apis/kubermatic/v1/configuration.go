@@ -567,6 +567,17 @@ type CatalogManagerConfiguration struct {
 	// When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
 	// When defined, only ApplicationDefinitions matching the specified criteria are processed.
 	Limit ApplicationCatalogLimit `json:"limit,omitempty"`
+
+	// Image configures the container image for the application-catalog manager.
+	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
+
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+	// By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+	// Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
 }
 
 type ApplicationCatalogLimit struct {
@@ -643,6 +654,15 @@ type DefaultApplicationCatalogSettings struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
+}
+
+// CatalogManagerImageConfiguration configures the container image settings.
+type CatalogManagerImageConfiguration struct {
+	// Repository is used to override the application-catalog manager image repository.
+	// The default value is "quay.io/kubermatic/application-catalog-manager"
+	Repository string `json:"repository,omitempty"`
+	// Tag is used to override the application-catalog manager image tag.
+	Tag string `json:"tag,omitempty"`
 }
 
 // +kubebuilder:object:generate=true
