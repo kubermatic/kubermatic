@@ -87,11 +87,8 @@ func Add(
 					if !strings.HasPrefix(secret.Name, EncryptionSecretPrefix) {
 						return false
 					}
-					if secret.Annotations == nil {
-						return false
-					}
-					_, hasClusterAnnotation := secret.Annotations[ClusterNameAnnotation]
-					return hasClusterAnnotation
+
+					return metav1.HasAnnotation(secret.ObjectMeta, ClusterNameAnnotation)
 				}),
 				predicate.ByNamespace(r.namespace),
 			),
