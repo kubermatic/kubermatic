@@ -16,6 +16,9 @@ cortex:
   # Check master values.yaml which are the default values for Chart version v2.23.8-a
   # https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml
 
+  # TEMP until KKP user-mla chart is updated
+  image:
+    tag: "v1.15.0"
   config:
     auth_enabled: true
     # Note: below defaults were changed by cortex from 0.7.0 to 1.7.0. So not keeping old defaults
@@ -44,6 +47,8 @@ cortex:
       # Note: below were added for HA setup and stability of the cluster in kubermatic setup. So should be kept.
       accept_ha_samples: true
       max_label_names_per_series: 40
+      # avoid "err: out of order sample." errors in both agent and cortex side.
+      out_of_order_time_window: 10m
     # Note: below defaults were changed by cortex from 0.7.0 to 1.7.0. So not keeping old defaults in upgrade to helm chart v2.1.0
     # server:
     #   grpc_server_max_concurrent_streams: 1000
@@ -366,3 +371,4 @@ cortex:
     resources:
       requests:
         cpu: 5m
+
