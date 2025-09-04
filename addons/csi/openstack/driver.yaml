@@ -399,7 +399,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0
+    chart: openstack-cinder-csi-2.33.1
     component: controllerplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -423,7 +423,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0
+        chart: openstack-cinder-csi-2.33.1
         component: controllerplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -578,7 +578,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0
+    chart: openstack-cinder-csi-2.33.1
     component: nodeplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -596,7 +596,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0
+        chart: openstack-cinder-csi-2.33.1
         component: nodeplugin
         heritage: Helm
         release: openstack-cinder-csi

@@ -21,16 +21,19 @@
 {{ $version := "UNSUPPORTED" }}
 
 {{ if eq .Cluster.MajorMinorVersion "1.30" }}
-{{ $version = "v1.30.4" }}
+{{ $version = "v1.30.10" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.31" }}
-{{ $version = "v1.30.4" }}
+{{ $version = "v1.31.6" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
-{{ $version = "v1.30.4" }}
+{{ $version = "v1.32.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.33" }}
-{{ $version = "v1.30.4" }}
+{{ $version = "v1.33.4" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.34" }}
+{{ $version = "v1.33.4" }}
 {{ end }}
 apiVersion: v1
 kind: ServiceAccount
@@ -570,7 +573,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
             - name: AZURE_GO_SDK_LOG_LEVEL
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:v1.33.4" }}'
+          image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azuredisk-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5

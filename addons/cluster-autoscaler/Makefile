@@ -16,7 +16,7 @@
 
 OUTPUT_FILE = cluster-autoscaler.yaml
 REPO_NAME = kkp-addons-cluster-autoscaler
-CHART_VERSION = 9.46.6
+CHART_VERSION = 9.50.1
 
 .PHONY: default
 default: setup-helm build clean-helm

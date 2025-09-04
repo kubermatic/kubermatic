@@ -171,7 +171,7 @@ func RunFunc(log *zap.SugaredLogger, opt *runOptions) cobraFuncE {
 		}
 
 		// setup and start etcd command
-		etcdCmd, err := e.StartEtcdCmd(log)
+		etcdCmd, err := e.StartEtcdCmd(ctx, log)
 		if err != nil {
 			log.Panicw("failed to start etcd cmd", zap.Error(err))
 		}
