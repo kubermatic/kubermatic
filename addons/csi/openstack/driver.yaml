@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file was generated, DO NOT EDIT.
-# Run `make` instead.
+# This file was generated, using `make` and then modified (where applicable)
+#
+# - Replace all entries for env CLOUD_CONFIG value from `/etc/config/config` to `/etc/kubernetes/config`
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -527,7 +528,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/config/config
+              value: /etc/kubernetes/config
             - name: CLUSTER_NAME
               value: '{{ .Cluster.Name }}'
             - name: SSL_CERT_FILE
@@ -654,7 +655,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/config/config
+              value: /etc/kubernetes/config
             - name: SSL_CERT_FILE
               value: /etc/kubermatic/certs/ca-bundle.pem
           image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'
