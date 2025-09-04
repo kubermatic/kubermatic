@@ -29,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.29-13
+        - image: quay.io/kubermatic/build:go-1.23-node-20-kind-0.29-14
           env:
             - name: KUBERMATIC_EDITION
               value: ee
