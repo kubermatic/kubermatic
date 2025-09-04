@@ -25,7 +25,7 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 ADD https://dl.k8s.io/v1.34.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.34
 ADD https://dl.k8s.io/v1.32.8/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.32
 
-RUN wget -O- https://get.helm.sh/helm-v3.17.4-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
+RUN wget -O- https://get.helm.sh/helm-v3.18.4-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
 # We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
