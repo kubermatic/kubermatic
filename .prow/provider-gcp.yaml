@@ -231,8 +231,9 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-gcp-flatcar-1.33
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.34
     decorate: true
+    run_if_changed: "(pkg/provider/cloud/gcp|addons/csi/gcp)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-gce: "true"
@@ -252,11 +253,11 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.33"
+              value: "1.34"
             - name: PROVIDER
               value: "gcp"
             - name: DISTRIBUTIONS
-              value: flatcar
+              value: ubuntu
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
