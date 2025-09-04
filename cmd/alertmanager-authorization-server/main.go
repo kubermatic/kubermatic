@@ -298,7 +298,8 @@ func main() {
 		"authHeader", server.authHeaderName,
 		"orgIDHeader", server.orgIDHeaderName,
 	).Info("Listening…")
-	lis, err := net.Listen("tcp", server.listenAddress)
+	var lc net.ListenConfig
+	lis, err := lc.Listen(ctx, "tcp", server.listenAddress)
 	if err != nil {
 		log.Fatalw("Alertmanager authorization server failed to listen", zap.Error(err))
 	}

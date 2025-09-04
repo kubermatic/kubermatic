@@ -154,13 +154,6 @@ linters:
       - linters:
           - goconst
         path: (.+)_test\.go
-      # TODO: Should be fixed via https://github.com/kubermatic/kubermatic/issues/14957
-      - path: (.+)\.go$
-        text: os/exec\.Command must not be called\. use os/exec\.CommandContext
-      - path: (.+)\.go$
-        text: net.Listen must not be called\. use \(\*net\.ListenConfig\)\.Listen
-      - path: (.+)\.go$
-        text: net.LookupHost must not be called. use \(\*net\.Resolver\)\.LookupHost with a context
     paths:
       - zz_generated.*.go
       # This package was forked from upstream (in #9826)
