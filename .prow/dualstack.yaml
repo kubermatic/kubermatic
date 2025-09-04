@@ -27,7 +27,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -66,7 +66,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -104,7 +104,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -140,7 +140,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -176,7 +176,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -212,7 +212,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -248,7 +248,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -284,7 +284,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -320,7 +320,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -356,7 +356,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -392,7 +392,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -428,7 +428,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -464,7 +464,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -502,7 +502,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -540,7 +540,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
@@ -582,7 +582,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-8
+        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.29-9
           command:
             - "./hack/ci/run-dualstack-e2e-test.sh"
           env:
