@@ -16,8 +16,6 @@
 # Run `make aws-node-termination-handler` instead.
 
 {{ if eq .Cluster.CloudProviderName "aws" }}
-Pulled: {{ Image "public.ecr.aws/aws-ec2/helm/aws-node-termination-handler:0.27.2" }}
-Digest: sha256:cd669ebe12b0cae9a515133777aafeefd254e87ad12f7811798d6668f18525f8
 ---
 # Source: aws-node-termination-handler/templates/serviceaccount.yaml
 apiVersion: v1
