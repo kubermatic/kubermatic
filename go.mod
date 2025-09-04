@@ -2,7 +2,7 @@ module k8c.io/kubermatic/v2
 
 go 1.23.0
 
-toolchain go1.23.6
+toolchain go1.23.12
 
 // follow repository deprecation
 replace github.com/ajeddeloh/go-json => github.com/coreos/go-json v0.0.0-20220810161552-7cce03887f34
@@ -100,7 +100,7 @@ require (
 	k8c.io/kubeone v1.7.3
 	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
 	k8c.io/machine-controller/sdk v1.62.0
-	k8c.io/operating-system-manager v1.7.0
+	k8c.io/operating-system-manager v1.7.5
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.32.2
 	k8s.io/apiextensions-apiserver v0.32.2

@@ -18,6 +18,7 @@ package helm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -261,7 +262,7 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 		globalArgs = append(globalArgs, "--namespace", namespace)
 	}
 
-	cmd := exec.Command(c.binary, append(globalArgs, args...)...)
+	cmd := exec.CommandContext(context.Background(), c.binary, append(globalArgs, args...)...)
 	// "If Env contains duplicate environment keys, only the last
 	// value in the slice for each duplicate key is used."
 	// Source: https://pkg.go.dev/os/exec#Cmd.Env

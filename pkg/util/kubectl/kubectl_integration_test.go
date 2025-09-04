@@ -20,6 +20,7 @@ package kubectl
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -57,7 +58,8 @@ func testVersionSkew(clusterVersison semver.Semver, dockerImage string) error {
 		return fmt.Errorf("no kubectl binary found: %w", err)
 	}
 
-	cmd := exec.Command("docker",
+	cmd := exec.CommandContext(context.Background(),
+		"docker",
 		"run",
 		"--rm",
 		dockerImage,
