@@ -55,7 +55,7 @@ spec:
             secretKeyRef:
               key: password
               name: cloud-credentials
-        image: quay.io/kubermatic/operating-system-manager:v1.7.5
+        image: quay.io/kubermatic/operating-system-manager:ffb26e2b74ef24e2528f81f57bf8f3064c3a78c8
         livenessProbe:
           failureThreshold: 3
           httpGet:
