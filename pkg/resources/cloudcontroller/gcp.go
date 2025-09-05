@@ -213,14 +213,14 @@ func GCPCCMVersion(version semver.Semver) string {
 
 	switch version.MajorMinor() {
 	case v130:
-		fallthrough
+		return "v30.0.0"
 	case v131:
-		fallthrough
+		return "v30.0.0"
 	case v132:
-		fallthrough
+		return "v32.2.5"
 	case v133:
 		fallthrough
 	default:
-		return "v30.0.0"
+		return "v33.1.1"
 	}
 }
