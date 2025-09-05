@@ -20,10 +20,10 @@ package images
 
 import (
 	"fmt"
+	"iter"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"iter"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
