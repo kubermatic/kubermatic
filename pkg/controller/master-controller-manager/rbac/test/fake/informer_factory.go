@@ -74,6 +74,10 @@ func (i *dummySharedIndexInformer) AddEventHandler(handler cache.ResourceEventHa
 	panic("implement me")
 }
 
+func (i *dummySharedIndexInformer) AddEventHandlerWithOptions(handler cache.ResourceEventHandler, options cache.HandlerOptions) (cache.ResourceEventHandlerRegistration, error) {
+	panic("implement me")
+}
+
 func (i *dummySharedIndexInformer) RemoveEventHandler(handler cache.ResourceEventHandlerRegistration) error {
 	panic("implement me")
 }
