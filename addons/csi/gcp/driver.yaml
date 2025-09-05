@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file was generated, DO NOT EDIT.
-# Run `make gcp-csi-driver` instead.
+# This file was generated using `make` and then modified (where applicable).
+#
+# Remove `--enable-data-cache` flag which will be supported for `gcp-compute-persistent-disk-csi-driver` from 1.18.0 version. Reference issue https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/issues/1987#issuecomment-2903578666
 
 # GCP is the only provider where the CSI driver is deployed into
-# all 1.25+ clusters (and is not tied to the CCM/CSI migration, because
+# all 1.30+ clusters (and is not tied to the CCM/CSI migration, because
 # the GCP CCM is not yet integrated into KKP).
 
 {{ if eq .Cluster.CloudProviderName "gcp" }}
@@ -626,7 +627,6 @@ spec:
             - --endpoint=unix:/csi/csi.sock
             - --supports-dynamic-iops-provisioning=hyperdisk-balanced,hyperdisk-extreme
             - --supports-dynamic-throughput-provisioning=hyperdisk-balanced,hyperdisk-throughput,hyperdisk-ml
-            - --enable-data-cache
             - --enable-multitenancy
           command:
             - /gce-pd-csi-driver
@@ -691,7 +691,6 @@ spec:
             - --v=5
             - --endpoint=unix:/csi/csi.sock
             - --run-controller-service=false
-            - --enable-data-cache
             - --enable-multitenancy
             - --node-name=$(KUBE_NODE_NAME)
           env:
