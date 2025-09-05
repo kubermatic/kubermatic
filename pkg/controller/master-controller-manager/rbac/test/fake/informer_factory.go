@@ -17,6 +17,7 @@ limitations under the License.
 package fake
 
 import (
+	"context"
 	"time"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -118,8 +119,16 @@ func (i *dummySharedIndexInformer) AddIndexers(indexers cache.Indexers) error {
 	panic("implement me")
 }
 
+func (i *dummySharedIndexInformer) RunWithContext(ctx context.Context) {
+	panic("implement me")
+}
+
 func (i *dummySharedIndexInformer) SetTransform(handler cache.TransformFunc) error {
 	return nil
+}
+
+func (i *dummySharedIndexInformer) SetWatchErrorHandlerWithContext(handler cache.WatchErrorHandlerWithContext) error {
+	panic("implement me")
 }
 
 func (i *dummySharedIndexInformer) GetIndexer() cache.Indexer {
