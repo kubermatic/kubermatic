@@ -34,7 +34,7 @@ const (
 )
 
 type azureScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *azureScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -47,7 +47,7 @@ func (s *azureScenario) compatibleOperatingSystems() sets.Set[providerconfig.Ope
 }
 
 func (s *azureScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func (s *azureScenario) MachineDeployments(_ context.Context, num int, secrets t
 		WithVMSize(azureVMSize).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

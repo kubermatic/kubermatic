@@ -31,7 +31,7 @@ import (
 )
 
 type googleScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *googleScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -42,7 +42,7 @@ func (s *googleScenario) compatibleOperatingSystems() sets.Set[providerconfig.Op
 }
 
 func (s *googleScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -75,7 +75,7 @@ func (s *googleScenario) MachineDeployments(_ context.Context, num int, secrets 
 		WithPreemptible(false).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

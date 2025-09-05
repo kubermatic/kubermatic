@@ -41,7 +41,7 @@ const (
 )
 
 type awsScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *awsScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -49,7 +49,7 @@ func (s *awsScenario) compatibleOperatingSystems() sets.Set[providerconfig.Opera
 }
 
 func (s *awsScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (s *awsScenario) MachineDeployments(ctx context.Context, num int, secrets t
 			WithSpotInstanceMaxPrice("0.5").
 			Build()
 
-		md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+		md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 		if err != nil {
 			return nil, err
 		}

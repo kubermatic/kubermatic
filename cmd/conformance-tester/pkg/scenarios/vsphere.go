@@ -30,7 +30,7 @@ import (
 )
 
 type vSphereScenario struct {
-	baseScenario
+	BaseScenario
 
 	customFolder     bool
 	basePath         bool
@@ -47,7 +47,7 @@ func (s *vSphereScenario) compatibleOperatingSystems() sets.Set[providerconfig.O
 }
 
 func (s *vSphereScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -94,7 +94,7 @@ func (s *vSphereScenario) MachineDeployments(_ context.Context, num int, secrets
 		WithDiskSizeGB(10).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

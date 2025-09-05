@@ -40,7 +40,7 @@ const (
 )
 
 type vmwareCloudDirectorScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *vmwareCloudDirectorScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -51,7 +51,7 @@ func (s *vmwareCloudDirectorScenario) compatibleOperatingSystems() sets.Set[prov
 }
 
 func (s *vmwareCloudDirectorScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -93,7 +93,7 @@ func (s *vmwareCloudDirectorScenario) MachineDeployments(_ context.Context, num 
 		WithIPAllocationMode(vmwareCloudDirectorIPAllocationMode).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

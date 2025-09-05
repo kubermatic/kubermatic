@@ -36,7 +36,7 @@ const (
 )
 
 type nutanixScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *nutanixScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -49,7 +49,7 @@ func (s *nutanixScenario) compatibleOperatingSystems() sets.Set[providerconfig.O
 }
 
 func (s *nutanixScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -89,7 +89,7 @@ func (s *nutanixScenario) MachineDeployments(_ context.Context, num int, secrets
 		WithDiskSize(nutanixDiskSize).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

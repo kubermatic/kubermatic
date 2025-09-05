@@ -34,7 +34,7 @@ const (
 )
 
 type digitaloceanScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *digitaloceanScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -45,7 +45,7 @@ func (s *digitaloceanScenario) compatibleOperatingSystems() sets.Set[providercon
 }
 
 func (s *digitaloceanScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -73,7 +73,7 @@ func (s *digitaloceanScenario) MachineDeployments(_ context.Context, num int, se
 		WithSize(dropletSize).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

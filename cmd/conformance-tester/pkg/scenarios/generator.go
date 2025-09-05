@@ -145,7 +145,7 @@ func providerScenario(
 	version semver.Semver,
 	datacenter *kubermaticv1.Datacenter,
 ) (Scenario, error) {
-	base := baseScenario{
+	base := BaseScenario{
 		cloudProvider:    provider,
 		operatingSystem:  os,
 		clusterVersion:   version,
@@ -155,29 +155,29 @@ func providerScenario(
 
 	switch provider {
 	case kubermaticv1.AlibabaCloudProvider:
-		return &alibabaScenario{baseScenario: base}, nil
+		return &alibabaScenario{BaseScenario: base}, nil
 	case kubermaticv1.AnexiaCloudProvider:
-		return &anexiaScenario{baseScenario: base}, nil
+		return &anexiaScenario{BaseScenario: base}, nil
 	case kubermaticv1.AWSCloudProvider:
-		return &awsScenario{baseScenario: base}, nil
+		return &awsScenario{BaseScenario: base}, nil
 	case kubermaticv1.AzureCloudProvider:
-		return &azureScenario{baseScenario: base}, nil
+		return &azureScenario{BaseScenario: base}, nil
 	case kubermaticv1.DigitaloceanCloudProvider:
-		return &digitaloceanScenario{baseScenario: base}, nil
+		return &digitaloceanScenario{BaseScenario: base}, nil
 	case kubermaticv1.GCPCloudProvider:
-		return &googleScenario{baseScenario: base}, nil
+		return &googleScenario{BaseScenario: base}, nil
 	case kubermaticv1.HetznerCloudProvider:
-		return &hetznerScenario{baseScenario: base}, nil
+		return &hetznerScenario{BaseScenario: base}, nil
 	case kubermaticv1.KubevirtCloudProvider:
-		return &kubevirtScenario{baseScenario: base}, nil
+		return &KubevirtScenario{BaseScenario: base}, nil
 	case kubermaticv1.NutanixCloudProvider:
-		return &nutanixScenario{baseScenario: base}, nil
+		return &nutanixScenario{BaseScenario: base}, nil
 	case kubermaticv1.OpenstackCloudProvider:
-		return &openStackScenario{baseScenario: base}, nil
+		return &openStackScenario{BaseScenario: base}, nil
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
-		return &vmwareCloudDirectorScenario{baseScenario: base}, nil
+		return &vmwareCloudDirectorScenario{BaseScenario: base}, nil
 	case kubermaticv1.VSphereCloudProvider:
-		scenario := &vSphereScenario{baseScenario: base}
+		scenario := &vSphereScenario{BaseScenario: base}
 		scenario.customFolder = opts.ScenarioOptions.Has("custom-folder")
 		scenario.basePath = opts.ScenarioOptions.Has("basepath")
 		scenario.datastoreCluster = opts.ScenarioOptions.Has("datastore-cluster")

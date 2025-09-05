@@ -38,7 +38,7 @@ const (
 )
 
 type openStackScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *openStackScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -51,7 +51,7 @@ func (s *openStackScenario) compatibleOperatingSystems() sets.Set[providerconfig
 }
 
 func (s *openStackScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func (s *openStackScenario) MachineDeployments(_ context.Context, num int, secre
 		WithInstanceReadyCheckTimeout(openStackInstanceReadyCheckTimeout).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,7 @@ const (
 )
 
 type anexiaScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *anexiaScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -46,7 +46,7 @@ func (s *anexiaScenario) compatibleOperatingSystems() sets.Set[providerconfig.Op
 }
 
 func (s *anexiaScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (s *anexiaScenario) MachineDeployments(_ context.Context, num int, secrets 
 		WithVlanID(secrets.Anexia.VlanID).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}

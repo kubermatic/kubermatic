@@ -34,7 +34,7 @@ const (
 )
 
 type hetznerScenario struct {
-	baseScenario
+	BaseScenario
 }
 
 func (s *hetznerScenario) compatibleOperatingSystems() sets.Set[providerconfig.OperatingSystem] {
@@ -45,7 +45,7 @@ func (s *hetznerScenario) compatibleOperatingSystems() sets.Set[providerconfig.O
 }
 
 func (s *hetznerScenario) IsValid() error {
-	if err := s.baseScenario.IsValid(); err != nil {
+	if err := s.BaseScenario.IsValid(); err != nil {
 		return err
 	}
 
@@ -73,7 +73,7 @@ func (s *hetznerScenario) MachineDeployments(_ context.Context, num int, secrets
 		WithServerType(hetznerServerType).
 		Build()
 
-	md, err := s.createMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
+	md, err := s.CreateMachineDeployment(cluster, num, cloudProviderSpec, sshPubKeys, secrets)
 	if err != nil {
 		return nil, err
 	}
