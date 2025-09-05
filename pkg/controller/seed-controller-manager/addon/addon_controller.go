@@ -337,7 +337,7 @@ func (r *Reconciler) addonReconcileWrapper(
 	result, err := reconcile(ctx)
 
 	// Only set to true if we had no error and don't want to requeue the cluster
-	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
+	if err == nil && result.IsZero() {
 		reconcilingStatus = corev1.ConditionTrue
 	}
 
