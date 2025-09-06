@@ -116,7 +116,7 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 			if err != nil {
 				logger.Fatalf("failed to find 'kind' binary: %v", err)
 			}
-			out, err := exec.Command("kind", "version").CombinedOutput()
+			out, err := exec.CommandContext(context.Background(), "kind", "version").CombinedOutput()
 			if err != nil {
 				logger.Fatalf("failed to determine 'kind' version, requires at least %v: %v\n%v", minSupportedKindVersion, err, string(out))
 			}
@@ -149,14 +149,18 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 	}
 
 	logger.Info("Creating kind cluster…")
+
+	// start the manager in its own goroutine
+	appContext := context.Background()
+
 	// TODO: make this idempotent
-	out, err := exec.Command("kind", "create", "cluster", "-n", "kkp-cluster", "--config", kindConfig).CombinedOutput()
+	out, err := exec.CommandContext(appContext, "kind", "create", "cluster", "-n", "kkp-cluster", "--config", kindConfig).CombinedOutput()
 	if err != nil {
 		logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
-	kubeconfigCmd := exec.Command("kubectl", "config", "view", "--minify", "--flatten")
+	kubeconfigCmd := exec.CommandContext(appContext, "kubectl", "config", "view", "--minify", "--flatten")
 	kindKubeConfigPath := filepath.Join(dir, "kube-config.yaml")
 	kindKubeConfig, err := os.Create(kindKubeConfigPath)
 	if err != nil {
@@ -186,9 +190,6 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 	if err != nil {
 		logger.Fatalf("failed to construct mgr: %v", err)
 	}
-
-	// start the manager in its own goroutine
-	appContext := context.Background()
 
 	go func() {
 		if err := mgr.Start(appContext); err != nil {

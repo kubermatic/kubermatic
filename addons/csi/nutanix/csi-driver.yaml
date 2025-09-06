@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file was generated using `make nutanix-csi-driver` and then modified:
+# This file was generated using `make nutanix-csi-driver` and then modified (where applicable)
 #
 # - added KKP CABundle handling
 # - fix "driver" typo
+# - remove ValidatingWebhook for snapshots, as it's deployed by KKP.
+# - change webhook Service name to csi-snapshot-webhook (^-- because of the item above)
 
 {{ if eq .Cluster.CloudProviderName "nutanix" }}
 ---
@@ -218,7 +220,7 @@ spec:
           securityContext:
             privileged: true
             allowPrivilegeEscalation: true
-          image: {{ Image "quay.io/karbon/ntnx-csi:v2.6.6" }}
+          image: {{ Image "quay.io/karbon/ntnx-csi:v2.6.10" }}
           imagePullPolicy: IfNotPresent
           args :
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -407,7 +409,7 @@ spec:
           - name: socket-dir
             mountPath: /csi
         - name: nutanix-csi-plugin
-          image: {{ Image "quay.io/karbon/ntnx-csi:v2.6.6" }}
+          image: {{ Image "quay.io/karbon/ntnx-csi:v2.6.10" }}
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: true

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.33
+  - name: pre-kubermatic-e2e-kubevirt-ubuntu-1.34
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     run_if_changed: "(addons/csi/kubevirt/|pkg/provider/cloud/kubevirt/|pkg/resources/cloudconfig/kubevirt|pkg/resources/cloudcontroller/kubevirt.go)"
@@ -30,12 +30,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.33"
+              value: "1.34"
             - name: PROVIDER
               value: "kubevirt"
             - name: DISTRIBUTIONS

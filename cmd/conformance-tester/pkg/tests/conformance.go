@@ -61,7 +61,7 @@ func TestKubernetesConformance(
 		return nil
 	}
 
-	ginkgoRuns, err := getGinkgoRuns(opts, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
+	ginkgoRuns, err := getGinkgoRuns(ctx, opts, scenario, kubeconfigFilename, cloudConfigFilename, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get Ginkgo runs: %w", err)
 	}
@@ -201,6 +201,7 @@ func runGinkgo(
 }
 
 func getGinkgoRuns(
+	ctx context.Context,
 	opts *types.Options,
 	scenario scenarios.Scenario,
 	kubeconfigFilename,
@@ -297,7 +298,7 @@ func getGinkgoRuns(
 			env = append(env, "KUBE_SSH_USER=core")
 		}
 
-		cmd := exec.Command(path.Join(binRoot, "ginkgo"), args...)
+		cmd := exec.CommandContext(ctx, path.Join(binRoot, "ginkgo"), args...)
 		cmd.Env = env
 
 		ginkgoRuns = append(ginkgoRuns, &util.GinkgoRun{
