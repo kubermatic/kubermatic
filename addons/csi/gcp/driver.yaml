@@ -625,7 +625,6 @@ spec:
             - --endpoint=unix:/csi/csi.sock
             - --supports-dynamic-iops-provisioning=hyperdisk-balanced,hyperdisk-extreme
             - --supports-dynamic-throughput-provisioning=hyperdisk-balanced,hyperdisk-throughput,hyperdisk-ml
-            - --enable-data-cache
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/cloud-sa/cloud-sa.json
@@ -687,7 +686,6 @@ spec:
             - --v=5
             - --endpoint=unix:/csi/csi.sock
             - --run-controller-service=false
-            - --enable-data-cache
             - --node-name=$(KUBE_NODE_NAME)
           env:
             - name: KUBE_NODE_NAME
