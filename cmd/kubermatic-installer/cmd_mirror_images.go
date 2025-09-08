@@ -32,6 +32,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -64,6 +65,8 @@ type MirrorImagesOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
+
+	ApplicationCatalogRegistryToken string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -123,6 +126,8 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
+
+	cmd.PersistentFlags().StringVar(&opt.ApplicationCatalogRegistryToken, "application-catalog-registry-token", "", "Token used for authentication to the configured application catalog registry")
 
 	return cmd
 }
@@ -336,6 +341,12 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 
 			copyKubermaticConfig := kubermaticConfig.DeepCopy()
 
+			if _, ok := copyKubermaticConfig.Spec.FeatureGates[features.ExternalApplicationCatalogManager]; ok {
+				logger.Info("🚀 Getting images for configured application catalog and its manager…")
+				imageSet.Insert(fmt.Sprintf("%s:%s", strings.Replace(copyKubermaticConfig.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL, "oci://", "", 1), copyKubermaticConfig.Spec.Applications.CatalogManager.RegistrySettings.Tag))
+				imageSet.Insert(fmt.Sprintf("%s:%s", copyKubermaticConfig.Spec.Applications.CatalogManager.Image.Repository, copyKubermaticConfig.Spec.Applications.CatalogManager.Image.Tag))
+			}
+
 			logger.Info("🚀 Getting images from system Applications Helm charts…")
 
 			for sysChart, err := range images.SystemAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
@@ -358,7 +369,9 @@ func MirrorImagesFunc(logger *logrus.Logger, versions kubermaticversion.Versions
 				imageSet.Insert(sysChart.WorkloadImages...)
 			}
 
-			for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
+			logger.Info("🚀 Getting images from default Applications Helm charts…")
+
+			for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix, options.ApplicationCatalogRegistryToken) {
 				if err != nil {
 					return err
 				}
