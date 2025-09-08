@@ -19,7 +19,6 @@ package s3
 import (
 	"container/list"
 	"crypto/x509"
-	"fmt"
 	"net/http"
 	"testing"
 )
@@ -28,7 +27,7 @@ import (
 func resetCache() {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
-	transportCache = make(map[transportKey]*list.Element)
+	transportCache = make(map[*x509.CertPool]*list.Element)
 	lruList = list.New()
 }
 
@@ -38,81 +37,73 @@ func TestGetTransport(t *testing.T) {
 
 	testCases := []struct {
 		name             string
-		hostname         string
 		caBundle         *x509.CertPool
 		setup            func()
 		expectedLen      int
 		expectedCacheLen int
 	}{
 		{
-			name:             "Case 1: Get a transport for the first time",
-			hostname:         "s3.example.com",
+			name:             "Case 1: Get a transport with nil CA bundle",
 			caBundle:         nil,
 			setup:            resetCache,
 			expectedLen:      1,
 			expectedCacheLen: 1,
 		},
 		{
-			name:     "Case 2: Get the same transport again",
-			hostname: "s3.example.com",
+			name:     "Case 2: Get the same transport (nil CA bundle) again",
 			caBundle: nil,
 			setup: func() {
 				resetCache()
-				getTransport("s3.example.com", nil)
+				getTransport(nil)
 			},
 			expectedLen:      1,
 			expectedCacheLen: 1,
 		},
 		{
-			name:     "Case 3: Get a different transport",
-			hostname: "s3.another-example.com",
-			caBundle: nil,
+			name:     "Case 3: Get a different transport with a new CA bundle",
+			caBundle: caBundle1,
 			setup: func() {
 				resetCache()
-				getTransport("s3.example.com", nil)
+				getTransport(nil)
 			},
 			expectedLen:      2,
 			expectedCacheLen: 2,
 		},
 		{
-			name:     "Case 4: Access the first transport again to move it to front",
-			hostname: "s3.example.com",
+			name:     "Case 4: Access an existing transport to move it to front",
 			caBundle: nil,
 			setup: func() {
 				resetCache()
-				getTransport("s3.example.com", nil)
-				getTransport("s3.another-example.com", nil)
+				getTransport(nil)
+				getTransport(caBundle1)
 			},
 			expectedLen:      2,
 			expectedCacheLen: 2,
 		},
 		{
-			name:             "Case 5: Get a transport with a CA bundle",
-			hostname:         "s3.secure.com",
+			name:             "Case 5: Get a transport with a CA bundle for the first time",
 			caBundle:         caBundle1,
 			setup:            resetCache,
 			expectedLen:      1,
 			expectedCacheLen: 1,
 		},
 		{
-			name:     "Case 6: Get a transport with the same hostname but different CA bundle",
-			hostname: "s3.secure.com",
+			name:     "Case 6: Get a transport with a different CA bundle",
 			caBundle: caBundle2,
 			setup: func() {
 				resetCache()
-				getTransport("s3.secure.com", caBundle1)
+				getTransport(caBundle1)
 			},
 			expectedLen:      2,
 			expectedCacheLen: 2,
 		},
 		{
 			name:     "Case 7: Get the same CA-bundled transport again",
-			hostname: "s3.secure.com",
 			caBundle: caBundle1,
 			setup: func() {
 				resetCache()
-				getTransport("s3.secure.com", caBundle1)
-				getTransport("s3.secure.com", caBundle2)
+				getTransport(caBundle1)
+				getTransport(caBundle2)
 			},
 			expectedLen:      2,
 			expectedCacheLen: 2,
@@ -123,7 +114,7 @@ func TestGetTransport(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.setup()
 
-			tr := getTransport(tc.hostname, tc.caBundle)
+			tr := getTransport(tc.caBundle)
 			if tr == nil {
 				t.Fatal("getTransport returned a nil transport")
 			}
@@ -149,8 +140,9 @@ func TestGetTransport(t *testing.T) {
 				t.Fatal("Front element of LRU list has an invalid type")
 			}
 
-			if frontEntry.key.hostname != tc.hostname {
-				t.Errorf("Expected hostname at front of list to be %q, but got %q", tc.hostname, frontEntry.key.hostname)
+			expectedKey := tc.caBundle
+			if frontEntry.key != expectedKey {
+				t.Errorf("Expected caBundle pointer at front of list to be %p, but got %p", expectedKey, frontEntry.key)
 			}
 		})
 	}
@@ -160,10 +152,15 @@ func TestCacheEviction(t *testing.T) {
 	t.Run("should evict the least recently used item", func(t *testing.T) {
 		resetCache()
 
+		// Create a slice of unique CertPools to serve as unique keys.
+		caBundles := make([]*x509.CertPool, maxTransportCacheSize)
+		for i := range caBundles {
+			caBundles[i] = x509.NewCertPool()
+		}
+
 		// Fill the cache up to its maximum size.
-		for i := range maxTransportCacheSize {
-			hostname := fmt.Sprintf("s3.example-%d.com", i)
-			getTransport(hostname, nil)
+		for _, bundle := range caBundles {
+			getTransport(bundle)
 		}
 
 		if lruList.Len() != maxTransportCacheSize {
@@ -171,21 +168,21 @@ func TestCacheEviction(t *testing.T) {
 		}
 
 		// The first item added should be at the back of the list (least recently used).
-		firstHost := "s3.example-0.com"
+		firstBundle := caBundles[0]
 		lruKey := lruList.Back().Value.(*cacheEntry).key
-		if lruKey.hostname != firstHost {
-			t.Fatalf("Expected the LRU item to be %s, but got %s", firstHost, lruKey.hostname)
+		if lruKey != firstBundle {
+			t.Fatalf("Expected the LRU item to have pointer %p, but got %p", firstBundle, lruKey)
 		}
 
 		// Add one more transport, which should trigger an eviction.
-		getTransport("s3.new-host.com", nil)
+		getTransport(x509.NewCertPool())
 
 		if lruList.Len() != maxTransportCacheSize {
 			t.Errorf("Expected cache size to remain %d after eviction, but got %d", maxTransportCacheSize, lruList.Len())
 		}
 
 		// Check if the least recently used item was evicted.
-		keyToEvict := transportKey{hostname: firstHost, caBundle: nil}
+		keyToEvict := firstBundle
 		if _, exists := transportCache[keyToEvict]; exists {
 			t.Error("The least recently used transport was not evicted from the cache")
 		}
@@ -196,11 +193,10 @@ func TestAddTransportToCache(t *testing.T) {
 	t.Run("should add a custom transport and retrieve it", func(t *testing.T) {
 		resetCache()
 
-		hostname := "s3.custom.com"
 		customTransport := &http.Transport{}
 
 		// Add a custom transport.
-		AddTransportToCache(hostname, nil, customTransport)
+		AddTransportToCache(nil, customTransport)
 
 		if lruList.Len() != 1 {
 			t.Fatalf("Expected list length to be 1, but got %d", lruList.Len())
@@ -210,9 +206,76 @@ func TestAddTransportToCache(t *testing.T) {
 		}
 
 		// Retrieve it and check if it's the same instance.
-		retrieved := getTransport(hostname, nil)
+		retrieved := getTransport(nil)
 		if retrieved != customTransport {
 			t.Error("getTransport did not return the custom transport that was added")
+		}
+	})
+
+	t.Run("should move an existing transport to the front when updated", func(t *testing.T) {
+		resetCache()
+		caBundle := x509.NewCertPool()
+
+		// Add two transports.
+		AddTransportToCache(nil, &http.Transport{})
+		AddTransportToCache(caBundle, &http.Transport{}) // This is now the front.
+
+		// Check that the second transport is at the front.
+		frontKey := lruList.Front().Value.(*cacheEntry).key
+		if frontKey != caBundle {
+			t.Fatal("Test setup failed: The second transport was not at the front of the list.")
+		}
+
+		// Update the first transport, which should move it to the front.
+		updatedTransport := &http.Transport{}
+		AddTransportToCache(nil, updatedTransport)
+
+		if lruList.Len() != 2 {
+			t.Fatalf("Expected list length to remain 2, but got %d", lruList.Len())
+		}
+
+		// Verify that the updated transport is now at the front.
+		newFrontEntry := lruList.Front().Value.(*cacheEntry)
+		if newFrontEntry.key != nil {
+			t.Error("Expected the updated transport's key to be at the front of the list")
+		}
+		if newFrontEntry.transport != updatedTransport {
+			t.Error("The transport in the cache was not updated to the new instance")
+		}
+	})
+
+	t.Run("should evict the least recently used item when cache is full", func(t *testing.T) {
+		resetCache()
+
+		// Fill the cache to capacity.
+		caBundles := make([]*x509.CertPool, maxTransportCacheSize)
+		for i := range caBundles {
+			caBundles[i] = x509.NewCertPool()
+			AddTransportToCache(caBundles[i], &http.Transport{})
+		}
+
+		if lruList.Len() != maxTransportCacheSize {
+			t.Fatalf("Expected cache to be full, size %d, but got %d", maxTransportCacheSize, lruList.Len())
+		}
+
+		// The first item added should be at the back (LRU).
+		firstBundle := caBundles[0]
+		lruKey := lruList.Back().Value.(*cacheEntry).key
+		if lruKey != firstBundle {
+			t.Fatalf("Expected the LRU item to have the pointer for the first bundle, but it did not.")
+		}
+
+		// Add one more item to trigger eviction.
+		AddTransportToCache(x509.NewCertPool(), &http.Transport{})
+
+		if lruList.Len() != maxTransportCacheSize {
+			t.Errorf("Expected cache size to remain %d after eviction, but got %d", maxTransportCacheSize, lruList.Len())
+		}
+
+		// Check that the LRU item was evicted.
+		keyToEvict := firstBundle
+		if _, exists := transportCache[keyToEvict]; exists {
+			t.Error("The least recently used transport was not evicted from the cache")
 		}
 	})
 }
@@ -220,28 +283,41 @@ func TestAddTransportToCache(t *testing.T) {
 func TestRemoveTransportFromCache(t *testing.T) {
 	t.Run("should remove an existing transport", func(t *testing.T) {
 		resetCache()
+		caBundle := x509.NewCertPool()
 
-		hostname := "s3.to-remove.com"
+		// Add two transports.
+		getTransport(nil)
+		getTransport(caBundle)
 
-		// Add a transport and then remove it.
-		getTransport(hostname, nil)
+		if lruList.Len() != 2 {
+			t.Fatalf("Expected cache to have 2 items before removal, but got %d", lruList.Len())
+		}
+
+		// Remove the first transport (which is now the least recently used).
+		RemoveTransportFromCache(nil)
+
 		if lruList.Len() != 1 {
-			t.Fatal("Failed to add transport to cache before removal test")
+			t.Errorf("Expected cache to have 1 item after removal, but list length is %d", lruList.Len())
+		}
+		if len(transportCache) != 1 {
+			t.Errorf("Expected cache map to have 1 item after removal, but its size is %d", len(transportCache))
 		}
 
-		RemoveTransportFromCache(hostname, nil)
-
-		if lruList.Len() != 0 {
-			t.Errorf("Expected cache to be empty after removal, but list length is %d", lruList.Len())
+		// Check that the correct transport was removed and the other one remains.
+		keyToRemove := (*x509.CertPool)(nil)
+		if _, exists := transportCache[keyToRemove]; exists {
+			t.Error("The specified transport was not removed from the cache map")
 		}
-		if len(transportCache) != 0 {
-			t.Errorf("Expected cache map to be empty after removal, but its size is %d", len(transportCache))
+
+		remainingKey := lruList.Front().Value.(*cacheEntry).key
+		if remainingKey != caBundle {
+			t.Error("The wrong transport was removed from the cache")
 		}
 	})
 
 	t.Run("should not panic when removing a non-existent key", func(t *testing.T) {
 		resetCache()
 		// Ensure removing a non-existent key doesn't cause a panic.
-		RemoveTransportFromCache("s3.non-existent.com", nil)
+		RemoveTransportFromCache(nil)
 	})
 }

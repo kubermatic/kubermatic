@@ -33,22 +33,21 @@ const (
 	maxTransportCacheSize = 30
 )
 
-// transportKey is used as a key for the transport cache.
-// It ensures that we reuse transports only when the configuration is identical.
-type transportKey struct {
-	caBundle *x509.CertPool
-	hostname string
-}
-
 // cacheEntry stores the transport and a reference to its element in the LRU list.
 type cacheEntry struct {
-	key       transportKey
+	key       *x509.CertPool
 	transport *http.Transport
 }
 
 var (
 	// transportCache provides O(1) lookup for transports.
-	transportCache = make(map[transportKey]*list.Element)
+	// Using a pointer (*x509.CertPool) as a key is acceptable here because the cache's purpose
+	// is to tie a transport to a specific CertPool instance. The memory address of the CertPool
+	// serves as a unique identifier. This assumes that different CA bundles that require
+	// distinct transports will be represented by separate CertPool objects in memory.
+	// A nil pointer is a valid map key and all nil keys will map to the same entry, which is
+	// the desired behavior for sharing a default transport.
+	transportCache = make(map[*x509.CertPool]*list.Element)
 	// lruList maintains the order of usage, with the most recently used at the front.
 	lruList    = list.New()
 	cacheMutex = &sync.Mutex{}
@@ -56,14 +55,12 @@ var (
 
 // getTransport returns a cached or new http.Transport using an O(1) LRU cache.
 // This is essential to prevent connection leaks by reusing transports.
-func getTransport(hostname string, caBundle *x509.CertPool) *http.Transport {
+func getTransport(caBundle *x509.CertPool) *http.Transport {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
-	key := transportKey{hostname: hostname, caBundle: caBundle}
-
-	// If a transport for this key exists, move it to the front of the list and return it.
-	if element, ok := transportCache[key]; ok {
+	// If a transport for this caBundle exists, move it to the front of the list and return it.
+	if element, ok := transportCache[caBundle]; ok {
 		lruList.MoveToFront(element)
 		return element.Value.(*cacheEntry).transport
 	}
@@ -81,44 +78,42 @@ func getTransport(hostname string, caBundle *x509.CertPool) *http.Transport {
 	if lruList.Len() >= maxTransportCacheSize {
 		lruElement := lruList.Back()
 		if lruElement != nil {
+			evictedKey := lruElement.Value.(*cacheEntry).key
 			lruList.Remove(lruElement)
-			delete(transportCache, lruElement.Value.(*cacheEntry).key)
+			delete(transportCache, evictedKey)
 		}
 	}
 
 	// Add the new transport to the cache and the front of the list.
 	entry := &cacheEntry{
-		key:       key,
+		key:       caBundle,
 		transport: tr,
 	}
 	element := lruList.PushFront(entry)
-	transportCache[key] = element
+	transportCache[caBundle] = element
 
 	return tr
 }
 
 // RemoveTransportFromCache removes a transport from the cache based on its key.
-func RemoveTransportFromCache(hostname string, caBundle *x509.CertPool) {
+func RemoveTransportFromCache(caBundle *x509.CertPool) {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
-	key := transportKey{hostname: hostname, caBundle: caBundle}
-	if element, ok := transportCache[key]; ok {
+	if element, ok := transportCache[caBundle]; ok {
 		lruList.Remove(element)
-		delete(transportCache, key)
+		delete(transportCache, caBundle)
 	}
 }
 
 // AddTransportToCache adds a given transport to the cache with a specific key.
 // If the cache is full, it evicts the least recently used entry before adding the new one.
-func AddTransportToCache(hostname string, caBundle *x509.CertPool, transport *http.Transport) {
+func AddTransportToCache(caBundle *x509.CertPool, transport *http.Transport) {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
-	key := transportKey{hostname: hostname, caBundle: caBundle}
-
 	// If the item already exists, just move it to the front.
-	if element, ok := transportCache[key]; ok {
+	if element, ok := transportCache[caBundle]; ok {
 		lruList.MoveToFront(element)
 		element.Value.(*cacheEntry).transport = transport
 		return
@@ -128,18 +123,19 @@ func AddTransportToCache(hostname string, caBundle *x509.CertPool, transport *ht
 	if lruList.Len() >= maxTransportCacheSize {
 		lruElement := lruList.Back()
 		if lruElement != nil {
+			evictedKey := lruElement.Value.(*cacheEntry).key
 			lruList.Remove(lruElement)
-			delete(transportCache, lruElement.Value.(*cacheEntry).key)
+			delete(transportCache, evictedKey)
 		}
 	}
 
 	// Add the new transport to the cache.
 	entry := &cacheEntry{
-		key:       key,
+		key:       caBundle,
 		transport: transport,
 	}
 	element := lruList.PushFront(entry)
-	transportCache[key] = element
+	transportCache[caBundle] = element
 }
 
 func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool) (*minio.Client, error) {
@@ -151,17 +147,11 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool)
 		endpoint = strings.Replace(endpoint, "http://", "", 1)
 		secure = false
 	}
-
-	// The hostname is used as part of the cache key for the transport.
-	hostname := endpoint
-	if parts := strings.Split(hostname, ":"); len(parts) > 0 {
-		hostname = parts[0]
-	}
-
+	// secure = false
 	options := &minio.Options{
 		Creds:     credentials.NewStaticV4(accessKeyID, secretKey, ""),
 		Secure:    secure,
-		Transport: getTransport(hostname, caBundle),
+		Transport: getTransport(caBundle),
 	}
 
 	return minio.New(endpoint, options)
