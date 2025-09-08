@@ -70,6 +70,13 @@ const (
 	// routed through a proxy. All user-supplied values are appended to
 	// this constant.
 	DefaultNoProxy = "127.0.0.1/8,localhost,.local,.local.,kubernetes,.default,.svc"
+
+	// Default image repository and tag.
+	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
+	DefaultApplicationManagerImageTag        = "c3221135593524a8641fdb5b4e18682f45465922"
+
+	DefaultApplicationCatalogRepository = "quay.io/kubermatic/application-catalog"
+	DefaultApplicationCatalogTag        = "7fd8340dc8f0b3f6aae519301a1c9f8aff34d939"
 )
 
 func newSemver(s string) semver.Semver {
@@ -466,6 +473,26 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if auth.IssuerRedirectURL == "" && configCopy.Spec.Ingress.Domain != "" {
 		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", configCopy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.issuerRedirectURL", "value", auth.IssuerRedirectURL)
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.Image.Repository == "" {
+		configCopy.Spec.Applications.CatalogManager.Image.Repository = DefaultApplicationManagerImageRepository
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.repository", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.Image.Tag == "" {
+		configCopy.Spec.Applications.CatalogManager.Image.Tag = DefaultApplicationManagerImageTag
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.tag", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL == "" {
+		configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL = DefaultApplicationCatalogRepository
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.registrySettings.registryURL", "value", configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL)
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag == "" {
+		configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag = DefaultApplicationCatalogTag
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.registrySettings.tag", "value", configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag)
 	}
 
 	configCopy.Spec.Auth = auth
