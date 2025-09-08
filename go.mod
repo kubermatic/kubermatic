@@ -2,7 +2,7 @@ module k8c.io/kubermatic/v2
 
 go 1.23.0
 
-toolchain go1.23.3
+toolchain go1.23.12
 
 require (
 	dario.cat/mergo v1.0.1
