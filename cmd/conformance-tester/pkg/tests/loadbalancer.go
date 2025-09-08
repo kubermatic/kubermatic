@@ -136,7 +136,8 @@ func TestLoadBalancer(ctx context.Context, log *zap.SugaredLogger, opts *ctypes.
 				host = currentService.Status.LoadBalancer.Ingress[0].Hostname
 
 				// We wait until we can actually resolve the name
-				ips, err := net.LookupHost(host)
+				var r net.Resolver
+				ips, err := r.LookupHost(ctx, host)
 				if err != nil || len(ips) == 0 {
 					return fmt.Errorf("failed to resolve %q: %w", host, err), nil
 				}
