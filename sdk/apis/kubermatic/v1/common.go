@@ -82,6 +82,8 @@ const (
 	// SkipRouterReconciliationAnnotation is used to indicate that the router reconciliation should be skipped.
 	// This annotation is currently used exclusively for OpenStack provider.
 	SkipRouterReconciliationAnnotation = "reconciliation.kubermatic.k8c.io/skip-router"
+
+	EnvironmentAnnotation = "kubermatic.io/environment"
 )
 
 type MachineFlavorFilter struct {

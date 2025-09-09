@@ -33,6 +33,7 @@ import (
 	"go.uber.org/zap"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	controller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/default-application-controller"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
@@ -57,7 +58,7 @@ var (
 	applicationVersion          string
 	key                         string
 	names                       string
-	defaultValuesBlock          string
+	helmValues                  string
 	credentials                 jig.AWSCredentials
 	logOptions                  = utils.DefaultLogOptions
 )
@@ -73,7 +74,7 @@ func init() {
 	flag.StringVar(&applicationVersion, "application-version", "", "version of an application from the default app catalog")
 	flag.StringVar(&key, "app-label-key", "", "a Kubernetes recommended label used for identifying the name of an application")
 	flag.StringVar(&names, "names", "", "names of the pods of an application from the default app catalog")
-	flag.StringVar(&defaultValuesBlock, "default-values-block", "", "default values block of an application from the default app catalog")
+	flag.StringVar(&helmValues, "helm-values", "", "helm values of an application from the default app catalog")
 	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
@@ -114,15 +115,22 @@ func TestClusters(t *testing.T) {
 		t.Fatalf("failed to create user cluster: %v", err)
 	}
 
-	testUserCluster(ctx, t, tLogger, client)
+	testUserCluster(ctx, t, tLogger, client, "dev")
 }
 
-func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogger, client ctrlruntimeclient.Client) {
+func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogger, client ctrlruntimeclient.Client, env string) {
 	logger := log.NewLogrus()
 	sublogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
 	// Create the namespace in Kubernetes
 	if err := util.EnsureNamespace(ctx, sublogger, client, applicationNamespace); err != nil {
+		t.Fatalf("%v", err)
+	}
+
+	helmValues = strings.ReplaceAll(helmValues, "\\", "")
+
+	defaultValues, err := controller.GenerateDefaultValuesFromTemplate(&helmValues, &env)
+	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
@@ -140,13 +148,13 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 				Name:    applicationName,
 				Version: applicationVersion,
 			},
-			ValuesBlock: defaultValuesBlock,
+			ValuesBlock: defaultValues,
 		},
 	}
 
 	tLogger.Infof("Creating an ApplicationInstallation")
 
-	err := client.Create(ctx, &application)
+	err = client.Create(ctx, &application)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

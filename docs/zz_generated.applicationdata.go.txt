@@ -20,6 +20,8 @@ type ClusterData struct {
 	MajorMinorVersion string
 	// AutoscalerVersion is the tag which should be used for the cluster autoscaler
 	AutoscalerVersion string
+	// Env is used for templating in the helm values of certain application from the default app catalog
+	Env string
 }
 
 // ClusterAddress stores access and address information of a cluster.
