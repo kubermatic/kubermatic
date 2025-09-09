@@ -21,7 +21,7 @@ LABEL org.opencontainers.image.authors="support@kubermatic.com"
 ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
     KUBECTL_VERSION=v1.33.4 \
     # https://github.com/helm/helm/releases
-    HELM_VERSION=v3.17.4 \
+    HELM_VERSION=v3.18.5 \
     # https://github.com/hashicorp/vault/releases
     VAULT_VERSION=1.20.3 \
     # https://github.com/jqlang/jq/releases
