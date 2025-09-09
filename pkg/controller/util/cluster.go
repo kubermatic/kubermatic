@@ -57,7 +57,7 @@ func ClusterReconcileWrapper(
 	result, err := reconcile()
 
 	// Only set to true if we had no error and don't want to reqeue the cluster
-	if err == nil && (result == nil || (!result.Requeue && result.RequeueAfter == 0)) {
+	if err == nil && result.IsZero() {
 		reconcilingStatus = corev1.ConditionTrue
 	}
 
