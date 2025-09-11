@@ -186,7 +186,7 @@ spec:
             cpu: 100m
             memory: 32Mi
       - name: backup
-        image: 'quay.io/kubermatic/util:2.6.0'
+        image: 'quay.io/kubermatic/util:2.7.0'
         args:
         - /bin/sh
         - -c
