@@ -56,6 +56,9 @@ spec:
       applications: null
       # Enable is used to enable the installation of application definitions in the master cluster.
       enable: false
+      # HelmCredentials optionally holds the credentials for the Helm registry.
+      # Either username/password or registryConfigFile can be defined.
+      helmCredentials: null
       # HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
       # The value is dockercfg file that follows the same format rules as ~/.docker/config.json
       # The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
@@ -63,6 +66,12 @@ spec:
       helmRegistryConfigFile: null
       # HelmRepository specifies OCI repository containing Helm charts of Applications from the default application catalog e.g. oci://localhost:5000/myrepo.
       helmRepository: ""
+      # Insecure disables certificate validation when using an HTTPS registry. This setting has no
+      # effect when using a plaintext connection.
+      insecure: null
+      # PlainHTTP will enable HTTP-only (i.e. unencrypted) traffic for oci:// URLs. By default HTTPS
+      # is used when communicating with an oci:// URL.
+      plainHTTP: null
     # SystemApplications contains configuration for system applications.
     systemApplications:
       # Applications is a list of application definition names that should be installed in the master cluster.

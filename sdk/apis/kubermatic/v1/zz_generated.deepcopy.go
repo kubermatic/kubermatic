@@ -23,6 +23,7 @@ package v1
 import (
 	"encoding/json"
 	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	apps_kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/machine-controller/sdk/providerconfig"
 	corev1 "k8s.io/api/core/v1"
@@ -2859,6 +2860,21 @@ func (in *DefaultApplicationCatalogSettings) DeepCopyInto(out *DefaultApplicatio
 		in, out := &in.HelmRegistryConfigFile, &out.HelmRegistryConfigFile
 		*out = new(corev1.SecretKeySelector)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.HelmCredentials != nil {
+		in, out := &in.HelmCredentials, &out.HelmCredentials
+		*out = new(apps_kubermaticv1.HelmCredentials)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Insecure != nil {
+		in, out := &in.Insecure, &out.Insecure
+		*out = new(bool)
+		**out = **in
+	}
+	if in.PlainHTTP != nil {
+		in, out := &in.PlainHTTP, &out.PlainHTTP
+		*out = new(bool)
+		**out = **in
 	}
 }
 
