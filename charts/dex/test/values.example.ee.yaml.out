@@ -6,10 +6,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: dex/charts/dex/templates/secret.yaml
@@ -19,10 +19,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 type: Opaque
 data:
@@ -61,10 +61,10 @@ kind: ClusterRole
 metadata:
   name: release-name-dex
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups: ["apiextensions.k8s.io"]
@@ -77,10 +77,10 @@ kind: ClusterRoleBinding
 metadata:
   name: release-name-dex-cluster
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   kind: ClusterRole
@@ -98,10 +98,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 rules:
   - apiGroups: ["dex.coreos.com"]
@@ -115,10 +115,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 roleRef:
   kind: Role
@@ -136,10 +136,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -165,10 +165,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
     
   
@@ -183,7 +183,7 @@ spec:
     metadata:
       annotations:
       
-        checksum/config: 30ad8d160980ee36d4618497eb49f8e547ded54e20cf23e7065c4ac3d6864caa
+        checksum/config: 1489d692ffba34afc26661d995b5f04620dca0e8c1faca5bc3602dc3d12b7972
       labels:
         app.kubernetes.io/name: dex
         app.kubernetes.io/instance: release-name
@@ -195,7 +195,7 @@ spec:
         - name: dex
           securityContext:
             {}
-          image: "ghcr.io/dexidp/dex:v2.42.0"
+          image: "ghcr.io/dexidp/dex:v2.44.0"
           imagePullPolicy: IfNotPresent
           args:
             - dex
@@ -259,10 +259,10 @@ metadata:
   name: release-name-dex
   namespace: default
   labels:
-    helm.sh/chart: dex-0.23.0
+    helm.sh/chart: dex-0.24.0
     app.kubernetes.io/name: dex
     app.kubernetes.io/instance: release-name
-    app.kubernetes.io/version: "2.42.0"
+    app.kubernetes.io/version: "2.44.0"
     app.kubernetes.io/managed-by: Helm
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-staging
