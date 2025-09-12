@@ -17,7 +17,6 @@ limitations under the License.
 package s3
 
 import (
-	"container/list"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -27,16 +26,20 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net/http"
 	"testing"
 	"time"
+
+	arccache "github.com/hashicorp/golang-lru/arc/v2"
 )
 
 // resetCache is a helper function to reset the global cache state between tests.
 func resetCache() {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-	transportCache = make(map[string]*list.Element)
-	lruList = list.New()
+	var err error
+	transportCache, err = arccache.NewARC[string, *http.Transport](maxTransportCacheSize)
+	if err != nil {
+		panic("failed to re-initialize transport cache: " + err.Error())
+	}
 }
 
 // newTestCertPEM creates a new self-signed certificate and returns it as a PEM-encoded block.
@@ -68,8 +71,6 @@ func newTestCertPEM(t *testing.T, org string) []byte {
 }
 
 func TestGetTransport(t *testing.T) {
-	resetCache()
-
 	certPEM1 := newTestCertPEM(t, "org1")
 	certPEM2 := newTestCertPEM(t, "org2")
 
@@ -83,91 +84,86 @@ func TestGetTransport(t *testing.T) {
 	emptyCacheKey := hex.EncodeToString(emptyHash[:])
 
 	testCases := []struct {
-		name             string
-		caBundlePEM      []byte
-		setup            func()
-		expectedLen      int
-		expectedCacheLen int
-		expectedFrontKey string
+		name               string
+		caBundlePEM        []byte
+		setup              func(t *testing.T)
+		expectedCacheLen   int
+		expectedKeyInCache string
 	}{
 		{
-			name:             "Case 1: Get a transport with nil CA bundle",
-			caBundlePEM:      nil,
-			setup:            resetCache,
-			expectedLen:      1,
-			expectedCacheLen: 1,
-			expectedFrontKey: emptyCacheKey,
+			name:        "Case 1: Get a transport with nil CA bundle",
+			caBundlePEM: nil,
+			setup: func(t *testing.T) {
+				resetCache()
+			},
+			expectedCacheLen:   1,
+			expectedKeyInCache: emptyCacheKey,
 		},
 		{
 			name:        "Case 2: Get the same transport (nil CA bundle) again",
 			caBundlePEM: nil,
-			setup: func() {
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport(nil)
+				if _, err := getTransport(nil); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
 			},
-			expectedLen:      1,
-			expectedCacheLen: 1,
-			expectedFrontKey: emptyCacheKey,
+			expectedCacheLen:   1,
+			expectedKeyInCache: emptyCacheKey,
 		},
 		{
 			name:        "Case 3: Get a different transport with a new CA bundle",
 			caBundlePEM: certPEM1,
-			setup: func() {
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport(nil)
+				if _, err := getTransport(nil); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
 			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
-			expectedFrontKey: cacheKey1,
+			expectedCacheLen:   2,
+			expectedKeyInCache: cacheKey1,
 		},
 		{
-			name:        "Case 4: Access an existing transport to move it to front",
-			caBundlePEM: nil,
-			setup: func() {
-				resetCache()
-				getTransport(certPEM1)
-				getTransport(nil)
-			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
-			expectedFrontKey: emptyCacheKey,
-		},
-		{
-			name:             "Case 5: Get a transport with a CA bundle for the first time",
-			caBundlePEM:      certPEM1,
-			setup:            resetCache,
-			expectedLen:      1,
-			expectedCacheLen: 1,
-			expectedFrontKey: cacheKey1,
-		},
-		{
-			name:        "Case 6: Get a transport with a different CA bundle",
-			caBundlePEM: certPEM2,
-			setup: func() {
-				resetCache()
-				getTransport(certPEM1)
-			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
-			expectedFrontKey: cacheKey2,
-		},
-		{
-			name:        "Case 7: Get the same CA-bundled transport again",
+			name:        "Case 4: Get a transport with a CA bundle for the first time",
 			caBundlePEM: certPEM1,
-			setup: func() {
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport(certPEM1)
-				getTransport(certPEM2)
 			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
-			expectedFrontKey: cacheKey1,
+			expectedCacheLen:   1,
+			expectedKeyInCache: cacheKey1,
+		},
+		{
+			name:        "Case 5: Get a transport with a different CA bundle",
+			caBundlePEM: certPEM2,
+			setup: func(t *testing.T) {
+				resetCache()
+				if _, err := getTransport(certPEM1); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
+			},
+			expectedCacheLen:   2,
+			expectedKeyInCache: cacheKey2,
+		},
+		{
+			name:        "Case 6: Get the same CA-bundled transport again",
+			caBundlePEM: certPEM1,
+			setup: func(t *testing.T) {
+				resetCache()
+				if _, err := getTransport(certPEM1); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
+				if _, err := getTransport(certPEM2); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
+			},
+			expectedCacheLen:   2,
+			expectedKeyInCache: cacheKey1,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.setup()
+			tc.setup(t)
 
 			tr, err := getTransport(tc.caBundlePEM)
 			if err != nil {
@@ -177,29 +173,13 @@ func TestGetTransport(t *testing.T) {
 				t.Fatal("getTransport returned a nil transport")
 			}
 
-			if lruList.Len() != tc.expectedLen {
-				t.Errorf("Expected LRU list length to be %d, but got %d", tc.expectedLen, lruList.Len())
-			}
-			if len(transportCache) != tc.expectedCacheLen {
-				t.Errorf("Expected cache map size to be %d, but got %d", tc.expectedCacheLen, len(transportCache))
+			if transportCache.Len() != tc.expectedCacheLen {
+				t.Errorf("Expected cache map size to be %d, but got %d", tc.expectedCacheLen, transportCache.Len())
 			}
 
-			// Check that the accessed element is now at the front of the list.
-			frontElement := lruList.Front()
-			if frontElement == nil {
-				if tc.expectedLen > 0 {
-					t.Fatal("LRU list is unexpectedly empty")
-				}
-				return // List is empty as expected.
-			}
-
-			frontEntry, ok := frontElement.Value.(*cacheEntry)
-			if !ok {
-				t.Fatal("Front element of LRU list has an invalid type")
-			}
-
-			if frontEntry.key != tc.expectedFrontKey {
-				t.Errorf("Expected front key to be %q, but got %q", tc.expectedFrontKey, frontEntry.key)
+			// Check that the accessed element is in the cache.
+			if !transportCache.Contains(tc.expectedKeyInCache) {
+				t.Errorf("Expected key %q to be in the cache, but it was not", tc.expectedKeyInCache)
 			}
 		})
 	}
@@ -217,32 +197,31 @@ func TestCacheEviction(t *testing.T) {
 
 		// Fill the cache up to its maximum size.
 		for _, pem := range caBundlePEMs {
-			getTransport(pem)
+			if _, err := getTransport(pem); err != nil {
+				t.Fatalf("getTransport failed during setup: %v", err)
+			}
 		}
 
-		if lruList.Len() != maxTransportCacheSize {
-			t.Fatalf("Expected cache to be full, size %d, but got %d", maxTransportCacheSize, lruList.Len())
+		if transportCache.Len() != maxTransportCacheSize {
+			t.Fatalf("Expected cache to be full, size %d, but got %d", maxTransportCacheSize, transportCache.Len())
 		}
 
-		// The first item added should be at the back of the list (least recently used).
+		// The first item added should be the first candidate for eviction.
 		firstPEM := caBundlePEMs[0]
 		hash := sha256.Sum256(firstPEM)
-		expectedLruKey := hex.EncodeToString(hash[:])
-
-		lruKey := lruList.Back().Value.(*cacheEntry).key
-		if lruKey != expectedLruKey {
-			t.Fatalf("Expected the LRU key to be %q, but it was %q", expectedLruKey, lruKey)
-		}
+		keyToEvict := hex.EncodeToString(hash[:])
 
 		// Add one more transport, which should trigger an eviction.
-		getTransport(newTestCertPEM(t, "new-org"))
+		if _, err := getTransport(newTestCertPEM(t, "new-org")); err != nil {
+			t.Fatalf("getTransport failed during eviction test: %v", err)
+		}
 
-		if lruList.Len() != maxTransportCacheSize {
-			t.Errorf("Expected cache size to remain %d after eviction, but got %d", maxTransportCacheSize, lruList.Len())
+		if transportCache.Len() != maxTransportCacheSize {
+			t.Errorf("Expected cache size to remain %d after eviction, but got %d", maxTransportCacheSize, transportCache.Len())
 		}
 
 		// Check if the least recently used item was evicted.
-		if _, ok := transportCache[expectedLruKey]; ok {
+		if transportCache.Contains(keyToEvict) {
 			t.Error("The least recently used transport was not evicted from the cache")
 		}
 	})
