@@ -1752,12 +1752,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", fmt.Errorf("ConfigMap does not contain key %q", CABundleConfigMapKey)
 	}
 
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM([]byte(bundle)) {
-		return nil, "", errors.New("CA bundle does not contain any valid certificates")
-	}
-
-	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, pool)
+	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, bundle)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
 	}
