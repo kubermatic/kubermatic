@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -37,10 +38,6 @@ const (
 	ApplicationCatalogManagerDeploymentName = "application-catalog-manager"
 
 	ApplicationCatalogServiceAccountName = "application-catalog-manager"
-
-	// Default image repository and tag.
-	DefaultImageRepository = "quay.io/kubermatic/application-catalog-manager"
-	DefaultImageTag        = "c3221135593524a8641fdb5b4e18682f45465922"
 )
 
 var (
@@ -285,12 +282,12 @@ func getResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequ
 }
 
 func getImage(cfg *kubermaticv1.KubermaticConfiguration) string {
-	repository := DefaultImageRepository
+	repository := defaulting.DefaultApplicationManagerImageRepository
 	if cfg.Spec.Applications.CatalogManager.Image.Repository != "" {
 		repository = cfg.Spec.Applications.CatalogManager.Image.Repository
 	}
 
-	tag := DefaultImageTag
+	tag := defaulting.DefaultApplicationManagerImageTag
 	if cfg.Spec.Applications.CatalogManager.Image.Tag != "" {
 		tag = cfg.Spec.Applications.CatalogManager.Image.Tag
 	}

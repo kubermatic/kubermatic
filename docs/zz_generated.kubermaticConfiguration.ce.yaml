@@ -57,9 +57,9 @@ spec:
       image:
         # Repository is used to override the application-catalog manager image repository.
         # The default value is "quay.io/kubermatic/application-catalog-manager"
-        repository: ""
+        repository: quay.io/kubermatic/application-catalog-manager
         # Tag is used to override the application-catalog manager image tag.
-        tag: ""
+        tag: c3221135593524a8641fdb5b4e18682f45465922
       # Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
       # When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
       # When defined, only ApplicationDefinitions matching the specified criteria are processed.
@@ -93,10 +93,10 @@ spec:
         credentials: null
         # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
         # Example: oci://localhost:5000/myrepo
-        registryURL: ""
+        registryURL: quay.io/kubermatic/application-catalog
         # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
         # Example: v1.0.0
-        tag: ""
+        tag: 7fd8340dc8f0b3f6aae519301a1c9f8aff34d939
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,
