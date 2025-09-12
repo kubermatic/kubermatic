@@ -76,18 +76,18 @@ func main() {
 		logger.Fatalw("Failed to create kube client", zap.Error(err))
 	}
 
-	var caBundle string
+	var bundleData string
 	if *caBundleFile != "" {
 		bundle, err := certificates.NewCABundleFromFile(*caBundleFile)
 		if err != nil {
 			logger.Fatalw("Failed to load CA bundle", zap.Error(err))
 		}
 
-		caBundle = bundle.String()
+		bundleData = bundle.String()
 	}
 
 	stopChannel := make(chan struct{})
-	minioClient, err := s3.NewClient(*endpoint, *accessKeyID, *secretAccessKey, []byte(caBundle))
+	minioClient, err := s3.NewClient(*endpoint, *accessKeyID, *secretAccessKey, bundleData)
 	if err != nil {
 		logger.Fatalw("Failed to get S3 client", zap.Error(err))
 	}

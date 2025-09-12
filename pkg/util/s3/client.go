@@ -99,7 +99,7 @@ func getTransport(caBundlePEM []byte) (*http.Transport, error) {
 }
 
 // NewClient creates a new S3 client using raw PEM data for the CA bundle.
-func NewClient(endpoint, accessKeyID, secretKey string, caBundlePEM []byte) (*minio.Client, error) {
+func NewClient(endpoint, accessKeyID, secretKey string, caBundlePEM string) (*minio.Client, error) {
 	secure := true
 	if strings.HasPrefix(endpoint, "https://") {
 		endpoint = strings.Replace(endpoint, "https://", "", 1)
@@ -108,7 +108,7 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundlePEM []byte) (*mi
 		secure = false
 	}
 
-	transport, err := getTransport(caBundlePEM)
+	transport, err := getTransport([]byte(caBundlePEM))
 	if err != nil {
 		return nil, err
 	}

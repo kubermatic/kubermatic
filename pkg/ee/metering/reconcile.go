@@ -26,7 +26,6 @@ package metering
 
 import (
 	"context"
-	"crypto/x509"
 	"fmt"
 	"net/http"
 
@@ -255,13 +254,7 @@ func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient 
 		return nil, "", fmt.Errorf("configMap does not contain key %q", resources.CABundleConfigMapKey)
 	}
 
-	// Create cert pool and append CA bundle
-	caCertPool := x509.NewCertPool()
-	if ok := caCertPool.AppendCertsFromPEM([]byte(caBundleData)); !ok {
-		return nil, "", fmt.Errorf("failed to parse CA bundle")
-	}
-
-	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, []byte(caBundleData))
+	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, caBundleData)
 	if err != nil {
 		return nil, "", err
 	}
