@@ -17,140 +17,169 @@ limitations under the License.
 package s3
 
 import (
-	"container/list"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/hex"
+	"encoding/pem"
 	"fmt"
+	"math/big"
 	"net/http"
 	"testing"
+	"time"
+
+	arccache "github.com/hashicorp/golang-lru/arc/v2"
 )
 
 // resetCache is a helper function to reset the global cache state between tests.
 func resetCache() {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-	transportCache = make(map[transportKey]*list.Element)
-	lruList = list.New()
+	var err error
+	transportCache, err = arccache.NewARC[string, *http.Transport](maxTransportCacheSize)
+	if err != nil {
+		panic("failed to re-initialize transport cache: " + err.Error())
+	}
+}
+
+// newTestCertPEM creates a new self-signed certificate and returns it as a PEM-encoded block.
+func newTestCertPEM(t *testing.T, org string) []byte {
+	t.Helper()
+
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("Failed to generate private key: %v", err)
+	}
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{org},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(time.Hour),
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		BasicConstraintsValid: true,
+	}
+
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		t.Fatalf("Failed to create certificate: %v", err)
+	}
+
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 }
 
 func TestGetTransport(t *testing.T) {
-	caBundle1 := x509.NewCertPool()
-	caBundle2 := x509.NewCertPool()
+	certPEM1 := newTestCertPEM(t, "org1")
+	certPEM2 := newTestCertPEM(t, "org2")
+
+	hash1 := sha256.Sum256(certPEM1)
+	cacheKey1 := hex.EncodeToString(hash1[:])
+
+	hash2 := sha256.Sum256(certPEM2)
+	cacheKey2 := hex.EncodeToString(hash2[:])
+
+	emptyHash := sha256.Sum256([]byte{})
+	emptyCacheKey := hex.EncodeToString(emptyHash[:])
 
 	testCases := []struct {
-		name             string
-		hostname         string
-		caBundle         *x509.CertPool
-		setup            func()
-		expectedLen      int
-		expectedCacheLen int
+		name               string
+		caBundlePEM        []byte
+		setup              func(t *testing.T)
+		expectedCacheLen   int
+		expectedKeyInCache string
 	}{
 		{
-			name:             "Case 1: Get a transport for the first time",
-			hostname:         "s3.example.com",
-			caBundle:         nil,
-			setup:            resetCache,
-			expectedLen:      1,
-			expectedCacheLen: 1,
-		},
-		{
-			name:     "Case 2: Get the same transport again",
-			hostname: "s3.example.com",
-			caBundle: nil,
-			setup: func() {
+			name:        "Case 1: Get a transport with nil CA bundle",
+			caBundlePEM: nil,
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport("s3.example.com", nil)
 			},
-			expectedLen:      1,
-			expectedCacheLen: 1,
+			expectedCacheLen:   1,
+			expectedKeyInCache: emptyCacheKey,
 		},
 		{
-			name:     "Case 3: Get a different transport",
-			hostname: "s3.another-example.com",
-			caBundle: nil,
-			setup: func() {
+			name:        "Case 2: Get the same transport (nil CA bundle) again",
+			caBundlePEM: nil,
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport("s3.example.com", nil)
+				if _, err := getTransport(nil); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
 			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
+			expectedCacheLen:   1,
+			expectedKeyInCache: emptyCacheKey,
 		},
 		{
-			name:     "Case 4: Access the first transport again to move it to front",
-			hostname: "s3.example.com",
-			caBundle: nil,
-			setup: func() {
+			name:        "Case 3: Get a different transport with a new CA bundle",
+			caBundlePEM: certPEM1,
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport("s3.example.com", nil)
-				getTransport("s3.another-example.com", nil)
+				if _, err := getTransport(nil); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
 			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
+			expectedCacheLen:   2,
+			expectedKeyInCache: cacheKey1,
 		},
 		{
-			name:             "Case 5: Get a transport with a CA bundle",
-			hostname:         "s3.secure.com",
-			caBundle:         caBundle1,
-			setup:            resetCache,
-			expectedLen:      1,
-			expectedCacheLen: 1,
-		},
-		{
-			name:     "Case 6: Get a transport with the same hostname but different CA bundle",
-			hostname: "s3.secure.com",
-			caBundle: caBundle2,
-			setup: func() {
+			name:        "Case 4: Get a transport with a CA bundle for the first time",
+			caBundlePEM: certPEM1,
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport("s3.secure.com", caBundle1)
 			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
+			expectedCacheLen:   1,
+			expectedKeyInCache: cacheKey1,
 		},
 		{
-			name:     "Case 7: Get the same CA-bundled transport again",
-			hostname: "s3.secure.com",
-			caBundle: caBundle1,
-			setup: func() {
+			name:        "Case 5: Get a transport with a different CA bundle",
+			caBundlePEM: certPEM2,
+			setup: func(t *testing.T) {
 				resetCache()
-				getTransport("s3.secure.com", caBundle1)
-				getTransport("s3.secure.com", caBundle2)
+				if _, err := getTransport(certPEM1); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
 			},
-			expectedLen:      2,
-			expectedCacheLen: 2,
+			expectedCacheLen:   2,
+			expectedKeyInCache: cacheKey2,
+		},
+		{
+			name:        "Case 6: Get the same CA-bundled transport again",
+			caBundlePEM: certPEM1,
+			setup: func(t *testing.T) {
+				resetCache()
+				if _, err := getTransport(certPEM1); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
+				if _, err := getTransport(certPEM2); err != nil {
+					t.Fatalf("setup failed: %v", err)
+				}
+			},
+			expectedCacheLen:   2,
+			expectedKeyInCache: cacheKey1,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.setup()
+			tc.setup(t)
 
-			tr := getTransport(tc.hostname, tc.caBundle)
+			tr, err := getTransport(tc.caBundlePEM)
+			if err != nil {
+				t.Fatalf("getTransport returned an error: %v", err)
+			}
 			if tr == nil {
 				t.Fatal("getTransport returned a nil transport")
 			}
 
-			if lruList.Len() != tc.expectedLen {
-				t.Errorf("Expected LRU list length to be %d, but got %d", tc.expectedLen, lruList.Len())
-			}
-			if len(transportCache) != tc.expectedCacheLen {
-				t.Errorf("Expected cache map size to be %d, but got %d", tc.expectedCacheLen, len(transportCache))
+			if transportCache.Len() != tc.expectedCacheLen {
+				t.Errorf("Expected cache map size to be %d, but got %d", tc.expectedCacheLen, transportCache.Len())
 			}
 
-			// Check that the accessed element is now at the front of the list.
-			frontElement := lruList.Front()
-			if frontElement == nil {
-				if tc.expectedLen > 0 {
-					t.Fatal("LRU list is unexpectedly empty")
-				}
-				return // List is empty as expected.
-			}
-
-			frontEntry, ok := frontElement.Value.(*cacheEntry)
-			if !ok {
-				t.Fatal("Front element of LRU list has an invalid type")
-			}
-
-			if frontEntry.key.hostname != tc.hostname {
-				t.Errorf("Expected hostname at front of list to be %q, but got %q", tc.hostname, frontEntry.key.hostname)
+			// Check that the accessed element is in the cache.
+			if !transportCache.Contains(tc.expectedKeyInCache) {
+				t.Errorf("Expected key %q to be in the cache, but it was not", tc.expectedKeyInCache)
 			}
 		})
 	}
@@ -160,88 +189,40 @@ func TestCacheEviction(t *testing.T) {
 	t.Run("should evict the least recently used item", func(t *testing.T) {
 		resetCache()
 
+		// Create a slice of unique PEMs to serve as unique keys.
+		caBundlePEMs := make([][]byte, maxTransportCacheSize)
+		for i := range caBundlePEMs {
+			caBundlePEMs[i] = newTestCertPEM(t, "org"+fmt.Sprintf("%d", i))
+		}
+
 		// Fill the cache up to its maximum size.
-		for i := range maxTransportCacheSize {
-			hostname := fmt.Sprintf("s3.example-%d.com", i)
-			getTransport(hostname, nil)
+		for _, pem := range caBundlePEMs {
+			if _, err := getTransport(pem); err != nil {
+				t.Fatalf("getTransport failed during setup: %v", err)
+			}
 		}
 
-		if lruList.Len() != maxTransportCacheSize {
-			t.Fatalf("Expected cache to be full, size %d, but got %d", maxTransportCacheSize, lruList.Len())
+		if transportCache.Len() != maxTransportCacheSize {
+			t.Fatalf("Expected cache to be full, size %d, but got %d", maxTransportCacheSize, transportCache.Len())
 		}
 
-		// The first item added should be at the back of the list (least recently used).
-		firstHost := "s3.example-0.com"
-		lruKey := lruList.Back().Value.(*cacheEntry).key
-		if lruKey.hostname != firstHost {
-			t.Fatalf("Expected the LRU item to be %s, but got %s", firstHost, lruKey.hostname)
-		}
+		// The first item added should be the first candidate for eviction.
+		firstPEM := caBundlePEMs[0]
+		hash := sha256.Sum256(firstPEM)
+		keyToEvict := hex.EncodeToString(hash[:])
 
 		// Add one more transport, which should trigger an eviction.
-		getTransport("s3.new-host.com", nil)
+		if _, err := getTransport(newTestCertPEM(t, "new-org")); err != nil {
+			t.Fatalf("getTransport failed during eviction test: %v", err)
+		}
 
-		if lruList.Len() != maxTransportCacheSize {
-			t.Errorf("Expected cache size to remain %d after eviction, but got %d", maxTransportCacheSize, lruList.Len())
+		if transportCache.Len() != maxTransportCacheSize {
+			t.Errorf("Expected cache size to remain %d after eviction, but got %d", maxTransportCacheSize, transportCache.Len())
 		}
 
 		// Check if the least recently used item was evicted.
-		keyToEvict := transportKey{hostname: firstHost, caBundle: nil}
-		if _, exists := transportCache[keyToEvict]; exists {
+		if transportCache.Contains(keyToEvict) {
 			t.Error("The least recently used transport was not evicted from the cache")
 		}
-	})
-}
-
-func TestAddTransportToCache(t *testing.T) {
-	t.Run("should add a custom transport and retrieve it", func(t *testing.T) {
-		resetCache()
-
-		hostname := "s3.custom.com"
-		customTransport := &http.Transport{}
-
-		// Add a custom transport.
-		AddTransportToCache(hostname, nil, customTransport)
-
-		if lruList.Len() != 1 {
-			t.Fatalf("Expected list length to be 1, but got %d", lruList.Len())
-		}
-		if len(transportCache) != 1 {
-			t.Fatalf("Expected cache size to be 1, but got %d", len(transportCache))
-		}
-
-		// Retrieve it and check if it's the same instance.
-		retrieved := getTransport(hostname, nil)
-		if retrieved != customTransport {
-			t.Error("getTransport did not return the custom transport that was added")
-		}
-	})
-}
-
-func TestRemoveTransportFromCache(t *testing.T) {
-	t.Run("should remove an existing transport", func(t *testing.T) {
-		resetCache()
-
-		hostname := "s3.to-remove.com"
-
-		// Add a transport and then remove it.
-		getTransport(hostname, nil)
-		if lruList.Len() != 1 {
-			t.Fatal("Failed to add transport to cache before removal test")
-		}
-
-		RemoveTransportFromCache(hostname, nil)
-
-		if lruList.Len() != 0 {
-			t.Errorf("Expected cache to be empty after removal, but list length is %d", lruList.Len())
-		}
-		if len(transportCache) != 0 {
-			t.Errorf("Expected cache map to be empty after removal, but its size is %d", len(transportCache))
-		}
-	})
-
-	t.Run("should not panic when removing a non-existent key", func(t *testing.T) {
-		resetCache()
-		// Ensure removing a non-existent key doesn't cause a panic.
-		RemoveTransportFromCache("s3.non-existent.com", nil)
 	})
 }
