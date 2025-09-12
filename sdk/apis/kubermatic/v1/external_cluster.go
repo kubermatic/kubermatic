@@ -96,7 +96,7 @@ type ExternalClusterCondition struct {
 type ExternalClusterKubeOneCloudSpec struct {
 	// The name of the cloud provider used, one of
 	// "aws", "azure", "digitalocean", "gcp",
-	// "hetzner", "nutanix", "openstack", "packet", "vsphere" KubeOne natively-supported providers
+	// "hetzner", "nutanix", "openstack", "vsphere" KubeOne natively-supported providers
 	ProviderName string `json:"providerName"`
 
 	// The cloud provider region in which the cluster resides.

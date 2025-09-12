@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.18.0
     kubermatic.k8c.io/location: master,seed
   name: projects.kubermatic.k8c.io
 spec:
@@ -57,6 +57,229 @@ spec:
                   additionalProperties:
                     type: boolean
                   description: AllowedOperatingSystems defines a map of operating systems that can be used for the machines inside this project.
+                  type: object
+                defaultTenantSpec:
+                  description: DefaultTenantSpec
+                  properties:
+                    allowedDomains:
+                      default:
+                        - '**'
+                      description: |-
+                        List of allowed domains for the tenant. This is used to restrict the domains that can be used
+                        for the tenant. If specified, applies on all the components such as Ingress, GatewayAPI, DNS, certificates, etc.
+                        Examples:
+                        - ["*.example.com"] -> this allows subdomains at the root level such as example.com and test.example.com but won't allow domains at one level above like test.test.example.com
+                        - ["**.example.com"] -> this allows all subdomains of example.com such as test.dns.example.com and dns.example.com
+                        - ["example.com"] -> this allows only example.com
+                        - ["**"] or ["*"] -> this allows all domains
+                        Note: "**" was added as a special case to allow any levels of subdomains that come before it. "*" works for only 1 level.
+                        Default: value is ["**"] and all domains are allowed.
+                      items:
+                        type: string
+                      type: array
+                    certificates:
+                      description: CertificatesSettings defines the settings for the certificates.
+                      properties:
+                        allowedDomains:
+                          description: |-
+                            AllowedDomains is a list of allowed domains for automated Certificate management. Has a higher precedence than the value specified in the Config.
+                            If empty, the value specified in `tenant.spec.allowedDomains` will be used.
+                            Examples:
+                            - ["*.example.com"] -> this allows subdomains at the root level such as example.com and test.example.com but won't allow domains at one level above like test.test.example.com
+                            - ["**.example.com"] -> this allows all subdomains of example.com such as test.dns.example.com and dns.example.com
+                            - ["example.com"] -> this allows only example.com
+                            - ["**"] or ["*"] -> this allows all domains
+                            Note: "**" was added as a special case to allow any levels of subdomains that come before it. "*" works for only 1 level.
+                          items:
+                            type: string
+                          type: array
+                        defaultClusterIssuer:
+                          description: DefaultClusterIssuer is the Cluster Issuer to use for the certificates by default. This is applied when the cluster issuer is not specified in the annotations on the resource itself.
+                          type: string
+                        disable:
+                          description: Disable is a flag that can be used to disable certificate automation for a tenant.
+                          type: boolean
+                      type: object
+                    defaultAnnotations:
+                      additionalProperties:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      description: |-
+                        DefaultAnnotations defines the list of annotations(key-value pairs) that will be set on the load balancing resources if not already present. A special key `all` can be used to apply the same
+                        set of annotations to all resources.
+                        Tenant configuration has higher precedence than the annotations specified at the Config level.
+                      type: object
+                    dns:
+                      description: DNSSettings defines the tenant specific settings for DNS management and automation.
+                      properties:
+                        allowExplicitHostnames:
+                          description: |-
+                            AllowExplicitHostnames is a flag that can be used to allow explicit hostnames to be used for DNS resources.
+                            This is only used when LoadBalancer.Spec.Hostname or Tunnel.Spec.Hostname is set.
+                          type: boolean
+                        allowedDomains:
+                          description: |-
+                            AllowedDomains is a list of allowed domains for automated DNS management. Has a higher precedence than the value specified in the Config.
+                            If empty, the value specified in `tenant.spec.allowedDomains` will be used.
+                            Examples:
+                            - ["*.example.com"] -> this allows subdomains at the root level such as example.com and test.example.com but won't allow domains at one level above like test.test.example.com
+                            - ["**.example.com"] -> this allows all subdomains of example.com such as test.dns.example.com and dns.example.com
+                            - ["example.com"] -> this allows only example.com
+                            - ["**"] or ["*"] -> this allows all domains
+                            Note: "**" was added as a special case to allow any levels of subdomains that come before it. "*" works for only 1 level.
+                          items:
+                            type: string
+                          type: array
+                        disable:
+                          description: Disable is a flag that can be used to disable DNS automation for a tenant.
+                          type: boolean
+                        useCertificateAnnotations:
+                          description: |-
+                            UseCertificateAnnotations is a flag that can be used to add Certificate annotations to Certificate resources.
+                            This is only used when LoadBalancer.Spec.Hostname or Tunnel.Spec.Hostname is set.
+                          type: boolean
+                        useDNSAnnotations:
+                          description: |-
+                            UseDNSAnnotations is a flag that can be used to add DNS annotations to DNS resources.
+                            This is only used when LoadBalancer.Spec.Hostname or Tunnel.Spec.Hostname is set.
+                          type: boolean
+                        wildcardDomain:
+                          description: |-
+                            WildcardDomain is the domain that will be used as the base domain to create wildcard DNS records for DNS resources.
+                            This is only used for determining the hostname for LoadBalancer and Tunnel resources.
+                          type: string
+                      type: object
+                    gatewayAPI:
+                      description: GatewayAPISettings defines the settings for the gateway API.
+                      properties:
+                        class:
+                          description: |-
+                            Class is the class of the gateway API to use. This can be used to specify a specific gateway API implementation.
+                            This has higher precedence than the value specified in the Config.
+                          type: string
+                        defaultGateway:
+                          description: DefaultGateway is the default gateway reference to use for the tenant. This is only used for load balancer hostname and tunneling.
+                          properties:
+                            apiVersion:
+                              description: API version of the referent.
+                              type: string
+                            fieldPath:
+                              description: |-
+                                If referring to a piece of an object instead of an entire object, this string
+                                should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2].
+                                For example, if the object reference is to a container within a pod, this would take on a value like:
+                                "spec.containers{name}" (where "name" refers to the name of the container that triggered
+                                the event) or if no container name is specified "spec.containers[2]" (container with
+                                index 2 in this pod). This syntax is chosen only to have some well-defined way of
+                                referencing a part of an object.
+                              type: string
+                            kind:
+                              description: |-
+                                Kind of the referent.
+                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+                              type: string
+                            name:
+                              description: |-
+                                Name of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                              type: string
+                            namespace:
+                              description: |-
+                                Namespace of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+                              type: string
+                            resourceVersion:
+                              description: |-
+                                Specific resourceVersion to which this reference is made, if any.
+                                More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency
+                              type: string
+                            uid:
+                              description: |-
+                                UID of the referent.
+                                More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                              type: string
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        disable:
+                          description: Disable is a flag that can be used to disable Gateway API for a tenant.
+                          type: boolean
+                        disableGRPCRoute:
+                          type: boolean
+                        disableHTTPRoute:
+                          type: boolean
+                        disableTCPRoute:
+                          type: boolean
+                        disableTLSRoute:
+                          type: boolean
+                        disableUDPRoute:
+                          type: boolean
+                        gateway:
+                          description: GatewaySettings defines the settings for the gateway resource.
+                          properties:
+                            limit:
+                              description: |-
+                                Limit is the maximum number of gateways to create.
+                                If a lower limit is set than the number of reources that exist, the limit will be disallow creation of new resources but will not delete existing resources. The reason behind this
+                                is that it is not possible for KubeLB to know which resources are safe to remove.
+                              type: integer
+                          type: object
+                      type: object
+                    ingress:
+                      description: IngressSettings defines the settings for the ingress.
+                      properties:
+                        class:
+                          description: |-
+                            Class is the class of the ingress to use.
+                            This has higher precedence than the value specified in the Config.
+                          type: string
+                        disable:
+                          description: Disable is a flag that can be used to disable Ingress for a tenant.
+                          type: boolean
+                      type: object
+                    loadBalancer:
+                      description: LoadBalancerSettings defines the settings for the load balancers.
+                      properties:
+                        class:
+                          description: |-
+                            Class is the class of the load balancer to use.
+                            This has higher precedence than the value specified in the Config.
+                          type: string
+                        disable:
+                          description: Disable is a flag that can be used to disable L4 load balancing for a tenant.
+                          type: boolean
+                        limit:
+                          description: |-
+                            Limit is the maximum number of load balancers to create.
+                            If a lower limit is set than the number of reources that exist, the limit will be disallow creation of new resources but will not delete existing resources. The reason behind this
+                            is that it is not possible for KubeLB to know which resources are safe to remove.
+                          type: integer
+                      type: object
+                    propagateAllAnnotations:
+                      description: |-
+                        PropagateAllAnnotations defines whether all annotations will be propagated to the LoadBalancer service. If set to true, PropagatedAnnotations will be ignored.
+                        Tenant configuration has higher precedence than the value specified at the Config level.
+                      type: boolean
+                    propagatedAnnotations:
+                      additionalProperties:
+                        type: string
+                      description: |-
+                        PropagatedAnnotations defines the list of annotations(key-value pairs) that will be propagated to the LoadBalancer service. Keep the `value` field empty in the key-value pair to allow any value.
+                        Tenant configuration has higher precedence than the annotations specified at the Config level.
+                      type: object
+                    tunnel:
+                      description: TenantTunnelSettings defines the settings for the tunnel.
+                      properties:
+                        disable:
+                          description: Disable is a flag that can be used to disable tunneling for a tenant.
+                          type: boolean
+                        limit:
+                          description: |-
+                            Limit is the maximum number of tunnels to create.
+                            If a lower limit is set than the number of reources that exist, the limit will be disallow creation of new resources but will not delete existing resources. The reason behind this
+                            is that it is not possible for KubeLB to know which resources are safe to remove.
+                          type: integer
+                      type: object
                   type: object
                 name:
                   description: Name is the human-readable name given to the project.

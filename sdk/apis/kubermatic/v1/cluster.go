@@ -40,7 +40,7 @@ const (
 	// ClusterKindName represents "Kind" defined in Kubernetes.
 	ClusterKindName = "Cluster"
 
-	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
+	// CredentialPrefix is the prefix used for the secrets containing cloud provider credentials.
 	CredentialPrefix = "credential"
 
 	// ForceRestartAnnotation is key of the annotation used to restart machine deployments.
@@ -271,6 +271,12 @@ type ClusterSpec struct {
 
 	// Optional: AuthorizationConfig to configure the apiserver authorization modes. This feature is in technical preview right now
 	AuthorizationConfig *AuthorizationConfig `json:"authorizationConfig,omitempty"`
+
+	// ContainerRuntimeOpts defines optional configuration options to configure container-runtime
+	// that is going to be used in the user cluster.
+	// This will not configure node level settings for container runtime used in user clusters; its only being used
+	// to configure container runtime settings of a particular user cluster.
+	ContainerRuntimeOpts *ContainerRuntimeOpts `json:"containerRuntimeOpts,omitempty"`
 }
 
 // KubernetesDashboard contains settings for the kubernetes-dashboard component as part of the cluster control plane.
@@ -469,6 +475,10 @@ type AuthorizationWebhookConfiguration struct {
 	SecretKey string `json:"secretKey"`
 	// the Webhook Version, by default "v1"
 	WebhookVersion string `json:"webhookVersion"`
+	// Optional: The duration to cache authorization decisions for successful authorization webhook calls.
+	CacheAuthorizedTTL *metav1.Duration `json:"cacheAuthorizedTTL,omitempty"`
+	// Optional: The duration to cache authorization decisions for failed authorization webhook calls.
+	CacheUnauthorizedTTL *metav1.Duration `json:"cacheUnauthorizedTTL,omitempty"`
 }
 
 type AuthorizationConfigurationFile struct {
@@ -852,6 +862,8 @@ type ComponentSettings struct {
 	OperatingSystemManager *OSMControllerSettings `json:"operatingSystemManager,omitempty"`
 	// CoreDNS configures CoreDNS deployed as part of the cluster control plane.
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
+	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
+	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -1100,6 +1112,7 @@ type CloudSpec struct {
 	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
 	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Packet defines the configuration data of a Packet / Equinix Metal cloud.
+	// NOOP.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
@@ -1464,9 +1477,7 @@ type OpenstackCloudSpec struct {
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
 }
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// PacketCloudSpec specifies access data to a Packet cloud.
+// NOOP.
 type PacketCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
@@ -1740,9 +1751,6 @@ func (c *Cluster) GetSecretName() string {
 	}
 	if c.Spec.Cloud.Openstack != nil {
 		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
-	}
-	if c.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
 	if c.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)

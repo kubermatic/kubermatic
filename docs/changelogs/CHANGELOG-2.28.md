@@ -1,6 +1,67 @@
 # Kubermatic 2.28
 
 - [v2.28.0](#v2280)
+- [v2.28.1](#v2281)
+- [v2.28.2](#v2282)
+
+## v2.28.2
+
+**GitHub release: [v2.28.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.2)**
+
+### New Features
+
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+
+### Bugfixes
+
+- Add RBAC rules for Velero Backup resources to allow get, list, and watch operations ([#14822](https://github.com/kubermatic/kubermatic/pull/14822))
+- Fix issue with CBSL credentials and status not syncing to seed clusters ([#14703](https://github.com/kubermatic/kubermatic/pull/14703))
+- Update `kubermatic-installer local kind` Dex static client configurations ([#14735](https://github.com/kubermatic/kubermatic/pull/14735))
+- Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
+
+### Updates
+
+- Add support for k8s patch releases 1.33.3/1.32.7/1.31.11 ([#14830](https://github.com/kubermatic/kubermatic/pull/14830))
+- Update helm to v3.17.4 ([#14831](https://github.com/kubermatic/kubermatic/pull/14831))
+- Update OSM to [v1.7.5](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.5) ([#14887](https://github.com/kubermatic/kubermatic/pull/14887))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
+
+## v2.28.1
+
+**GitHub release: [v2.28.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.1)**
+
+### Supported Kubernetes Versions
+
+- Add 1.33.2/1.32.6/1.31.10/1.30.14 to the list of supported Kubernetes releases ([#14783](https://github.com/kubermatic/kubermatic/pull/14783))
+
+### New Features
+
+- Add the ability to skip router reconciliation in the OpenStack provider ([#14771](https://github.com/kubermatic/kubermatic/pull/14771),[#7483](https://github.com/kubermatic/dashboard/pull/7483))
+- KubeLB: KKP defaulting will now enable KubeLB for a cluster if it's enforced at the datacenter level ([#14732](https://github.com/kubermatic/kubermatic/pull/14732))
+- Overwrite system application images when `overwriteRegistry` is defined ([#14773](https://github.com/kubermatic/kubermatic/pull/14773))
+
+### Bugfixes
+
+- A regression bug regarding node-exporter pod labeling which didn't exclude node-exporter pods from pod discovery was fixed ([#14742](https://github.com/kubermatic/kubermatic/pull/14742))
+- Support KubeVirt vCPUs validation in the resource quota controller ([#14728](https://github.com/kubermatic/kubermatic/pull/14728))
+- A bug which lead to missing kube state metrics scraping was fixed ([#14759](https://github.com/kubermatic/kubermatic/pull/14759))
+- Fix KubeLB checkbox state management and UI flickering issues in cluster creation wizard/edit cluster dialog ([#7458](https://github.com/kubermatic/dashboard/pull/7458))
+- Fix validation error when switching expose strategy from Tunneling to LoadBalancer by clearing tunnelingAgentIP automatically ([#7422](https://github.com/kubermatic/dashboard/pull/7422))
+- KubeLB: Fix a bug where enforcement on a datacenter was not enabling KubeLB for the user clusters in the dashboard ([#7453](https://github.com/kubermatic/dashboard/pull/7453))
+- Project viewers can now only view cluster templates. Create, update, and delete actions are restricted except deletion by the owner ([#7481](https://github.com/kubermatic/dashboard/pull/7481))
+- Skip setting custom CPUs field in machine deployment for Kubevirt user clusters. ([#7493](https://github.com/kubermatic/dashboard/pull/7493))
+- A bug  regarding network policy cleanup up in kubevirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed. ([#14805](https://github.com/kubermatic/kubermatic/pull/14805))
+- Fix log spam on deleted ResourceQuota objects. ([#14806](https://github.com/kubermatic/kubermatic/pull/14806))
+
+### Updates
+
+- Update operating-system-manager to [v1.7.4](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.4) ([#14793](https://github.com/kubermatic/kubermatic/pull/14793))
+- Update to Go 1.24.4 ([#14665](https://github.com/kubermatic/kubermatic/pull/14665),[#7440](https://github.com/kubermatic/dashboard/pull/7440))
+
+### Cleanup
+
+- By default the oauth2-proxy disables Dex's approval screen now. To return to the old behaviour, set `approval_prompt = "force"` for each IAP deployment in your Helm values.yaml ([#14751](https://github.com/kubermatic/kubermatic/pull/14751))
+
 
 ## v2.28.0
 

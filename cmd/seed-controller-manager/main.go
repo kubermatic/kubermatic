@@ -31,7 +31,7 @@ import (
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
-	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
+	kubelbv1alpha1 "k8c.io/kubelb/api/ee/kubelb.k8c.io/v1alpha1"
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -200,6 +200,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Unable to create the configuration getter", zap.Error(err))
 	}
 
+	projectsGetter, err := kubernetesprovider.ProjectsGetterFactory(rootCtx, mgr.GetClient())
+	if err != nil {
+		log.Fatalw("Unable to create the seed getter", zap.Error(err))
+	}
+
 	var clientProvider *client.Provider
 	if isInternalConfig(cfg) {
 		clientProvider, err = client.NewInternal(mgr.GetClient())
@@ -216,6 +221,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		mgr:                  mgr,
 		clientProvider:       clientProvider,
 		seedGetter:           seedGetter,
+		projectsGetter:       projectsGetter,
 		configGetter:         configGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,

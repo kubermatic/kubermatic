@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.18.0
     kubermatic.k8c.io/location: master,seed
   name: clusters.kubermatic.k8c.io
 spec:
@@ -358,6 +358,12 @@ spec:
                     authorizationWebhookConfiguration:
                       description: Contains the settings for the AuthorizationWebhook if EnabledModes contains Webhook
                       properties:
+                        cacheAuthorizedTTL:
+                          description: 'Optional: The duration to cache authorization decisions for successful authorization webhook calls.'
+                          type: string
+                        cacheUnauthorizedTTL:
+                          description: 'Optional: The duration to cache authorization decisions for failed authorization webhook calls.'
+                          type: string
                         secretKey:
                           description: The secret Key inside the secret
                           type: string
@@ -1465,6 +1471,7 @@ spec:
                         Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
                         This provider is no longer supported. Migrate your configurations away from "packet" immediately.
                         Packet defines the configuration data of a Packet / Equinix Metal cloud.
+                        NOOP.
                       properties:
                         apiKey:
                           type: string
@@ -2445,6 +2452,110 @@ spec:
                               type: object
                           type: object
                       type: object
+                    kubeStateMetrics:
+                      description: KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
+                      properties:
+                        replicas:
+                          format: int32
+                          type: integer
+                        resources:
+                          description: ResourceRequirements describes the compute resource requirements.
+                          properties:
+                            claims:
+                              description: |-
+                                Claims lists the names of resources, defined in spec.resourceClaims,
+                                that are used by this container.
+
+                                This is an alpha field and requires enabling the
+                                DynamicResourceAllocation feature gate.
+
+                                This field is immutable. It can only be set for containers.
+                              items:
+                                description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                properties:
+                                  name:
+                                    description: |-
+                                      Name must match the name of one entry in pod.spec.resourceClaims of
+                                      the Pod where this field is used. It makes that resource available
+                                      inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
+                                    type: string
+                                required:
+                                  - name
+                                type: object
+                              type: array
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
+                            limits:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Limits describes the maximum amount of compute resources allowed.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                            requests:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Requests describes the minimum amount of compute resources required.
+                                If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                          type: object
+                        tolerations:
+                          items:
+                            description: |-
+                              The pod this Toleration is attached to tolerates any taint that matches
+                              the triple <key,value,effect> using the matching operator <operator>.
+                            properties:
+                              effect:
+                                description: |-
+                                  Effect indicates the taint effect to match. Empty means match all taint effects.
+                                  When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.
+                                type: string
+                              key:
+                                description: |-
+                                  Key is the taint key that the toleration applies to. Empty means match all taint keys.
+                                  If the key is empty, operator must be Exists; this combination means to match all values and all keys.
+                                type: string
+                              operator:
+                                description: |-
+                                  Operator represents a key's relationship to the value.
+                                  Valid operators are Exists and Equal. Defaults to Equal.
+                                  Exists is equivalent to wildcard for value, so that a pod can
+                                  tolerate all taints of a particular category.
+                                type: string
+                              tolerationSeconds:
+                                description: |-
+                                  TolerationSeconds represents the period of time the toleration (which must be
+                                  of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default,
+                                  it is not set, which means tolerate the taint forever (do not evict). Zero and
+                                  negative values will be treated as 0 (evict immediately) by the system.
+                                format: int64
+                                type: integer
+                              value:
+                                description: |-
+                                  Value is the taint value the toleration matches to.
+                                  If the operator is Exists, the value should be empty, otherwise just a regular string.
+                                type: string
+                            type: object
+                          type: array
+                      type: object
                     nodePortProxyEnvoy:
                       description: |-
                         NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
@@ -3028,6 +3139,52 @@ spec:
                     - docker
                     - containerd
                   type: string
+                containerRuntimeOpts:
+                  description: |-
+                    ContainerRuntimeOpts defines optional configuration options to configure container-runtime
+                    that is going to be used in the user cluster.
+                    This will not configure node level settings for container runtime used in user clusters; its only being used
+                    to configure container runtime settings of a particular user cluster.
+                  properties:
+                    containerdRegistryMirrors:
+                      description: 'Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.'
+                      properties:
+                        registries:
+                          additionalProperties:
+                            description: ContainerdRegistry defines endpoints and security for given container registry.
+                            properties:
+                              mirrors:
+                                description: List of registry mirrors to use
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          description: A map of registries to use to render configs and mirrors for containerd registries
+                          type: object
+                      type: object
+                    enableNonRootDeviceOwnership:
+                      description: 'Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.'
+                      type: boolean
+                    insecureRegistries:
+                      description: |-
+                        Optional: These image registries will be configured as insecure
+                        on the container runtime.
+                      items:
+                        type: string
+                      type: array
+                    pauseImage:
+                      description: |-
+                        Optional: Translates to --pod-infra-container-image on the kubelet.
+                        If not set, the kubelet will default it.
+                      type: string
+                    registryMirrors:
+                      description: |-
+                        Optional: These image registries will be configured as registry mirrors
+                        on the container runtime.
+                      items:
+                        type: string
+                      type: array
+                  type: object
                 debugLog:
                   description: Enables more verbose logging in KKP's user-cluster-controller-manager.
                   type: boolean

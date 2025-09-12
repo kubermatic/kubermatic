@@ -13,50 +13,6 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.30
-    decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-vsphere: "true"
-      preset-vault: "true"
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: RELEASES_TO_TEST
-              value: "1.30"
-            - name: PROVIDER
-              value: "vsphere"
-            - name: DISTRIBUTIONS
-              value: ubuntu
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          command:
-            - "./hack/ci/run-e2e-tests.sh"
-          # docker-in-docker needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 3.5
-            limits:
-              memory: 6Gi
-
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.31
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
@@ -74,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -118,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -162,7 +118,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -189,7 +145,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.33-customfolder
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.34
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -206,12 +162,56 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.33"
+              value: "1.34"
+            - name: PROVIDER
+              value: "vsphere"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.34-customfolder
+    decorate: true
+    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-vsphere: "true"
+      preset-vault: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: RELEASES_TO_TEST
+              value: "1.34"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -235,7 +235,7 @@ presubmits:
             limits:
               memory: 6Gi
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.33-basepath
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.34-basepath
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -252,12 +252,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.33"
+              value: "1.34"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS
@@ -282,7 +282,7 @@ presubmits:
               memory: 6Gi
 
 
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.33-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.34-datastore-cluster
     decorate: true
     # This job is disabled currently because we have a datastore cluster
     # but it will not work as it is connected to vSAN and vSAN is messed up.
@@ -301,12 +301,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
-              value: "1.33"
+              value: "1.34"
             - name: PROVIDER
               value: "vsphere"
             - name: DISTRIBUTIONS

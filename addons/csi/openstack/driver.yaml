@@ -12,28 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file was generated, DO NOT EDIT.
-# Run `make` instead.
+# This file was generated, using `make` and then modified (where applicable)
+#
+# - Replace all entries for env CLOUD_CONFIG value from `/etc/config/config` to `/etc/kubernetes/config`
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 
 {{ $version := "UNSUPPORTED" }}
 
-{{ if eq .Cluster.MajorMinorVersion "1.29" }}
-{{ $version = "v1.29.1" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.30" }}
-{{ $version = "v1.30.2" }}
+{{ $version = "v1.30.3" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.31" }}
-{{ $version = "v1.31.2" }}
+{{ $version = "v1.31.4" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
-{{ $version = "v1.31.2" }}
+{{ $version = "v1.32.1" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.33" }}
-{{ $version = "v1.32.0" }}
+{{ $version = "v1.33.1" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.34" }}
+{{ $version = "v1.33.1" }}
 {{ end }}
 
 {{ if .Cluster.Features.Has "kubeSystemNetworkPolicies" }}
@@ -402,7 +403,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0-alpha.0
+    chart: openstack-cinder-csi-2.33.1
     component: controllerplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -426,7 +427,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0-alpha.0
+        chart: openstack-cinder-csi-2.33.1
         component: controllerplugin
         heritage: Helm
         release: openstack-cinder-csi
@@ -581,7 +582,7 @@ metadata:
     cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
   labels:
     app: openstack-cinder-csi
-    chart: openstack-cinder-csi-2.33.0-alpha.0
+    chart: openstack-cinder-csi-2.33.1
     component: nodeplugin
     heritage: Helm
     release: openstack-cinder-csi
@@ -599,7 +600,7 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
       labels:
         app: openstack-cinder-csi
-        chart: openstack-cinder-csi-2.33.0-alpha.0
+        chart: openstack-cinder-csi-2.33.1
         component: nodeplugin
         heritage: Helm
         release: openstack-cinder-csi

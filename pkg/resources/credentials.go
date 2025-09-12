@@ -35,7 +35,6 @@ type Credentials struct {
 	GCP                 GCPCredentials
 	Hetzner             HetznerCredentials
 	Openstack           OpenstackCredentials
-	Packet              PacketCredentials
 	Kubevirt            KubevirtCredentials
 	VSphere             VSphereCredentials
 	Alibaba             AlibabaCredentials
@@ -113,11 +112,6 @@ type OpenstackCredentials struct {
 	ApplicationCredentialID     string
 	ApplicationCredentialSecret string
 	Token                       string
-}
-
-type PacketCredentials struct {
-	APIKey    string
-	ProjectID string
 }
 
 type KubevirtCredentials struct {
@@ -205,10 +199,6 @@ func GetCredentialsReference(cluster *kubermaticv1.Cluster) (*providerconfig.Glo
 	if cluster.Spec.Cloud.Openstack != nil {
 		return cluster.Spec.Cloud.Openstack.CredentialsReference, nil
 	}
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if cluster.Spec.Cloud.Packet != nil {
-		return cluster.Spec.Cloud.Packet.CredentialsReference, nil //nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		return cluster.Spec.Cloud.Kubevirt.CredentialsReference, nil
 	}
@@ -275,13 +265,6 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		if credentials.Openstack, err = GetOpenstackCredentials(data); err != nil {
-			return Credentials{}, err
-		}
-	}
-
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if data.Cluster().Spec.Cloud.Packet != nil {
-		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -385,14 +368,6 @@ func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error 
 		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
 	}
 
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	if data.Cluster().Spec.Cloud.Packet != nil {
-		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
-			return err
-		}
-		cluster.Spec.Cloud.Packet.ProjectID = credentials.Packet.ProjectID
-		cluster.Spec.Cloud.Packet.APIKey = credentials.Packet.APIKey
-	}
 	if data.Cluster().Spec.Cloud.Kubevirt != nil {
 		if credentials.Kubevirt, err = GetKubevirtCredentials(data); err != nil {
 			return err
@@ -663,27 +638,6 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	}
 
 	return openstackCredentials, nil
-}
-
-//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
-	spec := data.Cluster().Spec.Cloud.Packet
-	packetCredentials := PacketCredentials{}
-	var err error
-
-	if spec.APIKey != "" {
-		packetCredentials.APIKey = spec.APIKey
-	} else if packetCredentials.APIKey, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, PacketAPIKey); err != nil {
-		return PacketCredentials{}, err
-	}
-
-	if spec.ProjectID != "" {
-		packetCredentials.ProjectID = spec.ProjectID
-	} else if packetCredentials.ProjectID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, PacketProjectID); err != nil {
-		return PacketCredentials{}, err
-	}
-
-	return packetCredentials, nil
 }
 
 func GetKubevirtCredentials(data CredentialsData) (KubevirtCredentials, error) {

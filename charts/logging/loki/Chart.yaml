@@ -22,7 +22,7 @@ keywords:
   - logging
   - grafana
   - loki
-  - promtail
+  - alloy
 home: https://grafana.com/loki
 sources:
   - https://github.com/grafana/loki

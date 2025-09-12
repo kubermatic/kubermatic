@@ -57,7 +57,7 @@ var (
 )
 
 const (
-	Tag = "v1.7.4"
+	Tag = "a92e88631b65bc5d13df12b08b272931a165ef50"
 )
 
 type operatingSystemManagerData interface {
@@ -273,20 +273,8 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 	}
 
 	nodeSettings := data.DC().Node
-	if nodeSettings != nil {
-		if len(nodeSettings.InsecureRegistries) > 0 {
-			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
-		}
-		if nodeSettings.ContainerdRegistryMirrors != nil {
-			flags = append(flags, getContainerdFlags(nodeSettings.ContainerdRegistryMirrors)...)
-		}
-		if len(nodeSettings.RegistryMirrors) > 0 {
-			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
-		}
-		if nodeSettings.PauseImage != "" {
-			flags = append(flags, "-pause-image", nodeSettings.PauseImage)
-		}
-	}
+
+	flags = appendContainerRuntimeFlags(flags, data)
 
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
@@ -402,24 +390,99 @@ func getEnvVars(data operatingSystemManagerData) ([]corev1.EnvVar, error) {
 	return resources.SanitizeEnvVars(vars), nil
 }
 
-func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeContainerd) []string {
+func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeOpts) []string {
+	flags := make([]string, 0)
+	if crid == nil {
+		return flags
+	}
+	// If enableNonRootDeviceOwnership is true, we add the flag to enable device ownership from security context.
+	if crid.EnableNonRootDeviceOwnership {
+		flags = append(flags, "-device-ownership-from-security-context")
+	}
+
+	if crid.ContainerdRegistryMirrors == nil || len(crid.ContainerdRegistryMirrors.Registries) == 0 {
+		return flags
+	}
+
 	var (
-		registries, flags []string
+		registries []string
 	)
 
 	// fetch all keys from the map and sort them
 	// for stable order.
-	for registry := range crid.Registries {
+	for registry := range crid.ContainerdRegistryMirrors.Registries {
 		registries = append(registries, registry)
 	}
 
 	slices.Sort(registries)
 
 	for _, registry := range registries {
-		for _, endpoint := range crid.Registries[registry].Mirrors {
+		for _, endpoint := range crid.ContainerdRegistryMirrors.Registries[registry].Mirrors {
 			flags = append(flags, fmt.Sprintf("-node-containerd-registry-mirrors=%s=%s", registry, endpoint))
 		}
 	}
 
 	return flags
+}
+
+// appendContainerRuntimeFlags updates given flags array to include OSM flags for container-runtime configurations.
+// Individual flags in cluster take precedence over the same flags defined in datacenter.
+func appendContainerRuntimeFlags(flags []string, data operatingSystemManagerData) []string {
+	containerRuntimeFlags := make(map[string]string)
+	var nodeSettings *kubermaticv1.NodeSettings
+	if dc := data.DC(); dc != nil {
+		nodeSettings = dc.Node
+	}
+
+	if nodeSettings != nil {
+		if len(nodeSettings.InsecureRegistries) > 0 {
+			containerRuntimeFlags["-node-insecure-registries"] = strings.Join(nodeSettings.InsecureRegistries, ",")
+		}
+
+		if len(nodeSettings.RegistryMirrors) > 0 {
+			containerRuntimeFlags["-node-registry-mirrors"] = strings.Join(nodeSettings.RegistryMirrors, ",")
+		}
+
+		if nodeSettings.PauseImage != "" {
+			containerRuntimeFlags["-pause-image"] = nodeSettings.PauseImage
+		}
+	}
+
+	if c := data.Cluster(); c != nil {
+		ctrOpts := c.Spec.ContainerRuntimeOpts
+		if ctrOpts != nil {
+			if len(ctrOpts.InsecureRegistries) > 0 {
+				containerRuntimeFlags["-node-insecure-registries"] = strings.Join(ctrOpts.InsecureRegistries, ",")
+			}
+
+			if len(ctrOpts.RegistryMirrors) > 0 {
+				containerRuntimeFlags["-node-registry-mirrors"] = strings.Join(ctrOpts.RegistryMirrors, ",")
+			}
+
+			if ctrOpts.PauseImage != "" {
+				containerRuntimeFlags["-pause-image"] = ctrOpts.PauseImage
+			}
+		}
+	}
+
+	for flag, value := range containerRuntimeFlags {
+		flags = append(flags, flag, value)
+	}
+
+	containerdFlags := containerdFlags(nodeSettings, data.Cluster())
+	for _, flag := range containerdFlags {
+		flags = append(flags, flag, "")
+	}
+
+	return flags
+}
+
+func containerdFlags(nodeSettings *kubermaticv1.NodeSettings, cluster *kubermaticv1.Cluster) []string {
+	if cluster != nil && cluster.Spec.ContainerRuntimeOpts != nil {
+		return getContainerdFlags(cluster.Spec.ContainerRuntimeOpts)
+	}
+	if nodeSettings != nil {
+		return getContainerdFlags(&nodeSettings.ContainerRuntimeOpts)
+	}
+	return []string{}
 }

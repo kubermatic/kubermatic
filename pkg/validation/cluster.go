@@ -779,9 +779,6 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter,
 		providerErr = validateKubevirtCloudSpec(spec.Kubevirt)
 	case spec.Openstack != nil:
 		providerErr = validateOpenStackCloudSpec(spec.Openstack, dc, externalCCM)
-	//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-	case spec.Packet != nil:
-		providerErr = validatePacketCloudSpec(spec.Packet)
 	case spec.VSphere != nil:
 		providerErr = validateVSphereCloudSpec(spec.VSphere)
 	case spec.Nutanix != nil:
@@ -939,21 +936,6 @@ func validateHetznerCloudSpec(spec *kubermaticv1.HetznerCloudSpec) error {
 		}
 	}
 
-	return nil
-}
-
-//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-func validatePacketCloudSpec(spec *kubermaticv1.PacketCloudSpec) error {
-	if spec.APIKey == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.PacketAPIKey); err != nil {
-			return err
-		}
-	}
-	if spec.ProjectID == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.PacketProjectID); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

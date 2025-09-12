@@ -1,6 +1,6 @@
 --- a/addons/csi/azure-disk/driver.yaml
 +++ b/addons/csi/azure-disk/driver.yaml
-@@ -531,8 +532,12 @@ spec:
+@@ -560,8 +561,12 @@ spec:
              - --vmss-cache-ttl-seconds=-1
              - --enable-traffic-manager=false
              - --traffic-manager-port=7788
@@ -9,17 +9,6 @@
 +            {{- end }}
 +            {{- if semverCompare .Cluster.Version ">= 1.30" }}
              - --check-disk-lun-collision=true
-+            {{- end }}
-           env:
-             - name: AZURE_CREDENTIAL_FILE
-               value: /etc/kubernetes/azure.json
-@@ -774,8 +775,10 @@ spec:
-             - --allow-empty-cloud-config=true
-             - --support-zone=true
-             - --get-node-info-from-labels=false
-+            {{- if semverCompare .Cluster.Version ">= 1.29" }}
-             - --get-nodeid-from-imds=false
-             - --enable-otel-tracing=false
 +            {{- end }}
            env:
              - name: AZURE_CREDENTIAL_FILE

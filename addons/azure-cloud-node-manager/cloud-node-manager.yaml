@@ -12,25 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/cloud-provider-azure/blob/v1.31.0/examples/out-of-tree/cloud-node-manager.yaml
+# Source: https://github.com/kubernetes-sigs/cloud-provider-azure/blob/v1.34.0/examples/out-of-tree/cloud-node-manager.yaml
 #
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
 {{ $version := "UNSUPPORTED" }}
-{{ if eq .Cluster.MajorMinorVersion "1.29" }}
-{{ $version = "v1.29.11" }}
-{{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.30" }}
-{{ $version = "v1.30.7" }}
+{{ $version = "v1.29.0" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.31" }}
-{{ $version = "v1.31.1" }}
+{{ $version = "v1.30.5" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
-{{ $version = "v1.32.4" }}
+{{ $version = "v1.30.5" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.33" }}
 {{ $version = "v1.32.4" }}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.34" }}
+{{ $version = "v1.33.1" }}
 {{ end }}
 {{ if not (eq $version "UNSUPPORTED") }}
 apiVersion: v1
@@ -123,6 +123,62 @@ spec:
         - cloud-node-manager
         - --node-name=$(NODE_NAME)
         - --wait-routes=true   # only set to true when --configure-cloud-routes=true in cloud-controller-manager.
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+          limits:
+            cpu: 2000m
+            memory: 512Mi
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cloud-node-manager-windows
+  namespace: kube-system
+  labels:
+    component: cloud-node-manager
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: Reconcile
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cloud-node-manager-windows
+  template:
+    metadata:
+      labels:
+        k8s-app: cloud-node-manager-windows
+      annotations:
+        cluster-autoscaler.kubernetes.io/daemonset-pod: "true"
+    spec:
+      priorityClassName: system-node-critical
+      serviceAccountName: cloud-node-manager
+      nodeSelector:
+        kubernetes.io/os: windows
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: node-role.kubernetes.io/master
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+      - operator: "Exists"
+        effect: NoExecute
+      - operator: "Exists"
+        effect: NoSchedule
+      containers:
+      - name: cloud-node-manager
+        image: {{ Image (print "mcr.microsoft.com/oss/kubernetes/azure-cloud-node-manager:" $version) }}
+        imagePullPolicy: IfNotPresent
+        command:
+        - /cloud-node-manager.exe
+        - --node-name=$(NODE_NAME)
         env:
         - name: NODE_NAME
           valueFrom:

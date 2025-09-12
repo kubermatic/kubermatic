@@ -1,6 +1,6 @@
 dependencies:
 - name: dex
   repository: https://charts.dexidp.io
-  version: 0.19.1
-digest: sha256:8b96787ba39f6973b42abfde2ed704596c340bc959d6fc3178f95389dcbbcf93
-generated: "2024-10-09T18:22:28.937055874+02:00"
+  version: 0.24.0
+digest: sha256:edc13197d17a4f57be57b6276617398b55c40748b01ff09c800f93a7d344cf05
+generated: "2025-09-12T02:16:26.274458989+05:30"

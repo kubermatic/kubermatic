@@ -493,6 +493,15 @@ func generateAuthorizationFlags(cluster *kubermaticv1.Cluster) []string {
 	if cluster.Spec.IsWebhookAuthorizationEnabled() {
 		flags = append(flags, "--authorization-webhook-config-file", "/etc/kubernetes/authorization-webhook.yaml")
 		flags = append(flags, "--authorization-webhook-version", cluster.Spec.GetAuthorizationWebhookVersion())
+
+		// Add cache TTL flags if specified by user (override Kubernetes defaults)
+		webhookConfig := cluster.Spec.AuthorizationConfig.AuthorizationWebhookConfiguration
+		if webhookConfig.CacheAuthorizedTTL != nil {
+			flags = append(flags, "--authorization-webhook-cache-authorized-ttl", webhookConfig.CacheAuthorizedTTL.Duration.String())
+		}
+		if webhookConfig.CacheUnauthorizedTTL != nil {
+			flags = append(flags, "--authorization-webhook-cache-unauthorized-ttl", webhookConfig.CacheUnauthorizedTTL.Duration.String())
+		}
 	}
 
 	if cluster.Spec.IsAuthorizationConfigurationFileEnabled() {

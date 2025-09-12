@@ -67,6 +67,20 @@ rule_files:
   - /etc/config/alerts
 scrape_configs:
   - honor_labels: true
+    job_name: cluster_kubelet_volume_stats
+    kubernetes_sd_configs:
+      - role: endpoints
+    metrics_path: /federate
+    params:
+      match[]:
+        - '{__name__=~"kubelet_volume_stats_capacity_bytes|kubelet_volume_stats_used_bytes", job="kubelet"}'
+    relabel_configs:
+      - action: keep
+        regex: user
+        source_labels:
+          - __meta_kubernetes_service_label_cluster
+
+  - honor_labels: true
     job_name: seed-controller-manager
     kubernetes_sd_configs:
       - role: pod

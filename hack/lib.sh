@@ -120,7 +120,7 @@ is_containerized() {
 
 containerize() {
   local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.6.0}"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:2.7.0}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
   local gomodcache="${CONTAINERIZE_GOMODCACHE:-/tmp/.gomodcache}"
   local skip="${NO_CONTAINERIZE:-}"
@@ -462,7 +462,12 @@ set_helm_charts_version() {
     chartRepoURL=$(yq eval '.dependencies[0].repository' $chartFile)
     if [ "$chartRepoURL" != "null" ]; then
       chartDepName=$(yq eval '.dependencies[0].name' $chartFile)
-      helm repo add $chartDepName $chartRepoURL
+      # Skip OCI repositories as they don't need to be added to helm repos
+      if [[ "$chartRepoURL" == oci://* ]]; then
+        echodate "Skipping OCI repository: $chartRepoURL"
+      else
+        helm repo add $chartDepName $chartRepoURL
+      fi
 
       chartDirParent=$(dirname "$chartFile")
       helm dependency build $chartDirParent --skip-refresh

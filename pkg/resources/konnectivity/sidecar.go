@@ -135,8 +135,6 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	// https://github.com/kubernetes-sigs/apiserver-network-proxy#versioning-and-releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.29":
-		return "v0.29.3"
 	case "1.30":
 		return "v0.30.3"
 	case "1.31":

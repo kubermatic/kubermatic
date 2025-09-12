@@ -127,8 +127,8 @@ func DaemonSetReconciler(imageRewriter registry.ImageRewriter) reconciling.Named
 							Protocol:      corev1.ProtocolUDP,
 						},
 						{
-							ContainerPort: 9153,
-							HostPort:      9153,
+							ContainerPort: 9253,
+							HostPort:      9253,
 							Name:          "metrics",
 							Protocol:      corev1.ProtocolTCP,
 						},

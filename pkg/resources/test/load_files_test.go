@@ -70,9 +70,6 @@ var (
 
 	kubernetesVersions = []*version.Version{
 		{
-			Version: semverlib.MustParse("1.30.0"),
-		},
-		{
 			Version: semverlib.MustParse("1.31.0"),
 		},
 		{
@@ -80,6 +77,9 @@ var (
 		},
 		{
 			Version: semverlib.MustParse("1.33.0"),
+		},
+		{
+			Version: semverlib.MustParse("1.34.0"),
 		},
 	}
 

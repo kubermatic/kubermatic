@@ -6,6 +6,64 @@
 - [v2.27.3](#v2273)
 - [v2.27.4](#v2274)
 - [v2.27.5](#v2275)
+- [v2.27.6](#v2276)
+- [v2.27.7](#v2277)
+
+## v2.27.7
+
+**GitHub release: [v2.27.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.7)**
+
+### New Features
+
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+
+### Bugfixes
+
+- Add RBAC rules for Velero Backup resources to allow get, list, and watch operations ([#14822](https://github.com/kubermatic/kubermatic/pull/14822))
+- Fix issue with CBSL credentials and status not syncing to seed clusters ([#14865](https://github.com/kubermatic/kubermatic/pull/14865))
+- Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
+- Pass ConfigDrive value to JSON patch during machine updates  for OpenStack ([#7299](https://github.com/kubermatic/dashboard/pull/7299))
+
+### Updates
+
+- Update Helm v3.17.4 ([#14854](https://github.com/kubermatic/kubermatic/pull/14854))
+- Update OSM to [v1.6.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.8) ([#14888](https://github.com/kubermatic/kubermatic/pull/14888))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
+
+## v2.27.6
+
+**GitHub release: [v2.27.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.6)**
+
+### New Features
+
+- KubeLB: KKP defaulting will now enable KubeLB for a cluster if it's enforced at the datacenter level ([#14747](https://github.com/kubermatic/kubermatic/pull/14747))
+
+### Design
+
+- Fix clickable documentation links in hints for disabled checkboxes ([#7434](https://github.com/kubermatic/dashboard/pull/7434))
+
+### Bugfixes
+
+- Fix KubeLB checkbox state management and UI flickering issues in cluster creation wizard/edit cluster dialog ([#7460](https://github.com/kubermatic/dashboard/pull/7460))
+- Fix validation error when switching expose strategy from Tunneling to LoadBalancer by clearing tunnelingAgentIP automatically ([#7422](https://github.com/kubermatic/dashboard/pull/7422))
+- KubeLB: Fix a bug where enforcement on a datacenter was not enabling KubeLB for the user clusters in the dashboard ([#7455](https://github.com/kubermatic/dashboard/pull/7455))
+- List all OpenStack networks in the UI wizard during cluster creation ([#7437](https://github.com/kubermatic/dashboard/pull/7437))
+- Project viewers can now only view cluster templates. Create, update, and delete actions are restricted except deletion by the owner ([#7482](https://github.com/kubermatic/dashboard/pull/7482))
+- Shows custom disk fields when a custom disk is configured in the Machine Deployment edit dialog ([#7415](https://github.com/kubermatic/dashboard/pull/7415))
+- Unset backup sync period if value is empty ([#7444](https://github.com/kubermatic/dashboard/pull/7444))
+- Skip setting custom CPUs field in machine deployment for Kubevirt user clusters. ([#7493](https://github.com/kubermatic/dashboard/pull/7493))
+- A bug  regarding network policy cleanup up in kubevirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed. ([#14803](https://github.com/kubermatic/kubermatic/pull/14803))
+- Fix log spam on deleted ResourceQuota objects. ([#14807](https://github.com/kubermatic/kubermatic/pull/14807))
+
+### Updates
+
+- Update machine-controller(MC) to [v1.61.3](https://github.com/kubermatic/machine-controller/releases/tag/v1.61.3) ([#14729](https://github.com/kubermatic/kubermatic/pull/14729))
+- Update operating-system-manager(OSM) to [v1.6.7](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.7) ([#14794](https://github.com/kubermatic/kubermatic/pull/14794))
+- Update to Go 1.23.10 ([#14667](https://github.com/kubermatic/kubermatic/pull/14667),[#7450](https://github.com/kubermatic/dashboard/pull/7450))
+
+### Cleanup
+
+- By default the oauth2-proxy disables Dex's approval screen now. To return to the old behaviour, set `approval_prompt = "force"` for each IAP deployment in your Helm values.yaml ([#14751](https://github.com/kubermatic/kubermatic/pull/14751))
 
 
 ## v2.27.5
