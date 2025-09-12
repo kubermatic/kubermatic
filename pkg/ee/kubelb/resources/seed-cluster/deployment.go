@@ -211,6 +211,8 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 
 	if clusterKubeLB != nil && clusterKubeLB.EnableGatewayAPI != nil && *clusterKubeLB.EnableGatewayAPI {
 		flags = append(flags, "-enable-gateway-api")
+		flags = append(flags, "-install-gateway-api-crds")
+		flags = append(flags, "-gateway-api-crds-channel=experimental") // The 'experimental' channel is used here as it's the default value for KubeLB-EE.
 	}
 	if clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass {
 		flags = append(flags, "-use-loadbalancer-class")
