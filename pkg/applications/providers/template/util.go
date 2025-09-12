@@ -57,6 +57,12 @@ type ClusterData struct {
 	MajorMinorVersion string
 	// AutoscalerVersion is the tag which should be used for the cluster autoscaler
 	AutoscalerVersion string
+	// Annotations holds arbitrary non-identifying metadata attached to the cluster.
+	// Transferred from the Kubermatic cluster object.
+	Annotations map[string]string
+	// Labels are key-value pairs used to organize, categorize, and select clusters.
+	// Transferred from the Kubermatic cluster object.
+	Labels map[string]string
 }
 
 var (
@@ -121,6 +127,8 @@ func GetTemplateData(ctx context.Context, seedClient ctrlruntimeclient.Client, c
 				Version:           fmt.Sprintf("%d.%d.%d", clusterVersion.Major(), clusterVersion.Minor(), clusterVersion.Patch()),
 				MajorMinorVersion: fmt.Sprintf("%d.%d", clusterVersion.Major(), clusterVersion.Minor()),
 				AutoscalerVersion: clusterAutoscalerVersion,
+				Annotations:       cluster.Annotations,
+				Labels:            cluster.Labels,
 			},
 		}, nil
 	}
