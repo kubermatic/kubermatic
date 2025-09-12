@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"crypto/x509"
 	"flag"
 	"net/http"
 	"os"
@@ -77,18 +76,18 @@ func main() {
 		logger.Fatalw("Failed to create kube client", zap.Error(err))
 	}
 
-	var certPool *x509.CertPool
+	var caBundle string
 	if *caBundleFile != "" {
 		bundle, err := certificates.NewCABundleFromFile(*caBundleFile)
 		if err != nil {
 			logger.Fatalw("Failed to load CA bundle", zap.Error(err))
 		}
 
-		certPool = bundle.CertPool()
+		caBundle = bundle.String()
 	}
 
 	stopChannel := make(chan struct{})
-	minioClient, err := s3.NewClient(*endpoint, *accessKeyID, *secretAccessKey, certPool)
+	minioClient, err := s3.NewClient(*endpoint, *accessKeyID, *secretAccessKey, []byte(caBundle))
 	if err != nil {
 		logger.Fatalw("Failed to get S3 client", zap.Error(err))
 	}

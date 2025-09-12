@@ -261,7 +261,7 @@ func getS3DataFromSeed(ctx context.Context, seed *kubermaticv1.Seed, seedClient 
 		return nil, "", fmt.Errorf("failed to parse CA bundle")
 	}
 
-	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, caCertPool)
+	mc, err := s3.NewClient(s3endpoint, s3accessKeyID, s3secretAccessKey, []byte(caBundleData))
 	if err != nil {
 		return nil, "", err
 	}

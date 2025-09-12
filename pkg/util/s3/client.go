@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,13 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 package s3
 
 import (
 	"container/list"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
 	"net/http"
 	"strings"
 	"sync"
@@ -35,43 +36,45 @@ const (
 
 // cacheEntry stores the transport and a reference to its element in the LRU list.
 type cacheEntry struct {
-	key       *x509.CertPool
+	key       string
 	transport *http.Transport
 }
 
 var (
-	// transportCache provides O(1) lookup for transports.
-	// Using a pointer (*x509.CertPool) as a key is acceptable here because the cache's purpose
-	// is to tie a transport to a specific CertPool instance. The memory address of the CertPool
-	// serves as a unique identifier. This assumes that different CA bundles that require
-	// distinct transports will be represented by separate CertPool objects in memory.
-	// A nil pointer is a valid map key and all nil keys will map to the same entry, which is
-	// the desired behavior for sharing a default transport.
-	transportCache = make(map[*x509.CertPool]*list.Element)
+	// transportCache provides O(1) lookup for transports based on a string key.
+	transportCache = make(map[string]*list.Element)
 	// lruList maintains the order of usage, with the most recently used at the front.
 	lruList    = list.New()
 	cacheMutex = &sync.Mutex{}
 )
 
-// getTransport returns a cached or new http.Transport using an O(1) LRU cache.
-// This is essential to prevent connection leaks by reusing transports.
-func getTransport(caBundle *x509.CertPool) *http.Transport {
+// getTransport returns a cached or new http.Transport for the given CA bundle PEM.
+// It uses a SHA256 hash of the PEM data as a stable cache key.
+func getTransport(caBundlePEM []byte) (*http.Transport, error) {
 	cacheMutex.Lock()
 	defer cacheMutex.Unlock()
 
-	// If a transport for this caBundle exists, move it to the front of the list and return it.
-	if element, ok := transportCache[caBundle]; ok {
+	// Generate a stable key from the PEM content.
+	hash := sha256.Sum256(caBundlePEM)
+	cacheKey := hex.EncodeToString(hash[:])
+
+	// If a transport for this key exists, move it to the front and return it.
+	if element, ok := transportCache[cacheKey]; ok {
 		lruList.MoveToFront(element)
-		return element.Value.(*cacheEntry).transport
+		return element.Value.(*cacheEntry).transport, nil
 	}
 
-	// Create a new transport, cloning the default to inherit basic settings.
+	// Create a new transport.
 	tr := http.DefaultTransport.(*http.Transport).Clone()
 	tr.DisableCompression = true
 
-	// If a caBundle is provided, configure TLS. Otherwise, it will use system defaults.
-	if caBundle != nil {
-		tr.TLSClientConfig = &tls.Config{RootCAs: caBundle}
+	// Create a CertPool and configure TLS if a bundle is provided.
+	if len(caBundlePEM) > 0 {
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caBundlePEM) {
+			return nil, &minio.ErrorResponse{Message: "Failed to append certificates from PEM."}
+		}
+		tr.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
 	}
 
 	// Enforce cache size limit by evicting the least recently used item.
@@ -84,74 +87,36 @@ func getTransport(caBundle *x509.CertPool) *http.Transport {
 		}
 	}
 
-	// Add the new transport to the cache and the front of the list.
+	// Add the new transport to the cache.
 	entry := &cacheEntry{
-		key:       caBundle,
+		key:       cacheKey,
 		transport: tr,
 	}
 	element := lruList.PushFront(entry)
-	transportCache[caBundle] = element
+	transportCache[cacheKey] = element
 
-	return tr
+	return tr, nil
 }
 
-// RemoveTransportFromCache removes a transport from the cache based on its key.
-func RemoveTransportFromCache(caBundle *x509.CertPool) {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-
-	if element, ok := transportCache[caBundle]; ok {
-		lruList.Remove(element)
-		delete(transportCache, caBundle)
-	}
-}
-
-// AddTransportToCache adds a given transport to the cache with a specific key.
-// If the cache is full, it evicts the least recently used entry before adding the new one.
-func AddTransportToCache(caBundle *x509.CertPool, transport *http.Transport) {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-
-	// If the item already exists, just move it to the front.
-	if element, ok := transportCache[caBundle]; ok {
-		lruList.MoveToFront(element)
-		element.Value.(*cacheEntry).transport = transport
-		return
-	}
-
-	// Enforce cache size limit.
-	if lruList.Len() >= maxTransportCacheSize {
-		lruElement := lruList.Back()
-		if lruElement != nil {
-			evictedKey := lruElement.Value.(*cacheEntry).key
-			lruList.Remove(lruElement)
-			delete(transportCache, evictedKey)
-		}
-	}
-
-	// Add the new transport to the cache.
-	entry := &cacheEntry{
-		key:       caBundle,
-		transport: transport,
-	}
-	element := lruList.PushFront(entry)
-	transportCache[caBundle] = element
-}
-
-func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool) (*minio.Client, error) {
+// NewClient creates a new S3 client using raw PEM data for the CA bundle.
+func NewClient(endpoint, accessKeyID, secretKey string, caBundlePEM []byte) (*minio.Client, error) {
 	secure := true
-
 	if strings.HasPrefix(endpoint, "https://") {
 		endpoint = strings.Replace(endpoint, "https://", "", 1)
 	} else if strings.HasPrefix(endpoint, "http://") {
 		endpoint = strings.Replace(endpoint, "http://", "", 1)
 		secure = false
 	}
-	// secure = false
+
+	transport, err := getTransport(caBundlePEM)
+	if err != nil {
+		return nil, err
+	}
+
 	options := &minio.Options{
 		Creds:     credentials.NewStaticV4(accessKeyID, secretKey, ""),
 		Secure:    secure,
-		Transport: getTransport(caBundle),
+		Transport: transport,
 	}
 
 	return minio.New(endpoint, options)
