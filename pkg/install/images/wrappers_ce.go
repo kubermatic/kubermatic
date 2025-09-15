@@ -41,7 +41,6 @@ func DefaultAppsHelmCharts(
 	helmClient helm.Client,
 	helmTimeout time.Duration,
 	registryPrefix string,
-	applicationManagerRegistryToken string,
 ) iter.Seq2[*AppsHelmChart, error] {
 	return func(yield func(*AppsHelmChart, error) bool) {}
 }

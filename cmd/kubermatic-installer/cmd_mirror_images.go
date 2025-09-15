@@ -65,8 +65,6 @@ type MirrorImagesOptions struct {
 	HelmValuesFile string
 	HelmTimeout    time.Duration
 	HelmBinary     string
-
-	ApplicationCatalogRegistryToken string
 }
 
 func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versions) *cobra.Command {
@@ -126,8 +124,6 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmValuesFile, "helm-values", "", "Use this values.yaml when rendering Helm charts")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "Helm 3.x binary to use for rendering charts")
-
-	cmd.PersistentFlags().StringVar(&opt.ApplicationCatalogRegistryToken, "application-catalog-registry-token", "", "Token used for authentication to the configured application catalog registry")
 
 	return cmd
 }
@@ -409,7 +405,7 @@ func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermati
 	}
 
 	logger.Info("🚀 Getting images from default Applications Helm charts…")
-	for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix, options.ApplicationCatalogRegistryToken) {
+	for defaultChart, err := range images.DefaultAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {
 		if err != nil {
 			return nil, err
 		}

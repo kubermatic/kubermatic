@@ -93,7 +93,7 @@ spec:
         credentials: null
         # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
         # Example: oci://localhost:5000/myrepo
-        registryURL: quay.io/kubermatic/application-catalog
+        registryURL: quay.io/kubermatic/applications
         # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
         # Example: v1.0.0
         tag: 7fd8340dc8f0b3f6aae519301a1c9f8aff34d939

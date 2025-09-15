@@ -64,7 +64,7 @@ func GetImagesFromDefaultApplicationDefinitions(
 	registryPrefix string,
 ) ([]string, error) {
 	var images []string
-	for defaultApp, err := range DefaultAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix, "") {
+	for defaultApp, err := range DefaultAppsHelmCharts(config, logger, helmClient, helmTimeout, registryPrefix) {
 		if err != nil {
 			return nil, err
 		}

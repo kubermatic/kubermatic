@@ -42,26 +42,27 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/kubectl/pkg/util/slice"
 	"sigs.k8s.io/yaml"
 )
+
+const ApplicationCatalogTierAnnotationName = "apps.k8c.io/application-tier"
 
 func ExternalApplicationCatalogReconcilerFactories(
 	logger *zap.SugaredLogger,
 	config *kubermaticv1.KubermaticConfiguration,
 	mirror bool,
-	applicationManagerRegistryToken string,
 ) ([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, error) {
 	registrySettings := config.Spec.Applications.CatalogManager.RegistrySettings
 	if registrySettings.RegistryURL == "" {
 		return nil, fmt.Errorf("registry URL is not defined, its required while using external application catalog manager")
 	}
 
-	auth := authn.AuthConfig{}
-	if applicationManagerRegistryToken != "" {
-		auth.IdentityToken = applicationManagerRegistryToken
+	options := []crane.Option{
+		crane.WithAuthFromKeychain(authn.DefaultKeychain),
 	}
 
-	image, err := crane.Pull(strings.Replace(registrySettings.RegistryURL, "oci://", "", 1), crane.WithAuth(authn.FromConfig(auth)))
+	image, err := crane.Pull(strings.Replace(registrySettings.RegistryURL, "oci://", "", 1), options...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to pull image %s: %w", registrySettings.RegistryURL, err)
 	}
@@ -71,21 +72,16 @@ func ExternalApplicationCatalogReconcilerFactories(
 		return nil, fmt.Errorf("failed to render application definitions from image layer: %w", err)
 	}
 
-	filterApps := len(config.Spec.Applications.DefaultApplicationCatalog.Applications) > 0
-	requestedApps := make(map[string]struct{})
-	if filterApps {
-		for _, appName := range config.Spec.Applications.DefaultApplicationCatalog.Applications {
-			requestedApps[appName] = struct{}{}
-		}
-
-		logger.Debugf("Installing only specified default applications: %+v", config.Spec.Applications.DefaultApplicationCatalog.Applications)
-	}
-
+	filter := config.Spec.Applications.CatalogManager.Limit
 	creators := make([]kkpreconciling.NamedApplicationDefinitionReconcilerFactory, 0, len(apps))
 	for _, app := range apps {
-		if filterApps {
-			if _, ok := requestedApps[app.Name]; !ok {
-				logger.Debugf("Skipping application %q as it's not in the requested list", app.Name)
+		if len(filter.MetadataSelector.Tiers) > 0 {
+			if !slice.ContainsString(filter.MetadataSelector.Tiers, app.Annotations[ApplicationCatalogTierAnnotationName], nil) {
+				continue
+			}
+		}
+		if len(filter.NameSelector) > 0 {
+			if !slice.ContainsString(filter.NameSelector, app.Name, nil) {
 				continue
 			}
 		}
@@ -221,7 +217,7 @@ func renderApplicationDefinitionsFromOCILayer(image v1.Image) (map[string]appsku
 			return nil, nil, fmt.Errorf("error getting layer media type: %w", err)
 		}
 
-		if mediaType == ocispec.MediaTypeImageLayerGzip || mediaType == ocispec.MediaTypeImageManifest {
+		if mediaType == ocispec.MediaTypeImageLayerGzip {
 			reader, err := layer.Uncompressed()
 			if err != nil {
 				return nil, nil, fmt.Errorf("error getting uncompressed layer: %w", err)

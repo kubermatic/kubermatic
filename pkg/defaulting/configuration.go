@@ -75,7 +75,7 @@ const (
 	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
 	DefaultApplicationManagerImageTag        = "c3221135593524a8641fdb5b4e18682f45465922"
 
-	DefaultApplicationCatalogRepository = "quay.io/kubermatic/application-catalog"
+	DefaultApplicationCatalogRepository = "quay.io/kubermatic/applications"
 	DefaultApplicationCatalogTag        = "7fd8340dc8f0b3f6aae519301a1c9f8aff34d939"
 )
 

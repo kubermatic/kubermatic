@@ -82,14 +82,13 @@ func DefaultAppsHelmCharts(
 	helmClient helm.Client,
 	helmTimeout time.Duration,
 	registryPrefix string,
-	applicationManagerRegistryToken string,
 ) iter.Seq2[*AppsHelmChart, error] {
 	var err error
 	var defaultAppDefReconcilers []func() (name string, reconciler func(existing *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error))
 	log := kubermaticlog.NewDefault().Sugar()
 	if _, ok := config.Spec.FeatureGates[features.ExternalApplicationCatalogManager]; ok {
 		// when the feature gate is enabled, we use the external application catalog manager reconcilers
-		defaultAppDefReconcilers, err = applicationcatalog.ExternalApplicationCatalogReconcilerFactories(log, config, true, applicationManagerRegistryToken)
+		defaultAppDefReconcilers, err = applicationcatalog.ExternalApplicationCatalogReconcilerFactories(log, config, true)
 		if err != nil {
 			return func(yield func(*AppsHelmChart, error) bool) {
 				yield(nil, fmt.Errorf("failed to get external application definition reconciler factories: %w", err))
