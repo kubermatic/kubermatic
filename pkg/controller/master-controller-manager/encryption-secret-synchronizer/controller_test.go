@@ -19,7 +19,9 @@ package encryptionsecretsynchonizer
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -88,6 +90,25 @@ func TestReconcile(t *testing.T) {
 			expectError:      true,
 			expectSecretInNS: false,
 		},
+		{
+			name: "scenario 5: cluster exists but not ready, should trigger requeue",
+			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
+				ClusterNameAnnotation: testClusterName,
+			}),
+			existingCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testClusterName,
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+						Enabled: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{},
+			},
+			expectError:      false,
+			expectSecretInNS: false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -127,7 +148,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// Execute reconcile
-			_, err := r.Reconcile(ctx, request)
+			result, err := r.Reconcile(ctx, request)
 
 			// Check error expectation
 			if tc.expectError && err == nil {
@@ -135,6 +156,19 @@ func TestReconcile(t *testing.T) {
 			}
 			if !tc.expectError && err != nil {
 				t.Errorf("expected no error but got: %v", err)
+			}
+
+			// For scenario 5, check that requeue is triggered (no error, but RequeueAfter is set)
+			if tc.name == "scenario 5: cluster exists but not ready, should trigger requeue" {
+				if err != nil {
+					t.Errorf("expected no error for requeue scenario but got: %v", err)
+				}
+				if result.RequeueAfter == 0 {
+					t.Errorf("expected RequeueAfter to be set but got: %v", result.RequeueAfter)
+				}
+				if result.RequeueAfter != 30*time.Second {
+					t.Errorf("expected RequeueAfter to be 30 seconds but got: %v", result.RequeueAfter)
+				}
 			}
 
 			// Check if secret should exist in cluster namespace
@@ -188,6 +222,9 @@ func TestHandleDeletion(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testSecretName,
 					Namespace: masterNamespace,
+					Annotations: map[string]string{
+						ClusterNameAnnotation: testClusterName,
+					},
 				},
 			},
 			existingSecretInNS: &corev1.Secret{
@@ -231,6 +268,20 @@ func TestHandleDeletion(t *testing.T) {
 			if tc.existingSecretInNS != nil {
 				seedObjects = append(seedObjects, tc.existingSecretInNS)
 			}
+
+			// Add test cluster with proper namespace set
+			if strings.HasPrefix(tc.secretToDelete.Name, EncryptionSecretPrefix) {
+				cluster := &kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: testClusterName,
+					},
+					Status: kubermaticv1.ClusterStatus{
+						NamespaceName: clusterNamespace,
+					},
+				}
+				seedObjects = append(seedObjects, cluster)
+			}
+
 			seedClient := fake.NewClientBuilder().WithObjects(seedObjects...).Build()
 
 			r := &reconciler{
