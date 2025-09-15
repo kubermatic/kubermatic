@@ -586,9 +586,7 @@ spec:
                                 description: DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
                                 type: boolean
                               enableGatewayAPI:
-                                description: |-
-                                  EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
-                                  When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+                                description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB. Once enabled, Gateway API CRDs are installed for the user cluster.
                                 type: boolean
                               enableSecretSynchronizer:
                                 description: EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.

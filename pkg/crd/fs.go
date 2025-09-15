@@ -42,8 +42,6 @@ const (
 	k8sDir = "k8s.io"
 )
 
-const GatewayAPIGroup = "gateway.networking.k8s.io"
-
 // Groups returns a list of all known API groups for which CRDs are available.
 func Groups() ([]string, error) {
 	dirs := []string{k8cDir, k8sDir}
