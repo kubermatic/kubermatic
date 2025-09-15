@@ -26,7 +26,7 @@
 ### Bugfixes
 
 - A bug was fixed where evicted KubeVirt VMs configured with evictionStrategy `LiveMigrate` were treated like vms with `External` evictionStrategy by deleting the related machine object ([#14736](https://github.com/kubermatic/kubermatic/pull/14736))
-- A caching functionality for used http.Transports when initializing minio clients in seed-controller-manager was added to avoid tcp connection leaks ([#14959](https://github.com/kubermatic/kubermatic/pull/14959))
+- A caching functionality for used http.Transports when initializing minio clients in seed-controller-manager was added to avoid tcp connection leaks ([#14959](https://github.com/kubermatic/kubermatic/pull/14959), [#7592](https://github.com/kubermatic/dashboard/pull/7592))
 - Fix web terminal token expiration by refreshing expired tokens automatically ([#7549](https://github.com/kubermatic/dashboard/pull/7549))
 - Move web-terminal cleanup job to seed to fix cleanup not working when the token is expired ([#7547](https://github.com/kubermatic/dashboard/pull/7547))
 
