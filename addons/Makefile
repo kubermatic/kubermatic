@@ -23,7 +23,7 @@ aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-
 aws-node-termination-handler:
 	cat aws-node-termination-handler/_header.txt > $(OUTPUT_FILE)
 	helm template aws-node-termination-handler oci://public.ecr.aws/aws-ec2/helm/aws-node-termination-handler \
-	  --version 0.26.0 \
+	  --version 0.27.2 \
 	  --namespace kube-system \
 	  --values values-aws-node-termination-handler.yaml \
 	  >> $(OUTPUT_FILE)
@@ -41,7 +41,7 @@ nutanix-csi-storage:
 	mkdir -p csi/nutanix
 	cat csi/nutanix/_header.txt > $(OUTPUT_FILE)
 	helm --namespace kube-system template nutanix-csi-storage nutanix/nutanix-csi-storage \
-	  --version 2.6.6 \
+	  --version 2.6.10 \
 	  --set 'createSecret=false' \
 	  >> $(OUTPUT_FILE)
 	cat csi/nutanix/_footer.txt >> $(OUTPUT_FILE)

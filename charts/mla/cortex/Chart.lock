@@ -1,6 +1,6 @@
 dependencies:
 - name: cortex
-  repository: https://cortexproject.github.io/cortex-helm-chart
+  repository: oci://quay.io/kubermatic-mirror/helm-charts
   version: 2.1.0
-digest: sha256:7cddb7331732b8779ba3bd94f8a4f27ee3166a13d3057bb757b7a9830b4e4af6
-generated: "2023-12-21T09:08:18.061272245+05:30"
+digest: sha256:7484dffa864c02d6e6775288aa71b931edd4511aac466d8e3532390fe0355976
+generated: "2025-08-10T15:19:15.334546248+05:00"

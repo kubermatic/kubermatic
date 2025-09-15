@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.24-node-20-6 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=quay.io/kubermatic/build:go-1.25-node-22-4 containerize ./hack/update-codegen.sh
 
 sed="sed"
 [ "$(command -v gsed)" ] && sed="gsed"
@@ -83,15 +83,6 @@ declare -A locationMap=(
 
   ["verticalpodautoscalers.autoscaling.k8s.io"]="seed"
   ["verticalpodautoscalercheckpoints.autoscaling.k8s.io"]="seed"
-
-  # Gateway API
-  ["gateways.gateway.networking.k8s.io"]="usercluster"
-  ["grpcroutes.gateway.networking.k8s.io"]="usercluster"
-  ["httproutes.gateway.networking.k8s.io"]="usercluster"
-  ["tcproutes.gateway.networking.k8s.io"]="usercluster"
-  ["udproutes.gateway.networking.k8s.io"]="usercluster"
-  ["tlsroutes.gateway.networking.k8s.io"]="usercluster"
-  ["referencegrants.gateway.networking.k8s.io"]="usercluster"
 
   ["policytemplates.kubermatic.k8c.io"]="master,seed"
   # PolicyBindings will be deployed on master clusters although they are used on seed cluster namespaces.

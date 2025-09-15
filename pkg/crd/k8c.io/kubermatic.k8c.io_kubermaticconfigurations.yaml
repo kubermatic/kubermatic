@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.18.0
     kubermatic.k8c.io/location: master,seed
   name: kubermaticconfigurations.kubermatic.k8c.io
 spec:
@@ -142,6 +142,221 @@ spec:
                 applications:
                   description: Applications contains configuration for Application settings.
                   properties:
+                    catalogManager:
+                      description: |-
+                        CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
+                        in the cluster from specified OCI registries.
+                        Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
+                      properties:
+                        image:
+                          description: Image configures the container image for the application-catalog manager.
+                          properties:
+                            repository:
+                              description: |-
+                                Repository is used to override the application-catalog manager image repository.
+                                The default value is "quay.io/kubermatic/application-catalog-manager"
+                              type: string
+                            tag:
+                              description: Tag is used to override the application-catalog manager image tag.
+                              type: string
+                          type: object
+                        limit:
+                          description: |-
+                            Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
+                            When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
+                            When defined, only ApplicationDefinitions matching the specified criteria are processed.
+                          properties:
+                            metadataSelector:
+                              description: |-
+                                MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+                                For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
+                                specify that tier here.
+                                When multiple tiers are specified, the Application Catalog Manager uses additive logic
+                                to determine which ApplicationDefinitions to retrieve from the OCI registry.
+                              properties:
+                                tiers:
+                                  description: |-
+                                    Tiers specifies the support tiers to filter ApplicationDefinitions.
+                                    ApplicationDefinitions matching any of the specified tiers will be selected.
+                                  items:
+                                    type: string
+                                  type: array
+                              type: object
+                            nameSelector:
+                              description: |-
+                                NameSelector defines criteria for selecting ApplicationDefinitions by name.
+                                Each name must correspond to an ApplicationDefinition's `metadata.name` field.
+                                When multiple names are specified, the Application Catalog Manager uses additive logic
+                                to retrieve all matching ApplicationDefinitions from the OCI registry.
+                                Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
+                              items:
+                                type: string
+                              type: array
+                          type: object
+                        logLevel:
+                          description: LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+                          type: string
+                        reconciliationInterval:
+                          description: |-
+                            ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+                            By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+                            Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+                          type: string
+                        registrySettings:
+                          description: |-
+                            RegistrySettings configures the OCI registry from which the Application Catalog Manager
+                            retrieves ApplicationDefinition manifests.
+                          properties:
+                            credentials:
+                              description: |-
+                                Credentials optionally references a secret containing Helm registry authentication credentials.
+                                Either username/password or registryConfigFile can be specified, but not both.
+                              properties:
+                                password:
+                                  description: |-
+                                    Password references the secret containing the registry password credential.
+                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                registryConfigFile:
+                                  description: |-
+                                    RegistryConfigFile references the secret containing the Docker registry configuration file.
+                                    The value must be a dockercfg file following the same format as ~/.docker/config.json.
+                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                username:
+                                  description: |-
+                                    Username references the secret containing the registry username credential.
+                                    The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its key must be defined
+                                      type: boolean
+                                  required:
+                                    - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                            registryURL:
+                              description: |-
+                                RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+                                Example: oci://localhost:5000/myrepo
+                              type: string
+                            tag:
+                              description: |-
+                                Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+                                Example: v1.0.0
+                              type: string
+                          type: object
+                        resources:
+                          description: Resources describes the requested and maximum allowed CPU/memory usage.
+                          properties:
+                            claims:
+                              description: |-
+                                Claims lists the names of resources, defined in spec.resourceClaims,
+                                that are used by this container.
+
+                                This is an alpha field and requires enabling the
+                                DynamicResourceAllocation feature gate.
+
+                                This field is immutable. It can only be set for containers.
+                              items:
+                                description: ResourceClaim references one entry in PodSpec.ResourceClaims.
+                                properties:
+                                  name:
+                                    description: |-
+                                      Name must match the name of one entry in pod.spec.resourceClaims of
+                                      the Pod where this field is used. It makes that resource available
+                                      inside a container.
+                                    type: string
+                                  request:
+                                    description: |-
+                                      Request is the name chosen for a request in the referenced claim.
+                                      If empty, everything from the claim is made available, otherwise
+                                      only the result of this request.
+                                    type: string
+                                required:
+                                  - name
+                                type: object
+                              type: array
+                              x-kubernetes-list-map-keys:
+                                - name
+                              x-kubernetes-list-type: map
+                            limits:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Limits describes the maximum amount of compute resources allowed.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                            requests:
+                              additionalProperties:
+                                anyOf:
+                                  - type: integer
+                                  - type: string
+                                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                x-kubernetes-int-or-string: true
+                              description: |-
+                                Requests describes the minimum amount of compute resources required.
+                                If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+                                otherwise to an implementation-defined value. Requests cannot exceed Limits.
+                                More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+                              type: object
+                          type: object
+                      type: object
                     defaultApplicationCatalog:
                       description: DefaultApplicationCatalog contains configuration for the default application catalog.
                       properties:
@@ -645,6 +860,8 @@ spec:
                             description: |-
                               awsElasticBlockStore represents an AWS Disk resource that is attached to a
                               kubelet's host machine and then exposed to the pod.
+                              Deprecated: AWSElasticBlockStore is deprecated. All operations for the in-tree
+                              awsElasticBlockStore type are redirected to the ebs.csi.aws.com CSI driver.
                               More info: https://kubernetes.io/docs/concepts/storage/volumes#awselasticblockstore
                             properties:
                               fsType:
@@ -676,7 +893,10 @@ spec:
                               - volumeID
                             type: object
                           azureDisk:
-                            description: azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.
+                            description: |-
+                              azureDisk represents an Azure Data Disk mount on the host and bind mount to the pod.
+                              Deprecated: AzureDisk is deprecated. All operations for the in-tree azureDisk type
+                              are redirected to the disk.csi.azure.com CSI driver.
                             properties:
                               cachingMode:
                                 description: 'cachingMode is the Host Caching mode: None, Read Only, Read Write.'
@@ -708,7 +928,10 @@ spec:
                               - diskURI
                             type: object
                           azureFile:
-                            description: azureFile represents an Azure File Service mount on the host and bind mount to the pod.
+                            description: |-
+                              azureFile represents an Azure File Service mount on the host and bind mount to the pod.
+                              Deprecated: AzureFile is deprecated. All operations for the in-tree azureFile type
+                              are redirected to the file.csi.azure.com CSI driver.
                             properties:
                               readOnly:
                                 description: |-
@@ -726,7 +949,9 @@ spec:
                               - shareName
                             type: object
                           cephfs:
-                            description: cephFS represents a Ceph FS mount on the host that shares a pod's lifetime
+                            description: |-
+                              cephFS represents a Ceph FS mount on the host that shares a pod's lifetime.
+                              Deprecated: CephFS is deprecated and the in-tree cephfs type is no longer supported.
                             properties:
                               monitors:
                                 description: |-
@@ -777,6 +1002,8 @@ spec:
                           cinder:
                             description: |-
                               cinder represents a cinder volume attached and mounted on kubelets host machine.
+                              Deprecated: Cinder is deprecated. All operations for the in-tree cinder type
+                              are redirected to the cinder.csi.openstack.org CSI driver.
                               More info: https://examples.k8s.io/mysql-cinder-pd/README.md
                             properties:
                               fsType:
@@ -883,7 +1110,7 @@ spec:
                             type: object
                             x-kubernetes-map-type: atomic
                           csi:
-                            description: csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers (Beta feature).
+                            description: csi (Container Storage Interface) represents ephemeral storage that is handled by certain external CSI drivers.
                             properties:
                               driver:
                                 description: |-
@@ -1325,6 +1552,7 @@ spec:
                             description: |-
                               flexVolume represents a generic volume resource that is
                               provisioned/attached using an exec based plugin.
+                              Deprecated: FlexVolume is deprecated. Consider using a CSIDriver instead.
                             properties:
                               driver:
                                 description: driver is the name of the driver to use for this volume.
@@ -1368,7 +1596,9 @@ spec:
                               - driver
                             type: object
                           flocker:
-                            description: flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running
+                            description: |-
+                              flocker represents a Flocker volume attached to a kubelet's host machine. This depends on the Flocker control service being running.
+                              Deprecated: Flocker is deprecated and the in-tree flocker type is no longer supported.
                             properties:
                               datasetName:
                                 description: |-
@@ -1383,6 +1613,8 @@ spec:
                             description: |-
                               gcePersistentDisk represents a GCE Disk resource that is attached to a
                               kubelet's host machine and then exposed to the pod.
+                              Deprecated: GCEPersistentDisk is deprecated. All operations for the in-tree
+                              gcePersistentDisk type are redirected to the pd.csi.storage.gke.io CSI driver.
                               More info: https://kubernetes.io/docs/concepts/storage/volumes#gcepersistentdisk
                             properties:
                               fsType:
@@ -1418,7 +1650,7 @@ spec:
                           gitRepo:
                             description: |-
                               gitRepo represents a git repository at a particular revision.
-                              DEPRECATED: GitRepo is deprecated. To provision a container with a git repo, mount an
+                              Deprecated: GitRepo is deprecated. To provision a container with a git repo, mount an
                               EmptyDir into an InitContainer that clones the repo using git, then mount the EmptyDir
                               into the Pod's container.
                             properties:
@@ -1441,6 +1673,7 @@ spec:
                           glusterfs:
                             description: |-
                               glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
+                              Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
                               More info: https://examples.k8s.io/volumes/glusterfs/README.md
                             properties:
                               endpoints:
@@ -1500,7 +1733,7 @@ spec:
                               The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
                               The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
                               The volume will be mounted read-only (ro) and non-executable files (noexec).
-                              Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+                              Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
                               The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
                             properties:
                               pullPolicy:
@@ -1647,7 +1880,9 @@ spec:
                               - claimName
                             type: object
                           photonPersistentDisk:
-                            description: photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine
+                            description: |-
+                              photonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine.
+                              Deprecated: PhotonPersistentDisk is deprecated and the in-tree photonPersistentDisk type is no longer supported.
                             properties:
                               fsType:
                                 description: |-
@@ -1662,7 +1897,11 @@ spec:
                               - pdID
                             type: object
                           portworxVolume:
-                            description: portworxVolume represents a portworx volume attached and mounted on kubelets host machine
+                            description: |-
+                              portworxVolume represents a portworx volume attached and mounted on kubelets host machine.
+                              Deprecated: PortworxVolume is deprecated. All operations for the in-tree portworxVolume type
+                              are redirected to the pxd.portworx.com CSI driver when the CSIMigrationPortworx feature-gate
+                              is on.
                             properties:
                               fsType:
                                 description: |-
@@ -1997,7 +2236,9 @@ spec:
                                 x-kubernetes-list-type: atomic
                             type: object
                           quobyte:
-                            description: quobyte represents a Quobyte mount on the host that shares a pod's lifetime
+                            description: |-
+                              quobyte represents a Quobyte mount on the host that shares a pod's lifetime.
+                              Deprecated: Quobyte is deprecated and the in-tree quobyte type is no longer supported.
                             properties:
                               group:
                                 description: |-
@@ -2035,6 +2276,7 @@ spec:
                           rbd:
                             description: |-
                               rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
+                              Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
                               More info: https://examples.k8s.io/volumes/rbd/README.md
                             properties:
                               fsType:
@@ -2107,7 +2349,9 @@ spec:
                               - monitors
                             type: object
                           scaleIO:
-                            description: scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.
+                            description: |-
+                              scaleIO represents a ScaleIO persistent volume attached and mounted on Kubernetes nodes.
+                              Deprecated: ScaleIO is deprecated and the in-tree scaleIO type is no longer supported.
                             properties:
                               fsType:
                                 default: xfs
@@ -2233,7 +2477,9 @@ spec:
                                 type: string
                             type: object
                           storageos:
-                            description: storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.
+                            description: |-
+                              storageOS represents a StorageOS volume attached and mounted on Kubernetes nodes.
+                              Deprecated: StorageOS is deprecated and the in-tree storageos type is no longer supported.
                             properties:
                               fsType:
                                 description: |-
@@ -2278,7 +2524,10 @@ spec:
                                 type: string
                             type: object
                           vsphereVolume:
-                            description: vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine
+                            description: |-
+                              vsphereVolume represents a vSphere volume attached and mounted on kubelets host machine.
+                              Deprecated: VsphereVolume is deprecated. All operations for the in-tree vsphereVolume type
+                              are redirected to the csi.vsphere.vmware.com CSI driver.
                             properties:
                               fsType:
                                 description: |-
@@ -2603,7 +2852,6 @@ spec:
                               - vsphere
                               - aws
                               - openstack
-                              - packet
                               - gcp
                               - kubevirt
                               - nutanix

@@ -631,17 +631,6 @@ func (r *reconciler) reconcileCRDs(ctx context.Context, data reconcileData) erro
 		operatingsystemmanager.OperatingSystemProfileCRDReconciler(),
 	}
 
-	if data.cluster.Spec.IsKubeLBEnabled() && data.cluster.Spec.KubeLB.IsGatewayAPIEnabled() {
-		crds, err := crd.CRDsForGroup(crd.GatewayAPIGroup)
-		if err != nil {
-			return fmt.Errorf("failed to get %s CRDs: %w", crd.GatewayAPIGroup, err)
-		}
-
-		for _, c := range crds {
-			creators = append(creators, applications.CRDReconciler(&c))
-		}
-	}
-
 	if r.opaIntegration {
 		gatekeeperCRDs, err := gatekeeper.CRDs()
 		if err != nil {

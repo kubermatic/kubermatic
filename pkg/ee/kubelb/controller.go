@@ -31,7 +31,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubelbv1alpha1 "k8c.io/kubelb/api/kubelb.k8c.io/v1alpha1"
+	kubelbv1alpha1 "k8c.io/kubelb/api/ee/kubelb.k8c.io/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
@@ -80,18 +80,20 @@ type reconciler struct {
 	workerName                    string
 	recorder                      record.EventRecorder
 	seedGetter                    provider.SeedGetter
+	projectsGetter                provider.ProjectsGetter
 	userClusterConnectionProvider UserClusterClientProvider
 	log                           *zap.SugaredLogger
 	overwriteRegistry             string
 	versions                      kubermatic.Versions
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegistry string, seedGetter provider.SeedGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegistry string, seedGetter provider.SeedGetter, projectsGetter provider.ProjectsGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:                    seedGetter,
+		projectsGetter:                projectsGetter,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
 		versions:                      versions,
@@ -189,6 +191,24 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, err
 	}
 
+	// Ensure that cluster related project can be fetched to use default tenant configuration if specified
+	projects, err := r.projectsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	// We need to get the project name from cluster labels
+	clusterLabels := cluster.GetLabels()
+	if clusterLabels == nil {
+		return nil, fmt.Errorf("couldn't find project due to empty labels for cluster %q", cluster.Name)
+	}
+
+	projectName := clusterLabels[kubermaticv1.ProjectIDLabelKey]
+	project, projectFound := projects[projectName]
+	if !projectFound {
+		return nil, fmt.Errorf("couldn't find project %q for cluster %q", projectName, cluster.Name)
+	}
+
 	datacenter, found := seed.Spec.Datacenters[cluster.Spec.Cloud.DatacenterName]
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacenter %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
@@ -210,7 +230,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// Create/update required resources in kubeLB management cluster.
-	if err := r.createOrUpdateKubeLBManagementClusterResources(ctx, kubeLBManagementClient, cluster); err != nil {
+	if err := r.createOrUpdateKubeLBManagementClusterResources(ctx, kubeLBManagementClient, cluster, project.Spec.DefaultTenantSpec); err != nil {
 		return nil, err
 	}
 
@@ -223,7 +243,7 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	return r.createOrUpdateKubeLBSeedClusterResources(ctx, cluster, kubeLBManagementClient, kubeLBManagementKubeConfig, datacenter)
 }
 
-func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, defaultTenantSpec *kubelbv1alpha1.TenantSpec) error {
 	// Check if tenant exists or not, if it doesn't we create it.
 	tenant := &kubelbv1alpha1.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
@@ -235,6 +255,10 @@ func (r *reconciler) createOrUpdateKubeLBManagementClusterResources(ctx context.
 				"kubermatic.k8c.io/cluster-project-id":    cluster.Labels[kubermaticv1.ProjectIDLabelKey],
 			},
 		},
+	}
+	// Default tenant configuration from the related project should be used if specified
+	if defaultTenantSpec != nil {
+		tenant.Spec = *defaultTenantSpec
 	}
 	if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tenant), tenant); err != nil {
 		if !apierrors.IsNotFound(err) {

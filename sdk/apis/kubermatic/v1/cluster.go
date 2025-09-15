@@ -298,7 +298,7 @@ type KubeLB struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass *bool `json:"useLoadBalancerClass,omitempty"`
-	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KKP installs the Gateway API CRDs for the user cluster.
+	// EnableGatewayAPI is used to enable Gateway API for KubeLB. Once enabled, KubeLB installs the Gateway API CRDs in the user cluster.
 	EnableGatewayAPI *bool `json:"enableGatewayAPI,omitempty"`
 	// ExtraArgs are additional arbitrary flags to pass to the kubeLB CCM for the user cluster.
 	ExtraArgs map[string]string `json:"extraArgs,omitempty"`
@@ -475,6 +475,10 @@ type AuthorizationWebhookConfiguration struct {
 	SecretKey string `json:"secretKey"`
 	// the Webhook Version, by default "v1"
 	WebhookVersion string `json:"webhookVersion"`
+	// Optional: The duration to cache authorization decisions for successful authorization webhook calls.
+	CacheAuthorizedTTL *metav1.Duration `json:"cacheAuthorizedTTL,omitempty"`
+	// Optional: The duration to cache authorization decisions for failed authorization webhook calls.
+	CacheUnauthorizedTTL *metav1.Duration `json:"cacheUnauthorizedTTL,omitempty"`
 }
 
 type AuthorizationConfigurationFile struct {
@@ -1108,6 +1112,7 @@ type CloudSpec struct {
 	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
 	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Packet defines the configuration data of a Packet / Equinix Metal cloud.
+	// NOOP.
 	Packet *PacketCloudSpec `json:"packet,omitempty"`
 	// Hetzner defines the configuration data of the Hetzner cloud.
 	Hetzner *HetznerCloudSpec `json:"hetzner,omitempty"`
@@ -1472,9 +1477,7 @@ type OpenstackCloudSpec struct {
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
 }
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// PacketCloudSpec specifies access data to a Packet cloud.
+// NOOP.
 type PacketCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
@@ -1748,9 +1751,6 @@ func (c *Cluster) GetSecretName() string {
 	}
 	if c.Spec.Cloud.Openstack != nil {
 		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, clusterName)
-	}
-	if c.Spec.Cloud.Packet != nil {
-		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, clusterName)
 	}
 	if c.Spec.Cloud.Kubevirt != nil {
 		return fmt.Sprintf("%s-kubevirt-%s", CredentialPrefix, clusterName)

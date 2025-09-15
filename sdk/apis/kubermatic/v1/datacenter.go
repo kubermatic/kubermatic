@@ -30,7 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
+// +kubebuilder:validation:Enum=digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 type ProviderType string
 
 // +kubebuilder:validation:Pattern:=`^((\d{1,3}\.){3}\d{1,3}\/([0-9]|[1-2][0-9]|3[0-2]))$`
@@ -55,7 +55,6 @@ const (
 	KubevirtCloudProvider            ProviderType = "kubevirt"
 	NutanixCloudProvider             ProviderType = "nutanix"
 	OpenstackCloudProvider           ProviderType = "openstack"
-	PacketCloudProvider              ProviderType = "packet"
 	VMwareCloudDirectorCloudProvider ProviderType = "vmwareclouddirector"
 	VSphereCloudProvider             ProviderType = "vsphere"
 
@@ -84,7 +83,6 @@ var (
 		KubevirtCloudProvider,
 		NutanixCloudProvider,
 		OpenstackCloudProvider,
-		PacketCloudProvider,
 		VMwareCloudDirectorCloudProvider,
 		VSphereCloudProvider,
 	}
@@ -443,6 +441,7 @@ type DatacenterSpec struct {
 	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
 	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
 	// Packet configures an Equinix Metal datacenter.
+	// NOOP.
 	Packet *DatacenterSpecPacket `json:"packet,omitempty"`
 	// Hetzner configures a Hetzner datacenter.
 	Hetzner *DatacenterSpecHetzner `json:"hetzner,omitempty"`
@@ -548,9 +547,6 @@ var (
 		},
 		OpenstackCloudProvider: {
 			ipv6EnabledForAllDatacenters: false,
-		},
-		PacketCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
 		},
 		VSphereCloudProvider: {
 			ipv6EnabledForAllDatacenters: false,
@@ -820,9 +816,7 @@ type DatacenterSpecBringYourOwn struct {
 type DatacenterSpecEdge struct {
 }
 
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// DatacenterSpecPacket describes a Packet datacenter.
+// NOOP.
 type DatacenterSpecPacket struct {
 	// The list of enabled facilities, for example "ams1", for a full list of available
 	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
@@ -1143,6 +1137,8 @@ type ContainerRuntimeOpts struct {
 	PauseImage string `json:"pauseImage,omitempty"`
 	// Optional: ContainerdRegistryMirrors configure registry mirrors endpoints. Can be used multiple times to specify multiple mirrors.
 	ContainerdRegistryMirrors *ContainerRuntimeContainerd `json:"containerdRegistryMirrors,omitempty"`
+	// Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.
+	EnableNonRootDeviceOwnership bool `json:"enableNonRootDeviceOwnership,omitempty"`
 }
 
 // ContainerRuntimeContainerd defines containerd container runtime registries configs.
@@ -1287,8 +1283,7 @@ type KubeLBDatacenterSettings struct {
 	// UseLoadBalancerClass is used to configure the use of load balancer class `kubelb` for kubeLB. If false, kubeLB will manage all load balancers in the
 	// user cluster irrespective of the load balancer class.
 	UseLoadBalancerClass bool `json:"useLoadBalancerClass,omitempty"`
-	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
-	// When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+	// EnableGatewayAPI is used to configure the use of gateway API for kubeLB. Once enabled, Gateway API CRDs are installed for the user cluster.
 	EnableGatewayAPI bool `json:"enableGatewayAPI,omitempty"`
 	// EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
 	EnableSecretSynchronizer bool `json:"enableSecretSynchronizer,omitempty"`

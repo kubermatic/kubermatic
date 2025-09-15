@@ -77,7 +77,10 @@ func Add(ctx context.Context, log *zap.SugaredLogger, userMgr, kubevirtInfraMgr 
 			&kubevirtv1.VirtualMachineInstance{},
 			&handler.TypedEnqueueRequestForObject[*kubevirtv1.VirtualMachineInstance]{},
 			kubermaticpred.TypedFactory(func(vmi *kubevirtv1.VirtualMachineInstance) bool {
-				return vmi.Status.EvacuationNodeName != ""
+				if *vmi.Spec.EvictionStrategy == kubevirtv1.EvictionStrategyExternal {
+					return vmi.Status.EvacuationNodeName != ""
+				}
+				return false
 			}),
 		)).
 		Build(r)

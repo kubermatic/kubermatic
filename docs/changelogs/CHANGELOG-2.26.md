@@ -11,6 +11,32 @@
 - [v2.26.8](#v2268)
 - [v2.26.9](#v2269)
 - [v2.26.10](#v22610)
+- [v2.26.11](#v22611)
+- [v2.26.12](#v22612)
+
+## v2.26.12
+
+**GitHub release: [v2.26.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.12)**
+
+### New Features
+
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+
+### Bugfixes
+
+- Add RBAC rules for Velero Backup resources to allow get, list, and watch operations ([#14822](https://github.com/kubermatic/kubermatic/pull/14822))
+- Fix issue with CBSL credentials and status not syncing to Seed clusters ([#14866](https://github.com/kubermatic/kubermatic/pull/14866))
+- Pass ConfigDrive value to JSON patch during machine updates  for OpenStack ([#7299](https://github.com/kubermatic/dashboard/pull/7299))
+
+### Updates
+
+- Update Helm v3.17.4 ([#14855](https://github.com/kubermatic/kubermatic/pull/14855))
+- Update OSM to [v1.6.8](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.6.8) ([#14890](https://github.com/kubermatic/kubermatic/pull/14890))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14900](https://github.com/kubermatic/kubermatic/pull/14900))
+
+## v2.26.11
+
+This release contains a mistake, please use **GitHub release: [v2.26.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.26.12)** instead.
 
 ## v2.26.10
 

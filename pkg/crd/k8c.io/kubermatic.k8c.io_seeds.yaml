@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.18.0
     kubermatic.k8c.io/location: master,seed
   name: seeds.kubermatic.k8c.io
 spec:
@@ -335,6 +335,9 @@ spec:
                                 description: A map of registries to use to render configs and mirrors for containerd registries
                                 type: object
                             type: object
+                          enableNonRootDeviceOwnership:
+                            description: 'Optional: EnableNonRootDeviceOwnership enables the non-root device ownership feature in the container runtime.'
+                            type: boolean
                           httpProxy:
                             description: 'Optional: If set, this proxy will be configured for both HTTP and HTTPS.'
                             type: string
@@ -583,9 +586,7 @@ spec:
                                 description: DisableIngressClass is used to disable the ingress class `kubelb` filter for kubeLB.
                                 type: boolean
                               enableGatewayAPI:
-                                description: |-
-                                  EnableGatewayAPI is used to configure the use of gateway API for kubeLB.
-                                  When this option is enabled for the user cluster, KKP installs the Gateway API CRDs for the user cluster.
+                                description: EnableGatewayAPI is used to configure the use of gateway API for kubeLB. Once enabled, Gateway API CRDs are installed for the user cluster.
                                 type: boolean
                               enableSecretSynchronizer:
                                 description: EnableSecretSynchronizer is used to configure the use of secret synchronizer for kubeLB.
@@ -1178,9 +1179,12 @@ spec:
                                       description: PodDNSConfigOption defines DNS resolver options of a pod.
                                       properties:
                                         name:
-                                          description: Required.
+                                          description: |-
+                                            Name is this DNS resolver option's name.
+                                            Required.
                                           type: string
                                         value:
+                                          description: Value is this DNS resolver option's value.
                                           type: string
                                       type: object
                                     type: array
@@ -1593,6 +1597,7 @@ spec:
                               Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
                               This provider is no longer supported. Migrate your configurations away from "packet" immediately.
                               Packet configures an Equinix Metal datacenter.
+                              NOOP.
                             properties:
                               facilities:
                                 description: |-

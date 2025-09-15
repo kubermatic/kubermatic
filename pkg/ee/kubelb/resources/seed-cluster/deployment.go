@@ -62,7 +62,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.1.5"
+	imageTag  = "v1.2.0"
 )
 
 type kubeLBData interface {
@@ -211,6 +211,7 @@ func getFlags(name string, kubelb *kubermaticv1.KubeLBDatacenterSettings, cluste
 
 	if clusterKubeLB != nil && clusterKubeLB.EnableGatewayAPI != nil && *clusterKubeLB.EnableGatewayAPI {
 		flags = append(flags, "-enable-gateway-api")
+		flags = append(flags, "-install-gateway-api-crds")
 	}
 	if clusterKubeLB != nil && clusterKubeLB.UseLoadBalancerClass != nil && *clusterKubeLB.UseLoadBalancerClass {
 		flags = append(flags, "-use-loadbalancer-class")

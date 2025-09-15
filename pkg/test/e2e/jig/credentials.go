@@ -269,33 +269,6 @@ func (c *DigitaloceanCredentials) Parse() (err error) {
 	return nil
 }
 
-type EquinixMetalCredentials struct {
-	CommonCredentials
-
-	APIKey    string
-	ProjectID string
-}
-
-func (c *EquinixMetalCredentials) AddFlags(fs *flag.FlagSet) {
-	flag.StringVar(&c.KKPDatacenter, "equinix-kkp-datacenter", c.KKPDatacenter, "KKP datacenter to use for EquinixMetal clusters")
-}
-
-func (c *EquinixMetalCredentials) Parse() (err error) {
-	if c.KKPDatacenter == "" {
-		return errors.New("no -equinix-kkp-datacenter flag given")
-	}
-
-	if c.APIKey, err = env("METAL_AUTH_TOKEN"); err != nil {
-		return err
-	}
-
-	if c.ProjectID, err = env("METAL_PROJECT_ID"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 type BYOCredentials struct {
 	CommonCredentials
 }

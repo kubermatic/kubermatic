@@ -497,7 +497,7 @@ type Update struct {
 type Incompatibility struct {
 	// Provider to which to apply the compatibility check.
 	// Empty string matches all providers
-	// +kubebuilder:validation:Enum="";digitalocean;hetzner;azure;vsphere;aws;openstack;packet;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
+	// +kubebuilder:validation:Enum="";digitalocean;hetzner;azure;vsphere;aws;openstack;gcp;kubevirt;nutanix;alibaba;anexia;fake;vmwareclouddirector
 	Provider string `json:"provider,omitempty"`
 	// Version is the Kubernetes version that must be checked. Wildcards are allowed, e.g. "1.25.*".
 	Version string `json:"version,omitempty"`
@@ -548,6 +548,86 @@ type ApplicationDefinitionsConfiguration struct {
 
 	// DefaultApplicationCatalog contains configuration for the default application catalog.
 	DefaultApplicationCatalog DefaultApplicationCatalogSettings `json:"defaultApplicationCatalog,omitempty"`
+
+	// CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
+	// in the cluster from specified OCI registries.
+	// Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
+	CatalogManager CatalogManagerConfiguration `json:"catalogManager,omitempty"`
+}
+
+type CatalogManagerConfiguration struct {
+	// LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+	LogLevel string `json:"logLevel,omitempty"`
+
+	// RegistrySettings configures the OCI registry from which the Application Catalog Manager
+	// retrieves ApplicationDefinition manifests.
+	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
+
+	// Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
+	// When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
+	// When defined, only ApplicationDefinitions matching the specified criteria are processed.
+	Limit ApplicationCatalogLimit `json:"limit,omitempty"`
+
+	// Image configures the container image for the application-catalog manager.
+	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
+
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+	// By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+	// Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
+}
+
+type ApplicationCatalogLimit struct {
+	// MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+	// For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
+	// specify that tier here.
+	// When multiple tiers are specified, the Application Catalog Manager uses additive logic
+	// to determine which ApplicationDefinitions to retrieve from the OCI registry.
+	MetadataSelector ApplicationDefinitionMetadataSelector `json:"metadataSelector,omitempty"`
+	// NameSelector defines criteria for selecting ApplicationDefinitions by name.
+	// Each name must correspond to an ApplicationDefinition's `metadata.name` field.
+	// When multiple names are specified, the Application Catalog Manager uses additive logic
+	// to retrieve all matching ApplicationDefinitions from the OCI registry.
+	// Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
+	NameSelector []string `json:"nameSelector,omitempty"`
+}
+
+type RegistrySettings struct {
+	// RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+	// Example: oci://localhost:5000/myrepo
+	RegistryURL string `json:"registryURL,omitempty"`
+
+	// Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+	// Example: v1.0.0
+	Tag string `json:"tag,omitempty"`
+
+	// Credentials optionally references a secret containing Helm registry authentication credentials.
+	// Either username/password or registryConfigFile can be specified, but not both.
+	Credentials *RegistryCredentials `json:"credentials,omitempty"`
+}
+
+type RegistryCredentials struct {
+	// Username references the secret containing the registry username credential.
+	// The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+	Username *corev1.SecretKeySelector `json:"username,omitempty"`
+
+	// Password references the secret containing the registry password credential.
+	// The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+	Password *corev1.SecretKeySelector `json:"password,omitempty"`
+
+	// RegistryConfigFile references the secret containing the Docker registry configuration file.
+	// The value must be a dockercfg file following the same format as ~/.docker/config.json.
+	// The referenced Secret must exist in the KKP installation namespace (default: "kubermatic").
+	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
+}
+
+type ApplicationDefinitionMetadataSelector struct {
+	// Tiers specifies the support tiers to filter ApplicationDefinitions.
+	// ApplicationDefinitions matching any of the specified tiers will be selected.
+	Tiers []string `json:"tiers,omitempty"`
 }
 
 type SystemApplicationsSettings struct {
@@ -574,6 +654,15 @@ type DefaultApplicationCatalogSettings struct {
 	// The Secret must exist in the namespace where KKP is installed (default is "kubermatic").
 	// The Secret must be annotated with `apps.kubermatic.k8c.io/secret-type:` set to "helm".
 	HelmRegistryConfigFile *corev1.SecretKeySelector `json:"helmRegistryConfigFile,omitempty"`
+}
+
+// CatalogManagerImageConfiguration configures the container image settings.
+type CatalogManagerImageConfiguration struct {
+	// Repository is used to override the application-catalog manager image repository.
+	// The default value is "quay.io/kubermatic/application-catalog-manager"
+	Repository string `json:"repository,omitempty"`
+	// Tag is used to override the application-catalog manager image tag.
+	Tag string `json:"tag,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

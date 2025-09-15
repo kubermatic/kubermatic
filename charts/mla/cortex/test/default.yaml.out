@@ -1243,7 +1243,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: memcached
-          image: docker.io/bitnami/memcached:1.6.19-debian-11-r0
+          image: quay.io/kubermatic-mirror/images/memcached:1.6.19-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1287,7 +1287,7 @@ spec:
             - name: tmp
               mountPath: /tmp
         - name: metrics
-          image: docker.io/bitnami/memcached-exporter:0.11.2-debian-11-r0
+          image: quay.io/kubermatic-mirror/images/memcached-exporter:0.11.2-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1374,7 +1374,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: memcached
-          image: docker.io/bitnami/memcached:1.6.19-debian-11-r0
+          image: quay.io/kubermatic-mirror/images/memcached:1.6.19-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1418,7 +1418,7 @@ spec:
             - name: tmp
               mountPath: /tmp
         - name: metrics
-          image: docker.io/bitnami/memcached-exporter:0.11.2-debian-11-r0
+          image: quay.io/kubermatic-mirror/images/memcached-exporter:0.11.2-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1505,7 +1505,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: memcached
-          image: docker.io/bitnami/memcached:1.6.19-debian-11-r0
+          image: quay.io/kubermatic-mirror/images/memcached:1.6.19-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1549,7 +1549,7 @@ spec:
             - name: tmp
               mountPath: /tmp
         - name: metrics
-          image: docker.io/bitnami/memcached-exporter:0.11.2-debian-11-r0
+          image: quay.io/kubermatic-mirror/images/memcached-exporter:0.11.2-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true

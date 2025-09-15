@@ -17,27 +17,72 @@ limitations under the License.
 package s3
 
 import (
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/hex"
+	"errors"
 	"net/http"
 	"strings"
 
+	arccache "github.com/hashicorp/golang-lru/arc/v2"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-var defaultTransport = noCompressionTransport()
+const (
+	// maxTransportCacheSize defines the maximum number of idle transports to keep in the cache.
+	maxTransportCacheSize = 30
+)
 
-func noCompressionTransport() *http.Transport {
+var (
+	// transportCache provides a thread-safe, fixed-size ARC cache for http.Transport objects.
+	transportCache *arccache.ARCCache[string, *http.Transport]
+)
+
+func init() {
+	var err error
+	transportCache, err = arccache.NewARC[string, *http.Transport](maxTransportCacheSize)
+	if err != nil {
+		// This should not happen with a static size > 0.
+		panic("failed to initialize transport cache: " + err.Error())
+	}
+}
+
+// getTransport returns a cached or new http.Transport for the given CA bundle PEM.
+// It uses a SHA256 hash of the PEM data as a stable cache key.
+func getTransport(caBundlePEM []byte) (*http.Transport, error) {
+	// Generate a stable key from the PEM content.
+	hash := sha256.Sum256(caBundlePEM)
+	cacheKey := hex.EncodeToString(hash[:])
+
+	// If a transport for this key exists, return it.
+	if tr, ok := transportCache.Get(cacheKey); ok {
+		return tr, nil
+	}
+
+	// Create a new transport.
 	tr := http.DefaultTransport.(*http.Transport).Clone()
 	tr.DisableCompression = true
 
-	return tr
+	// Create a CertPool and configure TLS if a bundle is provided.
+	if len(caBundlePEM) > 0 {
+		caCertPool := x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(caBundlePEM) {
+			return nil, errors.New("failed to append certificates from pem")
+		}
+		tr.TLSClientConfig = &tls.Config{RootCAs: caCertPool}
+	}
+
+	// Add the new transport to the cache.
+	transportCache.Add(cacheKey, tr)
+
+	return tr, nil
 }
 
-func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool) (*minio.Client, error) {
+// NewClient creates a new S3 client using raw PEM data for the CA bundle.
+func NewClient(endpoint, accessKeyID, secretKey string, caBundlePEM string) (*minio.Client, error) {
 	secure := true
-
 	if strings.HasPrefix(endpoint, "https://") {
 		endpoint = strings.Replace(endpoint, "https://", "", 1)
 	} else if strings.HasPrefix(endpoint, "http://") {
@@ -45,19 +90,15 @@ func NewClient(endpoint, accessKeyID, secretKey string, caBundle *x509.CertPool)
 		secure = false
 	}
 
+	transport, err := getTransport([]byte(caBundlePEM))
+	if err != nil {
+		return nil, err
+	}
+
 	options := &minio.Options{
 		Creds:     credentials.NewStaticV4(accessKeyID, secretKey, ""),
 		Secure:    secure,
-		Transport: defaultTransport,
-	}
-
-	if caBundle != nil {
-		tr := defaultTransport.Clone()
-		if tr.TLSClientConfig == nil {
-			tr.TLSClientConfig = &tls.Config{}
-		}
-		tr.TLSClientConfig.RootCAs = caBundle
-		options.Transport = tr
+		Transport: transport,
 	}
 
 	return minio.New(endpoint, options)

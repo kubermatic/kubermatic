@@ -70,6 +70,13 @@ const (
 	// routed through a proxy. All user-supplied values are appended to
 	// this constant.
 	DefaultNoProxy = "127.0.0.1/8,localhost,.local,.local.,kubernetes,.default,.svc"
+
+	// Default image repository and tag.
+	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
+	DefaultApplicationManagerImageTag        = "c3221135593524a8641fdb5b4e18682f45465922"
+
+	DefaultApplicationCatalogRepository = "quay.io/kubermatic/applications"
+	DefaultApplicationCatalogTag        = "7fd8340dc8f0b3f6aae519301a1c9f8aff34d939"
 )
 
 func newSemver(s string) semver.Semver {
@@ -215,7 +222,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = kubermaticv1.KubermaticVersioningConfiguration{
-		Default: semver.NewSemverOrDie("v1.32.7"),
+		Default: semver.NewSemverOrDie("v1.33.5"),
 		// NB: We keep all patch releases that we supported, even if there's
 		// an auto-upgrade rule in place. That's because removing a patch
 		// release from this slice can break reconciliation loop for clusters
@@ -224,12 +231,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.30
-			newSemver("v1.30.5"),
-			newSemver("v1.30.9"),
-			newSemver("v1.30.11"),
-			newSemver("v1.30.12"),
-			newSemver("v1.30.14"),
 			// Kubernetes 1.31
 			newSemver("v1.31.1"),
 			newSemver("v1.31.5"),
@@ -237,34 +238,23 @@ var (
 			newSemver("v1.31.8"),
 			newSemver("v1.31.10"),
 			newSemver("v1.31.11"),
+			newSemver("v1.31.13"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),
 			newSemver("v1.32.4"),
 			newSemver("v1.32.6"),
 			newSemver("v1.32.7"),
+			newSemver("v1.32.9"),
 			// Kubernetes 1.33
 			newSemver("v1.33.0"),
 			newSemver("v1.33.2"),
 			newSemver("v1.33.3"),
+			newSemver("v1.33.5"),
+			// Kubernetes 1.34
+			newSemver("v1.34.1"),
 		},
 		Updates: []kubermaticv1.Update{
-			{
-				// Allow to next minor release
-				From: "1.29.*",
-				To:   "1.30.*",
-			},
-			// ======= 1.30 =======
-			{
-				// Allow to change to any patch version
-				From: "1.30.*",
-				To:   "1.30.*",
-			},
-			{
-				// Allow to next minor release
-				From: "1.30.*",
-				To:   "1.31.*",
-			},
 			// ======= 1.31 =======
 			{
 				// Allow to change to any patch version
@@ -293,6 +283,17 @@ var (
 				From: "1.33.*",
 				To:   "1.33.*",
 			},
+			{
+				// Allow to next minor release
+				From: "1.33.*",
+				To:   "1.34.*",
+			},
+			// ======= 1.34 =======
+			{
+				// Allow to change to any patch version
+				From: "1.34.*",
+				To:   "1.34.*",
+			},
 		},
 		ProviderIncompatibilities: []kubermaticv1.Incompatibility{
 			// In-tree cloud providers have been fully removed in Kubernetes 1.30.
@@ -313,9 +314,6 @@ var (
 		Default: semver.NewSemverOrDie("v1.31"),
 		Versions: []semver.Semver{
 			newSemver("v1.31"),
-			newSemver("v1.30"),
-			newSemver("v1.29"),
-			newSemver("v1.28"),
 		},
 	}
 
@@ -325,9 +323,6 @@ var (
 		Default: semver.NewSemverOrDie("v1.31"),
 		Versions: []semver.Semver{
 			newSemver("v1.31"),
-			newSemver("v1.30"),
-			newSemver("v1.29"),
-			newSemver("v1.28"),
 		},
 	}
 
@@ -478,6 +473,26 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if auth.IssuerRedirectURL == "" && configCopy.Spec.Ingress.Domain != "" {
 		auth.IssuerRedirectURL = fmt.Sprintf("https://%s/api/v1/kubeconfig", configCopy.Spec.Ingress.Domain)
 		logger.Debugw("Defaulting field", "field", "auth.issuerRedirectURL", "value", auth.IssuerRedirectURL)
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.Image.Repository == "" {
+		configCopy.Spec.Applications.CatalogManager.Image.Repository = DefaultApplicationManagerImageRepository
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.repository", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.Image.Tag == "" {
+		configCopy.Spec.Applications.CatalogManager.Image.Tag = DefaultApplicationManagerImageTag
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.tag", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL == "" {
+		configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL = DefaultApplicationCatalogRepository
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.registrySettings.registryURL", "value", configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL)
+	}
+
+	if configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag == "" {
+		configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag = DefaultApplicationCatalogTag
+		logger.Debugw("Defaulting field", "field", "applications.catalogManager.registrySettings.tag", "value", configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag)
 	}
 
 	configCopy.Spec.Auth = auth

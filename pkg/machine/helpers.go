@@ -28,7 +28,6 @@ import (
 	azure "k8c.io/machine-controller/sdk/cloudprovider/azure"
 	baremetal "k8c.io/machine-controller/sdk/cloudprovider/baremetal"
 	digitalocean "k8c.io/machine-controller/sdk/cloudprovider/digitalocean"
-	equinixmetal "k8c.io/machine-controller/sdk/cloudprovider/equinixmetal"
 	gce "k8c.io/machine-controller/sdk/cloudprovider/gce"
 	hetzner "k8c.io/machine-controller/sdk/cloudprovider/hetzner"
 	kubevirt "k8c.io/machine-controller/sdk/cloudprovider/kubevirt"
@@ -184,8 +183,6 @@ func ProviderTypeFromSpec(cloudProviderSpec interface{}) (kubermaticv1.ProviderT
 		return kubermaticv1.NutanixCloudProvider, nil
 	case openstack.RawConfig:
 		return kubermaticv1.OpenstackCloudProvider, nil
-	case equinixmetal.RawConfig:
-		return kubermaticv1.PacketCloudProvider, nil
 	case vmwareclouddirector.RawConfig:
 		return kubermaticv1.VMwareCloudDirectorCloudProvider, nil
 	case vsphere.RawConfig:
@@ -219,8 +216,6 @@ func DecodeCloudProviderSpec(cloudProvider kubermaticv1.ProviderType, pconfig pr
 		return nutanix.GetConfig(pconfig)
 	case kubermaticv1.OpenstackCloudProvider:
 		return openstack.GetConfig(pconfig)
-	case kubermaticv1.PacketCloudProvider:
-		return equinixmetal.GetConfig(pconfig)
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		return vmwareclouddirector.GetConfig(pconfig)
 	case kubermaticv1.VSphereCloudProvider:
@@ -284,9 +279,6 @@ func CompleteCloudProviderSpec(cloudProviderSpec interface{}, cloudProvider kube
 		return provider.CompleteNutanixProviderSpec(assert[nutanix.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Nutanix, os)
 	case kubermaticv1.OpenstackCloudProvider:
 		return provider.CompleteOpenstackProviderSpec(assert[openstack.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Openstack, os)
-	case kubermaticv1.PacketCloudProvider:
-		//nolint:staticcheck // Deprecated Packet provider is still used for backward compatibility until v2.29
-		return provider.CompleteEquinixMetalProviderSpec(assert[equinixmetal.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.Packet)
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		return provider.CompleteVMwareCloudDirectorProviderSpec(assert[vmwareclouddirector.RawConfig](cloudProviderSpec), cluster, datacenter.Spec.VMwareCloudDirector, os)
 	case kubermaticv1.VSphereCloudProvider:

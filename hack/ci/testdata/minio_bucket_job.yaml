@@ -22,11 +22,11 @@ spec:
     spec:
       containers:
         - name: mc
-          image: quay.io/kubermatic/util:2.6.0
+          image: quay.io/kubermatic/util:2.7.0
           args:
             - /bin/sh
             - -c
-            - mc --insecure config host add src https://minio.minio.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc --insecure mb src/kkpbackupe2e
+            - mc --insecure alias set src https://minio.minio.svc.cluster.local:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && mc --insecure mb src/kkpbackupe2e
           env:
             - name: MINIO_ACCESS_KEY
               valueFrom:

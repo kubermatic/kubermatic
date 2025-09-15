@@ -127,8 +127,6 @@ func (g *Generator) datacenter(ctx context.Context, client ctrlruntimeclient.Cli
 		datacenterName = secrets.Nutanix.KKPDatacenter
 	case kubermaticv1.OpenstackCloudProvider:
 		datacenterName = secrets.OpenStack.KKPDatacenter
-	case kubermaticv1.PacketCloudProvider:
-		datacenterName = secrets.Packet.KKPDatacenter
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		datacenterName = secrets.VMwareCloudDirector.KKPDatacenter
 	case kubermaticv1.VSphereCloudProvider:
@@ -176,8 +174,6 @@ func providerScenario(
 		return &nutanixScenario{baseScenario: base}, nil
 	case kubermaticv1.OpenstackCloudProvider:
 		return &openStackScenario{baseScenario: base}, nil
-	case kubermaticv1.PacketCloudProvider:
-		return &packetScenario{baseScenario: base}, nil
 	case kubermaticv1.VMwareCloudDirectorCloudProvider:
 		return &vmwareCloudDirectorScenario{baseScenario: base}, nil
 	case kubermaticv1.VSphereCloudProvider:

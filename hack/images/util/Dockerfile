@@ -18,16 +18,16 @@ LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
     # https://dl.minio.io/client/mc/release/linux-amd64/
-ENV MC_VERSION=RELEASE.2025-04-16T18-13-26Z \
-    KUBECTL_VERSION=v1.31.8 \
+ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
+    KUBECTL_VERSION=v1.33.4 \
     # https://github.com/helm/helm/releases
-    HELM_VERSION=v3.17.3 \
+    HELM_VERSION=v3.18.5 \
     # https://github.com/hashicorp/vault/releases
-    VAULT_VERSION=1.19.3 \
+    VAULT_VERSION=1.20.3 \
     # https://github.com/jqlang/jq/releases
-    JQ_VERSION=1.7.1 \
+    JQ_VERSION=1.8.1 \
     # https://github.com/mikefarah/yq/releases
-    YQ_VERSION=4.45.4
+    YQ_VERSION=4.47.1
 
 # ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
 RUN apk add --no-cache -U \

@@ -49,6 +49,72 @@ spec:
         memory: 150Mi
   # Applications contains configuration for Application settings.
   applications:
+    # CatalogManager configures the Application Catalog CatalogManager, which is responsible for managing ApplicationDefinitions
+    # in the cluster from specified OCI registries.
+    # Note: The Application Catalog CatalogManager requires its feature flag to be enabled as it is currently in beta.
+    catalogManager:
+      # Image configures the container image for the application-catalog manager.
+      image:
+        # Repository is used to override the application-catalog manager image repository.
+        # The default value is "quay.io/kubermatic/application-catalog-manager"
+        repository: quay.io/kubermatic/application-catalog-manager
+        # Tag is used to override the application-catalog manager image tag.
+        tag: c3221135593524a8641fdb5b4e18682f45465922
+      # Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
+      # When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
+      # When defined, only ApplicationDefinitions matching the specified criteria are processed.
+      limit:
+        # MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+        # For example, to select ApplicationDefinitions with a specific support tier (e.g., 'gold'),
+        # specify that tier here.
+        # When multiple tiers are specified, the Application Catalog Manager uses additive logic
+        # to determine which ApplicationDefinitions to retrieve from the OCI registry.
+        metadataSelector:
+          # Tiers specifies the support tiers to filter ApplicationDefinitions.
+          # ApplicationDefinitions matching any of the specified tiers will be selected.
+          tiers: null
+        # NameSelector defines criteria for selecting ApplicationDefinitions by name.
+        # Each name must correspond to an ApplicationDefinition's `metadata.name` field.
+        # When multiple names are specified, the Application Catalog Manager uses additive logic
+        # to retrieve all matching ApplicationDefinitions from the OCI registry.
+        # Example: Specifying ['nginx', 'cert-manager'] will retrieve only those specific ApplicationDefinitions.
+        nameSelector: null
+      # LogLevel specifies the logging verbosity level for the Application Catalog Manager.
+      logLevel: ""
+      # ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+      # By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+      # Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+      reconciliationInterval: 0s
+      # RegistrySettings configures the OCI registry from which the Application Catalog Manager
+      # retrieves ApplicationDefinition manifests.
+      registrySettings:
+        # Credentials optionally references a secret containing Helm registry authentication credentials.
+        # Either username/password or registryConfigFile can be specified, but not both.
+        credentials: null
+        # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+        # Example: oci://localhost:5000/myrepo
+        registryURL: quay.io/kubermatic/applications
+        # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+        # Example: v1.0.0
+        tag: 7fd8340dc8f0b3f6aae519301a1c9f8aff34d939
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This is an alpha field and requires enabling the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable. It can only be set for containers.
+        claims: null
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits: null
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests: null
     # DefaultApplicationCatalog contains configuration for the default application catalog.
     defaultApplicationCatalog:
       # Applications is a list of application definition names that should be installed in the master cluster.
@@ -496,7 +562,7 @@ spec:
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.32.7
+    default: v1.33.5
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
@@ -507,9 +573,6 @@ spec:
         # Versions lists the available versions.
         versions:
           - v1.31
-          - v1.30
-          - v1.29
-          - v1.28
       eks:
         # Default is the default version to offer users.
         default: v1.31
@@ -518,9 +581,6 @@ spec:
         # Versions lists the available versions.
         versions:
           - v1.31
-          - v1.30
-          - v1.29
-          - v1.28
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -549,16 +609,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.29.*
+        from: 1.31.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.30.*
-      - from: 1.30.*
-        to: 1.30.*
-      - from: 1.30.*
-        to: 1.31.*
-      - from: 1.31.*
         to: 1.31.*
       - from: 1.31.*
         to: 1.32.*
@@ -568,27 +622,30 @@ spec:
         to: 1.33.*
       - from: 1.33.*
         to: 1.33.*
+      - from: 1.33.*
+        to: 1.34.*
+      - from: 1.34.*
+        to: 1.34.*
     # Versions lists the available versions.
     versions:
-      - v1.30.5
-      - v1.30.9
-      - v1.30.11
-      - v1.30.12
-      - v1.30.14
       - v1.31.1
       - v1.31.5
       - v1.31.7
       - v1.31.8
       - v1.31.10
       - v1.31.11
+      - v1.31.13
       - v1.32.1
       - v1.32.3
       - v1.32.4
       - v1.32.6
       - v1.32.7
+      - v1.32.9
       - v1.33.0
       - v1.33.2
       - v1.33.3
+      - v1.33.5
+      - v1.34.1
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

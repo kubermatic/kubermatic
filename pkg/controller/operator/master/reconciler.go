@@ -22,9 +22,11 @@ import (
 
 	"go.uber.org/zap"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/applicationdefinitions"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	applicationcatalogmanager "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/application-catalog"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
@@ -35,10 +37,12 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -170,6 +174,13 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, r, logger, defaulted.Namespace)
 
+	// Clean up application catalog manager resources if feature gate is disabled
+	if !defaulted.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		if err := r.cleanupApplicationCatalogManagerResources(ctx, defaulted, logger); err != nil {
+			return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -180,8 +191,9 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 
 	logger.Debug("KubermaticConfiguration was deleted, cleaning up cluster-wide resources")
 
-	if err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, kubermatic.ClusterRoleBindingName(config)); err != nil {
-		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
+	err := r.cleanupApplicationCatalogManagerResources(ctx, config, logger)
+	if err != nil {
+		return fmt.Errorf("failed to clean up application catalog manager resources: %w", err)
 	}
 
 	validating := []string{
@@ -213,6 +225,69 @@ func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *ku
 	}
 
 	return kubernetes.TryRemoveFinalizer(ctx, r, config, common.CleanupFinalizer)
+}
+
+func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Context, cfg *kubermaticv1.KubermaticConfiguration, l *zap.SugaredLogger) error {
+	l.Debug("Cleaning up application catalog manager resources")
+
+	clusterRoleName, _ := applicationcatalogmanager.ClusterRoleReconciler(cfg)()
+	err := common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRole{}, clusterRoleName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager ClusterRole: %w", err)
+	}
+
+	clusterRoleBindingName, _ := applicationcatalogmanager.ClusterRoleBindingReconciler(cfg)()
+	err = common.CleanupClusterResource(ctx, r, &rbacv1.ClusterRoleBinding{}, clusterRoleBindingName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up ClusterRoleBinding: %w", err)
+	}
+
+	serviceAccountName, _ := applicationcatalogmanager.ServiceAccountReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &corev1.ServiceAccount{}, cfg.Namespace, serviceAccountName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager ServiceAccount: %w", err)
+	}
+
+	roleName, _ := applicationcatalogmanager.RoleReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &rbacv1.Role{}, cfg.Namespace, roleName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager Role: %w", err)
+	}
+
+	roleBindingName, _ := applicationcatalogmanager.RoleBindingReconciler()()
+	err = r.cleanupNamespacedResource(ctx, &rbacv1.RoleBinding{}, cfg.Namespace, roleBindingName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager RoleBinding: %w", err)
+	}
+
+	deploymentName, _ := applicationcatalogmanager.CatalogManagerDeploymentReconciler(cfg)()
+	err = r.cleanupNamespacedResource(ctx, &appsv1.Deployment{}, cfg.Namespace, deploymentName)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to clean up application catalog manager Deployment: %w", err)
+	}
+
+	err = r.reconcileAppDefManagementMeta(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to update ApplicationDefinitions metadata: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) cleanupNamespacedResource(ctx context.Context, obj ctrlruntimeclient.Object, namespace, name string) error {
+	key := ctrlruntimeclient.ObjectKey{Namespace: namespace, Name: name}
+	if err := r.Get(ctx, key, obj); err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to probe for %s: %w", key, err)
+	}
+
+	if err := r.Delete(ctx, obj); err != nil {
+		return fmt.Errorf("failed to delete %s: %w", key, err)
+	}
+
+	return nil
 }
 
 func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
@@ -257,6 +332,9 @@ func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *kuber
 		kubermatic.APIServiceAccountReconciler(),
 		common.WebhookServiceAccountReconciler(config),
 	}
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.ServiceAccountReconciler())
+	}
 
 	if err := reconciling.ReconcileServiceAccounts(ctx, reconcilers, config.Namespace, r.Client, modifier.Ownership(config, common.OperatorName, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %w", err)
@@ -271,6 +349,9 @@ func (r *Reconciler) reconcileRoles(ctx context.Context, config *kubermaticv1.Ku
 	reconcilers := []reconciling.NamedRoleReconcilerFactory{
 		common.WebhookRoleReconciler(config),
 		kubermatic.APIRoleReconciler(),
+	}
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.RoleReconciler())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, reconcilers, config.Namespace, r.Client); err != nil {
@@ -287,6 +368,9 @@ func (r *Reconciler) reconcileRoleBindings(ctx context.Context, config *kubermat
 		common.WebhookRoleBindingReconciler(config),
 		kubermatic.APIRoleBindingReconciler(),
 	}
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.RoleBindingReconciler())
+	}
 
 	if err := reconciling.ReconcileRoleBindings(ctx, reconcilers, config.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings: %w", err)
@@ -301,6 +385,9 @@ func (r *Reconciler) reconcileClusterRoles(ctx context.Context, config *kubermat
 	reconcilers := []reconciling.NamedClusterRoleReconcilerFactory{
 		kubermatic.APIClusterRoleReconciler(config),
 		common.WebhookClusterRoleReconciler(config),
+	}
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.ClusterRoleReconciler(config))
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, reconcilers, "", r.Client); err != nil {
@@ -317,6 +404,9 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *k
 		kubermatic.ClusterRoleBindingReconciler(config),
 		kubermatic.APIClusterRoleBindingReconciler(config),
 		common.WebhookClusterRoleBindingReconciler(config),
+	}
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.ClusterRoleBindingReconciler(config))
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, reconcilers, "", r.Client); err != nil {
@@ -339,6 +429,9 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 			kubermatic.APIDeploymentReconciler(config, r.workerName, r.versions),
 			kubermatic.UIDeploymentReconciler(config, r.versions),
 		)
+		if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+			reconcilers = append(reconcilers, applicationcatalogmanager.CatalogManagerDeploymentReconciler(config))
+		}
 	}
 
 	modifiers := []reconciling.ObjectModifier{
@@ -491,16 +584,69 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 
 	reconcilers = append(reconcilers, sysAppDefReconcilers...)
 
-	// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
-	defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config, false)
-	if err != nil {
-		return fmt.Errorf("failed to get default application definition reconciler factories: %w", err)
-	}
+	// we do not want to reconcile ApplicationDefinitions if the Feature Flag for the new application-catalog
+	// manager is set because this feature flags gives the reconciliation responsibility to the new
+	// out-tree application-catalog manager
+	if !config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		logger.Debug("Default ApplicationsDefinitions will be reconciled by KKP master controller")
 
-	reconcilers = append(reconcilers, defaultAppDefReconcilers...)
+		// For CE version this will return nil, for EE it will return the default application definition reconciler factories.
+		defaultAppDefReconcilers, err := DefaultApplicationCatalogReconcilerFactories(logger, config, false)
+		if err != nil {
+			return fmt.Errorf("failed to get default application definition reconciler factories: %w", err)
+		}
+
+		reconcilers = append(reconcilers, defaultAppDefReconcilers...)
+	} else {
+		logger.Debug(
+			"Default ApplicationDefinitions will be reconciled by the external (out-tree) Application Catalog Manager",
+		)
+	}
 
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
+	}
+
+	return nil
+}
+
+// reconcileAppDefManagementMeta reconciles existing ApplicationDefinition resources in the cluster
+// when the out-tree application-catalog manager is being deleted.
+// It sets "apps.k8c.io/managed-by-external-manager" annotation to false since the application-catalog
+// is being removed.
+func (r *Reconciler) reconcileAppDefManagementMeta(ctx context.Context) error {
+	apps := appskubermaticv1.ApplicationDefinitionList{}
+
+	err := r.List(ctx, &apps)
+	if err != nil {
+		return err
+	}
+
+	var errs []error
+	for i := range apps.Items {
+		app := apps.Items[i]
+		oldApp := app.DeepCopy()
+
+		anns := app.Annotations
+		if anns == nil {
+			continue
+		}
+
+		_, exists := app.Annotations[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation]
+		if !exists {
+			continue
+		}
+
+		anns[applicationcatalogmanager.ExternalApplicationCatalogManagerManagedByAnnotation] = "false"
+		app.SetAnnotations(anns)
+
+		err = r.Patch(ctx, &app, ctrlruntimeclient.MergeFrom(oldApp))
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
 	}
 
 	return nil

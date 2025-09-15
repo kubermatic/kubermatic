@@ -114,8 +114,6 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 	// gcrane ls --json mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v129:
-		return "1.29.11", nil
 	case v130:
 		return "1.30.7", nil
 	case v131:
@@ -124,8 +122,10 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 		return "1.32.4", nil
 	case v133:
 		fallthrough
+	case v134:
+		fallthrough
 	default:
-		return "1.33.0", nil
+		return "1.33.2", nil
 	}
 }
 

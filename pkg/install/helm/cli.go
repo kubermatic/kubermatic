@@ -18,6 +18,7 @@ package helm
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -63,6 +64,12 @@ func (c *cli) BuildChartDependencies(chartDirectory string, flags []string) (err
 	}
 
 	for idx, dep := range chart.Dependencies {
+		// Skip OCI repositories as they don't need to be added to helm repos
+		if strings.HasPrefix(dep.Repository, "oci://") {
+			c.logger.Debugf("Skipping OCI repository: %s", dep.Repository)
+			continue
+		}
+
 		repoName := fmt.Sprintf("dep-%s-%d", chart.Name, idx)
 		repoAddFlags := []string{
 			"repo",
@@ -255,7 +262,7 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 		globalArgs = append(globalArgs, "--namespace", namespace)
 	}
 
-	cmd := exec.Command(c.binary, append(globalArgs, args...)...)
+	cmd := exec.CommandContext(context.Background(), c.binary, append(globalArgs, args...)...)
 	// "If Env contains duplicate environment keys, only the last
 	// value in the slice for each duplicate key is used."
 	// Source: https://pkg.go.dev/os/exec#Cmd.Env

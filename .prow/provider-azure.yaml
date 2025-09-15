@@ -13,51 +13,6 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-azure-ubuntu-1.30
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-azure: "true"
-      preset-vault: "true"
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: RELEASES_TO_TEST
-              value: "1.30"
-            - name: DISTRIBUTIONS
-              value: ubuntu
-            - name: PROVIDER
-              value: "azure"
-            - name: DEFAULT_TIMEOUT_MINUTES
-              value: "20"
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          command:
-            - "./hack/ci/run-e2e-tests.sh"
-          # docker-in-docker needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 3.5
-            limits:
-              memory: 6Gi
-
   - name: pre-kubermatic-e2e-azure-ubuntu-1.31
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -74,7 +29,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -119,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -165,12 +120,58 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.24-node-20-kind-0.27-6
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: RELEASES_TO_TEST
               value: "1.33"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: PROVIDER
+              value: "azure"
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 6Gi
+
+  - name: pre-kubermatic-e2e-azure-ubuntu-1.34
+    decorate: true
+    run_if_changed: "(addons/csi/azure.*|addons/azure.*|pkg/provider/cloud/azure|pkg/resources/cloudconfig/azure)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-azure: "true"
+      preset-vault: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: RELEASES_TO_TEST
+              value: "1.34"
             - name: DISTRIBUTIONS
               value: ubuntu
             - name: PROVIDER

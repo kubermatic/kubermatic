@@ -91,9 +91,9 @@ spec:
         - /bin/sh
         - -c
         {{- if .Values.minio.certificateSecret }}
-        - mc --insecure config host add src https://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
+        - mc --insecure alias set src https://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
         {{- else }}
-        - mc config host add src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
+        - mc alias set src http://127.0.0.1:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY" && while true; do sleep 1h; done
         {{- end }}
         env:
         - name: MINIO_ACCESS_KEY

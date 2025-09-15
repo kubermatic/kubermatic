@@ -643,7 +643,6 @@ const (
 	KubeOneNutanix             = "nutanix"
 	KubeOneVMwareCloudDirector = "vmwareCloudDirector"
 	KubeOneOpenStack           = "openstack"
-	KubeOneEquinix             = "equinix"
 	KubeOneVSphere             = "vsphere"
 	KubeOneImage               = "quay.io/kubermatic/kubeone"
 	KubeOneImageTag            = "v1.7.2"
@@ -688,9 +687,6 @@ const (
 	// Below OpenStack constant is added for KubeOne Clusters.
 	OpenstackAuthURL = "authURL"
 	OpenstackRegion  = "region"
-
-	PacketAPIKey    = "apiKey"
-	PacketProjectID = "projectID"
 
 	KubeVirtKubeconfig = "kubeConfig"
 
@@ -1020,6 +1016,7 @@ const (
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
 	NetworkPolicyKyvernoWebhookAllow                = "kyverno-webhook-allow"
+	NetworkPolicyAuthorizationWebhookAllow          = "authorization-webhook-allow"
 )
 
 const (
@@ -1670,12 +1667,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		return nil, "", fmt.Errorf("ConfigMap does not contain key %q", CABundleConfigMapKey)
 	}
 
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM([]byte(bundle)) {
-		return nil, "", errors.New("CA bundle does not contain any valid certificates")
-	}
-
-	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, pool)
+	s3Client, err := s3.NewClient(endpoint, accessKeyID, secretAccessKey, bundle)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating S3 client: %w", err)
 	}

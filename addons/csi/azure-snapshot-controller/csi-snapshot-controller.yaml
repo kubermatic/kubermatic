@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.29.2/deploy/v1.29.2/csi-snapshot-controller.yaml
+# Source: https://github.com/kubernetes-sigs/azuredisk-csi-driver/blob/v1.33.4/deploy/v1.33.4/csi-snapshot-controller.yaml
 #
 # Changes:
 # - removal of tolerations
@@ -22,6 +22,7 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "azure" }}
+---
 ---
 kind: Deployment
 apiVersion: apps/v1
@@ -56,17 +57,23 @@ spec:
           type: RuntimeDefault
       containers:
         - name: csi-snapshot-controller
-          image: {{ Image "mcr.microsoft.com/oss/kubernetes-csi/snapshot-controller:v6.3.1" }}
+          image: {{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/snapshot-controller:v8.3.0" }}
           args:
             - "--v=2"
             - "--leader-election=true"
             - "--leader-election-namespace=kube-system"
+            - "--worker-threads=250"
+            - "--retry-interval-max=30m"
           resources:
             limits:
               cpu: 1
-              memory: 300Mi
+              memory: 500Mi
             requests:
               cpu: 10m
               memory: 20Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
 {{ end }}
 {{ end }}
