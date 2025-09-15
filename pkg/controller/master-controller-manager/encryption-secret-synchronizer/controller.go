@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -41,10 +42,9 @@ import (
 )
 
 const (
-	ControllerName           = "kkp-encryption-secret-synchronizer"
-	ClusterNameAnnotation    = "kubermatic.io/cluster-name"
-	EncryptionSecretPrefix   = "encryption-key-cluster-"
-	ClusterNamespaceTemplate = "cluster-%s"
+	ControllerName         = "kkp-encryption-secret-synchronizer"
+	ClusterNameAnnotation  = "kubermatic.io/cluster-name"
+	EncryptionSecretPrefix = "encryption-key-cluster-"
 )
 
 type reconciler struct {
@@ -122,64 +122,52 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, nil
 	}
 
-	err := r.reconcile(ctx, log, secret)
-	if err != nil {
-		r.recorder.Event(secret, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-	}
-
-	return reconcile.Result{}, err
+	return r.reconcile(ctx, log, secret)
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secret *corev1.Secret) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, secret *corev1.Secret) (reconcile.Result, error) {
 	clusterName, exists := secret.Annotations[ClusterNameAnnotation]
 	if !exists {
-		return fmt.Errorf("secret %s missing cluster name annotation %s", secret.Name, ClusterNameAnnotation)
+		return reconcile.Result{}, fmt.Errorf("secret %s missing cluster name annotation %s", secret.Name, ClusterNameAnnotation)
 	}
 
 	cluster, seedName, err := r.findTargetCluster(ctx, clusterName)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			log.Debug("Cluster not found, secret will be synced when cluster is created", "cluster", clusterName)
-			return nil
+			return reconcile.Result{}, nil
 		}
-		return err
+		return reconcile.Result{}, err
+	}
+
+	// Wait for cluster to have a namespace before syncing the secret
+	if cluster.Status.NamespaceName == "" {
+		return reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
 	if !cluster.IsEncryptionEnabled() {
-		log.Debug("Encryption not enabled on cluster, skipping secret sync", "cluster", clusterName)
-		return nil
+		return reconcile.Result{}, nil
 	}
 
 	seedClient, exists := r.seedClients[seedName]
 	if !exists {
-		return fmt.Errorf("seed client not found for %s", seedName)
+		return reconcile.Result{}, fmt.Errorf("seed client not found for %s", seedName)
 	}
 
-	clusterNamespace := fmt.Sprintf(ClusterNamespaceTemplate, cluster.Name)
+	clusterNamespace := cluster.Status.NamespaceName
 	syncSecret := secret.DeepCopy()
 	syncSecret.SetResourceVersion("")
+	syncSecret.SetNamespace(clusterNamespace)
 
 	namedSecretReconcilerFactory := []reconciling.NamedSecretReconcilerFactory{
 		secretReconcilerFactory(syncSecret),
 	}
 
-	existingSecret := &corev1.Secret{}
-	if err := seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{
-		Name:      syncSecret.Name,
-		Namespace: clusterNamespace,
-	}, existingSecret); err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to fetch Secret on seed cluster: %w", err)
-	}
-
-	if existingSecret.UID != "" && existingSecret.UID == syncSecret.UID {
-		return nil
-	}
-
 	if err := reconciling.ReconcileSecrets(ctx, namedSecretReconcilerFactory, clusterNamespace, seedClient); err != nil {
-		return fmt.Errorf("reconciling encryption secret %s failed: %w", syncSecret.Name, err)
+		return reconcile.Result{}, fmt.Errorf("reconciling encryption secret %s failed: %w", syncSecret.Name, err)
 	}
 
-	return nil
+	return reconcile.Result{}, nil
 }
 
 func (r *reconciler) findTargetCluster(ctx context.Context, clusterName string) (*kubermaticv1.Cluster, string, error) {
@@ -227,23 +215,32 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 		return nil
 	}
 
-	clusterName := strings.TrimPrefix(secret.Name, EncryptionSecretPrefix)
-	if clusterName == "" {
+	clusterName, exists := secret.Annotations[ClusterNameAnnotation]
+	if !exists {
 		return nil
 	}
 
 	return r.seedClients.Each(ctx, log, func(_ string, seedClient ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
-		clusterNamespace := fmt.Sprintf(ClusterNamespaceTemplate, clusterName)
+		cluster := &kubermaticv1.Cluster{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+
+		if cluster.Status.NamespaceName == "" {
+			return nil
+		}
 
 		err := seedClient.Delete(ctx, &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secret.Name,
-				Namespace: clusterNamespace,
+				Namespace: cluster.Status.NamespaceName,
 			},
 		})
 
 		if apierrors.IsNotFound(err) {
-			log.Debug("Secret already deleted from cluster namespace")
 			return nil
 		}
 
