@@ -3,6 +3,27 @@
 - [v2.28.0](#v2280)
 - [v2.28.1](#v2281)
 - [v2.28.2](#v2282)
+- [v2.28.3](#v2283)
+
+## v2.28.3
+
+**GitHub release: [v2.28.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.3)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.33.5/1.32.9/1.31.13 ([#14998](https://github.com/kubermatic/kubermatic/pull/14998))
+
+### Bugfixes
+
+- A bug was fixed where evicted kubevirt vms configured with evictionStrategy `LiveMigrate` were treated like vms with `External` evictionStrategy by deleting the related machine object ([#14736](https://github.com/kubermatic/kubermatic/pull/14736))
+- A caching functionality for used http.Transports when initializing minio clients in seed-controller-manager was added to avoid tcp connection leaks ([#14955](https://github.com/kubermatic/kubermatic/pull/14955))
+- Fix web terminal token expiration by refreshing expired tokens automatically ([#7551](https://github.com/kubermatic/dashboard/pull/7551))
+
+### Updates
+
+- Update Go version to 1.24.7 ([#14947](https://github.com/kubermatic/kubermatic/pull/14947), [#7555](https://github.com/kubermatic/dashboard/pull/7555))
+- Update machine-controller version to [v1.62.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.62.1) and operating-system-manager version to [v1.7.6](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.6) ([#15049](https://github.com/kubermatic/kubermatic/pull/15049))
+- Update nginx-ingress-controller version to 1.12.6 ([#15037](https://github.com/kubermatic/kubermatic/pull/15037))
 
 ## v2.28.2
 
