@@ -431,3 +431,33 @@ func KyvernoWebhookAllowReconciler(c *kubermaticv1.Cluster) reconciling.NamedNet
 		}
 	}
 }
+
+// AuthorizationWebhookAllowReconciler returns a func to create/update the apiserver authorization-webhook-allow egress policy.
+func AuthorizationWebhookAllowReconciler(egressIPs []net.IP) reconciling.NamedNetworkPolicyReconcilerFactory {
+	return func() (string, reconciling.NetworkPolicyReconciler) {
+		return resources.NetworkPolicyAuthorizationWebhookAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: ipListToPeers(egressIPs),
+						Ports: []networkingv1.NetworkPolicyPort{
+							{
+								Protocol: ptr.To(corev1.ProtocolTCP),
+								Port:     ptr.To(intstr.FromInt(443)),
+							},
+						},
+					},
+				},
+			}
+			return np, nil
+		}
+	}
+}
