@@ -122,6 +122,7 @@ require (
 
 require (
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
+	github.com/opencontainers/image-spec v1.1.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -364,7 +365,6 @@ require (
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/open-policy-agent/opa v0.68.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/openshift/custom-resource-status v1.1.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
 	github.com/pborman/uuid v1.2.1 // indirect

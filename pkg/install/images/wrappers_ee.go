@@ -25,12 +25,14 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/metering"
 	velero "k8c.io/kubermatic/v2/pkg/ee/cluster-backup/user-cluster/velero-controller/resources"
 	applicationcatalog "k8c.io/kubermatic/v2/pkg/ee/default-application-catalog"
 	kubelb "k8c.io/kubermatic/v2/pkg/ee/kubelb/resources/seed-cluster"
 	kyverno "k8c.io/kubermatic/v2/pkg/ee/kyverno"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -81,11 +83,24 @@ func DefaultAppsHelmCharts(
 	helmTimeout time.Duration,
 	registryPrefix string,
 ) iter.Seq2[*AppsHelmChart, error] {
+	var err error
+	var defaultAppDefReconcilers []func() (name string, reconciler func(existing *appskubermaticv1.ApplicationDefinition) (*appskubermaticv1.ApplicationDefinition, error))
 	log := kubermaticlog.NewDefault().Sugar()
-	defaultAppDefReconcilers, err := applicationcatalog.DefaultApplicationCatalogReconcilerFactories(log, config, true)
-	if err != nil {
-		return func(yield func(*AppsHelmChart, error) bool) {
-			yield(nil, fmt.Errorf("failed to get default application definition reconciler factories: %w", err))
+	if _, ok := config.Spec.FeatureGates[features.ExternalApplicationCatalogManager]; ok {
+		// when the feature gate is enabled, we use the external application catalog manager reconcilers
+		defaultAppDefReconcilers, err = applicationcatalog.ExternalApplicationCatalogReconcilerFactories(log, config, true)
+		if err != nil {
+			return func(yield func(*AppsHelmChart, error) bool) {
+				yield(nil, fmt.Errorf("failed to get external application definition reconciler factories: %w", err))
+			}
+		}
+	} else {
+		// when the feature gate is disabled, we use the default application catalog reconcilers
+		defaultAppDefReconcilers, err = applicationcatalog.DefaultApplicationCatalogReconcilerFactories(log, config, true)
+		if err != nil {
+			return func(yield func(*AppsHelmChart, error) bool) {
+				yield(nil, fmt.Errorf("failed to get default application definition reconciler factories: %w", err))
+			}
 		}
 	}
 
