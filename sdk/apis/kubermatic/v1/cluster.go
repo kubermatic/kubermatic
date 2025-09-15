@@ -1475,6 +1475,9 @@ type OpenstackCloudSpec struct {
 	// This requires Nova and Cinder to have matching availability zones configured.
 	// +optional
 	CinderTopologyEnabled bool `json:"cinderTopologyEnabled,omitempty"`
+	// List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
+	// +optional
+	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
 }
 
 // NOOP.
