@@ -101,6 +101,7 @@ type TemplateData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 	userClusterMLAEnabled                 bool
 	isKonnectivityEnabled                 bool
+	dra                                   bool
 
 	tunnelingAgentIP string
 
@@ -293,6 +294,11 @@ func (td *TemplateDataBuilder) WithAPIServerAlternateNames(altNames *certutil.Al
 func (td TemplateDataBuilder) Build() *TemplateData {
 	// TODO: Add validation
 	return &td.data
+}
+
+func (td *TemplateDataBuilder) WithDRA(draEnabled bool) *TemplateDataBuilder {
+	td.data.dra = draEnabled
+	return td
 }
 
 // GetViewerToken returns the viewer token.
@@ -1054,6 +1060,10 @@ func (d *TemplateData) ParseFluentBitRecords() (*kubermaticv1.AuditSidecarConfig
 	}
 
 	return config, nil
+}
+
+func (d *TemplateData) DRAEnabled() bool {
+	return d.dra
 }
 
 func expandVariables(input string, vars map[string]string) string {

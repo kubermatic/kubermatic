@@ -290,6 +290,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
+		WithDRA(r.features.DynamicResourceAllocation).
 		Build(), nil
 }
 
@@ -417,10 +418,10 @@ func GetDeploymentReconcilers(data *resources.TemplateData, features Features, v
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
 		apiserver.DeploymentReconciler(data, features.KubernetesOIDCAuthentication, features.DynamicResourceAllocation),
 		scheduler.DeploymentReconciler(data, features.DynamicResourceAllocation),
-		controllermanager.DeploymentReconciler(data, features.DynamicResourceAllocation),
+		controllermanager.DeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
 		userclusterwebhook.DeploymentReconciler(data),
-		operatingsystemmanager.DeploymentReconciler(data, features.DynamicResourceAllocation),
+		operatingsystemmanager.DeploymentReconciler(data),
 		operatingsystemmanager.WebhookDeploymentReconciler(data),
 	}
 
