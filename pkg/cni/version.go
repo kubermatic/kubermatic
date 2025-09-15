@@ -47,9 +47,10 @@ var (
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real semver
 			// See pkg/cni/cilium docs for details on introducing a new version.
-			"1.14.16",
 			"1.15.16",
 			"1.16.9",
+			"1.17.7",
+			"1.18.1",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -72,6 +73,7 @@ var (
 			"1.14.2",  // CVE-2023-44487 (High Severity)
 			"1.14.3",  // CVE-2024-28860, CVE-2024-28248 (High Severity)
 			"1.14.9",  // CVE-2024-47825 (Moderate Severity)
+			"1.14.16", // CVE-2025-23028, CVE-2025-23047 (Moderate Severity)
 			"1.15.3",  // CVE-2024-47825 (Moderate Severity)
 			"1.15.10", // CVE-2025-32793 (Moderate Severity)
 			"1.16.6",  // CVE-2025-32793 (Moderate Severity)
