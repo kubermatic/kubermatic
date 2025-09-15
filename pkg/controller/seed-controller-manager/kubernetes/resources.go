@@ -65,6 +65,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/tools/clientcmd"
 	certutil "k8s.io/client-go/util/cert"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -754,6 +755,28 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 			namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.OIDCIssuerAllowReconciler(ipList, cfg.Spec.Ingress.NamespaceOverride))
 		}
 
+		// Handle authorization webhook egress traffic
+		if c.Spec.IsWebhookAuthorizationEnabled() {
+			webhookURL, err := r.extractAuthorizationWebhookURL(ctx, c)
+			if err != nil {
+				return fmt.Errorf("failed to extract authorization webhook URL: %w", err)
+			}
+
+			if webhookURL != "" {
+				u, err := url.Parse(webhookURL)
+				if err != nil {
+					return fmt.Errorf("failed to parse authorization webhook URL %q: %w", webhookURL, err)
+				}
+
+				// allow egress traffic to authorization webhook's external IPs
+				ipList, err := hostnameToIPList(resolverCtx, u.Hostname())
+				if err != nil {
+					return fmt.Errorf("failed to resolve authorization webhook URL %q: %w", webhookURL, err)
+				}
+				namedNetworkPolicyReconcilerFactories = append(namedNetworkPolicyReconcilerFactories, apiserver.AuthorizationWebhookAllowReconciler(ipList))
+			}
+		}
+
 		apiIPs, err := r.fetchKubernetesServiceIPList(ctx, resolverCtx)
 		if err != nil {
 			return fmt.Errorf("failed to fetch Kubernetes API service IP list: %w", err)
@@ -1192,4 +1215,73 @@ func (r *Reconciler) auditWebhookSecretReconciler(ctx context.Context, data *res
 			return secret, nil
 		}
 	}
+}
+
+// extractAuthorizationWebhookURL extracts the server URL from authorization webhook configuration.
+// It handles both direct webhook configuration and authorization configuration file formats.
+func (r *Reconciler) extractAuthorizationWebhookURL(ctx context.Context, c *kubermaticv1.Cluster) (string, error) {
+	// Handle direct webhook configuration (AuthorizationWebhookConfiguration)
+	if c.Spec.IsWebhookAuthorizationEnabled() {
+		webhookConfig := c.Spec.AuthorizationConfig.AuthorizationWebhookConfiguration
+
+		// Get the webhook configuration secret from the user cluster namespace
+		webhookSecret := &corev1.Secret{}
+		err := r.Get(ctx, types.NamespacedName{
+			Name:      webhookConfig.SecretName,
+			Namespace: c.Status.NamespaceName,
+		}, webhookSecret)
+		if err != nil {
+			return "", fmt.Errorf("failed to get authorization webhook secret %q: %w", webhookConfig.SecretName, err)
+		}
+
+		// Extract webhook server URL from configuration
+		configData, exists := webhookSecret.Data[webhookConfig.SecretKey]
+		if !exists {
+			return "", fmt.Errorf("authorization webhook secret %q does not contain key %q", webhookConfig.SecretName, webhookConfig.SecretKey)
+		}
+
+		webhookURL, err := extractWebhookServerURL(configData)
+		if err != nil {
+			return "", fmt.Errorf("failed to extract server URL from authorization webhook configuration: %w", err)
+		}
+
+		return webhookURL, nil
+	}
+
+	return "", nil
+}
+
+// extractWebhookServerURL parses a Kubernetes authorization webhook configuration (kubeconfig format)
+// and extracts the server URL. Follows the established Kubermatic pattern for kubeconfig parsing.
+func extractWebhookServerURL(configData []byte) (string, error) {
+	// Parse the webhook configuration using the same pattern as other kubeconfig parsing in the codebase
+	config, err := clientcmd.Load(configData)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse webhook configuration: %w", err)
+	}
+
+	// Get the current context to find which cluster to use
+	currentContext := config.CurrentContext
+	if currentContext == "" {
+		return "", fmt.Errorf("no current context set in webhook configuration")
+	}
+
+	// Find the context
+	context, exists := config.Contexts[currentContext]
+	if !exists {
+		return "", fmt.Errorf("current context %q not found in webhook configuration", currentContext)
+	}
+
+	// Find the cluster referenced by the context
+	cluster, exists := config.Clusters[context.Cluster]
+	if !exists {
+		return "", fmt.Errorf("cluster %q not found in webhook configuration", context.Cluster)
+	}
+
+	// Extract the server URL
+	if cluster.Server == "" {
+		return "", fmt.Errorf("no server URL found in webhook configuration")
+	}
+
+	return cluster.Server, nil
 }

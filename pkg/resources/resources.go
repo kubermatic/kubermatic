@@ -1016,6 +1016,7 @@ const (
 	NetworkPolicySeedApiserverAllow                 = "seed-apiserver-allow"
 	NetworkPolicyApiserverInternalAllow             = "apiserver-internal-allow"
 	NetworkPolicyKyvernoWebhookAllow                = "kyverno-webhook-allow"
+	NetworkPolicyAuthorizationWebhookAllow          = "authorization-webhook-allow"
 )
 
 const (
