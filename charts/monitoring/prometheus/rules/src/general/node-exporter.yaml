@@ -417,7 +417,7 @@ groups:
             )
             /
             node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"}
-          ) * 100
+          ) * 100 > 80
         for: 5m
         labels:
           severity: warning
