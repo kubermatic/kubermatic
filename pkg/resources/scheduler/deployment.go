@@ -53,7 +53,7 @@ const (
 )
 
 // DeploymentReconciler returns the function to create and update the scheduler deployment.
-func DeploymentReconciler(data *resources.TemplateData, dra bool) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.SchedulerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			baseLabels := resources.BaseAppLabels(name, nil)
@@ -70,7 +70,7 @@ func DeploymentReconciler(data *resources.TemplateData, dra bool) reconciling.Na
 				// this can't be passed as two strings as the other parameters
 				"--profiling=false",
 			}
-			if dra {
+			if data.DRAEnabled() {
 				flags = append(flags, "--feature-gates=DynamicResourceAllocation=true")
 			}
 

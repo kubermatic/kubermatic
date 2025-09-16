@@ -64,7 +64,7 @@ const (
 )
 
 // DeploymentReconciler returns the function to create and update the API server deployment.
-func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication, dra bool) reconciling.NamedDeploymentReconcilerFactory {
+func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentReconcilerFactory {
 	enableEncryptionConfiguration := data.Cluster().IsEncryptionEnabled() || data.Cluster().IsEncryptionActive()
 
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -149,7 +149,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 
 			flags, err := getApiserverFlags(
 				data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled,
-				enableEncryptionConfiguration, auditWebhookBackendEnabled, dra,
+				enableEncryptionConfiguration, auditWebhookBackendEnabled,
 			)
 			if err != nil {
 				return nil, err
@@ -287,7 +287,7 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 func getApiserverFlags(
 	data *resources.TemplateData,
 	etcdEndpoints []string,
-	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled, dra bool,
+	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
 ) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
@@ -466,7 +466,7 @@ func getApiserverFlags(
 
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
 
-	if dra {
+	if data.DRAEnabled() {
 		featureGates = append(featureGates, "DynamicResourceAllocation=true")
 		flags = append(flags, "--runtime-config=resource.k8s.io/v1beta1=true")
 	}

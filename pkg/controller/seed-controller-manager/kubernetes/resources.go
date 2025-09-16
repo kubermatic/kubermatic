@@ -416,8 +416,8 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 // GetDeploymentReconcilers returns all DeploymentReconcilers that are currently in use.
 func GetDeploymentReconcilers(data *resources.TemplateData, features Features, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
-		apiserver.DeploymentReconciler(data, features.KubernetesOIDCAuthentication, features.DynamicResourceAllocation),
-		scheduler.DeploymentReconciler(data, features.DynamicResourceAllocation),
+		apiserver.DeploymentReconciler(data, features.KubernetesOIDCAuthentication),
+		scheduler.DeploymentReconciler(data),
 		controllermanager.DeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
 		userclusterwebhook.DeploymentReconciler(data),
