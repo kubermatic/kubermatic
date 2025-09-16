@@ -363,3 +363,62 @@ groups:
           severity: critical
           resource: "{{ $labels.node_name }}"
           service: "node-exporter"
+
+      - alert: HighClusterCPUUsage
+        annotations:
+          message: The average CPU usage across all nodes is above 80% for more than 5 minutes.
+        expr: avg (100 - (rate(node_cpu_seconds_total{app_kubernetes_io_name="node-exporter", mode="idle"}[5m]) * 100)) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: "node-exporter"
+
+      - alert: HighClusterMemoryUsage
+        annotations:
+          message: The average memory usage across all nodes is above 80% for more than 5 minutes.
+        expr: |
+          max(
+            (
+              sum(
+                node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter", node_name=~".*"}
+              - node_memory_MemFree_bytes{app_kubernetes_io_name="node-exporter", node_name=~".*"}
+              - node_memory_Buffers_bytes{app_kubernetes_io_name="node-exporter", node_name=~".*"}
+              - node_memory_Cached_bytes{app_kubernetes_io_name="node-exporter", node_name=~".*"}
+              )
+              /
+              sum(
+                node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter", node_name=~".*"}
+              )
+            ) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: "node-exporter"
+
+      - alert: HighNodeCPUUsage
+        annotations:
+          message: Node {{ $labels.node_name }} has CPU usage above 80% for more than 5 minutes.
+        expr: avg by (node_name) (100 - (rate(node_cpu_seconds_total{app_kubernetes_io_name="node-exporter", mode="idle"}[5m]) * 100)) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: "node-exporter"
+
+      - alert: HighNodeMemoryUsage
+        annotations:
+          message: Node {{ $labels.node_name }} has memory usage above 80% for more than 5 minutes.
+        expr: |
+          avg by (node_name) (
+            (
+              node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"}
+            - node_memory_MemFree_bytes{app_kubernetes_io_name="node-exporter"}
+            - node_memory_Buffers_bytes{app_kubernetes_io_name="node-exporter"}
+            - node_memory_Cached_bytes{app_kubernetes_io_name="node-exporter"}
+            )
+            /
+            node_memory_MemTotal_bytes{app_kubernetes_io_name="node-exporter"}
+          ) * 100
+        for: 5m
+        labels:
+          severity: warning
+          service: "node-exporter"
