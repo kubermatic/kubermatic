@@ -90,7 +90,10 @@ static_resources:
         envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
           "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
           explicit_http_config:
-            http2_protocol_options: {}
+            http2_protocol_options:
+              connection_keepalive:
+                interval: 5s
+                timeout: 2s
       load_assignment:
         cluster_name: proxy_cluster
         endpoints:
