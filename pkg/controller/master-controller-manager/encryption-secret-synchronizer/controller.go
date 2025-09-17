@@ -158,8 +158,11 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	}
 
 	if !cluster.IsEncryptionEnabled() {
-		log.Debug("Skipping cluster reconciling because encryption is not enabled")
-		// Remove finalizer if encryption is disabled
+		if kuberneteshelper.HasFinalizer(cluster, EncryptionSecretCleanupFinalizer) {
+			if err := r.cleanupEncryptionSecrets(ctx, log, cluster.Name); err != nil {
+				return fmt.Errorf("failed to cleanup encryption secrets for cluster with disabled encryption: %w", err)
+			}
+		}
 		return kuberneteshelper.TryRemoveFinalizer(ctx, seedClient, cluster, EncryptionSecretCleanupFinalizer)
 	}
 

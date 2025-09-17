@@ -124,6 +124,15 @@ func TestReconcile(t *testing.T) {
 			expectError:      false,
 			expectSecretInNS: false,
 		},
+		{
+			name: "scenario 6: cluster exists but encryption disabled - should cleanup secrets",
+			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
+				ClusterNameAnnotation: testClusterName,
+			}),
+			existingCluster:  generateCluster(testClusterName, false), // encryption disabled
+			expectError:      false,
+			expectSecretInNS: false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -337,6 +346,125 @@ func TestClusterDeletion(t *testing.T) {
 			} else {
 				if err != nil {
 					t.Errorf("expected UC secret to remain but got error: %v", err)
+				}
+			}
+		})
+	}
+}
+
+func TestEncryptionDisabledCleanup(t *testing.T) {
+	testCases := []struct {
+		name                string
+		clusterHasFinalizer bool
+		secretExists        bool
+		expectSecretDeleted bool
+		expectCleanupCalled bool
+	}{
+		{
+			name:                "encryption disabled with finalizer - should cleanup",
+			clusterHasFinalizer: true,
+			secretExists:        true,
+			expectSecretDeleted: true,
+			expectCleanupCalled: true,
+		},
+		{
+			name:                "encryption disabled without finalizer - should skip cleanup",
+			clusterHasFinalizer: false,
+			secretExists:        true,
+			expectSecretDeleted: false,
+			expectCleanupCalled: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			// Setup master client with secret if needed
+			var masterObjects []ctrlruntimeclient.Object
+			if tc.secretExists {
+				masterSecret := generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
+					ClusterNameAnnotation: testClusterName,
+				})
+				masterObjects = append(masterObjects, masterSecret)
+			}
+			masterClient := fake.NewClientBuilder().WithObjects(masterObjects...).Build()
+
+			// Cluster with encryption DISABLED
+			clusterWithEncryptionDisabled := &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testClusterName,
+					Labels: map[string]string{
+						kubermaticv1.WorkerNameLabelKey: "test-worker",
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					// No encryption configuration = disabled
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: clusterNamespace,
+				},
+			}
+
+			if tc.clusterHasFinalizer {
+				clusterWithEncryptionDisabled.Finalizers = []string{EncryptionSecretCleanupFinalizer}
+			}
+
+			seedClient := fake.NewClientBuilder().WithObjects(clusterWithEncryptionDisabled).Build()
+
+			r := &Reconciler{
+				log:          kubermaticlog.Logger,
+				recorder:     &record.FakeRecorder{},
+				masterClient: masterClient,
+				seedClients:  map[string]ctrlruntimeclient.Client{testSeedName: seedClient},
+				namespace:    masterNamespace,
+				workerName:   "test-worker",
+			}
+
+			request := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      testClusterName,
+					Namespace: testSeedName,
+				},
+			}
+
+			// Execute reconcile
+			_, err := r.Reconcile(ctx, request)
+			if err != nil {
+				t.Errorf("Reconcile failed: %v", err)
+			}
+
+			// Check if secret was deleted as expected
+			if tc.secretExists {
+				masterSecret := &corev1.Secret{}
+				err = masterClient.Get(ctx, types.NamespacedName{
+					Name:      testSecretName,
+					Namespace: masterNamespace,
+				}, masterSecret)
+
+				if tc.expectSecretDeleted {
+					if err == nil {
+						t.Errorf("Expected secret to be deleted but it still exists")
+					} else if !apierrors.IsNotFound(err) {
+						t.Errorf("Expected NotFound error but got: %v", err)
+					}
+				} else {
+					if err != nil {
+						t.Errorf("Expected secret to remain but got error: %v", err)
+					}
+				}
+			}
+
+			// Verify that finalizer was always removed (regardless of cleanup)
+			updatedCluster := &kubermaticv1.Cluster{}
+			err = seedClient.Get(ctx, types.NamespacedName{Name: testClusterName}, updatedCluster)
+			if err != nil {
+				t.Errorf("Failed to get updated cluster: %v", err)
+			}
+
+			for _, finalizer := range updatedCluster.Finalizers {
+				if finalizer == EncryptionSecretCleanupFinalizer {
+					t.Errorf("Expected finalizer to be removed when encryption is disabled, but it still exists")
 				}
 			}
 		})
