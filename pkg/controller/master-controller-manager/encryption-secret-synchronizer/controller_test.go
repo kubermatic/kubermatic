@@ -19,7 +19,6 @@ package encryptionsecretsynchonizer
 import (
 	"context"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -56,7 +55,7 @@ func TestReconcile(t *testing.T) {
 		expectSecretInNS bool
 	}{
 		{
-			name: "scenario 1: secret with annotation, cluster exists with encryption enabled",
+			name: "scenario 1: cluster exists with encryption enabled and secret exists",
 			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
 				ClusterNameAnnotation: testClusterName,
 			}),
@@ -67,7 +66,7 @@ func TestReconcile(t *testing.T) {
 			expectSecretInNS: true,
 		},
 		{
-			name: "scenario 2: secret with annotation, cluster exists but encryption disabled",
+			name: "scenario 2: cluster exists but encryption disabled",
 			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
 				ClusterNameAnnotation: testClusterName,
 			}),
@@ -75,36 +74,52 @@ func TestReconcile(t *testing.T) {
 			expectSecretInNS: false,
 		},
 		{
-			name: "scenario 3: secret with annotation, but cluster doesn't exist",
-			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
-				ClusterNameAnnotation: testClusterName,
-			}),
-			expectSecretInNS: false,
-		},
-		{
-			name: "scenario 4: secret without cluster annotation",
-			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
-				"other-annotation": "other-value",
-			}),
+			name:             "scenario 3: cluster exists with encryption enabled but secret doesn't exist",
 			existingCluster:  generateCluster(testClusterName, true),
-			expectError:      true,
 			expectSecretInNS: false,
 		},
 		{
-			name: "scenario 5: cluster exists but not ready, should trigger requeue",
+			name: "scenario 4: cluster exists but not ready (no namespace)",
 			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
 				ClusterNameAnnotation: testClusterName,
 			}),
 			existingCluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: testClusterName,
+					Labels: map[string]string{
+						kubermaticv1.WorkerNameLabelKey: "test-worker",
+					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
 						Enabled: true,
 					},
 				},
-				Status: kubermaticv1.ClusterStatus{},
+				Status: kubermaticv1.ClusterStatus{}, // No NamespaceName set
+			},
+			expectError:      false,
+			expectSecretInNS: false,
+		},
+		{
+			name: "scenario 5: cluster exists with wrong worker name",
+			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
+				ClusterNameAnnotation: testClusterName,
+			}),
+			existingCluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testClusterName,
+					Labels: map[string]string{
+						kubermaticv1.WorkerNameLabelKey: "wrong-worker",
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+						Enabled: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: clusterNamespace,
+				},
 			},
 			expectError:      false,
 			expectSecretInNS: false,
@@ -132,23 +147,24 @@ func TestReconcile(t *testing.T) {
 			}
 			seedClient := fake.NewClientBuilder().WithObjects(seedObjects...).Build()
 
-			r := &reconciler{
+			r := &Reconciler{
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: masterClient,
 				seedClients:  map[string]ctrlruntimeclient.Client{testSeedName: seedClient},
 				namespace:    masterNamespace,
+				workerName:   "test-worker",
 			}
 
 			request := reconcile.Request{
 				NamespacedName: types.NamespacedName{
-					Name:      testSecretName,
-					Namespace: masterNamespace,
+					Name:      testClusterName,
+					Namespace: testSeedName,
 				},
 			}
 
 			// Execute reconcile
-			result, err := r.Reconcile(ctx, request)
+			_, err := r.Reconcile(ctx, request)
 
 			// Check error expectation
 			if tc.expectError && err == nil {
@@ -158,76 +174,79 @@ func TestReconcile(t *testing.T) {
 				t.Errorf("expected no error but got: %v", err)
 			}
 
-			// For scenario 5, check that requeue is triggered (no error, but RequeueAfter is set)
-			if tc.name == "scenario 5: cluster exists but not ready, should trigger requeue" {
-				if err != nil {
-					t.Errorf("expected no error for requeue scenario but got: %v", err)
-				}
-				if result.RequeueAfter == 0 {
-					t.Errorf("expected RequeueAfter to be set but got: %v", result.RequeueAfter)
-				}
-				if result.RequeueAfter != 30*time.Second {
-					t.Errorf("expected RequeueAfter to be 30 seconds but got: %v", result.RequeueAfter)
-				}
-			}
-
 			// Check if secret should exist in cluster namespace
-			resultSecret := &corev1.Secret{}
-			err = seedClient.Get(ctx, types.NamespacedName{
-				Name:      testSecretName,
-				Namespace: clusterNamespace,
-			}, resultSecret)
+			if tc.existingCluster != nil && tc.existingCluster.Status.NamespaceName != "" {
+				resultSecret := &corev1.Secret{}
+				err = seedClient.Get(ctx, types.NamespacedName{
+					Name:      testSecretName,
+					Namespace: tc.existingCluster.Status.NamespaceName,
+				}, resultSecret)
 
-			if tc.expectSecretInNS {
-				if err != nil {
-					t.Errorf("expected secret to exist in cluster namespace but got error: %v", err)
-					return
-				}
+				if tc.expectSecretInNS {
+					if err != nil {
+						t.Errorf("expected secret to exist in cluster namespace but got error: %v", err)
+						return
+					}
 
-				if tc.expectedSecret != nil {
-					if resultSecret.Name != tc.expectedSecret.Name {
-						t.Errorf("expected secret name to be %q, got %q", tc.expectedSecret.Name, resultSecret.Name)
+					if tc.expectedSecret != nil {
+						if resultSecret.Name != tc.expectedSecret.Name {
+							t.Errorf("expected secret name to be %q, got %q", tc.expectedSecret.Name, resultSecret.Name)
+						}
+						if resultSecret.Namespace != tc.expectedSecret.Namespace {
+							t.Errorf("expected secret namespace to be %q, got %q", tc.expectedSecret.Namespace, resultSecret.Namespace)
+						}
+						if !reflect.DeepEqual(resultSecret.Data, tc.expectedSecret.Data) {
+							t.Errorf("expected secret data to be %q, got %q", tc.expectedSecret.Data, resultSecret.Data)
+						}
+						if !reflect.DeepEqual(resultSecret.Annotations, tc.expectedSecret.Annotations) {
+							t.Errorf("expected secret annotations to be %q, got %q", tc.expectedSecret.Annotations, resultSecret.Annotations)
+						}
 					}
-					if resultSecret.Namespace != tc.expectedSecret.Namespace {
-						t.Errorf("expected secret namespace to be %q, got %q", tc.expectedSecret.Namespace, resultSecret.Namespace)
+				} else {
+					if err == nil {
+						t.Errorf("expected secret not to exist in cluster namespace but it was found")
+					} else if !apierrors.IsNotFound(err) {
+						t.Errorf("expected NotFound error but got: %v", err)
 					}
-					if !reflect.DeepEqual(resultSecret.Data, tc.expectedSecret.Data) {
-						t.Errorf("expected secret data to be %q, got %q", tc.expectedSecret.Data, resultSecret.Data)
-					}
-					if !reflect.DeepEqual(resultSecret.Annotations, tc.expectedSecret.Annotations) {
-						t.Errorf("expected secret annotations to be %q, got %q", tc.expectedSecret.Annotations, resultSecret.Annotations)
-					}
-				}
-			} else {
-				if err == nil {
-					t.Errorf("expected secret not to exist in cluster namespace but it was found")
-				} else if !apierrors.IsNotFound(err) {
-					t.Errorf("expected NotFound error but got: %v", err)
 				}
 			}
 		})
 	}
 }
 
-func TestHandleDeletion(t *testing.T) {
+func TestClusterDeletion(t *testing.T) {
 	testCases := []struct {
-		name                string
-		secretToDelete      *corev1.Secret
-		existingSecretInNS  *corev1.Secret
-		expectSecretDeleted bool
+		name                      string
+		clusterToDelete           *kubermaticv1.Cluster
+		masterSecret              *corev1.Secret
+		existingSecretInUC        *corev1.Secret
+		expectMasterSecretDeleted bool
+		expectUCSecretDeleted     bool
 	}{
 		{
-			name: "deletion of encryption secret should remove secret from cluster namespace",
-			secretToDelete: &corev1.Secret{
+			name: "cluster deletion should remove secrets from both kubermatic and UC namespace",
+			clusterToDelete: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      testSecretName,
-					Namespace: masterNamespace,
-					Annotations: map[string]string{
-						ClusterNameAnnotation: testClusterName,
+					Name:              testClusterName,
+					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+					Finalizers:        []string{EncryptionSecretCleanupFinalizer},
+					Labels: map[string]string{
+						kubermaticv1.WorkerNameLabelKey: "test-worker",
 					},
 				},
+				Spec: kubermaticv1.ClusterSpec{
+					EncryptionConfiguration: &kubermaticv1.EncryptionConfiguration{
+						Enabled: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: clusterNamespace,
+				},
 			},
-			existingSecretInNS: &corev1.Secret{
+			masterSecret: generateEncryptionSecret(testSecretName, masterNamespace, map[string]string{
+				ClusterNameAnnotation: testClusterName,
+			}),
+			existingSecretInUC: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testSecretName,
 					Namespace: clusterNamespace,
@@ -236,26 +255,8 @@ func TestHandleDeletion(t *testing.T) {
 					"key": []byte(testEncryptionKey),
 				},
 			},
-			expectSecretDeleted: true,
-		},
-		{
-			name: "deletion of non-encryption secret should be ignored",
-			secretToDelete: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "regular-secret",
-					Namespace: masterNamespace,
-				},
-			},
-			existingSecretInNS: &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "regular-secret",
-					Namespace: clusterNamespace,
-				},
-				Data: map[string][]byte{
-					"key": []byte("some-data"),
-				},
-			},
-			expectSecretDeleted: false,
+			expectMasterSecretDeleted: true,
+			expectUCSecretDeleted:     true,
 		},
 	}
 
@@ -263,129 +264,80 @@ func TestHandleDeletion(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			// Setup seed client with existing secret
+			// Setup master client
+			var masterObjects []ctrlruntimeclient.Object
+			if tc.masterSecret != nil {
+				masterObjects = append(masterObjects, tc.masterSecret)
+			}
+			masterClient := fake.NewClientBuilder().WithObjects(masterObjects...).Build()
+
+			// Setup seed client with existing cluster and secret
 			var seedObjects []ctrlruntimeclient.Object
-			if tc.existingSecretInNS != nil {
-				seedObjects = append(seedObjects, tc.existingSecretInNS)
+			if tc.clusterToDelete != nil {
+				seedObjects = append(seedObjects, tc.clusterToDelete)
 			}
-
-			// Add test cluster with proper namespace set
-			if strings.HasPrefix(tc.secretToDelete.Name, EncryptionSecretPrefix) {
-				cluster := &kubermaticv1.Cluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: testClusterName,
-					},
-					Status: kubermaticv1.ClusterStatus{
-						NamespaceName: clusterNamespace,
-					},
-				}
-				seedObjects = append(seedObjects, cluster)
+			if tc.existingSecretInUC != nil {
+				seedObjects = append(seedObjects, tc.existingSecretInUC)
 			}
-
 			seedClient := fake.NewClientBuilder().WithObjects(seedObjects...).Build()
 
-			r := &reconciler{
-				log:         kubermaticlog.Logger,
-				recorder:    &record.FakeRecorder{},
-				seedClients: map[string]ctrlruntimeclient.Client{testSeedName: seedClient},
-				namespace:   masterNamespace,
+			r := &Reconciler{
+				log:          kubermaticlog.Logger,
+				recorder:     &record.FakeRecorder{},
+				masterClient: masterClient,
+				seedClients:  map[string]ctrlruntimeclient.Client{testSeedName: seedClient},
+				namespace:    masterNamespace,
+				workerName:   "test-worker",
 			}
 
-			err := r.handleDeletion(ctx, kubermaticlog.Logger, tc.secretToDelete)
+			request := reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      testClusterName,
+					Namespace: testSeedName,
+				},
+			}
+
+			_, err := r.Reconcile(ctx, request)
 			if err != nil {
-				t.Errorf("handleDeletion failed: %v", err)
+				t.Errorf("Reconcile failed: %v", err)
 			}
 
-			resultSecret := &corev1.Secret{}
-			err = seedClient.Get(ctx, types.NamespacedName{
-				Name:      tc.secretToDelete.Name,
-				Namespace: clusterNamespace,
-			}, resultSecret)
+			// Check if master secret was deleted
+			masterSecret := &corev1.Secret{}
+			err = masterClient.Get(ctx, types.NamespacedName{
+				Name:      testSecretName,
+				Namespace: masterNamespace,
+			}, masterSecret)
 
-			if tc.expectSecretDeleted {
+			if tc.expectMasterSecretDeleted {
 				if err == nil {
-					t.Errorf("expected secret to be deleted from cluster namespace but it still exists")
+					t.Errorf("expected master secret to be deleted but it still exists")
 				} else if !apierrors.IsNotFound(err) {
-					t.Errorf("expected NotFound error but got: %v", err)
+					t.Errorf("expected NotFound error for master secret but got: %v", err)
 				}
 			} else {
 				if err != nil {
-					t.Errorf("expected secret to remain in cluster namespace but got error: %v", err)
+					t.Errorf("expected master secret to remain but got error: %v", err)
 				}
 			}
-		})
-	}
-}
 
-func TestFindTargetCluster(t *testing.T) {
-	testCases := []struct {
-		name            string
-		clusterName     string
-		clusters        []*kubermaticv1.Cluster
-		expectedCluster *kubermaticv1.Cluster
-		expectedSeed    string
-		expectError     bool
-	}{
-		{
-			name:        "cluster found in first seed",
-			clusterName: testClusterName,
-			clusters: []*kubermaticv1.Cluster{
-				generateCluster(testClusterName, true),
-			},
-			expectedCluster: generateCluster(testClusterName, true),
-			expectedSeed:    testSeedName,
-		},
-		{
-			name:        "cluster not found in any seed",
-			clusterName: "non-existent-cluster",
-			clusters: []*kubermaticv1.Cluster{
-				generateCluster(testClusterName, true),
-			},
-			expectError: true,
-		},
-		{
-			name:        "no clusters in seeds",
-			clusterName: testClusterName,
-			clusters:    []*kubermaticv1.Cluster{},
-			expectError: true,
-		},
-	}
+			// Check if UC secret was deleted
+			ucSecret := &corev1.Secret{}
+			err = seedClient.Get(ctx, types.NamespacedName{
+				Name:      testSecretName,
+				Namespace: clusterNamespace,
+			}, ucSecret)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			var seedObjects []ctrlruntimeclient.Object
-			for _, cluster := range tc.clusters {
-				seedObjects = append(seedObjects, cluster)
-			}
-			seedClient := fake.NewClientBuilder().WithObjects(seedObjects...).Build()
-
-			r := &reconciler{
-				log:         kubermaticlog.Logger,
-				seedClients: map[string]ctrlruntimeclient.Client{testSeedName: seedClient},
-			}
-
-			cluster, seedName, err := r.findTargetCluster(ctx, tc.clusterName)
-
-			if tc.expectError {
+			if tc.expectUCSecretDeleted {
 				if err == nil {
-					t.Errorf("expected an error but got none")
+					t.Errorf("expected UC secret to be deleted but it still exists")
+				} else if !apierrors.IsNotFound(err) {
+					t.Errorf("expected NotFound error for UC secret but got: %v", err)
 				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("expected no error but got: %v", err)
-				return
-			}
-
-			if cluster.Name != tc.expectedCluster.Name {
-				t.Errorf("expected cluster name to be %q, got %q", tc.expectedCluster.Name, cluster.Name)
-			}
-
-			if seedName != tc.expectedSeed {
-				t.Errorf("expected seed name to be %q, got %q", tc.expectedSeed, seedName)
+			} else {
+				if err != nil {
+					t.Errorf("expected UC secret to remain but got error: %v", err)
+				}
 			}
 		})
 	}
@@ -409,6 +361,9 @@ func generateCluster(name string, encryptionEnabled bool) *kubermaticv1.Cluster 
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Labels: map[string]string{
+				kubermaticv1.WorkerNameLabelKey: "test-worker",
+			},
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Features: map[string]bool{},
