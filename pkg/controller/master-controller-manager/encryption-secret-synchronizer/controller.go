@@ -263,7 +263,7 @@ func secretReconcilerFactory(s *corev1.Secret) reconciling.NamedSecretReconciler
 	}
 }
 
-// enqueueAllClustersForEncryptionSecret enqueues all clusters that have encryption enabled
+// enqueueAllClustersForEncryptionSecret enqueues all clusters that have encryption enabled.
 func enqueueAllClustersForEncryptionSecret(clients kuberneteshelper.SeedClientMap, workerSelector labels.Selector, kubermaticNamespace string) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
 		secret := obj.(*corev1.Secret)
