@@ -72,6 +72,9 @@ const (
 	// Setting this feature flag to true will delegate the ApplicationDefinition reconciliation
 	// responsibility to the new external (out-tree) application catalog controller manager.
 	ExternalApplicationCatalogManager = "ExternalApplicationCatalogManager"
+
+	// DynamicResourceAllocation if enabled, it lets Kubernetes allocate resources to your Pods with DRA.
+	DynamicResourceAllocation = "DynamicResourceAllocation"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

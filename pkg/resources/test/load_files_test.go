@@ -904,7 +904,15 @@ func generateAndVerifyResources(t *testing.T, ctx context.Context, client ctrlru
 	controlPlaneModifier := modifier.ControlplaneComponent(cluster)
 
 	var deploymentReconcilers []reconciling.NamedDeploymentReconcilerFactory
-	deploymentReconcilers = append(deploymentReconcilers, kubernetescontroller.GetDeploymentReconcilers(data, true, versions)...)
+	deploymentReconcilers = append(deploymentReconcilers,
+		kubernetescontroller.GetDeploymentReconcilers(
+			data,
+			kubernetescontroller.Features{
+				KubernetesOIDCAuthentication: true,
+			},
+			versions,
+		)...,
+	)
 	deploymentReconcilers = append(deploymentReconcilers, monitoringcontroller.GetDeploymentReconcilers(data)...)
 	for _, factory := range deploymentReconcilers {
 		name, reconciler := factory()

@@ -71,6 +71,7 @@ type operatingSystemManagerData interface {
 	OperatingSystemManagerImageTag() string
 	OperatingSystemManagerImageRepository() string
 	OperatingSystemManagerDefaultOSPsDisabled() bool
+	DRAEnabled() bool
 }
 
 // DeploymentReconciler returns the function to create and update the operating system manager deployment.
@@ -278,8 +279,17 @@ func getFlags(data operatingSystemManagerData, cs *clusterSpec) []string {
 
 	flags = appendProxyFlags(flags, nodeSettings, data.Cluster())
 
+	kubeletFeatureGates := []string{}
 	if csiMigrationFeatureGates := data.GetCSIMigrationFeatureGates(nil); len(csiMigrationFeatureGates) > 0 {
-		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(csiMigrationFeatureGates, ","))
+		kubeletFeatureGates = append(kubeletFeatureGates, csiMigrationFeatureGates...)
+	}
+
+	if data.DRAEnabled() {
+		kubeletFeatureGates = append(kubeletFeatureGates, "DynamicResourceAllocation=true")
+	}
+
+	if len(kubeletFeatureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(kubeletFeatureGates, ","))
 	}
 
 	if imagePullSecret := data.Cluster().Spec.ImagePullSecret; imagePullSecret != nil {

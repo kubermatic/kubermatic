@@ -254,6 +254,9 @@ func getFlags(data *resources.TemplateData, version *semverlib.Version) ([]strin
 
 	featureGates := []string{"RotateKubeletServerCertificate=true"}
 	featureGates = append(featureGates, data.GetCSIMigrationFeatureGates(cluster.Status.Versions.ControllerManager.Semver())...)
+	if data.DRAEnabled() {
+		featureGates = append(featureGates, "DynamicResourceAllocation=true")
+	}
 
 	flags = append(flags, "--feature-gates")
 	flags = append(flags, strings.Join(featureGates, ","))

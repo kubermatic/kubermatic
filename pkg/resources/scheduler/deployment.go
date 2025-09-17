@@ -70,6 +70,9 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				// this can't be passed as two strings as the other parameters
 				"--profiling=false",
 			}
+			if data.DRAEnabled() {
+				flags = append(flags, "--feature-gates=DynamicResourceAllocation=true")
+			}
 
 			// Apply leader election settings
 			if lds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaseDurationSeconds; lds != nil {

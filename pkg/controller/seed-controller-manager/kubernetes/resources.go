@@ -290,6 +290,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
 		WithClusterBackupStorageLocation(cbsl).
 		WithVersions(r.versions).
+		WithDRA(r.features.DynamicResourceAllocation).
 		Build(), nil
 }
 
@@ -413,9 +414,9 @@ func (r *Reconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster
 }
 
 // GetDeploymentReconcilers returns all DeploymentReconcilers that are currently in use.
-func GetDeploymentReconcilers(data *resources.TemplateData, enableAPIserverOIDCAuthentication bool, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
+func GetDeploymentReconcilers(data *resources.TemplateData, features Features, versions kubermatic.Versions) []reconciling.NamedDeploymentReconcilerFactory {
 	deployments := []reconciling.NamedDeploymentReconcilerFactory{
-		apiserver.DeploymentReconciler(data, enableAPIserverOIDCAuthentication),
+		apiserver.DeploymentReconciler(data, features.KubernetesOIDCAuthentication),
 		scheduler.DeploymentReconciler(data),
 		controllermanager.DeploymentReconciler(data),
 		usercluster.DeploymentReconciler(data),
@@ -477,7 +478,7 @@ func (r *Reconciler) ensureDeployments(ctx context.Context, cluster *kubermaticv
 		modifier.ControlplaneComponent(cluster),
 	}
 
-	factories := GetDeploymentReconcilers(data, r.features.KubernetesOIDCAuthentication, r.versions)
+	factories := GetDeploymentReconcilers(data, r.features, r.versions)
 	return reconciling.ReconcileDeployments(ctx, factories, cluster.Status.NamespaceName, r, modifiers...)
 }
 

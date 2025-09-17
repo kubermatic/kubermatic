@@ -147,7 +147,10 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				}
 			}
 
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, enableEncryptionConfiguration, auditWebhookBackendEnabled)
+			flags, err := getApiserverFlags(
+				data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled,
+				enableEncryptionConfiguration, auditWebhookBackendEnabled,
+			)
 			if err != nil {
 				return nil, err
 			}
@@ -280,7 +283,12 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool) ([]string, error) {
+//nolint:gocyclo
+func getApiserverFlags(
+	data *resources.TemplateData,
+	etcdEndpoints []string,
+	enableOIDCAuthentication, auditLogEnabled, enableEncryption, auditWebhookEnabled bool,
+) ([]string, error) {
 	overrideFlags, err := getApiserverOverrideFlags(data)
 	if err != nil {
 		return nil, fmt.Errorf("could not get components override flags: %w", err)
@@ -457,6 +465,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	featureGates := data.GetCSIMigrationFeatureGates(cluster.Status.Versions.Apiserver.Semver())
+
+	if data.DRAEnabled() {
+		featureGates = append(featureGates, "DynamicResourceAllocation=true")
+		flags = append(flags, "--runtime-config=resource.k8s.io/v1beta1=true")
+	}
 
 	version := cluster.Status.Versions.Apiserver.Semver()
 	if gte131.Check(version) {
