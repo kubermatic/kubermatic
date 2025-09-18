@@ -55,7 +55,7 @@ const (
 	EncryptionSecretCleanupFinalizer = "kubermatic.k8c.io/cleanup-encryption-secrets"
 )
 
-// Reconciler is a controller which is responsible for synchronizing the
+// reconciler is a controller which is responsible for synchronizing the
 // encryption secrets (in the master cluster) as Secrets into the seed
 // clusters when clusters have encryption enabled.
 type reconciler struct {
