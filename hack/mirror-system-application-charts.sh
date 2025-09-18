@@ -43,6 +43,7 @@ declare -A CHART_URLS=(
   ["trivy"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-%s/trivy-%s.tgz"
   ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
   ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
+  ["kueue"]="oci://registry.k8s.io/kueue/charts/kueue"
 )
 
 # Default versions for each chart
@@ -63,6 +64,7 @@ declare -A CHART_VERSIONS=(
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
+  ["kueue"]="0.13.4"
 )
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
@@ -155,7 +157,13 @@ mirror_chart() {
   fi
 
   echo "   → Downloading chart..."
-  helm pull "${CHART_SOURCE}" --destination ./
+  if [[ "${CHART_SOURCE}" == oci://* ]]; then
+    # For OCI registries, use version-specific pull
+    helm pull "${CHART_SOURCE}" --version "${CHART_VERSION}" --destination ./
+  else
+    # For HTTP/HTTPS URLs, use direct URL
+    helm pull "${CHART_SOURCE}" --destination ./
+  fi
 
   echo "   → Pushing to registry..."
   helm push "./${CHART_PACKAGE}" "oci://${REGISTRY_HOST}/${REPOSITORY_PREFIX}"

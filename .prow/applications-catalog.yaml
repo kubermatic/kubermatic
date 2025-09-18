@@ -13,7 +13,7 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-kueue
+  - name: pre-kubermatic-appcatalog-kueue
     run_if_changed: "(pkg/ee/default-application-catalog/applicationdefinitions/kueue-app.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
