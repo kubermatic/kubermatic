@@ -112,7 +112,23 @@ metadata:
     app.kubernetes.io/version: "v1.14.1"
     app.kubernetes.io/managed-by: Helm
 data:
-  cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGRhdGFfZGlyOiAvZGF0YS9jb3J0ZXgvYWxlcnQtZGF0YQogIGVuYWJsZV9hcGk6IHRydWUKICBleHRlcm5hbF91cmw6IC9hcGkvcHJvbS9hbGVydG1hbmFnZXIKYWxlcnRtYW5hZ2VyX3N0b3JhZ2U6CiAgczM6CiAgICBidWNrZXRfbmFtZTogYWxlcnRtYW5hZ2VyCiAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgaW5zZWN1cmU6IHRydWUKYXBpOgogIHByb21ldGhldXNfaHR0cF9wcmVmaXg6IC9wcm9tZXRoZXVzCiAgcmVzcG9uc2VfY29tcHJlc3Npb25fZW5hYmxlZDogdHJ1ZQphdXRoX2VuYWJsZWQ6IHRydWUKYmxvY2tzX3N0b3JhZ2U6CiAgYnVja2V0X3N0b3JlOgogICAgYnVja2V0X2luZGV4OgogICAgICBlbmFibGVkOiB0cnVlCiAgICBpZ25vcmVfZGVsZXRpb25fbWFya19kZWxheTogMWgKICAgIHN5bmNfZGlyOiAvZGF0YQogIHMzOgogICAgYnVja2V0X25hbWU6IGNvcnRleAogICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgIGluc2VjdXJlOiB0cnVlCiAgdHNkYjoKICAgIGNsb3NlX2lkbGVfdHNkYl90aW1lb3V0OiAzNjVtCiAgICBkaXI6IC9kYXRhCiAgICBmbHVzaF9ibG9ja3Nfb25fc2h1dGRvd246IHRydWUKICAgIHJldGVudGlvbl9wZXJpb2Q6IDM2NW0KICAgIHdhbF9jb21wcmVzc2lvbl9lbmFibGVkOiB0cnVlCmNvbXBhY3RvcjoKICBkYXRhX2RpcjogL2RhdGEvY29ydGV4L2NvbXBhY3RvcgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKZGlzdHJpYnV0b3I6CiAgaGFfdHJhY2tlcjoKICAgIGVuYWJsZV9oYV90cmFja2VyOiB0cnVlCiAgICBrdnN0b3JlOgogICAgICBjb25zdWw6CiAgICAgICAgaG9zdDogY29uc3VsLWNvbnN1bC1zZXJ2ZXI6ODUwMAogICAgICBzdG9yZTogY29uc3VsCiAgcG9vbDoKICAgIGhlYWx0aF9jaGVja19pbmdlc3RlcnM6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICBzaGFyZF9ieV9hbGxfbGFiZWxzOiB0cnVlCmZyb250ZW5kOgogIGxvZ19xdWVyaWVzX2xvbmdlcl90aGFuOiAxMHMKaW5nZXN0ZXI6CiAgbGlmZWN5Y2xlcjoKICAgIGZpbmFsX3NsZWVwOiAzMHMKICAgIGpvaW5fYWZ0ZXI6IDEwcwogICAgbnVtX3Rva2VuczogNTEyCiAgICBvYnNlcnZlX3BlcmlvZDogMTBzCiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIHN0b3JlOiBtZW1iZXJsaXN0CiAgICAgIHJlcGxpY2F0aW9uX2ZhY3RvcjogMwppbmdlc3Rlcl9jbGllbnQ6CiAgZ3JwY19jbGllbnRfY29uZmlnOgogICAgbWF4X3JlY3ZfbXNnX3NpemU6IDEwNDg1NzYwCiAgICBtYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAKbGltaXRzOgogIGFjY2VwdF9oYV9zYW1wbGVzOiB0cnVlCiAgZW5mb3JjZV9tZXRyaWNfbmFtZTogdHJ1ZQogIG1heF9sYWJlbF9uYW1lc19wZXJfc2VyaWVzOiA0MAogIG1heF9xdWVyeV9sb29rYmFjazogMHMKICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczoKICAtIGNvcnRleC1pbmdlc3Rlci1oZWFkbGVzcwpxdWVyaWVyOgogIGFjdGl2ZV9xdWVyeV90cmFja2VyX2RpcjogL2RhdGEvYWN0aXZlLXF1ZXJ5LXRyYWNrZXIKICBxdWVyeV9pbmdlc3RlcnNfd2l0aGluOiAzNjVtCiAgcXVlcnlfc3RvcmVfYWZ0ZXI6IDM2MG0KICBzdG9yZV9nYXRld2F5X2FkZHJlc3NlczogfC0KICAgIApxdWVyeV9yYW5nZToKICBhbGlnbl9xdWVyaWVzX3dpdGhfc3RlcDogdHJ1ZQogIGNhY2hlX3Jlc3VsdHM6IHRydWUKICByZXN1bHRzX2NhY2hlOgogICAgY2FjaGU6CiAgICAgIG1lbWNhY2hlZDoKICAgICAgICBleHBpcmF0aW9uOiAxaAogICAgICBtZW1jYWNoZWRfY2xpZW50OgogICAgICAgIHRpbWVvdXQ6IDFzCiAgc3BsaXRfcXVlcmllc19ieV9pbnRlcnZhbDogMjRoCnJ1bGVyOgogIGVuYWJsZV9hbGVydG1hbmFnZXJfZGlzY292ZXJ5OiB0cnVlCiAgZW5hYmxlX2FwaTogdHJ1ZQogIHJpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdApydWxlcl9zdG9yYWdlOgogIHMzOgogICAgYnVja2V0X25hbWU6IGNvcnRleC1ydWxlcgogICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgIGluc2VjdXJlOiB0cnVlCnJ1bnRpbWVfY29uZmlnOgogIGZpbGU6IC9ldGMvY29ydGV4LXJ1bnRpbWUtY2ZnL3J1bnRpbWUtY29uZmlnLnlhbWwKICBwZXJpb2Q6IDEwcwpzZXJ2ZXI6CiAgZ3JwY19saXN0ZW5fcG9ydDogOTA5NQogIGdycGNfc2VydmVyX21heF9jb25jdXJyZW50X3N0cmVhbXM6IDEwMDAwCiAgZ3JwY19zZXJ2ZXJfbWF4X3JlY3ZfbXNnX3NpemU6IDEwNDg1NzYwCiAgZ3JwY19zZXJ2ZXJfbWF4X3NlbmRfbXNnX3NpemU6IDEwNDg1NzYwCiAgaHR0cF9saXN0ZW5fcG9ydDogODA4MApzdG9yYWdlOgogIGVuZ2luZTogYmxvY2tzCnN0b3JlX2dhdGV3YXk6CiAgc2hhcmRpbmdfZW5hYmxlZDogdHJ1ZQogIHNoYXJkaW5nX3Jpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdAogICAgcmVwbGljYXRpb25fZmFjdG9yOiAy
+  cortex.yaml: YWxlcnRtYW5hZ2VyOgogIGRhdGFfZGlyOiAvZGF0YS9jb3J0ZXgvYWxlcnQtZGF0YQogIGVuYWJsZV9hcGk6IHRydWUKICBleHRlcm5hbF91cmw6IC9hcGkvcHJvbS9hbGVydG1hbmFnZXIKYWxlcnRtYW5hZ2VyX3N0b3JhZ2U6CiAgczM6CiAgICBidWNrZXRfbmFtZTogYWxlcnRtYW5hZ2VyCiAgICBlbmRwb2ludDogbWluaW86OTAwMAogICAgaW5zZWN1cmU6IHRydWUKYXBpOgogIHByb21ldGhldXNfaHR0cF9wcmVmaXg6IC9wcm9tZXRoZXVzCiAgcmVzcG9uc2VfY29tcHJlc3Npb25fZW5hYmxlZDogdHJ1ZQphdXRoX2VuYWJsZWQ6IHRydWUKYmxvY2tzX3N0b3JhZ2U6CiAgYnVja2V0X3N0b3JlOgogICAgYnVja2V0X2luZGV4OgogICAgICBlbmFibGVkOiB0cnVlCiAgICBpZ25vcmVfZGVsZXRpb25fbWFya19kZWxheTogMWgKICAgIHN5bmNfZGlyOiAvZGF0YQogIHMzOgogICAgYnVja2V0X25hbWU6IGNvcnRleAogICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgIGluc2VjdXJlOiB0cnVlCiAgdHNkYjoKICAgIGNsb3NlX2lkbGVfdHNkYl90aW1lb3V0OiAzNjVtCiAgICBkaXI6IC9kYXRhCiAgICBmbHVzaF9ibG9ja3Nfb25fc2h1dGRvd246IHRydWUKICAgIHJldGVudGlvbl9wZXJpb2Q6IDM2NW0KICAgIHdhbF9jb21wcmVzc2lvbl9lbmFibGVkOiB0cnVlCmNvbXBhY3RvcjoKICBkYXRhX2RpcjogL2RhdGEvY29ydGV4L2NvbXBhY3RvcgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKZGlzdHJpYnV0b3I6CiAgaGFfdHJhY2tlcjoKICAgIGVuYWJsZV9oYV90cmFja2VyOiB0cnVlCiAgICBrdnN0b3JlOgogICAgICBjb25zdWw6CiAgICAgICAgaG9zdDogY29uc3VsLWNvbnN1bC1zZXJ2ZXI6ODUwMAogICAgICBzdG9yZTogY29uc3VsCiAgcG9vbDoKICAgIGhlYWx0aF9jaGVja19pbmdlc3RlcnM6IHRydWUKICByaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICBzaGFyZF9ieV9hbGxfbGFiZWxzOiB0cnVlCmZyb250ZW5kOgogIGxvZ19xdWVyaWVzX2xvbmdlcl90aGFuOiAxMHMKaW5nZXN0ZXI6CiAgbGlmZWN5Y2xlcjoKICAgIGZpbmFsX3NsZWVwOiAzMHMKICAgIGpvaW5fYWZ0ZXI6IDEwcwogICAgbnVtX3Rva2VuczogNTEyCiAgICBvYnNlcnZlX3BlcmlvZDogMTBzCiAgICByaW5nOgogICAgICBrdnN0b3JlOgogICAgICAgIHN0b3JlOiBtZW1iZXJsaXN0CiAgICAgIHJlcGxpY2F0aW9uX2ZhY3RvcjogMwppbmdlc3Rlcl9jbGllbnQ6CiAgZ3JwY19jbGllbnRfY29uZmlnOgogICAgbWF4X3JlY3ZfbXNnX3NpemU6IDEwNDg1NzYwCiAgICBtYXhfc2VuZF9tc2dfc2l6ZTogMTA0ODU3NjAKbGltaXRzOgogIGFjY2VwdF9oYV9zYW1wbGVzOiB0cnVlCiAgZW5mb3JjZV9tZXRyaWNfbmFtZTogdHJ1ZQogIG1heF9sYWJlbF9uYW1lc19wZXJfc2VyaWVzOiA0MAogIG1heF9xdWVyeV9sb29rYmFjazogMHMKICByZWplY3Rfb2xkX3NhbXBsZXM6IHRydWUKICByZWplY3Rfb2xkX3NhbXBsZXNfbWF4X2FnZTogMTY4aAptZW1iZXJsaXN0OgogIGJpbmRfcG9ydDogNzk0NgogIGpvaW5fbWVtYmVyczoKICAtIGNvcnRleC1pbmdlc3Rlci1oZWFkbGVzcwpxdWVyaWVyOgogIGFjdGl2ZV9xdWVyeV90cmFja2VyX2RpcjogL2RhdGEvYWN0aXZlLXF1ZXJ5LXRyYWNrZXIKICBxdWVyeV9pbmdlc3RlcnNfd2l0aGluOiAzNjVtCiAgcXVlcnlfc3RvcmVfYWZ0ZXI6IDM2MG0KICBzdG9yZV9nYXRld2F5X2FkZHJlc3NlczogfC0KICAgIApxdWVyeV9yYW5nZToKICBhbGlnbl9xdWVyaWVzX3dpdGhfc3RlcDogdHJ1ZQogIGNhY2hlX3Jlc3VsdHM6IHRydWUKICByZXN1bHRzX2NhY2hlOgogICAgY2FjaGU6CiAgICAgIG1lbWNhY2hlZDoKICAgICAgICBleHBpcmF0aW9uOiAxaAogICAgICBtZW1jYWNoZWRfY2xpZW50OgogICAgICAgIHRpbWVvdXQ6IDFzCiAgc3BsaXRfcXVlcmllc19ieV9pbnRlcnZhbDogMjRoCnJ1bGVyOgogIGVuYWJsZV9hbGVydG1hbmFnZXJfZGlzY292ZXJ5OiB0cnVlCiAgZW5hYmxlX2FwaTogdHJ1ZQogIHJpbmc6CiAgICBrdnN0b3JlOgogICAgICBzdG9yZTogbWVtYmVybGlzdApydWxlcl9zdG9yYWdlOgogIHMzOgogICAgYnVja2V0X25hbWU6IGNvcnRleC1ydWxlcgogICAgZW5kcG9pbnQ6IG1pbmlvOjkwMDAKICAgIGluc2VjdXJlOiB0cnVlCnJ1bnRpbWVfY29uZmlnOgogIGZpbGU6IC9ldGMvY29ydGV4LXJ1bnRpbWUtY29uZmlnL3J1bnRpbWVfY29uZmlnLnlhbWwKc2VydmVyOgogIGdycGNfbGlzdGVuX3BvcnQ6IDkwOTUKICBncnBjX3NlcnZlcl9tYXhfY29uY3VycmVudF9zdHJlYW1zOiAxMDAwMAogIGdycGNfc2VydmVyX21heF9yZWN2X21zZ19zaXplOiAxMDQ4NTc2MAogIGdycGNfc2VydmVyX21heF9zZW5kX21zZ19zaXplOiAxMDQ4NTc2MAogIGh0dHBfbGlzdGVuX3BvcnQ6IDgwODAKc3RvcmFnZToKICBlbmdpbmU6IGJsb2NrcwpzdG9yZV9nYXRld2F5OgogIHNoYXJkaW5nX2VuYWJsZWQ6IHRydWUKICBzaGFyZGluZ19yaW5nOgogICAga3ZzdG9yZToKICAgICAgc3RvcmU6IG1lbWJlcmxpc3QKICAgIHJlcGxpY2F0aW9uX2ZhY3RvcjogMg==
+---
+# Source: cortex/charts/cortex/templates/runtime-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-cortex-runtime-config
+  namespace: default
+  labels:
+    helm.sh/chart: cortex-2.1.0
+    app.kubernetes.io/name: cortex
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/version: "v1.14.1"
+    app.kubernetes.io/managed-by: Helm
+data:
+  runtime_config.yaml: |
+    {}
 ---
 # Source: cortex/charts/cortex/charts/memcached-blocks-index/templates/metrics-svc.yaml
 apiVersion: v1
@@ -727,7 +743,7 @@ spec:
         app.kubernetes.io/component: distributor
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
@@ -846,7 +862,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: querier
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
@@ -981,7 +997,7 @@ spec:
         app.kubernetes.io/managed-by: Helm
         app.kubernetes.io/component: query-frontend
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1095,7 +1111,7 @@ spec:
         app.kubernetes.io/component: ruler
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage,tmp
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
@@ -1630,7 +1646,7 @@ spec:
         app.kubernetes.io/component: alertmanager
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1768,7 +1784,7 @@ spec:
         app.kubernetes.io/component: compactor
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -1903,7 +1919,7 @@ spec:
         app.kubernetes.io/component: ingester
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
@@ -2045,7 +2061,7 @@ spec:
         app.kubernetes.io/component: store-gateway
         app.kubernetes.io/part-of: memberlist
       annotations:
-        checksum/config: 911b5b6fe52178872afd166bae86cf360898db35141c02e32be23c24954673df
+        checksum/config: 5b541a7c96a8f58575ad4f84d5fef482c5eab280187f2c7b0add1a7c026268df
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
     spec:
