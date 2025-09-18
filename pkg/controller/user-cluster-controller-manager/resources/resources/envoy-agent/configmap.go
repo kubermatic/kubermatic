@@ -92,8 +92,8 @@ static_resources:
           explicit_http_config:
             http2_protocol_options:
               connection_keepalive:
-                interval: 5s
-                timeout: 2s
+                interval: 2s
+                timeout: 1s
       load_assignment:
         cluster_name: proxy_cluster
         endpoints:
