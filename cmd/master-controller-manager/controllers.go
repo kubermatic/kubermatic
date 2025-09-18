@@ -305,6 +305,7 @@ func encryptionSecretSynchronizerFactoryCreator(ctrlCtx *controllerContext) seed
 			seedManagerMap,
 			ctrlCtx.namespace,
 			ctrlCtx.log,
+			ctrlCtx.workerName,
 			ctrlCtx.workerCount,
 		)
 	}
