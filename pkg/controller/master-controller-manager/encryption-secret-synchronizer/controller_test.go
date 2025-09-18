@@ -156,7 +156,7 @@ func TestReconcile(t *testing.T) {
 			}
 			seedClient := fake.NewClientBuilder().WithObjects(seedObjects...).Build()
 
-			r := &Reconciler{
+			r := &reconciler{
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: masterClient,
@@ -290,7 +290,7 @@ func TestClusterDeletion(t *testing.T) {
 			}
 			seedClient := fake.NewClientBuilder().WithObjects(seedObjects...).Build()
 
-			r := &Reconciler{
+			r := &reconciler{
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: masterClient,
@@ -412,7 +412,7 @@ func TestEncryptionDisabledCleanup(t *testing.T) {
 
 			seedClient := fake.NewClientBuilder().WithObjects(clusterWithEncryptionDisabled).Build()
 
-			r := &Reconciler{
+			r := &reconciler{
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: masterClient,

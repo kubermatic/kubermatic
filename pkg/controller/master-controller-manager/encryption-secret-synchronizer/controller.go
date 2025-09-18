@@ -58,7 +58,7 @@ const (
 // Reconciler is a controller which is responsible for synchronizing the
 // encryption secrets (in the master cluster) as Secrets into the seed
 // clusters when clusters have encryption enabled.
-type Reconciler struct {
+type reconciler struct {
 	masterClient ctrlruntimeclient.Client
 	log          *zap.SugaredLogger
 	recorder     record.EventRecorder
@@ -68,7 +68,7 @@ type Reconciler struct {
 }
 
 func Add(
-	mgr manager.Manager,
+	masterManager manager.Manager,
 	seedManagers map[string]manager.Manager,
 	namespace string,
 	log *zap.SugaredLogger,
@@ -80,24 +80,24 @@ func Add(
 		return fmt.Errorf("failed to build worker-name selector: %w", err)
 	}
 
-	reconciler := &Reconciler{
+	r := &reconciler{
 		log:          log.Named(ControllerName),
 		workerName:   workerName,
-		masterClient: mgr.GetClient(),
-		recorder:     mgr.GetEventRecorderFor(ControllerName),
+		masterClient: masterManager.GetClient(),
+		recorder:     masterManager.GetEventRecorderFor(ControllerName),
 		seedClients:  kuberneteshelper.SeedClientMap{},
 		namespace:    namespace,
 	}
 
-	bldr := builder.ControllerManagedBy(mgr).
+	bldr := builder.ControllerManagedBy(masterManager).
 		Named(ControllerName).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: numWorkers,
 		}).
-		Watches(&corev1.Secret{}, enqueueAllClustersForEncryptionSecret(reconciler.seedClients, workerSelector, reconciler.namespace))
+		Watches(&corev1.Secret{}, enqueueAllClustersForEncryptionSecret(r.seedClients, workerSelector, r.namespace))
 
 	for seedName, seedManager := range seedManagers {
-		reconciler.seedClients[seedName] = seedManager.GetClient()
+		r.seedClients[seedName] = seedManager.GetClient()
 
 		bldr.WatchesRawSource(source.Kind(
 			seedManager.GetCache(),
@@ -107,11 +107,11 @@ func Add(
 		))
 	}
 
-	_, err = bldr.Build(reconciler)
+	_, err = bldr.Build(r)
 	return err
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -119,7 +119,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	seedClient, ok := r.seedClients[request.Namespace]
 	if !ok {
 		log.Error("Got request for seed we don't have a client for", "seed", request.Namespace)
@@ -210,7 +210,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	return nil
 }
 
-func (r *Reconciler) cleanupEncryptionSecrets(ctx context.Context, log *zap.SugaredLogger, clusterName string) error {
+func (r *reconciler) cleanupEncryptionSecrets(ctx context.Context, log *zap.SugaredLogger, clusterName string) error {
 	secretName := EncryptionSecretPrefix + clusterName
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
