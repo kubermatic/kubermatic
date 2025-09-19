@@ -29,7 +29,7 @@ import (
 var (
 	defaultCNIPluginVersion = map[kubermaticv1.CNIPluginType]string{
 		kubermaticv1.CNIPluginTypeCanal:  "v3.29",
-		kubermaticv1.CNIPluginTypeCilium: "1.16.9",
+		kubermaticv1.CNIPluginTypeCilium: "1.18.1",
 	}
 )
 
