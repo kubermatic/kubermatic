@@ -31,6 +31,7 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/util"
@@ -63,7 +64,8 @@ var (
 )
 
 const (
-	projectName = "def-app-catalog-test-project"
+	projectName       = "def-app-catalog-test-project"
+	customVarTemplate = `{{- if eq .Cluster.Annotations.env "dev" }}custom1{{ else }}custom2{{ end }}`
 )
 
 func init() {
@@ -126,6 +128,8 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 		t.Fatalf("%v", err)
 	}
 
+	valuesBlock := makeValuesBlockWithTemplating(applicationInstallationName, defaultValuesBlock, tLogger)
+
 	application := appskubermaticv1.ApplicationInstallation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      applicationInstallationName,
@@ -140,7 +144,7 @@ func testUserCluster(ctx context.Context, t *testing.T, tLogger *zap.SugaredLogg
 				Name:    applicationName,
 				Version: applicationVersion,
 			},
-			ValuesBlock: defaultValuesBlock,
+			ValuesBlock: valuesBlock,
 		},
 	}
 
@@ -359,4 +363,49 @@ func createUserCluster(
 	clusterClient, err := testJig.ClusterClient(ctx)
 
 	return clusterClient, cleanup, log, err
+}
+
+// makeValuesBlockWithTemplating takes a string of values and returns a string in order to be used for templating.
+func makeValuesBlockWithTemplating(name string, values string, tLogger *zap.SugaredLogger) string {
+	// Try to unmarshal and merge properly. If that fails, fall back to safe concatenation.
+	var data map[string]interface{}
+
+	if values == "" {
+		data = make(map[string]interface{})
+	} else {
+		if err := yaml.Unmarshal([]byte(values), &data); err != nil {
+			// Fallback: append a global block (preserve original input if we can't parse it)
+			// Ensure proper newline separation
+			var prefix string
+			if strings.TrimSpace(values) == "" {
+				prefix = ""
+			} else {
+				prefix = values
+			}
+			// Use a YAML-safe representation for the template by letting fmt.Sprintf put it on a new line.
+			// We wrap the template in single quotes so any double-quotes inside the template remain literal.
+			// But since customVarTemplate contains no extra quotes, yaml marshalling would have been ideal.
+			fallback := fmt.Sprintf("%s\nglobal:\n  customVar: '%s'\n", prefix, customVarTemplate)
+			return fallback
+		}
+		if data == nil {
+			data = make(map[string]interface{})
+		}
+	}
+
+	// Ensure global exists
+	global, ok := data["global"].(map[string]interface{})
+	if !ok {
+		global = make(map[string]interface{})
+	}
+	global["customVar"] = customVarTemplate
+	data["global"] = global
+
+	// Marshal back to YAML
+	out, err := yaml.Marshal(data)
+	if err != nil {
+		tLogger.Fatalf("%v", err)
+	}
+
+	return string(out)
 }
