@@ -1592,26 +1592,6 @@ spec:
                               type: string
                             description: 'Optional: DefaultOperatingSystemProfiles specifies the OperatingSystemProfiles to use for each supported operating system.'
                             type: object
-                          packet:
-                            description: |-
-                              Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-                              This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-                              Packet configures an Equinix Metal datacenter.
-                              NOOP.
-                            properties:
-                              facilities:
-                                description: |-
-                                  The list of enabled facilities, for example "ams1", for a full list of available
-                                  facilities see https://metal.equinix.com/developers/docs/locations/facilities/
-                                items:
-                                  type: string
-                                type: array
-                              metro:
-                                description: |-
-                                  Metros are facilities that are grouped together geographically and share capacity
-                                  and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
-                                type: string
-                            type: object
                           providerReconciliationInterval:
                             description: |-
                               Optional: ProviderReconciliationInterval is the time that must have passed since a

@@ -63,11 +63,6 @@ type PresetSpec struct {
 	AWS *AWS `json:"aws,omitempty"`
 	// Access data for OpenStack.
 	Openstack *Openstack `json:"openstack,omitempty"`
-	// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-	// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-	// Access data for Packet Cloud.
-	// NOOP.
-	Packet *Packet `json:"packet,omitempty"`
 	// Access data for Google Cloud Platform(GCP).
 	GCP *GCP `json:"gcp,omitempty"`
 	// Access data for KuberVirt.
@@ -368,22 +363,6 @@ func (s Openstack) IsValid() bool {
 		len(s.Password) > 0 &&
 		(len(s.Project) > 0 || len(s.ProjectID) > 0) &&
 		len(s.Domain) > 0
-}
-
-// Deprecated: The Packet / Equinix Metal provider is deprecated and will be REMOVED IN VERSION 2.29.
-// This provider is no longer supported. Migrate your configurations away from "packet" immediately.
-// NOOP.
-type Packet struct {
-	ProviderPreset `json:",inline"`
-
-	APIKey    string `json:"apiKey"`
-	ProjectID string `json:"projectID"`
-
-	BillingCycle string `json:"billingCycle,omitempty"`
-}
-
-func (s Packet) IsValid() bool {
-	return len(s.APIKey) > 0 && len(s.ProjectID) > 0
 }
 
 type GCP struct {
