@@ -66,9 +66,12 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 	}
 
 	var lbClassOpts LBClassOpts
+	var lbClasses []kubermaticv1.LoadBalancerClass
+
 	if len(dc.Spec.Openstack.LoadBalancerClasses) > 0 {
 		lbClassOpts = make(LBClassOpts, len(dc.Spec.Openstack.LoadBalancerClasses))
-		for _, lbClass := range dc.Spec.Openstack.LoadBalancerClasses {
+		lbClasses = dc.Spec.Openstack.LoadBalancerClasses
+		for _, lbClass := range lbClasses {
 			lbClassOpts[lbClass.Name] = &LBClass{
 				FloatingNetworkID:  lbClass.Config.FloatingNetworkID,
 				FloatingSubnetID:   lbClass.Config.FloatingSubnetID,
@@ -76,6 +79,26 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 				FloatingSubnetTags: lbClass.Config.FloatingSubnetTags,
 				NetworkID:          lbClass.Config.NetworkID,
 				SubnetID:           lbClass.Config.SubnetID,
+				MemberSubnetID:     lbClass.Config.MemberSubnetID,
+			}
+		}
+	} else {
+		// initialize the map so we can add cluster-only classes below
+		lbClassOpts = make(LBClassOpts)
+	}
+
+	if len(cluster.Spec.Cloud.Openstack.LoadBalancerClasses) > 0 {
+		lbClasses = cluster.Spec.Cloud.Openstack.LoadBalancerClasses
+		for _, lbClass := range lbClasses {
+			// Always set/override the entry; this overwrites DC-provided class with same name
+			lbClassOpts[lbClass.Name] = &LBClass{
+				FloatingNetworkID:  lbClass.Config.FloatingNetworkID,
+				FloatingSubnetID:   lbClass.Config.FloatingSubnetID,
+				FloatingSubnet:     lbClass.Config.FloatingSubnet,
+				FloatingSubnetTags: lbClass.Config.FloatingSubnetTags,
+				NetworkID:          lbClass.Config.NetworkID,
+				SubnetID:           lbClass.Config.SubnetID,
+				MemberSubnetID:     lbClass.Config.MemberSubnetID,
 			}
 		}
 	}

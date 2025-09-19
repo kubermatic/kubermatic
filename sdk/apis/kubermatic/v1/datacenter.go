@@ -670,32 +670,6 @@ type DatacenterSpecOpenstack struct {
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
 }
 
-type LoadBalancerClass struct {
-	// Name is the name of the load balancer class.
-	//
-	// +kubebuilder:validation:MinLength=1
-	Name string `json:"name"`
-	// Config is the configuration for the specified LoadBalancerClass section in the cloud config.
-	Config LBClass `json:"config"`
-}
-
-type LBClass struct {
-	// FloatingNetworkID is the external network used to create floating IP for the load balancer VIP.
-	FloatingNetworkID string `json:"floatingNetworkID,omitempty"`
-	// FloatingSubnetID is the external network subnet used to create floating IP for the load balancer VIP.
-	FloatingSubnetID string `json:"floatingSubnetID,omitempty"`
-	// FloatingSubnet is a name pattern for the external network subnet used to create floating IP for the load balancer VIP.
-	FloatingSubnet string `json:"floatingSubnet,omitempty"`
-	// FloatingSubnetTags is a comma separated list of tags for the external network subnet used to create floating IP for the load balancer VIP.
-	FloatingSubnetTags string `json:"floatingSubnetTags,omitempty"`
-	// NetworkID is the ID of the Neutron network on which to create load balancer VIP, not needed if subnet-id is set.
-	NetworkID string `json:"networkID,omitempty"`
-	// SubnetID is the ID of the Neutron subnet on which to create load balancer VIP.
-	SubnetID string `json:"subnetID,omitempty"`
-	// MemberSubnetID is the ID of the Neutron network on which to create the members of the load balancer.
-	MemberSubnetID string `json:"memberSubnetID,omitempty"`
-}
-
 type OpenstackNodeSizeRequirements struct {
 	// VCPUs is the minimum required amount of (virtual) CPUs
 	MinimumVCPUs int `json:"minimumVCPUs,omitempty"` //nolint:tagliatelle
