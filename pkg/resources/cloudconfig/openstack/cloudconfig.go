@@ -65,12 +65,13 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
 	}
 
-	var lbClassOpts LBClassOpts
-	var lbClasses []kubermaticv1.LoadBalancerClass
+	dcLbClasses := dc.Spec.Openstack.LoadBalancerClasses
+	clusterLbClasses := cluster.Spec.Cloud.Openstack.LoadBalancerClasses
 
-	if len(dc.Spec.Openstack.LoadBalancerClasses) > 0 {
-		lbClassOpts = make(LBClassOpts, len(dc.Spec.Openstack.LoadBalancerClasses))
-		lbClasses = dc.Spec.Openstack.LoadBalancerClasses
+	// Preallocate for DC + Cluster classes
+	lbClassOpts := make(LBClassOpts, len(dcLbClasses)+len(clusterLbClasses))
+
+	addClasses := func(lbClasses []kubermaticv1.LoadBalancerClass) {
 		for _, lbClass := range lbClasses {
 			lbClassOpts[lbClass.Name] = &LBClass{
 				FloatingNetworkID:  lbClass.Config.FloatingNetworkID,
@@ -82,25 +83,14 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 				MemberSubnetID:     lbClass.Config.MemberSubnetID,
 			}
 		}
-	} else {
-		// initialize the map so we can add cluster-only classes below
-		lbClassOpts = make(LBClassOpts)
 	}
 
-	if len(cluster.Spec.Cloud.Openstack.LoadBalancerClasses) > 0 {
-		lbClasses = cluster.Spec.Cloud.Openstack.LoadBalancerClasses
-		for _, lbClass := range lbClasses {
-			// Always set/override the entry; this overwrites DC-provided class with same name
-			lbClassOpts[lbClass.Name] = &LBClass{
-				FloatingNetworkID:  lbClass.Config.FloatingNetworkID,
-				FloatingSubnetID:   lbClass.Config.FloatingSubnetID,
-				FloatingSubnet:     lbClass.Config.FloatingSubnet,
-				FloatingSubnetTags: lbClass.Config.FloatingSubnetTags,
-				NetworkID:          lbClass.Config.NetworkID,
-				SubnetID:           lbClass.Config.SubnetID,
-				MemberSubnetID:     lbClass.Config.MemberSubnetID,
-			}
-		}
+	// DC first, then Cluster to allow overrides.
+	if len(dcLbClasses) > 0 {
+		addClasses(dcLbClasses)
+	}
+	if len(clusterLbClasses) > 0 {
+		addClasses(clusterLbClasses)
 	}
 
 	cc := CloudConfig{
