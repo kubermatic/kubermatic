@@ -1383,7 +1383,7 @@ spec:
                             The suffix is set to `nip.io` by default. Can only be used with the external CCM and might be deprecated and removed in
                             future versions as it is considered a workaround only.
                           type: string
-                        ipv6SubnetCIDR:
+                        ipv6SubnetCidr:
                           description: |-
                             IPv6SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
                             didn't specify a subnet id for the IPv6 networking.
@@ -1444,7 +1444,7 @@ spec:
                             SubnetAllocationPool represents a pool of usable IPs that can be assigned to resources via the DHCP. The format is
                             first usable ip and last usable ip separated by a dash(e.g: 10.10.0.1-10.10.0.254)
                           type: string
-                        subnetCIDR:
+                        subnetCidr:
                           description: |-
                             SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
                             didn't specify a subnet id.

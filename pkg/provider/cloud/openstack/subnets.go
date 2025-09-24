@@ -121,7 +121,6 @@ func createIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, network
 		if subnetIPv6CIDR != "" {
 			subnetOpts.CIDR = subnetIPv6CIDR
 		}
-
 	}
 
 	for _, s := range dnsServers {

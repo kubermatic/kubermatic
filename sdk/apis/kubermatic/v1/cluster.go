@@ -1446,7 +1446,7 @@ type OpenstackCloudSpec struct {
 	// SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
 	// didn't specify a subnet id.
 	// +optional
-	SubnetCIDR string `json:"subnetCIDR,omitempty"`
+	SubnetCIDR string `json:"subnetCidr,omitempty"`
 	// SubnetAllocationPool represents a pool of usable IPs that can be assigned to resources via the DHCP. The format is
 	// first usable ip and last usable ip separated by a dash(e.g: 10.10.0.1-10.10.0.254)
 	// +optional
@@ -1454,7 +1454,7 @@ type OpenstackCloudSpec struct {
 	// IPv6SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
 	// didn't specify a subnet id for the IPv6 networking.
 	// +optional
-	IPv6SubnetCIDR string `json:"ipv6SubnetCIDR,omitempty"`
+	IPv6SubnetCIDR string `json:"ipv6SubnetCidr,omitempty"`
 	// IPv6SubnetID holds the ID of the subnet used for IPv6 networking.
 	// If not provided, a new subnet will be created if IPv6 is enabled.
 	// +optional
