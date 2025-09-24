@@ -677,6 +677,10 @@ type ClusterStatus struct {
 
 	// ResourceUsage shows the current usage of resources for the cluster.
 	ResourceUsage *ResourceDetails `json:"resourceUsage,omitempty"`
+
+	// ProviderStatus holds the status information for all cluster providers.
+	// +optional
+	ProviderStatus *ClusterProviderStatus `json:"providerStatus,omitempty"`
 }
 
 // ClusterVersionsStatus contains information regarding the current and desired versions
@@ -738,6 +742,16 @@ type ClusterEncryptionStatus struct {
 	// The `encryption_controller` logic will process the cluster based on the current phase and issue necessary changes
 	// to make sure encryption on the cluster is active and updated with what the ClusterSpec defines.
 	Phase ClusterEncryptionPhase `json:"phase"`
+}
+
+// ClusterProviderStatus holds the status information for all cluster providers.
+type ClusterProviderStatus struct {
+	VSphere *VSphereStatus `json:"vsphere,omitempty"`
+}
+
+// VSphereStatus holds the status information for vSphere clusters.
+type VSphereStatus struct {
+	ManagedTagIDs []string `json:"managedTagIDs,omitempty"`
 }
 
 // +kubebuilder:validation:Enum=Pending;Failed;Active;EncryptionNeeded

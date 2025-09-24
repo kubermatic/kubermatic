@@ -31,6 +31,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -84,8 +86,9 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		return nil, fmt.Errorf("failed to create REST client session: %w", err)
 	}
 
+	var managedTags sets.Set[string]
 	if cluster.Spec.Cloud.VSphere.Tags != nil {
-		cluster, err = reconcileTags(ctx, restSession, cluster, update)
+		cluster, managedTags, err = reconcileTags(ctx, restSession, cluster, update)
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster tags: %w", err)
 		}
@@ -98,7 +101,6 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 	defer session.Logout(ctx)
 
 	rootPath := getVMRootPath(v.dc)
-
 	clusterFolder := path.Join(rootPath, cluster.Name)
 
 	if cluster.Spec.Cloud.VSphere.BasePath != "" {
@@ -122,6 +124,18 @@ func (v *VSphere) reconcileCluster(ctx context.Context, cluster *kubermaticv1.Cl
 		if err != nil {
 			return nil, fmt.Errorf("failed to reconcile cluster folder: %w", err)
 		}
+	}
+
+	if managedTags != nil {
+		if cluster.Status.ProviderStatus == nil {
+			cluster.Status.ProviderStatus = &kubermaticv1.ClusterProviderStatus{
+				VSphere: &kubermaticv1.VSphereStatus{},
+			}
+		}
+		if cluster.Status.ProviderStatus.VSphere == nil {
+			cluster.Status.ProviderStatus.VSphere = &kubermaticv1.VSphereStatus{}
+		}
+		cluster.Status.ProviderStatus.VSphere.ManagedTagIDs = sets.List(managedTags)
 	}
 
 	return cluster, nil

@@ -19,7 +19,6 @@ package vsphere
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	vapitags "github.com/vmware/govmomi/vapi/tags"
 
@@ -30,36 +29,44 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const (
-	// managedTagsAnnotation is an annotation on the KKP Cluster object that stores a comma-separated list of vSphere tag IDs
-	// managed by this cluster.
-	managedTagsAnnotation = "kubermatic.io/vsphere-managed-tags"
-)
-
-func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	// The update function can be called multiple times, so we need to ensure we have the latest version of the cluster object.
+func reconcileTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, sets.Set[string], error) {
 	var err error
 	managedTags, err := syncCreatedClusterTags(ctx, restSession, cluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to sync created tags: %w", err)
+		return cluster, nil, fmt.Errorf("failed to sync created tags: %w", err)
 	}
 
 	managedTags, err = syncDeletedClusterTags(ctx, restSession, cluster, managedTags)
 	if err != nil {
-		return nil, fmt.Errorf("failed to sync deleted tags: %w", err)
+		return cluster, nil, fmt.Errorf("failed to sync deleted tags: %w", err)
 	}
 
-	updatedTags := strings.Join(sets.List(managedTags), ",")
-
-	return update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
+	// Avoid nil pointer panic
+	var managedTagIDs []string
+	if cluster.Status.ProviderStatus == nil || cluster.Status.ProviderStatus.VSphere == nil || cluster.Status.ProviderStatus.VSphere.ManagedTagIDs == nil {
+		managedTagIDs = []string{}
+	} else {
+		managedTagIDs = cluster.Status.ProviderStatus.VSphere.ManagedTagIDs
+	}
+	currentTagsSet := sets.New(managedTagIDs...)
+	if !currentTagsSet.Equal(managedTags) {
+		if cluster.Status.ProviderStatus == nil {
+			cluster.Status.ProviderStatus = &kubermaticv1.ClusterProviderStatus{
+				VSphere: &kubermaticv1.VSphereStatus{},
+			}
+		}
+		if cluster.Status.ProviderStatus.VSphere == nil {
+			cluster.Status.ProviderStatus.VSphere = &kubermaticv1.VSphereStatus{}
+		}
+		cluster.Status.ProviderStatus.VSphere.ManagedTagIDs = sets.List(managedTags)
+		return cluster, managedTags, nil
+	}
+	updatedCluster, err := update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		if !kuberneteshelper.HasFinalizer(cluster, tagCleanupFinalizer) {
 			kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
 		}
-		if cluster.Annotations == nil {
-			cluster.Annotations = make(map[string]string)
-		}
-		cluster.Annotations[managedTagsAnnotation] = updatedTags
 	})
+	return updatedCluster, managedTags, err
 }
 
 func syncCreatedClusterTags(ctx context.Context, restSession *RESTSession, cluster *kubermaticv1.Cluster) (sets.Set[string], error) {
@@ -72,7 +79,7 @@ func syncCreatedClusterTags(ctx context.Context, restSession *RESTSession, clust
 	managedTags := getManagedTags(cluster)
 	specTags := sets.NewString(cluster.Spec.Cloud.VSphere.Tags.Tags...)
 
-	// 1. Ensure all tags in the spec are present in vSphere and tracked in the annotation.
+	// Ensure all tags in the spec are present in vSphere and tracked in the annotation.
 	for _, tagName := range specTags.List() {
 		// Check if the tag from the spec already exists in vSphere for this category.
 		if tagID := filterTag(categoryTags, tagName); tagID != "" {
@@ -168,10 +175,12 @@ func syncDeletedClusterTags(ctx context.Context, restSession *RESTSession, clust
 }
 
 func getManagedTags(cluster *kubermaticv1.Cluster) sets.Set[string] {
-	if cluster.Annotations == nil || cluster.Annotations[managedTagsAnnotation] == "" {
+	if cluster.Status.ProviderStatus == nil ||
+		cluster.Status.ProviderStatus.VSphere == nil ||
+		len(cluster.Status.ProviderStatus.VSphere.ManagedTagIDs) == 0 {
 		return sets.New[string]()
 	}
-	return sets.New(strings.Split(cluster.Annotations[managedTagsAnnotation], ",")...)
+	return sets.New(cluster.Status.ProviderStatus.VSphere.ManagedTagIDs...)
 }
 
 func filterTag(categoryTags []vapitags.Tag, tagName string) string {

@@ -4058,6 +4058,18 @@ spec:
                     - Running
                     - Terminating
                   type: string
+                providerStatus:
+                  description: ProviderStatus holds the status information for all cluster providers.
+                  properties:
+                    vsphere:
+                      description: VSphereStatus holds the status information for vSphere clusters.
+                      properties:
+                        managedTagIDs:
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                  type: object
                 resourceUsage:
                   description: ResourceUsage shows the current usage of resources for the cluster.
                   properties:
