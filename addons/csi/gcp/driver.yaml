@@ -145,6 +145,13 @@ rules:
       - podsecuritypolicies
     verbs:
       - use
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -520,7 +527,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.1.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-provisioner:v5.2.0" }}'
           livenessProbe:
             failureThreshold: 1
             httpGet:
@@ -549,7 +556,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.4.3" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-attacher:v4.8.1" }}'
           livenessProbe:
             failureThreshold: 1
             httpGet:
@@ -579,7 +586,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.12.0" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-resizer:v1.13.2" }}'
           livenessProbe:
             failureThreshold: 1
             httpGet:
@@ -603,12 +610,13 @@ spec:
             - --leader-election
             - --leader-election-namespace=$(PDCSI_NAMESPACE)
             - --timeout=300s
+            - --retry-interval-max=60s
           env:
             - name: PDCSI_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v6.3.3" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-snapshotter:v8.2.1" }}'
           name: csi-snapshotter
           volumeMounts:
             - mountPath: /csi
@@ -618,10 +626,14 @@ spec:
             - --endpoint=unix:/csi/csi.sock
             - --supports-dynamic-iops-provisioning=hyperdisk-balanced,hyperdisk-extreme
             - --supports-dynamic-throughput-provisioning=hyperdisk-balanced,hyperdisk-throughput,hyperdisk-ml
+            - --enable-data-cache
+            - --enable-multitenancy
+          command:
+            - /gce-pd-csi-driver
           env:
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /etc/cloud-sa/cloud-sa.json
-          image: '{{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.15.0" }}'
+          image: '{{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.17.3" }}'
           name: gce-pd-driver
           volumeMounts:
             - mountPath: /csi
@@ -668,7 +680,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.9.3" }}'
+          image: '{{ Image "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0" }}'
           name: csi-driver-registrar
           volumeMounts:
             - mountPath: /csi
@@ -679,7 +691,15 @@ spec:
             - --v=5
             - --endpoint=unix:/csi/csi.sock
             - --run-controller-service=false
-          image: '{{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.15.0" }}'
+            - --enable-data-cache
+            - --enable-multitenancy
+            - --node-name=$(KUBE_NODE_NAME)
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          image: '{{ Image "registry.k8s.io/cloud-provider-gcp/gcp-compute-persistent-disk-csi-driver:v1.17.3" }}'
           name: gce-pd-driver
           securityContext:
             privileged: true
@@ -699,6 +719,9 @@ spec:
               name: udev-socket
             - mountPath: /sys
               name: sys
+            - mountPath: /lib/modules
+              name: lib-modules
+              readOnly: true
       hostNetwork: true
       nodeSelector:
         kubernetes.io/os: linux
@@ -742,6 +765,10 @@ spec:
             path: /sys
             type: Directory
           name: sys
+        - hostPath:
+            path: /lib/modules
+            type: Directory
+          name: lib-modules
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
