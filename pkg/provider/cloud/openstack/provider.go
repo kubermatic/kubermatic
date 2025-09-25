@@ -141,7 +141,7 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 		// If we're going to create a subnet in an existing network,
 		// let's check whether any existing subnets collide with our range.
 		if spec.Openstack.SubnetID == "" {
-			if err = validateExistingSubnetOverlap(network.ID, netClient); err != nil {
+			if err = validateExistingSubnetOverlap(network.ID, spec.Openstack.SubnetCIDR, netClient); err != nil {
 				return err
 			}
 		}
@@ -168,8 +168,11 @@ func (os *Provider) ValidateCloudSpec(ctx context.Context, spec kubermaticv1.Clo
 }
 
 // validateExistingSubnetOverlap checks whether any subnets in the given network overlap with the default subnet CIDR.
-func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.ServiceClient) error {
-	_, defaultCIDR, err := net.ParseCIDR(subnetCIDR)
+func validateExistingSubnetOverlap(networkID, assignedSubnetCIDR string, netClient *gophercloud.ServiceClient) error {
+	if assignedSubnetCIDR == "" {
+		assignedSubnetCIDR = subnetCIDR
+	}
+	_, defaultCIDR, err := net.ParseCIDR(assignedSubnetCIDR)
 	if err != nil {
 		return err
 	}
@@ -189,7 +192,7 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 
 			// do the CIDRs overlap?
 			if currentCIDR.Contains(defaultCIDR.IP) || defaultCIDR.Contains(currentCIDR.IP) {
-				return false, fmt.Errorf("existing subnetwork %q holds a CIDR %q which overlaps with default CIDR %q", sn.Name, sn.CIDR, subnetCIDR)
+				return false, fmt.Errorf("existing subnetwork %q holds a CIDR %q which overlaps with default CIDR %q", sn.Name, sn.CIDR, assignedSubnetCIDR)
 			}
 		}
 
@@ -436,7 +439,7 @@ func reconcileIPv6Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, dnservers)
+		subnet, err = createIPv6Subnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.IPv6SubnetPool, cluster.Spec.Cloud.Openstack.IPv6SubnetCIDR, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the IPv6 subnet: %w", err)
 		}
@@ -487,7 +490,7 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 		// At this point, either the SubnetID was empty, or the specified subnet was not found by ID or name
 		// Proceed to create a new subnet
-		subnet, err = createSubnet(netClient, cluster.Name, network, dnservers)
+		subnet, err = createSubnet(netClient, cluster.Name, network, cluster.Spec.Cloud.Openstack.SubnetAllocationPool, cluster.Spec.Cloud.Openstack.SubnetCIDR, dnservers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the IPv4 subnet: %w", err)
 		}

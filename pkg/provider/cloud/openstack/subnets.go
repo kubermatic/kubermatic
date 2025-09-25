@@ -17,36 +17,59 @@ limitations under the License.
 package openstack
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/gophercloud/gophercloud"
 	osrouters "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/routers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/subnetpools"
 	ossubnets "github.com/gophercloud/gophercloud/openstack/networking/v2/subnets"
 
-	"k8s.io/utils/net"
+	k8snet "k8s.io/utils/net"
 	"k8s.io/utils/ptr"
 )
 
-func createSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID string, dnsServers []string) (*ossubnets.Subnet, error) {
-	iTrue := true
+func createSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID, subnetPoolAllocation, assignedSubnetCIDR string, dnsServers []string) (*ossubnets.Subnet, error) {
+	var (
+		iTrue            = true
+		firstAvailableIP string
+		lastAvailableIP  string
+	)
+
+	if assignedSubnetCIDR == "" {
+		assignedSubnetCIDR = subnetCIDR
+		firstAvailableIP = subnetFirstAddress
+		lastAvailableIP = subnetLastAddress
+	}
+
+	if assignedSubnetCIDR != subnetCIDR && subnetPoolAllocation != "" {
+		ips := strings.Split(subnetPoolAllocation, "-")
+		if len(ips) != 2 {
+			return nil, errors.New("assigned subnet pool allocation does not contain valid ip addresses")
+		}
+
+		firstAvailableIP = ips[0]
+		lastAvailableIP = ips[1]
+	}
+
 	subnetOpts := ossubnets.CreateOpts{
 		Name:       resourceNamePrefix + clusterName,
 		NetworkID:  networkID,
 		IPVersion:  gophercloud.IPv4,
-		CIDR:       subnetCIDR,
+		CIDR:       assignedSubnetCIDR,
 		GatewayIP:  nil,
 		EnableDHCP: &iTrue,
 		AllocationPools: []ossubnets.AllocationPool{
 			{
-				Start: subnetFirstAddress,
-				End:   subnetLastAddress,
+				Start: firstAvailableIP,
+				End:   lastAvailableIP,
 			},
 		},
 	}
 
 	for _, s := range dnsServers {
-		if net.IsIPv4String(s) {
+		if k8snet.IsIPv4String(s) {
 			subnetOpts.DNSNameservers = append(subnetOpts.DNSNameservers, s)
 		}
 	}
@@ -58,7 +81,7 @@ func createSubnet(netClient *gophercloud.ServiceClient, clusterName, networkID s
 	return res.Extract()
 }
 
-func createIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, networkID, subnetPoolName string, dnsServers []string) (*ossubnets.Subnet, error) {
+func createIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, networkID, subnetPoolName, subnetIPv6CIDR string, dnsServers []string) (*ossubnets.Subnet, error) {
 	subnetOpts := ossubnets.CreateOpts{
 		Name:            resourceNamePrefix + clusterName + "-ipv6",
 		NetworkID:       networkID,
@@ -95,10 +118,13 @@ func createIPv6Subnet(netClient *gophercloud.ServiceClient, clusterName, network
 	} else {
 		// if no IPv6 subnet pool was provided / found, use the default IPv6 subnet CIDR
 		subnetOpts.CIDR = defaultIPv6SubnetCIDR
+		if subnetIPv6CIDR != "" {
+			subnetOpts.CIDR = subnetIPv6CIDR
+		}
 	}
 
 	for _, s := range dnsServers {
-		if net.IsIPv6String(s) {
+		if k8snet.IsIPv6String(s) {
 			subnetOpts.DNSNameservers = append(subnetOpts.DNSNameservers, s)
 		}
 	}
