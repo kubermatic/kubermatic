@@ -65,10 +65,14 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		useOctavia = cluster.Spec.Cloud.Openstack.UseOctavia
 	}
 
-	var lbClassOpts LBClassOpts
-	if len(dc.Spec.Openstack.LoadBalancerClasses) > 0 {
-		lbClassOpts = make(LBClassOpts, len(dc.Spec.Openstack.LoadBalancerClasses))
-		for _, lbClass := range dc.Spec.Openstack.LoadBalancerClasses {
+	dcLbClasses := dc.Spec.Openstack.LoadBalancerClasses
+	clusterLbClasses := cluster.Spec.Cloud.Openstack.LoadBalancerClasses
+
+	// Preallocate for DC + Cluster classes
+	lbClassOpts := make(LBClassOpts, len(dcLbClasses)+len(clusterLbClasses))
+
+	addClasses := func(lbClasses []kubermaticv1.LoadBalancerClass) {
+		for _, lbClass := range lbClasses {
 			lbClassOpts[lbClass.Name] = &LBClass{
 				FloatingNetworkID:  lbClass.Config.FloatingNetworkID,
 				FloatingSubnetID:   lbClass.Config.FloatingSubnetID,
@@ -76,8 +80,17 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 				FloatingSubnetTags: lbClass.Config.FloatingSubnetTags,
 				NetworkID:          lbClass.Config.NetworkID,
 				SubnetID:           lbClass.Config.SubnetID,
+				MemberSubnetID:     lbClass.Config.MemberSubnetID,
 			}
 		}
+	}
+
+	// DC first, then Cluster to allow overrides.
+	if len(dcLbClasses) > 0 {
+		addClasses(dcLbClasses)
+	}
+	if len(clusterLbClasses) > 0 {
+		addClasses(clusterLbClasses)
 	}
 
 	cc := CloudConfig{
