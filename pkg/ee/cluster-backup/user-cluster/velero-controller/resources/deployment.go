@@ -77,7 +77,7 @@ func DeploymentReconciler(data templateData) reconciling.NamedDeploymentReconcil
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:  "velero-velero-plugin-for-aws",
-					Image: registry.Must(data.RewriteImage(fmt.Sprintf("velero/velero-plugin-for-aws:%s", pluginVersion))),
+					Image: registry.Must(data.RewriteImage(fmt.Sprintf("quay.io/kubermatic-mirror/images/velero-plugin-for-aws:%s", pluginVersion))),
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "plugins",
@@ -91,7 +91,7 @@ func DeploymentReconciler(data templateData) reconciling.NamedDeploymentReconcil
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "velero",
-					Image:   registry.Must(data.RewriteImage(fmt.Sprintf("velero/velero:%s", version))),
+					Image:   registry.Must(data.RewriteImage(fmt.Sprintf("quay.io/kubermatic-mirror/images/velero:%s", version))),
 					Command: []string{"/velero"},
 					Args: []string{
 						"server",
