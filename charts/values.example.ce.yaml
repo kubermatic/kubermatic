@@ -107,7 +107,7 @@ dex:
         # Generate a secure secret key
         # Those can be generated on the shell using:
         # `cat /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c32`
-        secret: <a-random-key>
+        secret: <another-random-key>
         RedirectURIs:
           # ensure the URLs below use the dex.ingress.hosts[0].host configured above
           - https://kkp.example.com/api/v1/kubeconfig
