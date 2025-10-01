@@ -31,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/ptr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -489,6 +490,8 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 	tests := []struct {
 		name           string
 		seed           *kubermaticv1.Seed
+		cluster        *kubermaticv1.Cluster
+		datacenter     *kubermaticv1.Datacenter
 		objects        []ctrlruntimeclient.Object
 		expectedArgs   []string
 		expectedErrMsg string
@@ -679,6 +682,296 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 			},
 			expectedArgs: nil,
 		},
+		{
+			name: "cluster level XfrChannelSize has highest precedence",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--base-arg=seed"},
+							KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+								Server: &kubermaticv1.KonnectivityServerConfig{
+									XfrChannelSize: ptr.To(int32(100)),
+								},
+							},
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+								Server: &kubermaticv1.KonnectivityServerConfig{
+									XfrChannelSize: ptr.To(int32(5959)),
+								},
+							},
+						},
+					},
+				},
+			},
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+						Server: &kubermaticv1.KonnectivityServerConfig{
+							XfrChannelSize: ptr.To(int32(200)),
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+									Server: &kubermaticv1.KonnectivityServerConfig{
+										XfrChannelSize: ptr.To(int32(150)),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--base-arg=seed", "--xfr-channel-size=5959"},
+		},
+		{
+			name: "cluster template level XfrChannelSize when no cluster config",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+							KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+								Server: &kubermaticv1.KonnectivityServerConfig{
+									XfrChannelSize: ptr.To(int32(100)),
+								},
+							},
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			cluster: &kubermaticv1.Cluster{},
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+						Server: &kubermaticv1.KonnectivityServerConfig{
+							XfrChannelSize: ptr.To(int32(200)),
+						},
+					},
+				},
+			},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{"--template-arg=value"},
+								KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+									Server: &kubermaticv1.KonnectivityServerConfig{
+										XfrChannelSize: ptr.To(int32(150)),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--template-arg=value", "--xfr-channel-size=150"},
+		},
+		{
+			name: "datacenter level XfrChannelSize when no cluster or template config",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--seed-arg=value"},
+							KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+								Server: &kubermaticv1.KonnectivityServerConfig{
+									XfrChannelSize: ptr.To(int32(100)),
+								},
+							},
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{},
+			datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+						Server: &kubermaticv1.KonnectivityServerConfig{
+							XfrChannelSize: ptr.To(int32(300)),
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--seed-arg=value", "--xfr-channel-size=300"},
+		},
+		{
+			name: "seed level XfrChannelSize when no other configs",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--seed-only=true"},
+							KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+								Server: &kubermaticv1.KonnectivityServerConfig{
+									XfrChannelSize: ptr.To(int32(64)),
+								},
+							},
+						},
+					},
+				},
+			},
+			cluster:      &kubermaticv1.Cluster{},
+			datacenter:   &kubermaticv1.Datacenter{},
+			expectedArgs: []string{"--seed-only=true", "--xfr-channel-size=64"},
+		},
+		{
+			name: "no XfrChannelSize configuration anywhere",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--basic-arg=value"},
+						},
+					},
+				},
+			},
+			cluster:      &kubermaticv1.Cluster{},
+			datacenter:   &kubermaticv1.Datacenter{},
+			expectedArgs: []string{"--basic-arg=value"},
+		},
+		{
+			name: "only base args from template without XfrChannelSize",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			cluster:    &kubermaticv1.Cluster{},
+			datacenter: &kubermaticv1.Datacenter{},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{"--template-only=true"},
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--template-only=true"},
+		},
+		{
+			name: "template args with template level XfrChannelSize",
+			seed: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test-namespace",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+					DefaultClusterTemplate: "test-template",
+				},
+			},
+			cluster:    &kubermaticv1.Cluster{},
+			datacenter: &kubermaticv1.Datacenter{},
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.ClusterTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-template",
+						Namespace: "test-namespace",
+						Labels: map[string]string{
+							"scope": kubermaticv1.SeedTemplateScope,
+						},
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						ComponentsOverride: kubermaticv1.ComponentSettings{
+							KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+								Args: []string{"--template-with-xfr=true"},
+								KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+									Server: &kubermaticv1.KonnectivityServerConfig{
+										XfrChannelSize: ptr.To(int32(256)),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedArgs: []string{"--template-with-xfr=true", "--xfr-channel-size=256"},
+		},
+		{
+			name: "multiple args with cluster level XfrChannelSize",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--arg1=value1", "--arg2=value2", "--arg3=value3"},
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							KonnectivityConfigurations: &kubermaticv1.KonnectivityConfigurations{
+								Server: &kubermaticv1.KonnectivityServerConfig{
+									XfrChannelSize: ptr.To(int32(1024)),
+								},
+							},
+						},
+					},
+				},
+			},
+			datacenter:   &kubermaticv1.Datacenter{},
+			expectedArgs: []string{"--arg1=value1", "--arg2=value2", "--arg3=value3", "--xfr-channel-size=1024"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -686,6 +979,9 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 			var objects []ctrlruntimeclient.Object
 			if tt.seed != nil {
 				objects = append(objects, tt.seed)
+			}
+			if tt.cluster != nil {
+				objects = append(objects, tt.cluster)
 			}
 
 			objects = append(objects, tt.objects...)
@@ -695,9 +991,11 @@ func TestGetKonnectivityServerArgs(t *testing.T) {
 				Build()
 
 			templateData := &TemplateData{
-				ctx:    context.Background(),
-				client: cl,
-				seed:   tt.seed,
+				ctx:     context.Background(),
+				client:  cl,
+				seed:    tt.seed,
+				cluster: tt.cluster,
+				dc:      tt.datacenter,
 			}
 
 			args, err := templateData.GetKonnectivityServerArgs()
