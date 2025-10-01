@@ -292,13 +292,11 @@ func reconcileNetwork(ctx context.Context, netClient *gophercloud.ServiceClient,
 		kubernetes.AddFinalizer(cluster, NetworkCleanupFinalizer)
 		cluster.Spec.Cloud.Openstack.Network = networkName
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to update network cluster: %w", err)
 	}
 
 	_, err = createUserClusterNetwork(netClient, networkName)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create the network: %w", err)
 	}
@@ -364,7 +362,6 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 
 	// for each security group, ensure that it exists
 	err := validateSecurityGroupExists(netClient, securityGroup)
-
 	if err != nil {
 		if isNotFoundErr(err) {
 			// group does not yet exist, so we create it
@@ -385,7 +382,6 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 			cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				kubernetes.AddFinalizer(cluster, SecurityGroupCleanupFinalizer)
 			})
-
 			if err != nil {
 				return nil, fmt.Errorf("failed to add security group finalizer: %w", err)
 			}
@@ -397,7 +393,6 @@ func (os *Provider) reconcileSecurityGroups(ctx context.Context, netClient *goph
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		cluster.Spec.Cloud.Openstack.SecurityGroups = securityGroup
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to update security group in cluster: %w", err)
 	}
@@ -444,7 +439,7 @@ func reconcileIPv6Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 			return nil, fmt.Errorf("failed to create the IPv6 subnet: %w", err)
 		}
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, IPv6SubnetCleanupFinalizer, RouterIPv6SubnetLinkCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, IPv6SubnetCleanupFinalizer)
 			cluster.Spec.Cloud.Openstack.IPv6SubnetID = subnet.ID
 		})
 		if err != nil {
@@ -497,7 +492,7 @@ func reconcileIPv4Subnet(ctx context.Context, netClient *gophercloud.ServiceClie
 
 		// Update the cluster spec with the new subnet ID
 		cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			kubernetes.AddFinalizer(cluster, SubnetCleanupFinalizer, RouterSubnetLinkCleanupFinalizer)
+			kubernetes.AddFinalizer(cluster, SubnetCleanupFinalizer)
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
 		})
 		if err != nil {
