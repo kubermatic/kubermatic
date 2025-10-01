@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   name: etcd
   namespace: cluster-de-test-01
 spec:
@@ -16,7 +15,6 @@ spec:
     metadata:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: launcher
-      creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
         app: etcd
@@ -191,7 +189,6 @@ spec:
     type: RollingUpdate
   volumeClaimTemplates:
   - metadata:
-      creationTimestamp: null
       name: data
     spec:
       accessModes:

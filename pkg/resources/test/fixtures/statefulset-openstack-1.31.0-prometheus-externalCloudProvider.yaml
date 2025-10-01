@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: prometheus
     cluster: de-test-01
@@ -19,7 +18,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: data
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         apiserver-etcd-client-certificate-secret-revision: "123456"
         app: prometheus

@@ -1,18 +1,15 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   name: etcd-defragger
   namespace: cluster-de-test-01
 spec:
   concurrencyPolicy: Forbid
   jobTemplate:
-    metadata:
-      creationTimestamp: null
+    metadata: {}
     spec:
       template:
-        metadata:
-          creationTimestamp: null
+        metadata: {}
         spec:
           containers:
           - command:

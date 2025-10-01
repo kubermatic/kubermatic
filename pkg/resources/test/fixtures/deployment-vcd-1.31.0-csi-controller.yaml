@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: csi-controller
   name: csi-controller
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: operating-system-manager
         cloud-config-csi-secret-revision: "123456"

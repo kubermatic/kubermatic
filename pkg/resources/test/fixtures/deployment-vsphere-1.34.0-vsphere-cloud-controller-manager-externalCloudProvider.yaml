@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: vsphere-cloud-controller-manager
   name: vsphere-cloud-controller-manager
@@ -16,7 +15,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: vsphere-cloud-controller-manager
         ca-bundle-configmap-revision: "123456"

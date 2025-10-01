@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: nodeport-proxy-envoy
   name: nodeport-proxy-envoy
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: envoy-config
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: nodeport-proxy-envoy
         cluster: de-test-01

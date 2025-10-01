@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: apiserver
   name: apiserver
@@ -20,7 +19,6 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "30000"
         prometheus.io/scrape_with_kube_cert: "true"
-      creationTimestamp: null
       labels:
         adm-control-configmap-revision: "123456"
         apiserver-etcd-client-certificate-secret-revision: "123456"

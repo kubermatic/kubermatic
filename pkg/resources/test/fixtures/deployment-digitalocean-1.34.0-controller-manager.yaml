@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: controller-manager
   name: controller-manager
@@ -20,7 +19,6 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "10257"
         prometheus.io/scrape_with_kube_cert: "true"
-      creationTimestamp: null
       labels:
         app: controller-manager
         app.kubernetes.io/version: 1.34.0
