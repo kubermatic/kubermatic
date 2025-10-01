@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/zapr"
 	"github.com/prometheus/client_golang/prometheus"
+	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
@@ -144,6 +145,10 @@ func main() {
 
 	// register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
+
+	// The controller-runtime manager already registers a Go collector since https://github.com/kubernetes-sigs/controller-runtime/pull/3070 was merged, so we must
+	// unregister the one from the default registry to avoid duplicate metrics.
+	prometheus.Unregister(promcollectors.NewGoCollector())
 
 	// prepare a context to use throughout the controller manager
 	ctx := signals.SetupSignalHandler()
