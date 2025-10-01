@@ -55,6 +55,6 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 
 // flags to be only used in EE edition.
 func wrapDeployFlags(flagset *pflag.FlagSet, opt *DeployOptions) {
-	flagset.BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "DEPRECATED: This flag is no-op and will have no effect. Use KubermaticConfiguration.Applications.DefaultApplicationCatalog.Disable Reconcile the default Application Catalog (EE only)")
+	flagset.BoolVar(&opt.DeployDefaultAppCatalog, "deploy-default-app-catalog", false, "DEPRECATED: This flag is no-op and will have no effect. Use KubermaticConfiguration.applications.defaultApplicationCatalog.enable to reconcile the default Application Catalog (EE only)")
 	flagset.BoolVar(&opt.DeployDefaultPolicyTemplateCatalog, "deploy-default-policy-template-catalog", false, "Reconcile the default Policy Template Catalog (EE only)")
 }
