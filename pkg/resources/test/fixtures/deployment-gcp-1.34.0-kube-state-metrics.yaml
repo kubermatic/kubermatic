@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: kube-state-metrics
   name: kube-state-metrics
@@ -18,7 +17,6 @@ spec:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,tmp
         kubermatic.k8c.io/last-restart: ""
         prometheus.io/scrape: "true"
-      creationTimestamp: null
       labels:
         app: kube-state-metrics
         cluster: de-test-01
