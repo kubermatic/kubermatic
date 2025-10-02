@@ -28,7 +28,6 @@ import (
 	"github.com/go-logr/zapr"
 	constrainttemplatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 	"github.com/prometheus/client_golang/prometheus"
-	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	velerov1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 	"go.uber.org/zap"
 
@@ -171,10 +170,6 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	// Register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
-
-	// The controller-runtime manager already registers a Go collector since https://github.com/kubernetes-sigs/controller-runtime/pull/3070 was merged, so we must
-	// unregister the one from the default registry to avoid duplicate metrics.
-	prometheus.Unregister(promcollectors.NewGoCollector())
 
 	// Default to empty JSON object
 	// TODO: Do not create secret and image pull secret if empty
