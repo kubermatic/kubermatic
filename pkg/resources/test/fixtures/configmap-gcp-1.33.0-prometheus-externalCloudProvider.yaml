@@ -694,7 +694,6 @@ data:
         labels:
           severity: warning
 metadata:
-  creationTimestamp: null
   labels:
     app: prometheus
   name: prometheus
