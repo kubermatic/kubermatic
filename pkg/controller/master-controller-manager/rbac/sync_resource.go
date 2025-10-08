@@ -102,6 +102,18 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
+	// In controller-runtime >= v0.22 fake client may not set GVK on Get; fall back to Go type
+	if gvk.Kind == "" {
+		switch obj.(type) {
+		case *corev1.Secret:
+			gvk.Kind = "Secret"
+		case *rbacv1.Role:
+			gvk.Kind = "Role"
+		case *rbacv1.RoleBinding:
+			gvk.Kind = "RoleBinding"
+		}
+		gvk.Version = "v1"
+	}
 	resourceName, err := getPluralResourceName(c.restMapper, obj)
 	if err != nil {
 		return err
