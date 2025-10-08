@@ -53,7 +53,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
-			expectedActions: []string{"create", "create", "create", "create", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
+			expectedActions: []string{"create", "create", "create", "create"},
 
 			dependantToSync: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{
@@ -261,38 +261,6 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:cluster-abcd:etcd-launcher",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
-								Name:       "abcd",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							Namespace: "cluster-abcd",
-							Kind:      "ServiceAccount",
-							Name:      "etcd-launcher",
-						},
-						{
-							Namespace: "kube-system",
-							Kind:      "ServiceAccount",
-							Name:      "etcd-launcher-abcd",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:cluster-abcd:viewers-thunderball",
-					},
-				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:etcd-launcher",
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -328,7 +296,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 		// scenario 2
 		{
 			name:            "scenario 2: a proper set of RBAC Role/Binding is generated for an ssh key",
-			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
+			expectedActions: []string{"create", "create", "create"},
 
 			dependantToSync: &kubermaticv1.UserSSHKey{
 				TypeMeta: metav1.TypeMeta{
@@ -1084,7 +1052,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:resourcequota-project-thunderball:editors-thunderball",
+						Name: "kubermatic:resourcequota-project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1095,7 +1063,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						},
 						ResourceVersion: "1",
 						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
+							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
 						},
 					},
 					Rules: []rbacv1.PolicyRule{
@@ -1110,7 +1078,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:resourcequota-project-thunderball:owners-thunderball",
+						Name: "kubermatic:resourcequota-project-thunderball:editors-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
@@ -1121,7 +1089,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						},
 						ResourceVersion: "1",
 						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
+							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
 						},
 					},
 					Rules: []rbacv1.PolicyRule{
@@ -1341,28 +1309,6 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			}
 
 			{
-				var clusterRoleBindings rbacv1.ClusterRoleBindingList
-				err = fakeMasterClusterClient.List(context.Background(), &clusterRoleBindings)
-				assert.NoError(t, err)
-
-				assert.Len(t, clusterRoleBindings.Items, len(test.expectedClusterRoleBindings),
-					"cluster contains an different number of ClusterRoleBindings than expected (%d != %d)", len(clusterRoleBindings.Items), len(test.expectedClusterRoleBindings))
-
-			expectedClusterRoleBindingsLoop:
-				for _, expectedClusterRoleBinding := range test.expectedClusterRoleBindings {
-					// double-iterating over both slices might not be the most efficient way
-					// but it spares the trouble of converting pointers to values
-					// and then sorting everything for the comparison.
-					for _, existingClusterRoleBinding := range clusterRoleBindings.Items {
-						if reflect.DeepEqual(*expectedClusterRoleBinding, existingClusterRoleBinding) {
-							continue expectedClusterRoleBindingsLoop
-						}
-					}
-					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedClusterRoleBinding.Name)
-				}
-			}
-
-			{
 				var clusterRoles rbacv1.ClusterRoleList
 				err = fakeMasterClusterClient.List(context.Background(), &clusterRoles)
 				assert.NoError(t, err)
@@ -1375,13 +1321,42 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
-
 					for _, existingClusterRole := range clusterRoles.Items {
-						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
-							continue expectedClusterRolesLoop
+						if existingClusterRole.Name != expectedClusterRole.Name {
+							continue
 						}
+						if d := diff.ObjectDiff(*expectedClusterRole, existingClusterRole); d != "" {
+							t.Errorf("Got unexpected result for %s clusterrolebinding:\n%v", expectedClusterRole.Name, d)
+						}
+						continue expectedClusterRolesLoop
 					}
 					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
+				}
+			}
+
+			{
+				var clusterRoleBindings rbacv1.ClusterRoleBindingList
+				err = fakeMasterClusterClient.List(context.Background(), &clusterRoleBindings)
+				assert.NoError(t, err)
+
+				assert.Len(t, clusterRoleBindings.Items, len(test.expectedClusterRoleBindings),
+					"cluster contains an different number of ClusterRoleBindings than expected (%d != %d)", len(clusterRoleBindings.Items), len(test.expectedClusterRoleBindings))
+
+			expectedClusterRoleBindingsLoop:
+				for _, expectedClusterRoleBinding := range test.expectedClusterRoleBindings {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison
+					for _, existingClusterRoleBinding := range clusterRoleBindings.Items {
+						if existingClusterRoleBinding.Name != expectedClusterRoleBinding.Name {
+							continue
+						}
+						if d := diff.ObjectDiff(*expectedClusterRoleBinding, existingClusterRoleBinding); d != "" {
+							t.Errorf("Got unexpected result for %s clusterrolebinding:\n%v", expectedClusterRoleBinding.Name, d)
+						}
+						continue expectedClusterRoleBindingsLoop
+					}
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedClusterRoleBinding.Name)
 				}
 			}
 		})
@@ -1481,33 +1456,6 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			expectedRoleBindings: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:secret-abcd:projectmanagers-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: corev1.SchemeGroupVersion.String(),
-								Kind:       "Secret",
-								Name:       "abcd",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "projectmanagers-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "Role",
-						Name:     "kubermatic:secret-abcd:projectmanagers-thunderball",
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-abcd:owners-thunderball",
 						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1531,6 +1479,33 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "Role",
 						Name:     "kubermatic:secret-abcd:owners-thunderball",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secret-abcd:projectmanagers-thunderball",
+						Namespace: "kubermatic",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: corev1.SchemeGroupVersion.String(),
+								Kind:       "Secret",
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secret-abcd:projectmanagers-thunderball",
 					},
 				},
 			},
@@ -2086,10 +2061,6 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						},
 						ResourceVersion: "1",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
@@ -2115,10 +2086,6 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "1",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2146,10 +2113,6 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 						},
 						ResourceVersion: "2",
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Subjects: []rbacv1.Subject{
 						{
 							APIGroup: rbacv1.GroupName,
@@ -2175,10 +2138,6 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 							},
 						},
 						ResourceVersion: "2",
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRoleBinding",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2678,10 +2637,6 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							kubermaticv1.AuthZRoleLabel: "projectmanagers-thunderball",
 						},
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRole",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
@@ -2708,10 +2663,6 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							kubermaticv1.AuthZRoleLabel: "owners-thunderball",
 						},
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRole",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
@@ -2737,10 +2688,6 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 							kubermaticv1.AuthZRoleLabel: "editors-thunderball",
 						},
 					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRole",
-						APIVersion: "rbac.authorization.k8s.io/v1",
-					},
 					Rules: []rbacv1.PolicyRule{
 						{
 							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
@@ -2765,10 +2712,6 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						Labels: map[string]string{
 							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
 						},
-					},
-					TypeMeta: metav1.TypeMeta{
-						Kind:       "ClusterRole",
-						APIVersion: "rbac.authorization.k8s.io/v1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
