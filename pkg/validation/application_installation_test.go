@@ -345,7 +345,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					return *spec
 				}(),
 			},
-			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"somebody-else"}: label "apps.kubermatic.k8c.io/managed-by" is immutable]`, // TODO: change message
+			expectedError: `[metadata.labels: Invalid value: {"apps.kubermatic.k8c.io/managed-by":"somebody-else"}: label "apps.kubermatic.k8c.io/managed-by" is immutable]`,
 		},
 		{
 			name: "Update ApplicationInstallation Failure - type label is immutable if managed by kkp",
@@ -367,7 +367,7 @@ func TestValidateApplicationInstallationUpdate(t *testing.T) {
 					return *spec
 				}(),
 			},
-			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"kkp", "apps.kubermatic.k8c.io/type":"something-else"}: label "apps.kubermatic.k8c.io/type" is immutable]`,
+			expectedError: `[metadata.labels: Invalid value: {"apps.kubermatic.k8c.io/managed-by":"kkp","apps.kubermatic.k8c.io/type":"something-else"}: label "apps.kubermatic.k8c.io/type" is immutable]`,
 		},
 		{
 			name: "Update ApplicationInstallation Failure - invalid values",
