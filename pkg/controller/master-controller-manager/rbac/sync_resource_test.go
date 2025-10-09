@@ -53,7 +53,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
-			expectedActions: []string{"create", "create", "create"},
+			expectedActions: []string{"create", "create", "create", "create", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
 
 			dependantToSync: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{
@@ -150,6 +150,32 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						},
 					},
 				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+						Labels: map[string]string{
+							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{""},
+							Resources:     []string{"configmaps"},
+							ResourceNames: []string{"cluster-abcd-ca-bundle"},
+							Verbs:         []string{"get"},
+						},
+					},
+				},
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
@@ -233,13 +259,76 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						Name:     "kubermatic:cluster-abcd:viewers-thunderball",
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:cluster-abcd:etcd-launcher",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Namespace: "cluster-abcd",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher",
+						},
+						{
+							Namespace: "kube-system",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher-abcd",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:cluster-abcd:viewers-thunderball",
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:etcd-launcher",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ClusterKindName,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Namespace: "cluster-abcd",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher",
+						},
+						{
+							Namespace: "kube-system",
+							Kind:      "ServiceAccount",
+							Name:      "etcd-launcher-abcd",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
+					},
+				},
 			},
 		},
 
 		// scenario 2
 		{
 			name:            "scenario 2: a proper set of RBAC Role/Binding is generated for an ssh key",
-			expectedActions: []string{"create", "create", "create"},
+			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
 
 			dependantToSync: &kubermaticv1.UserSSHKey{
 				TypeMeta: metav1.TypeMeta{
@@ -1399,33 +1488,6 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			expectedRoleBindings: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "kubermatic:secret-abcd:owners-thunderball",
-						Namespace: "kubermatic",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: corev1.SchemeGroupVersion.String(),
-								Kind:       "Secret",
-								Name:       "abcd",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							APIGroup: rbacv1.GroupName,
-							Kind:     "Group",
-							Name:     "owners-thunderball",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "Role",
-						Name:     "kubermatic:secret-abcd:owners-thunderball",
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-abcd:projectmanagers-thunderball",
 						Namespace: "kubermatic",
 						OwnerReferences: []metav1.OwnerReference{
@@ -1449,6 +1511,33 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "Role",
 						Name:     "kubermatic:secret-abcd:projectmanagers-thunderball",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secret-abcd:owners-thunderball",
+						Namespace: "kubermatic",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: corev1.SchemeGroupVersion.String(),
+								Kind:       "Secret",
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secret-abcd:owners-thunderball",
 					},
 				},
 			},
