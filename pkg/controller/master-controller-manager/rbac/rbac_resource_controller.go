@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -121,6 +122,12 @@ func (c *resourcesController) Reconcile(ctx context.Context, req reconcile.Reque
 		}
 
 		return reconcile.Result{}, err
+	}
+
+	if obj.GetObjectKind().GroupVersionKind().Empty() {
+		if gvk, err := apiutil.GVKForObject(obj, c.client.Scheme()); err == nil {
+			obj.GetObjectKind().SetGroupVersionKind(gvk)
+		}
 	}
 
 	if obj.GetDeletionTimestamp() != nil {

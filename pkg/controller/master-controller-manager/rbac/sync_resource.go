@@ -59,30 +59,6 @@ func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Conte
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	// In controller-runtime >= v0.22 fake client may not set GVK on Get; fall back to Go type
-	if gvk.Kind == "" {
-		switch obj.(type) {
-		case *kubermaticv1.Cluster:
-			gvk.Kind = "Cluster"
-			gvk.Group = kubermaticGroup
-		case *kubermaticv1.UserSSHKey:
-			gvk.Kind = "UserSSHKey"
-			gvk.Group = kubermaticGroup
-		case *kubermaticv1.UserProjectBinding:
-			gvk.Kind = "UserProjectBinding"
-			gvk.Group = kubermaticGroup
-		case *kubermaticv1.ExternalCluster:
-			gvk.Kind = "ExternalCluster"
-			gvk.Group = kubermaticGroup
-		case *kubermaticv1.GroupProjectBinding:
-			gvk.Kind = "GroupProjectBinding"
-			gvk.Group = kubermaticGroup
-		case *kubermaticv1.ResourceQuota:
-			gvk.Kind = "ResourceQuota"
-			gvk.Group = kubermaticGroup
-		}
-		gvk.Version = "v1"
-	}
 	resourceName, err := getPluralResourceName(c.restMapper, obj)
 	if err != nil {
 		return err
@@ -126,22 +102,6 @@ func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Con
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	// In controller-runtime >= v0.22 fake client may not set GVK on Get; fall back to Go type
-	if gvk.Kind == "" {
-		switch obj.(type) {
-		case *corev1.Secret:
-			gvk.Kind = "Secret"
-		case *rbacv1.Role:
-			gvk.Kind = "Role"
-		case *rbacv1.RoleBinding:
-			gvk.Kind = "RoleBinding"
-		case *rbacv1.ClusterRole:
-			gvk.Kind = "ClusterRole"
-		case *rbacv1.ClusterRoleBinding:
-			gvk.Kind = "ClusterRoleBinding"
-		}
-		gvk.Version = "v1"
-	}
 	resourceName, err := getPluralResourceName(c.restMapper, obj)
 	if err != nil {
 		return err
