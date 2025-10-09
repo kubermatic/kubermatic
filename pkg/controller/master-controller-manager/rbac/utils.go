@@ -65,6 +65,10 @@ func getPluralResourceName(restMapper meta.RESTMapper, obj ctrlruntimeclient.Obj
 			gvk.Kind = "Role"
 		case *rbacv1.RoleBinding:
 			gvk.Kind = "RoleBinding"
+		case *rbacv1.ClusterRole:
+			gvk.Kind = "ClusterRole"
+		case *rbacv1.ClusterRoleBinding:
+			gvk.Kind = "ClusterRoleBinding"
 		}
 		gvk.Version = "v1"
 	}

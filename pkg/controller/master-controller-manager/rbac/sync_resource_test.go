@@ -53,7 +53,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
-			expectedActions: []string{"create", "create", "create", "create"},
+			expectedActions: []string{"create", "create", "create"},
 
 			dependantToSync: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{
@@ -150,32 +150,6 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						},
 					},
 				},
-
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
-								Name:       "abcd",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-						Labels: map[string]string{
-							kubermaticv1.AuthZRoleLabel: "viewers-thunderball",
-						},
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups:     []string{""},
-							Resources:     []string{"configmaps"},
-							ResourceNames: []string{"cluster-abcd-ca-bundle"},
-							Verbs:         []string{"get"},
-						},
-					},
-				},
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
@@ -257,37 +231,6 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "ClusterRole",
 						Name:     "kubermatic:cluster-abcd:viewers-thunderball",
-					},
-				},
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "kubermatic:configmap-cluster-abcd-ca-bundle:etcd-launcher",
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ClusterKindName,
-								Name:       "abcd",
-								UID:        "abcdID", // set manually
-							},
-						},
-						ResourceVersion: "1",
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							Namespace: "cluster-abcd",
-							Kind:      "ServiceAccount",
-							Name:      "etcd-launcher",
-						},
-						{
-							Namespace: "kube-system",
-							Kind:      "ServiceAccount",
-							Name:      "etcd-launcher-abcd",
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						APIGroup: rbacv1.GroupName,
-						Kind:     "ClusterRole",
-						Name:     "kubermatic:configmap-cluster-abcd-ca-bundle:viewers-thunderball",
 					},
 				},
 			},
@@ -1309,32 +1252,6 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			}
 
 			{
-				var clusterRoles rbacv1.ClusterRoleList
-				err = fakeMasterClusterClient.List(context.Background(), &clusterRoles)
-				assert.NoError(t, err)
-
-				assert.Len(t, clusterRoles.Items, len(test.expectedClusterRoles),
-					"cluster contains an different number of ClusterRoles than expected (%d != %d)", len(clusterRoles.Items), len(test.expectedClusterRoles))
-
-			expectedClusterRolesLoop:
-				for _, expectedClusterRole := range test.expectedClusterRoles {
-					// double-iterating over both slices might not be the most efficient way
-					// but it spares the trouble of converting pointers to values
-					// and then sorting everything for the comparison.
-					for _, existingClusterRole := range clusterRoles.Items {
-						if existingClusterRole.Name != expectedClusterRole.Name {
-							continue
-						}
-						if d := diff.ObjectDiff(*expectedClusterRole, existingClusterRole); d != "" {
-							t.Errorf("Got unexpected result for %s clusterrolebinding:\n%v", expectedClusterRole.Name, d)
-						}
-						continue expectedClusterRolesLoop
-					}
-					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
-				}
-			}
-
-			{
 				var clusterRoleBindings rbacv1.ClusterRoleBindingList
 				err = fakeMasterClusterClient.List(context.Background(), &clusterRoleBindings)
 				assert.NoError(t, err)
@@ -1357,6 +1274,32 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 						continue expectedClusterRoleBindingsLoop
 					}
 					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedClusterRoleBinding.Name)
+				}
+			}
+
+			{
+				var clusterRoles rbacv1.ClusterRoleList
+				err = fakeMasterClusterClient.List(context.Background(), &clusterRoles)
+				assert.NoError(t, err)
+
+				assert.Len(t, clusterRoles.Items, len(test.expectedClusterRoles),
+					"cluster contains an different number of ClusterRoles than expected (%d != %d)", len(clusterRoles.Items), len(test.expectedClusterRoles))
+
+			expectedClusterRolesLoop:
+				for _, expectedClusterRole := range test.expectedClusterRoles {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+					for _, existingClusterRole := range clusterRoles.Items {
+						if existingClusterRole.Name != expectedClusterRole.Name {
+							continue
+						}
+						if d := diff.ObjectDiff(*expectedClusterRole, existingClusterRole); d != "" {
+							t.Errorf("Got unexpected result for %s clusterrolebinding:\n%v", expectedClusterRole.Name, d)
+						}
+						continue expectedClusterRolesLoop
+					}
+					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
 				}
 			}
 		})
