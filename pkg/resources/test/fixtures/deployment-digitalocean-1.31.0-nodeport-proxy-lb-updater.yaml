@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: nodeport-proxy-lb-updater
   name: nodeport-proxy-lb-updater
@@ -14,7 +13,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: nodeport-proxy-lb-updater
         cluster: de-test-01

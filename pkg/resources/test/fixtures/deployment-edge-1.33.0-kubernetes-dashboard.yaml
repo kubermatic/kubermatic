@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: kubernetes-dashboard
   name: kubernetes-dashboard
@@ -17,7 +16,6 @@ spec:
       annotations:
         cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: http-prober-bin,tmp-volume
         kubermatic.k8c.io/last-restart: ""
-      creationTimestamp: null
       labels:
         app: kubernetes-dashboard
         cluster: de-test-01
