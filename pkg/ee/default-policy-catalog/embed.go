@@ -59,8 +59,13 @@ func GetPolicyTemplates() ([]kubermaticv1.PolicyTemplate, error) {
 
 			// Convert the ClusterPolicy to PolicyTemplate
 			template, err := convertClusterPolicyToPolicyTemplate(file)
+			closeErr := file.Close()
+
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert %s: %w", entry.Name(), err)
+			}
+			if closeErr != nil {
+				return nil, fmt.Errorf("failed to close %s: %w", entry.Name(), closeErr)
 			}
 
 			templates = append(templates, template)
@@ -71,8 +76,6 @@ func GetPolicyTemplates() ([]kubermaticv1.PolicyTemplate, error) {
 
 // convertClusterPolicyToPolicyTemplate converts a Kyverno ClusterPolicy to a Kubermatic PolicyTemplate.
 func convertClusterPolicyToPolicyTemplate(file fs.File) (kubermaticv1.PolicyTemplate, error) {
-	defer file.Close()
-
 	content, err := io.ReadAll(file)
 	if err != nil {
 		return kubermaticv1.PolicyTemplate{}, err
