@@ -172,7 +172,10 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	}
 
 	if template.Spec.NamespacedPolicy {
-		return r.reconcileNamespacedPolicy(ctx, log, template, binding)
+		if binding.Spec.KyvernoPolicyNamespace != nil && binding.Spec.KyvernoPolicyNamespace.Name != "" {
+			return r.reconcileNamespacedPolicy(ctx, log, template, binding)
+		}
+		return nil
 	}
 	return r.reconcileClusterPolicy(ctx, log, template, binding)
 }
@@ -369,7 +372,7 @@ func mapPolicyToRequest(namespace string) func(ctx context.Context, p *kyvernov1
 
 // handlePolicyBindingCleanup handles the cleanup of a PolicyBinding and its resources.
 func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
-	if err := r.deleteKyvernoResourcesForBinding(ctx, binding); err != nil {
+	if err := r.deleteKyvernoResourcesForBinding(ctx, binding); err != nil && binding.DeletionTimestamp.IsZero() {
 		return err
 	}
 
