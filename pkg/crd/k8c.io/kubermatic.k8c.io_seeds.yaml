@@ -1420,9 +1420,7 @@ spec:
                     to default all new created clusters
                   type: string
                 defaultComponentSettings:
-                  description: |-
-                    DefaultComponentSettings are default values to set for newly created clusters.
-                    Deprecated: Use DefaultClusterTemplate instead.
+                  description: DefaultComponentSettings are default values to set for newly created clusters.
                   properties:
                     apiserver:
                       description: Apiserver configures kube-apiserver settings.
