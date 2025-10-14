@@ -294,7 +294,6 @@ type SeedSpec struct {
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *SeedMLASettings `json:"mla,omitempty"`
 	// DefaultComponentSettings are default values to set for newly created clusters.
-	// Deprecated: Use DefaultClusterTemplate instead.
 	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
 	// DefaultClusterTemplate is the name of a cluster template of scope "seed" that is used
 	// to default all new created clusters
