@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file was generated, using `make` and then modified (where applicable)
-#
-# - Replace all entries for env CLOUD_CONFIG value from `/etc/config/config` to `/etc/kubernetes/config`
+# This file was generated, DO NOT EDIT.
+# Run `make` instead.
 
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
@@ -528,7 +527,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/config
+              value: /etc/config/config
             - name: CLUSTER_NAME
               value: '{{ .Cluster.Name }}'
             - name: SSL_CERT_FILE
@@ -556,7 +555,7 @@ spec:
             - mountPath: /etc/kubermatic/certs
               name: ca-bundle
               readOnly: true
-            - mountPath: /etc/kubernetes
+            - mountPath: /etc/config
               name: cloud-config
               readOnly: true
       nodeSelector: {}
@@ -655,7 +654,7 @@ spec:
             - name: CSI_ENDPOINT
               value: unix://csi/csi.sock
             - name: CLOUD_CONFIG
-              value: /etc/kubernetes/config
+              value: /etc/config/config
             - name: SSL_CERT_FILE
               value: /etc/kubermatic/certs/ca-bundle.pem
           image: '{{ Image (print "registry.k8s.io/provider-os/cinder-csi-plugin:" $version) }}'
@@ -692,7 +691,7 @@ spec:
             - mountPath: /etc/kubermatic/certs
               name: ca-bundle
               readOnly: true
-            - mountPath: /etc/kubernetes
+            - mountPath: /etc/config
               name: cloud-config
               readOnly: true
       dnsPolicy: ClusterFirstWithHostNet
