@@ -59,7 +59,7 @@ spec:
         # The default value is "quay.io/kubermatic/application-catalog-manager"
         repository: quay.io/kubermatic/application-catalog-manager
         # Tag is used to override the application-catalog manager image tag.
-        tag: c3221135593524a8641fdb5b4e18682f45465922
+        tag: v0.1.0
       # Limit defines filtering criteria for ApplicationDefinitions to be reconciled from the OCI registry.
       # When undefined, all ApplicationDefinitions from the registry are pulled and reconciled.
       # When defined, only ApplicationDefinitions matching the specified criteria are processed.

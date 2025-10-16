@@ -437,7 +437,6 @@ spec:
   # to default all new created clusters
   defaultClusterTemplate: ""
   # DefaultComponentSettings are default values to set for newly created clusters.
-  # Deprecated: Use DefaultClusterTemplate instead.
   defaultComponentSettings:
     # Apiserver configures kube-apiserver settings.
     apiserver:
