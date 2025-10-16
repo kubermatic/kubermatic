@@ -418,6 +418,24 @@ func getAppInstallOverrideValues(cluster *kubermaticv1.Cluster, overwriteRegistr
 			},
 		},
 		"podSecurityContext": podSecurityContext,
+		"tolerations": []map[string]any{
+			{
+				"key":      "node-role.kubernetes.io/control-plane",
+				"operator": "Exists",
+			},
+			{
+				"key":      "node-role.kubernetes.io/master", // deprecated
+				"operator": "Exists",
+			},
+			{
+				"key":      "node.kubernetes.io/not-ready",
+				"operator": "Exists",
+			},
+			{
+				"key":      "node.cloudprovider.kubernetes.io/uninitialized",
+				"operator": "Exists",
+			},
+		},
 	}
 	valuesCni := map[string]any{
 		// we run Cilium as non-exclusive CNI to allow for Multus use-cases
