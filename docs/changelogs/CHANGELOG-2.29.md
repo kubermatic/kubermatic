@@ -12,10 +12,6 @@
 	-  Cert-manager now hashes large RSA keys (3072 & 4096bit) with SHA-384 or SHA-512 respectively. If you are using these key sizes in your certificates, make sure your environment can handle the aforementioned hashing algorithms
 	- Log messages that were not structured have now been replaced with structured logs. If you were matching on specific log strings, this could break your setup.
 
-- Log messages that were not structured have now been replaced with structured logs. If you were matching on specific log strings, this could break your setup ([#14853](https://github.com/kubermatic/kubermatic/pull/14853))
-
-- The deprecated field `defaultComponentSettings` in the Seed Resource has been removed ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
-
 ### ACTION REQUIRED
 
 ### API Changes 
@@ -28,18 +24,16 @@
 
 #### Supported Versions
 
+- 1.34.1
 - 1.33.5
-- 1.33.4
-- 1.33.3 
+- 1.33.3
 - 1.33.2
 - 1.32.9
-- 1.32.8
 - 1.32.7
 - 1.32.6
 - 1.31.13
-- 1.31.12
 - 1.31.11
-- 1.31.10
+- 1.31.10 
 
 ### Cloud Providers 
 
@@ -73,6 +67,10 @@
 - Add an option to restrict project modification to the admins ([#14843](https://github.com/kubermatic/kubermatic/pull/14843))
 - Overwrite system application images when `overwriteRegistry` is defined ([#14773](https://github.com/kubermatic/kubermatic/pull/14773))
 - KubeLB: KKP defaulting will now enable KubeLB for a cluster if it's enforced at the datacenter level ([#14732](https://github.com/kubermatic/kubermatic/pull/14732))
+- Allow setting registry settings of container-runtime deployed user cluster through Cluster CR ([#14745](https://github.com/kubermatic/kubermatic/pull/14745))
+- Enable DynamicResourceAllocation (DRA) for user clusters ([#14872](https://github.com/kubermatic/kubermatic/pull/14872))
+- You can now use annotations and labels on user clusters to enable templating during application installations. This allows for dynamic configuration using expressions like {{- if eq (index .Cluster.Annotations "env") "dev" }}custom1{{ else }}custom2{{ end }}. This feature is useful for more flexible multi-environment setups, for example ([#14877](https://github.com/kubermatic/kubermatic/pull/14877))
+
 
 ### Bugfixes
 
@@ -85,7 +83,8 @@
 - Fix log spam on deleted ResourceQuota objects ([#14714](https://github.com/kubermatic/kubermatic/pull/14714))
 - Fix a regression bug regarding node-exporter pod labeling which didn't exclude node-exporter pods from pod discovery ([#14740](https://github.com/kubermatic/kubermatic/pull/14740))
 - Add Velero post-backup hook to clean up /backup/* files after Prometheus backup completion to prevent disk space accumulation on the node where Prometheus is running ([#14708](https://github.com/kubermatic/kubermatic/pull/14708))
-
+- A bug which lead to missing kube state metrics scraping was fixed ([#14759](https://github.com/kubermatic/kubermatic/pull/14759))
+- Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
 
 ### Updates
 
@@ -95,34 +94,19 @@
 - Update operating-system-manager version to [v1.7.6](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.6) ([#15047](https://github.com/kubermatic/kubermatic/pull/15047))
 - Update nginx-ingress-controller version to 1.13.2 ([#15036](https://github.com/kubermatic/kubermatic/pull/15036))
 - Update Dex chart to appversion 2.44.0 ([#15041](https://github.com/kubermatic/kubermatic/pull/15041))
-- Update cert-manager to v1.17.4 ([#14853](https://github.com/kubermatic/kubermatic/pull/14853))
 - KubeLB CCM has been upgraded to v1.2.0 ([#14961](https://github.com/kubermatic/kubermatic/pull/14961))
 - Update Prometheus federation configuration to include machine deployment metrics from user clusters in the seed MLA Prometheus ([#14817](https://github.com/kubermatic/kubermatic/pull/14817))
 - Update helm to v3.17.4 ([#14831](https://github.com/kubermatic/kubermatic/pull/14831))
 - Update the user cluster and metering Prometheus instances in the KKP Seed cluster to scrape `kubelet_volume_stats_capacity_bytes` and `kubelet_volume_stats_used_bytes` metrics from the KKP user clusters ([#14769](https://github.com/kubermatic/kubermatic/pull/14769))
 - Update `kubermatic-installer local kind` Dex static client configurations ([#14735](https://github.com/kubermatic/kubermatic/pull/14735))
 - Update Go version to 1.25.1 ([#14940](https://github.com/kubermatic/kubermatic/pull/14940))
-- Add Cilium 1.17.7 and 1.18.1 as supported CNI version, deprecate cilium version 1.14.16 as it's impacted by CVEs ([#15048](https://github.com/kubermatic/kubermatic/pull/15048))
+- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
+
 
 ### Cleanups
 
 - Gateway API CRDs installation and management have been delegated to KubeLB, that natively manages these CRDs using "-install-gateway-api-crds" and "-gateway-api-crds-channel" flags ([#14919](https://github.com/kubermatic/kubermatic/pull/14919))
 - Remove support for Equinix Metal (Packet) provider ([#14827](https://github.com/kubermatic/kubermatic/pull/14827))
 - By default the oauth2-proxy disables Dex's approval screen now. To return to the old behaviour, set `approval_prompt = "force"` for each IAP deployment in your Helm values.yaml ([#14751](https://github.com/kubermatic/kubermatic/pull/14751))
-
-### Miscellaneous
-
-- Make Cilium 1.18.1 the default version ([#15065](https://github.com/kubermatic/kubermatic/pull/15065))
-- You can now use annotations and labels on user clusters to enable templating during application installations. This allows for dynamic configuration using expressions like {{- if eq (index .Cluster.Annotations "env") "dev" }}custom1{{ else }}custom2{{ end }}. This feature is useful for more flexible multi-environment setups, for example ([#14877](https://github.com/kubermatic/kubermatic/pull/14877))
-- Enable DynamicResourceAllocation (DRA) for user clusters ([#14872](https://github.com/kubermatic/kubermatic/pull/14872))
 - Early deprecation of unsupported Falco versions 0.35.1 and 0.37.0 from the default application catalog, since they are not compatible with modern Linux Kernel versions present in machine templates ([#14861](https://github.com/kubermatic/kubermatic/pull/14861))
-- Defaults were added to `http.Transport` used for minio client ([#14848](https://github.com/kubermatic/kubermatic/pull/14848))
-- Allow setting registry settings of container-runtime deployed user cluster through Cluster CR ([#14745](https://github.com/kubermatic/kubermatic/pull/14745))
-- Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
-- A bug which lead to missing kube state metrics scraping was fixed ([#14759](https://github.com/kubermatic/kubermatic/pull/14759))
-
-### Chores
-
-
-- Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
-
+- The deprecated field `defaultComponentSettings` in the Seed Resource has been removed ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
