@@ -26,7 +26,7 @@ csi:
         name: ca-bundle
         readOnly: true
       - name: cloud-config
-        mountPath: /etc/kubernetes
+        mountPath: /etc/config
         readOnly: true
     extraEnv:
       # use KKP's CA bundle
