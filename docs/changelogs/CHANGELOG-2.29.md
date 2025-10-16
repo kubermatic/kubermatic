@@ -110,3 +110,62 @@
 - By default the oauth2-proxy disables Dex's approval screen now. To return to the old behaviour, set `approval_prompt = "force"` for each IAP deployment in your Helm values.yaml ([#14751](https://github.com/kubermatic/kubermatic/pull/14751))
 - Early deprecation of unsupported Falco versions 0.35.1 and 0.37.0 from the default application catalog, since they are not compatible with modern Linux Kernel versions present in machine templates ([#14861](https://github.com/kubermatic/kubermatic/pull/14861))
 - The deprecated field `defaultComponentSettings` in the Seed Resource has been removed ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
+
+
+
+### Dashboard and API 
+
+#### Cloud Providers 
+
+##### Openstack
+- Add OpenStack LoadBalancer Class configuration support at the Cluster level ([#7646](https://github.com/kubermatic/dashboard/pull/7646))
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+- Add new option in the user-cluster to skip router reconciliation option for OpenStack provider ([#7483](https://github.com/kubermatic/dashboard/pull/7483))
+- Fix network selection to display network ID when name is missing in OpenStack ([#7513](https://github.com/kubermatic/dashboard/pull/7513))
+
+##### KubeVirt 
+- Skip setting custom CPUs field in machine deployment for Kubevirt user clusters ([#7493](https://github.com/kubermatic/dashboard/pull/7493))
+
+#### New Features
+
+- Add the overwrite-registry flag in the api server ([#7651](https://github.com/kubermatic/dashboard/pull/7651))
+- Add support to toggle Encryption at Rest for Edit Cluster dialog ([#7599](https://github.com/kubermatic/dashboard/pull/7599))
+- Enables Encryption at rest feature for secrets ([#7525](https://github.com/kubermatic/dashboard/pull/7525))
+- Display node labels in the nodes list table ([#7588](https://github.com/kubermatic/dashboard/pull/7588))
+- Add dialog to choose authentication type (KKP API or OIDC-kubelogin) when downloading or sharing kubeconfig via OIDC ([#7522](https://github.com/kubermatic/dashboard/pull/7522))
+- Use cabundle as key for caching http.Transport ([#7591](https://github.com/kubermatic/dashboard/pull/7591))
+- Make NVIDIA GPU Operator labels accessible through Dashboard API ([#7520](https://github.com/kubermatic/dashboard/pull/7520))
+- Web-terminal: k9s, krew, and krew plugins ns, ctx, and oidc-login are available to use in the web-terminal image ([#7509](https://github.com/kubermatic/dashboard/pull/7509))
+- Add a new button in the initial node step of the user cluster wizard to configure the Cluster Autoscaler application ([#7500](https://github.com/kubermatic/dashboard/pull/7500))
+- Add support to delete presets from the admin interface with detailed linkage information ([#7479](https://github.com/kubermatic/dashboard/pull/7479))
+- Add an option to restrict project modification to admins ([#7504](https://github.com/kubermatic/dashboard/pull/7504))
+- Move web-terminal cleanup job to seed to fix cleanup not working when the token is expired ([#7451](https://github.com/kubermatic/dashboard/pull/7451))
+
+#### Bugfixes
+
+- Fix disk types and machine types values are not loaded in cluster template for Google Cloud Provider ([#7639](https://github.com/kubermatic/dashboard/pull/7639))
+- Fix the Kyverno PolicyBinding in a multi-seed setup ([#7631](https://github.com/kubermatic/dashboard/pull/7631))
+- Fix encryption configuration handling during cluster editing ([#7620](https://github.com/kubermatic/dashboard/pull/7620))
+- Fix cluster template editing when autoscaler application is not present ([#7619](https://github.com/kubermatic/dashboard/pull/7619))
+- Fix a possible null pointer exception for `isGlobalViewer` ([#7610](https://github.com/kubermatic/dashboard/pull/7610))
+- Disable min/max options if cluster autoscaler is not available ([#7559](https://github.com/kubermatic/dashboard/pull/7559))
+- Fix web terminal token expiration by refreshing expired tokens automatically ([#7508](https://github.com/kubermatic/dashboard/pull/7508))
+- Project viewers can now only view cluster templates. Create, update, and delete actions are restricted except deletion by the owner ([#7446](https://github.com/kubermatic/dashboard/pull/7446))
+- Fix validation error when switching expose strategy from Tunneling to LoadBalancer by clearing tunnelingAgentIP automatically ([#7422](https://github.com/kubermatic/dashboard/pull/7422))
+- Fix KubeLB checkbox state management and UI flickering issues in cluster creation wizard/edit cluster dialog ([#7458](https://github.com/kubermatic/dashboard/pull/7458))
+- KubeLB: Fix a bug where enforcement on a datacenter was not enabling KubeLB for the user clusters in the dashboard ([#7453](https://github.com/kubermatic/dashboard/pull/7453))
+
+#### Updates
+
+- Update KKP SDK to include `subnetAllocationPool` and `subnetCIDR` ([#7626](https://github.com/kubermatic/dashboard/pull/7626))
+- Update Go version to v1.25.1 ([#7554](https://github.com/kubermatic/dashboard/pull/7554))
+- Update Go version to 1.25.0 ([#7539](https://github.com/kubermatic/dashboard/pull/7539))
+- Update Node version to 22 ([#7539](https://github.com/kubermatic/dashboard/pull/7539))
+- Update web-terminal image to v0.11.0 ([#7509](https://github.com/kubermatic/dashboard/pull/7509))
+- Update to Go version 1.24.4 ([#7440](https://github.com/kubermatic/dashboard/pull/7440))
+
+#### Cleanups
+
+- Remove deprecated Azure Basic Load Balancer SKU option, defaulting to Standard SKU ([#7590](https://github.com/kubermatic/dashboard/pull/7590))
+- Remove Equinix (Packet) provider support from cluster creation, KubeOne, and presets ([#7533](https://github.com/kubermatic/dashboard/pull/7533))
+
