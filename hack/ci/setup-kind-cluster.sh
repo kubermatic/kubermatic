@@ -142,7 +142,7 @@ fi
 # cluster, which will force KKP to pull the correct image.
 docker exec "$KIND_CLUSTER_NAME-control-plane" bash -c "crictl images | grep kube-controller-manager | awk '{print \$2}' | xargs -I{} crictl rmi registry.k8s.io/kube-controller-manager:{}" || true
 
-CILIUM_VERSION="1.18.2"
+CILIUM_VERSION="1.18.1"
 
 helm repo add cilium https://helm.cilium.io/
 helm install cilium cilium/cilium \
