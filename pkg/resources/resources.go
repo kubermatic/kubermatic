@@ -274,6 +274,8 @@ const (
 
 	// CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
+	// CloudControllerManagerServiceAccountName is the name of the cloud controller manager service account.
+	CloudControllerManagerServiceAccountName = "cloud-provider"
 
 	// DefaultServiceAccountName is the name of Kubernetes default service accounts.
 	DefaultServiceAccountName = "default"
