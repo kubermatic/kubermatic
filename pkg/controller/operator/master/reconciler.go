@@ -429,9 +429,10 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 			kubermatic.APIDeploymentReconciler(config, r.workerName, r.versions),
 			kubermatic.UIDeploymentReconciler(config, r.versions),
 		)
-		if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
-			reconcilers = append(reconcilers, applicationcatalogmanager.CatalogManagerDeploymentReconciler(config))
-		}
+	}
+
+	if config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		reconcilers = append(reconcilers, applicationcatalogmanager.CatalogManagerDeploymentReconciler(config))
 	}
 
 	modifiers := []reconciling.ObjectModifier{
