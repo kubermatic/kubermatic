@@ -328,6 +328,8 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 	}
 	imageSet.Insert(sets.List(applicationImages)...)
 
+	// finally, add some static images that are not covered by any of the above
+	imageSet.Insert(staticImages()...)
 	return archiveOrCopyImages(ctx, logger, imageSet, options, userAgent)
 }
 
@@ -471,4 +473,9 @@ func loadImages(ctx context.Context, logger *logrus.Logger, options *MirrorImage
 
 	logger.Info("✅ Finished loading images.")
 	return nil
+}
+
+func staticImages() []string {
+	return []string{
+		resources.WEBTerminalImage}
 }
