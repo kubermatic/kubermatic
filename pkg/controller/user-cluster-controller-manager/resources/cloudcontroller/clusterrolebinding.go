@@ -21,6 +21,7 @@ import (
 	"k8c.io/reconciler/pkg/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ClusterRoleBindingReconciler returns a func to create/update the ClusterRoleBinding for external cloud controllers.
@@ -41,6 +42,11 @@ func ClusterRoleBindingReconciler() reconciling.NamedClusterRoleBindingReconcile
 					Kind:     "User",
 					Name:     resources.CloudControllerManagerCertUsername,
 					APIGroup: rbacv1.GroupName,
+				},
+				{
+					Kind:      rbacv1.ServiceAccountKind,
+					Name:      resources.CloudControllerManagerServiceAccountName,
+					Namespace: metav1.NamespaceSystem,
 				},
 			}
 			return crb, nil
