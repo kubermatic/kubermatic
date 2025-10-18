@@ -1167,7 +1167,7 @@ func TestValidateApplicationDefinitionDelete(t *testing.T) {
 		{
 			name:          "scenario 2: application deletion is not allowed for managed application definition",
 			ad:            managedAppDef,
-			expectedError: `[metadata.labels: Invalid value: map[string]string{"apps.kubermatic.k8c.io/managed-by":"kkp"}: ` + deleteSystemAppErrorMsg() + `]`,
+			expectedError: `[metadata.labels: Invalid value: {"apps.kubermatic.k8c.io/managed-by":"kkp"}: ` + deleteSystemAppErrorMsg() + `]`,
 		},
 	}
 

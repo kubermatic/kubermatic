@@ -34,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -133,6 +134,12 @@ func (h *AdmissionHandler) ensureClusterReference(ctx context.Context, addon *ku
 
 	if cluster.DeletionTimestamp != nil {
 		return fmt.Errorf("Cluster %s is in deletion already, cannot create a new addon", cluster.Name)
+	}
+
+	if cluster.GetObjectKind().GroupVersionKind().Empty() {
+		if gvk, err := apiutil.GVKForObject(cluster, client.Scheme()); err == nil {
+			cluster.GetObjectKind().SetGroupVersionKind(gvk)
+		}
 	}
 
 	addon.Spec.Cluster = corev1.ObjectReference{
