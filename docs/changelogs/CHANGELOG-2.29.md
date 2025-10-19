@@ -12,15 +12,11 @@
 	-  Cert-manager now hashes large RSA keys (3072 & 4096bit) with SHA-384 or SHA-512 respectively. If you are using these key sizes in your certificates, make sure your environment can handle the aforementioned hashing algorithms
 	- Log messages that were not structured have now been replaced with structured logs. If you were matching on specific log strings, this could break your setup.
 
-### ACTION REQUIRED
-
-### API Changes 
-
-### Supported Kubernetes Version 
+### Supported Kubernetes Version
 
 - Add support for Kubernetes version 1.34 ([#14940](https://github.com/kubermatic/kubermatic/pull/14940))
 - Remove support for Kubernetes version 1.30 ([#14828](https://github.com/kubermatic/kubermatic/pull/14828))
-- Add support for k8s patch releases 1.33.5/1.33.4/1.33.3/1.33.2/1.32.9/1.32.8/1.32.7/1.32.6/1.31.13/1.31.12/1.31.11/1.31.10 ([#14998](https://github.com/kubermatic/kubermatic/pull/14998)) ([#14910](https://github.com/kubermatic/kubermatic/pull/14910)) ([#14830](https://github.com/kubermatic/kubermatic/pull/14830)) ([#14783](https://github.com/kubermatic/kubermatic/pull/14783))
+- Add support for k8s patch releases 1.33.5/1.33.4/1.33.3/1.33.2/1.32.9/1.32.8/1.32.7/1.32.6/1.31.13/1.31.12/1.31.11/1.31.10 ([#14998](https://github.com/kubermatic/kubermatic/pull/14998), [#14910](https://github.com/kubermatic/kubermatic/pull/14910), [#14830](https://github.com/kubermatic/kubermatic/pull/14830), [#14783](https://github.com/kubermatic/kubermatic/pull/14783))
 
 #### Supported Versions
 
@@ -35,26 +31,20 @@
 - 1.31.11
 - 1.31.10 
 
-### Cloud Providers 
+### Cloud Providers
 
 #### KubeVirt
 
 - A bug was fixed where evicted KubeVirt VMs configured with evictionStrategy `LiveMigrate` were treated like VMs with `External` evictionStrategy by deleting the related machine object ([#14736](https://github.com/kubermatic/kubermatic/pull/14736))
-
 - A bug regarding network policy cleanup up in KubeVirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed ([#14802](https://github.com/kubermatic/kubermatic/pull/14802))
-
 - Support KubeVirt vCPUs validation in the resource quota controller ([#14728](https://github.com/kubermatic/kubermatic/pull/14728))
 
 #### OpenStack 
 
 - Add Load Balancer Class support for OpenStack cloud provider on cluster level ([#15046](https://github.com/kubermatic/kubermatic/pull/15046))
-
 - Support IPv4 and IPv6 custom subnet for Openstack provider ([#15080](https://github.com/kubermatic/kubermatic/pull/15080))
-
 - Add the ability to skip router reconciliation in the OpenStack provider ([#14771](https://github.com/kubermatic/kubermatic/pull/14771))
-
 - Fix adding router-link OpenStack finalizer in the wrong place ([#15086](https://github.com/kubermatic/kubermatic/pull/15086))
-
 
 ### New Features
 
@@ -70,7 +60,6 @@
 - Allow setting registry settings of container-runtime deployed user cluster through Cluster CR ([#14745](https://github.com/kubermatic/kubermatic/pull/14745))
 - Enable DynamicResourceAllocation (DRA) for user clusters ([#14872](https://github.com/kubermatic/kubermatic/pull/14872))
 - You can now use annotations and labels on user clusters to enable templating during application installations. This allows for dynamic configuration using expressions like {{- if eq (index .Cluster.Annotations "env") "dev" }}custom1{{ else }}custom2{{ end }}. This feature is useful for more flexible multi-environment setups, for example ([#14877](https://github.com/kubermatic/kubermatic/pull/14877))
-
 
 ### Bugfixes
 
@@ -102,7 +91,6 @@
 - Update Go version to 1.25.1 ([#14940](https://github.com/kubermatic/kubermatic/pull/14940))
 - Replace Bitnami charts and images with kubermatic-mirror charts and images to address issues identified in bitnami/containers#83267 ([#14873](https://github.com/kubermatic/kubermatic/pull/14873))
 
-
 ### Cleanups
 
 - Gateway API CRDs installation and management have been delegated to KubeLB, that natively manages these CRDs using "-install-gateway-api-crds" and "-gateway-api-crds-channel" flags ([#14919](https://github.com/kubermatic/kubermatic/pull/14919))
@@ -111,20 +99,24 @@
 - Early deprecation of unsupported Falco versions 0.35.1 and 0.37.0 from the default application catalog, since they are not compatible with modern Linux Kernel versions present in machine templates ([#14861](https://github.com/kubermatic/kubermatic/pull/14861))
 - The deprecated field `defaultComponentSettings` in the Seed Resource has been removed ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
 
+### Dashboard and API
 
+#### Cloud Providers
 
-### Dashboard and API 
+##### GCP
 
-#### Cloud Providers 
+- Fix disk types and machine types values are not loaded in cluster template for Google Cloud Provider ([#7639](https://github.com/kubermatic/dashboard/pull/7639))
 
-##### Openstack
+##### OpenStack
+
 - Add OpenStack LoadBalancer Class configuration support at the Cluster level ([#7646](https://github.com/kubermatic/dashboard/pull/7646))
-- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter-level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
+- Add a new option to enable the config drive on the OpenStack provider for machine deployments, along with a datacenter level option to enforce it for all machine deployments ([#7516](https://github.com/kubermatic/dashboard/pull/7516))
 - Add new option in the user-cluster to skip router reconciliation option for OpenStack provider ([#7483](https://github.com/kubermatic/dashboard/pull/7483))
 - Fix network selection to display network ID when name is missing in OpenStack ([#7513](https://github.com/kubermatic/dashboard/pull/7513))
 
-##### KubeVirt 
-- Skip setting custom CPUs field in machine deployment for Kubevirt user clusters ([#7493](https://github.com/kubermatic/dashboard/pull/7493))
+##### KubeVirt
+
+- Skip setting custom CPUs field in machine deployment for KubeVirt user clusters ([#7493](https://github.com/kubermatic/dashboard/pull/7493))
 
 #### New Features
 
@@ -143,8 +135,7 @@
 
 #### Bugfixes
 
-- Fix disk types and machine types values are not loaded in cluster template for Google Cloud Provider ([#7639](https://github.com/kubermatic/dashboard/pull/7639))
-- Fix the Kyverno PolicyBinding in a multi-seed setup ([#7631](https://github.com/kubermatic/dashboard/pull/7631))
+- Fix the Kyverno Policybinding in a multi-seed setup ([#7631](https://github.com/kubermatic/dashboard/pull/7631))
 - Fix encryption configuration handling during cluster editing ([#7620](https://github.com/kubermatic/dashboard/pull/7620))
 - Fix cluster template editing when autoscaler application is not present ([#7619](https://github.com/kubermatic/dashboard/pull/7619))
 - Fix a possible null pointer exception for `isGlobalViewer` ([#7610](https://github.com/kubermatic/dashboard/pull/7610))
@@ -159,10 +150,8 @@
 
 - Update KKP SDK to include `subnetAllocationPool` and `subnetCIDR` ([#7626](https://github.com/kubermatic/dashboard/pull/7626))
 - Update Go version to v1.25.1 ([#7554](https://github.com/kubermatic/dashboard/pull/7554))
-- Update Go version to 1.25.0 ([#7539](https://github.com/kubermatic/dashboard/pull/7539))
 - Update Node version to 22 ([#7539](https://github.com/kubermatic/dashboard/pull/7539))
 - Update web-terminal image to v0.11.0 ([#7509](https://github.com/kubermatic/dashboard/pull/7509))
-- Update to Go version 1.24.4 ([#7440](https://github.com/kubermatic/dashboard/pull/7440))
 
 #### Cleanups
 
