@@ -46,8 +46,11 @@
 - Add the ability to skip router reconciliation in the OpenStack provider ([#14771](https://github.com/kubermatic/kubermatic/pull/14771))
 - Fix adding router-link OpenStack finalizer in the wrong place ([#15086](https://github.com/kubermatic/kubermatic/pull/15086))
 
-### New Features
+#### GCP
+- Fix Load Balancer assignment in Kubernetes 1.33 and 1.34 GCP clusters.([#15123](https://github.com/kubermatic/kubermatic/pull/15123))
 
+### New Features
+- Improve `PolicyBinding` resources cleanup([#15110](https://github.com/kubermatic/kubermatic/pull/15110))
 - The newly introduced external application catalog manager was added to `kubermatic-installer mirror-images` command to be respected in offline environments and fetching catalog apps from an OCI image when the external manager is enabled was introduced for that purpose. ([#14995](https://github.com/kubermatic/kubermatic/pull/14995))
 - Add [Kueue](https://github.com/kubernetes-sigs/kueue) to the default applications catalog ([#15004](https://github.com/kubermatic/kubermatic/pull/15004))
 - Non root device usage on worker nodes can now be enabled for containerd runtime by setting seed datacenter value `spec.datacenter.node.enableNonRootDeviceOwnership` to `true` ([#14891](https://github.com/kubermatic/kubermatic/pull/14891))
@@ -63,6 +66,7 @@
 
 ### Bugfixes
 
+- Fix invalid `PolicyTemplate` resources that set both `spec.enforced` and `spec.namespacedPolicy` ([#15110](https://github.com/kubermatic/kubermatic/pull/15110))
 - Fix the default policy catalog `--deploy-default-policy-template-catalog` flag timing out in the kubermatic-installer ([#15099](https://github.com/kubermatic/kubermatic/pull/15099))
 - [User Cluster MLA] Minor upgrade of Cortex to fix repeating errors in the logs ([#14944](https://github.com/kubermatic/kubermatic/pull/14944))
 - The daemonset "node-local-dns" in the KKP user clusters now correctly defines port 9253 as the metrics port ([#14926](https://github.com/kubermatic/kubermatic/pull/14926))
@@ -74,9 +78,11 @@
 - Add Velero post-backup hook to clean up /backup/* files after Prometheus backup completion to prevent disk space accumulation on the node where Prometheus is running ([#14708](https://github.com/kubermatic/kubermatic/pull/14708))
 - A bug which lead to missing kube state metrics scraping was fixed ([#14759](https://github.com/kubermatic/kubermatic/pull/14759))
 - Add the ETCDCTL_ENDPOINTS environment variable with name-based endpoints in all etcd pods. This enables successful execution of the `etcdctl endpoint health` command without the need for the `--cluster` flag which pulls IP based endpoints from the etcd ring ([#14724](https://github.com/kubermatic/kubermatic/pull/14724))
+- Mirror the WebTerminal image ([#15108](https://github.com/kubermatic/kubermatic/pull/15108))
 
 ### Updates
-
+- Update OpenStack CSI version to 1.34.0 ([#15115](https://github.com/kubermatic/kubermatic/pull/15115))
+- Bump KubeVirt CSI Driver Operator to v0.4.5 ([#15096](https://github.com/kubermatic/kubermatic/pull/15096))
 - Update default Cilium version to 1.18.2, add Cilium 1.17.7 and 1.18.2 as supported CNI version, deprecate cilium version 1.14.16 as it's impacted by CVEs ([#15095](https://github.com/kubermatic/kubermatic/pull/15095),  [#15065](https://github.com/kubermatic/kubermatic/pull/15065), [#15048](https://github.com/kubermatic/kubermatic/pull/15048))
 - Update default Canal version to v3.30.3 and deprecate v3.27 ([#15078](https://github.com/kubermatic/kubermatic/pull/15078))
 - Update machine-controller version to [v1.63.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.63.1) ([#15047](https://github.com/kubermatic/kubermatic/pull/15047))
@@ -120,6 +126,7 @@
 
 #### New Features
 
+- Add strict validation for cluster encryption keys requiring proper 32-byte base64 format ([#7653](https://github.com/kubermatic/dashboard/pull/7653))
 - Add the overwrite-registry flag in the api server ([#7651](https://github.com/kubermatic/dashboard/pull/7651))
 - Add support to toggle Encryption at Rest for Edit Cluster dialog ([#7599](https://github.com/kubermatic/dashboard/pull/7599))
 - Enables Encryption at rest feature for secrets ([#7525](https://github.com/kubermatic/dashboard/pull/7525))
@@ -134,7 +141,8 @@
 - Move web-terminal cleanup job to seed to fix cleanup not working when the token is expired ([#7451](https://github.com/kubermatic/dashboard/pull/7451))
 
 #### Bugfixes
-
+- Kyverno policy bindings disappear when the template selector no longer matches the cluster. Enforcing Kyverno Policy disables the Namespaced option.
+ ([#7654](https://github.com/kubermatic/dashboard/pull/7654))
 - Fix the Kyverno Policybinding in a multi-seed setup ([#7631](https://github.com/kubermatic/dashboard/pull/7631))
 - Fix encryption configuration handling during cluster editing ([#7620](https://github.com/kubermatic/dashboard/pull/7620))
 - Fix cluster template editing when autoscaler application is not present ([#7619](https://github.com/kubermatic/dashboard/pull/7619))
