@@ -57,7 +57,7 @@ var (
 )
 
 const (
-	Tag = "3f18bc13f185b35562f79e2766b6f148c2ba4257"
+	Tag = "v1.8.0"
 )
 
 type operatingSystemManagerData interface {
