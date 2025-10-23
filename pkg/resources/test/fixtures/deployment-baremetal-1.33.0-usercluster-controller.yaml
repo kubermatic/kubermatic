@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: usercluster-controller
   name: usercluster-controller
@@ -24,7 +23,6 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "8085"
         prometheus.io/scrape: "true"
-      creationTimestamp: null
       labels:
         app: usercluster-controller
         ca-bundle-configmap-revision: "123456"
