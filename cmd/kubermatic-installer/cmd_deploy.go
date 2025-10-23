@@ -26,8 +26,10 @@ import (
 
 	semverlib "github.com/Masterminds/semver/v3"
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"github.com/go-logr/zapr"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -45,6 +47,7 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
@@ -222,6 +225,8 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		if err != nil {
 			return fmt.Errorf("failed to get config: %w", err)
 		}
+
+		ctrlruntimelog.SetLogger(zapr.NewLogger(zap.NewNop()))
 
 		mgr, err := manager.New(ctrlConfig, manager.Options{
 			Metrics:                metricsserver.Options{BindAddress: "0"},
