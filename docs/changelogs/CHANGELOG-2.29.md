@@ -40,7 +40,7 @@ Upgrading to a newer kernel (either enabling "Upgrade system on first boot" from
 #### KubeVirt
 
 - A bug was fixed where evicted KubeVirt VMs configured with evictionStrategy `LiveMigrate` were treated like VMs with `External` evictionStrategy by deleting the related machine object ([#14736](https://github.com/kubermatic/kubermatic/pull/14736))
-- A bug regarding network policy cleanup up in KubeVirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed ([#14802](https://github.com/kubermatic/kubermatic/pull/14802))
+- A bug regarding network policy cleanup in KubeVirt infra clusters when the removal of the finalizer failed after deleting the network policy was fixed ([#14802](https://github.com/kubermatic/kubermatic/pull/14802))
 - Support KubeVirt vCPUs validation in the resource quota controller ([#14728](https://github.com/kubermatic/kubermatic/pull/14728))
 
 #### OpenStack 
