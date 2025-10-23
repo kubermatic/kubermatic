@@ -12,6 +12,10 @@
 	-  Cert-manager now hashes large RSA keys (3072 & 4096bit) with SHA-384 or SHA-512 respectively. If you are using these key sizes in your certificates, make sure your environment can handle the aforementioned hashing algorithms
 	- Log messages that were not structured have now been replaced with structured logs. If you were matching on specific log strings, this could break your setup.
 
+- Update default Cilium version to 1.18.2 ([#15095](https://github.com/kubermatic/kubermatic/pull/15095))
+	- Cilium 1.18 will fail to start on Ubuntu 22.04 nodes using kernel 5.15.0-47-generic due to missing BPF verifier fixes. 
+Upgrading to a newer kernel (either enabling "Upgrade system on first boot" from KKP UI, or using a newer kernel like 5.15.0-160), or using Ubuntu 24.04 will resolve the issue.
+
 ### Supported Kubernetes Version
 
 - Add support for Kubernetes version 1.34 ([#14940](https://github.com/kubermatic/kubermatic/pull/14940))
@@ -83,7 +87,7 @@
 ### Updates
 - Update OpenStack CSI version to 1.34.0 ([#15115](https://github.com/kubermatic/kubermatic/pull/15115))
 - Bump KubeVirt CSI Driver Operator to v0.4.5 ([#15096](https://github.com/kubermatic/kubermatic/pull/15096))
-- Update default Cilium version to 1.18.2, add Cilium 1.17.7 and 1.18.2 as supported CNI version, deprecate cilium version 1.14.16 as it's impacted by CVEs ([#15095](https://github.com/kubermatic/kubermatic/pull/15095),  [#15065](https://github.com/kubermatic/kubermatic/pull/15065), [#15048](https://github.com/kubermatic/kubermatic/pull/15048))
+- Add Cilium 1.17.7 and 1.18.2 as supported CNI version, deprecate cilium version 1.14.16 as it's impacted by CVEs ([#15095](https://github.com/kubermatic/kubermatic/pull/15095),  [#15065](https://github.com/kubermatic/kubermatic/pull/15065), [#15048](https://github.com/kubermatic/kubermatic/pull/15048))
 - Update default Canal version to v3.30.3 and deprecate v3.27 ([#15078](https://github.com/kubermatic/kubermatic/pull/15078))
 - Update machine-controller version to [v1.63.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.63.1) ([#15047](https://github.com/kubermatic/kubermatic/pull/15047))
 - Update operating-system-manager version to [v1.7.6](https://github.com/kubermatic/operating-system-manager/releases/tag/v1.7.6) ([#15047](https://github.com/kubermatic/kubermatic/pull/15047))
