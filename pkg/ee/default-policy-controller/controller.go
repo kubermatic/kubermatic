@@ -272,7 +272,7 @@ func (r *Reconciler) handleGlobalWithTarget(ctx context.Context, cluster *kuberm
 		// Global + Target [ClusterSelector]
 		return handleGlobalClusterSelectorOnly(cluster, template)
 	default:
-		return false
+		return true
 	}
 }
 
@@ -286,7 +286,7 @@ func handleProjectWithTarget(cluster *kubermaticv1.Cluster, template *kubermatic
 		return matchesClusterSelector(cluster, template.Spec.Target.ClusterSelector)
 	}
 
-	return false
+	return true
 }
 
 // handleGlobalProjectAndClusterSelectors handles Global + Project + Cluster selectors (AND filtering).
