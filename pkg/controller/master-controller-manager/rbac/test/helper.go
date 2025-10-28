@@ -28,10 +28,6 @@ import (
 
 func CreateProject(name string) *kubermaticv1.Project {
 	return &kubermaticv1.Project{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.ProjectKindName,
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			UID:             types.UID(name) + "ID",
 			Name:            name,
@@ -48,10 +44,6 @@ func CreateProject(name string) *kubermaticv1.Project {
 
 func CreateUser(name string) *kubermaticv1.User {
 	return &kubermaticv1.User{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       kubermaticv1.UserKindName,
-			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			UID:  "",
 			Name: name,

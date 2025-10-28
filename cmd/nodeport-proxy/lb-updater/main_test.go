@@ -76,10 +76,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						Spec: corev1.ServiceSpec{
 							ClusterIP: "1.2.3.4",
 							Ports: []corev1.ServicePort{{
@@ -89,10 +85,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -146,10 +138,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Annotations: map[string]string{"nodeport-proxy.k8s.io/expose": "true"},
 						},
@@ -161,10 +149,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -215,10 +199,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Annotations: map[string]string{"nodeport-proxy.k8s.io/expose": "true"},
 						},
@@ -230,10 +210,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -294,10 +270,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:   "cluster",
 							Name:        "apiserver",
@@ -312,10 +284,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -385,10 +353,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:   "cluster",
 							Name:        "apiserver",
@@ -403,10 +367,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -468,10 +428,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:   "cluster",
 							Name:        "apiserver",
@@ -486,10 +442,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -551,10 +503,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:   "cluster",
 							Name:        "apiserver",
@@ -569,10 +517,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",
@@ -640,10 +584,6 @@ func TestReconciliation(t *testing.T) {
 			expectedServices: corev1.ServiceList{
 				Items: []corev1.Service{
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:   "cluster",
 							Name:        "apiserver",
@@ -658,10 +598,6 @@ func TestReconciliation(t *testing.T) {
 						},
 					},
 					{
-						TypeMeta: metav1.TypeMeta{
-							APIVersion: "v1",
-							Kind:       "Service",
-						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace:       "lb-ns",
 							Name:            "lb",

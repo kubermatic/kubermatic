@@ -21,6 +21,5 @@ data:
     X4XSQRjbgbMEHMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==
     -----END CERTIFICATE-----
 metadata:
-  creationTimestamp: null
   name: ca-bundle
   namespace: cluster-de-test-01

@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     app: operating-system-manager
   name: operating-system-manager
@@ -20,7 +19,6 @@ spec:
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
-      creationTimestamp: null
       labels:
         app: operating-system-manager
         cluster: de-test-01

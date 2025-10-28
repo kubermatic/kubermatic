@@ -8,6 +8,5 @@ data:
     rules:
       - level: Metadata
 metadata:
-  creationTimestamp: null
   name: audit-config
   namespace: cluster-de-test-01

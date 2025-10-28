@@ -1,7 +1,6 @@
 # This file has been generated, DO NOT EDIT.
 
 metadata:
-  creationTimestamp: null
   labels:
     project-id: my-project
   name: default-backups
