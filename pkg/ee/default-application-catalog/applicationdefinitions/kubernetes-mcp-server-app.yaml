@@ -32,7 +32,7 @@ spec:
           helm:
             chartName:  mcp-server-kubernetes
             chartVersion: 2.8.0
-            url: https://github.com/julioc-p/mcp-server-kubernetes/tree/helm-chart-packaging/charts/mcp-server
+            url: oci://ghcr.io/Flux159
       version: 2.8.0
   defaultValuesBlock: |
     service:
@@ -59,8 +59,8 @@ spec:
       # When enabled, these destructive tools are DISABLED:
       # kubectl_delete, uninstall_helm_chart, cleanup, kubectl_generic
       allowOnlyReadonly: false
-  documentationURL: https://github.com/julioc-p/mcp-server-kubernetes/blob/helm-chart-packaging/ADVANCED_README.md
-  sourceURL: https://github.com/julioc-p/mcp-server-kubernetes/blob/helm-chart-packaging
+  documentationURL: https://github.com/Flux159/mcp-server-kubernetes/blob/main/ADVANCED_README.md
+  sourceURL: https://github.com/Flux159/mcp-server-kubernetes
   logo: |+
     iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAAAXNSR0IArs4c6QAAAARnQU1BAACx
     jwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAxKSURBVGhDvZp7XFXVtse/a+8NWwQEeQhKKg+v
