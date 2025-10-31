@@ -59,6 +59,11 @@ spec:
       # When enabled, these destructive tools are DISABLED:
       # kubectl_delete, uninstall_helm_chart, cleanup, kubectl_generic
       allowOnlyReadonly: false
+    env:
+      # 5 MB for large clusters, default is 1 MB
+      SPAWN_MAX_BUFFER: "5242880"
+      ENABLE_UNSAFE_STREAMABLE_HTTP_TRANSPORT: "1"
+      HOST: "0.0.0.0"
   documentationURL: https://github.com/Flux159/mcp-server-kubernetes/blob/main/ADVANCED_README.md
   sourceURL: https://github.com/Flux159/mcp-server-kubernetes
   logo: |+
