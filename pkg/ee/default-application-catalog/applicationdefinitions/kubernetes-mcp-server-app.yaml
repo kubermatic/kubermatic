@@ -30,20 +30,35 @@ spec:
     - template:
         source:
           helm:
-            chartName: mcp-server
-            chartVersion: 0.1.0
+            chartName:  mcp-server-kubernetes
+            chartVersion: 2.8.0
             url: https://github.com/julioc-p/mcp-server-kubernetes/tree/helm-chart-packaging/charts/mcp-server
-      version: 2.9.6
+      version: 2.8.0
   defaultValuesBlock: |
     service:
       # To Expose the Kubernetes MCP Server externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
       type: "ClusterIP"
       port: 3000
-    serviceAccount:
-      # your created service account name bound to the respective cluster role to give wanted permissions
-      name: ""
-    # Only allow read only tools. Note that clients seek out your permission first before executing write tools
-    readOnlyTools: false
+      targetPort: 3001
+    # Note that clients ask you for permission to execute any action on your cluster.
+    rbac:
+      rules:
+        - apiGroups: [""] # Core API group
+          resources: ["pods", "services", "nodes", "namespaces"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["apps"]
+          resources: ["deployments", "statefulsets", "daemonsets"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["batch"]
+          resources: ["jobs", "cronjobs"]
+          verbs: ["get", "list", "watch"]
+    # Security configuration
+    security:
+      # Tool filtering
+      allowOnlyNonDestructive: false
+      # When enabled, these destructive tools are DISABLED:
+      # kubectl_delete, uninstall_helm_chart, cleanup, kubectl_generic
+      allowOnlyReadonly: false
   documentationURL: https://github.com/julioc-p/mcp-server-kubernetes/blob/helm-chart-packaging/ADVANCED_README.md
   sourceURL: https://github.com/julioc-p/mcp-server-kubernetes/blob/helm-chart-packaging
   logo: |+
