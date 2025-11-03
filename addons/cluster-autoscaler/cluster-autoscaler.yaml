@@ -50,6 +50,7 @@ rules:
       - list
       - update
       - watch
+      - patch
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
