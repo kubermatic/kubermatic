@@ -496,6 +496,17 @@ spec:
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
+    # KubeLB configures the kubeLB component.
+    kubelb:
+      # ImageRepository is used to override the KubeLB image repository.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+      imageRepository: ""
+      # ImageTag is used to override the KubeLB image.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+
+      # KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
+      # Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
+      imageTag: ""
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
     kubermaticDockerRepository: quay.io/kubermatic/kubermatic-ee
     # MachineController configures the Machine Controller
