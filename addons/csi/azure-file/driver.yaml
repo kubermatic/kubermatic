@@ -24,7 +24,7 @@
 {{ $version = "v1.30.9" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.31" }}
-{{ $version = "v1.31.5" }}
+{{ $version = "v1.31.7" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
 {{ $version = "v1.32.1" }}
@@ -806,8 +806,11 @@ spec:
         - args:
             - --v=5
             - --endpoint=$(CSI_ENDPOINT)
+            {{- if semverCompare .Cluster.Version ">= 1.32" }}
             - --azurefile-proxy-endpoint=$(AZUREFILE_PROXY_ENDPOINT)
             - --enable-azurefile-proxy=true
+            - --enable-kata-cc-mount=false
+            {{- end }}
             - --nodeid=$(KUBE_NODE_NAME)
             - --kubeconfig=
             - --drivername=file.csi.azure.com
@@ -823,7 +826,6 @@ spec:
             - --mount-permissions=511
             - --allow-inline-volume-key-access-with-identity=false
             - --metrics-address=0.0.0.0:29615
-            - --enable-kata-cc-mount=false
           env:
             - name: AZURE_CREDENTIAL_FILE
               value: /etc/kubernetes/azure.json
@@ -835,8 +837,10 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             - name: AZURE_GO_SDK_LOG_LEVEL
+            {{- if semverCompare .Cluster.Version ">= 1.32" }}
             - name: AZUREFILE_PROXY_ENDPOINT
               value: unix:///csi/azurefile-proxy.sock
+            {{- end }}
           image: '{{ Image (print "mcr.microsoft.com/oss/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -913,6 +917,7 @@ spec:
       dnsPolicy: Default
       hostNetwork: true
       hostPID: true
+      {{- if semverCompare .Cluster.Version ">= 1.32" }}
       initContainers:
         - command:
             - /azurefile-proxy/init.sh
@@ -942,6 +947,7 @@ spec:
               name: host-usr
             - mountPath: /host/etc
               name: host-etc
+      {{- end }}
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical
