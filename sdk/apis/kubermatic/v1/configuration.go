@@ -290,6 +290,8 @@ type KubermaticUserClusterConfiguration struct {
 	MachineController MachineControllerConfiguration `json:"machineController,omitempty"`
 	// OperatingSystemManager configures the image repo and the tag version for osm deployment.
 	OperatingSystemManager OperatingSystemManager `json:"operatingSystemManager,omitempty"`
+	// KubeLB configures the kubeLB component.
+	KubeLB KubeLBConfiguration `json:"kubelb,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -315,6 +317,19 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	// ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
 	// inside the user clusters.
 	ScrapeAnnotationPrefix string `json:"scrapeAnnotationPrefix,omitempty"`
+}
+
+// KubeLBConfiguration configures KubeLB.
+type KubeLBConfiguration struct {
+	// ImageRepository is used to override the KubeLB image repository.
+	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	ImageRepository string `json:"imageRepository,omitempty"`
+	// ImageTag is used to override the KubeLB image.
+	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	//
+	// KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
+	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
+	ImageTag string `json:"imageTag,omitempty"`
 }
 
 // MachineControllerConfiguration configures Machine Controller.
