@@ -91,6 +91,8 @@ type TemplateData struct {
 	machineControllerImageRepository      string
 	operatingSystemManagerImageTag        string
 	operatingSystemManagerImageRepository string
+	kubeLBImageRepository                 string
+	kubeLBImageTag                        string
 	backupSchedule                        time.Duration
 	backupCount                           *int
 	versions                              kubermatic.Versions
@@ -261,6 +263,16 @@ func (td *TemplateDataBuilder) WithBackupCount(backupCount int) *TemplateDataBui
 	return td
 }
 
+func (td *TemplateDataBuilder) WithKubeLBImageRepository(repository string) *TemplateDataBuilder {
+	td.data.kubeLBImageRepository = repository
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKubeLBImageTag(tag string) *TemplateDataBuilder {
+	td.data.kubeLBImageTag = tag
+	return td
+}
+
 func (td *TemplateDataBuilder) WithMachineControllerImageTag(tag string) *TemplateDataBuilder {
 	td.data.machineControllerImageTag = tag
 	return td
@@ -424,6 +436,14 @@ func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 // ExternalIP returns the external facing IP or an error if no IP exists.
 func (d *TemplateData) ExternalIP() (*net.IP, error) {
 	return GetClusterExternalIP(d.cluster)
+}
+
+func (d *TemplateData) KubeLBImageRepository() string {
+	return d.kubeLBImageRepository
+}
+
+func (d *TemplateData) KubeLBImageTag() string {
+	return d.kubeLBImageTag
 }
 
 func (d *TemplateData) MachineControllerImageTag() string {

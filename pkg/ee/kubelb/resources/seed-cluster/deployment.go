@@ -69,6 +69,8 @@ type kubeLBData interface {
 	Cluster() *kubermaticv1.Cluster
 	RewriteImage(string) (string, error)
 	DC() *kubermaticv1.Datacenter
+	KubeLBImageRepository() string
+	KubeLBImageTag() string
 }
 
 func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter) *resources.TemplateData {
@@ -128,10 +130,18 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/" + imageName))
+			if r := data.KubeLBImageRepository(); r != "" {
+				repository = r
+			}
+			tag := imageTag
+			if t := data.KubeLBImageTag(); t != "" {
+				tag = t
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.KubeLBDeploymentName,
-					Image:   repository + ":" + imageTag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/ccm"},
 					Args:    getFlags(data.Cluster().Name, data.DC().Spec.KubeLB, data.Cluster().Spec.KubeLB),
 					LivenessProbe: &corev1.Probe{
