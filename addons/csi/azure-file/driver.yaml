@@ -27,7 +27,7 @@
 {{ $version = "v1.31.7" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.32" }}
-{{ $version = "v1.32.1" }}
+{{ $version = "v1.32.5" }}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.33" }}
 {{ $version = "v1.33.3" }}
@@ -806,7 +806,7 @@ spec:
         - args:
             - --v=5
             - --endpoint=$(CSI_ENDPOINT)
-            {{- if semverCompare .Cluster.Version ">= 1.32" }}
+            {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - --azurefile-proxy-endpoint=$(AZUREFILE_PROXY_ENDPOINT)
             - --enable-azurefile-proxy=true
             - --enable-kata-cc-mount=false
@@ -837,7 +837,7 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             - name: AZURE_GO_SDK_LOG_LEVEL
-            {{- if semverCompare .Cluster.Version ">= 1.32" }}
+            {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - name: AZUREFILE_PROXY_ENDPOINT
               value: unix:///csi/azurefile-proxy.sock
             {{- end }}
@@ -916,8 +916,8 @@ spec:
               name: registration-dir
       dnsPolicy: Default
       hostNetwork: true
+      {{- if semverCompare .Cluster.Version ">= 1.33" }}
       hostPID: true
-      {{- if semverCompare .Cluster.Version ">= 1.32" }}
       initContainers:
         - command:
             - /azurefile-proxy/init.sh
