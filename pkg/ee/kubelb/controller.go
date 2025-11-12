@@ -85,9 +85,10 @@ type reconciler struct {
 	log                           *zap.SugaredLogger
 	overwriteRegistry             string
 	versions                      kubermatic.Versions
+	configGetter                  provider.KubermaticConfigurationGetter
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegistry string, seedGetter provider.SeedGetter, projectsGetter provider.ProjectsGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegistry string, seedGetter provider.SeedGetter, projectsGetter provider.ProjectsGetter, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions, configGetter provider.KubermaticConfigurationGetter) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
@@ -98,6 +99,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, overwriteRegist
 		log:                           log,
 		versions:                      versions,
 		overwriteRegistry:             overwriteRegistry,
+		configGetter:                  configGetter,
 	}
 
 	clusterIsAlive := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
@@ -359,13 +361,18 @@ func (r *reconciler) createOrUpdateKubeLBSeedClusterResources(ctx context.Contex
 		return nil, fmt.Errorf("failed to reconcile service account: %w", err)
 	}
 
+	cfg, err := r.configGetter(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
 	// Create/update kubeLB deployment.
 	modifiers := []reconciling.ObjectModifier{
 		modifier.RelatedRevisionsLabels(ctx, r),
 		modifier.ControlplaneComponent(cluster),
 	}
 	deploymentReconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc)),
+		kubelbseedresources.DeploymentReconciler(kubelbseedresources.NewKubeLBData(ctx, cluster, r, r.overwriteRegistry, dc, cfg.Spec.UserCluster.KubeLB)),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, deploymentReconcilers, seedNamespace, r.Client, modifiers...); err != nil {
 		return nil, fmt.Errorf("failed to reconcile the Deployments: %w", err)

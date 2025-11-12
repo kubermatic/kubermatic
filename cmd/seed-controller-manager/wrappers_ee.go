@@ -53,7 +53,7 @@ func setupControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create GroupProjectBinding controller: %w", err)
 	}
 
-	if err := kubelbcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.seedGetter, ctrlCtx.projectsGetter, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
+	if err := kubelbcontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.seedGetter, ctrlCtx.projectsGetter, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions, ctrlCtx.configGetter); err != nil {
 		return fmt.Errorf("failed to create KubeLB controller: %w", err)
 	}
 
