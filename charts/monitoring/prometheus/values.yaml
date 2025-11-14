@@ -46,7 +46,7 @@ prometheus:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 2.5.0
+      tag: 2.7.0
     timeout: 60m
 
   # Specify additional external labels which will be added to all

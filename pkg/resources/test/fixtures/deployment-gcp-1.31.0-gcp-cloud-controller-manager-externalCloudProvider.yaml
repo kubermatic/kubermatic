@@ -95,7 +95,7 @@ spec:
         - base64 -d /input/serviceAccount > /scratch/serviceAccount.json
         command:
         - /bin/sh
-        image: quay.io/kubermatic/util:2.5.0
+        image: quay.io/kubermatic/util:2.7.0
         name: decode-sa
         resources: {}
         volumeMounts:
