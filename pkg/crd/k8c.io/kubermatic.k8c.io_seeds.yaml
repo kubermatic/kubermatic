@@ -2878,13 +2878,6 @@ spec:
                             type: object
                           type: array
                       type: object
-                  required:
-                    - apiserver
-                    - controllerManager
-                    - etcd
-                    - nodePortProxyEnvoy
-                    - prometheus
-                    - scheduler
                   type: object
                 disabledCollectors:
                   description: |-
