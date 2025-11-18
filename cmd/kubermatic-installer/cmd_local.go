@@ -63,6 +63,7 @@ const (
 	kkpDefaultLogin      = "kubermatic@example.com"
 	kkpDefaultPassword   = "password"
 	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
+	kindClusterName      = "kkp-cluster"
 )
 
 var (
@@ -148,15 +149,26 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
-	logger.Info("Creating kind cluster…")
+	logger.Infof("Creating kind cluster %q…", kindClusterName)
 
 	// start the manager in its own goroutine
 	appContext := context.Background()
+	clusterExists := false
 
-	// TODO: make this idempotent
-	out, err := exec.CommandContext(appContext, "kind", "create", "cluster", "-n", "kkp-cluster", "--config", kindConfig).CombinedOutput()
-	if err != nil {
-		logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+	out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
+	if err == nil {
+		if strings.Contains(strings.TrimSpace(string(out)), kindClusterName) {
+			clusterExists = true
+		}
+	}
+
+	if clusterExists {
+		logger.Infof("Kind cluster %q already exists, skipping creation...", kindClusterName)
+	} else {
+		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", kindClusterName, "--config", kindConfig).CombinedOutput()
+		if err != nil {
+			logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+		}
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
