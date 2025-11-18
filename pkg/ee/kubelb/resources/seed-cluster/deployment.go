@@ -73,13 +73,15 @@ type kubeLBData interface {
 	KubeLBImageTag() string
 }
 
-func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter) *resources.TemplateData {
+func NewKubeLBData(ctx context.Context, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, overwriteRegistry string, dc kubermaticv1.Datacenter, kubeLB kubermaticv1.KubeLBConfiguration) *resources.TemplateData {
 	return resources.NewTemplateDataBuilder().
 		WithContext(ctx).
 		WithCluster(cluster).
 		WithClient(client).
 		WithOverwriteRegistry(overwriteRegistry).
 		WithDatacenter(&dc).
+		WithKubeLBImageRepository(kubeLB.ImageRepository).
+		WithKubeLBImageTag(kubeLB.ImageTag).
 		Build()
 }
 
