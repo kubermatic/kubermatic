@@ -4,6 +4,32 @@
 - [v2.28.1](#v2281)
 - [v2.28.2](#v2282)
 - [v2.28.3](#v2283)
+- [v2.28.4](#v2284)
+
+## v2.28.4
+
+**GitHub release: [v2.28.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.4)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.33.6/v1.32.10/v1.31.14 ([#15172](https://github.com/kubermatic/kubermatic/pull/15172))
+
+### New Features
+
+- Update to KubeLB [v1.1.6](https://docs.kubermatic.com/kubelb/v1.1/release-notes/#v116) ([#15166](https://github.com/kubermatic/kubermatic/pull/15166))
+
+### Bugfixes
+
+- Fix invalid `PolicyTemplate` resources that set both `spec.enforced` and `spec.namespacedPolicy`, and improve `PolicyBinding` resources cleanup ([#15110](https://github.com/kubermatic/kubermatic/pull/15110))
+- Fix Load Balancer assignment in Kubernetes 1.33 and 1.34 GCP clusters ([#15123](https://github.com/kubermatic/kubermatic/pull/15123))
+- Fix policy template selector targeting with empty target selectors ([#15145](https://github.com/kubermatic/kubermatic/pull/15145))
+- Fix the default policy catalog `--deploy-default-policy-template-catalog` flag timing out in the installer ([#15099](https://github.com/kubermatic/kubermatic/pull/15099))
+- Remove deprecation notice for `defaultComponentSettings` in the Seed Resource ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
+- Use the lowercase email when creating a user object ([#7629](https://github.com/kubermatic/dashboard/pull/7629))
+- A regression bug was fixed which introduced errors when a user tried to login with a user email containing uppercase letters and the one with only lowercase was already stored ([#7671](https://github.com/kubermatic/dashboard/pull/7671))
+- Fix a bug where the user cluster logging/monitoring checkboxes were shown even though user cluster MLA was disabled in the seed settings ([#7681](https://github.com/kubermatic/dashboard/pull/7681))
+- Fix a possible null pointer exception for `isGlobalViewer` ([#7610](https://github.com/kubermatic/dashboard/pull/7610))
+- Fix: Kyverno policy bindings disappear when the template selector no longer matches the cluster.Enforcing Kyverno Policy disables the Namespaced option ([#7654](https://github.com/kubermatic/dashboard/pull/7654))
 
 ## v2.28.3
 
