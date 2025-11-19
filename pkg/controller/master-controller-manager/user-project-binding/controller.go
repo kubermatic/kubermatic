@@ -97,8 +97,14 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.SugaredLogger, projectBinding *kubermaticv1.UserProjectBinding) error {
 	project, err := r.getProjectForBinding(ctx, projectBinding)
 	if err != nil {
-		if err := r.Delete(ctx, projectBinding); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete orphaned binding %s: %w", projectBinding.Name, err)
+		if apierrors.IsNotFound(err) {
+			if err := r.removeFinalizerFromBinding(ctx, projectBinding); err != nil {
+				return fmt.Errorf("failed to remove finalizer from orphaned binding %s: %w", projectBinding.Name, err)
+			}
+			if err := r.Delete(ctx, projectBinding); err != nil {
+				return fmt.Errorf("failed to delete orphaned binding %s: %w", projectBinding.Name, err)
+			}
+			return nil
 		}
 
 		return fmt.Errorf("failed to get project: %w", err)
@@ -106,8 +112,14 @@ func (r *reconcileSyncProjectBinding) reconcile(ctx context.Context, log *zap.Su
 
 	user, err := r.getUserForBinding(ctx, projectBinding)
 	if err != nil {
-		if err := r.Delete(ctx, projectBinding); err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete orphaned binding %s: %w", projectBinding.Name, err)
+		if apierrors.IsNotFound(err) {
+			if err := r.removeFinalizerFromBinding(ctx, projectBinding); err != nil {
+				return fmt.Errorf("failed to remove finalizer from orphaned binding %s: %w", projectBinding.Name, err)
+			}
+			if err := r.Delete(ctx, projectBinding); err != nil {
+				return fmt.Errorf("failed to delete orphaned binding %s: %w", projectBinding.Name, err)
+			}
+			return nil
 		}
 
 		return fmt.Errorf("failed to get user from binding: %w", err)
