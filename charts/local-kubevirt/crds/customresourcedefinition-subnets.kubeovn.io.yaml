@@ -1,0 +1,304 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: subnets.kubeovn.io
+spec:
+  group: kubeovn.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Provider
+          type: string
+          jsonPath: .spec.provider
+        - name: Vpc
+          type: string
+          jsonPath: .spec.vpc
+        - name: Vlan
+          type: string
+          jsonPath: .spec.vlan
+        - name: Protocol
+          type: string
+          jsonPath: .spec.protocol
+        - name: CIDR
+          type: string
+          jsonPath: .spec.cidrBlock
+        - name: Private
+          type: boolean
+          jsonPath: .spec.private
+        - name: NAT
+          type: boolean
+          jsonPath: .spec.natOutgoing
+        - name: Default
+          type: boolean
+          jsonPath: .spec.default
+        - name: GatewayType
+          type: string
+          jsonPath: .spec.gatewayType
+        - name: V4Used
+          type: number
+          jsonPath: .status.v4usingIPs
+        - name: V4Available
+          type: number
+          jsonPath: .status.v4availableIPs
+        - name: V6Used
+          type: number
+          jsonPath: .status.v6usingIPs
+        - name: V6Available
+          type: number
+          jsonPath: .status.v6availableIPs
+        - name: ExcludeIPs
+          type: string
+          jsonPath: .spec.excludeIps
+        - name: U2OInterconnectionIP
+          type: string
+          jsonPath: .status.u2oInterconnectionIP
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            metadata:
+              type: object
+              properties:
+                name:
+                  type: string
+                  pattern: ^[^0-9]
+            status:
+              type: object
+              properties:
+                v4availableIPs:
+                  type: number
+                v4usingIPs:
+                  type: number
+                v6availableIPs:
+                  type: number
+                v6usingIPs:
+                  type: number
+                activateGateway:
+                  type: string
+                dhcpV4OptionsUUID:
+                  type: string
+                dhcpV6OptionsUUID:
+                  type: string
+                u2oInterconnectionIP:
+                  type: string
+                u2oInterconnectionMAC:
+                  type: string
+                u2oInterconnectionVPC:
+                  type: string
+                mcastQuerierIP:
+                  type: string
+                mcastQuerierMAC:
+                  type: string
+                v4usingIPrange:
+                  type: string
+                v4availableIPrange:
+                  type: string
+                v6usingIPrange:
+                  type: string
+                v6availableIPrange:
+                  type: string
+                natOutgoingPolicyRules:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      ruleID:
+                        type: string
+                      action:
+                        type: string
+                        enum:
+                          - nat
+                          - forward
+                      match:
+                        type: object
+                        properties:
+                          srcIPs:
+                            type: string
+                          dstIPs:
+                            type: string
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      status:
+                        type: string
+                      reason:
+                        type: string
+                      message:
+                        type: string
+                      lastUpdateTime:
+                        type: string
+                      lastTransitionTime:
+                        type: string
+            spec:
+              type: object
+              properties:
+                vpc:
+                  type: string
+                default:
+                  type: boolean
+                protocol:
+                  type: string
+                  enum:
+                    - IPv4
+                    - IPv6
+                    - Dual
+                cidrBlock:
+                  type: string
+                namespaces:
+                  type: array
+                  items:
+                    type: string
+                gateway:
+                  type: string
+                provider:
+                  type: string
+                excludeIps:
+                  type: array
+                  items:
+                    type: string
+                vips:
+                  type: array
+                  items:
+                    type: string
+                gatewayType:
+                  type: string
+                allowSubnets:
+                  type: array
+                  items:
+                    type: string
+                gatewayNode:
+                  type: string
+                natOutgoing:
+                  type: boolean
+                externalEgressGateway:
+                  type: string
+                policyRoutingPriority:
+                  type: integer
+                  minimum: 1
+                  maximum: 32765
+                policyRoutingTableID:
+                  type: integer
+                  minimum: 1
+                  maximum: 2147483647
+                  not:
+                    enum:
+                      - 252 # compat
+                      - 253 # default
+                      - 254 # main
+                      - 255 # local
+                mtu:
+                  type: integer
+                  minimum: 68
+                  maximum: 65535
+                private:
+                  type: boolean
+                vlan:
+                  type: string
+                logicalGateway:
+                  type: boolean
+                disableGatewayCheck:
+                  type: boolean
+                disableInterConnection:
+                  type: boolean
+                enableDHCP:
+                  type: boolean
+                dhcpV4Options:
+                  type: string
+                dhcpV6Options:
+                  type: string
+                enableIPv6RA:
+                  type: boolean
+                ipv6RAConfigs:
+                  type: string
+                allowEWTraffic:
+                  type: boolean
+                acls:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      direction:
+                        type: string
+                        enum:
+                          - from-lport
+                          - to-lport
+                      priority:
+                        type: integer
+                        minimum: 0
+                        maximum: 32767
+                      match:
+                        type: string
+                      action:
+                        type: string
+                        enum:
+                          - allow-related
+                          - allow-stateless
+                          - allow
+                          - drop
+                          - reject
+                natOutgoingPolicyRules:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      action:
+                        type: string
+                        enum:
+                          - nat
+                          - forward
+                      match:
+                        type: object
+                        properties:
+                          srcIPs:
+                            type: string
+                          dstIPs:
+                            type: string
+                u2oInterconnection:
+                  type: boolean
+                u2oInterconnectionIP:
+                  type: string
+                enableLb:
+                  type: boolean
+                enableEcmp:
+                  type: boolean
+                enableMulticastSnoop:
+                  type: boolean
+                routeTable:
+                  type: string
+                namespaceSelectors:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      matchLabels:
+                        type: object
+                        additionalProperties:
+                          type: string
+                      matchExpressions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            key:
+                              type: string
+                            operator:
+                              type: string
+                            values:
+                              type: array
+                              items:
+                                type: string
+  scope: Cluster
+  names:
+    plural: subnets
+    singular: subnet
+    kind: Subnet
+    shortNames:
+      - subnet
