@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -99,6 +100,10 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		errs = append(errs, err)
 	}
 
+	if err := v.validateKyvernoEnforcement(cluster, datacenter, seed, config); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
@@ -128,6 +133,10 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, seed, cloudProvider, updateManager, v.features)
 
 	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := v.validateKyvernoEnforcement(newCluster, datacenter, seed, config); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -204,6 +213,29 @@ func (v *validator) validateProjectRelation(ctx context.Context, cluster *kuberm
 	// exists and is not being deleted.
 	if !isUpdate && project.DeletionTimestamp != nil {
 		return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
+	}
+
+	return nil
+}
+
+// validateKyvernoEnforcement ensures users cannot override enforced Kyverno settings through Cluster spec.
+func (v *validator) validateKyvernoEnforcement(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration) *field.Error {
+	enforcementInfo := util.GetKyvernoEnforcement(
+		datacenter.Spec.Kyverno,
+		seed.Spec.Kyverno,
+		config.Spec.UserCluster.Kyverno,
+	)
+
+	if enforcementInfo.Enforced {
+		fieldPath := field.NewPath("spec", "kyverno", "enabled")
+		if cluster.Spec.Kyverno == nil || !cluster.Spec.Kyverno.Enabled {
+			msg := fmt.Sprintf(
+				"kyverno deployment is enforced by %q and cannot be overridden by the Cluster spec",
+				enforcementInfo.Source,
+			)
+
+			return field.Invalid(fieldPath, cluster.Spec.Kyverno, msg)
+		}
 	}
 
 	return nil

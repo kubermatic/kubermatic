@@ -2696,6 +2696,23 @@ spec:
                     kubermaticDockerRepository:
                       description: KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
                       type: string
+                    kyverno:
+                      description: |-
+                        Kyverno configures the Kyverno policy engine settings at the global level.
+                        These settings apply to all user clusters unless overridden at seed or datacenter level.
+                      properties:
+                        enforced:
+                          description: |-
+                            Enforced indicates whether Kyverno enablement is mandatory at cluster.
+                            When set to true at Datacenter, Seed, or KubermaticConfiguration level, user clusters under that scope
+                            must have Kyverno enabled and cannot disable it.
+                            If it is set to true, the Kyverno becomes enforced at this level, and will be deployed to user clusters under the scope.
+                            If it is set to false, Kyverno is not enforced at this level.
+                            If nil, Kyverno no enforcement preference is declared.
+                            For example, if Kyverno is enforced at the Seed level, setting this to false at the Datacenter level make the Datacenter not enforce Kyverno,
+                            though other clusters in the Seed will still have Kyverno enforced.
+                          type: boolean
+                      type: object
                     machineController:
                       description: MachineController configures the Machine Controller
                       properties:

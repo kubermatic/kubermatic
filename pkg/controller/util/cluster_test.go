@@ -24,6 +24,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/utils/ptr"
 )
 
 func TestSetClusterCondition(t *testing.T) {
@@ -136,4 +137,214 @@ func getCluster(conditionType kubermaticv1.ClusterConditionType, condition *kube
 	}
 
 	return c
+}
+
+func TestGetKyvernoEnforcement(t *testing.T) {
+	testCases := []struct {
+		name             string
+		dcSettings       *kubermaticv1.KyvernoConfigurations
+		seedSettings     *kubermaticv1.KyvernoConfigurations
+		globalSettings   *kubermaticv1.KyvernoConfigurations
+		expectedEnforced bool
+		expectedSource   KyvernoEnforcementSource
+	}{
+		{
+			name:             "all parameters nil - no enforcement",
+			dcSettings:       nil,
+			seedSettings:     nil,
+			globalSettings:   nil,
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceNone,
+		},
+		{
+			name:             "all non-nil but Enforced fields are nil - no enforcement",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceNone,
+		},
+		{
+			name:             "only DC enforces true",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			seedSettings:     nil,
+			globalSettings:   nil,
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "only DC explicitly disables (false)",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     nil,
+			globalSettings:   nil,
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "only Seed enforces true",
+			dcSettings:       nil,
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   nil,
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceSeed,
+		},
+		{
+			name:             "only Seed explicitly disables (false)",
+			dcSettings:       nil,
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			globalSettings:   nil,
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceSeed,
+		},
+		{
+			name:             "only Global enforces true",
+			dcSettings:       nil,
+			seedSettings:     nil,
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceGlobal,
+		},
+		{
+			name:             "only Global explicitly disables (false)",
+			dcSettings:       nil,
+			seedSettings:     nil,
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceGlobal,
+		},
+		{
+			name:             "DC overrides Seed enforcement",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   nil,
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "DC overrides Global enforcement",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     nil,
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "DC overrides both Seed and Global",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "Seed overrides Global enforcement",
+			dcSettings:       nil,
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceSeed,
+		},
+		{
+			name:             "Seed with true overrides Global with false",
+			dcSettings:       nil,
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceSeed,
+		},
+		{
+			name:             "DC with true overrides Seed with false",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			globalSettings:   nil,
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "DC exists with nil Enforced, Seed enforces",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   nil,
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceSeed,
+		},
+		{
+			name:             "DC and Seed exist with nil Enforced, Global enforces",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceGlobal,
+		},
+		{
+			name:             "all exist but only Global has opinion",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: nil},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceGlobal,
+		},
+		{
+			name:             "all three enforce",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "all three disable",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "mixed - DC=true, Seed=false, Global=true",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: true,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "global enforcement with Seed opt-out (admin enforces globally, dev seed opts out)",
+			dcSettings:       nil,
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceSeed,
+		},
+		{
+			name:             "global enforcement with DC override (global enforcement, legacy DC needs exception)",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     nil,
+			globalSettings:   &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+		{
+			name:             "Seed enforces, DC opts out (prod seed enforces, special DC for testing)",
+			dcSettings:       &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(false)},
+			seedSettings:     &kubermaticv1.KyvernoConfigurations{Enforced: ptr.To(true)},
+			globalSettings:   nil,
+			expectedEnforced: false,
+			expectedSource:   KyvernoEnforcementSourceDatacenter,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			result := GetKyvernoEnforcement(tc.dcSettings, tc.seedSettings, tc.globalSettings)
+			if result.Enforced != tc.expectedEnforced {
+				t.Errorf("expected Enforced=%v, got %v", tc.expectedEnforced, result.Enforced)
+			}
+			if result.Source != tc.expectedSource {
+				t.Errorf("expected Source=%q, got %q", tc.expectedSource, result.Source)
+			}
+		})
+	}
 }
