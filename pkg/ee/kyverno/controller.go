@@ -199,11 +199,7 @@ func kyvernoSettingsChangedPredicate() predicate.Predicate {
 					}
 				}
 
-				if len(oldSeed.Spec.Datacenters) != len(newSeed.Spec.Datacenters) {
-					return true
-				}
-
-				return false
+				return len(oldSeed.Spec.Datacenters) != len(newSeed.Spec.Datacenters)
 			}
 
 			// For KubermaticConfiguration updates: check if global Kyverno settings changed
@@ -432,7 +428,7 @@ func (r *reconciler) ensureUserClusterCRDResources(ctx context.Context, cluster 
 }
 
 // ensureKyvernoEnforcement checks if Kyverno enforcement is active and updates cluster spec if needed.
-// Enforcement hierarchy: Datacenter > Seed > Global
+// Enforcement hierarchy: Datacenter > Seed > Global.
 func (r *reconciler) ensureKyvernoEnforcement(ctx context.Context, cluster *kubermaticv1.Cluster, l *zap.SugaredLogger) error {
 	seed, err := r.seedGetter()
 	if err != nil {

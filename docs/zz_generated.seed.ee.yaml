@@ -310,6 +310,10 @@ spec:
           # VMEvictionStrategy describes the strategy to follow when a node drain occurs. If not set the default
           # value is External and the VM will be protected by a PDB.
           vmEvictionStrategy: ""
+        # Kyverno configures the Kyverno policy engine settings at the datacenter level.
+        # These settings override seed and global configuration and apply to all user clusters
+        # in this datacenter.
+        kyverno: null
         # Optional: MachineFlavorFilter is used to filter out allowed machine flavors based on the specified resource limits like CPU, Memory, and GPU etc.
         machineFlavorFilter:
           # Include VMs with GPU
@@ -673,6 +677,9 @@ spec:
       # UID of the referent.
       # More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
       uid: ""
+  # Kyverno configures the Kyverno policy engine settings at the seed level.
+  # These settings apply to all user clusters in this seed.
+  kyverno: null
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
