@@ -831,19 +831,19 @@ const (
 
 type ComponentSettings struct {
 	// Apiserver configures kube-apiserver settings.
-	Apiserver APIServerSettings `json:"apiserver"`
+	Apiserver APIServerSettings `json:"apiserver,omitempty"`
 	// ControllerManager configures kube-controller-manager settings.
-	ControllerManager ControllerSettings `json:"controllerManager"`
+	ControllerManager ControllerSettings `json:"controllerManager,omitempty"`
 	// Scheduler configures kube-scheduler settings.
-	Scheduler ControllerSettings `json:"scheduler"`
+	Scheduler ControllerSettings `json:"scheduler,omitempty"`
 	// Etcd configures the etcd ring used to store Kubernetes data.
-	Etcd EtcdStatefulSetSettings `json:"etcd"`
+	Etcd EtcdStatefulSetSettings `json:"etcd,omitempty"`
 	// Prometheus configures the Prometheus instance deployed into the cluster control plane.
-	Prometheus StatefulSetSettings `json:"prometheus"`
+	Prometheus StatefulSetSettings `json:"prometheus,omitempty"`
 	// NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
 	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
 	// strategy is configured.
-	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
+	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy,omitempty"`
 	// KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
 	KonnectivityProxy KonnectivityProxySettings `json:"konnectivityProxy,omitempty"`
 	// UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
