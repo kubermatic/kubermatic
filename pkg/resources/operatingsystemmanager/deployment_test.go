@@ -268,9 +268,9 @@ func TestAppendContainerRuntimeFlags(t *testing.T) {
 			cluster: nil,
 			want: []string{
 				"-existing", "value",
-				"-node-containerd-registry-mirrors=docker.io=mirror1.docker.io", "",
-				"-node-containerd-registry-mirrors=docker.io=mirror2.docker.io", "",
-				"-node-containerd-registry-mirrors=gcr.io=mirror.gcr.io", "",
+				"-node-containerd-registry-mirrors=docker.io=mirror1.docker.io",
+				"-node-containerd-registry-mirrors=docker.io=mirror2.docker.io",
+				"-node-containerd-registry-mirrors=gcr.io=mirror.gcr.io",
 			},
 		},
 		{
@@ -295,10 +295,10 @@ func TestAppendContainerRuntimeFlags(t *testing.T) {
 			cluster: nil,
 			want: []string{
 				"-existing", "value",
-				"-node-insecure-registries", "insecure1.example.com,insecure2.example.com",
-				"-node-containerd-registry-mirrors=docker.io=dc-mirror.docker.io", "",
 				"-node-registry-mirrors", "mirror1.example.com,mirror2.example.com",
 				"-pause-image", "datacenter-pause:v1.0.0",
+				"-node-insecure-registries", "insecure1.example.com,insecure2.example.com",
+				"-node-containerd-registry-mirrors=docker.io=dc-mirror.docker.io",
 			},
 		},
 		{
@@ -392,8 +392,8 @@ func TestAppendContainerRuntimeFlags(t *testing.T) {
 			},
 			want: []string{
 				"-existing", "value",
-				"-node-containerd-registry-mirrors=docker.io=cluster-mirror.docker.io", "",
-				"-node-containerd-registry-mirrors=quay.io=cluster-mirror.quay.io", "",
+				"-node-containerd-registry-mirrors=docker.io=cluster-mirror.docker.io",
+				"-node-containerd-registry-mirrors=quay.io=cluster-mirror.quay.io",
 			},
 		},
 		{
@@ -495,7 +495,7 @@ func TestAppendContainerRuntimeFlags(t *testing.T) {
 			cluster: nil,
 			want: []string{
 				"-existing", "value",
-				"-node-containerd-registry-mirrors=gcr.io=mirror.gcr.io", "",
+				"-node-containerd-registry-mirrors=gcr.io=mirror.gcr.io",
 			},
 		},
 		{
