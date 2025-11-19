@@ -1,6 +1,29 @@
 # Kubermatic 2.29
 
 - [v2.29.0](#v2290)
+- [v2.29.1](#v2291)
+
+## [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.34.2/v1.33.6/v1.32.10/v1.31.14 ([#15170](https://github.com/kubermatic/kubermatic/pull/15170))
+
+### New Features
+
+- The image for KubeLB CCM can be overridden using `.spec.userCluster.kubelb` in the KubermaticConfiguration ([#15159](https://github.com/kubermatic/kubermatic/pull/15159))
+- Update to KubeLB [v1.2.1](https://docs.kubermatic.com/kubelb/v1.2/release-notes/#v121) ([#15165](https://github.com/kubermatic/kubermatic/pull/15165))
+
+### Bugfixes
+
+- Fix azurefile-csi with kubernetes 1.31 and 1.32 ([#15162](https://github.com/kubermatic/kubermatic/pull/15162))
+- Fix policy template selector targeting with empty target selectors ([#15145](https://github.com/kubermatic/kubermatic/pull/15145))
+- A regression bug was fixed which introduced errors when a user tried to login with a user email containing uppercase letters and the one with only lowercase was already stored ([#7671](https://github.com/kubermatic/dashboard/pull/7671))
+- Fix a bug where the user cluster logging/monitoring checkboxes were shown even though user cluster MLA was disabled in the seed settings ([#7681](https://github.com/kubermatic/dashboard/pull/7681))
+
+### Updates
+
+- Update azuredisk-csi-driver to 1.32.11 for 1.32 kubernetes version and to 1.31.12 for 1.31 kubernetes version ([#15147](https://github.com/kubermatic/kubermatic/pull/15147))
 
 ## v2.29.0
 
@@ -16,7 +39,7 @@
 	- Cilium 1.18 will fail to start on Ubuntu 22.04 nodes using kernel 5.15.0-47-generic due to missing BPF verifier fixes. 
 Upgrading to a newer kernel (either enabling "Upgrade system on first boot" from KKP UI, or using a newer kernel like 5.15.0-160), or using Ubuntu 24.04 will resolve the issue.
 
-### Supported Kubernetes Version
+### Supported Kubernetes Versions
 
 - Add support for Kubernetes version 1.34 ([#14940](https://github.com/kubermatic/kubermatic/pull/14940))
 - Remove support for Kubernetes version 1.30 ([#14828](https://github.com/kubermatic/kubermatic/pull/14828))
