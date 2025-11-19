@@ -11,7 +11,7 @@
 
 ### New Features
 
-- The image for KubeLB CCM can be overriden using `.spec.userCluster.kubelb` in the KubermaticConfiguration ([#15159](https://github.com/kubermatic/kubermatic/pull/15159))
+- The image for KubeLB CCM can be overridden using `.spec.userCluster.kubelb` in the KubermaticConfiguration ([#15159](https://github.com/kubermatic/kubermatic/pull/15159))
 - Update to KubeLB [v1.2.1](https://docs.kubermatic.com/kubelb/v1.2/release-notes/#v121) ([#15165](https://github.com/kubermatic/kubermatic/pull/15165))
 
 ### Bugfixes
