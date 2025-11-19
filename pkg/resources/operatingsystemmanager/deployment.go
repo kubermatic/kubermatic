@@ -480,9 +480,7 @@ func appendContainerRuntimeFlags(flags []string, data operatingSystemManagerData
 	}
 
 	containerdFlags := containerdFlags(nodeSettings, data.Cluster())
-	for _, flag := range containerdFlags {
-		flags = append(flags, flag, "")
-	}
+	flags = append(flags, containerdFlags...)
 
 	return flags
 }
