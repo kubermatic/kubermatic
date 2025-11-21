@@ -74,6 +74,8 @@ const (
 	OperatingSystemManagerWebhookServiceName = "operating-system-manager-webhook"
 	// MachineControllerDeploymentName is the name for the machine-controller deployment.
 	MachineControllerDeploymentName = "machine-controller"
+	// MachineControllerContainerName is the name for the container within the machine-controller deployment.
+	MachineControllerContainerName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment.
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
 	// MetricsServerDeploymentName is the name for the metrics-server deployment.
@@ -1554,6 +1556,9 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	}
 	if componentSettings.KubeStateMetrics != nil && componentSettings.KubeStateMetrics.Resources != nil {
 		r[KubeStateMetricsDeploymentName] = componentSettings.KubeStateMetrics.Resources.DeepCopy()
+	}
+	if componentSettings.MachineController != nil && componentSettings.MachineController.Resources != nil {
+		r[MachineControllerContainerName] = componentSettings.MachineController.Resources.DeepCopy()
 	}
 
 	return r

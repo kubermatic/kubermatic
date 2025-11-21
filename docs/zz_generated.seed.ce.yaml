@@ -506,6 +506,8 @@ spec:
       resources: null
     # KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
     kubeStateMetrics: null
+    # MachineController configures the Kubermatic machine-controller deployment.
+    machineController: null
     # NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
     # the `LoadBalancer` expose strategy is used. This is not effective if a different expose
     # strategy is configured.
