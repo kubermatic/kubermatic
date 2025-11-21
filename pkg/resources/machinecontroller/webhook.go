@@ -39,7 +39,7 @@ import (
 
 var (
 	webhookResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
+		resources.MachineControllerContainerName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
 				corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -116,7 +116,7 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
+					Name:    resources.MachineControllerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/webhook"},
 					Args:    args,
@@ -193,7 +193,7 @@ func WebhookDeploymentReconciler(data machinecontrollerData) reconciling.NamedDe
 
 			dep.Spec.Template.Spec.ServiceAccountName = webhookServiceAccountName
 
-			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(Name), "Machine,cluster.k8s.io/v1alpha1")
+			dep.Spec.Template, err = apiserver.IsRunningWrapper(data, dep.Spec.Template, sets.New(resources.MachineControllerContainerName), "Machine,cluster.k8s.io/v1alpha1")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}

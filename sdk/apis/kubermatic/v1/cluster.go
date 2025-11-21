@@ -864,6 +864,8 @@ type ComponentSettings struct {
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
 	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
+	// MachineController configures the Kubermatic machine-controller deployment.
+	MachineController *DeploymentSettings `json:"machineController,omitempty"`
 }
 
 type APIServerSettings struct {
