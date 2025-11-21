@@ -53,7 +53,9 @@ var (
 )
 
 const (
-	Tag = "v1.64.0"
+	// Name is the alias for `resources.MachineControllerContainerName` for backward compatibility.
+	Name = resources.MachineControllerContainerName
+	Tag  = "v1.64.0"
 )
 
 type machinecontrollerData interface {
