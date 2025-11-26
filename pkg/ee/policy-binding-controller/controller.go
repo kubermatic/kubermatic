@@ -28,6 +28,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	"go.uber.org/zap"
@@ -48,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -95,6 +97,10 @@ func Add(seedMgr, userMgr manager.Manager, log *zap.SugaredLogger, namespace, cl
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		WatchesRawSource(source.Kind(seedMgr.GetCache(), &kubermaticv1.PolicyBinding{},
 			handler.TypedEnqueueRequestsFromMapFunc(mapPolicyBindingToRequest(namespace)),
+			predicate.Or(
+				predicate.TypedGenerationChangedPredicate[*kubermaticv1.PolicyBinding]{},
+				predicate.TypedAnnotationChangedPredicate[*kubermaticv1.PolicyBinding]{},
+			),
 		)).
 		WatchesRawSource(source.Kind(seedMgr.GetCache(), &kubermaticv1.PolicyTemplate{},
 			handler.TypedEnqueueRequestsFromMapFunc(mapPolicyTemplateToRequest(r.seedClient, namespace, r.log)),
@@ -135,14 +141,7 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	if !cluster.Spec.IsKyvernoEnabled() || !cluster.DeletionTimestamp.IsZero() {
-		if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
-			return reconcile.Result{}, r.handlePolicyBindingCleanup(ctx, binding)
-		}
-		return reconcile.Result{}, nil
-	}
-
-	if err := r.reconcile(ctx, log, binding); err != nil {
+	if err := r.reconcile(ctx, log, binding, cluster); err != nil {
 		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 		return reconcile.Result{}, err
 	}
@@ -150,7 +149,23 @@ func (r *reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, binding *kubermaticv1.PolicyBinding) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, binding *kubermaticv1.PolicyBinding, cluster *kubermaticv1.Cluster) error {
+	// Keep a copy of the original binding for status patching.
+	oldBinding := binding.DeepCopy()
+	defer func() {
+		if statusErr := r.updateStatus(ctx, oldBinding, binding); statusErr != nil {
+			log.Errorw("Failed to update status", "error", statusErr)
+		}
+	}()
+
+	// Handle cleanup when Kyverno is disabled or cluster is being deleted.
+	if !cluster.Spec.IsKyvernoEnabled() || !cluster.DeletionTimestamp.IsZero() {
+		if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
+			return r.handlePolicyBindingCleanup(ctx, binding)
+		}
+		return nil
+	}
+
 	if !binding.DeletionTimestamp.IsZero() {
 		return r.handlePolicyBindingCleanup(ctx, binding)
 	}
@@ -162,22 +177,42 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	template := &kubermaticv1.PolicyTemplate{}
 	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.PolicyTemplateRef.Name}, template); err != nil {
 		if apierrors.IsNotFound(err) {
+			binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, fmt.Sprintf("PolicyTemplate %s not found", binding.Spec.PolicyTemplateRef.Name))
+			binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, "Referenced PolicyTemplate does not exist")
+			binding.SetStatusFields(nil, false)
 			return r.handlePolicyBindingCleanup(ctx, binding)
 		}
 		return err
 	}
 
 	if template.DeletionTimestamp != nil {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, "Referenced PolicyTemplate is being deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, "Referenced PolicyTemplate is being deleted")
+		binding.SetStatusFields(template, false)
 		return r.handlePolicyBindingCleanup(ctx, binding)
 	}
 
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionTrue, kubermaticv1.ReasonPolicyApplied, "Referenced PolicyTemplate is valid")
+
+	var reconcileErr error
 	if template.Spec.NamespacedPolicy {
-		if binding.Spec.KyvernoPolicyNamespace != nil && binding.Spec.KyvernoPolicyNamespace.Name != "" {
-			return r.reconcileNamespacedPolicy(ctx, log, template, binding)
-		}
-		return nil
+		reconcileErr = r.reconcileNamespacedPolicy(ctx, log, template, binding)
+	} else {
+		reconcileErr = r.reconcileClusterPolicy(ctx, log, template, binding)
 	}
-	return r.reconcileClusterPolicy(ctx, log, template, binding)
+
+	if reconcileErr != nil {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, reconcileErr.Error())
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, "Failed to apply Kyverno Policy")
+		binding.SetStatusFields(template, false)
+		return reconcileErr
+	}
+
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionTrue, kubermaticv1.ReasonPolicyApplied, "Kyverno Policy successfully created/updated")
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionTrue, kubermaticv1.ReasonReady, "PolicyBinding is ready")
+	binding.SetStatusFields(template, true)
+
+	return nil
 }
 
 // reconcileNamespacedPolicy reconciles a namespaced Kyverno Policy.
@@ -373,13 +408,28 @@ func mapPolicyToRequest(namespace string) func(ctx context.Context, p *kyvernov1
 // handlePolicyBindingCleanup handles the cleanup of a PolicyBinding and its resources.
 func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
 	if err := r.deleteKyvernoResourcesForBinding(ctx, binding); err != nil && binding.DeletionTimestamp.IsZero() {
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, err.Error())
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, "Failed to cleanup Kyverno resources")
+		binding.SetStatusFields(nil, false)
 		return err
 	}
 
+	// Set status to reflect that the policy is no longer active
+	if !binding.DeletionTimestamp.IsZero() {
+		binding.SetStatusFields(nil, false)
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.ReasonDeleting, "Kyverno resources have been deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonDeleting, "PolicyBinding is being deleted")
+	}
+
 	if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
+		savedStatus := binding.Status.DeepCopy()
+
 		if err := kuberneteshelper.TryRemoveFinalizer(ctx, r.seedClient, binding, cleanupFinalizer); err != nil {
 			return fmt.Errorf("failed to remove finalizer: %w", err)
 		}
+
+		// Restore the status after TryRemoveFinalizer so the defer can persist it.
+		binding.Status = *savedStatus
 	}
 
 	return nil
@@ -433,5 +483,20 @@ func (r *reconciler) deleteKyvernoPolicy(ctx context.Context, policyName, policy
 	if err := r.userClient.Delete(ctx, p); ctrlruntimeclient.IgnoreNotFound(err) != nil {
 		return fmt.Errorf("failed to delete Policy %s/%s: %w", policyNamespace, policyName, err)
 	}
+	return nil
+}
+
+// updateStatus updates the PolicyBinding status.
+func (r *reconciler) updateStatus(ctx context.Context, oldBinding, binding *kubermaticv1.PolicyBinding) error {
+	binding.Status.ObservedGeneration = binding.Generation
+
+	if reflect.DeepEqual(oldBinding.Status, binding.Status) {
+		return nil
+	}
+
+	if err := r.seedClient.Status().Patch(ctx, binding, ctrlruntimeclient.MergeFrom(oldBinding)); err != nil {
+		return fmt.Errorf("failed to update PolicyBinding status: %w", err)
+	}
+
 	return nil
 }

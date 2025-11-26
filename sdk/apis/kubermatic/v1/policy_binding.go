@@ -47,6 +47,24 @@ const (
 	PolicyBindingConditionKyvernoPolicyApplied PolicyBindingConditionType = "KyvernoPolicyApplied"
 )
 
+// Condition reasons for PolicyBinding.
+const (
+	// ReasonReady indicates the PolicyBinding is fully reconciled and the Kyverno policy is active.
+	ReasonReady = "Ready"
+
+	// ReasonTemplateNotFound indicates the referenced PolicyTemplate is unavailable.
+	ReasonTemplateNotFound = "TemplateNotFound"
+
+	// ReasonApplyFailed indicates a failure during reconciliation.
+	ReasonApplyFailed = "ApplyFailed"
+
+	// ReasonPolicyApplied indicates the Kyverno policy was successfully created/updated and the referenced PolicyTemplate is valid.
+	ReasonPolicyApplied = "Applied"
+
+	// ReasonDeleting indicates the PolicyBinding or its resources are being deleted.
+	ReasonDeleting = "Deleting"
+)
+
 // Annotation keys for PolicyBinding.
 const (
 	// AnnotationPolicyEnforced is added to PolicyBinding resources that were automatically created.
@@ -147,4 +165,38 @@ type PolicyBindingList struct {
 
 	// Items refers to the list of PolicyBinding objects
 	Items []PolicyBinding `json:"items"`
+}
+
+// SetCondition sets a condition on the PolicyBinding, it properly handles LastTransitionTime and ObservedGeneration.
+func (pb *PolicyBinding) SetCondition(conditionType PolicyBindingConditionType, status metav1.ConditionStatus, reason, message string) {
+	now := metav1.Now()
+
+	newCondition := metav1.Condition{
+		Type:               string(conditionType),
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		ObservedGeneration: pb.Generation,
+		LastTransitionTime: now,
+	}
+
+	for i, existing := range pb.Status.Conditions {
+		if existing.Type == string(conditionType) {
+			if existing.Status == status {
+				newCondition.LastTransitionTime = existing.LastTransitionTime
+			}
+			pb.Status.Conditions[i] = newCondition
+			return
+		}
+	}
+
+	pb.Status.Conditions = append(pb.Status.Conditions, newCondition)
+}
+
+// SetStatusFields sets the Active and TemplateEnforced status fields.
+func (pb *PolicyBinding) SetStatusFields(template *PolicyTemplate, active bool) {
+	if template != nil {
+		pb.Status.TemplateEnforced = &template.Spec.Enforced
+	}
+	pb.Status.Active = &active
 }
