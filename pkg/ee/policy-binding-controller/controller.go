@@ -177,8 +177,8 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	template := &kubermaticv1.PolicyTemplate{}
 	if err := r.seedClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.PolicyTemplateRef.Name}, template); err != nil {
 		if apierrors.IsNotFound(err) {
-			binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, fmt.Sprintf("PolicyTemplate %s not found", binding.Spec.PolicyTemplateRef.Name))
-			binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, "Referenced PolicyTemplate does not exist")
+			binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonTemplateNotFound, fmt.Sprintf("PolicyTemplate %s not found", binding.Spec.PolicyTemplateRef.Name))
+			binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonTemplateNotFound, "Referenced PolicyTemplate does not exist")
 			binding.SetStatusFields(nil, false)
 			return r.handlePolicyBindingCleanup(ctx, binding)
 		}
@@ -186,13 +186,13 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	}
 
 	if template.DeletionTimestamp != nil {
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, "Referenced PolicyTemplate is being deleted")
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonTemplateNotFound, "Referenced PolicyTemplate is being deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonTemplateNotFound, "Referenced PolicyTemplate is being deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonTemplateNotFound, "Referenced PolicyTemplate is being deleted")
 		binding.SetStatusFields(template, false)
 		return r.handlePolicyBindingCleanup(ctx, binding)
 	}
 
-	binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionTrue, kubermaticv1.ReasonPolicyApplied, "Referenced PolicyTemplate is valid")
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionTemplateValid, metav1.ConditionTrue, kubermaticv1.PolicyBindingReasonPolicyApplied, "Referenced PolicyTemplate is valid")
 
 	var reconcileErr error
 	if template.Spec.NamespacedPolicy {
@@ -202,14 +202,14 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, bind
 	}
 
 	if reconcileErr != nil {
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, reconcileErr.Error())
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, "Failed to apply Kyverno Policy")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, reconcileErr.Error())
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, "Failed to apply Kyverno Policy")
 		binding.SetStatusFields(template, false)
 		return reconcileErr
 	}
 
-	binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionTrue, kubermaticv1.ReasonPolicyApplied, "Kyverno Policy successfully created/updated")
-	binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionTrue, kubermaticv1.ReasonReady, "PolicyBinding is ready")
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionTrue, kubermaticv1.PolicyBindingReasonPolicyApplied, "Kyverno Policy successfully created/updated")
+	binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionTrue, kubermaticv1.PolicyBindingReasonReady, "PolicyBinding is ready")
 	binding.SetStatusFields(template, true)
 
 	return nil
@@ -408,8 +408,8 @@ func mapPolicyToRequest(namespace string) func(ctx context.Context, p *kyvernov1
 // handlePolicyBindingCleanup handles the cleanup of a PolicyBinding and its resources.
 func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *kubermaticv1.PolicyBinding) error {
 	if err := r.deleteKyvernoResourcesForBinding(ctx, binding); err != nil && binding.DeletionTimestamp.IsZero() {
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, err.Error())
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonApplyFailed, "Failed to cleanup Kyverno resources")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, err.Error())
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonApplyFailed, "Failed to cleanup Kyverno resources")
 		binding.SetStatusFields(nil, false)
 		return err
 	}
@@ -417,8 +417,8 @@ func (r *reconciler) handlePolicyBindingCleanup(ctx context.Context, binding *ku
 	// Set status to reflect that the policy is no longer active
 	if !binding.DeletionTimestamp.IsZero() {
 		binding.SetStatusFields(nil, false)
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.ReasonDeleting, "Kyverno resources have been deleted")
-		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.ReasonDeleting, "PolicyBinding is being deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "Kyverno resources have been deleted")
+		binding.SetCondition(kubermaticv1.PolicyBindingConditionReady, metav1.ConditionFalse, kubermaticv1.PolicyBindingReasonDeleting, "PolicyBinding is being deleted")
 	}
 
 	if kuberneteshelper.HasFinalizer(binding, cleanupFinalizer) {
