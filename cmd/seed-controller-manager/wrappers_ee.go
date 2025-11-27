@@ -65,7 +65,7 @@ func setupControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create cluster-backup rbac controller: %w", err)
 	}
 
-	if err := kyvernocontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.clientProvider, ctrlCtx.log, ctrlCtx.versions); err != nil {
+	if err := kyvernocontroller.Add(ctrlCtx.mgr, ctrlCtx.runOptions.workerCount, ctrlCtx.runOptions.workerName, ctrlCtx.runOptions.overwriteRegistry, ctrlCtx.clientProvider, ctrlCtx.seedGetter, ctrlCtx.configGetter, ctrlCtx.log, ctrlCtx.versions); err != nil {
 		return fmt.Errorf("failed to create Kyverno controller: %w", err)
 	}
 
