@@ -49,20 +49,20 @@ const (
 
 // Condition reasons for PolicyBinding.
 const (
-	// ReasonReady indicates the PolicyBinding is fully reconciled and the Kyverno policy is active.
-	ReasonReady = "Ready"
+	// PolicyBindingReasonReady indicates the PolicyBinding is fully reconciled and the Kyverno policy is active.
+	PolicyBindingReasonReady = "Ready"
 
-	// ReasonTemplateNotFound indicates the referenced PolicyTemplate is unavailable.
-	ReasonTemplateNotFound = "TemplateNotFound"
+	// PolicyBindingReasonTemplateNotFound indicates the referenced PolicyTemplate is unavailable.
+	PolicyBindingReasonTemplateNotFound = "TemplateNotFound"
 
-	// ReasonApplyFailed indicates a failure during reconciliation.
-	ReasonApplyFailed = "ApplyFailed"
+	// PolicyBindingReasonApplyFailed indicates a failure during reconciliation.
+	PolicyBindingReasonApplyFailed = "ApplyFailed"
 
-	// ReasonPolicyApplied indicates the Kyverno policy was successfully created/updated and the referenced PolicyTemplate is valid.
-	ReasonPolicyApplied = "Applied"
+	// PolicyBindingReasonPolicyApplied indicates the Kyverno policy was successfully created/updated and the referenced PolicyTemplate is valid.
+	PolicyBindingReasonPolicyApplied = "Applied"
 
-	// ReasonDeleting indicates the PolicyBinding or its resources are being deleted.
-	ReasonDeleting = "Deleting"
+	// PolicyBindingReasonDeleting indicates the PolicyBinding or its resources are being deleted.
+	PolicyBindingReasonDeleting = "Deleting"
 )
 
 // Annotation keys for PolicyBinding.

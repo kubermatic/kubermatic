@@ -89,8 +89,8 @@ func TestReconcile(t *testing.T) {
 				if readyCondition.Status != metav1.ConditionTrue {
 					return fmt.Errorf("Ready condition should be True, got %s", readyCondition.Status)
 				}
-				if readyCondition.Reason != kubermaticv1.ReasonReady {
-					return fmt.Errorf("Ready reason should be %s, got %s", kubermaticv1.ReasonReady, readyCondition.Reason)
+				if readyCondition.Reason != kubermaticv1.PolicyBindingReasonReady {
+					return fmt.Errorf("Ready reason should be %s, got %s", kubermaticv1.PolicyBindingReasonReady, readyCondition.Reason)
 				}
 
 				appliedCondition := getCondition(binding, kubermaticv1.PolicyBindingConditionKyvernoPolicyApplied)
@@ -170,8 +170,8 @@ func TestReconcile(t *testing.T) {
 				if readyCondition.Status != metav1.ConditionFalse {
 					return fmt.Errorf("Ready condition should be False, got %s", readyCondition.Status)
 				}
-				if readyCondition.Reason != kubermaticv1.ReasonTemplateNotFound {
-					return fmt.Errorf("Ready reason should be %s, got %s", kubermaticv1.ReasonTemplateNotFound, readyCondition.Reason)
+				if readyCondition.Reason != kubermaticv1.PolicyBindingReasonTemplateNotFound {
+					return fmt.Errorf("Ready reason should be %s, got %s", kubermaticv1.PolicyBindingReasonTemplateNotFound, readyCondition.Reason)
 				}
 
 				// Verify TemplateValid condition is False
@@ -182,8 +182,8 @@ func TestReconcile(t *testing.T) {
 				if templateValidCondition.Status != metav1.ConditionFalse {
 					return fmt.Errorf("TemplateValid condition should be False, got %s", templateValidCondition.Status)
 				}
-				if templateValidCondition.Reason != kubermaticv1.ReasonTemplateNotFound {
-					return fmt.Errorf("TemplateValid reason should be %s, got %s", kubermaticv1.ReasonTemplateNotFound, templateValidCondition.Reason)
+				if templateValidCondition.Reason != kubermaticv1.PolicyBindingReasonTemplateNotFound {
+					return fmt.Errorf("TemplateValid reason should be %s, got %s", kubermaticv1.PolicyBindingReasonTemplateNotFound, templateValidCondition.Reason)
 				}
 
 				// Verify Active is false
