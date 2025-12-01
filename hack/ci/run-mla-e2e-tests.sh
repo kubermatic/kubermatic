@@ -53,6 +53,44 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 
 source hack/ci/setup-kubermatic-mla-in-kind.sh
 
+echodate "Waiting for kubermatic-webhook deployment to exist..."
+timeout=300
+while [ $timeout -gt 0 ]; do
+  if kubectl -n kubermatic get deployment kubermatic-webhook &> /dev/null; then
+    echodate "kubermatic-webhook deployment found"
+    break
+  fi
+  sleep 2
+  timeout=$((timeout - 2))
+done
+
+if [ $timeout -le 0 ]; then
+  echodate "ERROR: kubermatic-webhook deployment not found after 5 minutes"
+  kubectl -n kubermatic get deployments
+  exit 1
+fi
+
+echodate "Waiting for kubermatic-webhook pods to be ready..."
+retry 30 kubectl -n kubermatic wait --for=condition=ready --timeout=10s pod -l app.kubernetes.io/name=kubermatic-webhook || {
+  echodate "WARNING: kubermatic-webhook pods not ready yet, checking status..."
+  kubectl -n kubermatic get pods -l app.kubernetes.io/name=kubermatic-webhook
+  kubectl -n kubermatic describe pods -l app.kubernetes.io/name=kubermatic-webhook
+}
+
+echodate "Waiting for kubermatic-webhook service endpoint to be ready..."
+timeout=120
+while [ $timeout -gt 0 ]; do
+  if kubectl -n kubermatic get endpoints kubermatic-webhook -o jsonpath='{.subsets[*].addresses[*].ip}' | grep -q .; then
+    echodate "kubermatic-webhook service has endpoints"
+    break
+  fi
+  sleep 2
+  timeout=$((timeout - 2))
+done
+
+echodate "Waiting for User CRD to be ready..."
+retry 5 kubectl get crd users.kubermatic.k8c.io
+
 echodate "Creating roxy-admin user..."
 cat << EOF > user.yaml
 apiVersion: kubermatic.k8c.io/v1
@@ -64,7 +102,13 @@ spec:
   email: roxy-admin@kubermatic.com
   name: roxy-admin
 EOF
-retry 2 kubectl apply -f user.yaml
+
+echodate "Checking if user exists..."
+if kubectl get user roxy-admin &> /dev/null; then
+  echodate "User roxy-admin already exists, checking email..."
+fi
+
+kubectl get user
 
 echodate "Running MLA tests..."
 

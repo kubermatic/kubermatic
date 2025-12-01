@@ -64,6 +64,11 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		errs = append(errs, err)
 	}
 
+	// Validate email uniqueness
+	if err := validation.ValidateUserEmailUniqueness(ctx, v.client, user.Spec.Email, ""); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
@@ -82,6 +87,12 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 
 	if err := v.validateProjectRelationship(ctx, newUser, oldUser); err != nil {
 		errs = append(errs, err)
+	}
+
+	if oldUser.Spec.Email != newUser.Spec.Email {
+		if err := validation.ValidateUserEmailUniqueness(ctx, v.client, newUser.Spec.Email, newUser.Name); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	return nil, errs.ToAggregate()

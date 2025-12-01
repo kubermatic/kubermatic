@@ -84,6 +84,30 @@ func ValidateUserCreate(user *kubermaticv1.User) field.ErrorList {
 	return allErrs
 }
 
+func ValidateUserEmailUniqueness(ctx context.Context, client ctrlruntimeclient.Client, email string, currentUserName string) *field.Error {
+	if email == "" {
+		return nil
+	}
+
+	userList := &kubermaticv1.UserList{}
+	if err := client.List(ctx, userList); err != nil {
+		return field.InternalError(field.NewPath("spec", "email"), fmt.Errorf("failed to list users: %w", err))
+	}
+
+	for i := range userList.Items {
+		user := &userList.Items[i]
+		if user.Name == currentUserName {
+			continue
+		}
+
+		if user.Spec.Email == email {
+			return field.Duplicate(field.NewPath("spec", "email"), email)
+		}
+	}
+
+	return nil
+}
+
 func ValidateUserUpdate(oldUser, newUser *kubermaticv1.User) field.ErrorList {
 	allErrs := ValidateUser(newUser)
 	specPath := field.NewPath("spec")
