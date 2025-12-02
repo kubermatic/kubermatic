@@ -103,12 +103,12 @@ spec:
   name: roxy-admin
 EOF
 
+retry 2 kubectl apply -f user.yaml
+
 echodate "Checking if user exists..."
 if kubectl get user roxy-admin &> /dev/null; then
-  echodate "User roxy-admin already exists, checking email..."
+  echodate "User roxy-admin exists"
 fi
-
-kubectl get user
 
 echodate "Running MLA tests..."
 
