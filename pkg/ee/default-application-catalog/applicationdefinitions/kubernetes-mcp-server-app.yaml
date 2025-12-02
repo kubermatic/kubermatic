@@ -30,17 +30,17 @@ spec:
     - template:
         source:
           helm:
-            chartName:  mcp-server-kubernetes
-            chartVersion: 2.8.0
-            url: oci://ghcr.io/Flux159
-      version: 2.8.0
+            chartName: mcp-server-kubernetes
+            chartVersion: 2.9.9
+            url: oci://ghcr.io/flux159
+      version: 2.9.9
   defaultValuesBlock: |
-    service:
-      # To Expose the Kubernetes MCP Server externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
-      type: "ClusterIP"
-      port: 3000
-      targetPort: 3001
-    # Note that clients ask you for permission to execute any action on your cluster.
+    transport:
+      service:
+        # To Expose the Kubernetes MCP Server externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
+        type: "ClusterIP"
+        port: 3000
+        targetPort: 3001
     rbac:
       rules:
         - apiGroups: [""] # Core API group
@@ -52,7 +52,6 @@ spec:
         - apiGroups: ["batch"]
           resources: ["jobs", "cronjobs"]
           verbs: ["get", "list", "watch"]
-    # Security configuration
     security:
       # Tool filtering
       allowOnlyNonDestructive: false
