@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/machine-controller/sdk/providerconfig"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -57,7 +56,8 @@ var (
 )
 
 const (
-	Tag = "9565cc80e1d1ad93638ecba268b85bb67bf99270"
+	Tag        = "cis-remove-hostname-override"
+	Repository = "docker.io/adoi/operating-system-manager"
 )
 
 type operatingSystemManagerData interface {
@@ -153,14 +153,8 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 				nodePortRange:    data.ComputedNodePortRange(),
 			}
 
-			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/operating-system-manager"))
-			if r := data.OperatingSystemManagerImageRepository(); r != "" {
-				repository = r
-			}
+			repository := Repository
 			tag := Tag
-			if t := data.OperatingSystemManagerImageTag(); t != "" {
-				tag = t
-			}
 
 			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsNonRoot: resources.Bool(true),

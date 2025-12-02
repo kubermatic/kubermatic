@@ -24,7 +24,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
-	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -71,15 +70,8 @@ func WebhookDeploymentReconciler(data operatingSystemManagerData) reconciling.Na
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 
-			repository := registry.Must(data.RewriteImage(resources.RegistryQuay + "/kubermatic/operating-system-manager"))
-			if r := data.OperatingSystemManagerImageRepository(); r != "" {
-				repository = r
-			}
-
+			repository := Repository
 			tag := Tag
-			if t := data.OperatingSystemManagerImageTag(); t != "" {
-				tag = t
-			}
 
 			dep.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsNonRoot: resources.Bool(true),
