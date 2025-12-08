@@ -2941,7 +2941,7 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 		},
 		// scenario 2
 		{
-			name: "scenario 2: a mis-configured set of RBAC Role/Binding is updated for constraints",
+			name: "scenario 2: a misconfigured set of RBAC Role/Binding is updated for constraints",
 
 			dependantToSync: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{
@@ -3369,7 +3369,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 			},
 		},
 		{
-			name: "a mis-configured set of RBAC Role/Binding is updated for alertmanager",
+			name: "a misconfigured set of RBAC Role/Binding is updated for alertmanager",
 			dependantToSync: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Cluster",
@@ -3691,7 +3691,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 			},
 		},
 		{
-			name: "a mis-configured set of RBAC Role/Binding is updated for rulegroups",
+			name: "a misconfigured set of RBAC Role/Binding is updated for rulegroups",
 
 			dependantToSync: &kubermaticv1.Cluster{
 				TypeMeta: metav1.TypeMeta{

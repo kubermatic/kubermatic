@@ -1258,7 +1258,7 @@ func ReconcileBackupStorageLocations(ctx context.Context, namedFactories []Named
 	return nil
 }
 
-// KyvernoClusterPolicyReconciler defines an interface to create/update ClusterPolicys.
+// KyvernoClusterPolicyReconciler defines an interface to create/update ClusterPolicies.
 type KyvernoClusterPolicyReconciler = func(existing *kyvernov1.ClusterPolicy) (*kyvernov1.ClusterPolicy, error)
 
 // NamedKyvernoClusterPolicyReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
@@ -1275,8 +1275,8 @@ func KyvernoClusterPolicyObjectWrapper(reconciler KyvernoClusterPolicyReconciler
 	}
 }
 
-// ReconcileKyvernoClusterPolicys will create and update the KyvernoClusterPolicys coming from the passed KyvernoClusterPolicyReconciler slice.
-func ReconcileKyvernoClusterPolicys(ctx context.Context, namedFactories []NamedKyvernoClusterPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+// ReconcileKyvernoClusterPolicies will create and update the KyvernoClusterPolicies coming from the passed KyvernoClusterPolicyReconciler slice.
+func ReconcileKyvernoClusterPolicies(ctx context.Context, namedFactories []NamedKyvernoClusterPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
 	for _, factory := range namedFactories {
 		name, reconciler := factory()
 		reconcileObject := KyvernoClusterPolicyObjectWrapper(reconciler)
@@ -1295,7 +1295,7 @@ func ReconcileKyvernoClusterPolicys(ctx context.Context, namedFactories []NamedK
 	return nil
 }
 
-// KyvernoPolicyReconciler defines an interface to create/update Policys.
+// KyvernoPolicyReconciler defines an interface to create/update Policies.
 type KyvernoPolicyReconciler = func(existing *kyvernov1.Policy) (*kyvernov1.Policy, error)
 
 // NamedKyvernoPolicyReconcilerFactory returns the name of the resource and the corresponding Reconciler function.
@@ -1312,8 +1312,8 @@ func KyvernoPolicyObjectWrapper(reconciler KyvernoPolicyReconciler) reconciling.
 	}
 }
 
-// ReconcileKyvernoPolicys will create and update the KyvernoPolicys coming from the passed KyvernoPolicyReconciler slice.
-func ReconcileKyvernoPolicys(ctx context.Context, namedFactories []NamedKyvernoPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
+// ReconcileKyvernoPolicies will create and update the KyvernoPolicies coming from the passed KyvernoPolicyReconciler slice.
+func ReconcileKyvernoPolicies(ctx context.Context, namedFactories []NamedKyvernoPolicyReconcilerFactory, namespace string, client ctrlruntimeclient.Client, objectModifiers ...reconciling.ObjectModifier) error {
 	for _, factory := range namedFactories {
 		name, reconciler := factory()
 		reconcileObject := KyvernoPolicyObjectWrapper(reconciler)
