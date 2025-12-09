@@ -66,7 +66,8 @@ type DeployOptions struct {
 	KubeContext string
 
 	HelmBinary         string
-	HelmValues         string
+	HelmValues         string // deprecated single-file input (backwards compatibility)
+  HelmValuesFiles    []string
 	HelmTimeout        time.Duration
 	SkipDependencies   bool
 	SkipSeedValidation sets.Set[string]
@@ -124,6 +125,18 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 			if opt.HelmBinary == "" {
 				opt.HelmBinary = os.Getenv("HELM_BINARY")
 			}
+
+			// Backwards compatibility & env support for multiple files:
+			// - If --helm-values not provided as slice, fall back to old single string or $HELM_VALUES
+			if len(opt.HelmValuesFiles) == 0 {
+				source := opt.HelmValues
+				if source == "" {
+					source = os.Getenv("HELM_VALUES")
+				}
+				if source != "" {
+					opt.HelmValuesFiles = []string{source}
+				}
+			}
 		},
 	}
 
@@ -131,7 +144,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.Kubeconfig, "kubeconfig", "", "full path to where a kubeconfig with cluster-admin permissions for the target cluster")
 	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
 
-	cmd.PersistentFlags().StringVar(&opt.HelmValues, "helm-values", "", "full path to the Helm values.yaml used for customizing all charts")
+	cmd.PersistentFlags().StringArrayVar(&opt.HelmValuesFiles, "helm-values", nil, "one or more Helm values files (repeat flag)")
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
@@ -189,7 +202,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			return fmt.Errorf("failed to load KubermaticConfiguration: %w", err)
 		}
 
-		helmValues, err := loadHelmValues(opt.HelmValues)
+		helmValues, err := loadAndMergeHelmValues(opt.HelmValuesFiles)
 		if err != nil {
 			return fmt.Errorf("failed to load Helm values: %w", err)
 		}
@@ -397,4 +410,75 @@ func setupKubermaticStack(logger *logrus.Logger, args []string, opt *DeployOptio
 		return nil, fmt.Errorf("unknown stack %q specified", stackName)
 	}
 	return kubermaticStack, nil
+}
+
+// loadAndMergeHelmValues loads multiple Helm values files and performs a deep merge.
+// Merge semantics are aligned with Helm's -f behavior for maps; lists/arrays are replaced by later files.
+func loadAndMergeHelmValues(files []string) (map[string]interface{}, error) {
+	// If no files provided, behave like loadHelmValues("") did before (i.e., nil / empty map).
+	if len(files) == 0 {
+		return nil, nil
+	}
+
+		var merged map[string]interface{}
+		for _, f := range files {
+			if f == "" {
+				continue
+			}
+
+
+			vals, err := loadHelmValues(f)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load Helm values from %s: %w", f, err)
+			}
+
+			if merged == nil {
+				// first file wins as base
+				if vals == nil {
+					merged = map[string]interface{}{}
+				} else {
+					merged = vals
+				}
+				continue
+			}
+
+			merged = deepMergeMaps(merged, vals)
+    }
+
+	return merged, nil
+}
+
+// deepMergeMaps merges b into a (mutating a), recursively for maps.
+// Slices/arrays are REPLACED (not appended), scalars are overwritten by b.
+func deepMergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	if a == nil {
+		return b
+	}
+
+	for k, bv := range b {
+		if av, ok := a[k]; ok {
+			a[k] = mergeNode(av, bv)
+		} else {
+			a[k] = bv
+		}
+	}
+
+	return a
+}
+
+func mergeNode(av, bv interface{}) interface{} {
+	switch a := av.(type) {
+	case map[string]interface{}:
+		if b, ok := bv.(map[string]interface{}); ok {
+			return deepMergeMaps(a, b)
+		}
+		return bv
+
+	case []interface{}:
+		// replace arrays/list as Helm does for -f
+		return bv
+
+	default:
+		return bv
+	}
 }
