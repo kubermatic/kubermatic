@@ -134,7 +134,7 @@ func loadHelmValues(filenames []string) (*yamled.Document, error) {
 	return values, nil
 }
 
-// Help function for deep merging of maps
+// Help function for deep merging of maps.
 func mergeMaps(dest, src map[string]interface{}) error {
 	for k, v := range src {
 		// check whether the key exists in dest and whether both are maps
