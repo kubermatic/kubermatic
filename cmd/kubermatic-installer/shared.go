@@ -25,6 +25,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	goyaml "gopkg.in/yaml.v3"
+
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -80,22 +82,75 @@ func loadKubermaticConfiguration(filename string) (*kubermaticv1.KubermaticConfi
 	return config, raw, nil
 }
 
-func loadHelmValues(filename string) (*yamled.Document, error) {
-	if filename == "" {
+func loadHelmValues(filenames []string) (*yamled.Document, error) {
+	if len(filenames) == 0 {
 		doc, _ := yamled.Load(bytes.NewReader([]byte("---\n")))
 		return doc, nil
 	}
 
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
+	// We create an empty map into which we merge everything.
+	mergedValues := make(map[string]interface{})
 
-	values, err := yamled.Load(f)
+	for _, filename := range filenames {
+		if filename == "" {
+			continue
+		}
+
+		f, err := os.Open(filename)
+		if err != nil {
+			return nil, err
+		}
+		// defer f.Close() is tricky in loops, we close explicitly:
+
+		// decoding the current file
+		currentMap := make(map[string]interface{})
+		decoder := goyaml.NewDecoder(f)
+		if err := decoder.Decode(&currentMap); err != nil {
+			f.Close()
+			return nil, fmt.Errorf("failed to decode %s: %w", filename, err)
+		}
+		f.Close()
+
+		// merge: currentMap overwrites values in mergedValues
+		if err := mergeMaps(mergedValues, currentMap); err != nil {
+			return nil, fmt.Errorf("failed to merge values from %s: %w", filename, err)
+		}
+	}
+
+	// Convert the finished map back to bytes for yamled
+	var buf bytes.Buffer
+	encoder := goyaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+	if err := encoder.Encode(mergedValues); err != nil {
+		return nil, fmt.Errorf("failed to encode merged values: %w", err)
+	}
+
+	// load yamled (as expected by the rest of the code)
+	values, err := yamled.Load(bytes.NewReader(buf.Bytes()))
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode %s: %w", filename, err)
+		return nil, fmt.Errorf("failed to load final values: %w", err)
 	}
 
 	return values, nil
+}
+
+// Help function for deep merging of maps
+func mergeMaps(dest, src map[string]interface{}) error {
+	for k, v := range src {
+		// check whether the key exists in dest and whether both are maps
+		if destVal, ok := dest[k]; ok {
+			if srcMap, ok := v.(map[string]interface{}); ok {
+				if destMap, ok := destVal.(map[string]interface{}); ok {
+					// recursive call for nested maps
+					if err := mergeMaps(destMap, srcMap); err != nil {
+						return err
+					}
+					continue
+				}
+			}
+		}
+		// otherwise overwrite value
+		dest[k] = v
+	}
+	return nil
 }
