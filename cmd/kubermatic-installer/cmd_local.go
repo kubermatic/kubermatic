@@ -383,7 +383,9 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
 	}
-	v, err := loadHelmValues(valuesPath)
+
+	// the string valuesPath is wrapped in a slice: []string{valuesPath}
+	v, err := loadHelmValues([]string{valuesPath})
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", valuesPath, err)
 	}
