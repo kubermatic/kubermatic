@@ -67,6 +67,18 @@ iap:
     #     annotations: {}
     #     ## (Optional) Allow setting the value for ingressClassName to the different ingress controller such as "cilium". Default is set to "nginx"
     #     class: "nginx"
+
+  # extraArgs allows specifying additional arguments to the oauth2-proxy container for each deployment.
+  # Example:
+  # deployments:
+  #   grafana:
+  #     extraArgs:
+  #       - --session-cookie-minimal=true
+  #
+  # Or set globally for all deployments (can be overridden per deployment):
+  # extraArgs:
+  #   - --session-cookie-minimal=true
+  extraArgs: []
     #
     # grafana:
     #   name: grafana
