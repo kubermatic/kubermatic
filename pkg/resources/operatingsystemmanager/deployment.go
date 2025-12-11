@@ -41,20 +41,18 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var (
-	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.OperatingSystemManagerContainerName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("128Mi"),
-				corev1.ResourceCPU:    resource.MustParse("50m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("1"),
-			},
+var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
+	resources.OperatingSystemManagerContainerName: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("128Mi"),
+			corev1.ResourceCPU:    resource.MustParse("50m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("1"),
+		},
+	},
+}
 
 const (
 	Tag = "9565cc80e1d1ad93638ecba268b85bb67bf99270"
@@ -105,8 +103,12 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
-			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas != nil {
-				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Replicas
+			override := data.Cluster().Spec.ComponentsOverride.OperatingSystemManager
+			if override != nil {
+				if override.Replicas != nil {
+					dep.Spec.Replicas = override.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = override.Tolerations
 			}
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
@@ -233,10 +235,6 @@ func DeploymentReconcilerWithoutInitWrapper(data operatingSystemManagerData) rec
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
-			}
-
-			if data.Cluster().Spec.ComponentsOverride.OperatingSystemManager != nil && len(data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Tolerations) > 0 {
-				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.OperatingSystemManager.Tolerations
 			}
 
 			return dep, nil
@@ -414,9 +412,7 @@ func getContainerdFlags(crid *kubermaticv1.ContainerRuntimeOpts) []string {
 		return flags
 	}
 
-	var (
-		registries []string
-	)
+	var registries []string
 
 	// fetch all keys from the map and sort them
 	// for stable order.

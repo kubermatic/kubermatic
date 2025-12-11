@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
+	templatesv1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -47,8 +47,8 @@ type ConstraintTemplate struct {
 
 // ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec.
 type ConstraintTemplateSpec struct {
-	CRD     v1.CRD      `json:"crd,omitempty"`
-	Targets []v1.Target `json:"targets,omitempty"`
+	CRD     templatesv1.CRD      `json:"crd,omitempty"`
+	Targets []templatesv1.Target `json:"targets,omitempty"`
 
 	// Selector configures which clusters this constraint template is applied to.
 	Selector ConstraintTemplateSelector `json:"selector,omitempty"`
