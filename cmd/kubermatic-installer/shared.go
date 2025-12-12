@@ -88,7 +88,7 @@ func loadHelmValues(filenames []string) (*yamled.Document, error) {
 	}
 
 	// We create an empty map into which we merge everything.
-	mergedValues := make(map[string]interface{})
+	mergedValues := make(map[string]any)
 
 	for _, filename := range filenames {
 		if filename == "" {
