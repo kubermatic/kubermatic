@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/imdario/mergo"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	goyaml "gopkg.in/yaml.v3"
@@ -95,23 +96,22 @@ func loadHelmValues(filenames []string) (*yamled.Document, error) {
 			continue
 		}
 
-		f, err := os.Open(filename)
+		content, err := os.ReadFile(filename)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read %s: %w", filename, err)
 		}
-		// defer f.Close() is tricky in loops, we close explicitly:
 
 		// decoding the current file
 		currentMap := make(map[string]any)
-		decoder := goyaml.NewDecoder(f)
-		if err := decoder.Decode(&currentMap); err != nil {
-			f.Close()
+
+		// using unmarshal directly on the bytes
+		if err := goyaml.Unmarshal(content, &currentMap); err != nil {
 			return nil, fmt.Errorf("failed to decode %s: %w", filename, err)
 		}
-		f.Close()
 
-		// merge: currentMap overwrites values in mergedValues
-		if err := mergeMaps(mergedValues, currentMap); err != nil {
+		// mergo.WithOverride ensures that values from "currentMap"
+		// overwrite existing values in "mergedValues"
+		if err := mergo.Merge(&mergedValues, currentMap, mergo.WithOverride); err != nil {
 			return nil, fmt.Errorf("failed to merge values from %s: %w", filename, err)
 		}
 	}
@@ -120,6 +120,7 @@ func loadHelmValues(filenames []string) (*yamled.Document, error) {
 	var buf bytes.Buffer
 	encoder := goyaml.NewEncoder(&buf)
 	encoder.SetIndent(2)
+
 	if err := encoder.Encode(mergedValues); err != nil {
 		return nil, fmt.Errorf("failed to encode merged values: %w", err)
 	}
@@ -131,25 +132,4 @@ func loadHelmValues(filenames []string) (*yamled.Document, error) {
 	}
 
 	return values, nil
-}
-
-// Help function for deep merging of maps.
-func mergeMaps(dest, src map[string]interface{}) error {
-	for k, v := range src {
-		// check whether the key exists in dest and whether both are maps
-		if destVal, ok := dest[k]; ok {
-			if srcMap, ok := v.(map[string]interface{}); ok {
-				if destMap, ok := destVal.(map[string]interface{}); ok {
-					// recursive call for nested maps
-					if err := mergeMaps(destMap, srcMap); err != nil {
-						return err
-					}
-					continue
-				}
-			}
-		}
-		// otherwise overwrite value
-		dest[k] = v
-	}
-	return nil
 }
