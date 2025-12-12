@@ -66,7 +66,7 @@ type DeployOptions struct {
 	KubeContext string
 
 	HelmBinary         string
-	HelmValues         string
+	HelmValues         []string
 	HelmTimeout        time.Duration
 	SkipDependencies   bool
 	SkipSeedValidation sets.Set[string]
@@ -118,8 +118,10 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 			if opt.KubeContext == "" {
 				opt.KubeContext = os.Getenv("KUBE_CONTEXT")
 			}
-			if opt.HelmValues == "" {
-				opt.HelmValues = os.Getenv("HELM_VALUES")
+			if len(opt.HelmValues) == 0 {
+				if envVal := os.Getenv("HELM_VALUES"); envVal != "" {
+					opt.HelmValues = []string{envVal}
+				}
 			}
 			if opt.HelmBinary == "" {
 				opt.HelmBinary = os.Getenv("HELM_BINARY")
@@ -131,7 +133,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().StringVar(&opt.Kubeconfig, "kubeconfig", "", "full path to where a kubeconfig with cluster-admin permissions for the target cluster")
 	cmd.PersistentFlags().StringVar(&opt.KubeContext, "kube-context", "", "context to use from the given kubeconfig")
 
-	cmd.PersistentFlags().StringVar(&opt.HelmValues, "helm-values", "", "full path to the Helm values.yaml used for customizing all charts")
+	cmd.PersistentFlags().StringSliceVar(&opt.HelmValues, "helm-values", nil, "full path to the Helm values.yaml used for customizing all charts (can be specified multiple times)")
 	cmd.PersistentFlags().DurationVar(&opt.HelmTimeout, "helm-timeout", opt.HelmTimeout, "time to wait for Helm operations to finish")
 	cmd.PersistentFlags().StringVar(&opt.HelmBinary, "helm-binary", opt.HelmBinary, "full path to the Helm 3 binary to use")
 	cmd.PersistentFlags().BoolVar(&opt.SkipDependencies, "skip-dependencies", false, "skip pulling Helm chart dependencies (requires chart dependencies to be already downloaded)")
