@@ -16,6 +16,9 @@ cortex:
   # Check master values.yaml which are the default values for Chart version v2.23.8-a
   # https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml
 
+  # TEMP until KKP user-mla chart is updated
+  image:
+    tag: "v1.16.1"
   config:
     auth_enabled: true
     # Note: below defaults were changed by cortex from 0.7.0 to 1.7.0. So not keeping old defaults
