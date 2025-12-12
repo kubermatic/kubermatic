@@ -37,20 +37,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var (
-	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("32Mi"),
-				corev1.ResourceCPU:    resource.MustParse("25m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("2"),
-			},
+var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
+	Name: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("25m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
+		},
+	},
+}
 
 const (
 	Name = "machine-controller"
