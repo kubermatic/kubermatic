@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 require (
-	dario.cat/mergo v1.0.1
+	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0
@@ -123,7 +123,6 @@ require (
 require (
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
 	github.com/opencontainers/image-spec v1.1.0
-	github.com/imdario/mergo v0.3.16
 	gopkg.in/yaml.v2 v2.4.0
 )
 

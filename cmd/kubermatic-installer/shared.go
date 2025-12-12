@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	goyaml "gopkg.in/yaml.v3"
