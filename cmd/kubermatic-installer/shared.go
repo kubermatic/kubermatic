@@ -102,7 +102,7 @@ func loadHelmValues(filenames []string) (*yamled.Document, error) {
 		// defer f.Close() is tricky in loops, we close explicitly:
 
 		// decoding the current file
-		currentMap := make(map[string]interface{})
+		currentMap := make(map[string]any)
 		decoder := goyaml.NewDecoder(f)
 		if err := decoder.Decode(&currentMap); err != nil {
 			f.Close()
