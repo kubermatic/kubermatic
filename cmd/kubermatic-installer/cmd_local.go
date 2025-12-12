@@ -29,6 +29,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -224,9 +225,28 @@ func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, 
 	}
 }
 
-func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, opt LocalOptions) {
+func installKubevirt(logger *logrus.Logger, helmClient helm.Client, opt LocalOptions) {
 	logger.Info("Installing KubeVirt…")
-	err := helmClient.InstallChart("kubevirt", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, []string{"--create-namespace"})
+
+	var helmValues map[string]string = nil
+
+	// check the OS; if it is NOT Linux (e.g., 'darwin' for macOS), enable kubevirt emulation.
+	// reference: https://kubevirt.io/quickstart_kind/
+	if runtime.GOOS != "linux" {
+		logger.Info("enabling KubeVirt emulation.")
+
+		helmValues = make(map[string]string)
+		helmValues["localKubevirt.useEmulation"] = "true"
+	}
+
+	err := helmClient.InstallChart(
+		"kubevirt",
+		"kubevirt",
+		filepath.Join(opt.ChartsDirectory, "local-kubevirt"),
+		"",
+		helmValues,
+		[]string{"--create-namespace"},
+	)
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
@@ -448,7 +468,7 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 				helmVersion,
 			)
 		}
-		installKubevirt(logger, exampleDir, helmClient, opt)
+		installKubevirt(logger, helmClient, opt)
 		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, opt)
 		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)

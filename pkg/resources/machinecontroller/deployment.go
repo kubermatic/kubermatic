@@ -37,20 +37,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var (
-	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.MachineControllerContainerName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("32Mi"),
-				corev1.ResourceCPU:    resource.MustParse("25m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("2"),
-			},
+var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
+	resources.MachineControllerContainerName: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("25m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
+		},
+	},
+}
 
 const (
 	// Name is the alias for `resources.MachineControllerContainerName` for backward compatibility.
@@ -100,10 +98,14 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
-			mdOverrides := data.Cluster().Spec.ComponentsOverride.MachineController
-			if mdOverrides != nil && mdOverrides.Replicas != nil {
-				dep.Spec.Replicas = mdOverrides.Replicas
+			overrides := data.Cluster().Spec.ComponentsOverride.MachineController
+			if overrides != nil {
+				if overrides.Replicas != nil {
+					dep.Spec.Replicas = overrides.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = overrides.Tolerations
 			}
+
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -212,10 +214,6 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
-			}
-
-			if mdOverrides != nil && mdOverrides.Tolerations != nil {
-				dep.Spec.Template.Spec.Tolerations = mdOverrides.Tolerations
 			}
 
 			return dep, nil
