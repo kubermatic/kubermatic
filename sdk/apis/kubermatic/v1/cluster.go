@@ -391,7 +391,6 @@ type ClusterConditionType string
 // The reference time for this is the node system time and might differ from
 // the user's timezone, which needs to be considered when configuring a window.
 type UpdateWindow struct {
-
 	// Sets the start time of the update window. This can be a time of day in 24h format, e.g. `22:30`,
 	// or a day of week plus a time of day, for example `Mon 21:00`. Only short names for week days are supported,
 	// i.e. `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat` and `Sun`.
@@ -1344,7 +1343,6 @@ type BaremetalCloudSpec struct {
 }
 
 type TinkerbellCloudSpec struct {
-
 	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
@@ -1573,7 +1571,6 @@ type AnexiaCloudSpec struct {
 
 // NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
 type NutanixCSIConfig struct {
-
 	// Prism Element Username for CSI driver.
 	Username string `json:"username,omitempty"`
 
