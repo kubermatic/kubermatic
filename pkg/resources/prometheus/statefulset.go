@@ -39,20 +39,18 @@ const (
 	volumeDataName   = "data"
 )
 
-var (
-	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		name: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("1Gi"),
-				corev1.ResourceCPU:    resource.MustParse("500m"),
-			},
+var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+	name: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("1Gi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+		},
+	},
+}
 
 // StatefulSetReconciler returns the function to reconcile the Prometheus StatefulSet.
 func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatefulSetReconcilerFactory {
@@ -74,13 +72,11 @@ func StatefulSetReconciler(data *resources.TemplateData) reconciling.NamedStatef
 			}
 
 			set.Spec.Replicas = resources.Int32(1)
-			if data.Cluster().Spec.ComponentsOverride.Prometheus.Replicas != nil {
-				set.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Prometheus.Replicas
+			override := data.Cluster().Spec.ComponentsOverride.Prometheus
+			if override.Replicas != nil {
+				set.Spec.Replicas = override.Replicas
 			}
-
-			if data.Cluster().Spec.ComponentsOverride.Prometheus.Tolerations != nil {
-				set.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.Prometheus.Tolerations
-			}
+			set.Spec.Template.Spec.Tolerations = override.Tolerations
 
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 
