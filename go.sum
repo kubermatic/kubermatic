@@ -737,6 +737,8 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/huandu/xstrings v1.5.0 h1:2ag3IFq9ZDANvthTwTiqSSZLjDc+BedvHPAp5tJy2TI=
 github.com/huandu/xstrings v1.5.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
+github.com/imdario/mergo v0.3.16 h1:wwQJbIsHYGMUyLSPrEq1CT16AhnhNJQ51+4fdHUnCl4=
+github.com/imdario/mergo v0.3.16/go.mod h1:WBLT9ZmE3lPoWsEzCh9LPo3TiwVN+ZKEjmz+hD27ysY=
 github.com/in-toto/attestation v1.1.0 h1:oRWzfmZPDSctChD0VaQV7MJrywKOzyNrtpENQFq//2Q=
 github.com/in-toto/attestation v1.1.0/go.mod h1:DB59ytd3z7cIHgXxwpSX2SABrU6WJUKg/grpdgHVgVs=
 github.com/in-toto/in-toto-golang v0.9.1-0.20240317085821-8e2966059a09 h1:cwCITdi9pF50CF8uh40qDbkJ/VrEVzx5AoaHP7OPdEo=
