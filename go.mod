@@ -123,6 +123,7 @@ require (
 require (
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
 	github.com/opencontainers/image-spec v1.1.0
+	github.com/imdario/mergo v0.3.16
 	gopkg.in/yaml.v2 v2.4.0
 )
 
