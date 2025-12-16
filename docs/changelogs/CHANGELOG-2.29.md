@@ -2,6 +2,14 @@
 
 - [v2.29.0](#v2290)
 - [v2.29.1](#v2291)
+- [v2.29.2](#v2292)
+
+
+## [v2.29.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.2)
+
+### Bugfixes
+
+- Fix encryption at rest feature failing in environments with separate master and seed clusters ([#7718](https://github.com/kubermatic/dashboard/pull/7718))
 
 ## [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)
 
