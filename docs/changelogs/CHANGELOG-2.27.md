@@ -10,6 +10,16 @@
 - [v2.27.7](#v2277)
 - [v2.27.8](#v2278)
 - [v2.27.9](#v2279)
+- [v2.27.10](#v22710)
+
+## v2.27.10
+
+**GitHub release: [v2.27.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.10)**
+
+### Bugfixes
+
+- Delete orphaned UserProjectBinding resources on User or Project deletion ([#15181](https://github.com/kubermatic/kubermatic/pull/15181))
+- Add omitempty to component settings fields to allow partial configuration ([#15182](https://github.com/kubermatic/kubermatic/pull/15182))
 
 ## v2.27.9
 
