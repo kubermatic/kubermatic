@@ -96,7 +96,7 @@ require (
 	k8c.io/kubelb v1.2.0
 	k8c.io/kubeone v1.10.0
 	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
-	k8c.io/machine-controller/sdk v1.64.0
+	k8c.io/machine-controller/sdk v1.64.1
 	k8c.io/operating-system-manager v1.8.1-0.20251201160225-9565cc80e1d1
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.34.0
