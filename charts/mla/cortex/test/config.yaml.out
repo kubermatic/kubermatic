@@ -1243,7 +1243,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: memcached
-          image: quay.io/kubermatic-mirror/images/memcached:1.6.19-debian-11-r0
+          image: quay.io/bitnamilegacy/memcached:1.6.19-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1374,7 +1374,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: memcached
-          image: quay.io/kubermatic-mirror/images/memcached:1.6.19-debian-11-r0
+          image: quay.io/bitnamilegacy/memcached:1.6.19-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
@@ -1505,7 +1505,7 @@ spec:
       serviceAccountName: default
       containers:
         - name: memcached
-          image: quay.io/kubermatic-mirror/images/memcached:1.6.19-debian-11-r0
+          image: quay.io/bitnamilegacy/memcached:1.6.19-debian-11-r0
           imagePullPolicy: "IfNotPresent"
           securityContext:
             runAsNonRoot: true
