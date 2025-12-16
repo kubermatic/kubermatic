@@ -58,9 +58,13 @@ spec:
         - --reverse-proxy=true
         - --skip-provider-button=true
         - --config=/config/config.toml
-        {{- $extraArgs := .extraArgs | default $.Values.iap.extraArgs }}
-        {{- if $extraArgs }}
-        {{- range $arg := $extraArgs }}
+        {{- if $.Values.iap.extraArgs }}
+        {{- range $arg := $.Values.iap.extraArgs }}
+        - {{ $arg }}
+        {{- end }}
+        {{- end }}
+        {{- if .extraArgs }}
+        {{- range $arg := .extraArgs }}
         - {{ $arg }}
         {{- end }}
         {{- end }}
