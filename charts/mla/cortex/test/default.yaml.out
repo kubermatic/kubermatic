@@ -737,7 +737,7 @@ spec:
         []
       containers:
         - name: distributor
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=distributor"
@@ -856,7 +856,7 @@ spec:
         []
       containers:
         - name: querier
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=querier"
@@ -990,7 +990,7 @@ spec:
         []
       containers:
         - name: query-frontend
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=query-frontend"
@@ -1105,7 +1105,7 @@ spec:
         []
       containers:
         - name: rules
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=ruler"
@@ -1666,7 +1666,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: alertmanager
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=alertmanager"
@@ -1804,7 +1804,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: compactor
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=compactor"
@@ -1939,7 +1939,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: ingester
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=ingester"
@@ -2081,7 +2081,7 @@ spec:
           name: cortex-runtime-config
       containers:
         - name: store-gateway
-          image: "quay.io/cortexproject/cortex:v1.14.1"
+          image: "quay.io/cortexproject/cortex:v1.16.1"
           imagePullPolicy: IfNotPresent
           args:
             - "-target=store-gateway"
