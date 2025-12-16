@@ -153,7 +153,8 @@ spec:
         - --reverse-proxy=true
         - --skip-provider-button=true
         - --config=/config/config.toml
-        - --custom-value=overridden-for-alertmanager
+        - --arg1=added-in-all-deployments
+        - --arg2=added-for-alertmanager
         envFrom:
         - secretRef:
             name: iap-alertmanager-secret
@@ -255,7 +256,7 @@ spec:
         - --reverse-proxy=true
         - --skip-provider-button=true
         - --config=/config/config.toml
-        - --custom-value=common-for-all-deployments
+        - --arg1=added-in-all-deployments
         envFrom:
         - secretRef:
             name: iap-grafana-secret
