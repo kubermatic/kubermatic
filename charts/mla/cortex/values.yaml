@@ -349,6 +349,9 @@ cortex:
         name: "cortex-runtime-config"
   memcached-blocks-index:
     enabled: true
+    # TODO: TEMP Until we upgrade to latest cortex helm chart
+    image:
+      repository: bitnamilegacy/memcached
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
@@ -357,6 +360,9 @@ cortex:
         cpu: 5m
   memcached-blocks:
     enabled: true
+    # TODO: TEMP Until we upgrade to latest cortex helm chart
+    image:
+      repository: bitnamilegacy/memcached
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
@@ -365,6 +371,9 @@ cortex:
         cpu: 5m
   memcached-blocks-metadata:
     enabled: true
+    # TODO: TEMP Until we upgrade to latest cortex helm chart
+    image:
+      repository: bitnamilegacy/memcached
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
