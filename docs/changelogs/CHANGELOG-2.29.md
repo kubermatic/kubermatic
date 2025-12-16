@@ -2,6 +2,33 @@
 
 - [v2.29.0](#v2290)
 - [v2.29.1](#v2291)
+- [v2.29.2](#v2292)
+
+## [v2.29.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.2)
+
+### Breaking Changes
+
+- Fix cluster-autoscaler RBAC permissions.cluster-autoscaler application needs to be re-installed to force recreating ApplicationInstallation resource, in order to get the new updated default values.yaml ([#15152](https://github.com/kubermatic/kubermatic/pull/15152))
+- Update oauth2-proxy to appversion v7.13.0. If your configuration relies on matching query parameters in `skip_auth_routes` patterns, you must update your regex patterns to match paths only. Review all `skip_auth_routes` entries for potential impact. For detailed information, migration guidance, and security implications, see the upstream [security advisory](https://github.com/oauth2-proxy/oauth2-proxy/security/advisories/GHSA-7rh7-c77v-6434) ([#15174](https://github.com/kubermatic/kubermatic/pull/15174))
+
+### New Features
+
+- Add new env vars for KubeVirt provider in machine controller ([#15253](https://github.com/kubermatic/kubermatic/pull/15253))
+- Set Tolerations overrides for control plane components ([#15252](https://github.com/kubermatic/kubermatic/pull/15252))
+- Users can now configure additional arguments to oauth2-proxy pods. (useful for seed and user-mla) ([#15241](https://github.com/kubermatic/kubermatic/pull/15241))
+
+### Bugfixes
+
+- Cortex upgrade to 1.16.1 fixing issue of cortex-ingester taking up a lot of storage space ([#15242](https://github.com/kubermatic/kubermatic/pull/15242))
+- Delete orphaned UserProjectBinding resources on User or Project deletion ([#15181](https://github.com/kubermatic/kubermatic/pull/15181))
+- Velero backup hook annotations have been corrected to use proper JSON format and ASCII quotes, fixing backup failures caused by invalid exec commands ([#15217](https://github.com/kubermatic/kubermatic/pull/15217))
+- Fix Operating System Manager args, for flags like containerd-registry-mirrors ([#15154](https://github.com/kubermatic/kubermatic/pull/15154))
+- Add omitempty to component settings fields to allow partial configuration ([#15182](https://github.com/kubermatic/kubermatic/pull/15182))
+- Fix encryption at rest feature failing in environments with separate master and seed clusters ([#7718](https://github.com/kubermatic/dashboard/pull/7718))
+### Updates
+
+- Update machine-controller to [v1.64.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.1) ([#15267](https://github.com/kubermatic/kubermatic/pull/15267))
+- Add support of the latest k8s patch releases v1.34.3/v1.33.7 ([#15239](https://github.com/kubermatic/kubermatic/pull/15239))
 
 ## [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)
 
