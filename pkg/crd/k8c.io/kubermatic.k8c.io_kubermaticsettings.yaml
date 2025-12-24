@@ -278,6 +278,7 @@ spec:
                   description: Notifications are the configuration for notifications on dashboard.
                   properties:
                     enableThrottling:
+                      default: false
                       description: EnableThrottling limits the frequency of notifications to prevent noise.
                       type: boolean
                     hideErrorEvents:
