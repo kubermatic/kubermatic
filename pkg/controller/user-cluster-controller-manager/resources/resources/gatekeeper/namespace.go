@@ -31,6 +31,9 @@ func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 			ns.Labels = make(map[string]string)
 		}
 		ns.Labels[resources.GatekeeperExemptNamespaceLabel] = "true"
+		for k, v := range resources.PSALabelsPrivileged() {
+			ns.Labels[k] = v
+		}
 		return ns, nil
 	}
 }

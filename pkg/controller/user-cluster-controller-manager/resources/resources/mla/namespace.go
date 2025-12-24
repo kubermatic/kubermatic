@@ -26,10 +26,12 @@ import (
 
 func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 	return resources.UserClusterMLANamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
-		if ns.Labels != nil {
-			ns.Labels[common.ComponentLabel] = resources.MLAComponentName
-		} else {
-			ns.SetLabels(map[string]string{common.ComponentLabel: resources.MLAComponentName})
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
+		ns.Labels[common.ComponentLabel] = resources.MLAComponentName
+		for k, v := range resources.PSALabelsPrivileged() {
+			ns.Labels[k] = v
 		}
 		return ns, nil
 	}
