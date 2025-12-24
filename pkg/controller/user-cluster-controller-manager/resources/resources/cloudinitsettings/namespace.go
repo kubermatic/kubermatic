@@ -26,6 +26,12 @@ import (
 // NamespaceReconciler creates the namespace for CloudInitSettingsNamespace.
 func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 	return resources.CloudInitSettingsNamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
+		for k, v := range resources.PSALabelsPrivileged() {
+			ns.Labels[k] = v
+		}
 		return ns, nil
 	}
 }
