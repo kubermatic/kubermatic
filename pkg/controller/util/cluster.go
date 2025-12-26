@@ -219,58 +219,6 @@ func uniqueVersion(v kubermatic.Versions) string {
 	return v.GitVersion
 }
 
-// KyvernoEnforcementSource indicates where Kyverno enforcement originates from.
-type KyvernoEnforcementSource string
-
-const (
-	// KyvernoEnforcementSourceNone indicates that Kyverno is not enforced.
-	KyvernoEnforcementSourceNone KyvernoEnforcementSource = ""
-	// KyvernoEnforcementSourceDatacenter indicates that Kyverno is enforced at datacenter level.
-	KyvernoEnforcementSourceDatacenter KyvernoEnforcementSource = "datacenter"
-	// KyvernoEnforcementSourceSeed indicates that Kyverno is enforced at seed level.
-	KyvernoEnforcementSourceSeed KyvernoEnforcementSource = "seed"
-	// KyvernoEnforcementSourceGlobal indicates that Kyverno is enforced at global level.
-	KyvernoEnforcementSourceGlobal KyvernoEnforcementSource = "global"
-)
-
-// KyvernoEnforcementInfo contains resolved enforcement information for Kyverno.
-type KyvernoEnforcementInfo struct {
-	// Enforced indicates whether Kyverno enablement is enforced at a parent level.
-	Enforced bool
-
-	// Source indicates which level enforces: "datacenter", "seed", "global", or "" if not enforced.
-	Source KyvernoEnforcementSource
-}
-
-// GetKyvernoEnforcement resolves Kyverno enforcement with precedence: DC > Seed > Global.
-// Returns enforcement information indicating whether Kyverno is enforced or not.
-func GetKyvernoEnforcement(dcConf, seedConf, globalConf *kubermaticv1.KyvernoConfigurations) KyvernoEnforcementInfo {
-	result := KyvernoEnforcementInfo{
-		Enforced: false,
-		Source:   KyvernoEnforcementSourceNone,
-	}
-
-	if dcConf != nil && dcConf.Enforced != nil {
-		result.Enforced = *dcConf.Enforced
-		result.Source = KyvernoEnforcementSourceDatacenter
-		return result
-	}
-
-	if seedConf != nil && seedConf.Enforced != nil {
-		result.Enforced = *seedConf.Enforced
-		result.Source = KyvernoEnforcementSourceSeed
-		return result
-	}
-
-	if globalConf != nil && globalConf.Enforced != nil {
-		result.Enforced = *globalConf.Enforced
-		result.Source = KyvernoEnforcementSourceGlobal
-		return result
-	}
-
-	return result
-}
-
 // DatacenterForCluster returns the datacenter spec for the given cluster from the given seed.
 // If no matching datacenter is found, an error is returned.
 func DatacenterForCluster(cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*kubermaticv1.Datacenter, error) {

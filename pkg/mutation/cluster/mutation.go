@@ -18,7 +18,6 @@ package cluster
 
 import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -47,19 +46,6 @@ func MutateCreate(newCluster *kubermaticv1.Cluster, config *kubermaticv1.Kuberma
 	// Enforce DisableCSIDriver
 	if datacenter.Spec.DisableCSIDriver {
 		newCluster.Spec.DisableCSIDriver = true
-	}
-
-	enforcementInfo := util.GetKyvernoEnforcement(
-		datacenter.Spec.Kyverno,
-		seed.Spec.Kyverno,
-		config.Spec.UserCluster.Kyverno,
-	)
-
-	if enforcementInfo.Enforced {
-		if newCluster.Spec.Kyverno == nil {
-			newCluster.Spec.Kyverno = &kubermaticv1.KyvernoSettings{}
-		}
-		newCluster.Spec.Kyverno.Enabled = true
 	}
 
 	// Always enable external CCM for supported providers in new clusters unless the user

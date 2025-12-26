@@ -24,11 +24,11 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -100,7 +100,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		errs = append(errs, err)
 	}
 
-	if err := v.validateKyvernoEnforcement(cluster, datacenter, seed, config); err != nil {
+	if err := v.validateKyvernoEnforcement(cluster, nil, datacenter, seed, config); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -136,7 +136,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
-	if err := v.validateKyvernoEnforcement(newCluster, datacenter, seed, config); err != nil {
+	if err := v.validateKyvernoEnforcement(newCluster, oldCluster, datacenter, seed, config); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -219,23 +219,42 @@ func (v *validator) validateProjectRelation(ctx context.Context, cluster *kuberm
 }
 
 // validateKyvernoEnforcement ensures users cannot override enforced Kyverno settings through Cluster spec.
-func (v *validator) validateKyvernoEnforcement(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration) *field.Error {
-	enforcementInfo := util.GetKyvernoEnforcement(
+func (v *validator) validateKyvernoEnforcement(
+	newCluster, oldCluster *kubermaticv1.Cluster,
+	datacenter *kubermaticv1.Datacenter,
+	seed *kubermaticv1.Seed,
+	config *kubermaticv1.KubermaticConfiguration,
+) *field.Error {
+	enforcementInfo := kyverno.GetEnforcement(
 		datacenter.Spec.Kyverno,
 		seed.Spec.Kyverno,
 		config.Spec.UserCluster.Kyverno,
 	)
+	if !enforcementInfo.Enforced {
+		return nil
+	}
 
-	if enforcementInfo.Enforced {
-		fieldPath := field.NewPath("spec", "kyverno", "enabled")
-		if cluster.Spec.Kyverno == nil || !cluster.Spec.Kyverno.Enabled {
-			msg := fmt.Sprintf(
-				"kyverno deployment is enforced by %q and cannot be overridden by the Cluster spec",
-				enforcementInfo.Source,
+	fieldPath := field.NewPath("spec", "kyverno", "enabled")
+	
+	isUpdate := oldCluster != nil
+	if isUpdate {
+		if oldCluster.Spec.IsKyvernoEnabled() && !newCluster.Spec.IsKyvernoEnabled() {
+			return field.Invalid(
+				fieldPath,
+				newCluster.Spec.Kyverno,
+				fmt.Sprintf("kyverno is enforced by %q and cannot be disabled", enforcementInfo.Source),
 			)
-
-			return field.Invalid(fieldPath, cluster.Spec.Kyverno, msg)
 		}
+
+		return nil
+	}
+
+	if !newCluster.Spec.IsKyvernoEnabled() {
+		return field.Invalid(
+			fieldPath,
+			newCluster.Spec.Kyverno,
+			fmt.Sprintf("kyverno is enforced by %q and must be enabled for new clusters", enforcementInfo.Source),
+		)
 	}
 
 	return nil

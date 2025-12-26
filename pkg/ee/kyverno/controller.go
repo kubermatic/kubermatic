@@ -45,6 +45,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -445,12 +446,11 @@ func (r *reconciler) ensureKyvernoEnforcement(ctx context.Context, cluster *kube
 		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
 	}
 
-	enforcementInfo := util.GetKyvernoEnforcement(
+	enforcementInfo := kyverno.GetEnforcement(
 		dc.Spec.Kyverno,
 		seed.Spec.Kyverno,
 		config.Spec.UserCluster.Kyverno,
 	)
-
 	if !enforcementInfo.Enforced {
 		return nil
 	}
