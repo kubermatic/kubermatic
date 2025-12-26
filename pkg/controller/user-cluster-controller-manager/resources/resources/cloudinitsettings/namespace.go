@@ -17,6 +17,8 @@ limitations under the License.
 package cloudinitsettings
 
 import (
+	"maps"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -29,9 +31,7 @@ func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 		if ns.Labels == nil {
 			ns.Labels = make(map[string]string)
 		}
-		for k, v := range resources.PSALabelsPrivileged() {
-			ns.Labels[k] = v
-		}
+		maps.Copy(ns.Labels, resources.PSALabelsPrivileged())
 		return ns, nil
 	}
 }

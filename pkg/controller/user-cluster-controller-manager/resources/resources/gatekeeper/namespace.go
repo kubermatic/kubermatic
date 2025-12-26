@@ -17,6 +17,8 @@ limitations under the License.
 package gatekeeper
 
 import (
+	"maps"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -31,9 +33,7 @@ func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 			ns.Labels = make(map[string]string)
 		}
 		ns.Labels[resources.GatekeeperExemptNamespaceLabel] = "true"
-		for k, v := range resources.PSALabelsPrivileged() {
-			ns.Labels[k] = v
-		}
+		maps.Copy(ns.Labels, resources.PSALabelsPrivileged())
 		return ns, nil
 	}
 }

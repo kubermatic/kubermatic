@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"maps"
 	"net"
 	"strings"
 
@@ -951,9 +952,7 @@ func psaPrivilegedLabeler(namespace string) reconciling.NamedNamespaceReconciler
 			if ns.Labels == nil {
 				ns.Labels = make(map[string]string)
 			}
-			for k, v := range resources.PSALabelsPrivileged() {
-				ns.Labels[k] = v
-			}
+			maps.Copy(ns.Labels, resources.PSALabelsPrivileged())
 			return ns, nil
 		}
 	}
@@ -966,9 +965,7 @@ func psaBaselineLabeler(namespace string) reconciling.NamedNamespaceReconcilerFa
 			if ns.Labels == nil {
 				ns.Labels = make(map[string]string)
 			}
-			for k, v := range resources.PSALabelsBaseline() {
-				ns.Labels[k] = v
-			}
+			maps.Copy(ns.Labels, resources.PSALabelsBaseline())
 			return ns, nil
 		}
 	}
