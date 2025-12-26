@@ -235,7 +235,7 @@ func (v *validator) validateKyvernoEnforcement(
 	}
 
 	fieldPath := field.NewPath("spec", "kyverno", "enabled")
-	
+
 	isUpdate := oldCluster != nil
 	if isUpdate {
 		if oldCluster.Spec.IsKyvernoEnabled() && !newCluster.Spec.IsKyvernoEnabled() {
