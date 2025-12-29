@@ -115,8 +115,12 @@ func getContainers(imageRewriter registry.ImageRewriter) []corev1.Container {
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:                ptr.To[int64](1001),
 				RunAsGroup:               ptr.To[int64](2001),
+				RunAsNonRoot:             ptr.To(true),
 				ReadOnlyRootFilesystem:   ptr.To(true),
 				AllowPrivilegeEscalation: ptr.To(false),
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
 			},
 		},
 	}
