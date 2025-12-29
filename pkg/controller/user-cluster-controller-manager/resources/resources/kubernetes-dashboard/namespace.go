@@ -17,6 +17,9 @@ limitations under the License.
 package kubernetesdashboard
 
 import (
+	"maps"
+
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,6 +28,10 @@ import (
 // NamespaceReconciler creates the namespace for the Kubernetes Dashboard.
 func NamespaceReconciler() (string, reconciling.NamespaceReconciler) {
 	return Namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+		if ns.Labels == nil {
+			ns.Labels = make(map[string]string)
+		}
+		maps.Copy(ns.Labels, resources.PSALabelsBaseline())
 		return ns, nil
 	}
 }
