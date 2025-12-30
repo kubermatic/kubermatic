@@ -124,6 +124,7 @@ require (
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
 	github.com/opencontainers/image-spec v1.1.0
 	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/pod-security-admission v0.31.0
 )
 
 require (
@@ -490,7 +491,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	k8s.io/kube-proxy v0.31.1 // indirect
 	k8s.io/kubelet v0.31.1 // indirect
-	k8s.io/pod-security-admission v0.31.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go v1.2.6 // indirect
 	sigs.k8s.io/gateway-api v1.3.0 // indirect
