@@ -9,6 +9,32 @@
 - [v2.27.6](#v2276)
 - [v2.27.7](#v2277)
 - [v2.27.8](#v2278)
+- [v2.27.9](#v2279)
+- [v2.27.10](#v22710)
+
+## v2.27.10
+
+**GitHub release: [v2.27.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.10)**
+
+### Bugfixes
+
+- Delete orphaned UserProjectBinding resources on User or Project deletion ([#15181](https://github.com/kubermatic/kubermatic/pull/15181))
+- Add omitempty to component settings fields to allow partial configuration ([#15182](https://github.com/kubermatic/kubermatic/pull/15182))
+
+## v2.27.9
+
+**GitHub release: [v2.27.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.27.9)**
+
+### Supported Kubernetes Versions
+
+- Add support for k8s patch releases v1.32.10/v1.31.14 ([#15173](https://github.com/kubermatic/kubermatic/pull/15173))
+
+### Bugfixes
+
+- Remove deprecation notice for `defaultComponentSettings` in the Seed Resource ([#15102](https://github.com/kubermatic/kubermatic/pull/15102))
+- Use the lowercase email when creating a user object ([#7629](https://github.com/kubermatic/dashboard/pull/7629))
+- A regression bug was fixed which introduced errors when a user tried to login with a user email containing uppercase letters and the one with only lowercase was already stored ([#7671](https://github.com/kubermatic/dashboard/pull/7671))
+- Fix a bug where the user cluster logging/monitoring checkboxes were shown even though user cluster MLA was disabled in the seed settings ([#7681](https://github.com/kubermatic/dashboard/pull/7681))
 
 ## v2.27.8
 

@@ -110,7 +110,7 @@ func getContainers(data templateData) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            DaemonSetName,
-			Image:           registry.Must(data.RewriteImage(fmt.Sprintf("velero/velero:%s", version))),
+			Image:           registry.Must(data.RewriteImage(fmt.Sprintf("quay.io/kubermatic-mirror/images/velero:%s", version))),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Command: []string{
 				"/velero",

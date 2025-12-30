@@ -37,24 +37,23 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var (
-	controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
-		Name: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("32Mi"),
-				corev1.ResourceCPU:    resource.MustParse("25m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("2"),
-			},
+var controllerResourceRequirements = map[string]*corev1.ResourceRequirements{
+	resources.MachineControllerContainerName: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("25m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("2"),
+		},
+	},
+}
 
 const (
-	Name = "machine-controller"
-	Tag  = "v1.64.0"
+	// Name is the alias for `resources.MachineControllerContainerName` for backward compatibility.
+	Name = resources.MachineControllerContainerName
+	Tag  = "v1.64.1"
 )
 
 type machinecontrollerData interface {
@@ -80,7 +79,7 @@ func DeploymentReconciler(data machinecontrollerData) reconciling.NamedDeploymen
 			if err != nil {
 				return nil, err
 			}
-			deployment.Spec.Template, err = apiserver.IsRunningWrapper(data, deployment.Spec.Template, sets.New(Name), "cluster.k8s.io,v1alpha1,machines,kube-system")
+			deployment.Spec.Template, err = apiserver.IsRunningWrapper(data, deployment.Spec.Template, sets.New(resources.MachineControllerContainerName), "cluster.k8s.io,v1alpha1,machines,kube-system")
 			if err != nil {
 				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %w", err)
 			}
@@ -95,10 +94,18 @@ func DeploymentReconciler(data machinecontrollerData) reconciling.NamedDeploymen
 func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return resources.MachineControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			baseLabels := resources.BaseAppLabels(Name, nil)
+			baseLabels := resources.BaseAppLabels(resources.MachineControllerDeploymentName, nil)
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
+			overrides := data.Cluster().Spec.ComponentsOverride.MachineController
+			if overrides != nil {
+				if overrides.Replicas != nil {
+					dep.Spec.Replicas = overrides.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = overrides.Tolerations
+			}
+
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,
 			}
@@ -140,7 +147,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    Name,
+					Name:    resources.MachineControllerContainerName,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
 					Args:    getFlags(data.Cluster().Spec.Features),
@@ -204,7 +211,7 @@ func DeploymentReconcilerWithoutInitWrapper(data machinecontrollerData) reconcil
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, nil, dep.Annotations)
+			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, controllerResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}

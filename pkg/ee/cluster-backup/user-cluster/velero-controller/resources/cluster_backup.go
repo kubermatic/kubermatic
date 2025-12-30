@@ -155,7 +155,7 @@ func CustomizationConfigMapReconciler(rewriter registry.ImageRewriter) reconcili
 			}
 
 			// all we want to set is the custom restore helper image
-			rewritten, err := rewriter("docker.io/velero/velero-restore-helper")
+			rewritten, err := rewriter("quay.io/kubermatic-mirror/images/velero-restore-helper")
 			if err != nil {
 				return nil, fmt.Errorf("failed to rewrite image: %w", err)
 			}

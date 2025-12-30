@@ -39,20 +39,18 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var (
-	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.UserClusterControllerContainerName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("32Mi"),
-				corev1.ResourceCPU:    resource.MustParse("25m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("500m"),
-			},
+var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+	resources.UserClusterControllerContainerName: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("32Mi"),
+			corev1.ResourceCPU:    resource.MustParse("25m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("500m"),
+		},
+	},
+}
 
 // userclusterControllerData is the subet of the deploymentData interface
 // that is actually required by the usercluster deployment
@@ -91,8 +89,12 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			dep.Spec.Replicas = resources.Int32(1)
 
-			if data.Cluster().Spec.ComponentsOverride.UserClusterController != nil && data.Cluster().Spec.ComponentsOverride.UserClusterController.Replicas != nil {
-				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.UserClusterController.Replicas
+			override := data.Cluster().Spec.ComponentsOverride.UserClusterController
+			if override != nil {
+				if override.Replicas != nil {
+					dep.Spec.Replicas = override.Replicas
+				}
+				dep.Spec.Template.Spec.Tolerations = override.Tolerations
 			}
 
 			dep.Spec.Selector = &metav1.LabelSelector{
@@ -268,10 +270,6 @@ func DeploymentReconciler(data userclusterControllerData) reconciling.NamedDeplo
 
 			if data.Cluster().Spec.IsKyvernoEnabled() {
 				args = append(args, "-kyverno-enabled")
-			}
-
-			if data.Cluster().Spec.ComponentsOverride.UserClusterController != nil && data.Cluster().Spec.ComponentsOverride.UserClusterController.Tolerations != nil {
-				dep.Spec.Template.Spec.Tolerations = data.Cluster().Spec.ComponentsOverride.UserClusterController.Tolerations
 			}
 
 			envVars, err := data.GetEnvVars()

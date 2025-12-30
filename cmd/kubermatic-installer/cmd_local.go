@@ -29,6 +29,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -63,6 +64,7 @@ const (
 	kkpDefaultLogin      = "kubermatic@example.com"
 	kkpDefaultPassword   = "password"
 	localKindTeardownCmd = "kind delete cluster -n kkp-cluster"
+	kindClusterName      = "kkp-cluster"
 )
 
 var (
@@ -148,15 +150,26 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to create 'kind' config: %v", err)
 	}
 
-	logger.Info("Creating kind cluster…")
+	logger.Infof("Creating kind cluster %q…", kindClusterName)
 
 	// start the manager in its own goroutine
 	appContext := context.Background()
+	clusterExists := false
 
-	// TODO: make this idempotent
-	out, err := exec.CommandContext(appContext, "kind", "create", "cluster", "-n", "kkp-cluster", "--config", kindConfig).CombinedOutput()
-	if err != nil {
-		logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+	out, err := exec.CommandContext(appContext, "kind", "get", "clusters").CombinedOutput()
+	if err == nil {
+		if strings.Contains(strings.TrimSpace(string(out)), kindClusterName) {
+			clusterExists = true
+		}
+	}
+
+	if clusterExists {
+		logger.Infof("Kind cluster %q already exists, skipping creation...", kindClusterName)
+	} else {
+		out, err = exec.CommandContext(appContext, "kind", "create", "cluster", "-n", kindClusterName, "--config", kindConfig).CombinedOutput()
+		if err != nil {
+			logger.Fatalf("failed to create 'kind' cluster: %v\n%v", err, string(out))
+		}
 	}
 
 	logger.Info("Kind cluster ready, continuing configuration…")
@@ -212,9 +225,28 @@ func ensureResource(kubeClient ctrlruntimeclient.Client, logger *logrus.Logger, 
 	}
 }
 
-func installKubevirt(logger *logrus.Logger, dir string, helmClient helm.Client, opt LocalOptions) {
+func installKubevirt(logger *logrus.Logger, helmClient helm.Client, opt LocalOptions) {
 	logger.Info("Installing KubeVirt…")
-	err := helmClient.InstallChart("kubevirt", "kubevirt", filepath.Join(opt.ChartsDirectory, "local-kubevirt"), "", nil, []string{"--create-namespace"})
+
+	var helmValues map[string]string = nil
+
+	// check the OS; if it is NOT Linux (e.g., 'darwin' for macOS), enable kubevirt emulation.
+	// reference: https://kubevirt.io/quickstart_kind/
+	if runtime.GOOS != "linux" {
+		logger.Info("enabling KubeVirt emulation.")
+
+		helmValues = make(map[string]string)
+		helmValues["localKubevirt.useEmulation"] = "true"
+	}
+
+	err := helmClient.InstallChart(
+		"kubevirt",
+		"kubevirt",
+		filepath.Join(opt.ChartsDirectory, "local-kubevirt"),
+		"",
+		helmValues,
+		[]string{"--create-namespace"},
+	)
 	if err != nil {
 		logger.Fatalf("Failed to install KubeVirt Helm client: %v", err)
 	}
@@ -371,7 +403,9 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
 	}
-	v, err := loadHelmValues(valuesPath)
+
+	// the string valuesPath is wrapped in a slice: []string{valuesPath}
+	v, err := loadHelmValues([]string{valuesPath})
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", valuesPath, err)
 	}
@@ -434,7 +468,7 @@ func localKindFunc(logger *logrus.Logger, opt LocalOptions) cobraFuncE {
 				helmVersion,
 			)
 		}
-		installKubevirt(logger, exampleDir, helmClient, opt)
+		installKubevirt(logger, helmClient, opt)
 		endpoint := installKubermatic(logger, exampleDir, kubeClient, helmClient, opt)
 		logger.Infoln()
 		logger.Infof("KKP installed successfully, login at http://%v", endpoint)

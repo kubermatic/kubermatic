@@ -64,29 +64,27 @@ const (
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-var (
-	SupportedProviders = []ProviderType{
-		AKSCloudProvider,
-		AlibabaCloudProvider,
-		AnexiaCloudProvider,
-		AWSCloudProvider,
-		AzureCloudProvider,
-		BaremetalCloudProvider,
-		BringYourOwnCloudProvider,
-		DigitaloceanCloudProvider,
-		EdgeCloudProvider,
-		EKSCloudProvider,
-		FakeCloudProvider,
-		GCPCloudProvider,
-		GKECloudProvider,
-		HetznerCloudProvider,
-		KubevirtCloudProvider,
-		NutanixCloudProvider,
-		OpenstackCloudProvider,
-		VMwareCloudDirectorCloudProvider,
-		VSphereCloudProvider,
-	}
-)
+var SupportedProviders = []ProviderType{
+	AKSCloudProvider,
+	AlibabaCloudProvider,
+	AnexiaCloudProvider,
+	AWSCloudProvider,
+	AzureCloudProvider,
+	BaremetalCloudProvider,
+	BringYourOwnCloudProvider,
+	DigitaloceanCloudProvider,
+	EdgeCloudProvider,
+	EKSCloudProvider,
+	FakeCloudProvider,
+	GCPCloudProvider,
+	GKECloudProvider,
+	HetznerCloudProvider,
+	KubevirtCloudProvider,
+	NutanixCloudProvider,
+	OpenstackCloudProvider,
+	VMwareCloudDirectorCloudProvider,
+	VSphereCloudProvider,
+}
 
 func IsProviderSupported(name string) bool {
 	for _, provider := range SupportedProviders {
@@ -533,43 +531,41 @@ type DatacenterSpec struct {
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
 }
 
-var (
-	// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
-	knownIPv6CloudProviders = map[ProviderType]struct {
-		ipv6EnabledForAllDatacenters bool
-	}{
-		AWSCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		AzureCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		BaremetalCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		BringYourOwnCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		EdgeCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		DigitaloceanCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		GCPCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		HetznerCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		OpenstackCloudProvider: {
-			ipv6EnabledForAllDatacenters: false,
-		},
-		VSphereCloudProvider: {
-			ipv6EnabledForAllDatacenters: false,
-		},
-	}
-)
+// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
+var knownIPv6CloudProviders = map[ProviderType]struct {
+	ipv6EnabledForAllDatacenters bool
+}{
+	AWSCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	AzureCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	BaremetalCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	BringYourOwnCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	EdgeCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	DigitaloceanCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	GCPCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	HetznerCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	OpenstackCloudProvider: {
+		ipv6EnabledForAllDatacenters: false,
+	},
+	VSphereCloudProvider: {
+		ipv6EnabledForAllDatacenters: false,
+	},
+}
 
 func (cloudProvider ProviderType) IsIPv6KnownProvider() bool {
 	_, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
@@ -772,14 +768,12 @@ type DatacenterSpecBaremetal struct {
 	Tinkerbell *DatacenterSpecTinkerbell `json:"tinkerbell,omitempty"`
 }
 
-var (
-	SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
 // DatacenterSepcTinkerbell contains spec for tinkerbell provider.
 type DatacenterSpecTinkerbell struct {
@@ -800,12 +794,10 @@ type TinkerbellHTTPSource struct {
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
-type DatacenterSpecBringYourOwn struct {
-}
+type DatacenterSpecBringYourOwn struct{}
 
 // DatacenterSpecEdge describes a datacenter of edge nodes.
-type DatacenterSpecEdge struct {
-}
+type DatacenterSpecEdge struct{}
 
 // NOOP.
 type DatacenterSpecPacket struct {
@@ -999,14 +991,12 @@ type CustomNetworkPolicy struct {
 	Spec networkingv1.NetworkPolicySpec `json:"spec"`
 }
 
-var (
-	SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
 // KubeVirtVolumeProvisioner represents what is the provisioner of the storage class volume, whether it will be the csi driver
 // and/or CDI for disk images.

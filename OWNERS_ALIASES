@@ -3,7 +3,9 @@
 
 aliases:
   sig-api:
+    - ahmadhamzh
     - ahmedwaleedmalik
+    - khizerrehan
     - simontheleg
     - waseem826
   sig-app-management:
@@ -22,7 +24,6 @@ aliases:
     - ahmedwaleedmalik
     - buraksekili
     - cnvergence
-    - embik
     - julioc-p
     - kron4eg
     - moadqassem
@@ -41,4 +42,5 @@ aliases:
   sig-ui:
     - ahmadhamzh
     - ahmedwaleedmalik
+    - khizerrehan
     - waseem826
