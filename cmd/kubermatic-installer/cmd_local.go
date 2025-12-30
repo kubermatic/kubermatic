@@ -114,6 +114,11 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 		Short: "Initialize kind environment for simplified local KKP installation",
 		Long:  "Prepares minimal kind environment and auto-configures a non-production KKP installation for evaluation and development purpose.",
 		PreRun: func(cmd *cobra.Command, args []string) {
+			options.CopyInto(&opt.Options)
+			if opt.HelmBinary == "" {
+				opt.HelmBinary = os.Getenv("HELM_BINARY")
+			}
+
 			_, err := exec.LookPath("kind")
 			if err != nil {
 				logger.Fatalf("failed to find 'kind' binary: %v", err)
@@ -139,7 +144,9 @@ func localKindCommand(logger *logrus.Logger, opt LocalOptions) *cobra.Command {
 				logger.Fatalf("failed to find 'helm' binary: %v", err)
 			}
 		},
-		RunE: localKindFunc(logger, opt),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return localKindFunc(logger, opt)(cmd, args)
+		},
 	}
 	return cmd
 }
