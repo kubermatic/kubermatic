@@ -66,6 +66,15 @@ func deleteSystemAppErrorMsg() string {
 	)
 }
 
+func deleteAppCatalogManagedAppErrorMsg() string {
+	return fmt.Sprintf("ApplicationDefinition for applications managed by ApplicationCatalog cannot be deleted until the " +
+		"ApplicationDefinition declaration is removed from the ApplicationCatalog. " +
+		"If you would still like to remove the ApplicationDefinition, remove its entry from the ApplicationCatalog first.",
+	)
+}
+
+const applicationCatalogManagedByLabel = "applicationcatalog.k8c.io/managed-by"
+
 func ValidateApplicationDefinitionDelete(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	labels := ad.GetLabels()
 	if labels != nil {
@@ -75,6 +84,18 @@ func ValidateApplicationDefinitionDelete(ad appskubermaticv1.ApplicationDefiniti
 					field.NewPath("metadata").Child("labels"),
 					labels,
 					deleteSystemAppErrorMsg(),
+				),
+			}
+		}
+
+		// if the application is managed by ApplicationCatalog, the deletion is blocked until the label
+		// is removed or the ApplicationDefinition declaration is removed from the ApplicationCatalog.
+		if _, exists := labels[applicationCatalogManagedByLabel]; exists {
+			return field.ErrorList{
+				field.Invalid(
+					field.NewPath("metadata").Child("labels"),
+					labels,
+					deleteAppCatalogManagedAppErrorMsg(),
 				),
 			}
 		}
