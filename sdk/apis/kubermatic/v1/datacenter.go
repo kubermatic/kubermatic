@@ -321,6 +321,23 @@ type SeedSpec struct {
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
 	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+	// Kyverno configures the Kyverno policy engine settings at the seed level.
+	// These settings apply to all user clusters in this seed.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+}
+
+type KyvernoConfigurations struct {
+	// Enforced indicates whether Kyverno enablement is mandatory at cluster.
+	// When set to true at Datacenter, Seed, or KubermaticConfiguration level, user clusters under that scope
+	// must have Kyverno enabled and cannot disable it.
+	// If it is set to true, the Kyverno becomes enforced at this level, and will be deployed to user clusters under the scope.
+	// If it is set to false, Kyverno is not enforced at this level.
+	// If nil, no Kyverno enforcement preference is declared.
+	// For example, if Kyverno is enforced at the Seed level, setting this to false at the Datacenter level makes the Datacenter not enforce Kyverno,
+	// though other clusters in the Seed will still have Kyverno enforced.
+	// +optional
+	Enforced *bool `json:"enforced,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -506,6 +523,12 @@ type DatacenterSpec struct {
 	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
+
+	// Kyverno configures the Kyverno policy engine settings at the datacenter level.
+	// These settings override seed and global configuration and apply to all user clusters
+	// in this datacenter.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
 }
 
 // knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.

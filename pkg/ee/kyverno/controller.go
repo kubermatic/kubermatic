@@ -27,6 +27,7 @@ package kyverno
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"go.uber.org/zap"
@@ -42,18 +43,24 @@ import (
 	reportscontrollerresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/seed-cluster/reports-controller"
 	userclusterresources "k8c.io/kubermatic/v2/pkg/ee/kyverno/resources/user-cluster"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	kkpreconciling "k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -74,17 +81,21 @@ type reconciler struct {
 	workerName                    string
 	recorder                      record.EventRecorder
 	userClusterConnectionProvider UserClusterClientProvider
+	seedGetter                    provider.SeedGetter
+	configGetter                  provider.KubermaticConfigurationGetter
 	log                           *zap.SugaredLogger
 	overwriteRegistry             string
 	versions                      kubermatic.Versions
 }
 
-func Add(mgr manager.Manager, numWorkers int, workerName, overwriteRegistry string, userClusterConnectionProvider UserClusterClientProvider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
+func Add(mgr manager.Manager, numWorkers int, workerName, overwriteRegistry string, userClusterConnectionProvider UserClusterClientProvider, seedGetter provider.SeedGetter, configGetter provider.KubermaticConfigurationGetter, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &reconciler{
 		Client:                        mgr.GetClient(),
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
+		seedGetter:                    seedGetter,
+		configGetter:                  configGetter,
 		log:                           log,
 		overwriteRegistry:             overwriteRegistry,
 		versions:                      versions,
@@ -102,9 +113,108 @@ func Add(mgr manager.Manager, numWorkers int, workerName, overwriteRegistry stri
 			MaxConcurrentReconciles: numWorkers,
 		}).
 		For(&kubermaticv1.Cluster{}, builder.WithPredicates(workerlabel.Predicate(workerName), clusterIsAlive)).
+		Watches(
+			&kubermaticv1.Seed{},
+			enqueueClustersInSeed(reconciler.Client),
+			builder.WithPredicates(kyvernoSettingsChangedPredicate()),
+		).
+		Watches(
+			&kubermaticv1.KubermaticConfiguration{},
+			enqueueAllClusters(reconciler.Client),
+			builder.WithPredicates(kyvernoSettingsChangedPredicate()),
+		).
 		Build(reconciler)
 
 	return err
+}
+
+// enqueueClustersInSeed enqueues all clusters that belong to datacenters in the modified seed.
+// When a seed's Kyverno settings change, we need to reconcile affected clusters, to roll out changes.
+func enqueueClustersInSeed(client ctrlruntimeclient.Client) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+		seed, ok := obj.(*kubermaticv1.Seed)
+		if !ok {
+			return nil
+		}
+
+		clusters := &kubermaticv1.ClusterList{}
+		if err := client.List(ctx, clusters); err != nil {
+			return nil
+		}
+
+		var requests []reconcile.Request
+		for _, cluster := range clusters.Items {
+			dcName := cluster.Spec.Cloud.DatacenterName
+			if _, found := seed.Spec.Datacenters[dcName]; found {
+				requests = append(requests, reconcile.Request{
+					NamespacedName: types.NamespacedName{Name: cluster.Name},
+				})
+			}
+		}
+
+		return requests
+	})
+}
+
+// enqueueAllClusters enqueues all clusters when global Kyverno configuration changes.
+// Global config changes affect all clusters regardless of their seed or datacenter.
+func enqueueAllClusters(client ctrlruntimeclient.Client) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj ctrlruntimeclient.Object) []reconcile.Request {
+		clusters := &kubermaticv1.ClusterList{}
+		if err := client.List(ctx, clusters); err != nil {
+			return nil
+		}
+
+		requests := make([]reconcile.Request, 0, len(clusters.Items))
+		for _, cluster := range clusters.Items {
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: cluster.Name},
+			})
+		}
+
+		return requests
+	})
+}
+
+// kyvernoSettingsChangedPredicate filters events to only trigger reconciliation when Kyverno settings change.
+func kyvernoSettingsChangedPredicate() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			if oldSeed, ok := e.ObjectOld.(*kubermaticv1.Seed); ok {
+				newSeed := e.ObjectNew.(*kubermaticv1.Seed)
+
+				if !reflect.DeepEqual(oldSeed.Spec.Kyverno, newSeed.Spec.Kyverno) {
+					return true
+				}
+
+				for dcName, newDC := range newSeed.Spec.Datacenters {
+					oldDC, exists := oldSeed.Spec.Datacenters[dcName]
+					if !exists {
+						return true
+					}
+					if !reflect.DeepEqual(oldDC.Spec.Kyverno, newDC.Spec.Kyverno) {
+						return true
+					}
+				}
+
+				return len(oldSeed.Spec.Datacenters) != len(newSeed.Spec.Datacenters)
+			}
+
+			// For KubermaticConfiguration updates: check if global Kyverno settings changed
+			if oldConfig, ok := e.ObjectOld.(*kubermaticv1.KubermaticConfiguration); ok {
+				newConfig := e.ObjectNew.(*kubermaticv1.KubermaticConfiguration)
+				return !reflect.DeepEqual(
+					oldConfig.Spec.UserCluster.Kyverno,
+					newConfig.Spec.UserCluster.Kyverno,
+				)
+			}
+
+			return true
+		},
+	}
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -131,6 +241,13 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if kuberneteshelper.HasFinalizer(cluster, CleanupFinalizer) && !cluster.Spec.IsKyvernoEnabled() {
 		log.Debug("Cleaning up Kyverno resources")
 		return reconcile.Result{}, r.handleKyvernoCleanup(ctx, cluster)
+	}
+
+	// Check if Kyverno enforcement requires enabling Kyverno for this cluster.
+	// If so, patch the cluster spec to enable it IF the cluster does not already have Kyverno enabled.
+	// If kyverno is already enabled, nothing needs to be done or patched.
+	if err := r.ensureKyvernoEnforcement(ctx, cluster, log); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to ensure Kyverno enforcement: %w", err)
 	}
 
 	// Kyverno is disabled. Nothing to do.
@@ -309,4 +426,57 @@ func (r *reconciler) ensureUserClusterCRDResources(ctx context.Context, cluster 
 	}
 
 	return nil
+}
+
+// ensureKyvernoEnforcement checks if Kyverno enforcement is active and updates cluster spec if needed.
+// Enforcement hierarchy: Datacenter > Seed > Global.
+func (r *reconciler) ensureKyvernoEnforcement(ctx context.Context, cluster *kubermaticv1.Cluster, l *zap.SugaredLogger) error {
+	seed, err := r.seedGetter()
+	if err != nil {
+		return fmt.Errorf("failed to get seed: %w", err)
+	}
+
+	dc, err := util.DatacenterForCluster(cluster, seed)
+	if err != nil {
+		return err
+	}
+
+	config, err := r.configGetter(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get KubermaticConfiguration: %w", err)
+	}
+
+	enforcementInfo := kyverno.GetEnforcement(
+		dc.Spec.Kyverno,
+		seed.Spec.Kyverno,
+		config.Spec.UserCluster.Kyverno,
+	)
+	if !enforcementInfo.Enforced {
+		return nil
+	}
+
+	if !cluster.Spec.IsKyvernoEnabled() {
+		clusterName := ctrlruntimeclient.ObjectKeyFromObject(cluster).String()
+		l.Debug("Kyverno is enforced by %q, patching cluster %q to enable Kyverno", enforcementInfo.Source, clusterName)
+
+		err := r.patchCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			if c.Spec.Kyverno == nil {
+				c.Spec.Kyverno = &kubermaticv1.KyvernoSettings{}
+			}
+			c.Spec.Kyverno.Enabled = true
+		})
+		if err != nil {
+			return fmt.Errorf("failed to patch cluster %q to enable Kyverno: %w", clusterName, err)
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+func (r *reconciler) patchCluster(ctx context.Context, cluster *kubermaticv1.Cluster, patch util.ClusterPatchFunc) error {
+	original := cluster.DeepCopy()
+	patch(cluster)
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(original))
 }
