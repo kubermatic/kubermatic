@@ -351,6 +351,7 @@ cortex:
     enabled: true
     # TODO: TEMP Until we upgrade to latest cortex helm chart
     image:
+      registry: docker.io
       repository: bitnamilegacy/memcached
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
@@ -362,6 +363,7 @@ cortex:
     enabled: true
     # TODO: TEMP Until we upgrade to latest cortex helm chart
     image:
+      registry: docker.io
       repository: bitnamilegacy/memcached
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
@@ -373,6 +375,7 @@ cortex:
     enabled: true
     # TODO: TEMP Until we upgrade to latest cortex helm chart
     image:
+      registry: docker.io
       repository: bitnamilegacy/memcached
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
