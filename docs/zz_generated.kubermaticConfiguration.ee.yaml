@@ -509,6 +509,9 @@ spec:
       imageTag: ""
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
     kubermaticDockerRepository: quay.io/kubermatic/kubermatic-ee
+    # Kyverno configures the Kyverno policy engine settings at the global level.
+    # These settings apply to all user clusters unless overridden at seed or datacenter level.
+    kyverno: null
     # MachineController configures the Machine Controller
     machineController:
       # ImageRepository is used to override the Machine Controller image repository.
