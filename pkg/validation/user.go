@@ -19,6 +19,7 @@ package validation
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
@@ -100,7 +101,7 @@ func ValidateUserEmailUniqueness(ctx context.Context, client ctrlruntimeclient.C
 			continue
 		}
 
-		if user.Spec.Email == email {
+		if strings.ToLower(user.Spec.Email) == strings.ToLower(email) {
 			return field.Duplicate(field.NewPath("spec", "email"), email)
 		}
 	}

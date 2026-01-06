@@ -19,6 +19,7 @@ package validation
 import (
 	"context"
 	"errors"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
@@ -89,7 +90,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
-	if oldUser.Spec.Email != newUser.Spec.Email {
+	if strings.ToLower(oldUser.Spec.Email) != strings.ToLower(newUser.Spec.Email) {
 		if err := validation.ValidateUserEmailUniqueness(ctx, v.client, newUser.Spec.Email, newUser.Name); err != nil {
 			errs = append(errs, err)
 		}
