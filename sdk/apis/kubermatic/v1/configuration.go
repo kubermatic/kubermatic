@@ -292,6 +292,10 @@ type KubermaticUserClusterConfiguration struct {
 	OperatingSystemManager OperatingSystemManager `json:"operatingSystemManager,omitempty"`
 	// KubeLB configures the kubeLB component.
 	KubeLB KubeLBConfiguration `json:"kubelb,omitempty"`
+	// Kyverno configures the Kyverno policy engine settings at the global level.
+	// These settings apply to all user clusters unless overridden at seed or datacenter level.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.

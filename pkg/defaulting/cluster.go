@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -145,6 +146,18 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 			// Enforcement only ensures that the KubeLB is enabled. Users can still change the other settings for KubeLB.
 			spec.KubeLB.Enabled = true
 		}
+	}
+
+	kyvernoEnforcement := kyverno.GetEnforcement(
+		datacenter.Spec.Kyverno,
+		seed.Spec.Kyverno,
+		config.Spec.UserCluster.Kyverno,
+	)
+	if kyvernoEnforcement.Enforced {
+		if spec.Kyverno == nil {
+			spec.Kyverno = &kubermaticv1.KyvernoSettings{}
+		}
+		spec.Kyverno.Enabled = true
 	}
 
 	// Add default CNI plugin settings if not present.
