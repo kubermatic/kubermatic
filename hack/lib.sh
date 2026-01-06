@@ -616,12 +616,12 @@ download_archive() {
   if [[ -z "${PROW_JOB_ID:-}" ]] || [[ -z "${DOWNLOAD_CACHE_HOST:-}" ]] || ! echo "$proxiedDomains" | grep -w -q "$domain"; then
     # do nothing special when running outside of the CI environment
     # or when using a domain we do not proxy internally
-    curl "$url" "$@"
+    curl --fail "$url" "$@"
   else
     # determine target domain
     echodate "Note: Proxying request to $domain through download proxy." >&2
     url="$(echo "$url" | sed -E "s#https?://$domain/#http://$DOWNLOAD_CACHE_HOST/#")"
-    curl --header "Host: $domain" "$url" "$@"
+    curl --fail --header "Host: $domain" "$url" "$@"
   fi
 }
 
@@ -634,6 +634,14 @@ download_envtest() {
   export KUBEBUILDER_ASSETS="$(mktemp -d)"
   cd "$KUBEBUILDER_ASSETS"
   download_archive "https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v${envtestVersion}/$archiveName" -Lo "$archiveName"
+
+  if ! file "$archiveName" | grep -q "gzip compressed"; then
+    echodate "ERROR: Downloaded file is not a valid gzip archive"
+    echodate "File type: $(file "$archiveName")"
+    echodate "File content preview: $(head -c 200 "$archiveName")"
+    return 1
+  fi
+
   tar -zxf "$archiveName" --strip-components 2
   rm "$archiveName"
   cd -
