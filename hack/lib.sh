@@ -635,13 +635,6 @@ download_envtest() {
   cd "$KUBEBUILDER_ASSETS"
   download_archive "https://github.com/kubernetes-sigs/controller-tools/releases/download/envtest-v${envtestVersion}/$archiveName" -Lo "$archiveName"
 
-  if ! file "$archiveName" | grep -q "gzip compressed"; then
-    echodate "ERROR: Downloaded file is not a valid gzip archive"
-    echodate "File type: $(file "$archiveName")"
-    echodate "File content preview: $(head -c 200 "$archiveName")"
-    return 1
-  fi
-
   tar -zxf "$archiveName" --strip-components 2
   rm "$archiveName"
   cd -
