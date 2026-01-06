@@ -203,14 +203,15 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			totalProviderReconciliations.WithLabelValues(cluster.Name, providerName).Inc()
 
 			// reconcile
-			cluster, err = betterProvider.ReconcileCluster(ctx, cluster, r.clusterUpdater)
+			cluster, err := betterProvider.ReconcileCluster(ctx, cluster, r.clusterUpdater)
+			updatedProviderStatus := cluster.Status.ProviderStatus
 			if err != nil {
 				return handleProviderError(err)
 			}
-
 			// remember that we reconciled
 			err = util.UpdateClusterStatus(ctx, r, cluster, func(c *kubermaticv1.Cluster) {
 				c.Status.LastProviderReconciliation = metav1.Now()
+				c.Status.ProviderStatus = updatedProviderStatus
 			})
 			if err != nil {
 				return nil, fmt.Errorf("failed to set last reconcile timestamp: %w", err)
