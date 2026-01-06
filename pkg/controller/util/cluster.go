@@ -56,7 +56,7 @@ func ClusterReconcileWrapper(
 	reconcilingStatus := corev1.ConditionFalse
 	result, err := reconcile()
 
-	// Only set to true if we had no error and don't want to reqeue the cluster
+	// Only set to true if we had no error and don't want to requeue the cluster
 	if err == nil && result.IsZero() {
 		reconcilingStatus = corev1.ConditionTrue
 	}
@@ -217,4 +217,25 @@ func GetHealthStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Clu
 
 func uniqueVersion(v kubermatic.Versions) string {
 	return v.GitVersion
+}
+
+// DatacenterForCluster returns the datacenter spec for the given cluster from the given seed.
+// If no matching datacenter is found, an error is returned.
+func DatacenterForCluster(cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) (*kubermaticv1.Datacenter, error) {
+	if cluster == nil || seed == nil {
+		return nil, fmt.Errorf("failed to find datacenter for the cluster, cluster or seed is nil")
+	}
+
+	for key, dc := range seed.Spec.Datacenters {
+		if key == cluster.Spec.Cloud.DatacenterName {
+			return &dc, nil
+		}
+	}
+
+	return nil, fmt.Errorf(
+		"failed to find Datacenter %q for Cluster %q in Seed %q",
+		cluster.Spec.Cloud.DatacenterName,
+		ctrlruntimeclient.ObjectKeyFromObject(cluster).String(),
+		seed.Name,
+	)
 }

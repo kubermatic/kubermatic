@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"maps"
 	"net"
 	"strings"
 
@@ -944,6 +945,32 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	return nil
 }
 
+// psaPrivilegedLabeler returns a namespace reconciler that applies PSA privileged labels.
+func psaPrivilegedLabeler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
+			}
+			maps.Copy(ns.Labels, resources.PSALabelsPrivileged())
+			return ns, nil
+		}
+	}
+}
+
+// psaBaselineLabeler returns a namespace reconciler that applies PSA baseline labels.
+func psaBaselineLabeler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
+			}
+			maps.Copy(ns.Labels, resources.PSALabelsBaseline())
+			return ns, nil
+		}
+	}
+}
+
 func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData) error {
 	var dsReconcilers []reconciling.NamedDaemonSetReconcilerFactory
 
@@ -981,6 +1008,11 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedNamespaceReconcilerFactory{
 		cloudinitsettings.NamespaceReconciler,
+		// PSA labels for system namespaces
+		psaPrivilegedLabeler(metav1.NamespaceSystem),
+		psaPrivilegedLabeler(metav1.NamespacePublic),
+		psaPrivilegedLabeler(resources.NamespaceNodeLease),
+		psaBaselineLabeler(metav1.NamespaceDefault),
 	}
 	if data.kubernetesDashboardEnabled {
 		creators = append(creators, kubernetesdashboard.NamespaceReconciler)

@@ -391,7 +391,6 @@ type ClusterConditionType string
 // The reference time for this is the node system time and might differ from
 // the user's timezone, which needs to be considered when configuring a window.
 type UpdateWindow struct {
-
 	// Sets the start time of the update window. This can be a time of day in 24h format, e.g. `22:30`,
 	// or a day of week plus a time of day, for example `Mon 21:00`. Only short names for week days are supported,
 	// i.e. `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat` and `Sun`.
@@ -841,19 +840,19 @@ const (
 
 type ComponentSettings struct {
 	// Apiserver configures kube-apiserver settings.
-	Apiserver APIServerSettings `json:"apiserver"`
+	Apiserver APIServerSettings `json:"apiserver,omitempty"`
 	// ControllerManager configures kube-controller-manager settings.
-	ControllerManager ControllerSettings `json:"controllerManager"`
+	ControllerManager ControllerSettings `json:"controllerManager,omitempty"`
 	// Scheduler configures kube-scheduler settings.
-	Scheduler ControllerSettings `json:"scheduler"`
+	Scheduler ControllerSettings `json:"scheduler,omitempty"`
 	// Etcd configures the etcd ring used to store Kubernetes data.
-	Etcd EtcdStatefulSetSettings `json:"etcd"`
+	Etcd EtcdStatefulSetSettings `json:"etcd,omitempty"`
 	// Prometheus configures the Prometheus instance deployed into the cluster control plane.
-	Prometheus StatefulSetSettings `json:"prometheus"`
+	Prometheus StatefulSetSettings `json:"prometheus,omitempty"`
 	// NodePortProxyEnvoy configures the per-cluster nodeport-proxy-envoy that is deployed if
 	// the `LoadBalancer` expose strategy is used. This is not effective if a different expose
 	// strategy is configured.
-	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy"`
+	NodePortProxyEnvoy NodeportProxyComponent `json:"nodePortProxyEnvoy,omitempty"`
 	// KonnectivityProxy configures konnectivity-server and konnectivity-agent components.
 	KonnectivityProxy KonnectivityProxySettings `json:"konnectivityProxy,omitempty"`
 	// UserClusterController configures the KKP usercluster-controller deployed as part of the cluster control plane.
@@ -864,6 +863,8 @@ type ComponentSettings struct {
 	CoreDNS *DeploymentSettings `json:"coreDNS,omitempty"`
 	// KubeStateMetrics configures kube-state-metrics settings deployed by the monitoring controller.
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
+	// MachineController configures the Kubermatic machine-controller deployment.
+	MachineController *DeploymentSettings `json:"machineController,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -1344,7 +1345,6 @@ type BaremetalCloudSpec struct {
 }
 
 type TinkerbellCloudSpec struct {
-
 	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
@@ -1573,7 +1573,6 @@ type AnexiaCloudSpec struct {
 
 // NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
 type NutanixCSIConfig struct {
-
 	// Prism Element Username for CSI driver.
 	Username string `json:"username,omitempty"`
 

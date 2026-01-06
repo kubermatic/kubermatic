@@ -64,29 +64,27 @@ const (
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-var (
-	SupportedProviders = []ProviderType{
-		AKSCloudProvider,
-		AlibabaCloudProvider,
-		AnexiaCloudProvider,
-		AWSCloudProvider,
-		AzureCloudProvider,
-		BaremetalCloudProvider,
-		BringYourOwnCloudProvider,
-		DigitaloceanCloudProvider,
-		EdgeCloudProvider,
-		EKSCloudProvider,
-		FakeCloudProvider,
-		GCPCloudProvider,
-		GKECloudProvider,
-		HetznerCloudProvider,
-		KubevirtCloudProvider,
-		NutanixCloudProvider,
-		OpenstackCloudProvider,
-		VMwareCloudDirectorCloudProvider,
-		VSphereCloudProvider,
-	}
-)
+var SupportedProviders = []ProviderType{
+	AKSCloudProvider,
+	AlibabaCloudProvider,
+	AnexiaCloudProvider,
+	AWSCloudProvider,
+	AzureCloudProvider,
+	BaremetalCloudProvider,
+	BringYourOwnCloudProvider,
+	DigitaloceanCloudProvider,
+	EdgeCloudProvider,
+	EKSCloudProvider,
+	FakeCloudProvider,
+	GCPCloudProvider,
+	GKECloudProvider,
+	HetznerCloudProvider,
+	KubevirtCloudProvider,
+	NutanixCloudProvider,
+	OpenstackCloudProvider,
+	VMwareCloudDirectorCloudProvider,
+	VSphereCloudProvider,
+}
 
 func IsProviderSupported(name string) bool {
 	for _, provider := range SupportedProviders {
@@ -323,6 +321,23 @@ type SeedSpec struct {
 	DefaultAPIServerAllowedIPRanges []string `json:"defaultAPIServerAllowedIPRanges,omitempty"`
 	// Optional: AuditLogging empowers admins to centrally configure Kubernetes API audit logging for all user clusters in the seed (https://kubernetes.io/docs/tasks/debug-application-cluster/audit/ ).
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+	// Kyverno configures the Kyverno policy engine settings at the seed level.
+	// These settings apply to all user clusters in this seed.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+}
+
+type KyvernoConfigurations struct {
+	// Enforced indicates whether Kyverno enablement is mandatory at cluster.
+	// When set to true at Datacenter, Seed, or KubermaticConfiguration level, user clusters under that scope
+	// must have Kyverno enabled and cannot disable it.
+	// If it is set to true, the Kyverno becomes enforced at this level, and will be deployed to user clusters under the scope.
+	// If it is set to false, Kyverno is not enforced at this level.
+	// If nil, no Kyverno enforcement preference is declared.
+	// For example, if Kyverno is enforced at the Seed level, setting this to false at the Datacenter level makes the Datacenter not enforce Kyverno,
+	// though other clusters in the Seed will still have Kyverno enforced.
+	// +optional
+	Enforced *bool `json:"enforced,omitempty"`
 }
 
 // EtcdBackupRestore holds the configuration of the automatic backup and restores.
@@ -508,45 +523,49 @@ type DatacenterSpec struct {
 	// By default, the type of service that will be used is determined by the `ExposeStrategy` used for the cluster.
 	// +optional
 	APIServerServiceType *corev1.ServiceType `json:"apiServerServiceType,omitempty"`
+
+	// Kyverno configures the Kyverno policy engine settings at the datacenter level.
+	// These settings override seed and global configuration and apply to all user clusters
+	// in this datacenter.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
 }
 
-var (
-	// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
-	knownIPv6CloudProviders = map[ProviderType]struct {
-		ipv6EnabledForAllDatacenters bool
-	}{
-		AWSCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		AzureCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		BaremetalCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		BringYourOwnCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		EdgeCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		DigitaloceanCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		GCPCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		HetznerCloudProvider: {
-			ipv6EnabledForAllDatacenters: true,
-		},
-		OpenstackCloudProvider: {
-			ipv6EnabledForAllDatacenters: false,
-		},
-		VSphereCloudProvider: {
-			ipv6EnabledForAllDatacenters: false,
-		},
-	}
-)
+// knownIPv6CloudProviders configures which providers have IPv6 and if it's enabled for all datacenters.
+var knownIPv6CloudProviders = map[ProviderType]struct {
+	ipv6EnabledForAllDatacenters bool
+}{
+	AWSCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	AzureCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	BaremetalCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	BringYourOwnCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	EdgeCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	DigitaloceanCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	GCPCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	HetznerCloudProvider: {
+		ipv6EnabledForAllDatacenters: true,
+	},
+	OpenstackCloudProvider: {
+		ipv6EnabledForAllDatacenters: false,
+	},
+	VSphereCloudProvider: {
+		ipv6EnabledForAllDatacenters: false,
+	},
+}
 
 func (cloudProvider ProviderType) IsIPv6KnownProvider() bool {
 	_, isIPv6KnownProvider := knownIPv6CloudProviders[cloudProvider]
@@ -749,14 +768,12 @@ type DatacenterSpecBaremetal struct {
 	Tinkerbell *DatacenterSpecTinkerbell `json:"tinkerbell,omitempty"`
 }
 
-var (
-	SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedTinkerbellOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
 // DatacenterSepcTinkerbell contains spec for tinkerbell provider.
 type DatacenterSpecTinkerbell struct {
@@ -777,12 +794,10 @@ type TinkerbellHTTPSource struct {
 }
 
 // DatacenterSpecBringYourOwn describes a datacenter our of bring your own nodes.
-type DatacenterSpecBringYourOwn struct {
-}
+type DatacenterSpecBringYourOwn struct{}
 
 // DatacenterSpecEdge describes a datacenter of edge nodes.
-type DatacenterSpecEdge struct {
-}
+type DatacenterSpecEdge struct{}
 
 // NOOP.
 type DatacenterSpecPacket struct {
@@ -976,14 +991,12 @@ type CustomNetworkPolicy struct {
 	Spec networkingv1.NetworkPolicySpec `json:"spec"`
 }
 
-var (
-	SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
-		providerconfig.OperatingSystemUbuntu:     nil,
-		providerconfig.OperatingSystemRHEL:       nil,
-		providerconfig.OperatingSystemFlatcar:    nil,
-		providerconfig.OperatingSystemRockyLinux: nil,
-	}
-)
+var SupportedKubeVirtOS = map[providerconfig.OperatingSystem]*struct{}{
+	providerconfig.OperatingSystemUbuntu:     nil,
+	providerconfig.OperatingSystemRHEL:       nil,
+	providerconfig.OperatingSystemFlatcar:    nil,
+	providerconfig.OperatingSystemRockyLinux: nil,
+}
 
 // KubeVirtVolumeProvisioner represents what is the provisioner of the storage class volume, whether it will be the csi driver
 // and/or CDI for disk images.

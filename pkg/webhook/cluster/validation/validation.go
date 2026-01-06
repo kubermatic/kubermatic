@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -99,6 +100,10 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		errs = append(errs, err)
 	}
 
+	if err := v.validateKyvernoEnforcement(cluster, nil, datacenter, seed, config); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
@@ -128,6 +133,10 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	errs := validation.ValidateClusterUpdate(ctx, newCluster, oldCluster, datacenter, seed, cloudProvider, updateManager, v.features)
 
 	if err := v.validateProjectRelation(ctx, newCluster, oldCluster); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := v.validateKyvernoEnforcement(newCluster, oldCluster, datacenter, seed, config); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -204,6 +213,48 @@ func (v *validator) validateProjectRelation(ctx context.Context, cluster *kuberm
 	// exists and is not being deleted.
 	if !isUpdate && project.DeletionTimestamp != nil {
 		return field.Invalid(fieldPath, projectID, "project is in deletion, cannot create new clusters in it")
+	}
+
+	return nil
+}
+
+// validateKyvernoEnforcement ensures users cannot override enforced Kyverno settings through Cluster spec.
+func (v *validator) validateKyvernoEnforcement(
+	newCluster, oldCluster *kubermaticv1.Cluster,
+	datacenter *kubermaticv1.Datacenter,
+	seed *kubermaticv1.Seed,
+	config *kubermaticv1.KubermaticConfiguration,
+) *field.Error {
+	enforcementInfo := kyverno.GetEnforcement(
+		datacenter.Spec.Kyverno,
+		seed.Spec.Kyverno,
+		config.Spec.UserCluster.Kyverno,
+	)
+	if !enforcementInfo.Enforced {
+		return nil
+	}
+
+	fieldPath := field.NewPath("spec", "kyverno", "enabled")
+
+	isUpdate := oldCluster != nil
+	if isUpdate {
+		if oldCluster.Spec.IsKyvernoEnabled() && !newCluster.Spec.IsKyvernoEnabled() {
+			return field.Invalid(
+				fieldPath,
+				newCluster.Spec.Kyverno,
+				fmt.Sprintf("kyverno is enforced by %q and cannot be disabled", enforcementInfo.Source),
+			)
+		}
+
+		return nil
+	}
+
+	if !newCluster.Spec.IsKyvernoEnabled() {
+		return field.Invalid(
+			fieldPath,
+			newCluster.Spec.Kyverno,
+			fmt.Sprintf("kyverno is enforced by %q and must be enabled for new clusters", enforcementInfo.Source),
+		)
 	}
 
 	return nil
