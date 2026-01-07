@@ -472,3 +472,51 @@ const prometheusRuleEnvoyAgentFederation = `
     labels:
       kubermatic: federate
 `
+
+// prometheusRuleKonnectivity contains recording and alerting rules for Konnectivity server metrics.
+// Recording rules are federated to the seed Prometheus for cluster-level monitoring.
+const prometheusRuleKonnectivity = `
+- name: kubermatic.konnectivity
+  rules:
+  - record: job:konnectivity_ready_backend_connections:count
+    expr: konnectivity_network_proxy_server_ready_backend_connections
+    labels:
+      kubermatic: federate
+
+  - record: job:konnectivity_dial_failure_rate:by_reason
+    expr: sum(rate(konnectivity_network_proxy_server_dial_failure_count[5m])) by (reason)
+    labels:
+      kubermatic: federate
+
+  - record: job:konnectivity_network_proxy_server_full_receive_channels:sum
+    expr: sum(konnectivity_network_proxy_server_full_receive_channels)
+    labels:
+      kubermatic: federate
+
+  - alert: KonnectivityNoAgents
+    annotations:
+      message: 'Cluster {{ $labels.cluster }} has no Konnectivity agents connected. New tunnels cannot be established.'
+    expr: |
+      job:konnectivity_ready_backend_connections:count == 0
+    for: 2m
+    labels:
+      severity: critical
+
+  - alert: KonnectivityAgentsUnhealthy
+    annotations:
+      message: 'Cluster {{ $labels.cluster }} has only {{ $value }} Konnectivity agent(s) connected (expected: 2).'
+    expr: |
+      job:konnectivity_ready_backend_connections:count < 2
+    for: 3m
+    labels:
+      severity: warning
+
+  - alert: KonnectivityHighDialFailureRate
+    annotations:
+      message: 'Cluster {{ $labels.cluster }} has {{ $value | humanize }} dial failures/sec (reason: {{ $labels.reason }}). Check agent and node health.'
+    expr: |
+      job:konnectivity_dial_failure_rate:by_reason > 0.1
+    for: 10m
+    labels:
+      severity: warning
+`
