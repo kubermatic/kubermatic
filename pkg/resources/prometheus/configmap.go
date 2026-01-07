@@ -146,6 +146,8 @@ func ConfigMapReconciler(data *resources.TemplateData) reconciling.NamedConfigMa
 				// (custom DNS resolver in not deployed in Konnectivity setup)
 				if !data.IsKonnectivityEnabled() {
 					cm.Data["rules.yaml"] += prometheusRuleDNSResolverDownAlert
+				} else {
+					cm.Data["rules.yaml"] += prometheusRuleKonnectivity
 				}
 
 				if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -309,6 +311,41 @@ scrape_configs:
   - source_labels: [__meta_kubernetes_pod_name]
     action: replace
     target_label: pod
+
+{{- if .TemplateData.IsKonnectivityEnabled }}
+# scrape Konnectivity server metrics from apiserver pods
+- job_name: konnectivity-server
+  scheme: http
+
+  kubernetes_sd_configs:
+  - role: pod
+    namespaces:
+      names:
+      - "{{ $.TemplateData.Cluster.Status.NamespaceName }}"
+
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    action: keep
+    regex: apiserver
+  - source_labels: [__meta_kubernetes_pod_container_name]
+    action: keep
+    regex: konnectivity-server
+  - source_labels: [__address__]
+    action: replace
+    regex: ([^:]+)(?::\d+)?
+    replacement: $1:8133
+    target_label: __address__
+  - target_label: __metrics_path__
+    replacement: /metrics
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: pod
+  - target_label: job
+    replacement: konnectivity-server
+{{- end }}
 
 #######################################################################
 # These rules will scrape pods running inside the user cluster itself.
