@@ -246,6 +246,66 @@ func ControllerDeploymentReconciler(data *resources.TemplateData) reconciling.Na
 					},
 				},
 				{
+					Name:            "csi-resizer",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(data.RewriteImage("registry.k8s.io/sig-storage/csi-resizer:v1.13.1")),
+					Args: []string{
+						"--csi-address=/csi/csi.sock",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--v=5",
+						"--timeout=3m",
+						"--handle-volume-inuse-error=false",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: " /csi",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("20Mi"),
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+					},
+				},
+				{
+					Name:            "csi-snapshotter",
+					ImagePullPolicy: corev1.PullAlways,
+					Image:           registry.Must(data.RewriteImage("k8s.gcr.io/sig-storage/csi-snapshotter:v4.2.1")),
+					Args: []string{
+						"--csi-address=/csi/csi.sock",
+						"--kubeconfig=/var/run/secrets/tenantcluster/kubeconfig",
+						"--v=5",
+						"--timeout=3m",
+					},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "socket-dir",
+							MountPath: " /csi",
+						},
+						{
+							Name:      "tenantcluster",
+							MountPath: "/var/run/secrets/tenantcluster",
+						},
+					},
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("10m"),
+							corev1.ResourceMemory: resource.MustParse("20Mi"),
+						},
+					},
+				},
+				{
 					Name:            "csi-liveness-probe",
 					ImagePullPolicy: corev1.PullAlways,
 					Image:           registry.Must(data.RewriteImage("quay.io/openshift/origin-csi-livenessprobe:4.20.0")),
