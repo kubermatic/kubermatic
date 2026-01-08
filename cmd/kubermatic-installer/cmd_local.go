@@ -203,6 +203,10 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to construct mgr: %v", err)
 	}
 
+	if err := setupKubermaticInstallerScheme(mgr); err != nil {
+		logger.Fatalf("failed to setup installer scheme: %v", err)
+	}
+
 	go func() {
 		if err := mgr.Start(appContext); err != nil {
 			logger.Fatalf("Failed to start Kubernetes client manager: %v", err)
