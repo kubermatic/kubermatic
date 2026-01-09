@@ -3370,13 +3370,19 @@ spec:
                     namespace:
                       properties:
                         burst:
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
@@ -3385,13 +3391,19 @@ spec:
                     server:
                       properties:
                         burst:
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
@@ -3400,13 +3412,19 @@ spec:
                     sourceAndObject:
                       properties:
                         burst:
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
@@ -3415,13 +3433,19 @@ spec:
                     user:
                       properties:
                         burst:
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
