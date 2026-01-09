@@ -1394,26 +1394,21 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 
 // ValidateEventRateLimitConfig validates the EventRateLimitConfig settings.
 func ValidateEventRateLimitConfig(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
+	var allErrs field.ErrorList
 
 	config := spec.EventRateLimitConfig
-
-	// Check if plugin is enabled and no limits are configured, apiserver crashes otherwise
 	pluginEnabled := spec.UseEventRateLimitAdmissionPlugin || slices.Contains(spec.AdmissionPlugins, resources.EventRateLimitAdmissionPlugin)
 
-	if pluginEnabled {
-		hasLimits := config != nil && (config.Server != nil || config.Namespace != nil ||
-			config.User != nil || config.SourceAndObject != nil)
-		if !hasLimits {
-			allErrs = append(allErrs, field.Required(fldPath, "at least one limit type (server, namespace, user, or sourceAndObject) must be configured when EventRateLimit admission plugin is enabled"))
-		}
+	// Check if plugin is enabled and no limits are configured, apiserver crashes otherwise
+	hasLimits := config != nil && (config.Server != nil || config.Namespace != nil || config.User != nil || config.SourceAndObject != nil)
+	if pluginEnabled && !hasLimits {
+		allErrs = append(allErrs, field.Required(fldPath, "at least one limit type (server, namespace, user, or sourceAndObject) must be configured when EventRateLimit admission plugin is enabled"))
 	}
 
 	if config == nil {
 		return allErrs
 	}
 
-	// Validate each limit type
 	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.Server, fldPath.Child("server"))...)
 	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.Namespace, fldPath.Child("namespace"))...)
 	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.User, fldPath.Child("user"))...)
@@ -1423,11 +1418,11 @@ func ValidateEventRateLimitConfig(spec *kubermaticv1.ClusterSpec, fldPath *field
 }
 
 func validateEventRateLimitConfigItem(item *kubermaticv1.EventRateLimitConfigItem, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-
 	if item == nil {
-		return allErrs
+		return nil
 	}
+
+	var allErrs field.ErrorList
 
 	if item.QPS < 1 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("qps"), item.QPS, "must be at least 1"))
