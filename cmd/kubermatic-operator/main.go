@@ -43,6 +43,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
+	gwapischeme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 )
 
 type controllerRunOptions struct {
@@ -115,6 +117,10 @@ func main() {
 
 	if err := ciliumv2.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", ciliumv2.SchemeGroupVersion), zap.Error(err))
+	}
+
+	if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)

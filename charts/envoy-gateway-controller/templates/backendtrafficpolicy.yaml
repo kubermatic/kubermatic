@@ -1,0 +1,37 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{- if .Values.backendTrafficPolicy.create -}}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: {{ .Values.backendTrafficPolicy.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: backend-traffic-policy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: helm
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.backendTrafficPolicy.targetGateway.name }}
+      {{- if .Values.backendTrafficPolicy.targetGateway.namespace }}
+      namespace: {{ .Values.backendTrafficPolicy.targetGateway.namespace }}
+      {{- end }}
+  {{- if .Values.backendTrafficPolicy.requestBuffer }}
+  requestBuffer:
+    limit: {{ .Values.backendTrafficPolicy.requestBuffer.limit | quote }}
+  {{- end }}
+{{- end }}

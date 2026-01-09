@@ -1,0 +1,143 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{- if .Values.envoyProxy.create -}}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: {{ .Values.envoyProxy.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: envoy-proxy
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: helm
+    {{- with .Values.envoyProxy.deployment.pod.labels }}
+    {{ toYaml . | indent 4 }}
+    {{- end }}
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: {{ .Values.envoyProxy.deployment.replicas }}
+        {{- with .Values.envoyProxy.deployment.strategy }}
+        strategy:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+        container:
+          image: {{ .Values.envoyProxy.deployment.container.image }}
+          {{- with .Values.envoyProxy.deployment.container.resources }}
+          resources:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envoyProxy.deployment.container.env }}
+          env:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+        pod:
+          {{- with .Values.envoyProxy.deployment.pod.annotations }}
+          annotations:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envoyProxy.deployment.pod.labels }}
+          labels:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envoyProxy.deployment.pod.affinity }}
+          affinity:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envoyProxy.deployment.pod.tolerations }}
+          tolerations:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envoyProxy.deployment.pod.nodeSelector }}
+          nodeSelector:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.envoyProxy.deployment.pod.volumes }}
+          volumes:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+        {{- if or .Values.envoyProxy.deployment.container.volumeMounts .Values.envoyProxy.deployment.containerSecurityContext .Values.envoyProxy.deployment.podSecurityContext .Values.envoyProxy.deployment.shutdownManager }}
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              template:
+                spec:
+                  {{- with .Values.envoyProxy.deployment.podSecurityContext }}
+                  securityContext:
+                    {{ toYaml . | nindent 22 }}
+                  {{- end }}
+                  containers:
+                  {{- if or .Values.envoyProxy.deployment.container.volumeMounts .Values.envoyProxy.deployment.containerSecurityContext }}
+                  - name: envoy
+                    {{- with .Values.envoyProxy.deployment.containerSecurityContext }}
+                    securityContext:
+                      {{ toYaml . | nindent 22 }}
+                    {{- end }}
+                    {{- with .Values.envoyProxy.deployment.container.volumeMounts }}
+                    volumeMounts:
+                      {{ toYaml . | nindent 22 }}
+                    {{- end }}
+                  {{- end }}
+                  {{- $shutdownManager := .Values.envoyProxy.deployment.shutdownManager }}
+                  {{- if $shutdownManager }}
+                  - name: shutdown-manager
+                    {{- with $shutdownManager.resources }}
+                    resources:
+                      {{ toYaml . | nindent 22 }}
+                    {{- end }}
+                    {{- with $.Values.envoyProxy.deployment.containerSecurityContext }}
+                    securityContext:
+                      {{ toYaml . | nindent 22 }}
+                    {{- end }}
+                  {{- end }}
+        {{- end }}
+      envoyService:
+        {{- with .Values.envoyProxy.service.annotations }}
+        annotations:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.envoyProxy.service.labels }}
+        labels:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- if .Values.envoyProxy.service.type }}
+        type: {{ .Values.envoyProxy.service.type }}
+        {{- end }}
+        {{- if .Values.envoyProxy.service.externalTrafficPolicy }}
+        externalTrafficPolicy: {{ .Values.envoyProxy.service.externalTrafficPolicy }}
+        {{- end }}
+        {{- with .Values.envoyProxy.service.patch }}
+        patch:
+          {{ toYaml . | nindent 10 }}
+        {{- end }}
+  {{- with .Values.envoyProxy.bootstrap }}
+  bootstrap:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.envoyProxy.extraArgs }}
+  extraArgs:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.envoyProxy.filterOrder }}
+  filterOrder:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.envoyProxy.ipFamily }}
+  ipFamily: {{ .Values.envoyProxy.ipFamily }}
+  {{- end }}
+{{- end }}

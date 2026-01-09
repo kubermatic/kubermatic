@@ -12,6 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Gateway API migration: When true, creates HTTPRoute instead of using Ingress.
+# The HTTPRoute will attach to the kubermatic Gateway (cross-namespace).
+# The kubermatic-installer automatically labels the dex namespace for Gateway access.
+migrateGatewayAPI: false
+
+# HTTPRoute configuration (only used when migrateGatewayAPI: true)
+httproute:
+  # Name of the Gateway to attach to (in kubermatic namespace)
+  gatewayName: kubermatic
+  # Namespace of the Gateway
+  gatewayNamespace: kubermatic
+  # External domain for Dex (same as KubermaticInstallation domain)
+  domain: ""
+  # Timeout for requests (matching nginx proxy-read-timeout annotation)
+  timeout: 3600s
+
 dex:
   replicaCount: 2
 

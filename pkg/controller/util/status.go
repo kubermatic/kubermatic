@@ -128,7 +128,7 @@ func UpdateKubermaticConfigurationStatus(ctx context.Context,
 		}
 
 		// update the status
-		return client.Patch(ctx, kc, ctrlruntimeclient.MergeFrom(original))
+		return client.Status().Patch(ctx, kc, ctrlruntimeclient.MergeFrom(original))
 	})
 }
 

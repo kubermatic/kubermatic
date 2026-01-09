@@ -45,6 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 const (
@@ -130,6 +131,8 @@ func Add(
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&networkingv1.Ingress{},
+		&gatewayapiv1.Gateway{},
+		&gatewayapiv1.HTTPRoute{},
 		&policyv1.PodDisruptionBudget{},
 	} {
 		bldr.Watches(t, childEventHandler, builder.WithPredicates(namespacePredicate, common.ManagedByOperatorPredicate))

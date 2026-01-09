@@ -41,12 +41,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 const (
 	NginxIngressControllerChartName   = "nginx-ingress-controller"
 	NginxIngressControllerReleaseName = NginxIngressControllerChartName
 	NginxIngressControllerNamespace   = NginxIngressControllerChartName
+
+	EnvoyGatewayControllerChartName   = "envoy-gateway-controller"
+	EnvoyGatewayControllerReleaseName = EnvoyGatewayControllerChartName
+	EnvoyGatewayControllerNamespace   = EnvoyGatewayControllerChartName
 
 	CertManagerChartName   = "cert-manager"
 	CertManagerReleaseName = CertManagerChartName
@@ -90,8 +95,14 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
-	if err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
-		return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
+	if opt.KubermaticConfiguration.GatewayAPIEnabled() {
+		if err := deployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+			return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
+		}
+	} else {
+		if err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+			return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
+		}
 	}
 
 	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -331,11 +342,39 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		return
 	}
 
-	if opt.KubermaticConfiguration.Spec.Ingress.Disable {
-		sublogger.Info("Ingress creation has been disabled in the KubermaticConfiguration, skipping.")
-		return
+	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
+	var hostname, ip string
+
+	if opt.KubermaticConfiguration.GatewayAPIEnabled() {
+		hostname, ip = showGatewayDNSSettings(ctx, logger, kubeClient, opt)
+	} else {
+		if opt.KubermaticConfiguration.Spec.Ingress.Disable {
+			sublogger.Info("Ingress creation has been disabled in the KubermaticConfiguration, skipping.")
+			return
+		}
+		hostname, ip = showIngressDNSSettings(ctx, logger, kubeClient, opt)
 	}
 
+	if hostname != "" {
+		logger.Infof("  Address via hostname: %s", hostname)
+		logger.Info("")
+		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
+		logger.Info("")
+		logger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
+		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
+	} else if ip != "" {
+		logger.Infof("  Address via IP      : %s", ip)
+		logger.Info("")
+		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
+		logger.Info("")
+		logger.Infof("   %s.    IN  A  %s", domain, ip)
+		logger.Infof("   *.%s.  IN  A  %s", domain, ip)
+	}
+
+	logger.Info("")
+}
+
+func showIngressDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) (hostname, ip string) {
 	ingressName := types.NamespacedName{
 		Namespace: opt.KubermaticConfiguration.Namespace,
 		Name:      operatorcommon.IngressName,
@@ -359,15 +398,13 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		logger.Warn("Please check the Service and, if necessary, reconfigure the")
 		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
 		logger.Warn("updated configuration afterwards.")
-		return
+		return "", ""
 	}
 
 	logger.Info("The main Ingress is ready.")
 	logger.Info("")
 	logger.Infof("  Ingress             : %s / %s", ingressName.Namespace, ingressName.Name)
 
-	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
-	hostname, ip := "", ""
 	for _, ingress := range ingresses {
 		if ingress.Hostname != "" {
 			hostname = ingress.Hostname
@@ -383,21 +420,54 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		}
 	}
 
-	if hostname != "" {
-		logger.Infof("  Ingress via hostname: %s", hostname)
-		logger.Info("")
-		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
-		logger.Info("")
-		logger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
-		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
-	} else if ip != "" {
-		logger.Infof("  Ingress via IP      : %s", ip)
-		logger.Info("")
-		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
-		logger.Info("")
-		logger.Infof("   %s.    IN  A  %s", domain, ip)
-		logger.Infof("   *.%s.  IN  A  %s", domain, ip)
+	return hostname, ip
+}
+
+func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) (hostname, ip string) {
+	gatewayName := types.NamespacedName{
+		Namespace: opt.KubermaticConfiguration.Namespace,
+		Name:      operatorcommon.GatewayName,
 	}
 
+	logger.WithField("gateway", gatewayName).Debug("Waiting for Gateway to be ready…")
+
+	var addresses []gatewayapiv1.GatewayStatusAddress
+	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+		gw := gatewayapiv1.Gateway{}
+		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
+			return false, err
+		}
+
+		addresses = gw.Status.Addresses
+
+		return len(addresses) > 0, nil
+	})
+	if err != nil {
+		logger.Warn("Timed out waiting for the Gateway to become ready.")
+		logger.Warn("Please check the Gateway and EnvoyProxy Service, and if necessary,")
+		logger.Warn("reconfigure the envoy-gateway-controller Helm chart. Re-run the installer")
+		logger.Warn("to apply updated configuration afterwards.")
+		return "", ""
+	}
+
+	logger.Info("The main Gateway is ready.")
 	logger.Info("")
+	logger.Infof("  Gateway             : %s / %s", gatewayName.Namespace, gatewayName.Name)
+
+	for _, addr := range addresses {
+		if addr.Type != nil && *addr.Type == gatewayapiv1.HostnameAddressType {
+			hostname = addr.Value
+			break
+		}
+		if addr.Type != nil && *addr.Type == gatewayapiv1.IPAddressType {
+			if ip == "" {
+				ip = addr.Value
+			}
+			if isPublicIP(addr.Value) {
+				ip = addr.Value
+			}
+		}
+	}
+
+	return hostname, ip
 }

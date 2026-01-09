@@ -196,6 +196,9 @@ spec:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
     domain: example.com
+    # Gateway configures Gateway API mode as an alternative to traditional Ingress.
+    # When enabled, Gateway and HTTPRoute resources are created instead of Ingress.
+    gateway: null
     # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.

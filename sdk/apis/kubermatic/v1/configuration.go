@@ -421,6 +421,27 @@ type KubermaticIngressConfiguration struct {
 	// Setting an empty name disables the automatic creation of certificates and disables
 	// the TLS settings on the Kubermatic Ingress.
 	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+
+	// Gateway configures Gateway API mode as an alternative to traditional Ingress.
+	// When enabled, Gateway and HTTPRoute resources are created instead of Ingress.
+	Gateway *KubermaticGatewayConfiguration `json:"gateway,omitempty"`
+}
+
+// KubermaticGatewayConfiguration configures the Gateway API integration
+//
+// This configuration allows enabling the migration from nginx-ingress-controller to Envoy Gateway
+// in response to the upstream deprecation of nginx-ingress-controller (March 2025).
+type KubermaticGatewayConfiguration struct {
+	// Enable activates Gateway API mode. When true, Gateway and HTTPRoute
+	// resources are created instead of traditional Ingress.
+	// Requires Envoy Gateway controller to be installed via Helm.
+	// Default: false (Ingress mode) in KKP 2.30, will default to true in 2.31+.
+	Enable bool `json:"enable,omitempty"`
+
+	// ClassName is the Gateway resource's class name, used for selecting the appropriate
+	// GatewayClass (gateway controller). Defaults to "kubermatic-envoy" if not specified.
+	// +kubebuilder:default:=kubermatic-envoy
+	ClassName string `json:"className,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.
@@ -682,6 +703,11 @@ type CatalogManagerImageConfiguration struct {
 	Repository string `json:"repository,omitempty"`
 	// Tag is used to override the application-catalog manager image tag.
 	Tag string `json:"tag,omitempty"`
+}
+
+// GatewayAPIEnabled returns true if Gateway API mode is enabled.
+func (c *KubermaticConfiguration) GatewayAPIEnabled() bool {
+	return c.Spec.Ingress.Gateway != nil && c.Spec.Ingress.Gateway.Enable
 }
 
 // +kubebuilder:object:generate=true
