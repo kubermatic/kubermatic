@@ -52,11 +52,13 @@ func TestVSphereCA(t *testing.T) {
 	serverURL := server.URL.String()
 	serverHost := server.URL.Host
 
-	conn, err := tls.Dial("tcp", serverHost, &tls.Config{InsecureSkipVerify: true})
+	dialer := &tls.Dialer{Config: &tls.Config{InsecureSkipVerify: true}}
+	conn, err := dialer.DialContext(context.Background(), "tcp", serverHost)
 	if err != nil {
 		t.Fatalf("failed to connect to get server cert: %v", err)
 	}
-	serverCert := conn.ConnectionState().PeerCertificates[0]
+	tlsConn := conn.(*tls.Conn)
+	serverCert := tlsConn.ConnectionState().PeerCertificates[0]
 	conn.Close()
 
 	validCAPool := x509.NewCertPool()
@@ -107,10 +109,8 @@ func TestVSphereCA(t *testing.T) {
 				if !strings.Contains(err.Error(), test.errMsgContains) {
 					t.Fatalf("expected error message to contain %q, got: %v", test.errMsgContains, err)
 				}
-			} else {
-				if err != nil {
-					t.Fatalf("expected no error, got: %v", err)
-				}
+			} else if err != nil {
+				t.Fatalf("expected no error, got: %v", err)
 			}
 		})
 	}
