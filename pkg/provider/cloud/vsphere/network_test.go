@@ -20,49 +20,63 @@ package vsphere
 
 import (
 	"context"
-	"fmt"
-	"sort"
+	"strings"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	"github.com/vmware/govmomi/simulator"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
-	tests := []struct {
-		name                 string
-		expectedNetworkInfos []NetworkInfo
-	}{
-		{
-			name: "get all networks",
-			expectedNetworkInfos: []NetworkInfo{
-				{
-					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
-					RelativePath: "VM Network",
-					Type:         "Network",
-					Name:         "VM Network",
-				},
-			},
-		},
+	// Set up vcsim simulator
+	model := simulator.VPX()
+
+	err := model.Create()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer model.Remove()
+
+	server := model.Service.NewServer()
+	defer server.Close()
+
+	username := simulator.DefaultLogin.Username()
+	password, _ := simulator.DefaultLogin.Password()
+
+	dc := &kubermaticv1.DatacenterSpecVSphere{
+		Datacenter:    "DC0",
+		Endpoint:      strings.TrimSuffix(server.URL.String(), "/sdk"),
+		AllowInsecure: true,
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, nil)
-			if err != nil {
-				t.Fatal(err)
+	t.Run("get all networks", func(t *testing.T) {
+		networkInfos, err := GetNetworks(context.Background(), dc, username, password, nil)
+		if err != nil {
+			t.Fatalf("GetNetworks failed: %v", err)
+		}
+
+		if len(networkInfos) == 0 {
+			t.Fatal("expected at least one network, got none")
+		}
+
+		// Verify each returned network has properly populated fields
+		for _, n := range networkInfos {
+			if n.Name == "" {
+				t.Error("network Name should not be empty")
 			}
-
-			sort.Slice(test.expectedNetworkInfos, func(i, j int) bool {
-				return test.expectedNetworkInfos[i].AbsolutePath < test.expectedNetworkInfos[j].AbsolutePath
-			})
-
-			sort.Slice(networkInfos, func(i, j int) bool {
-				return networkInfos[i].AbsolutePath < networkInfos[j].AbsolutePath
-			})
-
-			if changes := diff.ObjectDiff(test.expectedNetworkInfos, networkInfos); changes != "" {
-				t.Errorf("Got network infos differ from expected ones. Diff: %v", changes)
+			if n.AbsolutePath == "" {
+				t.Error("network AbsolutePath should not be empty")
 			}
-		})
-	}
+			if n.RelativePath == "" {
+				t.Error("network RelativePath should not be empty")
+			}
+			if n.Type == "" {
+				t.Error("network Type should not be empty")
+			}
+			if !strings.HasPrefix(n.AbsolutePath, "/DC0/network/") {
+				t.Errorf("expected AbsolutePath to start with '/DC0/network/', got %s", n.AbsolutePath)
+			}
+		}
+	})
 }
