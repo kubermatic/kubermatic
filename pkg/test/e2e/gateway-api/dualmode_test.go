@@ -29,7 +29,8 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
@@ -106,7 +107,7 @@ func TestGatewayAPIDualModeSwitching(t *testing.T) {
 	testJig := jig.NewAWSCluster(seedClient, logger, credentials, 1, nil)
 	testJig.ClusterJig.WithTestName("gateway-dualmode")
 
-	project, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
+	_, cluster, err := testJig.Setup(ctx, jig.WaitForReadyPods)
 	defer testJig.Cleanup(ctx, t, true)
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
@@ -246,7 +247,7 @@ func TestGatewayAPINamespaceLabel(t *testing.T) {
 			return fmt.Errorf("failed to get namespace: %w", err), nil
 		}
 
-		expectedLabel := kubermatic.GatewayAccessLabelKey
+		expectedLabel := common.GatewayAccessLabelKey
 		if ns.Labels == nil {
 			return fmt.Errorf("namespace has no labels"), nil
 		}
@@ -299,13 +300,13 @@ func verifyMode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Clie
 	err := wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
 		if gatewayEnabled {
 			gateway := &gatewayapiv1.Gateway{}
-			gwName := types.NamespacedName{Namespace: clusterNamespace, Name: kubermatic.GatewayName}
+			gwName := types.NamespacedName{Namespace: clusterNamespace, Name: defaulting.DefaultGatewayName}
 			if err := client.Get(ctx, gwName, gateway); err != nil {
 				return fmt.Errorf("Gateway not found yet: %w", err), nil
 			}
 
 			route := &gatewayapiv1.HTTPRoute{}
-			routeName := types.NamespacedName{Namespace: clusterNamespace, Name: kubermatic.HTTPRouteName}
+			routeName := types.NamespacedName{Namespace: clusterNamespace, Name: defaulting.DefaultHTTPRouteName}
 			if err := client.Get(ctx, routeName, route); err != nil {
 				return fmt.Errorf("HTTPRoute not found yet: %w", err), nil
 			}
@@ -327,7 +328,7 @@ func verifyMode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Clie
 			}
 
 			gateway := &gatewayapiv1.Gateway{}
-			gwName := types.NamespacedName{Namespace: clusterNamespace, Name: kubermatic.GatewayName}
+			gwName := types.NamespacedName{Namespace: clusterNamespace, Name: defaulting.DefaultGatewayName}
 			if err := client.Get(ctx, gwName, gateway); err == nil {
 				return fmt.Errorf("Gateway still exists (should be cleaned up)"), nil
 			} else if !apierrors.IsNotFound(err) {
@@ -335,7 +336,7 @@ func verifyMode(t *testing.T, ctx context.Context, client ctrlruntimeclient.Clie
 			}
 
 			route := &gatewayapiv1.HTTPRoute{}
-			routeName := types.NamespacedName{Namespace: clusterNamespace, Name: kubermatic.HTTPRouteName}
+			routeName := types.NamespacedName{Namespace: clusterNamespace, Name: defaulting.DefaultHTTPRouteName}
 			if err := client.Get(ctx, routeName, route); err == nil {
 				return fmt.Errorf("HTTPRoute still exists (should be cleaned up)"), nil
 			} else if !apierrors.IsNotFound(err) {
