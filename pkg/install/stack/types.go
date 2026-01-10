@@ -69,6 +69,10 @@ type DeployOptions struct {
 	SkipCharts []string
 
 	DeployDefaultPolicyTemplateCatalog bool
+
+	// MigrateToGatewayAPI indicates whether to deploy Envoy Gateway or ingress-controller.
+	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
+	MigrateToGatewayAPI bool
 }
 
 type Stack interface {

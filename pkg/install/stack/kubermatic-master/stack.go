@@ -27,6 +27,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	operatorcommon "k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -95,14 +96,18 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 		return fmt.Errorf("failed to deploy StorageClass: %w", err)
 	}
 
-	if opt.KubermaticConfiguration.GatewayAPIEnabled() {
-		if err := deployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+	if opt.MigrateToGatewayAPI {
+		err := deployEnvoyGatewayController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
+		if err != nil {
 			return fmt.Errorf("failed to deploy envoy-gateway-controller: %w", err)
 		}
 	} else {
-		if err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
+		err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt)
+		if err != nil {
 			return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
 		}
+
+		cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
 	}
 
 	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -119,6 +124,14 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 
 	if err := applyKubermaticConfiguration(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to apply Kubermatic Configuration: %w", err)
+	}
+
+	// once Kubermatic Operator is up and running, it will create the Gateway object if needed.
+	// so, cleanup old resources depending on the mode.
+	if opt.MigrateToGatewayAPI {
+		cleanupIngress(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
+	} else {
+		cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
 	}
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -345,7 +358,7 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
 	var hostname, ip string
 
-	if opt.KubermaticConfiguration.GatewayAPIEnabled() {
+	if opt.MigrateToGatewayAPI {
 		hostname, ip = showGatewayDNSSettings(ctx, logger, kubeClient, opt)
 	} else {
 		if opt.KubermaticConfiguration.Spec.Ingress.Disable {
@@ -470,4 +483,64 @@ func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 	}
 
 	return hostname, ip
+}
+
+// cleanupGatewayAPIResources removes the Gateway and HTTPRoute when switching from Gateway API to Ingress.
+func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) error {
+	l.Info("Removing existing Gateway API resources (if any) since Ingress is enabled for Kubermatic")
+	if config == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+
+	gtw := &gatewayapiv1.Gateway{}
+
+	err := c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultGatewayName}, gtw)
+	if err == nil {
+		err = c.Delete(ctx, gtw)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete Gateway: %w", err)
+		}
+	} else if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get Gateway: %w", err)
+	}
+
+	hr := &gatewayapiv1.HTTPRoute{}
+
+	err = c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}, hr)
+	if err == nil {
+		err = c.Delete(ctx, hr)
+		if err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete HTTPRoute: %w", err)
+		}
+	} else if !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to get HTTPRoute: %w", err)
+	}
+
+	return nil
+}
+
+// cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
+func cleanupIngress(ctx context.Context, l *logrus.Entry, c ctrlruntimeclient.Client, config *kubermaticv1.KubermaticConfiguration) error {
+	l.Info("Removing existing Ingress resources (if any) since Gateway API is enabled for Kubermatic")
+	if config == nil {
+		return errors.New("kubermatic configuration is nil")
+	}
+
+	ingress := &networkingv1.Ingress{}
+
+	err := c.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}, ingress)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil
+		}
+
+		return fmt.Errorf("failed to get Ingress: %w", err)
+	}
+
+	err = c.Delete(ctx, ingress)
+	if err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete Ingress: %w", err)
+	}
+
+	return nil
 }

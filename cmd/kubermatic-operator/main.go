@@ -53,6 +53,7 @@ type controllerRunOptions struct {
 	workerCount          int
 	workerName           string
 	enableLeaderElection bool
+	enableGatewayAPI     bool
 }
 
 func main() {
@@ -71,8 +72,13 @@ func main() {
 	flag.StringVar(&opt.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served")
 	flag.StringVar(&opt.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.BoolVar(&opt.enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(
+		&opt.enableGatewayAPI,
+		"enable-gateway-api",
+		false,
+		"Allow watching Gateway API resources (Gateway and HTTPRoute). Requires Gateway API CRDs to exist",
+	)
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format).Named(opt.workerName)
@@ -119,8 +125,10 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", ciliumv2.SchemeGroupVersion), zap.Error(err))
 	}
 
-	if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
+	if opt.enableGatewayAPI {
+		if err := gwapischeme.AddToScheme(mgr.GetScheme()); err != nil {
+			log.Fatalw("Failed to register scheme", zap.Stringer("api", gatewayv1.SchemeGroupVersion), zap.Error(err))
+		}
 	}
 
 	configGetter, err := kubernetesprovider.DynamicKubermaticConfigurationGetterFactory(mgr.GetClient(), opt.namespace)
@@ -140,7 +148,7 @@ func main() {
 
 	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-	if err := masterctrl.Add(mgr, log, opt.namespace, opt.workerCount, opt.workerName); err != nil {
+	if err := masterctrl.Add(mgr, log, opt.namespace, opt.workerCount, opt.workerName, opt.enableGatewayAPI); err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 

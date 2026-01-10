@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-### This script sets up a local KKP installation in kind, deploys a
-### test cluster and then runs the Gateway API e2e tests.
+### This script sets up a local KKP installation in kind with Gateway API enabled
+### from the start (fresh install), deploys a test cluster, and then runs the
+### Gateway API e2e tests.
 
 set -euo pipefail
 
@@ -31,11 +32,16 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
+
+# Enable Gateway API mode for fresh installation
+export INSTALLER_FLAGS="--migrate-gateway-api"
+
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the cluster control plane and in the Kubermatic namespace
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' >/dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic >/dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller >/dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
@@ -45,19 +51,30 @@ if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
   echodate "Getting default SSH pubkey for machines from Vault"
   retry 5 vault_ci_login
   E2E_SSH_PUBKEY="$(mktemp)"
-  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key >"${E2E_SSH_PUBKEY}"
 else
   E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
   E2E_SSH_PUBKEY="$(mktemp)"
-  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" >"${E2E_SSH_PUBKEY}"
 fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
-echodate "Running Gateway API tests..."
+# Verify Gateway API resources exist before running tests
+echodate "Verifying Gateway API resources are deployed..."
+echodate "Checking Gateway resource kubermatic/kubermatic"
+retry 10 kubectl get gateway -n kubermatic kubermatic
+echodate "Checking HTTPRoute resource kubermatic/kubermatic"
+retry 10 kubectl get httproute -n kubermatic kubermatic
+echodate "Checking GatewayClass resource kubermatic-envoy"
+retry 10 kubectl get gatewayclass kubermatic-envoy
+
+echodate "Gateway API resources are present."
+echodate "Running Gateway API fresh install tests..."
 
 go_test gateway_api_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
+  -test.run "TestGatewayAPIFreshInstall|TestGatewayAPINamespaceLabel" \
   -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
-echodate "Gateway API tests completed successfully!"
+echodate "Gateway API fresh install tests completed successfully!"

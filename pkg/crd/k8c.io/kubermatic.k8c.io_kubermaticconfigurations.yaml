@@ -526,22 +526,14 @@ spec:
                       type: string
                     gateway:
                       description: |-
-                        Gateway configures Gateway API mode as an alternative to traditional Ingress.
-                        When enabled, Gateway and HTTPRoute resources are created instead of Ingress.
+                        Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+                        When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+                        are managed by kubermatic-operator, instead of Ingress.
                       properties:
                         className:
                           default: kubermatic-envoy
-                          description: |-
-                            ClassName is the Gateway resource's class name, used for selecting the appropriate
-                            GatewayClass (gateway controller). Defaults to "kubermatic-envoy" if not specified.
+                          description: ClassName is the GatewayClass to use.
                           type: string
-                        enable:
-                          description: |-
-                            Enable activates Gateway API mode. When true, Gateway and HTTPRoute
-                            resources are created instead of traditional Ingress.
-                            Requires Envoy Gateway controller to be installed via Helm.
-                            Default: false (Ingress mode) in KKP 2.30, will default to true in 2.31+.
-                          type: boolean
                       type: object
                     namespaceOverride:
                       description: NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.

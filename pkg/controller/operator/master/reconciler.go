@@ -39,17 +39,14 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 // Reconciler (re)stores all components required for running a Kubermatic
@@ -62,13 +59,17 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	versions   kubermaticversion.Versions
+	// gatewayAPIEnabled indicates whether Gateway API resources should be created or not
+	// by kubermatic-operator controllers.
+	// It will create Gateway and HTTPRoute resources when enabled for Kubermatic API and Dashboard.
+	// It will be by default true in the future releases as Gateway API becomes the default.
+	gatewayAPIEnabled bool
 }
 
 // Reconcile acts upon requests and will restore the state of resources
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	// find the requested configuration
 	config := &kubermaticv1.KubermaticConfiguration{}
 	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -508,8 +509,8 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 		return nil
 	}
 
-	if config.GatewayAPIEnabled() {
-		logger.Debug("Skipping Ingress creation because Gateway API is enabled")
+	if r.gatewayAPIEnabled {
+		logger.Debug("Skipping Ingress creation because Gateway API is enabled via --enable-gateway-api flag")
 		return nil
 	}
 
@@ -528,17 +529,12 @@ func (r *Reconciler) reconcileIngresses(ctx context.Context, config *kubermaticv
 		return fmt.Errorf("failed to reconcile Ingresses: %w", err)
 	}
 
-	err := r.cleanupGatewayAPIResources(ctx, config, logger)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	if !config.GatewayAPIEnabled() {
-		logger.Debug("Skipping Gateway API resources creation because Gateway is not enabled")
+	if !r.gatewayAPIEnabled {
+		logger.Debug("Skipping Gateway API resources creation because Gateway API is not enabled via --enable-gateway-api flag")
 		return nil
 	}
 
@@ -581,63 +577,6 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 	)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile HTTPRoutes: %w", err)
-	}
-
-	err = r.cleanupIngress(ctx, config, logger)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// cleanupGatewayAPIResources removes the Gateway and HTTPRoute when switching from Gateway API to Ingress.
-// This only cleans up the operator managed resources and not Helm managed resources like Dex.
-func (r *Reconciler) cleanupGatewayAPIResources(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	gw := &gatewayapiv1.Gateway{}
-	err := r.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultGatewayName}, gw)
-	if err == nil {
-		err = r.Delete(ctx, gw)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete Gateway: %w", err)
-		}
-
-		logger.Debug("Deleted orphaned Gateway resource (switching to Ingress mode)")
-	} else if !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get Gateway: %w", err)
-	}
-
-	hr := &gatewayapiv1.HTTPRoute{}
-	err = r.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultHTTPRouteName}, hr)
-	if err == nil {
-		err = r.Delete(ctx, hr)
-		if err != nil && !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete HTTPRoute: %w", err)
-		}
-
-		logger.Debug("Deleted orphaned HTTPRoute resource (switching to Ingress mode)")
-	} else if !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to get HTTPRoute: %w", err)
-	}
-
-	return nil
-}
-
-// cleanupIngress removes the Ingress resource when switching from Ingress mode to Gateway API mode.
-func (r *Reconciler) cleanupIngress(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	ingress := &networkingv1.Ingress{}
-
-	err := r.Get(ctx, types.NamespacedName{Namespace: config.Namespace, Name: defaulting.DefaultIngressName}, ingress)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get Ingress: %w", err)
-		}
-		return nil
-	}
-
-	err = r.Delete(ctx, ingress)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return fmt.Errorf("failed to delete Ingress: %w", err)
 	}
 
 	return nil

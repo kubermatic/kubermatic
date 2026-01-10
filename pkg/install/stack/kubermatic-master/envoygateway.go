@@ -64,7 +64,8 @@ func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 		return fmt.Errorf("failed to load Helm chart: %w", err)
 	}
 
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, EnvoyGatewayControllerNamespace); err != nil {
+	err = util.EnsureNamespace(ctx, sublogger, kubeClient, EnvoyGatewayControllerNamespace)
+	if err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
@@ -88,7 +89,8 @@ func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 		return fmt.Errorf("failed to deploy Helm release: %w", err)
 	}
 
-	if err := waitForGatewayClass(ctx, sublogger, kubeClient); err != nil {
+	err = waitForGatewayClass(ctx, sublogger, kubeClient)
+	if err != nil {
 		return fmt.Errorf("failed to verify that GatewayClass is available: %w", err)
 	}
 
