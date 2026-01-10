@@ -107,7 +107,9 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 			return fmt.Errorf("failed to deploy nginx-ingress-controller: %w", err)
 		}
 
-		cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
+		if err := cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration); err != nil {
+			opt.Logger.Warnf("Failed to cleanup Gateway API resources: %v", err)
+		}
 	}
 
 	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
@@ -129,9 +131,13 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 	// once Kubermatic Operator is up and running, it will create the Gateway object if needed.
 	// so, cleanup old resources depending on the mode.
 	if opt.MigrateToGatewayAPI {
-		cleanupIngress(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
+		if err := cleanupIngress(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration); err != nil {
+			opt.Logger.Warnf("Failed to cleanup Ingress resources: %v", err)
+		}
 	} else {
-		cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
+		if err := cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration); err != nil {
+			opt.Logger.Warnf("Failed to cleanup Gateway API resources: %v", err)
+		}
 	}
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {

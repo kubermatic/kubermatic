@@ -33,15 +33,24 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 
+# Create a patched config with HeadlessInstallation disabled for Gateway API tests.
+# Envoy Gateway deployment is skipped when HeadlessInstallation is true, but we need
+# it deployed for Gateway API e2e tests. This creates a temp config with the flag
+# disabled, avoiding modification of the shared base config file.
+GATEWAY_KUBERMATIC_YAML="$(mktemp)"
+cp "$KUBERMATIC_YAML" "$GATEWAY_KUBERMATIC_YAML"
+sed -i "s/HeadlessInstallation: true/HeadlessInstallation: false/g" "$GATEWAY_KUBERMATIC_YAML"
+export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
+
 # Enable Gateway API mode for fresh installation
 export INSTALLER_FLAGS="--migrate-gateway-api"
 
 source hack/ci/setup-kind-cluster.sh
 
 # gather the logs of all things in the cluster control plane and in the Kubermatic namespace
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' >/dev/null 2>&1 &
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic >/dev/null 2>&1 &
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller >/dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-control-plane" --namespace 'cluster-*' > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller > /dev/null 2>&1 &
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
@@ -51,11 +60,11 @@ if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
   echodate "Getting default SSH pubkey for machines from Vault"
   retry 5 vault_ci_login
   E2E_SSH_PUBKEY="$(mktemp)"
-  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key >"${E2E_SSH_PUBKEY}"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
 else
   E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
   E2E_SSH_PUBKEY="$(mktemp)"
-  echo "${E2E_SSH_PUBKEY_CONTENT}" >"${E2E_SSH_PUBKEY}"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
 fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"

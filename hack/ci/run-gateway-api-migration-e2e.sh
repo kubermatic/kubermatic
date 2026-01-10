@@ -31,6 +31,11 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 
+GATEWAY_KUBERMATIC_YAML="$(mktemp)"
+cp "$KUBERMATIC_YAML" "$GATEWAY_KUBERMATIC_YAML"
+sed -i "s/HeadlessInstallation: true/HeadlessInstallation: false/g" "$GATEWAY_KUBERMATIC_YAML"
+export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
+
 echodate "Deploying KKP with nginx-ingress"
 
 export INSTALLER_FLAGS=""
