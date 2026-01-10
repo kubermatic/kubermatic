@@ -52,7 +52,7 @@ export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
 
 # Enable Gateway API mode for fresh installation
 # Skip Dex deployment as tests don't use authentication
-export INSTALLER_FLAGS="--migrate-gateway-api --skip-charts=dex"
+export INSTALLER_FLAGS="--migrate-gateway-api"
 
 source hack/ci/setup-kind-cluster.sh
 
