@@ -40,10 +40,7 @@ cp "$KUBERMATIC_YAML" "$GATEWAY_KUBERMATIC_YAML"
 sed -i "s/HeadlessInstallation: true/HeadlessInstallation: false/g" "$GATEWAY_KUBERMATIC_YAML"
 # Add auth section with dummy serviceAccountKey (required when HeadlessInstallation=false)
 # Tests don't use authentication, but validation requires this field.
-sed -i "/^spec:/a\
-  auth:\
-    serviceAccountKey: \"KiehK9IqLofm4_lJDPwlsa-hwEqe4H74X9OO_dbTYQs\"
-" "$GATEWAY_KUBERMATIC_YAML"
+yq e '.spec.auth.serviceAccountKey = "KiehK9IqLofm4_lJDPwlsa-hwEqe4H74X9OO_dbTYQs"' -i "$GATEWAY_KUBERMATIC_YAML"
 export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
 
 echodate "Deploying KKP with nginx-ingress"
