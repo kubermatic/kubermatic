@@ -59,9 +59,9 @@ var NoStatusUpdate StatusUpdater = func(status *appskubermaticv1.ApplicationInst
 }
 
 // GetCredentialFromSecret get the secret and returns secret.Data[key].
-func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Client, namespce string, name string, key string) (string, error) {
+func GetCredentialFromSecret(ctx context.Context, client ctrlruntimeclient.Client, namespace string, name string, key string) (string, error) {
 	secret := &corev1.Secret{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: namespce, Name: name}, secret); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, secret); err != nil {
 		return "", fmt.Errorf("failed to get credential secret: %w", err)
 	}
 

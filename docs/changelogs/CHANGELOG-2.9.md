@@ -149,7 +149,7 @@
 - Updated machine-controller to `v0.9.9`Fixed a bug in the machine-migration that caused cloud provider instances to not be properly identified anymore ([#2307](https://github.com/kubermatic/kubermatic/issues/2307))
 - Fixd missing permissions in kube-state-metrics ClusterRole ([#2366](https://github.com/kubermatic/kubermatic/issues/2366))
 - Missing ca-certificates have been added to s3-exporter image ([#2464](https://github.com/kubermatic/kubermatic/issues/2464))
-- Adedd missing configmap checksums to kubermatic-controller-manager chart ([#2492](https://github.com/kubermatic/kubermatic/issues/2492))
+- Added missing configmap checksums to kubermatic-controller-manager chart ([#2492](https://github.com/kubermatic/kubermatic/issues/2492))
 - cloud-config files are now properly escaped ([#2498](https://github.com/kubermatic/kubermatic/issues/2498))
 - SSH keys can no longer be added with duplicate names ([#2499](https://github.com/kubermatic/kubermatic/issues/2499))
 - Fixed an issue with kubelets being unreachable by the apiserver on some OS configurations. ([#2522](https://github.com/kubermatic/kubermatic/issues/2522))

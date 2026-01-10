@@ -230,7 +230,7 @@ func (r *reconciler) reconcileNamespacedPolicy(ctx context.Context, log *zap.Sug
 		r.kyvernoPolicyFactory(template, binding),
 	}
 
-	if err := kkpreconciling.ReconcileKyvernoPolicys(ctx, policyFactories, targetNamespace, r.userClient); err != nil {
+	if err := kkpreconciling.ReconcileKyvernoPolicies(ctx, policyFactories, targetNamespace, r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile Kyverno Policy %s in namespace %s: %w", template.Name, targetNamespace, err)
 	}
 
@@ -260,7 +260,7 @@ func (r *reconciler) reconcileClusterPolicy(ctx context.Context, log *zap.Sugare
 	clusterPolicyFactories := []kkpreconciling.NamedKyvernoClusterPolicyReconcilerFactory{
 		r.kyvernoClusterPolicyFactory(template, binding),
 	}
-	if err := kkpreconciling.ReconcileKyvernoClusterPolicys(ctx, clusterPolicyFactories, "", r.userClient); err != nil {
+	if err := kkpreconciling.ReconcileKyvernoClusterPolicies(ctx, clusterPolicyFactories, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile Kyverno ClusterPolicy %s: %w", template.Name, err)
 	}
 
