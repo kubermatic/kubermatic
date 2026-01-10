@@ -31,14 +31,25 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 
+# Create a patched config with HeadlessInstallation disabled for Gateway API migration tests.
+# Pre-migration tests require Ingress resources to be deployed (skipped when HeadlessInstallation is true).
+# Post-migration tests require Envoy Gateway to be deployed (also skipped when HeadlessInstallation is true).
+# This creates a temp config with the flag disabled, avoiding modification of the shared base config file.
 GATEWAY_KUBERMATIC_YAML="$(mktemp)"
 cp "$KUBERMATIC_YAML" "$GATEWAY_KUBERMATIC_YAML"
 sed -i "s/HeadlessInstallation: true/HeadlessInstallation: false/g" "$GATEWAY_KUBERMATIC_YAML"
+# Add auth section with dummy serviceAccountKey (required when HeadlessInstallation=false)
+# Tests don't use authentication, but validation requires this field.
+sed -i "/^spec:/a\
+  auth:\
+    serviceAccountKey: \"KiehK9IqLofm4_lJDPwlsa-hwEqe4H74X9OO_dbTYQs\"
+" "$GATEWAY_KUBERMATIC_YAML"
 export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
 
 echodate "Deploying KKP with nginx-ingress"
 
-export INSTALLER_FLAGS=""
+# Skip Dex deployment as tests don't use authentication
+export INSTALLER_FLAGS="--skip-charts=dex"
 
 source hack/ci/setup-kind-cluster.sh
 
@@ -120,7 +131,7 @@ telemetry:
     - --record-dir=\$(RECORD_DIR)
 EOF
 
-export INSTALLER_FLAGS="--migrate-gateway-api --helm-values $UPGRADE_HELM_VALUES"
+export INSTALLER_FLAGS="--migrate-gateway-api --helm-values $UPGRADE_HELM_VALUES --skip-charts=dex"
 
 echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
 

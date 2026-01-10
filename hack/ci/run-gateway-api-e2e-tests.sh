@@ -40,10 +40,17 @@ export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
 GATEWAY_KUBERMATIC_YAML="$(mktemp)"
 cp "$KUBERMATIC_YAML" "$GATEWAY_KUBERMATIC_YAML"
 sed -i "s/HeadlessInstallation: true/HeadlessInstallation: false/g" "$GATEWAY_KUBERMATIC_YAML"
+# Add auth section with dummy serviceAccountKey (required when HeadlessInstallation=false)
+# Tests don't use authentication, but validation requires this field.
+sed -i "/^spec:/a\
+  auth:\
+    serviceAccountKey: \"KiehK9IqLofm4_lJDPwlsa-hwEqe4H74X9OO_dbTYQs\"
+" "$GATEWAY_KUBERMATIC_YAML"
 export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
 
 # Enable Gateway API mode for fresh installation
-export INSTALLER_FLAGS="--migrate-gateway-api"
+# Skip Dex deployment as tests don't use authentication
+export INSTALLER_FLAGS="--migrate-gateway-api --skip-charts=dex"
 
 source hack/ci/setup-kind-cluster.sh
 

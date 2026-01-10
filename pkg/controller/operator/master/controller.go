@@ -151,7 +151,7 @@ func Add(
 		namespacedResources = append(namespacedResources, &gatewayapiv1.Gateway{}, &gatewayapiv1.HTTPRoute{})
 		log.Infow("Gateway API mode enabled, watching Gateway and HTTPRoute resources")
 	} else {
-		log.Warn("In the future KKP releases, nginx-ingress-controller will be depreacted. Consider upgrading to Gateway API.")
+		log.Warn("In the future KKP releases, nginx-ingress-controller will be deprecated. Consider upgrading to Gateway API.")
 	}
 
 	for _, t := range namespacedResources {
