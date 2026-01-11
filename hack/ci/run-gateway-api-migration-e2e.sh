@@ -29,29 +29,9 @@ make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic.yaml
-
-# Create a patched config with HeadlessInstallation disabled for Gateway API migration tests.
-# Pre-migration tests require Ingress resources to be deployed (skipped when HeadlessInstallation is true).
-# Post-migration tests require Envoy Gateway to be deployed (also skipped when HeadlessInstallation is true).
-# This creates a temp config with the flag disabled, avoiding modification of the shared base config file.
-GATEWAY_KUBERMATIC_YAML="$(mktemp)"
-cp "$KUBERMATIC_YAML" "$GATEWAY_KUBERMATIC_YAML"
-sed -i "s/HeadlessInstallation: true/HeadlessInstallation: false/g" "$GATEWAY_KUBERMATIC_YAML"
-# Add auth section with dummy serviceAccountKey (required when HeadlessInstallation=false)
-# Tests don't use authentication, but validation requires this field.
-# Note: Using sed heredoc for Linux/GNU sed compatibility in CI.
-# yq was causing helm template failures due to YAML processing differences.
-sed -i "/^spec:/a\\
-  auth:\\
-    serviceAccountKey: \"KiehK9IqLofm4_lJDPwlsa-hwEqe4H74X9OO_dbTYQs\"
-" "$GATEWAY_KUBERMATIC_YAML"
-export KUBERMATIC_YAML="$GATEWAY_KUBERMATIC_YAML"
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_gatewayapi.yaml
 
 echodate "Deploying KKP with nginx-ingress"
-
-# Skip Dex deployment as tests don't use authentication
-export INSTALLER_FLAGS="--skip-charts=dex"
 
 source hack/ci/setup-kind-cluster.sh
 
@@ -114,16 +94,23 @@ KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 UPGRADE_HELM_VALUES="$(mktemp)"
 cat << EOF > $UPGRADE_HELM_VALUES
 migrateGatewayAPI: true
+dex:
+  migrateGatewayAPI: true
+  config:
+    issuer: "https://${KUBERMATIC_DOMAIN}/dex"
+httproute:
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+  domain: "${KUBERMATIC_DOMAIN}"
+  timeout: 3600s
 kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
-
 minio:
   credentials:
     accessKey: test
     secretKey: testtest
-
 telemetry:
   uuid: "559a1b90-b5d0-40aa-a74d-bd9e808ec10f"
   schedule: "* * * * *"
@@ -133,7 +120,7 @@ telemetry:
     - --record-dir=\$(RECORD_DIR)
 EOF
 
-export INSTALLER_FLAGS="--migrate-gateway-api --helm-values $UPGRADE_HELM_VALUES --skip-charts=dex"
+export INSTALLER_FLAGS="--migrate-gateway-api --helm-values $UPGRADE_HELM_VALUES"
 
 echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
 

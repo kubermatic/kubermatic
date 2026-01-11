@@ -1,0 +1,39 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: kubermatic.k8c.io/v1
+kind: KubermaticConfiguration
+metadata:
+  name: e2e
+  namespace: kubermatic
+spec:
+  ingress:
+    # Gateway API requires a domain for HTTPRoute hostname configuration
+    domain: '__KUBERMATIC_DOMAIN__'
+  imagePullSecret: '__IMAGE_PULL_SECRET__'
+  auth:
+    # Dummy service account key - required when HeadlessInstallation is false
+    # Tests don't use actual authentication
+    serviceAccountKey: '__SERVICE_ACCOUNT_KEY__'
+  userCluster:
+    apiserverReplicas: 1
+  featureGates:
+    EtcdLauncher: true
+    # Gateway API tests need actual Gateway/HTTPRoute resources deployed
+    # HeadlessInstallation would skip Envoy Gateway deployment
+    HeadlessInstallation: false
+    VerticalPodAutoscaler: true
+  applications:
+    defaultApplicationCatalog:
+      enable: true
