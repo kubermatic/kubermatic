@@ -23,10 +23,10 @@ spec:
     # feature gate), we still need the base domain to construct the URLs to
     # the usercluster kube-apiserver. This traffic however is never routed
     # through nginx.
-    domain: "__KUBERMATIC_DOMAIN__"
+    domain: '__KUBERMATIC_DOMAIN__'
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   auth:
-    serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
+    serviceAccountKey: '__SERVICE_ACCOUNT_KEY__'
   userCluster:
     apiserverReplicas: 1
   featureGates:

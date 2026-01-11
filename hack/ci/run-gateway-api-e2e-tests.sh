@@ -47,8 +47,6 @@ KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
 DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
 
-# Customize Helm values using HELM_VALUES_EXTRA
-# This appends to the default values in setup-kubermatic-in-kind.sh
 export HELM_VALUES_EXTRA="
 migrateGatewayAPI: true
 dex:

@@ -135,7 +135,6 @@ sed -i "s;__KUBERMATIC_DOMAIN__;$KUBERMATIC_DOMAIN;g" $KUBERMATIC_CONFIG
 HELM_VALUES_FILE="$(mktemp)"
 cat << EOF > $HELM_VALUES_FILE
 kubermaticOperator:
-  imagePullSecret: "$IMAGE_PULL_SECRET_INLINE"
   image:
     repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
     tag: "$KUBERMATIC_VERSION"
