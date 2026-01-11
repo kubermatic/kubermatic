@@ -57,6 +57,9 @@ migrateGatewayAPI: true
 dex:
   ingress:
     enabled: false
+    # Explicitly clear hosts/tls to prevent partial merge issues
+    hosts: []
+    tls: []
   config:
     issuer: "https://${KUBERMATIC_DOMAIN}/dex"
     enablePasswordDB: true
