@@ -24,7 +24,7 @@ spec:
     # the usercluster kube-apiserver. This traffic however is never routed
     # through nginx.
     domain: "__KUBERMATIC_DOMAIN__"
-  imagePullSecret: "__IMAGE_PULL_SECRET__"
+  imagePullSecret: '__IMAGE_PULL_SECRET__'
   auth:
     serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
   userCluster:
