@@ -44,6 +44,11 @@ const (
 	// ComponentLabel is the label of the component within the architecture.
 	ComponentLabel = "app.kubernetes.io/component"
 
+	// GatewayAccessLabelKey is the label key used to allow namespaces to attach
+	// HTTPRoutes to the KKP Gateway. Namespaces with this label set to "true"
+	// can route traffic through the Gateway.
+	GatewayAccessLabelKey = "kubermatic.io/gateway-access"
+
 	DockercfgSecretName = "dockercfg"
 
 	WebhookServiceName        = "kubermatic-webhook"
@@ -88,6 +93,7 @@ const (
 	WebhookServingCertSecretName = "webhook-cert"
 
 	IngressName                           = "kubermatic"
+	GatewayName                           = "kubermatic"
 	MasterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	SeedControllerManagerDeploymentName   = "kubermatic-seed-controller-manager"
 	WebhookDeploymentName                 = "kubermatic-webhook"
