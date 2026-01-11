@@ -19,21 +19,19 @@ metadata:
   namespace: kubermatic
 spec:
   ingress:
-    # Gateway API requires a domain for HTTPRoute hostname configuration
-    domain: '__KUBERMATIC_DOMAIN__'
-  imagePullSecret: '__IMAGE_PULL_SECRET__'
+    # Even though no ingress will be created (due to the HeadlessInstallation
+    # feature gate), we still need the base domain to construct the URLs to
+    # the usercluster kube-apiserver. This traffic however is never routed
+    # through nginx.
+    domain: "__KUBERMATIC_DOMAIN__"
+  imagePullSecret: "__IMAGE_PULL_SECRET__"
   auth:
-    # Dummy service account key - required when HeadlessInstallation is false
-    # Tests don't use actual authentication
-    serviceAccountKey: '__SERVICE_ACCOUNT_KEY__'
+    serviceAccountKey: "__SERVICE_ACCOUNT_KEY__"
   userCluster:
     apiserverReplicas: 1
   featureGates:
     EtcdLauncher: true
-    # Gateway API tests need actual Gateway/HTTPRoute resources deployed
-    # HeadlessInstallation would skip Envoy Gateway deployment
     HeadlessInstallation: false
-    VerticalPodAutoscaler: true
   applications:
     defaultApplicationCatalog:
       enable: true

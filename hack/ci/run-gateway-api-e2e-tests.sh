@@ -33,65 +33,7 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_gatewayapi.yaml
 
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" != "ce" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
-KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
-
-DEX_PASSWORD_HASH=""
-if command -v python3 &> /dev/null; then
-  DEX_PASSWORD_HASH=$(python3 -c "import passlib.hash; print(passlib.hash.bcrypt.encrypt('password', rounds=10, ident='2a'))" 2>/dev/null)
-fi
-if [ -z "$DEX_PASSWORD_HASH" ] && command -v htpasswd &> /dev/null; then
-  DEX_PASSWORD_HASH=$(htpasswd -bnBC 10 "" password | tr -d ':\n' | sed 's/$2y/$2a/')
-fi
-if [ -z "$DEX_PASSWORD_HASH" ]; then
-  DEX_PASSWORD_HASH='$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK'
-fi
-
-UPGRADE_HELM_VALUES="$(mktemp)"
-cat << EOF > $UPGRADE_HELM_VALUES
-migrateGatewayAPI: true
-dex:
-  ingress:
-    enabled: false
-    # Explicitly clear hosts/tls to prevent partial merge issues
-    hosts: []
-    tls: []
-  config:
-    issuer: "https://${KUBERMATIC_DOMAIN}/dex"
-    enablePasswordDB: true
-    staticPasswords:
-      - email: kubermatic@example.com
-        # bcrypt hash of the string "password"
-        hash: "${DEX_PASSWORD_HASH}"
-        username: admin
-        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
-httproute:
-  gatewayName: kubermatic
-  gatewayNamespace: kubermatic
-  domain: "${KUBERMATIC_DOMAIN}"
-  timeout: 3600s
-kubermaticOperator:
-  image:
-    repository: "quay.io/kubermatic/kubermatic${REPOSUFFIX}"
-    tag: "${KUBERMATIC_VERSION}"
-minio:
-  credentials:
-    accessKey: test
-    secretKey: testtest
-telemetry:
-  uuid: "559a1b90-b5d0-40aa-a74d-bd9e808ec10f"
-  schedule: "* * * * *"
-  reporterArgs:
-    - stdout
-    - --client-uuid=\$(CLIENT_UUID)
-    - --record-dir=\$(RECORD_DIR)
-EOF
-
-export INSTALLER_FLAGS="--migrate-gateway-api --helm-values $UPGRADE_HELM_VALUES"
+echodate "Deploying KKP with Envoy Gateway"
 
 source hack/ci/setup-kind-cluster.sh
 
@@ -100,6 +42,36 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-con
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller > /dev/null 2>&1 &
 
+KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
+KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
+
+DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
+
+# Customize Helm values using HELM_VALUES_EXTRA
+# This appends to the default values in setup-kubermatic-in-kind.sh
+export HELM_VALUES_EXTRA="
+migrateGatewayAPI: true
+dex:
+  ingress:
+    enabled: false
+    hosts: []
+    tls: []
+  config:
+    issuer: \"https://${KUBERMATIC_DOMAIN}/dex\"
+    enablePasswordDB: true
+    staticPasswords:
+      - email: kubermatic@example.com
+        hash: \"${DEX_PASSWORD_HASH}\"
+        username: admin
+        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
+httproute:
+  gatewayName: kubermatic
+  gatewayNamespace: kubermatic
+  domain: \"${KUBERMATIC_DOMAIN}\"
+  timeout: 3600s
+"
+
+export INSTALLER_FLAGS="--migrate-gateway-api"
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"

@@ -122,7 +122,7 @@ pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild
 echodate "Successfully built and loaded all images"
 
 # prepare to run kubermatic-installer
-KUBERMATIC_CONFIG="$(mktemp)"
+export KUBERMATIC_CONFIG="$(mktemp)"
 IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
 KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
@@ -163,6 +163,11 @@ telemetry:
     - --client-uuid=\$(CLIENT_UUID)
     - --record-dir=\$(RECORD_DIR)
 EOF
+
+# Allow caller to append custom Helm values
+if [ -n "${HELM_VALUES_EXTRA:-}" ]; then
+  echo "$HELM_VALUES_EXTRA" >> $HELM_VALUES_FILE
+fi
 
 # prepare CRDs
 copy_crds_to_chart

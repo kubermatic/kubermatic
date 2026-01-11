@@ -67,6 +67,7 @@ if kubectl get gateway -n kubermatic kubermatic 2> /dev/null; then
   echodate "ERROR: Gateway should not exist in Ingress mode!"
   exit 1
 fi
+
 if kubectl get httproute -n kubermatic kubermatic 2> /dev/null; then
   echodate "ERROR: HTTPRoute should not exist in Ingress mode!"
   exit 1
@@ -81,29 +82,10 @@ go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gatewa
   -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
 
 echodate "Pre-migration tests passed"
-
 echodate ""
 echodate "Upgrading to Gateway API mode"
 
-REPOSUFFIX=""
-if [ "$KUBERMATIC_EDITION" != "ce" ]; then
-  REPOSUFFIX="-$KUBERMATIC_EDITION"
-fi
-KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-
-# Generate bcrypt hash for Dex static password (password: "password")
-# Try Python first, fallback to htpasswd, then use pre-computed hash
-DEX_PASSWORD_HASH=""
-if command -v python3 &> /dev/null; then
-  DEX_PASSWORD_HASH=$(python3 -c "import passlib.hash; print(passlib.hash.bcrypt.encrypt('password', rounds=10, ident='2a'))" 2>/dev/null)
-fi
-if [ -z "$DEX_PASSWORD_HASH" ] && command -v htpasswd &> /dev/null; then
-  DEX_PASSWORD_HASH=$(htpasswd -bnBC 10 "" password | tr -d ':\n' | sed 's/$2y/$2a/')
-fi
-# Fallback to pre-computed hash if neither tool is available
-if [ -z "$DEX_PASSWORD_HASH" ]; then
-  DEX_PASSWORD_HASH='$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK'
-fi
+DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
 
 UPGRADE_HELM_VALUES="$(mktemp)"
 cat << EOF > $UPGRADE_HELM_VALUES
@@ -111,7 +93,6 @@ migrateGatewayAPI: true
 dex:
   ingress:
     enabled: false
-    # Explicitly clear hosts/tls to prevent partial merge issues
     hosts: []
     tls: []
   config:
@@ -119,7 +100,6 @@ dex:
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
-        # bcrypt hash of the string "password"
         hash: "${DEX_PASSWORD_HASH}"
         username: admin
         userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
@@ -128,39 +108,13 @@ httproute:
   gatewayNamespace: kubermatic
   domain: "${KUBERMATIC_DOMAIN}"
   timeout: 3600s
-kubermaticOperator:
-  image:
-    repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
-    tag: "$KUBERMATIC_VERSION"
-minio:
-  credentials:
-    accessKey: test
-    secretKey: testtest
-telemetry:
-  uuid: "559a1b90-b5d0-40aa-a74d-bd9e808ec10f"
-  schedule: "* * * * *"
-  reporterArgs:
-    - stdout
-    - --client-uuid=\$(CLIENT_UUID)
-    - --record-dir=\$(RECORD_DIR)
 EOF
 
-export INSTALLER_FLAGS="--migrate-gateway-api --helm-values $UPGRADE_HELM_VALUES"
+export INSTALLER_FLAGS="--migrate-gateway-api"
 
 echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
 
-# Prepare KubermaticConfiguration for upgrade (config from Phase 1 is a temp file, so we recreate)
-# Note that this duplicates logic from setup-kubermatic-in-kind.sh because that script's
-# KUBERMATIC_CONFIG is a local temp file no longer accessible here.
-KUBERMATIC_CONFIG="$(mktemp)"
-IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
-KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
-
-cp $KUBERMATIC_YAML $KUBERMATIC_CONFIG
-sed -i "s;__SERVICE_ACCOUNT_KEY__;$SERVICE_ACCOUNT_KEY;g" $KUBERMATIC_CONFIG
-sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
-sed -i "s;__KUBERMATIC_DOMAIN__;$KUBERMATIC_DOMAIN;g" $KUBERMATIC_CONFIG
-
+# KUBERMATIC_CONFIG is exported from setup-kubermatic-in-kind.sh and available here
 ./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
