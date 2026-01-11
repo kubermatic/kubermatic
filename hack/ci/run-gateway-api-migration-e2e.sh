@@ -91,6 +91,20 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
 fi
 KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 
+# Generate bcrypt hash for Dex static password (password: "password")
+# Try Python first, fallback to htpasswd, then use pre-computed hash
+DEX_PASSWORD_HASH=""
+if command -v python3 &> /dev/null; then
+  DEX_PASSWORD_HASH=$(python3 -c "import passlib.hash; print(passlib.hash.bcrypt.encrypt('password', rounds=10, ident='2a'))" 2>/dev/null)
+fi
+if [ -z "$DEX_PASSWORD_HASH" ] && command -v htpasswd &> /dev/null; then
+  DEX_PASSWORD_HASH=$(htpasswd -bnBC 10 "" password | tr -d ':\n' | sed 's/$2y/$2a/')
+fi
+# Fallback to pre-computed hash if neither tool is available
+if [ -z "$DEX_PASSWORD_HASH" ]; then
+  DEX_PASSWORD_HASH='$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK'
+fi
+
 UPGRADE_HELM_VALUES="$(mktemp)"
 cat << EOF > $UPGRADE_HELM_VALUES
 migrateGatewayAPI: true
@@ -99,6 +113,13 @@ dex:
     enabled: false
   config:
     issuer: "https://${KUBERMATIC_DOMAIN}/dex"
+    enablePasswordDB: true
+    staticPasswords:
+      - email: kubermatic@example.com
+        # bcrypt hash of the string "password"
+        hash: "${DEX_PASSWORD_HASH}"
+        username: admin
+        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 httproute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
