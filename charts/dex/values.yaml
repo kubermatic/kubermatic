@@ -23,7 +23,7 @@ httproute:
   gatewayName: kubermatic
   # Namespace of the Gateway
   gatewayNamespace: kubermatic
-  # External domain for Dex (same as KubermaticInstallation domain)
+  # External domain for Dex
   domain: ""
   # Timeout for requests (matching nginx proxy-read-timeout annotation)
   timeout: 3600s
