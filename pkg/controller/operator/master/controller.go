@@ -139,7 +139,7 @@ func Add(
 	}
 
 	if enableGatewayAPI {
-		exists, err := gatewayAPICRDExists(context.Background(), mgr.GetClient())
+		exists, err := gatewayAPICRDExists(context.Background(), mgr.GetAPIReader())
 		if err != nil {
 			return fmt.Errorf("failed to check whether Gateway API CRD exists: %w", err)
 		}
@@ -180,12 +180,12 @@ func Add(
 	return err
 }
 
-func gatewayAPICRDExists(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
+func gatewayAPICRDExists(ctx context.Context, reader ctrlruntimeclient.Reader) (bool, error) {
 	crd := apiextensionsv1.CustomResourceDefinition{}
 	key := types.NamespacedName{Name: "gateways.gateway.networking.k8s.io"}
 
 	crdExists := true
-	if err := client.Get(ctx, key, &crd); err != nil {
+	if err := reader.Get(ctx, key, &crd); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return false, fmt.Errorf("failed to probe for Gateway API CRD: %w", err)
 		}
