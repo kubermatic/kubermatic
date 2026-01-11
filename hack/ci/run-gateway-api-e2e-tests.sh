@@ -44,6 +44,8 @@ UPGRADE_HELM_VALUES="$(mktemp)"
 cat << EOF > $UPGRADE_HELM_VALUES
 migrateGatewayAPI: true
 dex:
+  ingress:
+    enabled: false
   config:
     issuer: "https://${KUBERMATIC_DOMAIN}/dex"
 httproute:

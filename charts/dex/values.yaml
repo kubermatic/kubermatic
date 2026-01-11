@@ -32,6 +32,9 @@ dex:
   replicaCount: 2
 
   ingress:
+    # When migrateGatewayAPI is true, ingress must be disabled (set to false)
+    # to avoid creating an invalid Ingress with empty host values.
+    # The HTTPRoute will be used instead for routing.
     enabled: true
     className: "nginx"
     hosts:
