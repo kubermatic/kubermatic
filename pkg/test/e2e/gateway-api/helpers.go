@@ -36,14 +36,15 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 var (
-	credentials jig.AWSCredentials
-	logOptions  = utils.DefaultLogOptions
+	logOptions = utils.DefaultLogOptions
 )
 
 const (
@@ -53,109 +54,172 @@ const (
 )
 
 func init() {
-	credentials.AddFlags(flag.CommandLine)
 	jig.AddFlags(flag.CommandLine)
 	logOptions.AddFlags(flag.CommandLine)
 }
 
-func verifyGatewayAPIResourcesInstalled(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, namespace string, logger *zap.SugaredLogger) error {
+// verifyGatewayAPIModeResources verifies that the Gateway API resources are properly installed in Gateway API mode
+// and no `kubermatic/kubermatic` ingress resource exists in the cluster.
+func verifyGatewayAPIModeResources(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
 	t.Helper()
 
-	logger.Info("Checking GatewayClass...")
+	ns := jig.KubermaticNamespace()
+
+	l.Info("Verifying GatewayClass...")
 	gcName := types.NamespacedName{Name: defaulting.DefaultGatewayClassName}
 	gc := &gatewayapiv1.GatewayClass{}
 
-	err := wait.PollImmediateLog(ctx, logger, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		if err := client.Get(ctx, gcName, gc); err != nil {
-			return fmt.Errorf("GatewayClass not found: %w", err), nil
+	err := wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		err := c.Get(ctx, gcName, gc)
+		if err != nil {
+			return err, nil
 		}
-		return nil, nil
+
+		gcAccepted := meta.IsStatusConditionTrue(
+			gc.Status.Conditions,
+			string(gatewayapiv1.GatewayClassConditionStatusAccepted),
+		)
+		if gcAccepted {
+			return nil, nil
+		}
+
+		return fmt.Errorf("GatewayClass %q is not accepted yet, status: %+v", defaulting.DefaultGatewayClassName, gc.Status), nil
 	})
 	if err != nil {
 		return fmt.Errorf("GatewayClass %q not found: %w", defaulting.DefaultGatewayClassName, err)
 	}
 
-	logger.Infof("GatewayClass %q exists", defaulting.DefaultGatewayClassName)
+	l.Infof("GatewayClass %q exists", defaulting.DefaultGatewayClassName)
 
-	logger.Info("Checking main Gateway...")
-	gtwName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}
+	gtwName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultGatewayName}
+	l.Infof("verifying Gateway %q", gtwName.String())
+
 	gtw := &gatewayapiv1.Gateway{}
-
-	err = wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
-		if err := client.Get(ctx, gtwName, gtw); err != nil {
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+		err := c.Get(ctx, gtwName, gtw)
+		if err != nil {
 			return fmt.Errorf("Gateway not found: %w", err), nil
 		}
+
+		gtwProgrammed := meta.IsStatusConditionTrue(
+			gtw.Status.Conditions,
+			string(gatewayapiv1.GatewayConditionProgrammed),
+		)
+		if !gtwProgrammed {
+			return fmt.Errorf("Gateway %q is not programmed yet", gtwName.String()), nil
+		}
+
+		listeners := gtw.Status.Listeners
+		if len(listeners) == 0 {
+			return fmt.Errorf("Gateway %q has no listeners yet, status: %+v", gtwName.String(), gtw.Status), nil
+		}
+
+		attachedRoutes := listeners[0].AttachedRoutes
+		if attachedRoutes != 2 {
+			return fmt.Errorf("Gateway %q has no expected attached routes, status: %+v", gtwName.String(), gtw.Status), nil
+		}
+
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("Gateway not found: %w", err)
+		return fmt.Errorf("user cluster Gateway not found: %w", err)
 	}
 
-	logger.Infof("Gateway %q exists", ctrlruntimeclient.ObjectKeyFromObject(gtw).String())
+	l.Infof("Gateway %q exists", gtwName.String())
 
-	logger.Info("Checking main HTTPRoute...")
-	hrName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}
+	hrNn := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultHTTPRouteName}
+	l.Infof("verifying HTTPRoute %q", hrNn.String())
 	hr := &gatewayapiv1.HTTPRoute{}
 
-	err = wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
-		if err := client.Get(ctx, hrName, hr); err != nil {
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+		if err := c.Get(ctx, hrNn, hr); err != nil {
 			return fmt.Errorf("HTTPRoute not found: %w", err), nil
 		}
-		return nil, nil
+
+		if len(hr.Status.Parents) == 0 {
+			return fmt.Errorf("HTTPRoute %q has no parents yet, status: %+v", defaulting.DefaultHTTPRouteName, hr.Status), nil
+		}
+
+		if len(hr.Status.Parents) != 1 {
+			return fmt.Errorf("HTTPRoute %q has unexpected number of parents: %d", defaulting.DefaultHTTPRouteName, len(hr.Status.Parents)), nil
+		}
+
+		controllerName := hr.Status.Parents[0].ControllerName
+		if controllerName != "gateway.k8c.io/envoy-controller" {
+			return fmt.Errorf("HTTPRoute %q has unexpected parent Gateway %q", hrNn.String(), controllerName), nil
+		}
+
+		parentRef := hr.Status.Parents[0].ParentRef
+		if parentRef.Name != defaulting.DefaultGatewayName ||
+			parentRef.Namespace == nil || *parentRef.Namespace != gatewayapiv1.Namespace(jig.KubermaticNamespace()) {
+			return fmt.Errorf("HTTPRoute %q has unexpected parent Gateway name %q", hrNn.String(), parentRef.Name), nil
+		}
+
+		routeAccepted := meta.IsStatusConditionTrue(
+			hr.Status.Parents[0].Conditions,
+			string(gatewayapiv1.RouteConditionAccepted),
+		)
+		if routeAccepted {
+			return nil, nil
+		}
+
+		return fmt.Errorf("Route %q is not accepted yet, status: %+v", hrNn.String(), hr.Status), nil
 	})
 	if err != nil {
-		return fmt.Errorf("HTTPRoute not found: %w", err)
+		return fmt.Errorf("user cluster HTTPRoute not found: %w", err)
 	}
 
-	logger.Infof("HTTPRoute %q exists", ctrlruntimeclient.ObjectKeyFromObject(hr).String())
+	l.Infof("HTTPRoute %q exists", hrNn.String())
 
-	return nil
-}
+	ingNn := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultIngressName}
+	l.Infof("verifying that Ingress %q does not exist since we use Gatewy API", ingNn.String())
 
-func verifyNoIngressResources(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, namespace string, logger *zap.SugaredLogger) error {
-	t.Helper()
-
-	ingressName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultIngressName}
-	err := wait.PollImmediateLog(ctx, logger, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		ingress := &networkingv1.Ingress{}
-		err := client.Get(ctx, ingressName, ingress)
+	ingress := &networkingv1.Ingress{}
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		err := c.Get(ctx, ingNn, ingress)
 		if err == nil {
 			return fmt.Errorf("Ingress should not exist in Gateway API mode"), nil
 		}
+
 		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to check for Ingress: %w", err)
 		}
+
 		return nil, nil
 	})
-
 	if err != nil {
 		return err
 	}
 
-	logger.Infof("No Ingress resources found (expected for Gateway API mode)")
+	l.Infof("No kubermatic ingress in the namespace as expected since we run Gateway API mode")
+
 	return nil
 }
 
-func verifyNoGatewayAPIResources(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, namespace string, logger *zap.SugaredLogger) error {
+func verifyNoGatewayAPIResources(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, logger *zap.SugaredLogger) error {
 	t.Helper()
-	gwName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}
+	ns := jig.KubermaticNamespace()
+
+	logger.Info("verify that no gateway api resources exist in ingress mode")
+	gtwName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultGatewayName}
 	err := wait.PollImmediateLog(ctx, logger, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		gw := &gatewayapiv1.Gateway{}
-		err := client.Get(ctx, gwName, gw)
+
+		err := client.Get(ctx, gtwName, gw)
 		if err == nil {
 			return fmt.Errorf("Gateway should not exist in Ingress mode"), nil
 		}
 		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to check for Gateway: %w", err)
 		}
+
 		return nil, nil
 	})
-
 	if err != nil {
 		return err
 	}
 
-	hrName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}
+	hrName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultHTTPRouteName}
 	err = wait.PollImmediateLog(ctx, logger, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
 		hr := &gatewayapiv1.HTTPRoute{}
 		err := client.Get(ctx, hrName, hr)
@@ -165,9 +229,9 @@ func verifyNoGatewayAPIResources(ctx context.Context, t *testing.T, client ctrlr
 		if !apierrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to check for HTTPRoute: %w", err)
 		}
+
 		return nil, nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -176,88 +240,65 @@ func verifyNoGatewayAPIResources(ctx context.Context, t *testing.T, client ctrlr
 	return nil
 }
 
-func verifyUserClusterGatewayResources(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, namespace string, logger *zap.SugaredLogger) error {
+func verifyNamespaceGatewayLabel(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
 	t.Helper()
 
-	logger.Info("Checking user cluster Gateway...")
-	gwName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultGatewayName}
-	gw := &gatewayapiv1.Gateway{}
+	namespaces := []string{jig.KubermaticNamespace(), "dex"}
 
-	err := wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
-		if err := client.Get(ctx, gwName, gw); err != nil {
-			return fmt.Errorf("user cluster Gateway not found: %w", err), nil
+	errs := make([]error, 0)
+	for _, ns := range namespaces {
+		l.Infof("Waiting for namespace %q Gateway access label...", ns)
+
+		err := wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+			namespace := &corev1.Namespace{}
+
+			err := c.Get(ctx, types.NamespacedName{Name: ns}, namespace)
+			if err != nil {
+				return fmt.Errorf("failed to get namespace: %w", err), nil
+			}
+
+			if namespace.Labels == nil {
+				return fmt.Errorf("namespace has no labels"), nil
+			}
+
+			expectedLabel := common.GatewayAccessLabelKey
+			if namespace.Labels[expectedLabel] != "true" {
+				return fmt.Errorf("namespace missing %q label (has: %+v)", expectedLabel, namespace.Labels), nil
+			}
+
+			return nil, nil
+		})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("namespace %q label verification failed: %w", ns, err))
 		}
-		return nil, nil
-	})
-	if err != nil {
-		return fmt.Errorf("user cluster Gateway not found: %w", err)
 	}
-	logger.Infof("User cluster Gateway %s/%s exists", namespace, defaulting.DefaultGatewayName)
-
-	logger.Info("Checking user cluster HTTPRoute...")
-	hrName := types.NamespacedName{Namespace: namespace, Name: defaulting.DefaultHTTPRouteName}
-	hr := &gatewayapiv1.HTTPRoute{}
-
-	err = wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
-		if err := client.Get(ctx, hrName, hr); err != nil {
-			return fmt.Errorf("user cluster HTTPRoute not found: %w", err), nil
-		}
-		return nil, nil
-	})
-	if err != nil {
-		return fmt.Errorf("user cluster HTTPRoute not found: %w", err)
-	}
-	logger.Infof("User cluster HTTPRoute %s/%s exists", namespace, defaulting.DefaultHTTPRouteName)
-
-	ingressName := types.NamespacedName{Namespace: namespace, Name: "kubermatic"}
-	ingress := &networkingv1.Ingress{}
-
-	err = wait.PollImmediateLog(ctx, logger, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		err := client.Get(ctx, ingressName, ingress)
-		if err == nil {
-			return fmt.Errorf("Ingress should not exist in user cluster namespace in Gateway API mode"), nil
-		}
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to check for Ingress: %w", err)
-		}
-		return nil, nil
-	})
-
-	if err != nil {
-		return err
+	if len(errs) > 0 {
+		return kerrors.NewAggregate(errs)
 	}
 
-	logger.Infof("No Ingress in user cluster namespace (expected)")
 	return nil
 }
 
-func verifyNamespaceGatewayLabel(ctx context.Context, t *testing.T, client ctrlruntimeclient.Client, namespace string, logger *zap.SugaredLogger) error {
+func verifyIngressMode(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
 	t.Helper()
 
-	logger.Info("Waiting for namespace Gateway access label...")
+	ns := jig.KubermaticNamespace()
 
-	err := wait.PollImmediateLog(ctx, logger, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
-		ns := &corev1.Namespace{}
-		if err := client.Get(ctx, types.NamespacedName{Name: namespace}, ns); err != nil {
-			return fmt.Errorf("failed to get namespace: %w", err), nil
+	ingressName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultIngressName}
+	l.Infof("Checking main %q Ingress...", ingressName.String())
+
+	ingress := &networkingv1.Ingress{}
+	err := wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+		if err := c.Get(ctx, ingressName, ingress); err != nil {
+			return fmt.Errorf("Ingress not found: %w", err), nil
 		}
-
-		expectedLabel := common.GatewayAccessLabelKey
-		if ns.Labels == nil {
-			return fmt.Errorf("namespace has no labels"), nil
-		}
-
-		if ns.Labels[expectedLabel] != "true" {
-			return fmt.Errorf("namespace missing %q label (has: %v)", expectedLabel, ns.Labels), nil
-		}
-
 		return nil, nil
 	})
-
 	if err != nil {
-		return fmt.Errorf("namespace label verification failed: %w", err)
+		return fmt.Errorf("Ingress not found: %w", err)
 	}
 
-	logger.Infof("Namespace %s has Gateway access label", namespace)
+	l.Infof("Ingress %q exists", ingressName.String())
+
 	return nil
 }

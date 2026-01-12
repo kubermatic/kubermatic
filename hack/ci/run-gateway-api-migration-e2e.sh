@@ -29,7 +29,7 @@ make download-gocache
 pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
-export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_gatewayapi.yaml
+export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_nginx.yaml
 
 echodate "Deploying KKP with nginx-ingress"
 
@@ -40,22 +40,32 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/cluster-con
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic" --namespace kubermatic > /dev/null 2>&1 &
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/nginx-ingress" --namespace nginx-ingress-controller > /dev/null 2>&1 &
 
+KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
+
+DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
+
+export HELM_VALUES_EXTRA="
+dex:
+  ingress:
+    enabled: true
+    hosts:
+      - ${KUBERMATIC_DOMAIN}
+    tls:
+      - hosts:
+          - ${KUBERMATIC_DOMAIN}
+  config:
+    issuer: https://${KUBERMATIC_DOMAIN}/dex
+    enablePasswordDB: true
+    staticPasswords:
+      - email: kubermatic@example.com
+        hash: \"${DEX_PASSWORD_HASH}\"
+        username: admin
+        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
+"
+
 source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
-
-if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
-  echodate "Getting default SSH pubkey for machines from Vault"
-  retry 5 vault_ci_login
-  E2E_SSH_PUBKEY="$(mktemp)"
-  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
-else
-  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
-  E2E_SSH_PUBKEY="$(mktemp)"
-  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
-fi
-
-echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
 
 echodate "Verifying nginx-ingress mode deployment..."
 retry 10 kubectl wait --for=condition=ready --timeout=1m ingress/kubermatic -n kubermatic
@@ -77,18 +87,13 @@ echodate "Gateway API resources correctly absent"
 
 echodate "Running pre-migration tests (Ingress mode)..."
 go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
-  -test.run "TestGatewayAPIPreMigration" \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
-  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
+  -test.run "TestGatewayAPIPreMigration"
 
 echodate "Pre-migration tests passed"
 echodate ""
 echodate "Upgrading to Gateway API mode"
 
-DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
-
-UPGRADE_HELM_VALUES="$(mktemp)"
-cat << EOF > $UPGRADE_HELM_VALUES
+export HELM_VALUES_EXTRA="
 migrateGatewayAPI: true
 dex:
   ingress:
@@ -96,29 +101,43 @@ dex:
     hosts: []
     tls: []
   config:
-    issuer: "https://${KUBERMATIC_DOMAIN}/dex"
+    issuer: https://ci.kubermatic.io/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
-        hash: "${DEX_PASSWORD_HASH}"
+        hash: \"${DEX_PASSWORD_HASH}\"
         username: admin
         userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 httproute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
-  domain: "${KUBERMATIC_DOMAIN}"
+  domain: ci.kubermatic.io
   timeout: 3600s
-EOF
+"
 
 export INSTALLER_FLAGS="--migrate-gateway-api"
 
+# Create the Helm values file with default values from setup-kubermatic-in-kind.sh
+# This will automatically append HELM_VALUES_EXTRA to the file
+HELM_VALUES_FILE="$(mktemp)"
+cat << EOF > $HELM_VALUES_FILE
+kubermaticOperator:
+  image:
+    repository: "quay.io/kubermatic/kubermatic"
+    tag: "$KUBERMATIC_VERSION"
+EOF
+
+# Append HELM_VALUES_EXTRA if set
+if [ -n "${HELM_VALUES_EXTRA:-}" ]; then
+  echo "$HELM_VALUES_EXTRA" >> $HELM_VALUES_FILE
+fi
+
 echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
 
-# KUBERMATIC_CONFIG is exported from setup-kubermatic-in-kind.sh and available here
 ./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$UPGRADE_HELM_VALUES" \
+  --helm-values "$HELM_VALUES_FILE" \
   $INSTALLER_FLAGS
 
 echodate "Waiting for Kubermatic Operator to restart with Gateway API enabled..."
@@ -149,9 +168,7 @@ echodate "Verifying cluster health after migration ==="
 echodate "Running post-migration tests (Gateway API mode)..."
 
 go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
-  -test.run "TestGatewayAPIPostMigration" \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
-  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
+  -test.run "TestGatewayAPIPostMigration"
 
 echodate "Post-migration tests passed"
 echodate "Gateway API migration tests completed successfully!"

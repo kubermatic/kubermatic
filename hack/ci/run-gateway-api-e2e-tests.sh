@@ -15,8 +15,7 @@
 # limitations under the License.
 
 ### This script sets up a local KKP installation in kind with Gateway API enabled
-### from the start (fresh install), deploys a test cluster, and then runs the
-### Gateway API e2e tests.
+### from the start (fresh install) and runs the Gateway API e2e tests.
 
 set -euo pipefail
 
@@ -32,7 +31,6 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_gatewayapi.yaml
-export SHOW_POD_DEBUG=true
 
 echodate "Deploying KKP with Envoy Gateway"
 
@@ -73,19 +71,6 @@ source hack/ci/setup-kubermatic-in-kind.sh
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
-if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
-  echodate "Getting default SSH pubkey for machines from Vault"
-  retry 5 vault_ci_login
-  E2E_SSH_PUBKEY="$(mktemp)"
-  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
-else
-  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
-  E2E_SSH_PUBKEY="$(mktemp)"
-  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
-fi
-
-echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
-
 # Verify Gateway API resources exist before running tests
 echodate "Verifying Gateway API resources are deployed..."
 echodate "Checking Gateway resource kubermatic/kubermatic"
@@ -99,8 +84,6 @@ echodate "Gateway API resources are present."
 echodate "Running Gateway API fresh install tests..."
 
 go_test gateway_api_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
-  -test.run "TestGatewayAPIFreshInstall|TestGatewayAPINamespaceLabel" \
-  -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
-  -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")"
+  -test.run "TestGatewayAPIFreshInstall"
 
 echodate "Gateway API fresh install tests completed successfully!"

@@ -19,11 +19,9 @@ metadata:
   namespace: kubermatic
 spec:
   ingress:
-    # Even though no ingress will be created (due to the HeadlessInstallation
-    # feature gate), we still need the base domain to construct the URLs to
-    # the usercluster kube-apiserver. This traffic however is never routed
-    # through nginx.
     domain: '__KUBERMATIC_DOMAIN__'
+    className: nginx
+    disable: false
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   auth:
     serviceAccountKey: '__SERVICE_ACCOUNT_KEY__'
