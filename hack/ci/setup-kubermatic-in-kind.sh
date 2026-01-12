@@ -176,6 +176,8 @@ set_crds_version_annotation
 # install dependencies and Kubermatic Operator into cluster
 TEST_NAME="Install KKP into kind"
 
+export HELM_VALUES_STR="$(cat $HELM_VALUES_FILE)"
+
 ./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \

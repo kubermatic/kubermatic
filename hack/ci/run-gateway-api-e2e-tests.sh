@@ -64,14 +64,17 @@ httproute:
   gatewayNamespace: kubermatic
   domain: ci.kubermatic.io
   timeout: 3600s
+# if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
+# which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
+envoyProxy:
+  service:
+    type: NodePort
+    externalTrafficPolicy: Cluster
 "
 
 export INSTALLER_FLAGS="--migrate-gateway-api"
 source hack/ci/setup-kubermatic-in-kind.sh
 
-export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
-
-# Verify Gateway API resources exist before running tests
 echodate "Verifying Gateway API resources are deployed..."
 echodate "Checking Gateway resource kubermatic/kubermatic"
 retry 10 kubectl get gateway -n kubermatic kubermatic

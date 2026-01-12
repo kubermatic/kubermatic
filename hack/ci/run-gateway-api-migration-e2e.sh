@@ -48,24 +48,22 @@ export HELM_VALUES_EXTRA="
 dex:
   ingress:
     enabled: true
+    className: "nginx"
     hosts:
-      - ${KUBERMATIC_DOMAIN}
-    tls:
-      - hosts:
-          - ${KUBERMATIC_DOMAIN}
+      - host: ${KUBERMATIC_DOMAIN}
+        paths:
+          - path: /dex
+            pathType: ImplementationSpecific
   config:
     issuer: https://${KUBERMATIC_DOMAIN}/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
-        hash: \"${DEX_PASSWORD_HASH}\"
+        hash: ${DEX_PASSWORD_HASH}
         username: admin
-        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 "
 
 source hack/ci/setup-kubermatic-in-kind.sh
-
-export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
 echodate "Verifying nginx-ingress mode deployment..."
 retry 10 kubectl wait --for=condition=ready --timeout=1m ingress/kubermatic -n kubermatic
@@ -105,9 +103,8 @@ dex:
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
-        hash: \"${DEX_PASSWORD_HASH}\"
+        hash: ${DEX_PASSWORD_HASH}
         username: admin
-        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 httproute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
@@ -115,29 +112,18 @@ httproute:
   timeout: 3600s
 "
 
+merged_helm_values_file="$(mktemp)"
+echo "$HELM_VALUES_STR" >> $merged_helm_values_file
+echo "$HELM_VALUES_EXTRA" >> $merged_helm_values_file
+
 export INSTALLER_FLAGS="--migrate-gateway-api"
-
-# Create the Helm values file with default values from setup-kubermatic-in-kind.sh
-# This will automatically append HELM_VALUES_EXTRA to the file
-HELM_VALUES_FILE="$(mktemp)"
-cat << EOF > $HELM_VALUES_FILE
-kubermaticOperator:
-  image:
-    repository: "quay.io/kubermatic/kubermatic"
-    tag: "$KUBERMATIC_VERSION"
-EOF
-
-# Append HELM_VALUES_EXTRA if set
-if [ -n "${HELM_VALUES_EXTRA:-}" ]; then
-  echo "$HELM_VALUES_EXTRA" >> $HELM_VALUES_FILE
-fi
 
 echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
 
 ./_build/kubermatic-installer deploy kubermatic-master \
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$HELM_VALUES_FILE" \
+  --helm-values "$merged_helm_values_file" \
   $INSTALLER_FLAGS
 
 echodate "Waiting for Kubermatic Operator to restart with Gateway API enabled..."
@@ -156,15 +142,22 @@ retry 10 kubectl get httproute -n kubermatic kubermatic
 echodate "Gateway API resources deployed"
 
 echodate "Verifying old Ingress was removed..."
-if kubectl get ingress -n kubermatic kubermatic 2> /dev/null; then
-  echodate "ERROR: Old Ingress still exists after migration!"
-  kubectl get ingress -n kubermatic kubermatic -o yaml
-  exit 1
-fi
+
+ingress_removed() {
+  if kubectl get ingress -n kubermatic kubermatic 2> /dev/null; then
+    echodate "ERROR: Old Ingress still exists after migration!"
+    kubectl get ingress -n kubermatic kubermatic -o yaml
+    return 1
+  fi
+
+  return 0
+}
+
+retry 5 ingress_removed
 echodate "Old Ingress correctly removed"
 
 echodate ""
-echodate "Verifying cluster health after migration ==="
+echodate "Verifying cluster health after migration"
 echodate "Running post-migration tests (Gateway API mode)..."
 
 go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
