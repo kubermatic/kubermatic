@@ -39,6 +39,7 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -506,7 +507,7 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete Gateway: %w", err)
 		}
-	} else if !apierrors.IsNotFound(err) {
+	} else if !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get Gateway: %w", err)
 	}
 
@@ -518,7 +519,7 @@ func cleanupGatewayAPIResources(ctx context.Context, l *logrus.Entry, c ctrlrunt
 		if err != nil && !apierrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete HTTPRoute: %w", err)
 		}
-	} else if !apierrors.IsNotFound(err) {
+	} else if !apierrors.IsNotFound(err) && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to get HTTPRoute: %w", err)
 	}
 
