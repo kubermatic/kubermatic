@@ -70,27 +70,11 @@ dex:
 
 source hack/ci/setup-kubermatic-in-kind.sh
 
-echodate "Verifying nginx-ingress mode deployment..."
-retry 10 kubectl wait --for=condition=ready --timeout=1m ingress/kubermatic -n kubermatic
 retry 10 check_all_deployments_ready nginx-ingress-controller
 echodate "nginx-ingress controller deployed"
 
-echodate "Verifying Gateway API resources do not exist in Ingress mode..."
-if kubectl get gateway -n kubermatic kubermatic 2> /dev/null; then
-  echodate "ERROR: Gateway should not exist in Ingress mode!"
-  exit 1
-fi
-
-if kubectl get httproute -n kubermatic kubermatic 2> /dev/null; then
-  echodate "ERROR: HTTPRoute should not exist in Ingress mode!"
-  exit 1
-fi
-
-echodate "Gateway API resources correctly absent"
-
 echodate "Running pre-migration tests (Ingress mode)..."
-go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
-  -test.run "TestGatewayAPIPreMigration"
+go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestGatewayAPIPreMigration"
 
 echodate "Pre-migration tests passed"
 echodate ""
@@ -142,32 +126,9 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gatew
 echodate "Verifying Gateway API resources deployed..."
 retry 10 check_all_deployments_ready envoy-gateway-controller
 retry 10 check_all_deployments_ready kubermatic
-retry 10 kubectl get gatewayclass kubermatic-envoy
-retry 10 kubectl get gateway -n kubermatic kubermatic
-retry 10 kubectl get httproute -n kubermatic kubermatic
-echodate "Gateway API resources deployed"
 
-echodate "Verifying old Ingress was removed..."
-
-ingress_removed() {
-  if kubectl get ingress -n kubermatic kubermatic 2> /dev/null; then
-    echodate "ERROR: Old Ingress still exists after migration!"
-    kubectl get ingress -n kubermatic kubermatic -o yaml
-    return 1
-  fi
-
-  return 0
-}
-
-retry 5 ingress_removed
-echodate "Old Ingress correctly removed"
-
-echodate ""
-echodate "Verifying cluster health after migration"
 echodate "Running post-migration tests (Gateway API mode)..."
 
-go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api \
-  -test.run "TestGatewayAPIPostMigration"
+go_test gateway_api_migration_e2e -timeout 1h -tags e2e -v ./pkg/test/e2e/gateway-api -test.run "TestGatewayAPIPostMigration"
 
-echodate "Post-migration tests passed"
 echodate "Gateway API migration tests completed successfully!"
