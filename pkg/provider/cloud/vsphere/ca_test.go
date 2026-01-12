@@ -32,35 +32,12 @@ import (
 )
 
 func TestVSphereCA(t *testing.T) {
-	// Set up vcsim simulator
-	model := simulator.VPX()
+	ctx := context.Background()
+	sim := vSphereTLSSimulator{t: t}
+	sim.setUp()
+	defer sim.tearDown()
 
-	err := model.Create()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer model.Remove()
-
-	// Create a TLS server by configuring TLS on the service before creating the server
-	model.Service.TLS = new(tls.Config)
-	server := model.Service.NewServer()
-	defer server.Close()
-
-	username := simulator.DefaultLogin.Username()
-	password, _ := simulator.DefaultLogin.Password()
-
-	serverURL := server.URL.String()
-	serverHost := server.URL.Host
-
-	dialer := &tls.Dialer{Config: &tls.Config{InsecureSkipVerify: true}}
-	conn, err := dialer.DialContext(context.Background(), "tcp", serverHost)
-	if err != nil {
-		t.Fatalf("failed to connect to get server cert: %v", err)
-	}
-	tlsConn := conn.(*tls.Conn)
-	serverCert := tlsConn.ConnectionState().PeerCertificates[0]
-	conn.Close()
-
+	serverCert := sim.getServerCertificate()
 	validCAPool := x509.NewCertPool()
 	validCAPool.AddCert(serverCert)
 
@@ -68,50 +45,88 @@ func TestVSphereCA(t *testing.T) {
 		name           string
 		allowInsecure  bool
 		caBundle       *x509.CertPool
-		expectedError  bool
+		wantErr        bool
 		errMsgContains string
 	}{
 		{
-			name:          "succeed with AllowInsecure=true (skip cert validation)",
+			name:          "succeed with AllowInsecure=true",
 			allowInsecure: true,
 			caBundle:      nil,
-			expectedError: false,
+			wantErr:       false,
 		},
 		{
-			name:           "fail with fake certificate and AllowInsecure=false",
+			name:           "fail with fake certificate",
 			allowInsecure:  false,
 			caBundle:       certificates.NewFakeCABundle().CertPool(),
-			expectedError:  true,
+			wantErr:        true,
 			errMsgContains: "certificate",
 		},
 		{
 			name:          "succeed with valid server certificate",
 			allowInsecure: false,
 			caBundle:      validCAPool,
-			expectedError: false,
+			wantErr:       false,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			dc := &kubermaticv1.DatacenterSpecVSphere{
 				Datacenter:    "DC0",
-				Endpoint:      strings.TrimSuffix(serverURL, "/sdk"),
-				AllowInsecure: test.allowInsecure,
+				Endpoint:      strings.TrimSuffix(sim.server.URL.String(), "/sdk"),
+				AllowInsecure: tt.allowInsecure,
 			}
 
-			_, err := GetNetworks(context.Background(), dc, username, password, test.caBundle)
+			_, err := GetNetworks(ctx, dc, sim.username, sim.password, tt.caBundle)
 
-			if test.expectedError {
+			if tt.wantErr {
 				if err == nil {
 					t.Fatal("expected error, got nil")
 				}
-				if !strings.Contains(err.Error(), test.errMsgContains) {
-					t.Fatalf("expected error message to contain %q, got: %v", test.errMsgContains, err)
+				if !strings.Contains(err.Error(), tt.errMsgContains) {
+					t.Fatalf("expected error containing %q, got: %v", tt.errMsgContains, err)
 				}
 			} else if err != nil {
-				t.Fatalf("expected no error, got: %v", err)
+				t.Fatalf("unexpected error: %v", err)
 			}
 		})
 	}
+}
+
+type vSphereTLSSimulator struct {
+	t        *testing.T
+	model    *simulator.Model
+	server   *simulator.Server
+	username string
+	password string
+}
+
+func (v *vSphereTLSSimulator) setUp() {
+	v.model = simulator.VPX()
+	if err := v.model.Create(); err != nil {
+		v.t.Fatal(err)
+	}
+
+	v.model.Service.TLS = new(tls.Config)
+	v.server = v.model.Service.NewServer()
+
+	v.username = simulator.DefaultLogin.Username()
+	v.password, _ = simulator.DefaultLogin.Password()
+}
+
+func (v *vSphereTLSSimulator) tearDown() {
+	v.server.Close()
+	v.model.Remove()
+}
+
+func (v *vSphereTLSSimulator) getServerCertificate() *x509.Certificate {
+	dialer := &tls.Dialer{Config: &tls.Config{InsecureSkipVerify: true}}
+	conn, err := dialer.DialContext(context.Background(), "tcp", v.server.URL.Host)
+	if err != nil {
+		v.t.Fatalf("failed to connect for server cert: %v", err)
+	}
+	defer conn.Close()
+
+	tlsConn := conn.(*tls.Conn)
+	return tlsConn.ConnectionState().PeerCertificates[0]
 }
