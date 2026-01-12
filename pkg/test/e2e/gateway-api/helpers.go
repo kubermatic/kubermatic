@@ -36,6 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -48,9 +49,8 @@ var (
 )
 
 const (
-	defaultInterval         = 5 * time.Second
-	defaultTimeout          = 10 * time.Minute
-	controlPlaneHealthCheck = 10 * time.Minute
+	defaultInterval = 5 * time.Second
+	defaultTimeout  = 10 * time.Minute
 )
 
 func init() {
@@ -206,31 +206,32 @@ func verifyNoGatewayAPIResources(ctx context.Context, t *testing.T, client ctrlr
 		gw := &gatewayapiv1.Gateway{}
 
 		err := client.Get(ctx, gtwName, gw)
-		if err == nil {
-			return fmt.Errorf("Gateway should not exist in Ingress mode"), nil
+		switch {
+		case err == nil:
+			return nil, fmt.Errorf("Gateway found but should not exist")
+		case apierrors.IsNotFound(err), meta.IsNoMatchError(err):
+			return nil, nil
+		default:
+			return fmt.Errorf("unexpected error checking Gateway: %w", err), nil
 		}
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to check for Gateway: %w", err)
-		}
-
-		return nil, nil
 	})
 	if err != nil {
 		return err
 	}
 
-	hrName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultHTTPRouteName}
+	routeName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultHTTPRouteName}
 	err = wait.PollImmediateLog(ctx, logger, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		hr := &gatewayapiv1.HTTPRoute{}
-		err := client.Get(ctx, hrName, hr)
-		if err == nil {
-			return fmt.Errorf("HTTPRoute should not exist in Ingress mode"), nil
-		}
-		if !apierrors.IsNotFound(err) {
-			return nil, fmt.Errorf("failed to check for HTTPRoute: %w", err)
-		}
+		route := &gatewayapiv1.HTTPRoute{}
 
-		return nil, nil
+		err := client.Get(ctx, routeName, route)
+		switch {
+		case err == nil:
+			return nil, fmt.Errorf("HTTPRoute found but should not exist")
+		case apierrors.IsNotFound(err), meta.IsNoMatchError(err):
+			return nil, nil
+		default:
+			return fmt.Errorf("unexpected error checking HTTPRoute: %w", err), nil
+		}
 	})
 	if err != nil {
 		return err
