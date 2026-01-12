@@ -104,6 +104,7 @@ httproute:
 
 merged_helm_values_file="$(mktemp)"
 echo "$HELM_VALUES_STR" >> $merged_helm_values_file
+yq e 'del(.dex)' -i $merged_helm_values_file
 echo "$HELM_VALUES_EXTRA" >> $merged_helm_values_file
 
 export INSTALLER_FLAGS="--migrate-gateway-api"
