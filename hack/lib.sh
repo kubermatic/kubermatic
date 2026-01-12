@@ -348,6 +348,7 @@ fatal() {
 
 check_all_deployments_ready() {
   local namespace="$1"
+  local show_debug="${SHOW_POD_DEBUG:-false}"
 
   # check that Deployments have been created
   local deployments
@@ -363,6 +364,33 @@ check_all_deployments_ready() {
   unready=$(echo "$deployments" | jq -r '[.items[] | select(.spec.replicas > 0) | select (.status.availableReplicas < .spec.replicas) | .metadata.name] | @tsv')
   if [ -n "$unready" ]; then
     echodate "Not all Deployments have finished rolling out, namely: $unready"
+
+    # Debug: Show pod status and logs for unready deployments
+    if [ "$show_debug" = "true" ]; then
+      for deployment in $unready; do
+        echodate ""
+        echodate "=== Debug info for deployment: $deployment ==="
+
+        # Show pods for this deployment
+        echodate "Pods:"
+        kubectl -n $namespace get pods -l app.kubernetes.io/name=$deployment -o wide || true
+
+        # Show recent events
+        echodate "Recent events:"
+        kubectl -n $namespace describe deployment $deployment | tail -20 || true
+
+        # Show logs from non-running pods
+        for pod in $(kubectl -n $namespace get pods -l app.kubernetes.io/name=$deployment -o jsonpath='{.items[*].metadata.name}'); do
+          pod_phase=$(kubectl -n $namespace get pod $pod -o jsonpath='{.status.phase}')
+          if [ "$pod_phase" != "Running" ]; then
+            echodate ""
+            echodate "--- Logs from pod $pod (phase: $pod_phase) ---"
+            kubectl -n $namespace logs $pod --all-containers --tail=50 || true
+          fi
+        done
+      done
+    fi
+
     return 1
   fi
 

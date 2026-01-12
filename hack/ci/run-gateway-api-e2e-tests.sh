@@ -32,6 +32,7 @@ pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
 export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
 export KUBERMATIC_YAML=hack/ci/testdata/kubermatic_gatewayapi.yaml
+export SHOW_POD_DEBUG=true
 
 echodate "Deploying KKP with Envoy Gateway"
 
@@ -43,7 +44,6 @@ protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/kubermatic"
 protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller > /dev/null 2>&1 &
 
 KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
-KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
 DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
 
@@ -55,17 +55,16 @@ dex:
     hosts: []
     tls: []
   config:
-    issuer: \"https://${KUBERMATIC_DOMAIN}/dex\"
+    issuer: https://ci.kubermatic.io/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
         hash: \"${DEX_PASSWORD_HASH}\"
         username: admin
-        userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 httproute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
-  domain: \"${KUBERMATIC_DOMAIN}\"
+  domain: ci.kubermatic.io
   timeout: 3600s
 "
 
