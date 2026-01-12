@@ -17,16 +17,20 @@ limitations under the License.
 package kubermatic
 
 import (
+	"context"
 	"testing"
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
+	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
@@ -422,5 +426,255 @@ func TestHTTPRouteReconciler(t *testing.T) {
 				tc.validate(t, reconciled)
 			}
 		})
+	}
+}
+
+func TestEnsureGatewayCreatesNew(t *testing.T) {
+	ctx := context.Background()
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kubermatic.example.com",
+			},
+		},
+	}
+	namespace := "kubermatic"
+
+	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).Build()
+
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var created gatewayapiv1.Gateway
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &created)
+	if err != nil {
+		t.Fatalf("Gateway should exist after EnsureGateway: %v", err)
+	}
+
+	if created.Name != gatewayName {
+		t.Errorf("expected name %s, got %s", gatewayName, created.Name)
+	}
+
+	if created.Namespace != namespace {
+		t.Errorf("expected namespace %s, got %s", namespace, created.Namespace)
+	}
+
+	if len(created.Spec.Listeners) != 1 {
+		t.Fatalf("expected 1 listener (HTTP only, no issuer), got %d", len(created.Spec.Listeners))
+	}
+
+	httpListener := created.Spec.Listeners[0]
+	if httpListener.Port != gatewayapiv1.PortNumber(80) {
+		t.Errorf("expected port 80, got %d", httpListener.Port)
+	}
+
+	if httpListener.Protocol != gatewayapiv1.HTTPProtocolType {
+		t.Errorf("expected protocol HTTP, got %s", httpListener.Protocol)
+	}
+}
+
+func TestEnsureGatewayUpdatesExisting(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	existing := &gatewayapiv1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      gatewayName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"old-label": "old-value",
+			},
+		},
+		Spec: gatewayapiv1.GatewaySpec{
+			GatewayClassName: "old-class-name",
+			Listeners: []gatewayapiv1.Listener{
+				{
+					Name:     "http",
+					Protocol: gatewayapiv1.HTTPProtocolType,
+					Port:     gatewayapiv1.PortNumber(80),
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kubermatic.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: defaulting.DefaultGatewayClassName,
+				},
+			},
+		},
+	}
+
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var updated gatewayapiv1.Gateway
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &updated)
+	if err != nil {
+		t.Fatalf("Gateway should exist: %v", err)
+	}
+
+	if updated.Spec.GatewayClassName != gatewayapiv1.ObjectName(defaulting.DefaultGatewayClassName) {
+		t.Errorf("expected GatewayClassName %s, got %s", defaulting.DefaultGatewayClassName, updated.Spec.GatewayClassName)
+	}
+}
+
+func TestEnsureGatewaySkipsWhenUnchanged(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kubermatic.example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: defaulting.DefaultGatewayClassName,
+				},
+			},
+		},
+	}
+	factory := GatewayReconciler(cfg, namespace)
+	_, reconciler := factory()
+
+	desired := &gatewayapiv1.Gateway{}
+	if _, err := reconciler(desired); err != nil {
+		t.Fatalf("failed to build desired Gateway: %v", err)
+	}
+
+	existing := desired.DeepCopy()
+	existing.Status = gatewayapiv1.GatewayStatus{
+		Conditions: []metav1.Condition{
+			{
+				Type:               "Accepted",
+				Status:             metav1.ConditionTrue,
+				LastTransitionTime: metav1.Now(),
+				Reason:             "Accepted",
+				Message:            "Gateway is accepted",
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+
+	err := EnsureGateway(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var fetched gatewayapiv1.Gateway
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: gatewayName}, &fetched)
+	if err != nil {
+		t.Fatalf("Gateway should exist: %v", err)
+	}
+
+	if len(fetched.Status.Conditions) == 0 {
+		t.Error("Expected Status conditions to be preserved, but they were cleared (Update was called when it shouldn't have been)")
+	}
+}
+
+func TestEnsureHTTPRouteCreatesNew(t *testing.T) {
+	ctx := context.Background()
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kubermatic.example.com",
+			},
+		},
+	}
+	namespace := "kubermatic"
+
+	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).Build()
+
+	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var created gatewayapiv1.HTTPRoute
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: httpRouteName}, &created)
+	if err != nil {
+		t.Fatalf("HTTPRoute should exist after EnsureHTTPRoute: %v", err)
+	}
+
+	if created.Name != httpRouteName {
+		t.Errorf("expected name %s, got %s", httpRouteName, created.Name)
+	}
+
+	if len(created.Spec.Rules) != 2 {
+		t.Fatalf("expected 2 rules, got %d", len(created.Spec.Rules))
+	}
+
+	apiRule := created.Spec.Rules[0]
+	if len(apiRule.Matches) != 1 {
+		t.Errorf("expected 1 match in /api rule, got %d", len(apiRule.Matches))
+	}
+	if len(apiRule.BackendRefs) != 1 {
+		t.Errorf("expected 1 backend in /api rule, got %d", len(apiRule.BackendRefs))
+	}
+	if apiRule.BackendRefs[0].Name != APIDeploymentName {
+		t.Errorf("expected backend %s, got %s", APIDeploymentName, apiRule.BackendRefs[0].Name)
+	}
+}
+
+func TestEnsureHTTPRouteSkipsWhenUnchanged(t *testing.T) {
+	ctx := context.Background()
+	namespace := "kubermatic"
+
+	cfg := &kubermaticv1.KubermaticConfiguration{
+		Spec: kubermaticv1.KubermaticConfigurationSpec{
+			Ingress: kubermaticv1.KubermaticIngressConfiguration{
+				Domain: "kubermatic.example.com",
+			},
+		},
+	}
+
+	factory := HTTPRouteReconciler(cfg, namespace)
+	_, reconciler := factory()
+
+	desired := &gatewayapiv1.HTTPRoute{}
+	if _, err := reconciler(desired); err != nil {
+		t.Fatalf("failed to build desired HTTPRoute: %v", err)
+	}
+
+	existing := desired.DeepCopy()
+	existing.Status.RouteStatus = gatewayapiv1.RouteStatus{
+		Parents: []gatewayapiv1.RouteParentStatus{
+			{
+				Conditions: []metav1.Condition{
+					{
+						Type:               "Accepted",
+						Status:             metav1.ConditionTrue,
+						LastTransitionTime: metav1.Now(),
+					},
+				},
+			},
+		},
+	}
+
+	client := fake.NewClientBuilder().WithScheme(fake.NewScheme()).WithObjects(existing).Build()
+
+	err := EnsureHTTPRoute(ctx, client, zap.NewNop().Sugar(), cfg, namespace)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	var fetched gatewayapiv1.HTTPRoute
+
+	err = client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: httpRouteName}, &fetched)
+	if err != nil {
+		t.Fatalf("HTTPRoute should exist: %v", err)
+	}
+
+	if len(fetched.Status.Parents) == 0 {
+		t.Error("Expected Status Parents to be preserved, but they were cleared (Update was called when it shouldn't have been)")
 	}
 }
