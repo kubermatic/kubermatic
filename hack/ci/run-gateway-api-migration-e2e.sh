@@ -115,7 +115,7 @@ echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
   --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$merged_helm_values_file" \
-  --skip-seed-validation \
+  --skip-seed-validation=kubermatic \
   $INSTALLER_FLAGS
 
 echodate "Waiting for Kubermatic Operator to restart with Gateway API enabled..."
