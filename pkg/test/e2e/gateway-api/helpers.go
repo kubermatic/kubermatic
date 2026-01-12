@@ -105,6 +105,7 @@ func verifyGatewayAPIModeResources(ctx context.Context, t *testing.T, c ctrlrunt
 			string(gatewayapiv1.GatewayConditionProgrammed),
 		)
 		if !gtwProgrammed {
+			l.Infof("%+v", gtw.Status.Conditions)
 			return fmt.Errorf("Gateway %q is not programmed yet", gtwName.String()), nil
 		}
 

@@ -100,6 +100,12 @@ httproute:
   gatewayNamespace: kubermatic
   domain: ci.kubermatic.io
   timeout: 3600s
+# if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
+# which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
+envoyProxy:
+  service:
+    type: NodePort
+    externalTrafficPolicy: Cluster
 "
 
 merged_helm_values_file="$(mktemp)"
