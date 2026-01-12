@@ -553,30 +553,12 @@ func (r *Reconciler) reconcileGatewayAPIResources(ctx context.Context, config *k
 		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
 	}
 
-	err := kkpreconciling.ReconcileGatewayAPIGateways(
-		ctx,
-		[]kkpreconciling.NamedGatewayAPIGatewayReconcilerFactory{
-			kubermatic.GatewayReconciler(config, config.Namespace),
-		},
-		config.Namespace,
-		r.Client,
-		modifier.Ownership(config, common.OperatorName, r.scheme),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to reconcile Gateways: %w", err)
+	if err := kubermatic.EnsureGateway(ctx, r.Client, logger, config, config.Namespace); err != nil {
+		return fmt.Errorf("failed to reconcile Gateway: %w", err)
 	}
 
-	err = kkpreconciling.ReconcileGatewayAPIHTTPRoutes(
-		ctx,
-		[]kkpreconciling.NamedGatewayAPIHTTPRouteReconcilerFactory{
-			kubermatic.HTTPRouteReconciler(config, config.Namespace),
-		},
-		config.Namespace,
-		r.Client,
-		modifier.Ownership(config, common.OperatorName, r.scheme),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to reconcile HTTPRoutes: %w", err)
+	if err := kubermatic.EnsureHTTPRoute(ctx, r.Client, logger, config, config.Namespace); err != nil {
+		return fmt.Errorf("failed to reconcile HTTPRoute: %w", err)
 	}
 
 	return nil
