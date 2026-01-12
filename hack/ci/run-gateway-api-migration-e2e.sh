@@ -46,16 +46,21 @@ DEX_PASSWORD_HASH='$2y$10$Lurps56wlfD5Rgelz9u4FuYOMdUw8FZaIKyt5xUyPBwHP0Eo.yLhW'
 
 export HELM_VALUES_EXTRA="
 dex:
+  replicaCount: 1
   ingress:
     enabled: true
     className: "nginx"
     hosts:
-      - host: ${KUBERMATIC_DOMAIN}
+      - host: ci.kubermatic.io
         paths:
           - path: /dex
             pathType: ImplementationSpecific
+    tls: []
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-staging
+
   config:
-    issuer: https://${KUBERMATIC_DOMAIN}/dex
+    issuer: https://ci.kubermatic.io/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
@@ -94,6 +99,7 @@ echodate "Upgrading to Gateway API mode"
 export HELM_VALUES_EXTRA="
 migrateGatewayAPI: true
 dex:
+  replicaCount: 1
   ingress:
     enabled: false
     hosts: []
