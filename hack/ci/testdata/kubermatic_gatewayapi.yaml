@@ -35,3 +35,7 @@ spec:
   applications:
     defaultApplicationCatalog:
       enable: true
+  api:
+      dockerTag: v2.29.0
+  ui:
+      dockerTag: v2.29.0
