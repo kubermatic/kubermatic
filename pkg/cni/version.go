@@ -50,7 +50,9 @@ var (
 			"1.15.16",
 			"1.16.9",
 			"1.17.7",
+			"1.17.12",
 			"1.18.2",
+			"1.18.6",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
