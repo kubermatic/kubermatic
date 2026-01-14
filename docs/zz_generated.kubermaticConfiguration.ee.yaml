@@ -478,6 +478,8 @@ spec:
       # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
       # suffix it becomes "v2.15.0-SUFFIX".
       dockerTagSuffix: ""
+    # AdmissionPlugins configures global admission plugin settings for all user clusters.
+    admissionPlugins: null
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # Applications contains configuration for default Application settings.
