@@ -455,7 +455,7 @@ func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		gw := gatewayapiv1.Gateway{}
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
-			logger.Debugf("failed to get Gateway, err: %w", err)
+			logger.Debugf("failed to get Gateway, err: %v", err)
 			return false, nil
 		}
 
