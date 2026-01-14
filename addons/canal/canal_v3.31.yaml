@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Source: https://github.com/projectcalico/calico/blob/v3.30.3/manifests/canal.yaml
+# Source: https://github.com/projectcalico/calico/blob/v3.31.3/manifests/canal.yaml
 # Modifications:
 #   - templated cni_network_config ipam for dual-stack
 #   - templated net-conf.json Network & CALICO_IPV4POOL_CIDR + CALICO_IPV6POOL_CIDR
@@ -25,7 +25,7 @@
 #   - added custom network policy
 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
-{{ if eq .Cluster.CNIPlugin.Version "v3.30" }}
+{{ if eq .Cluster.CNIPlugin.Version "v3.31" }}
 ---
 # Source: calico/templates/calico-kube-controllers.yaml
 # This manifest creates a Pod Disruption Budget for Controller to allow K8s Cluster Autoscaler to evict
