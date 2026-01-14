@@ -24,10 +24,10 @@ metadata:
     app.kubernetes.io/managed-by: helm
 spec:
   parentRefs:
-    - name: {{ .Values.httproute.gatewayName }}
-      namespace: {{ .Values.httproute.gatewayNamespace }}
+    - name: {{ .Values.httpRoute.gatewayName }}
+      namespace: {{ .Values.httpRoute.gatewayNamespace }}
   hostnames:
-    - {{ .Values.httproute.domain | quote }}
+    - {{ .Values.httpRoute.domain | quote }}
   rules:
     - matches:
         - path:
@@ -37,6 +37,6 @@ spec:
         - name: dex
           port: 5556
       timeouts:
-        request: {{ .Values.httproute.timeout }}
-        backendRequest: {{ .Values.httproute.timeout }}
+        request: {{ .Values.httpRoute.timeout }}
+        backendRequest: {{ .Values.httpRoute.timeout }}
 {{- end -}}

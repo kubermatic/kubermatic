@@ -431,7 +431,7 @@ type KubermaticIngressConfiguration struct {
 // KubermaticGatewayConfiguration configures the Gateway API integration.
 type KubermaticGatewayConfiguration struct {
 	// ClassName is the GatewayClass to use.
-	// +kubebuilder:default:=kubermatic-envoy
+	// +kubebuilder:default:=kubermatic-envoy-gateway
 	ClassName string `json:"className,omitempty"`
 }
 

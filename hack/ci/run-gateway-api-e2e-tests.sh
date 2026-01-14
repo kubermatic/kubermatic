@@ -80,8 +80,8 @@ echodate "Checking Gateway resource kubermatic/kubermatic"
 retry 10 kubectl get gateway -n kubermatic kubermatic
 echodate "Checking HTTPRoute resource kubermatic/kubermatic"
 retry 10 kubectl get httproute -n kubermatic kubermatic
-echodate "Checking GatewayClass resource kubermatic-envoy"
-retry 10 kubectl get gatewayclass kubermatic-envoy
+echodate "Checking GatewayClass resource kubermatic-envoy-gateway"
+retry 10 kubectl get gatewayclass kubermatic-envoy-gateway
 
 echodate "Gateway API resources are present."
 echodate "Running Gateway API fresh install tests..."

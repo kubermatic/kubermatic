@@ -27,7 +27,7 @@
 # GatewayClass that links to our EnvoyProxy configuration.
 gatewayClass:
   create: true
-  name: kubermatic-envoy
+  name: kubermatic-envoy-gateway
 
   # Annotations for the GatewayClass
   annotations:
@@ -227,7 +227,7 @@ gateway:
     envoyGateway:
       gateway:
         # Must match the controllerName in GatewayClass.
-        controllerName: gateway.k8c.io/envoy-controller
+        controllerName: gateway.k8c.io/envoy-gateway
       provider:
         type: Kubernetes
       logging:

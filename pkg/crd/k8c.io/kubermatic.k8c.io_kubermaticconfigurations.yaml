@@ -531,7 +531,7 @@ spec:
                         are managed by kubermatic-operator, instead of Ingress.
                       properties:
                         className:
-                          default: kubermatic-envoy
+                          default: kubermatic-envoy-gateway
                           description: ClassName is the GatewayClass to use.
                           type: string
                       type: object

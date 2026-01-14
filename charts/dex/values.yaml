@@ -17,8 +17,8 @@
 # The kubermatic-installer automatically labels the dex namespace for Gateway access.
 migrateGatewayAPI: false
 
-# HTTPRoute configuration (only used when migrateGatewayAPI: true)
-httproute:
+# httpRoute configures HTTPRoute for Dex (only used when migrateGatewayAPI: true)
+httpRoute:
   # Name of the Gateway to attach to (in kubermatic namespace)
   gatewayName: kubermatic
   # Namespace of the Gateway

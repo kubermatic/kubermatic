@@ -42,7 +42,7 @@ const (
 	// GatewayClassName is the name of the GatewayClass resource that is
 	// created by the envoy-gateway-controller Helm chart. This must match
 	// the value set in the chart's values.yaml under gatewayClass.name.
-	GatewayClassName = "kubermatic-envoy"
+	GatewayClassName = "kubermatic-envoy-gateway"
 )
 
 func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {

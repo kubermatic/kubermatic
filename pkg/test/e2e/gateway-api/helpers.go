@@ -20,8 +20,11 @@ package gatewayapi
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -145,7 +148,7 @@ func verifyGatewayAPIModeResources(ctx context.Context, t *testing.T, c ctrlrunt
 		}
 
 		controllerName := hr.Status.Parents[0].ControllerName
-		if controllerName != "gateway.k8c.io/envoy-controller" {
+		if controllerName != "gateway.k8c.io/envoy-gateway" {
 			return fmt.Errorf("HTTPRoute %q has unexpected parent Gateway %q", hrNn.String(), controllerName), nil
 		}
 
@@ -300,6 +303,114 @@ func verifyIngressMode(ctx context.Context, t *testing.T, c ctrlruntimeclient.Cl
 	}
 
 	l.Infof("Ingress %q exists", ingressName.String())
+
+	return nil
+}
+
+func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
+	t.Helper()
+
+	ns := jig.KubermaticNamespace()
+	gtwName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultGatewayName}
+
+	l.Info("Fetching Gateway to get external address...")
+
+	gateway := &gatewayapiv1.Gateway{}
+	err := wait.PollImmediateLog(ctx, l, defaultInterval, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		if err := c.Get(ctx, gtwName, gateway); err != nil {
+			return fmt.Errorf("failed to get Gateway: %w", err), nil
+		}
+
+		if len(gateway.Status.Addresses) == 0 {
+			return fmt.Errorf("Gateway has no addresses yet"), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get Gateway address: %w", err)
+	}
+
+	address := gateway.Status.Addresses[0].Value
+	l.Infof("Gateway address: %s", address)
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	baseURL := (&url.URL{
+		Scheme: "https",
+		Host:   address,
+	}).String()
+
+	l.Info("Testing /api/v1/healthz endpoint...")
+	healthzURL, err := url.JoinPath(baseURL, "api", "v1", "healthz")
+	if err != nil {
+		return fmt.Errorf("failed to construct healthz URL: %w", err)
+	}
+
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthzURL, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err), nil
+		}
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("health check request failed: %w", err), nil
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code for /api/v1/healthz: got %d, expected %d", resp.StatusCode, http.StatusOK), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("healthz check failed: %w", err)
+	}
+
+	l.Infof("Health check endpoint /api/v1/healthz returned 200 OK")
+
+	l.Info("Testing /api/swagger.json endpoint for data transfer...")
+	swaggerURL, err := url.JoinPath(baseURL, "api", "swagger.json")
+	if err != nil {
+		return fmt.Errorf("failed to construct swagger URL: %w", err)
+	}
+
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, 3*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, swaggerURL, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create request: %w", err), nil
+		}
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return fmt.Errorf("swagger request failed: %w", err), nil
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("unexpected status code for /api/swagger.json: got %d, expected %d", resp.StatusCode, http.StatusOK), nil
+		}
+
+		contentType := resp.Header.Get("Content-Type")
+		if contentType != "application/json" {
+			return fmt.Errorf("unexpected content type: got %s, expected application/json", contentType), nil
+		}
+
+		return nil, nil
+	})
+	if err != nil {
+		return fmt.Errorf("swagger check failed: %w", err)
+	}
+
+	l.Infof("Swagger endpoint /api/swagger.json returned 200 OK with correct content type")
 
 	return nil
 }

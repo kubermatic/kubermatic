@@ -50,4 +50,9 @@ func TestGatewayAPIFreshInstall(t *testing.T) {
 	if err := verifyNamespaceGatewayLabel(ctx, t, seedClient, logger); err != nil {
 		t.Fatalf("Namespace label verification failed: %v", err)
 	}
+
+	logger.Info("Verifying HTTP connectivity through Gateway...")
+	if err := verifyGatewayHTTPConnectivity(ctx, t, seedClient, logger); err != nil {
+		t.Fatalf("Gateway HTTP connectivity verification failed: %v", err)
+	}
 }

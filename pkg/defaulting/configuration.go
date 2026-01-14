@@ -47,7 +47,7 @@ const (
 	DefaultIngressName                            = "kubermatic"
 	DefaultGatewayName                            = "kubermatic"
 	DefaultHTTPRouteName                          = "kubermatic"
-	DefaultGatewayClassName                       = "kubermatic-envoy"
+	DefaultGatewayClassName                       = "kubermatic-envoy-gateway"
 	DefaultCABundleConfigMapName                  = "ca-bundle"
 	DefaultAPIReplicas                            = 2
 	DefaultUIReplicas                             = 2
