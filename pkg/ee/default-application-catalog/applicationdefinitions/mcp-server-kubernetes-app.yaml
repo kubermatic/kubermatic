@@ -1,0 +1,127 @@
+#                Kubermatic Enterprise Read-Only License
+#                       Version 1.0 ("KERO-1.0”)
+#                   Copyright © 2025 Kubermatic GmbH
+#
+# 1.	You may only view, read and display for studying purposes the source
+#    code of the software licensed under this license, and, to the extent
+#    explicitly provided under this license, the binary code.
+# 2.	Any use of the software which exceeds the foregoing right, including,
+#    without limitation, its execution, compilation, copying, modification
+#    and distribution, is expressly prohibited.
+# 3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# END OF TERMS AND CONDITIONS
+
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: kubernetes-mcp-server
+spec:
+  description: MCP Server that can connect to a Kubernetes cluster and manage it.
+  displayName: Kubernetes MCP Server
+  method: helm
+  versions:
+    - template:
+        source:
+          helm:
+            chartName: mcp-server-kubernetes
+            chartVersion: 2.9.9
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: 2.9.9
+  defaultValuesBlock: |
+    transport:
+      service:
+        # To Expose the Kubernetes MCP Server externally without ingress, set service type as "LoadBalancer". Default value is "ClusterIP".
+        type: "ClusterIP"
+        port: 3000
+        targetPort: 3001
+    rbac:
+      rules:
+        - apiGroups: [""] # Core API group
+          resources: ["pods", "services", "nodes", "namespaces"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["apps"]
+          resources: ["deployments", "statefulsets", "daemonsets"]
+          verbs: ["get", "list", "watch"]
+        - apiGroups: ["batch"]
+          resources: ["jobs", "cronjobs"]
+          verbs: ["get", "list", "watch"]
+    security:
+      # Tool filtering
+      allowOnlyNonDestructive: false
+      # When enabled, these destructive tools are DISABLED:
+      # kubectl_delete, uninstall_helm_chart, cleanup, kubectl_generic
+      allowOnlyReadonly: false
+    env:
+      # 5 MB for large clusters, default is 1 MB
+      SPAWN_MAX_BUFFER: "5242880"
+      ENABLE_UNSAFE_STREAMABLE_HTTP_TRANSPORT: "1"
+      HOST: "0.0.0.0"
+  documentationURL: https://github.com/Flux159/mcp-server-kubernetes/blob/main/ADVANCED_README.md
+  sourceURL: https://github.com/Flux159/mcp-server-kubernetes
+  logo: |+
+    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
+    rkJggg==
+  logoFormat: png
