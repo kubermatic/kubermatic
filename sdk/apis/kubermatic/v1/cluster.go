@@ -457,6 +457,11 @@ func (c ClusterSpec) IsKyvernoEnabled() bool {
 	return c.Kyverno != nil && c.Kyverno.Enabled
 }
 
+// IsEventRateLimitEnabled returns whether the EventRateLimit admission plugin is enabled.
+func (c ClusterSpec) IsEventRateLimitEnabled() bool {
+	return c.UseEventRateLimitAdmissionPlugin
+}
+
 type AuthorizationConfig struct {
 	// Optional: List of enabled Authorization modes (by default 'Node,RBAC')
 	// Important: order matters

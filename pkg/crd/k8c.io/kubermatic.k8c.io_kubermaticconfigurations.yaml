@@ -2645,6 +2645,84 @@ spec:
                             suffix it becomes "v2.15.0-SUFFIX".
                           type: string
                       type: object
+                    admissionPlugins:
+                      description: AdmissionPlugins configures global admission plugin settings for all user clusters.
+                      properties:
+                        eventRateLimit:
+                          description: EventRateLimit configures the EventRateLimit admission plugin.
+                          properties:
+                            defaultConfig:
+                              description: DefaultConfig provides default configuration values for the EventRateLimit plugin.
+                              properties:
+                                namespace:
+                                  properties:
+                                    burst:
+                                      format: int32
+                                      type: integer
+                                    cacheSize:
+                                      format: int32
+                                      type: integer
+                                    qps:
+                                      format: int32
+                                      type: integer
+                                  required:
+                                    - burst
+                                    - qps
+                                  type: object
+                                server:
+                                  properties:
+                                    burst:
+                                      format: int32
+                                      type: integer
+                                    cacheSize:
+                                      format: int32
+                                      type: integer
+                                    qps:
+                                      format: int32
+                                      type: integer
+                                  required:
+                                    - burst
+                                    - qps
+                                  type: object
+                                sourceAndObject:
+                                  properties:
+                                    burst:
+                                      format: int32
+                                      type: integer
+                                    cacheSize:
+                                      format: int32
+                                      type: integer
+                                    qps:
+                                      format: int32
+                                      type: integer
+                                  required:
+                                    - burst
+                                    - qps
+                                  type: object
+                                user:
+                                  properties:
+                                    burst:
+                                      format: int32
+                                      type: integer
+                                    cacheSize:
+                                      format: int32
+                                      type: integer
+                                    qps:
+                                      format: int32
+                                      type: integer
+                                  required:
+                                    - burst
+                                    - qps
+                                  type: object
+                              type: object
+                            enabled:
+                              description: Enabled indicates whether EventRateLimit should be enabled by default for new clusters.
+                              type: boolean
+                            enforced:
+                              description: Enforced indicates whether EventRateLimit enablement is mandatory.
+                              type: boolean
+                          type: object
+                      type: object
                     apiserverReplicas:
                       description: APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
                       format: int32
