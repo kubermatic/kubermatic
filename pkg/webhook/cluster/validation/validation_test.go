@@ -1824,7 +1824,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:             true,
 		},
 		{
-			name: "Create cluster with enforcement - plugin not enabled (should fail)",
+			name: "Create cluster with enforcement - plugin not enabled",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1845,7 +1845,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:             false,
 		},
 		{
-			name: "Create cluster with enforcement - plugin enabled (should pass)",
+			name: "Create cluster with enforcement - plugin enabled",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1866,7 +1866,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:             true,
 		},
 		{
-			name: "Update cluster with enforcement - disable plugin (should fail)",
+			name: "Update cluster with enforcement - disable plugin",
 			op:   admissionv1.Update,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1888,7 +1888,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:                false,
 		},
 		{
-			name: "Update cluster with enforcement - keep plugin enabled (should pass)",
+			name: "Update cluster with enforcement - keep plugin enabled",
 			op:   admissionv1.Update,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1910,7 +1910,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:                true,
 		},
 		{
-			name: "Update cluster without enforcement - disable plugin (should pass)",
+			name: "Update cluster without enforcement - disable plugin",
 			op:   admissionv1.Update,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1924,7 +1924,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:                true,
 		},
 		{
-			name: "Create cluster with enforced=false - plugin not enabled (should pass)",
+			name: "Create cluster with enforced=false - plugin not enabled",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1945,7 +1945,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:             true,
 		},
 		{
-			name: "Create with enforced config - user specifies different config (should fail)",
+			name: "Create with enforced config - user specifies different config",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1978,7 +1978,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed: false,
 		},
 		{
-			name: "Create with enforced config - user specifies same config (should pass)",
+			name: "Create with enforced config - user specifies same config",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2011,7 +2011,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
-			name: "Create with enforced config - no user config (should pass)",
+			name: "Create with enforced config - no user config",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
@@ -2039,7 +2039,7 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			wantAllowed:             true,
 		},
 		{
-			name: "Create without enforced config - user can override (should pass)",
+			name: "Create without enforced config - user can override",
 			op:   admissionv1.Create,
 			config: &kubermaticv1.KubermaticConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
