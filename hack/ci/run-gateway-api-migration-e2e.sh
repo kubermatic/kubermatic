@@ -113,8 +113,6 @@ echo "$HELM_VALUES_STR" >> $merged_helm_values_file
 yq e 'del(.dex)' -i $merged_helm_values_file
 echo "$HELM_VALUES_EXTRA" >> $merged_helm_values_file
 
-export INSTALLER_FLAGS="--migrate-gateway-api"
-
 echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
 
 ./_build/kubermatic-installer deploy kubermatic-master \
@@ -122,14 +120,16 @@ echodate "Re-running kubermatic-installer with --migrate-gateway-api flag..."
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$merged_helm_values_file" \
   --skip-seed-validation=kubermatic \
-  $INSTALLER_FLAGS
+  --migrate-gateway-api \
+  --verbose
+
+protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller > /dev/null 2>&1 &
 
 echodate "Waiting for Kubermatic Operator to restart with Gateway API enabled..."
 sleep 5
 retry 10 check_all_deployments_ready kubermatic
 echodate "Operator restarted with Gateway API mode"
 
-protokol --kubeconfig "$KUBECONFIG" --flat --output "$ARTIFACTS/logs/envoy-gateway" --namespace envoy-gateway-controller > /dev/null 2>&1 &
 
 echodate "Verifying Gateway API resources deployed..."
 retry 10 check_all_deployments_ready envoy-gateway-controller

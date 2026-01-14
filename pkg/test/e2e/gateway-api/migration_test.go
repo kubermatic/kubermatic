@@ -65,4 +65,9 @@ func TestGatewayAPIPostMigration(t *testing.T) {
 	if err := verifyGatewayAPIModeResources(ctx, t, seedClient, logger); err != nil {
 		t.Fatalf("Gateway API mode verification failed: %v", err)
 	}
+
+	logger.Info("Verifying HTTP connectivity through Gateway...")
+	if err := verifyGatewayHTTPConnectivity(ctx, t, seedClient, logger); err != nil {
+		t.Fatalf("Gateway HTTP connectivity verification failed: %v", err)
+	}
 }

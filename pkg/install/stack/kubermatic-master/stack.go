@@ -455,7 +455,8 @@ func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		gw := gatewayapiv1.Gateway{}
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
-			return false, err
+			logger.Debugf("failed to get Gateway, err: %w", err)
+			return false, nil
 		}
 
 		addresses = gw.Status.Addresses
@@ -467,6 +468,7 @@ func showGatewayDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClien
 		logger.Warn("Please check the Gateway and EnvoyProxy Service, and if necessary,")
 		logger.Warn("reconfigure the envoy-gateway-controller Helm chart. Re-run the installer")
 		logger.Warn("to apply updated configuration afterwards.")
+		logger.Warn(err.Error())
 		return "", ""
 	}
 
