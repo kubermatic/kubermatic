@@ -984,7 +984,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve envoy-agent config hash: %w", err)
 		}
-		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
+		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(data.cluster, r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r); err != nil {

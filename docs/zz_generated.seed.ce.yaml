@@ -467,6 +467,8 @@ spec:
       tolerations: null
     # CoreDNS configures CoreDNS deployed as part of the cluster control plane.
     coreDNS: null
+    # EnvoyAgent configures the envoy-agent deployed in the usercluster.
+    envoyAgent: null
     # Etcd configures the etcd ring used to store Kubernetes data.
     etcd:
       # ClusterSize is the number of replicas created for etcd. This should be an

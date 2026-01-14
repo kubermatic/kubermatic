@@ -21,6 +21,7 @@ import (
 	"net"
 	"strconv"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -54,7 +55,7 @@ const (
 )
 
 // DaemonSetReconciler returns the function to create and update the Envoy DaemonSet.
-func DaemonSetReconciler(agentIP net.IP, versions kubermatic.Versions, configHash string, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
+func DaemonSetReconciler(cluster *kubermaticv1.Cluster, agentIP net.IP, versions kubermatic.Versions, configHash string, imageRewriter registry.ImageRewriter) reconciling.NamedDaemonSetReconcilerFactory {
 	return func() (string, reconciling.DaemonSetReconciler) {
 		return resources.EnvoyAgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Name = resources.EnvoyAgentDaemonSetName
@@ -118,7 +119,13 @@ func DaemonSetReconciler(agentIP net.IP, versions kubermatic.Versions, configHas
 					Operator: corev1.TolerationOpExists,
 				},
 			}
-			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
+
+			var overrides map[string]*corev1.ResourceRequirements
+			if cluster != nil {
+				overrides = resources.GetOverrides(cluster.Spec.ComponentsOverride)
+			}
+
+			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, overrides, ds.Annotations); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %w", err)
 			}
 
