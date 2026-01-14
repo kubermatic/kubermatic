@@ -25,6 +25,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/distribution/reference"
 
+	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version"
 
@@ -38,6 +39,11 @@ func ValidateKubermaticConfigurationSpec(spec *kubermaticv1.KubermaticConfigurat
 	// Validate the MirrorImages field
 	if err := ValidateMirrorImages(spec.MirrorImages); err != nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "mirrorImages"), spec.MirrorImages, err.Error()))
+	}
+
+	// Validate ApplicationDefinitions configuration
+	if errs := ValidateApplicationDefinitionsConfiguration(spec.Applications, field.NewPath("spec", "applications")); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
 	}
 
 	// general cloud spec logic
@@ -167,4 +173,61 @@ func ValidateMirrorImages(images []string) error {
 		}
 	}
 	return nil
+}
+
+func ValidateApplicationDefinitionsConfiguration(config kubermaticv1.ApplicationDefinitionsConfiguration, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Validate DefaultApplicationCatalog settings
+	if errs := ValidateDefaultApplicationCatalogSettings(config.DefaultApplicationCatalog, parentFieldPath.Child("defaultApplicationCatalog")); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
+	return allErrs
+}
+
+func ValidateDefaultApplicationCatalogSettings(config kubermaticv1.DefaultApplicationCatalogSettings, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Validate that HelmCredentials and HelmRegistryConfigFile are not both set
+	if config.HelmCredentials != nil && config.HelmRegistryConfigFile != nil {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath.Child("helmCredentials"), config.HelmCredentials, "helmCredentials and helmRegistryConfigFile cannot be set simultaneously"))
+	}
+
+	// Validate HelmCredentials if provided
+	if config.HelmCredentials != nil {
+		if errs := ValidateHelmCredentials(config.HelmCredentials, parentFieldPath.Child("helmCredentials")); len(errs) > 0 {
+			allErrs = append(allErrs, errs...)
+		}
+	}
+
+	return allErrs
+}
+
+func ValidateHelmCredentials(credentials *appskubermaticv1.HelmCredentials, parentFieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	// Validate that either username/password or registryConfigFile is set, but not both
+	hasUsernamePassword := credentials.Username != nil || credentials.Password != nil
+	hasRegistryConfig := credentials.RegistryConfigFile != nil
+
+	if hasUsernamePassword && hasRegistryConfig {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, credentials, "either username/password or registryConfigFile can be defined, but not both"))
+	}
+
+	if !hasUsernamePassword && !hasRegistryConfig {
+		allErrs = append(allErrs, field.Invalid(parentFieldPath, credentials, "either username/password or registryConfigFile must be defined"))
+	}
+
+	// If username is set, password must also be set
+	if credentials.Username != nil && credentials.Password == nil {
+		allErrs = append(allErrs, field.Required(parentFieldPath.Child("password"), "password is required when username is provided"))
+	}
+
+	// If password is set, username must also be set
+	if credentials.Password != nil && credentials.Username == nil {
+		allErrs = append(allErrs, field.Required(parentFieldPath.Child("username"), "username is required when password is provided"))
+	}
+
+	return allErrs
 }
