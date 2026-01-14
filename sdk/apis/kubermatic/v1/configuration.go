@@ -346,7 +346,7 @@ type AdmissionPluginsConfiguration struct {
 	EventRateLimit *EventRateLimitPluginConfiguration `json:"eventRateLimit,omitempty"`
 }
 
-// EventRateLimitPluginConfiguration configures the EventRateLimit admission plugin at global leve.
+// EventRateLimitPluginConfiguration configures the EventRateLimit admission plugin at global level.
 //
 // Enforcement modes:
 //   - Enforced=true: Plugin must be enabled; config cannot be overridden by users
