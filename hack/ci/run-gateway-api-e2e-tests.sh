@@ -66,10 +66,22 @@ httpRoute:
   timeout: 3600s
 # if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
 # which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
+# we use fixed NodePorts within kind's exposed range (30000:33000) for deterministic testing
 envoyProxy:
   service:
     type: NodePort
     externalTrafficPolicy: Cluster
+    patch:
+      type: JSONMerge
+      value:
+        spec:
+          ports:
+          - name: http
+            port: 80
+            nodePort: 30080
+          - name: https
+            port: 443
+            nodePort: 30443
 "
 
 export INSTALLER_FLAGS="--migrate-gateway-api"

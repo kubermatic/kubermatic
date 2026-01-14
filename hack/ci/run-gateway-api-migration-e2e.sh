@@ -102,10 +102,22 @@ httpRoute:
   timeout: 3600s
 # if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
 # which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
+# we use fixed NodePorts within kind's exposed range (30000:33000) for deterministic testing.
 envoyProxy:
   service:
     type: NodePort
     externalTrafficPolicy: Cluster
+    patch:
+      type: JSONMerge
+      value:
+        spec:
+          ports:
+          - name: http
+            port: 80
+            nodePort: 30080
+          - name: https
+            port: 443
+            nodePort: 30443
 "
 
 merged_helm_values_file="$(mktemp)"
@@ -129,7 +141,6 @@ echodate "Waiting for Kubermatic Operator to restart with Gateway API enabled...
 sleep 5
 retry 10 check_all_deployments_ready kubermatic
 echodate "Operator restarted with Gateway API mode"
-
 
 echodate "Verifying Gateway API resources deployed..."
 retry 10 check_all_deployments_ready envoy-gateway-controller

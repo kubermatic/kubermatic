@@ -20,7 +20,6 @@ package gatewayapi
 
 import (
 	"context"
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
@@ -310,40 +309,17 @@ func verifyIngressMode(ctx context.Context, t *testing.T, c ctrlruntimeclient.Cl
 func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlruntimeclient.Client, l *zap.SugaredLogger) error {
 	t.Helper()
 
-	ns := jig.KubermaticNamespace()
-	gtwName := types.NamespacedName{Namespace: ns, Name: defaulting.DefaultGatewayName}
+	l.Info("Testing HTTP connectivity through Gateway...")
 
-	l.Info("Fetching Gateway to get external address...")
+	// In kind E2E tests, envoy proxy uses fixed NodePorts configured in CI scripts.
+	// localhost:30080 -> http. And since we don't configure a CertificateIssuer, only HTTP listener is available.
+	address := "localhost:30080"
+	l.Infof("Using fixed HTTP NodePort: %s", address)
 
-	gateway := &gatewayapiv1.Gateway{}
-	err := wait.PollImmediateLog(ctx, l, defaultInterval, 5*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		if err := c.Get(ctx, gtwName, gateway); err != nil {
-			return fmt.Errorf("failed to get Gateway: %w", err), nil
-		}
-
-		if len(gateway.Status.Addresses) == 0 {
-			return fmt.Errorf("Gateway has no addresses yet"), nil
-		}
-
-		return nil, nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to get Gateway address: %w", err)
-	}
-
-	address := gateway.Status.Addresses[0].Value
-	l.Infof("Gateway address: %s", address)
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
+	httpClient := &http.Client{}
 
 	baseURL := (&url.URL{
-		Scheme: "https",
+		Scheme: "http",
 		Host:   address,
 	}).String()
 
