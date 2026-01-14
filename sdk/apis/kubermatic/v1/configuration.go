@@ -296,6 +296,9 @@ type KubermaticUserClusterConfiguration struct {
 	// These settings apply to all user clusters unless overridden at seed or datacenter level.
 	// +optional
 	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+	// AdmissionPlugins configures global admission plugin settings for all user clusters.
+	// +optional
+	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -334,6 +337,34 @@ type KubeLBConfiguration struct {
 	// KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
 	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
 	ImageTag string `json:"imageTag,omitempty"`
+}
+
+// AdmissionPluginsConfiguration contains global settings for admission plugins.
+type AdmissionPluginsConfiguration struct {
+	// EventRateLimit configures the EventRateLimit admission plugin.
+	// +optional
+	EventRateLimit *EventRateLimitPluginConfiguration `json:"eventRateLimit,omitempty"`
+}
+
+// EventRateLimitPluginConfiguration configures the EventRateLimit admission plugin at global level.
+//
+// Enforcement modes:
+//   - Enforced=true: Plugin must be enabled; config cannot be overridden by users
+//   - Enabled=true: Plugin enabled by default for new clusters, users can disable
+//   - DefaultConfig: Applied when plugin is enabled and cluster has no config
+//     (always applied when Enforced=true, overwriting user config)
+type EventRateLimitPluginConfiguration struct {
+	// Enabled indicates whether EventRateLimit should be enabled by default for new clusters.
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Enforced indicates whether EventRateLimit enablement is mandatory.
+	// +optional
+	Enforced *bool `json:"enforced,omitempty"`
+
+	// DefaultConfig provides default configuration values for the EventRateLimit plugin.
+	// +optional
+	DefaultConfig *EventRateLimitConfig `json:"defaultConfig,omitempty"`
 }
 
 // MachineControllerConfiguration configures Machine Controller.
