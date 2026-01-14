@@ -59,7 +59,7 @@ dex:
       - email: kubermatic@example.com
         hash: \"${DEX_PASSWORD_HASH}\"
         username: admin
-httproute:
+httpRoute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
   domain: ci.kubermatic.io

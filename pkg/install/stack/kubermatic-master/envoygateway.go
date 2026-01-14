@@ -78,20 +78,6 @@ func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 	// get an IP and this can require manual intervention based on the target environment
 	sublogger.Info("Deploying Helm chart...")
 
-	if !opt.HelmValues.IsEmpty() {
-		var rootMap map[string]interface{}
-		if err := opt.HelmValues.DecodeAtPath(nil, &rootMap); err == nil {
-			keys := make([]string, 0, len(rootMap))
-			for k := range rootMap {
-				keys = append(keys, k)
-			}
-			sublogger.Infof("Top-level Helm value keys: %v", keys)
-		}
-		if yamlData, err := opt.HelmValues.MarshalYAML(); err == nil {
-			sublogger.Debugf("Helm values: %+v", yamlData)
-		}
-	}
-
 	err = util.DeployHelmChart(
 		ctx,
 		sublogger,
