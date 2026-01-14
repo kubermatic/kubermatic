@@ -103,6 +103,7 @@ httpRoute:
 # if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
 # which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
 # we use fixed NodePorts within kind's exposed range (30000:33000) for deterministic testing.
+# envoy proxy containers listen on ports 10080 (HTTP) and 10443 (HTTPS)
 envoyProxy:
   service:
     type: NodePort
@@ -111,13 +112,16 @@ envoyProxy:
       type: JSONMerge
       value:
         spec:
+          type: NodePort
           ports:
           - name: http
             port: 80
             nodePort: 30080
+            targetPort: 10080
           - name: https
             port: 443
             nodePort: 30443
+            targetPort: 10443
 "
 
 merged_helm_values_file="$(mktemp)"
