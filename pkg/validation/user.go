@@ -101,7 +101,7 @@ func ValidateUserEmailUniqueness(ctx context.Context, client ctrlruntimeclient.C
 			continue
 		}
 
-		if strings.ToLower(user.Spec.Email) == strings.ToLower(email) {
+		if strings.EqualFold(user.Spec.Email, email) {
 			return field.Duplicate(field.NewPath("spec", "email"), email)
 		}
 	}

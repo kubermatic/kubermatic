@@ -90,7 +90,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 		errs = append(errs, err)
 	}
 
-	if strings.ToLower(oldUser.Spec.Email) != strings.ToLower(newUser.Spec.Email) {
+	if !strings.EqualFold(oldUser.Spec.Email, newUser.Spec.Email) {
 		if err := validation.ValidateUserEmailUniqueness(ctx, v.client, newUser.Spec.Email, newUser.Name); err != nil {
 			errs = append(errs, err)
 		}
