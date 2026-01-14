@@ -349,10 +349,10 @@ type AdmissionPluginsConfiguration struct {
 // EventRateLimitPluginConfiguration configures the EventRateLimit admission plugin at global leve.
 //
 // Enforcement modes:
-// - Enforced=true: Plugin must be enabled; config cannot be overridden by users
-// - Enabled=true: Plugin enabled by default for new clusters, users can disable
-// - DefaultConfig: Applied when plugin is enabled and cluster has no config
-//   (always applied when Enforced=true, overwriting user config)
+//   - Enforced=true: Plugin must be enabled; config cannot be overridden by users
+//   - Enabled=true: Plugin enabled by default for new clusters, users can disable
+//   - DefaultConfig: Applied when plugin is enabled and cluster has no config
+//     (always applied when Enforced=true, overwriting user config)
 type EventRateLimitPluginConfiguration struct {
 	// Enabled indicates whether EventRateLimit should be enabled by default for new clusters.
 	// +optional
