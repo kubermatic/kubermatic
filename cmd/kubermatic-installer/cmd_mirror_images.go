@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -51,6 +52,7 @@ type MirrorImagesOptions struct {
 	Config                    string
 	Versions                  kubermaticversion.Versions
 	VersionFilter             string
+	ProviderFilter            string
 	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
 	Archive                   bool
@@ -111,6 +113,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
+	cmd.PersistentFlags().StringVar(&opt.ProviderFilter, "provider-filter", "", "Comma-separated list of cloud providers to mirror images for (e.g., 'aws,azure,kubevirt'). If not specified, images for all providers will be mirrored")
 	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
@@ -149,9 +152,8 @@ func getKubermaticConfiguration(options *MirrorImagesOptions) (*kubermaticv1.Kub
 	// Validate the MirrorImages field in the KubermaticConfiguration to ensure all images are properly formatted.
 	// Each image must follow the format "repository:tag". Validation errors will prevent further processing.
 	if len(config.Spec.MirrorImages) > 0 {
-		err := validation.ValidateMirrorImages(config.Spec.MirrorImages)
-		if err != nil {
-			return nil, fmt.Errorf("invalid mirrorImages configuration in KubermaticConfiguration: %w", err)
+		if validationErr := validation.ValidateMirrorImages(config.Spec.MirrorImages); validationErr != nil {
+			return nil, fmt.Errorf("invalid mirrorImages configuration in KubermaticConfiguration: %w", validationErr)
 		}
 	}
 
@@ -204,6 +206,45 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 	return tempDir, nil
 }
 
+// parseProviderFilter parses a comma-separated list of provider names and returns them as a set.
+// Returns nil if the filter string is empty (meaning all providers should be included).
+func parseProviderFilter(filterStr string) (sets.Set[string], error) {
+	if filterStr == "" {
+		return nil, nil
+	}
+
+	providerSet := sets.New[string]()
+	providers := strings.Split(filterStr, ",")
+
+	for _, p := range providers {
+		provider := strings.TrimSpace(strings.ToLower(p))
+		if provider == "" {
+			continue
+		}
+
+		if !kubermaticv1.IsProviderSupported(provider) {
+			return nil, fmt.Errorf(
+				"invalid provider %q. Valid providers are: %s",
+				p,
+				strings.Join(allSupportedProviderNames(), ", "),
+			)
+		}
+
+		providerSet.Insert(provider)
+	}
+
+	return providerSet, nil
+}
+
+func allSupportedProviderNames() []string {
+	names := make([]string, 0, len(kubermaticv1.InfrastructureProviders))
+	for _, p := range kubermaticv1.InfrastructureProviders {
+		names = append(names, strings.ToLower(string(p)))
+	}
+	slices.Sort(names)
+	return names
+}
+
 // CollectImageMatrix aggregates images for all cluster versions, cloud providers, and CNI plugins,
 // including both Konnectivity and non-Konnectivity configurations.
 func CollectImageMatrix(
@@ -214,10 +255,11 @@ func CollectImageMatrix(
 	versions kubermaticversion.Versions,
 	caBundle resources.CABundle,
 	registryPrefix string,
+	cloudSpecs []kubermaticv1.CloudSpec,
 ) ([]string, error) {
 	var imageList []string
 	for _, clusterVersion := range clusterVersions {
-		for _, cloudSpec := range images.GetCloudSpecs() {
+		for _, cloudSpec := range cloudSpecs {
 			for _, cniPlugin := range images.GetCNIPlugins() {
 				versionLogger := logger.WithFields(logrus.Fields{
 					"version":     clusterVersion.Version.String(),
@@ -297,12 +339,27 @@ func mirrorImages(ctx context.Context, logger *logrus.Logger, versions kubermati
 		return fmt.Errorf("failed to load addons: %w", err)
 	}
 
+	// Parse and validate the provider filter
+	providerFilter, err := parseProviderFilter(options.ProviderFilter)
+	if err != nil {
+		return fmt.Errorf("failed to parse provider filter: %w", err)
+	}
+
+	// Filter cloud specs based on the provider filter
+	cloudSpecs := images.GetFilteredCloudSpecs(providerFilter)
+
+	if providerFilter != nil && providerFilter.Len() > 0 {
+		logger.Infof("Filtering images for providers: %v", sets.List(providerFilter))
+	} else {
+		logger.Info("🔍 Collecting images for all providers")
+	}
+
 	logger.Info("🚀 Collecting images…")
 
 	// Using a set here for deduplication
 	imageSet := sets.New[string]()
 
-	imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix)
+	imageList, err := CollectImageMatrix(logger, clusterVersions, kubermaticConfig, allAddons, versions, caBundle, options.RegistryPrefix, cloudSpecs)
 	if err != nil {
 		return err
 	}

@@ -131,3 +131,57 @@ func TestGetCloudSpecsComplete(t *testing.T) {
 		}
 	}
 }
+
+func TestFilterCloudSpecs(t *testing.T) {
+	testCases := []struct {
+		name           string
+		providerFilter sets.Set[string]
+		expectAll      bool
+	}{
+		{
+			name:           "nil filter returns all specs",
+			providerFilter: nil,
+			expectAll:      true,
+		},
+		{
+			name:           "empty filter returns all specs",
+			providerFilter: sets.New[string](),
+			expectAll:      true,
+		},
+		{
+			name:           "filter with AWS only",
+			providerFilter: sets.New("aws"),
+			expectAll:      false,
+		},
+		{
+			name:           "filter with multiple providers",
+			providerFilter: sets.New("aws", "azure", "kubevirt"),
+			expectAll:      false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := GetFilteredCloudSpecs(tc.providerFilter)
+
+			if tc.expectAll {
+				// Should return all cloud specs (15 total as of this writing)
+				if len(result) < 10 {
+					t.Errorf("expected all cloud specs (at least 10), got %d", len(result))
+				}
+			} else {
+				expectedCount := tc.providerFilter.Len()
+				if len(result) != expectedCount {
+					t.Errorf("expected %d filtered specs, got %d", expectedCount, len(result))
+				}
+
+				// Verify that all returned specs are in the filter
+				for _, spec := range result {
+					if !tc.providerFilter.Has(spec.ProviderName) {
+						t.Errorf("unexpected provider %s in filtered results", spec.ProviderName)
+					}
+				}
+			}
+		})
+	}
+}

@@ -64,8 +64,7 @@ const (
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-var SupportedProviders = []ProviderType{
-	AKSCloudProvider,
+var InfrastructureProviders = []ProviderType{
 	AlibabaCloudProvider,
 	AnexiaCloudProvider,
 	AWSCloudProvider,
@@ -74,10 +73,7 @@ var SupportedProviders = []ProviderType{
 	BringYourOwnCloudProvider,
 	DigitaloceanCloudProvider,
 	EdgeCloudProvider,
-	EKSCloudProvider,
-	FakeCloudProvider,
 	GCPCloudProvider,
-	GKECloudProvider,
 	HetznerCloudProvider,
 	KubevirtCloudProvider,
 	NutanixCloudProvider,
@@ -85,6 +81,20 @@ var SupportedProviders = []ProviderType{
 	VMwareCloudDirectorCloudProvider,
 	VSphereCloudProvider,
 }
+
+var ManagedKubernetesProviders = []ProviderType{
+	AKSCloudProvider,
+	EKSCloudProvider,
+	GKECloudProvider,
+}
+
+var SupportedProviders = append(
+	InfrastructureProviders,
+	append(
+		ManagedKubernetesProviders,
+		FakeCloudProvider,
+	)...,
+)
 
 func IsProviderSupported(name string) bool {
 	for _, provider := range SupportedProviders {
