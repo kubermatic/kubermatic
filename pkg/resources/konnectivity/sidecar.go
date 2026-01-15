@@ -28,18 +28,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var (
-	defResources = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("10Mi"),
-			corev1.ResourceCPU:    resource.MustParse("10m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("200Mi"),
-			corev1.ResourceCPU:    resource.MustParse("2"),
-		},
-	}
-)
+var defResources = corev1.ResourceRequirements{
+	Requests: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("10Mi"),
+		corev1.ResourceCPU:    resource.MustParse("10m"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("200Mi"),
+		corev1.ResourceCPU:    resource.MustParse("2"),
+	},
+}
 
 // ProxySidecar returns container that runs konnectivity proxy server as a sidecar in apiserver pods.
 func ProxySidecar(data *resources.TemplateData, serverCount int32) (*corev1.Container, error) {
@@ -135,10 +133,6 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	// https://github.com/kubernetes-sigs/apiserver-network-proxy#versioning-and-releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.30":
-		return "v0.30.3"
-	case "1.31":
-		fallthrough
 	default:
 		return "v0.31.0"
 	}

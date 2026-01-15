@@ -35,18 +35,16 @@ const (
 	AWSCCMDeploymentName = "aws-cloud-controller-manager"
 )
 
-var (
-	awsResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("300Mi"),
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("1"),
-		},
-	}
-)
+var awsResourceRequirements = corev1.ResourceRequirements{
+	Requests: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("300Mi"),
+		corev1.ResourceCPU:    resource.MustParse("200m"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("512Mi"),
+		corev1.ResourceCPU:    resource.MustParse("1"),
+	},
+}
 
 func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -54,8 +52,7 @@ func awsDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 			dep.Spec.Replicas = resources.Int32(1)
 
 			var err error
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
@@ -129,10 +126,6 @@ func AWSCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/provider-aws/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v130:
-		return "v1.30.3"
-	case v131:
-		return "v1.31.1"
 	case v132:
 		return "v1.32.1"
 	case v133:

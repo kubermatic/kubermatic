@@ -35,20 +35,18 @@ import (
 	"k8s.io/utils/ptr"
 )
 
-var (
-	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.KubernetesDashboardDeploymentName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("250m"),
-			},
+var defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
+	resources.KubernetesDashboardDeploymentName: {
+		Requests: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("256Mi"),
+			corev1.ResourceCPU:    resource.MustParse("100m"),
 		},
-	}
-)
+		Limits: corev1.ResourceList{
+			corev1.ResourceMemory: resource.MustParse("512Mi"),
+			corev1.ResourceCPU:    resource.MustParse("250m"),
+		},
+	},
+}
 
 const (
 	name      = resources.KubernetesDashboardDeploymentName
@@ -181,8 +179,6 @@ func DashboardVersion(clusterVersion semver.Semver) (string, error) {
 	// https://github.com/kubernetes/dashboard/releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.31":
-		return dashboardVersion, nil // not officially marked as supported
 	case "1.32":
 		return dashboardVersion, nil // not officially marked as supported
 	case "1.33":

@@ -34,18 +34,16 @@ const (
 	DigitalOceanCCMDeploymentName = "digitalocean-cloud-controller-manager"
 )
 
-var (
-	digitalOceanResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("50Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("1"),
-		},
-	}
-)
+var digitalOceanResourceRequirements = corev1.ResourceRequirements{
+	Requests: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("50Mi"),
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("512Mi"),
+		corev1.ResourceCPU:    resource.MustParse("1"),
+	},
+}
 
 func digitalOceanDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -53,8 +51,7 @@ func digitalOceanDeploymentReconciler(data *resources.TemplateData) reconciling.
 			dep.Spec.Replicas = resources.Int32(1)
 
 			var err error
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
@@ -126,10 +123,6 @@ func DigitaloceanCCMVersion(version semver.Semver) string {
 	// by replacing the `fallthrough` with a return statement.
 
 	switch version.MajorMinor() {
-	case v130: // 21 May 2024 – 27 July 2025
-		fallthrough
-	case v131: // 13 September 2024 – 27 November 2025
-		fallthrough
 	case v132: // 6 February 2025 – 27 March 2026
 		fallthrough
 	case v133: // 16 June 2025 - 27 July 2026

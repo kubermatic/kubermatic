@@ -583,20 +583,20 @@ spec:
     externalClusters:
       aks:
         # Default is the default version to offer users.
-        default: v1.31
+        default: v1.32
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
-          - v1.31
+          - v1.32
       eks:
         # Default is the default version to offer users.
-        default: v1.31
+        default: v1.32
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
-          - v1.31
+          - v1.32
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -625,14 +625,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.31.*
+        from: 1.32.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.31.*
-      - from: 1.31.*
-        to: 1.32.*
-      - from: 1.32.*
         to: 1.32.*
       - from: 1.32.*
         to: 1.33.*
@@ -644,14 +640,6 @@ spec:
         to: 1.34.*
     # Versions lists the available versions.
     versions:
-      - v1.31.1
-      - v1.31.5
-      - v1.31.7
-      - v1.31.8
-      - v1.31.10
-      - v1.31.11
-      - v1.31.13
-      - v1.31.14
       - v1.32.1
       - v1.32.3
       - v1.32.4

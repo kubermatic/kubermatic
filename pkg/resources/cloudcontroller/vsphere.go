@@ -34,18 +34,16 @@ const (
 	VSphereCCMDeploymentName = "vsphere-cloud-controller-manager"
 )
 
-var (
-	vsphereCPIResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("100Mi"),
-			corev1.ResourceCPU:    resource.MustParse("200m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("500m"),
-		},
-	}
-)
+var vsphereCPIResourceRequirements = corev1.ResourceRequirements{
+	Requests: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("100Mi"),
+		corev1.ResourceCPU:    resource.MustParse("200m"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("512Mi"),
+		corev1.ResourceCPU:    resource.MustParse("500m"),
+	},
+}
 
 func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -56,8 +54,7 @@ func vsphereDeploymentReconciler(data *resources.TemplateData) reconciling.Named
 			})
 
 			var err error
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
@@ -129,10 +126,6 @@ func VSphereCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v130:
-		return "1.30.1"
-	case v131:
-		return "1.31.0"
 	case v132:
 		return "1.32.2"
 	case v133:

@@ -202,9 +202,8 @@ func verifyChecksum(ctx context.Context, checksumURL string, binaryFilePath stri
 
 func getCriToolsRelease(version semverlib.Version) string {
 	release := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
-	var criToolsReleases = map[string]string{
+	criToolsReleases := map[string]string{
 		"1.32": "v1.32.0",
-		"1.31": "v1.31.1",
 		"1.30": "v1.30.1",
 	}
 	if criToolRelease, ok := criToolsReleases[release]; ok {
@@ -343,7 +342,6 @@ func MirrorBinariesFunc(logger *logrus.Logger, options *MirrorBinariesOptions) c
 
 		// Validate flag after parsing
 		archList, err := validateArchitectures(options.Architectures)
-
 		if err != nil {
 			return fmt.Errorf("invalid architectures: %w", err)
 		}

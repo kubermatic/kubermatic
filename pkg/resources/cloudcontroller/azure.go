@@ -36,18 +36,16 @@ const (
 	AzureCCMDeploymentName = "azure-cloud-controller-manager"
 )
 
-var (
-	azureResourceRequirements = corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("128Mi"),
-			corev1.ResourceCPU:    resource.MustParse("100m"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("2Gi"),
-			corev1.ResourceCPU:    resource.MustParse("4"),
-		},
-	}
-)
+var azureResourceRequirements = corev1.ResourceRequirements{
+	Requests: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("128Mi"),
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("2Gi"),
+		corev1.ResourceCPU:    resource.MustParse("4"),
+	},
+}
 
 func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
@@ -55,8 +53,7 @@ func azureDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDe
 			dep.Spec.Replicas = resources.Int32(1)
 
 			var err error
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
@@ -114,10 +111,6 @@ func AzureCCMVersion(version semver.Semver) (string, error) {
 	// gcrane ls --json mcr.microsoft.com/oss/kubernetes/azure-cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v130:
-		return "1.30.7", nil
-	case v131:
-		return "1.31.5", nil
 	case v132:
 		return "1.32.4", nil
 	case v133:

@@ -70,9 +70,6 @@ var (
 
 	kubernetesVersions = []*version.Version{
 		{
-			Version: semverlib.MustParse("1.31.0"),
-		},
-		{
 			Version: semverlib.MustParse("1.32.0"),
 		},
 		{
@@ -269,7 +266,7 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 	res = append([]byte("# This file has been generated, DO NOT EDIT.\n\n"), res...)
 
 	if *update {
-		if err := os.WriteFile(path, res, 0644); err != nil {
+		if err := os.WriteFile(path, res, 0o644); err != nil {
 			t.Fatalf("failed to update fixtures: %v", err)
 		}
 	}
@@ -400,7 +397,7 @@ func TestLoadFiles(t *testing.T) {
 		if err := os.RemoveAll(fixtureDir); err != nil {
 			t.Fatalf("Failed to remove all old fixtures: %v", err)
 		}
-		if err := os.MkdirAll(fixtureDir, 0755); err != nil {
+		if err := os.MkdirAll(fixtureDir, 0o755); err != nil {
 			t.Fatalf("Failed to create fixture directory: %v", err)
 		}
 	}

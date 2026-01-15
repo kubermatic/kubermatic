@@ -36,24 +36,22 @@ const (
 	GCPCCMDeploymentName = "gcp-cloud-controller-manager"
 )
 
-var (
-	gcpResourceRequirements = corev1.ResourceRequirements{
-		// 50m comes from https://github.com/kubernetes/cloud-provider-gcp/blob/ccm/v28.2.1/cluster/gce/gci/configure-helper.sh#L3471C10-L3471C10
-		// and there is no other limit/request being inserted into the GCP CCM manifest
-		// (cf. https://github.com/kubernetes/cloud-provider-gcp/blob/ccm/v28.2.1/deploy/cloud-controller-manager.manifest#L32)
-		//
-		// All other resource constraints are made up.
+var gcpResourceRequirements = corev1.ResourceRequirements{
+	// 50m comes from https://github.com/kubernetes/cloud-provider-gcp/blob/ccm/v28.2.1/cluster/gce/gci/configure-helper.sh#L3471C10-L3471C10
+	// and there is no other limit/request being inserted into the GCP CCM manifest
+	// (cf. https://github.com/kubernetes/cloud-provider-gcp/blob/ccm/v28.2.1/deploy/cloud-controller-manager.manifest#L32)
+	//
+	// All other resource constraints are made up.
 
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    resource.MustParse("50m"),
-			corev1.ResourceMemory: resource.MustParse("256Mi"),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceMemory: resource.MustParse("512Mi"),
-			corev1.ResourceCPU:    resource.MustParse("1"),
-		},
-	}
-)
+	Requests: corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("50m"),
+		corev1.ResourceMemory: resource.MustParse("256Mi"),
+	},
+	Limits: corev1.ResourceList{
+		corev1.ResourceMemory: resource.MustParse("512Mi"),
+		corev1.ResourceCPU:    resource.MustParse("1"),
+	},
+}
 
 // See https://github.com/kubernetes/cloud-provider-gcp/blob/ccm/v28.2.1/cluster/gce/gci/configure-helper.sh#L2271 for
 // the source of variables that get injected in the GCP CCM build process.
@@ -68,8 +66,7 @@ func gcpDeploymentReconciler(data *resources.TemplateData) reconciling.NamedDepl
 			})
 
 			var err error
-			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err =
-				resources.UserClusterDNSPolicyAndConfig(data)
+			dep.Spec.Template.Spec.DNSPolicy, dep.Spec.Template.Spec.DNSConfig, err = resources.UserClusterDNSPolicyAndConfig(data)
 			if err != nil {
 				return nil, err
 			}
@@ -212,10 +209,6 @@ func GCPCCMVersion(version semver.Semver) string {
 	// gcrane ls --json registry.k8s.io/cloud-provider-gcp/cloud-controller-manager | jq -r '.tags[]'
 
 	switch version.MajorMinor() {
-	case v130:
-		return "v30.0.0"
-	case v131:
-		return "v30.0.0"
 	case v132:
 		return "v32.2.5"
 	case v133:
