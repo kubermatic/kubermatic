@@ -160,7 +160,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log = log.With("cluster", cluster.Name)
 
 	// Skip reconciling if monitoring is disabled in MLA
-	if !cluster.Spec.MLA.MonitoringEnabled {
+	if cluster.Spec.MLA != nil && !cluster.Spec.MLA.MonitoringEnabled {
 		log.Debug("Skipping cluster reconciling because monitoring is disabled in MLA")
 		return reconcile.Result{}, nil
 	}
