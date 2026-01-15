@@ -791,16 +791,19 @@ type EventRateLimitConfig struct {
 
 type EventRateLimitConfigItem struct {
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=50
 	//
 	// QPS is the queries per second allowed for this limit type.
 	QPS int32 `json:"qps"`
 
 	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=100
 	//
 	// Burst is the maximum burst size for this limit type.
 	Burst int32 `json:"burst"`
 
 	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=4096
 	// +optional
 	//
 	// CacheSize is the size of the LRU cache for this limit type.
