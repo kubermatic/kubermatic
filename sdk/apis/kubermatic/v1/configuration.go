@@ -412,6 +412,8 @@ type KubermaticAddonsConfiguration struct {
 
 // SystemApplicationsConfiguration contains configuration for system Applications (e.g. CNI).
 type SystemApplicationsConfiguration struct {
+	// RegistryConnection contains options that control how KKP connects to the Helm OCI registry.
+	RegistryConnectionConfig `json:",inline"`
 	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
 	HelmRepository string `json:"helmRepository,omitempty"`
 	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
@@ -423,9 +425,25 @@ type SystemApplicationsConfiguration struct {
 
 // ApplicationsConfiguration contains configuration for default Applications configuration settings.
 type ApplicationsConfiguration struct {
+	// RegistryConnection contains options that control how KKP connects to the Helm OCI registry.
+	RegistryConnectionConfig `json:",inline"`
 	// Namespace is the namespace which is set as the default for applications installed via ui
 	// If left empty the default for the application installation namespace is the name of the resource itself
 	Namespace string `json:"namespace,omitempty"`
+}
+
+// RegistryConnectionConfig contains options that control how connections
+// to OCI registries are established.
+type RegistryConnectionConfig struct {
+	// InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+	// the server's TLS certificate.
+	// This should only be used in development or testing environments.
+	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+
+	// PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+	// instead of HTTPS.
+	// This is intended for local or air-gapped setups where HTTPS is not available.
+	PlainHTTP bool `json:"plainHTTP,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
