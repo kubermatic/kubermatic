@@ -42,6 +42,7 @@ var (
 		"azure-cloud-node-manager":     {kubermaticv1.AzureCloudProvider},
 		"canal":                        anyProvider,
 		"cilium":                       anyProvider,
+		"cluster-autoscaler":           anyProvider,
 		"csi":                          csiProviders,
 		"default-storage-class":        csiProviders,
 		"hubble":                       anyProvider,
