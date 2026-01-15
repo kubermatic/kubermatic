@@ -12,22 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.19
+FROM docker.io/alpine:3.23
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/hack/images/util/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
     # https://dl.minio.io/client/mc/release/linux-amd64/
 ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
-    KUBECTL_VERSION=v1.33.4 \
+    KUBECTL_VERSION=v1.34.3 \
     # https://github.com/helm/helm/releases
     HELM_VERSION=v3.18.5 \
     # https://github.com/hashicorp/vault/releases
-    VAULT_VERSION=1.20.3 \
+    VAULT_VERSION=1.21.2 \
     # https://github.com/jqlang/jq/releases
     JQ_VERSION=1.8.1 \
     # https://github.com/mikefarah/yq/releases
-    YQ_VERSION=4.47.1
+    YQ_VERSION=4.50.1
 
 # ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
 RUN apk add --no-cache -U \
