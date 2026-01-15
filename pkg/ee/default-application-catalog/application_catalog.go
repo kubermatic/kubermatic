@@ -199,6 +199,10 @@ func updateApplicationDefinition(appDef *appskubermaticv1.ApplicationDefinition,
 		if credentials != nil {
 			appDef.Spec.Versions[i].Template.Source.Helm.Credentials = credentials
 		}
+
+		// Set Insecure and PlainHTTP flags based on the configuration
+		appDef.Spec.Versions[i].Template.Source.Helm.Insecure = &config.Spec.UserCluster.Applications.InsecureSkipTLSVerify
+		appDef.Spec.Versions[i].Template.Source.Helm.PlainHTTP = &config.Spec.UserCluster.Applications.PlainHTTP
 	}
 }
 
