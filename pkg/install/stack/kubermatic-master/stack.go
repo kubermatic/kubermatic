@@ -127,7 +127,9 @@ func (s *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error
 
 	// once Kubermatic Operator is up and running, it will create the Gateway object if needed.
 	// so, cleanup old resources depending on the mode.
-	l7IngressResourceCleanup(ctx, opt)
+	if err := l7IngressResourceCleanup(ctx, opt); err != nil {
+		return fmt.Errorf("L7 ingress resource cleanup failed: %w", err)
+	}
 
 	if err := deployTelemetry(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Telemetry: %w", err)
@@ -575,31 +577,76 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 			return false, nil
 		}
 
-		return len(gw.Status.Addresses) > 0, nil
+		if len(gw.Status.Addresses) == 0 {
+			l.Debug("Gateway does not have addresses assigned yet")
+			return false, nil
+		}
+
+		programmed := meta.IsStatusConditionTrue(
+			gw.Status.Conditions,
+			string(gatewayapiv1.GatewayConditionProgrammed),
+		)
+		if !programmed {
+			condition := meta.FindStatusCondition(gw.Status.Conditions, string(gatewayapiv1.GatewayConditionProgrammed))
+			reason := "unknown"
+			message := "no condition"
+			if condition != nil {
+				reason = string(condition.Reason)
+				message = condition.Message
+			}
+
+			l.Debugf("Gateway not yet programmed: %s - %s", reason, message)
+			return false, nil
+		}
+
+		for _, listener := range gw.Status.Listeners {
+			listenerProgrammed := meta.IsStatusConditionTrue(
+				listener.Conditions,
+				string(gatewayapiv1.ListenerConditionProgrammed),
+			)
+			if !listenerProgrammed {
+				l.Debugf("Gateway listener %s not yet programmed", listener.Name)
+				return false, nil
+			}
+		}
+
+		l.Infof("Gateway is ready with %d address(es) and %d listener(s)",
+			len(gw.Status.Addresses),
+			len(gw.Status.Listeners),
+		)
+
+		return true, nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Gateway %s failed to become ready within 5 minutes: %w", gatewayName.String(), err)
 	}
 
 	return &gw, nil
 }
 
-func l7IngressResourceCleanup(ctx context.Context, opt stack.DeployOptions) {
+func l7IngressResourceCleanup(ctx context.Context, opt stack.DeployOptions) error {
 	if opt.SkipIngressCleanup {
-		return
+		opt.Logger.Info("Skipping L7 ingress resource cleanup as requested")
+		return nil
 	}
 
 	if opt.MigrateToGatewayAPI {
 		err := cleanupIngress(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
 		if err != nil {
-			opt.Logger.Warnf("Failed to cleanup Ingress resources: %v", err)
+			return fmt.Errorf("cleanup Ingress resources failed: %w", err)
 		}
 
-		return
+		opt.Logger.Info("Successfully cleaned up Ingress resources")
+
+		return nil
 	}
 
 	err := cleanupGatewayAPIResources(ctx, opt.Logger, opt.KubeClient, opt.KubermaticConfiguration)
 	if err != nil {
-		opt.Logger.Warnf("Failed to cleanup Gateway API resources: %v", err)
+		return fmt.Errorf("cleanup Gateway API resources failed: %w", err)
 	}
+
+	opt.Logger.Info("Successfully cleaned up Gateway API resources")
+
+	return nil
 }
