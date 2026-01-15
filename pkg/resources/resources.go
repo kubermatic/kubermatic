@@ -1528,7 +1528,7 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
 	}
-	if componentSettings.EnvoyAgent.Resources != nil {
+	if componentSettings.EnvoyAgent != nil && componentSettings.EnvoyAgent.Resources != nil {
 		r[EnvoyAgentDaemonSetName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
 		r[EnvoyAgentAssignAddressContainerName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
 	}
