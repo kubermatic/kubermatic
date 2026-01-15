@@ -352,7 +352,7 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 		for _, addr := range gw.Status.Addresses {
 			if addr.Type != nil && *addr.Type == gatewayapiv1.IPAddressType {
-				gatewayIP = string(addr.Value)
+				gatewayIP = addr.Value
 				return nil, nil
 			}
 		}
