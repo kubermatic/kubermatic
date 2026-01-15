@@ -19,11 +19,11 @@ LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
     # https://dl.minio.io/client/mc/release/linux-amd64/
 ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
-    KUBECTL_VERSION=v1.34.3 \
+    KUBECTL_VERSION=v1.33.4 \
     # https://github.com/helm/helm/releases
     HELM_VERSION=v3.18.5 \
     # https://github.com/hashicorp/vault/releases
-    VAULT_VERSION=1.21.2 \
+    VAULT_VERSION=1.20.3 \
     # https://github.com/jqlang/jq/releases
     JQ_VERSION=1.8.1 \
     # https://github.com/mikefarah/yq/releases
