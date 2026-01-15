@@ -43,6 +43,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -312,7 +313,7 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	l.Info("Testing HTTP connectivity through Gateway...")
 
 	gtwName := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultGatewayName}
-	address := ""
+	gatewayIP := ""
 
 	gtw := &gatewayapiv1.Gateway{}
 	err := wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
@@ -321,8 +322,13 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 			return fmt.Errorf("Gateway not found: %w", err), nil
 		}
 
-		l.Infof("gateway found %+v", gtw)
-		
+		b, err := yaml.Marshal(gtw)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal gateway object: %w", err), nil
+		}
+
+		l.Infof("gateway found %+v", string(b))
+
 		addresses := gtw.Status.Addresses
 		if len(addresses) == 0 {
 			return fmt.Errorf("waiting for Gateway addresses to be assigned"), nil
@@ -330,8 +336,8 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 		for _, addr := range addresses {
 			if addr.Type != nil && *addr.Type == gatewayapiv1.IPAddressType {
-				if address == "" {
-					address = addr.Value
+				if gatewayIP == "" {
+					gatewayIP = addr.Value
 					return nil, nil
 					break
 				}
@@ -343,13 +349,59 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 		return fmt.Errorf("failed to wait for gateway IP address to be assigned: %w", err)
 	}
 
-	l.Infof("Using fixed HTTP NodePort: %s", address)
+	const envoyNodePort = "30080"
+
+	candidates := []string{
+		fmt.Sprintf("localhost:%s", envoyNodePort),
+		fmt.Sprintf("%s:%s", gatewayIP, envoyNodePort),
+	}
+
+	l.Infof("Testing Gateway connectivity with candidates: %v", candidates)
 
 	httpClient := &http.Client{}
 
+	var workingEndpoint string
+	for _, candidate := range candidates {
+		l.Infof("Trying endpoint: %s", candidate)
+
+		testURL := (&url.URL{
+			Scheme: "http",
+			Host:   candidate,
+		}).String()
+
+		testHealthzURL, err := url.JoinPath(testURL, "api", "v1", "healthz")
+		if err != nil {
+			return fmt.Errorf("failed to construct test healthz URL: %w", err)
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, testHealthzURL, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create test request: %w", err)
+		}
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			l.Infof("Endpoint %s failed: %v", candidate, err)
+			continue
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			l.Infof("Endpoint %s works! Using it for all tests", candidate)
+			workingEndpoint = candidate
+			break
+		}
+
+		l.Infof("Endpoint %s returned status %d", candidate, resp.StatusCode)
+	}
+
+	if workingEndpoint == "" {
+		return fmt.Errorf("all Gateway endpoints failed: tried %v", candidates)
+	}
+
 	baseURL := (&url.URL{
 		Scheme: "http",
-		Host:   address,
+		Host:   workingEndpoint,
 	}).String()
 
 	l.Info("Testing /api/v1/healthz endpoint...")
