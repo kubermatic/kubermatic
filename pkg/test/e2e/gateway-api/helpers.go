@@ -311,9 +311,38 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 	l.Info("Testing HTTP connectivity through Gateway...")
 
-	// In kind E2E tests, envoy proxy uses fixed NodePorts configured in CI scripts.
-	// localhost:30080 -> http. And since we don't configure a CertificateIssuer, only HTTP listener is available.
-	address := "localhost:30080"
+	gtwName := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultGatewayName}
+	address := ""
+
+	gtw := &gatewayapiv1.Gateway{}
+	err := wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
+		err := c.Get(ctx, gtwName, gtw)
+		if err != nil {
+			return fmt.Errorf("Gateway not found: %w", err), nil
+		}
+
+		l.Infof("gateway found %+v", gtw)
+		
+		addresses := gtw.Status.Addresses
+		if len(addresses) == 0 {
+			return fmt.Errorf("waiting for Gateway addresses to be assigned"), nil
+		}
+
+		for _, addr := range addresses {
+			if addr.Type != nil && *addr.Type == gatewayapiv1.IPAddressType {
+				if address == "" {
+					address = addr.Value
+					return nil, nil
+					break
+				}
+			}
+		}
+		return fmt.Errorf("Gateway does not have any IP yet"), nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for gateway IP address to be assigned: %w", err)
+	}
+
 	l.Infof("Using fixed HTTP NodePort: %s", address)
 
 	httpClient := &http.Client{}
