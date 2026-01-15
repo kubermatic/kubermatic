@@ -1863,7 +1863,13 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 				},
 			},
 			useEventRateLimitPlugin: true,
-			wantAllowed:             true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
 		},
 		{
 			name: "Update cluster with enforcement - disable plugin",
@@ -1907,7 +1913,13 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 			},
 			useEventRateLimitPlugin:    true,
 			oldUseEventRateLimitPlugin: ptr.To(true),
-			wantAllowed:                true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
 		},
 		{
 			name: "Update cluster without enforcement - disable plugin",
@@ -2035,8 +2047,13 @@ func TestValidateEventRateLimitEnforcement(t *testing.T) {
 				},
 			},
 			useEventRateLimitPlugin: true,
-			userConfig:              nil,
-			wantAllowed:             true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
 		},
 		{
 			name: "Create without enforced config - user can override",
