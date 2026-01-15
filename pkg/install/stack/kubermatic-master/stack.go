@@ -591,7 +591,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 			reason := "unknown"
 			message := "no condition"
 			if condition != nil {
-				reason = string(condition.Reason)
+				reason = condition.Reason
 				message = condition.Message
 			}
 
