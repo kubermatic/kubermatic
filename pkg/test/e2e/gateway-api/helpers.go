@@ -43,7 +43,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -312,48 +311,33 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 	l.Info("Testing HTTP connectivity through Gateway...")
 
-	gtwName := types.NamespacedName{Namespace: jig.KubermaticNamespace(), Name: defaulting.DefaultGatewayName}
-	gatewayIP := ""
+	httprouteName := types.NamespacedName{
+		Namespace: jig.KubermaticNamespace(),
+		Name:     defaulting.DefaultHTTPRouteName,
+	}
 
-	gtw := &gatewayapiv1.Gateway{}
+	route := &gatewayapiv1.HTTPRoute{}
 	err := wait.PollImmediateLog(ctx, l, defaultInterval, defaultTimeout, func(ctx context.Context) (transient error, terminal error) {
-		err := c.Get(ctx, gtwName, gtw)
-		if err != nil {
-			return fmt.Errorf("Gateway not found: %w", err), nil
+		if err := c.Get(ctx, httprouteName, route); err != nil {
+			return fmt.Errorf("HTTPRoute not found: %w", err), nil
 		}
-
-		b, err := yaml.Marshal(gtw)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal gateway object: %w", err), nil
-		}
-
-		l.Infof("gateway found %+v", string(b))
-
-		addresses := gtw.Status.Addresses
-		if len(addresses) == 0 {
-			return fmt.Errorf("waiting for Gateway addresses to be assigned"), nil
-		}
-
-		for _, addr := range addresses {
-			if addr.Type != nil && *addr.Type == gatewayapiv1.IPAddressType {
-				if gatewayIP == "" {
-					gatewayIP = addr.Value
-					return nil, nil
-					break
-				}
-			}
-		}
-		return fmt.Errorf("Gateway does not have any IP yet"), nil
+		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to wait for gateway IP address to be assigned: %w", err)
+		return fmt.Errorf("failed to wait for HTTPRoute: %w", err)
 	}
+
+	if len(route.Spec.Hostnames) == 0 {
+		return fmt.Errorf("HTTPRoute has no hostnames configured")
+	}
+
+	hostname := string(route.Spec.Hostnames[0])
+	l.Infof("Using HTTPRoute hostname: %s", hostname)
 
 	const envoyNodePort = "30080"
 
 	candidates := []string{
 		fmt.Sprintf("localhost:%s", envoyNodePort),
-		fmt.Sprintf("%s:%s", gatewayIP, envoyNodePort),
 	}
 
 	l.Infof("Testing Gateway connectivity with candidates: %v", candidates)
@@ -378,6 +362,8 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 		if err != nil {
 			return fmt.Errorf("failed to create test request: %w", err)
 		}
+
+		req.Host = hostname
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
@@ -416,6 +402,8 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 			return fmt.Errorf("failed to create request: %w", err), nil
 		}
 
+		req.Host = hostname
+
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			return fmt.Errorf("health check request failed: %w", err), nil
@@ -445,6 +433,8 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err), nil
 		}
+
+		req.Host = hostname
 
 		resp, err := httpClient.Do(req)
 		if err != nil {

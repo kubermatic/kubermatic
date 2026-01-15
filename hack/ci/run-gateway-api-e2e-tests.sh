@@ -53,7 +53,7 @@ dex:
     hosts: []
     tls: []
   config:
-    issuer: https://ci.kubermatic.io/dex
+    issuer: https://worker.ci.k8c.io/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
@@ -62,7 +62,7 @@ dex:
 httpRoute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
-  domain: ci.kubermatic.io
+  domain: worker.ci.k8c.io
   timeout: 3600s
 # if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
 # which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
@@ -89,6 +89,7 @@ envoyProxy:
 "
 
 export INSTALLER_FLAGS="--migrate-gateway-api"
+export KUBERMATIC_DOMAIN="worker.ci.k8c.io"
 source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Verifying Gateway API resources are deployed..."

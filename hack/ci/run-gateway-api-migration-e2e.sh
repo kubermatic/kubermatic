@@ -51,7 +51,7 @@ dex:
     enabled: true
     className: "nginx"
     hosts:
-      - host: ci.kubermatic.io
+      - host: worker.ci.k8c.io
         paths:
           - path: /dex
             pathType: ImplementationSpecific
@@ -60,7 +60,7 @@ dex:
       cert-manager.io/cluster-issuer: letsencrypt-staging
 
   config:
-    issuer: https://ci.kubermatic.io/dex
+    issuer: https://worker.ci.k8c.io/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
@@ -68,6 +68,7 @@ dex:
         username: admin
 "
 
+export KUBERMATIC_DOMAIN="worker.ci.k8c.io"
 source hack/ci/setup-kubermatic-in-kind.sh
 
 retry 10 check_all_deployments_ready nginx-ingress-controller
@@ -89,7 +90,7 @@ dex:
     hosts: []
     tls: []
   config:
-    issuer: https://ci.kubermatic.io/dex
+    issuer: https://worker.ci.k8c.io/dex
     enablePasswordDB: true
     staticPasswords:
       - email: kubermatic@example.com
@@ -98,7 +99,7 @@ dex:
 httpRoute:
   gatewayName: kubermatic
   gatewayNamespace: kubermatic
-  domain: ci.kubermatic.io
+  domain: worker.ci.k8c.io
   timeout: 3600s
 # if we deploy envoy proxy as LB, its status won't be happy until an external LB IP is assigned
 # which does not happen in kind without extra tooling/setup. Therefore, we deploy it as NodePort for now...
