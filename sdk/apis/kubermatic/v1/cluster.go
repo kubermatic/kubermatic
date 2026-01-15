@@ -1487,15 +1487,6 @@ type OpenstackCloudSpec struct {
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
 }
 
-// NOOP.
-type PacketCloudSpec struct {
-	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
-
-	APIKey       string `json:"apiKey,omitempty"`
-	ProjectID    string `json:"projectID,omitempty"`
-	BillingCycle string `json:"billingCycle"`
-}
-
 // GCPCloudSpec specifies access data to GCP.
 type GCPCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
