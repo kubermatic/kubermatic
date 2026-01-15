@@ -27,7 +27,7 @@ ENV MC_VERSION=RELEASE.2025-08-13T08-35-41Z \
     # https://github.com/jqlang/jq/releases
     JQ_VERSION=1.8.1 \
     # https://github.com/mikefarah/yq/releases
-    YQ_VERSION=4.50.1
+    YQ_VERSION=4.47.1
 
 # ensure that we install a curl version that fixes CVE-2023-38545 and CVE-2023-38546.
 RUN apk add --no-cache -U \
