@@ -799,16 +799,6 @@ type DatacenterSpecBringYourOwn struct{}
 // DatacenterSpecEdge describes a datacenter of edge nodes.
 type DatacenterSpecEdge struct{}
 
-// NOOP.
-type DatacenterSpecPacket struct {
-	// The list of enabled facilities, for example "ams1", for a full list of available
-	// facilities see https://metal.equinix.com/developers/docs/locations/facilities/
-	Facilities []string `json:"facilities,omitempty"`
-	// Metros are facilities that are grouped together geographically and share capacity
-	// and networking features, see https://metal.equinix.com/developers/docs/locations/metros/
-	Metro string `json:"metro,omitempty"`
-}
-
 // DatacenterSpecGCP describes a GCP datacenter.
 type DatacenterSpecGCP struct {
 	// Region to use, for example "europe-west3", for a full list of regions see
