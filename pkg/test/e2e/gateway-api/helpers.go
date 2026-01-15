@@ -334,9 +334,38 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	hostname := string(route.Spec.Hostnames[0])
 	l.Infof("Using HTTPRoute hostname: %s", hostname)
 
+	gtwName := types.NamespacedName{
+		Name:      defaulting.DefaultGatewayName,
+		Namespace: jig.KubermaticNamespace(),
+	}
+
+	var gatewayIP string
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		gw := &gatewayapiv1.Gateway{}
+		if err := c.Get(ctx, gtwName, gw); err != nil {
+			return fmt.Errorf("Gateway not found: %w", err), nil
+		}
+
+		if len(gw.Status.Addresses) == 0 {
+			return fmt.Errorf("Gateway has no addresses yet, status: %+v", gw.Status), nil
+		}
+
+		for _, addr := range gw.Status.Addresses {
+			if addr.Type != nil && *addr.Type == gatewayapiv1.IPAddressType {
+				gatewayIP = string(addr.Value)
+				return nil, nil
+			}
+		}
+
+		return fmt.Errorf("Gateway has no IPAddress addresses"), nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get Gateway address: %w", err)
+	}
+
 	const envoyNodePort = "30080"
 
-	address := fmt.Sprintf("127.0.0.1:%s", envoyNodePort)
+	address := fmt.Sprintf("%s:%s", gatewayIP, envoyNodePort)
 
 	httpClient := &http.Client{}
 
@@ -344,15 +373,16 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 		Scheme: "http",
 		Host:   address,
 	}).String()
+	l.Infof("Using Gateway address from Gateway.status.addresses, baseUrl %v", baseURL)
 
-	l.Info("Testing /api/v1/healthz endpoint...")
-	healthzURL, err := url.JoinPath(baseURL, "api", "v1", "healthz")
+	k8cAPIHealthz, err := url.JoinPath(baseURL, "api", "v1", "healthz")
 	if err != nil {
 		return fmt.Errorf("failed to construct healthz URL: %w", err)
 	}
 
+	l.Infof("Testing /api/v1/healthz endpoint (k8c API), sending request %s", k8cAPIHealthz)
 	err = wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, healthzURL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, k8cAPIHealthz, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err), nil
 		}
@@ -377,14 +407,14 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 	l.Infof("Health check endpoint /api/v1/healthz returned 200 OK")
 
-	l.Info("Testing /api/swagger.json endpoint for data transfer...")
-	swaggerURL, err := url.JoinPath(baseURL, "api", "swagger.json")
+	dexHealthzURL, err := url.JoinPath(baseURL, "dex", "healthz")
 	if err != nil {
-		return fmt.Errorf("failed to construct swagger URL: %w", err)
+		return fmt.Errorf("failed to construct dex healthz URL: %w", err)
 	}
 
-	err = wait.PollImmediateLog(ctx, l, defaultInterval, 3*time.Minute, func(ctx context.Context) (transient error, terminal error) {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, swaggerURL, nil)
+	l.Info("Testing /dex/healthz endpoint (Dex), sending request to %v", dexHealthzURL)
+	err = wait.PollImmediateLog(ctx, l, defaultInterval, 2*time.Minute, func(ctx context.Context) (transient error, terminal error) {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, dexHealthzURL, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create request: %w", err), nil
 		}
@@ -393,26 +423,20 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			return fmt.Errorf("swagger request failed: %w", err), nil
+			return fmt.Errorf("dex health check request failed: %w", err), nil
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code for /api/swagger.json: got %d, expected %d", resp.StatusCode, http.StatusOK), nil
-		}
-
-		contentType := resp.Header.Get("Content-Type")
-		if contentType != "application/json" {
-			return fmt.Errorf("unexpected content type: got %s, expected application/json", contentType), nil
+			return fmt.Errorf("unexpected status code for /dex/healthz: got %d, expected %d", resp.StatusCode, http.StatusOK), nil
 		}
 
 		return nil, nil
 	})
 	if err != nil {
-		return fmt.Errorf("swagger check failed: %w", err)
+		return fmt.Errorf("dex healthz check failed: %w", err)
 	}
 
-	l.Infof("Swagger endpoint /api/swagger.json returned 200 OK with correct content type")
-
+	l.Infof("Dex health check endpoint /dex/healthz returned 200 OK")
 	return nil
 }
