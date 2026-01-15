@@ -313,7 +313,7 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 	httprouteName := types.NamespacedName{
 		Namespace: jig.KubermaticNamespace(),
-		Name:     defaulting.DefaultHTTPRouteName,
+		Name:      defaulting.DefaultHTTPRouteName,
 	}
 
 	route := &gatewayapiv1.HTTPRoute{}
@@ -344,47 +344,6 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	l.Infof("Testing Gateway connectivity with candidates: %v", candidates)
 
 	httpClient := &http.Client{}
-
-	var workingEndpoint string
-	for _, candidate := range candidates {
-		l.Infof("Trying endpoint: %s", candidate)
-
-		testURL := (&url.URL{
-			Scheme: "http",
-			Host:   candidate,
-		}).String()
-
-		testHealthzURL, err := url.JoinPath(testURL, "api", "v1", "healthz")
-		if err != nil {
-			return fmt.Errorf("failed to construct test healthz URL: %w", err)
-		}
-
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, testHealthzURL, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create test request: %w", err)
-		}
-
-		req.Host = hostname
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			l.Infof("Endpoint %s failed: %v", candidate, err)
-			continue
-		}
-		resp.Body.Close()
-
-		if resp.StatusCode == http.StatusOK {
-			l.Infof("Endpoint %s works! Using it for all tests", candidate)
-			workingEndpoint = candidate
-			break
-		}
-
-		l.Infof("Endpoint %s returned status %d", candidate, resp.StatusCode)
-	}
-
-	if workingEndpoint == "" {
-		return fmt.Errorf("all Gateway endpoints failed: tried %v", candidates)
-	}
 
 	baseURL := (&url.URL{
 		Scheme: "http",

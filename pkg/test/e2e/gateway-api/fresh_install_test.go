@@ -21,6 +21,7 @@ package gatewayapi
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
@@ -53,6 +54,7 @@ func TestGatewayAPIFreshInstall(t *testing.T) {
 
 	logger.Info("Verifying HTTP connectivity through Gateway...")
 	if err := verifyGatewayHTTPConnectivity(ctx, t, seedClient, logger); err != nil {
+		time.Sleep(1 * time.Hour)
 		t.Fatalf("Gateway HTTP connectivity verification failed: %v", err)
 	}
 }
