@@ -38,5 +38,6 @@ spec:
   # todo: automate them to point the latest available images instead of hardcoding it
   api:
       dockerTag: v2.29.0
+      debugLog: true
   ui:
       dockerTag: v2.29.0

@@ -337,6 +337,7 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 	const envoyNodePort = "30080"
 
 	candidates := []string{
+		fmt.Sprintf("127.0.0.1:%s", envoyNodePort),
 		fmt.Sprintf("localhost:%s", envoyNodePort),
 	}
 
