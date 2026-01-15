@@ -83,6 +83,10 @@ type DeployOptions struct {
 	//
 	// In the subsequent releases, this flag will be no-op as Gateway API will be the default.
 	MigrateGatewayAPI bool
+	// SkipIngressCleanup disables cleanup of old Ingress or Gateway API resources during migration.
+	// When false (default), old resources are cleaned up automatically during migration.
+	// When true, both old and new resources may coexist, allowing manual verification before cleanup.
+	SkipIngressCleanup bool
 
 	MLASkipMinio             bool
 	MLASkipMinioLifecycleMgr bool
@@ -152,6 +156,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermatic.Versions) *cobra.C
 	cmd.PersistentFlags().BoolVar(&opt.MigrateUpstreamCertManager, "migrate-upstream-cert-manager", false, "enable the migration for cert-manager to chart version 2.1.0+")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateNginx, "migrate-upstream-nginx-ingress", false, "enable the migration procedure for nginx-ingress-controller (upgrade from v1.3.0+)")
 	cmd.PersistentFlags().BoolVar(&opt.MigrateGatewayAPI, "migrate-gateway-api", false, "enable the migration from nginx-ingress-controller to Gateway API. See the documentation for more details.")
+	cmd.PersistentFlags().BoolVar(&opt.SkipIngressCleanup, "skip-ingress-cleanup", false, "skip cleanup of old Ingress or Gateway API resources during migration (cleanup happens by default)")
 
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinio, "mla-skip-minio", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio")
 	cmd.PersistentFlags().BoolVar(&opt.MLASkipMinioLifecycleMgr, "mla-skip-minio-lifecycle-mgr", false, "(UserCluster MLA) skip installation of UserCluster MLA Minio Bucket Lifecycle Manager")
@@ -226,6 +231,7 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			DeployDefaultPolicyTemplateCatalog: opt.DeployDefaultPolicyTemplateCatalog,
 			SkipSeedValidation:                 opt.SkipSeedValidation,
 			MigrateToGatewayAPI:                opt.MigrateGatewayAPI,
+			SkipIngressCleanup:                 opt.SkipIngressCleanup,
 		}
 
 		// prepare Kubernetes and Helm clients
