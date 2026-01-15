@@ -1468,6 +1468,12 @@ spec:
                           required:
                             - cidrBlocks
                           type: object
+                        nodeVolumeAttachLimit:
+                          description: |-
+                            NodeVolumeAttachLimit defines the maximum number of volumes that can be
+                            attached to a single node. If set, this value overrides the default
+                            OpenStack volume attachment limit.
+                          type: integer
                         password:
                           type: string
                         project:
