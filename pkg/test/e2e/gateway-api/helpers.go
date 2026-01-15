@@ -336,18 +336,13 @@ func verifyGatewayHTTPConnectivity(ctx context.Context, t *testing.T, c ctrlrunt
 
 	const envoyNodePort = "30080"
 
-	candidates := []string{
-		fmt.Sprintf("127.0.0.1:%s", envoyNodePort),
-		fmt.Sprintf("localhost:%s", envoyNodePort),
-	}
-
-	l.Infof("Testing Gateway connectivity with candidates: %v", candidates)
+	address := fmt.Sprintf("127.0.0.1:%s", envoyNodePort)
 
 	httpClient := &http.Client{}
 
 	baseURL := (&url.URL{
 		Scheme: "http",
-		Host:   workingEndpoint,
+		Host:   address,
 	}).String()
 
 	l.Info("Testing /api/v1/healthz endpoint...")
