@@ -54,6 +54,12 @@ func TestUserClusterMetrics(ctx context.Context, log *zap.SugaredLogger, opts *c
 		return nil
 	}
 
+	// Skip if monitoring is disabled in MLA
+	if cluster.Spec.MLA != nil && !cluster.Spec.MLA.MonitoringEnabled {
+		log.Info("Monitoring is disabled in MLA, skipping prometheus metrics test.")
+		return nil
+	}
+
 	log.Info("Testing user cluster metrics availability...")
 
 	res := opts.SeedGeneratedClient.CoreV1().RESTClient().Get().
