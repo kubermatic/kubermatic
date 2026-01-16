@@ -25,49 +25,61 @@ import (
 func TestParseProviderFilter(t *testing.T) {
 	testCases := []struct {
 		name          string
-		input         string
+		input         []string
 		expectedCount int
 		expectError   bool
 	}{
 		{
 			name:          "empty filter returns nil",
-			input:         "",
+			input:         []string{},
+			expectedCount: 0,
+			expectError:   false,
+		},
+		{
+			name:          "nil filter returns nil",
+			input:         nil,
 			expectedCount: 0,
 			expectError:   false,
 		},
 		{
 			name:          "single valid provider",
-			input:         "aws",
+			input:         []string{"aws"},
 			expectedCount: 1,
 			expectError:   false,
 		},
 		{
 			name:          "multiple valid providers",
-			input:         "aws,azure,kubevirt",
+			input:         []string{"aws", "azure", "kubevirt"},
 			expectedCount: 3,
 			expectError:   false,
 		},
 		{
 			name:          "mixed case providers",
-			input:         "AWS,Azure,KubeVirt",
+			input:         []string{"AWS", "Azure", "KubeVirt"},
 			expectedCount: 3,
 			expectError:   false,
 		},
 		{
 			name:          "providers with spaces",
-			input:         " aws , azure , kubevirt ",
+			input:         []string{" aws ", " azure ", " kubevirt "},
 			expectedCount: 3,
 			expectError:   false,
 		},
 		{
 			name:          "invalid provider",
-			input:         "aws,invalid-provider,azure",
+			input:         []string{"aws", "invalid-provider", "azure"},
 			expectedCount: 0,
 			expectError:   true,
 		},
 		{
 			name:          "duplicate providers",
-			input:         "aws,azure,aws",
+			input:         []string{"aws", "azure", "aws"},
+			expectedCount: 2,
+			expectError:   false,
+		},
+		{
+			name:          "empty strings in slice",
+			input:         []string{"aws", "", "azure"},
 			expectedCount: 2,
 			expectError:   false,
 		},

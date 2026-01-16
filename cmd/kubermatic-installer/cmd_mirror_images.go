@@ -52,7 +52,7 @@ type MirrorImagesOptions struct {
 	Config                    string
 	Versions                  kubermaticversion.Versions
 	VersionFilter             string
-	ProviderFilter            string
+	ProviderFilter            []string
 	RegistryPrefix            string
 	IgnoreRepositoryOverrides bool
 	Archive                   bool
@@ -113,7 +113,7 @@ func MirrorImagesCommand(logger *logrus.Logger, versions kubermaticversion.Versi
 
 	cmd.PersistentFlags().StringVar(&opt.Config, "config", "", "Path to the KubermaticConfiguration YAML file")
 	cmd.PersistentFlags().StringVar(&opt.VersionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	cmd.PersistentFlags().StringVar(&opt.ProviderFilter, "provider-filter", "", "Comma-separated list of cloud providers to mirror images for (e.g., 'aws,azure,kubevirt'). If not specified, images for all providers will be mirrored")
+	cmd.PersistentFlags().StringArrayVar(&opt.ProviderFilter, "provider-filter", nil, "Cloud providers to mirror images for (e.g., 'aws', 'azure', 'kubevirt'). Can be specified multiple times or as comma-separated values. If not specified, images for all providers will be mirrored")
 	cmd.PersistentFlags().StringVar(&opt.RegistryPrefix, "registry-prefix", "", "Check source registries against this prefix and only include images that match it")
 	cmd.PersistentFlags().StringVar(&opt.LoadFrom, "load-from", "", "Path to an image-archive to (up)load to the provided registry")
 	cmd.PersistentFlags().BoolVar(&opt.DryRun, "dry-run", false, "Only print the names of source and destination images")
@@ -206,15 +206,14 @@ func getAddonsPath(ctx context.Context, logger *logrus.Logger, options *MirrorIm
 	return tempDir, nil
 }
 
-// parseProviderFilter parses a comma-separated list of provider names and returns them as a set.
-// Returns nil if the filter string is empty (meaning all providers should be included).
-func parseProviderFilter(filterStr string) (sets.Set[string], error) {
-	if filterStr == "" {
+// parseProviderFilter parses a list of provider names and returns them as a set.
+// Returns nil if the filter list is empty (meaning all providers should be included).
+func parseProviderFilter(providers []string) (sets.Set[string], error) {
+	if len(providers) == 0 {
 		return nil, nil
 	}
 
 	providerSet := sets.New[string]()
-	providers := strings.Split(filterStr, ",")
 
 	for _, p := range providers {
 		provider := strings.TrimSpace(strings.ToLower(p))
