@@ -766,6 +766,20 @@ type OIDCSettings struct {
 	GroupsPrefix   string `json:"groupsPrefix,omitempty"`
 }
 
+// EventRateLimitType defines the type of event rate limit.
+type EventRateLimitType string
+
+const (
+	// EventRateLimitTypeServer is a limit where one bucket is shared by all event queries.
+	EventRateLimitTypeServer EventRateLimitType = "Server"
+	// EventRateLimitTypeNamespace is a limit where one bucket is used by each namespace.
+	EventRateLimitTypeNamespace EventRateLimitType = "Namespace"
+	// EventRateLimitTypeUser is a limit where one bucket is used by each user.
+	EventRateLimitTypeUser EventRateLimitType = "User"
+	// EventRateLimitTypeSourceAndObject is a limit where one bucket is used by each source+object combination.
+	EventRateLimitTypeSourceAndObject EventRateLimitType = "SourceAndObject"
+)
+
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 // More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
@@ -776,8 +790,23 @@ type EventRateLimitConfig struct {
 }
 
 type EventRateLimitConfigItem struct {
-	QPS       int32 `json:"qps"`
-	Burst     int32 `json:"burst"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=50
+	//
+	// QPS is the queries per second allowed for this limit type.
+	QPS int32 `json:"qps"`
+
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=100
+	//
+	// Burst is the maximum burst size for this limit type.
+	Burst int32 `json:"burst"`
+
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=4096
+	// +optional
+	//
+	// CacheSize is the size of the LRU cache for this limit type.
 	CacheSize int32 `json:"cacheSize,omitempty"`
 }
 

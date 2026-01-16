@@ -3471,13 +3471,22 @@ spec:
                     namespace:
                       properties:
                         burst:
+                          default: 100
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          default: 4096
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          default: 50
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
@@ -3486,13 +3495,22 @@ spec:
                     server:
                       properties:
                         burst:
+                          default: 100
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          default: 4096
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          default: 50
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
@@ -3501,13 +3519,22 @@ spec:
                     sourceAndObject:
                       properties:
                         burst:
+                          default: 100
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          default: 4096
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          default: 50
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst
@@ -3516,13 +3543,22 @@ spec:
                     user:
                       properties:
                         burst:
+                          default: 100
+                          description: Burst is the maximum burst size for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                         cacheSize:
+                          default: 4096
+                          description: CacheSize is the size of the LRU cache for this limit type.
                           format: int32
+                          minimum: 0
                           type: integer
                         qps:
+                          default: 50
+                          description: QPS is the queries per second allowed for this limit type.
                           format: int32
+                          minimum: 1
                           type: integer
                       required:
                         - burst

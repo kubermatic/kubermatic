@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"slices"
 	"strings"
 	"time"
 
@@ -173,6 +174,12 @@ func ValidateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datace
 	if spec.IsAuthorizationConfigurationFileEnabled() && spec.IsWebhookAuthorizationEnabled() {
 		allErrs = append(allErrs, field.Forbidden(parentFieldPath.Child("authorizationConfig"), "AuthorizationWebhookConfiguration and AuthorizationConfigurationFile cannot be used together"))
 	}
+
+	// Validate EventRateLimitConfig
+	if errs := ValidateEventRateLimitConfig(spec, parentFieldPath.Child("eventRateLimitConfig")); len(errs) > 0 {
+		allErrs = append(allErrs, errs...)
+	}
+
 	return allErrs
 }
 
@@ -1383,4 +1390,49 @@ func validateCoreDNSReplicas(spec *kubermaticv1.ClusterSpec, fldPath *field.Path
 	}
 
 	return nil
+}
+
+// ValidateEventRateLimitConfig validates the EventRateLimitConfig settings.
+func ValidateEventRateLimitConfig(spec *kubermaticv1.ClusterSpec, fldPath *field.Path) field.ErrorList {
+	var allErrs field.ErrorList
+
+	config := spec.EventRateLimitConfig
+	pluginEnabled := spec.UseEventRateLimitAdmissionPlugin || slices.Contains(spec.AdmissionPlugins, resources.EventRateLimitAdmissionPlugin)
+
+	// Check if plugin is enabled and no limits are configured, apiserver crashes otherwise
+	hasLimits := config != nil && (config.Server != nil || config.Namespace != nil || config.User != nil || config.SourceAndObject != nil)
+	if pluginEnabled && !hasLimits {
+		allErrs = append(allErrs, field.Required(fldPath, "at least one limit type (server, namespace, user, or sourceAndObject) must be configured when EventRateLimit admission plugin is enabled"))
+	}
+
+	if config == nil {
+		return allErrs
+	}
+
+	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.Server, fldPath.Child("server"))...)
+	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.Namespace, fldPath.Child("namespace"))...)
+	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.User, fldPath.Child("user"))...)
+	allErrs = append(allErrs, validateEventRateLimitConfigItem(config.SourceAndObject, fldPath.Child("sourceAndObject"))...)
+
+	return allErrs
+}
+
+func validateEventRateLimitConfigItem(item *kubermaticv1.EventRateLimitConfigItem, fldPath *field.Path) field.ErrorList {
+	if item == nil {
+		return nil
+	}
+
+	var allErrs field.ErrorList
+
+	if item.QPS < 1 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("qps"), item.QPS, "must be at least 1"))
+	}
+	if item.Burst < 1 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("burst"), item.Burst, "must be at least 1"))
+	}
+	if item.CacheSize < 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath.Child("cacheSize"), item.CacheSize, "must be non-negative"))
+	}
+
+	return allErrs
 }
