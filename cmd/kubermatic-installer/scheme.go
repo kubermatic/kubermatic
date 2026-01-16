@@ -25,10 +25,11 @@ import (
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	gatewayclientscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 )
 
 // setupKubermaticInstallerScheme adds all required API types to the manager's scheme.
-// This includes KKP types, cert-manager and apiextensions.
+// This includes KKP types, cert-manager, Gateway API, and apiextensions.
 func setupKubermaticInstallerScheme(mgr manager.Manager) error {
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return fmt.Errorf("failed to add Kubermatic v1 scheme: %w", err)
@@ -40,6 +41,10 @@ func setupKubermaticInstallerScheme(mgr manager.Manager) error {
 
 	if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
 		return fmt.Errorf("failed to add apiextensions v1 scheme: %w", err)
+	}
+
+	if err := gatewayclientscheme.AddToScheme(mgr.GetScheme()); err != nil {
+		return fmt.Errorf("failed to add Gateway API scheme: %w", err)
 	}
 
 	return nil

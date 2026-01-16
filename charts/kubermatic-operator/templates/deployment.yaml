@@ -63,6 +63,9 @@ spec:
         {{- if .Values.kubermaticOperator.leaderElection }}
         - -enable-leader-election
         {{- end }}
+        {{- if .Values.migrateGatewayAPI }}
+        - -enable-gateway-api
+        {{- end }}
         env:
         - name: SSL_CERT_FILE
           value: /opt/ca-bundle/ca-bundle.pem

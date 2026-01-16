@@ -44,6 +44,10 @@ const (
 	DefaultEtcdVolumeSize                         = "5Gi"
 	DefaultAuthClientID                           = "kubermatic"
 	DefaultIngressClass                           = "nginx"
+	DefaultIngressName                            = "kubermatic"
+	DefaultGatewayName                            = "kubermatic"
+	DefaultHTTPRouteName                          = "kubermatic"
+	DefaultGatewayClassName                       = "kubermatic-envoy-gateway"
 	DefaultCABundleConfigMapName                  = "ca-bundle"
 	DefaultAPIReplicas                            = 2
 	DefaultUIReplicas                             = 2
@@ -431,6 +435,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if configCopy.Spec.Ingress.ClassName == "" {
 		configCopy.Spec.Ingress.ClassName = DefaultIngressClass
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
+	}
+
+	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.ClassName == "" {
+		configCopy.Spec.Ingress.Gateway.ClassName = DefaultGatewayClassName
+		logger.Debugw("Defaulting field", "field", "ingress.gateway.className", "value", configCopy.Spec.Ingress.Gateway.ClassName)
 	}
 
 	if configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix == "" {

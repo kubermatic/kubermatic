@@ -22,6 +22,7 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +34,7 @@ const (
 	serviceAccountName    = "kubermatic-master"
 	apiServiceAccountName = "kubermatic-api"
 	uiConfigConfigMapName = "ui-config"
-	ingressName           = "kubermatic"
+	ingressName           = defaulting.DefaultIngressName
 	APIDeploymentName     = "kubermatic-api"
 	UIDeploymentName      = "kubermatic-dashboard"
 	apiServiceName        = "kubermatic-api"

@@ -471,6 +471,18 @@ type KubermaticIngressConfiguration struct {
 	// Setting an empty name disables the automatic creation of certificates and disables
 	// the TLS settings on the Kubermatic Ingress.
 	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+
+	// Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+	// When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+	// are managed by kubermatic-operator, instead of Ingress.
+	Gateway *KubermaticGatewayConfiguration `json:"gateway,omitempty"`
+}
+
+// KubermaticGatewayConfiguration configures the Gateway API integration.
+type KubermaticGatewayConfiguration struct {
+	// ClassName is the GatewayClass to use.
+	// +kubebuilder:default:=kubermatic-envoy-gateway
+	ClassName string `json:"className,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.

@@ -524,6 +524,17 @@ spec:
                         Domain is the base domain where the dashboard shall be available. Even with
                         a disabled Ingress, this must always be a valid hostname.
                       type: string
+                    gateway:
+                      description: |-
+                        Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+                        When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+                        are managed by kubermatic-operator, instead of Ingress.
+                      properties:
+                        className:
+                          default: kubermatic-envoy-gateway
+                          description: ClassName is the GatewayClass to use.
+                          type: string
+                      type: object
                     namespaceOverride:
                       description: NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
                       type: string

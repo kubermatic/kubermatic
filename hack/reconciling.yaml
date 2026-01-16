@@ -74,4 +74,8 @@ resourceTypes:
   # kyverno/v1
   - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: ClusterPolicy, apiVersionPrefix: Kyverno }
   - { package: github.com/kyverno/kyverno/api/kyverno/v1, resourceName: Policy, apiVersionPrefix: Kyverno }
-  
+
+  # gateway-api/v1
+  - { package: sigs.k8s.io/gateway-api/apis/v1, resourceName: Gateway, apiVersionPrefix: GatewayAPI, importAlias: gatewayapiv1 }
+  - { package: sigs.k8s.io/gateway-api/apis/v1, resourceName: GatewayClass, apiVersionPrefix: GatewayAPI, importAlias: gatewayapiv1 }
+  - { package: sigs.k8s.io/gateway-api/apis/v1, resourceName: HTTPRoute, apiVersionPrefix: GatewayAPI, importAlias: gatewayapiv1 }
