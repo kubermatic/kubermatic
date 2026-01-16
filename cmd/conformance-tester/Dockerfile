@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/alpine:3.19
+FROM docker.io/alpine:3.23
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/conformance-tester/Dockerfile"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-ENV KUBECTL_VERSION=v1.28.8
+ENV KUBECTL_VERSION=v1.34.3
 
 RUN apk add --no-cache -U bash ca-certificates curl jq
 
