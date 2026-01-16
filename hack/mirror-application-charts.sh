@@ -44,12 +44,13 @@ declare -A CHART_URLS=(
   ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
   ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
   ["kueue"]="oci://registry.k8s.io/kueue/charts/kueue"
+  ["mcp-server-kubernetes"]="oci://ghcr.io/flux159/mcp-server-kubernetes"
 )
 
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.18.2"
+  ["cilium"]="1.18.6"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
@@ -65,6 +66,7 @@ declare -A CHART_VERSIONS=(
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
   ["kueue"]="0.13.4"
+  ["mcp-server-kubernetes"]="2.9.9"
 )
 
 # ─── Usage ────────────────────────────────────────────────────────────────────

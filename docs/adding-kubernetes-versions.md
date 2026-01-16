@@ -52,7 +52,6 @@ Once new Docker images are ready, KKP can be updated as well.
   image tag for the e2e images to use the new tag you just created with the new test binaries.
 - Update the CSI addon manifests (`addon/csi/*.yaml`) to include the new minor version.
 - Update the CCM manifests located in `pkg/resources/cloudcontroller`) to include the new minor version.
-- Update the cluster-autoscaler addon manifests (`addon/cluster-autoscaler`) to include the new minor version.
 - The conformance-tests runner (`cmd/conformance-tester/pkg/tests/conformance.go`) has a list of
   exclusion filters to skip tests that cannot work in the CI environment. Make sure to
   update said list, or else you will be greeted by lots of NodePort Service related

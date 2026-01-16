@@ -232,3 +232,210 @@ func TestDefaultClusterNetwork(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultEventRateLimitPlugin(t *testing.T) {
+	testCases := []struct {
+		name           string
+		spec           *kubermaticv1.ClusterSpec
+		config         *kubermaticv1.KubermaticConfiguration
+		expectedPlugin bool
+		expectedConfig *kubermaticv1.EventRateLimitConfig
+	}{
+		{
+			name:           "nil config - no change",
+			spec:           &kubermaticv1.ClusterSpec{},
+			config:         nil,
+			expectedPlugin: false,
+			expectedConfig: nil,
+		},
+		{
+			name: "config without admission plugins - no change",
+			spec: &kubermaticv1.ClusterSpec{},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{},
+				},
+			},
+			expectedPlugin: false,
+			expectedConfig: nil,
+		},
+		{
+			name: "enforced - enables plugin",
+			spec: &kubermaticv1.ClusterSpec{},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: true,
+			expectedConfig: nil,
+		},
+		{
+			name: "enabled - enables plugin",
+			spec: &kubermaticv1.ClusterSpec{},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: true,
+			expectedConfig: nil,
+		},
+		{
+			name: "enabled=false - does not enable plugin",
+			spec: &kubermaticv1.ClusterSpec{},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(false),
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: false,
+			expectedConfig: nil,
+		},
+		{
+			name: "user already enabled - no change",
+			spec: &kubermaticv1.ClusterSpec{
+				UseEventRateLimitAdmissionPlugin: true,
+			},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(false),
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: true,
+			expectedConfig: nil,
+		},
+		{
+			name: "enabled with default config - applies config",
+			spec: &kubermaticv1.ClusterSpec{},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: true,
+			expectedConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+		},
+		{
+			name: "user config not overwritten",
+			spec: &kubermaticv1.ClusterSpec{
+				UseEventRateLimitAdmissionPlugin: true,
+				EventRateLimitConfig: &kubermaticv1.EventRateLimitConfig{
+					Namespace: &kubermaticv1.EventRateLimitConfigItem{
+						QPS:   25,
+						Burst: 50,
+					},
+				},
+			},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: true,
+			expectedConfig: &kubermaticv1.EventRateLimitConfig{
+				Namespace: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   25,
+					Burst: 50,
+				},
+			},
+		},
+		{
+			name: "enforced with config overwrites user config",
+			spec: &kubermaticv1.ClusterSpec{
+				UseEventRateLimitAdmissionPlugin: true,
+				EventRateLimitConfig: &kubermaticv1.EventRateLimitConfig{
+					Namespace: &kubermaticv1.EventRateLimitConfigItem{
+						QPS:   25,
+						Burst: 50,
+					},
+				},
+			},
+			config: &kubermaticv1.KubermaticConfiguration{
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectedPlugin: true,
+			expectedConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultEventRateLimitPlugin(tc.spec, tc.config)
+			assert.Equal(t, tc.expectedPlugin, tc.spec.UseEventRateLimitAdmissionPlugin)
+			assert.Equal(t, tc.expectedConfig, tc.spec.EventRateLimitConfig)
+		})
+	}
+}

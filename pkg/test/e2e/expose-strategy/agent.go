@@ -125,7 +125,7 @@ func (a *AgentConfig) newAgentConfigMap(ns string) *corev1.ConfigMap {
 
 // newAgnhostPod returns a pod returns the manifest of the agent pod.
 func (a *AgentConfig) newAgentPod(ns string) *corev1.Pod {
-	agentName, createDaemonSet := envoyagent.DaemonSetReconciler(net.IPv4(0, 0, 0, 0), a.Versions, "", registry.GetImageRewriterFunc(""))()
+	agentName, createDaemonSet := envoyagent.DaemonSetReconciler(nil, net.IPv4(0, 0, 0, 0), a.Versions, "", registry.GetImageRewriterFunc(""))()
 
 	ds, err := createDaemonSet(&appsv1.DaemonSet{})
 	if err != nil {

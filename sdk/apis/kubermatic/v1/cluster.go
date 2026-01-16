@@ -865,6 +865,8 @@ type ComponentSettings struct {
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 	// MachineController configures the Kubermatic machine-controller deployment.
 	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
+	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -899,6 +901,11 @@ type ControllerSettings struct {
 
 type DeploymentSettings struct {
 	Replicas    *int32                       `json:"replicas,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+}
+
+type DaemonSetSettings struct {
 	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
 }
@@ -1485,6 +1492,11 @@ type OpenstackCloudSpec struct {
 	// List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
 	// +optional
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
 // NOOP.

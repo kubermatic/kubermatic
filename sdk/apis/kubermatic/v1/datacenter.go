@@ -681,6 +681,11 @@ type DatacenterSpecOpenstack struct {
 	NodePortsAllowedIPRanges *NetworkRanges `json:"nodePortsAllowedIPRange,omitempty"`
 	// Optional: List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
 type OpenstackNodeSizeRequirements struct {

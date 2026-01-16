@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -104,6 +105,10 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 		errs = append(errs, err)
 	}
 
+	if err := v.validateEventRateLimitEnforcement(cluster, nil, config); err != nil {
+		errs = append(errs, err)
+	}
+
 	return nil, errs.ToAggregate()
 }
 
@@ -137,6 +142,10 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	}
 
 	if err := v.validateKyvernoEnforcement(newCluster, oldCluster, datacenter, seed, config); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := v.validateEventRateLimitEnforcement(newCluster, oldCluster, config); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -255,6 +264,48 @@ func (v *validator) validateKyvernoEnforcement(
 			newCluster.Spec.Kyverno,
 			fmt.Sprintf("kyverno is enforced by %q and must be enabled for new clusters", enforcementInfo.Source),
 		)
+	}
+
+	return nil
+}
+
+// validateEventRateLimitEnforcement ensures users cannot disable EventRateLimit or override its config when enforced globally.
+func (v *validator) validateEventRateLimitEnforcement(
+	newCluster, oldCluster *kubermaticv1.Cluster,
+	config *kubermaticv1.KubermaticConfiguration,
+) *field.Error {
+	if config == nil || config.Spec.UserCluster.AdmissionPlugins == nil ||
+		config.Spec.UserCluster.AdmissionPlugins.EventRateLimit == nil {
+		return nil
+	}
+
+	erl := config.Spec.UserCluster.AdmissionPlugins.EventRateLimit
+	if erl.Enforced == nil || !*erl.Enforced {
+		return nil
+	}
+
+	isUpdate := oldCluster != nil
+
+	fieldPath := field.NewPath("spec", "useEventRateLimitAdmissionPlugin")
+	if isUpdate {
+		// Prevent disabling when enforced
+		if oldCluster.Spec.UseEventRateLimitAdmissionPlugin && !newCluster.Spec.UseEventRateLimitAdmissionPlugin {
+			return field.Invalid(fieldPath, false,
+				"EventRateLimit is enforced globally and cannot be disabled")
+		}
+	} else {
+		if !newCluster.Spec.UseEventRateLimitAdmissionPlugin {
+			return field.Invalid(fieldPath, false,
+				"EventRateLimit is enforced globally and must be enabled for new clusters")
+		}
+	}
+
+	if erl.DefaultConfig != nil && newCluster.Spec.EventRateLimitConfig != nil {
+		if !equality.Semantic.DeepEqual(newCluster.Spec.EventRateLimitConfig, erl.DefaultConfig) {
+			configPath := field.NewPath("spec", "eventRateLimitConfig")
+			return field.Invalid(configPath, newCluster.Spec.EventRateLimitConfig,
+				"EventRateLimit configuration is enforced globally and cannot be overridden")
+		}
 	}
 
 	return nil

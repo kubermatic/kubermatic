@@ -20,47 +20,113 @@ package vsphere
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"strings"
 	"testing"
 
+	"github.com/vmware/govmomi/simulator"
+
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 )
 
 func TestVSphereCA(t *testing.T) {
-	t.Skip()
+	ctx := context.Background()
+	sim := vSphereTLSSimulator{t: t}
+	sim.setUp()
+	defer sim.tearDown()
+
+	serverCert := sim.getServerCertificate()
+	validCAPool := x509.NewCertPool()
+	validCAPool.AddCert(serverCert)
+
 	tests := []struct {
 		name           string
-		expectedError  bool
+		allowInsecure  bool
 		caBundle       *x509.CertPool
+		wantErr        bool
 		errMsgContains string
 	}{
 		{
-			name:           "fail accessing vSphere with fake certificate",
-			expectedError:  true,
+			name:          "succeed with AllowInsecure=true",
+			allowInsecure: true,
+			caBundle:      nil,
+			wantErr:       false,
+		},
+		{
+			name:           "fail with fake certificate",
+			allowInsecure:  false,
 			caBundle:       certificates.NewFakeCABundle().CertPool(),
+			wantErr:        true,
 			errMsgContains: "certificate",
 		},
 		{
-			name:          "succeed accessing vSphere with root/host certificate",
-			expectedError: false,
-			caBundle:      nil,
+			name:          "succeed with valid server certificate",
+			allowInsecure: false,
+			caBundle:      validCAPool,
+			wantErr:       false,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, test.caBundle)
-			if test.expectedError {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dc := &kubermaticv1.DatacenterSpecVSphere{
+				Datacenter:    "DC0",
+				Endpoint:      strings.TrimSuffix(sim.server.URL.String(), "/sdk"),
+				AllowInsecure: tt.allowInsecure,
+			}
+
+			_, err := GetNetworks(ctx, dc, sim.username, sim.password, tt.caBundle)
+
+			if tt.wantErr {
 				if err == nil {
-					t.Fatal("expected err, got nil")
+					t.Fatal("expected error, got nil")
 				}
-				if !strings.Contains(err.Error(), test.errMsgContains) {
-					t.Fatalf("expected err msg %q to contain %q", err.Error(), test.errMsgContains)
+				if !strings.Contains(err.Error(), tt.errMsgContains) {
+					t.Fatalf("expected error containing %q, got: %v", tt.errMsgContains, err)
 				}
 			} else if err != nil {
-				t.Fatal(err)
+				t.Fatalf("unexpected error: %v", err)
 			}
 		})
 	}
+}
+
+type vSphereTLSSimulator struct {
+	t        *testing.T
+	model    *simulator.Model
+	server   *simulator.Server
+	username string
+	password string
+}
+
+func (v *vSphereTLSSimulator) setUp() {
+	v.model = simulator.VPX()
+	if err := v.model.Create(); err != nil {
+		v.t.Fatal(err)
+	}
+
+	v.model.Service.TLS = new(tls.Config)
+	v.server = v.model.Service.NewServer()
+
+	v.username = simulator.DefaultLogin.Username()
+	v.password, _ = simulator.DefaultLogin.Password()
+}
+
+func (v *vSphereTLSSimulator) tearDown() {
+	v.server.Close()
+	v.model.Remove()
+}
+
+func (v *vSphereTLSSimulator) getServerCertificate() *x509.Certificate {
+	dialer := &tls.Dialer{Config: &tls.Config{InsecureSkipVerify: true}}
+	conn, err := dialer.DialContext(context.Background(), "tcp", v.server.URL.Host)
+	if err != nil {
+		v.t.Fatalf("failed to connect for server cert: %v", err)
+	}
+	defer conn.Close()
+
+	tlsConn := conn.(*tls.Conn)
+	return tlsConn.ConnectionState().PeerCertificates[0]
 }

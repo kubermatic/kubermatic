@@ -118,6 +118,15 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		LoadBalancerClass: lbClassOpts,
 	}
 
+	// Set NodeVolumeAttachLimit if specified in the DC or Cluster spec
+	if dc.Spec.Openstack.NodeVolumeAttachLimit != nil {
+		cc.BlockStorage.NodeVolumeAttachLimit = *dc.Spec.Openstack.NodeVolumeAttachLimit
+	}
+	if cluster.Spec.Cloud.Openstack.NodeVolumeAttachLimit != nil {
+		cc.BlockStorage.NodeVolumeAttachLimit = *cluster.Spec.Cloud.Openstack.NodeVolumeAttachLimit
+	}
+
+	// Ingress hostname settings
 	if cluster.Spec.Cloud.Openstack.EnableIngressHostname != nil {
 		cc.LoadBalancer.EnableIngressHostname = cluster.Spec.Cloud.Openstack.EnableIngressHostname
 	}

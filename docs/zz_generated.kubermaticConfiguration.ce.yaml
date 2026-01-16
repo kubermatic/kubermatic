@@ -478,13 +478,23 @@ spec:
       # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
       # suffix it becomes "v2.15.0-SUFFIX".
       dockerTagSuffix: ""
+    # AdmissionPlugins configures global admission plugin settings for all user clusters.
+    admissionPlugins: null
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # Applications contains configuration for default Application settings.
     applications:
+      # InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+      # the server's TLS certificate.
+      # This should only be used in development or testing environments.
+      insecureSkipTLSVerify: false
       # Namespace is the namespace which is set as the default for applications installed via ui
       # If left empty the default for the application installation namespace is the name of the resource itself
       namespace: ""
+      # PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+      # instead of HTTPS.
+      # This is intended for local or air-gapped setups where HTTPS is not available.
+      plainHTTP: false
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
@@ -573,6 +583,14 @@ spec:
       helmRegistryConfigFile: null
       # HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
       helmRepository: ""
+      # InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+      # the server's TLS certificate.
+      # This should only be used in development or testing environments.
+      insecureSkipTLSVerify: false
+      # PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+      # instead of HTTPS.
+      # This is intended for local or air-gapped setups where HTTPS is not available.
+      plainHTTP: false
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.

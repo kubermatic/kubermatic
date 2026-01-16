@@ -513,7 +513,7 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 		templateData.RewriteImage,
 	))
 	daemonsetReconcilers = append(daemonsetReconcilers, nodelocaldns.DaemonSetReconciler(templateData.RewriteImage))
-	daemonsetReconcilers = append(daemonsetReconcilers, envoyagent.DaemonSetReconciler(net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.RewriteImage))
+	daemonsetReconcilers = append(daemonsetReconcilers, envoyagent.DaemonSetReconciler(templateData.Cluster(), net.IPv4(0, 0, 0, 0), kubermaticVersions, "", templateData.RewriteImage))
 
 	for _, creatorGetter := range statefulsetReconcilers {
 		_, creator := creatorGetter()
