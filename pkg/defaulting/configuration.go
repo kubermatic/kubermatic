@@ -74,9 +74,6 @@ const (
 	// Default image repository and tag.
 	DefaultApplicationManagerImageRepository = "quay.io/kubermatic/application-catalog-manager"
 	DefaultApplicationManagerImageTag        = "v0.1.0"
-
-	DefaultApplicationCatalogRepository = "quay.io/kubermatic/applications"
-	DefaultApplicationCatalogTag        = "7fd8340dc8f0b3f6aae519301a1c9f8aff34d939"
 )
 
 func newSemver(s string) semver.Semver {
@@ -484,21 +481,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if configCopy.Spec.Applications.CatalogManager.Image.Repository == "" {
 		configCopy.Spec.Applications.CatalogManager.Image.Repository = DefaultApplicationManagerImageRepository
 		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.repository", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
-	}
-
-	if configCopy.Spec.Applications.CatalogManager.Image.Tag == "" {
-		configCopy.Spec.Applications.CatalogManager.Image.Tag = DefaultApplicationManagerImageTag
-		logger.Debugw("Defaulting field", "field", "applications.catalogManager.image.tag", "value", fmt.Sprintf("%s:%s", configCopy.Spec.Applications.CatalogManager.Image.Repository, configCopy.Spec.Applications.CatalogManager.Image.Tag))
-	}
-
-	if configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL == "" {
-		configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL = DefaultApplicationCatalogRepository
-		logger.Debugw("Defaulting field", "field", "applications.catalogManager.registrySettings.registryURL", "value", configCopy.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL)
-	}
-
-	if configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag == "" {
-		configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag = DefaultApplicationCatalogTag
-		logger.Debugw("Defaulting field", "field", "applications.catalogManager.registrySettings.tag", "value", configCopy.Spec.Applications.CatalogManager.RegistrySettings.Tag)
 	}
 
 	configCopy.Spec.Auth = auth

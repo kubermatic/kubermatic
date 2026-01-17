@@ -174,6 +174,10 @@ func (r *Reconciler) reconcile(ctx context.Context, config *kubermaticv1.Kuberma
 		return err
 	}
 
+	if err := r.reconcileApplicationCatalog(ctx, defaulted, logger); err != nil {
+		return err
+	}
+
 	// Since the new standalone webhook, the old service is not required anymore.
 	// Once the webhooks are reconciled above, we can now clean up unneeded services.
 	common.CleanupWebhookServices(ctx, r, logger, defaulted.Namespace)
@@ -296,6 +300,11 @@ func (r *Reconciler) cleanupApplicationCatalogManagerResources(ctx context.Conte
 	err = r.reconcileAppDefManagementMeta(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to update ApplicationDefinitions metadata: %w", err)
+	}
+
+	err = applicationcatalogmanager.CleanupApplicationCatalogs(ctx, r.Client, l)
+	if err != nil {
+		return fmt.Errorf("failed to clean up ApplicationCatalogs: %w", err)
 	}
 
 	return nil
@@ -673,6 +682,26 @@ func (r *Reconciler) reconcileApplicationDefinitions(ctx context.Context, config
 
 	if err := kkpreconciling.ReconcileApplicationDefinitions(ctx, reconcilers, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ApplicationDefinitions: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) reconcileApplicationCatalog(ctx context.Context, config *kubermaticv1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+	if !config.Spec.FeatureGates[features.ExternalApplicationCatalogManager] {
+		logger.Debug("External Application Catalog Manager is disabled, skipping ApplicationCatalog CR reconciliation")
+		return nil
+	}
+
+	if !config.Spec.Applications.DefaultApplicationCatalog.Enable {
+		logger.Debug("Default application catalog is disabled, skipping ApplicationCatalog CR creation")
+		return applicationcatalogmanager.CleanupApplicationCatalogs(ctx, r.Client, logger)
+	}
+
+	logger.Debug("Reconciling default ApplicationCatalog CR")
+
+	if err := applicationcatalogmanager.ReconcileDefaultApplicationCatalog(ctx, config, r.Client, r.scheme, logger); err != nil {
+		return fmt.Errorf("failed to reconcile default ApplicationCatalog: %w", err)
 	}
 
 	return nil

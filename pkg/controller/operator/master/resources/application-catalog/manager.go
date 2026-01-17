@@ -239,11 +239,11 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 				"--metrics-address=0.0.0.0:8085",
 				fmt.Sprintf(
 					"--reconciliation-interval=%s",
-					cfg.Spec.Applications.CatalogManager.ReconciliationInterval.Duration,
+					cfg.Spec.Applications.CatalogManager.ManagerSettings.ReconciliationInterval.Duration,
 				),
 			}
 
-			if cfg.Spec.Applications.CatalogManager.LogLevel == "debug" {
+			if cfg.Spec.Applications.CatalogManager.ManagerSettings.LogLevel == "debug" {
 				args = append(args, "--log-debug=true")
 			} else {
 				args = append(args, "--log-debug=false")
@@ -312,8 +312,9 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 }
 
 func getResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequirements {
-	if cfg.Spec.Applications.CatalogManager.Resources.Requests != nil || cfg.Spec.Applications.CatalogManager.Resources.Limits != nil {
-		return cfg.Spec.Applications.CatalogManager.Resources
+	resources := cfg.Spec.Applications.CatalogManager.ManagerSettings.Resources
+	if resources.Requests != nil || resources.Limits != nil {
+		return resources
 	}
 
 	return defaultResourceRequirements

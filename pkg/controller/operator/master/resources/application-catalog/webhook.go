@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Kubermatic Kubernetes Platform contributors.
+Copyright 2026 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ func CatalogWebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 				"--health-probe-bind-address=0.0.0.0:8081",
 			}
 
-			if cfg.Spec.Applications.CatalogManager.LogLevel == "debug" {
+			if cfg.Spec.Applications.CatalogManager.WebhookSettings.LogLevel == "debug" {
 				args = append(args, "--log-debug=true")
 			} else {
 				args = append(args, "--log-debug=false")
@@ -186,8 +186,9 @@ func CatalogWebhookDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 }
 
 func getWebhookResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequirements {
-	if cfg.Spec.Applications.CatalogManager.Resources.Requests != nil || cfg.Spec.Applications.CatalogManager.Resources.Limits != nil {
-		return cfg.Spec.Applications.CatalogManager.Resources
+	ws := cfg.Spec.Applications.CatalogManager.WebhookSettings
+	if ws.Resources.Requests != nil || ws.Resources.Limits != nil {
+		return ws.Resources
 	}
 
 	return defaultWebhookResourceRequirements
