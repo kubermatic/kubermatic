@@ -45,6 +45,7 @@ func TestKnpServerArgs(t *testing.T) {
 			"--server-port=0",
 			"--agent-port=8132",
 			"--admin-port=8133",
+			"--admin-bind-address=0.0.0.0",
 			"--health-port=8134",
 			"--agent-namespace=kube-system",
 			fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),

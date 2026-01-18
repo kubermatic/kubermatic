@@ -130,6 +130,38 @@ data:
       - source_labels: [__meta_kubernetes_pod_name]
         action: replace
         target_label: pod
+    # scrape Konnectivity server metrics from apiserver pods
+    - job_name: konnectivity-server
+      scheme: http
+
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - "cluster-de-test-01"
+
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: apiserver
+      - source_labels: [__meta_kubernetes_pod_container_name]
+        action: keep
+        regex: konnectivity-server
+      - source_labels: [__address__]
+        action: replace
+        regex: ([^:]+)(?::\d+)?
+        replacement: $1:8133
+        target_label: __address__
+      - target_label: __metrics_path__
+        replacement: /metrics
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+      - target_label: job
+        replacement: konnectivity-server
 
     #######################################################################
     # These rules will scrape pods running inside the user cluster itself.
@@ -691,6 +723,50 @@ data:
           message: The kubelet on {{ $labels.kubernetes_io_hostname }} could not be scraped.
         expr: up{job="kubernetes-nodes"} == 0
         for: 15m
+        labels:
+          severity: warning
+
+    - name: kubermatic.konnectivity
+      rules:
+      - record: job:konnectivity_ready_backend_connections:count
+        expr: konnectivity_network_proxy_server_ready_backend_connections
+        labels:
+          kubermatic: federate
+
+      - record: job:konnectivity_dial_failure_rate:by_reason
+        expr: sum(rate(konnectivity_network_proxy_server_dial_failure_count[5m])) by (reason)
+        labels:
+          kubermatic: federate
+
+      - record: job:konnectivity_network_proxy_server_full_receive_channels:sum
+        expr: sum(konnectivity_network_proxy_server_full_receive_channels)
+        labels:
+          kubermatic: federate
+
+      - alert: KonnectivityNoAgents
+        annotations:
+          message: 'Cluster {{ $labels.cluster }} has no Konnectivity agents connected. New tunnels cannot be established.'
+        expr: |
+          job:konnectivity_ready_backend_connections:count == 0
+        for: 2m
+        labels:
+          severity: critical
+
+      - alert: KonnectivityAgentsUnhealthy
+        annotations:
+          message: 'Cluster {{ $labels.cluster }} has only {{ $value }} Konnectivity agent(s) connected (expected: 2).'
+        expr: |
+          job:konnectivity_ready_backend_connections:count < 2
+        for: 3m
+        labels:
+          severity: warning
+
+      - alert: KonnectivityHighDialFailureRate
+        annotations:
+          message: 'Cluster {{ $labels.cluster }} has {{ $value | humanize }} dial failures/sec (reason: {{ $labels.reason }}). Check agent and node health.'
+        expr: |
+          job:konnectivity_dial_failure_rate:by_reason > 0.1
+        for: 10m
         labels:
           severity: warning
 metadata:
