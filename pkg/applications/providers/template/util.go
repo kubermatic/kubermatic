@@ -164,10 +164,6 @@ func RenderValueTemplate(applicationValues map[string]interface{}, templateData 
 
 func GetAutoscalerImageTag(majorMinorVersion string) (string, error) {
 	switch majorMinorVersion {
-	case "1.30":
-		return "v1.30.3", nil
-	case "1.31":
-		return "v1.31.1", nil
 	case "1.32":
 		return "v1.32.1", nil
 	case "1.33":
