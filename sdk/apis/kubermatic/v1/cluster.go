@@ -1038,10 +1038,10 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
-	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf
+	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf;nftables;
 	// +kubebuilder:default=ipvs
 
-	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf" / "nftables").
 	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode"`
 
