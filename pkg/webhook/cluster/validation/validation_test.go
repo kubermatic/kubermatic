@@ -455,6 +455,96 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
+			name: "Supported nftables proxy mode with Canal",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
+				ExternalCloudProvider: true,
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.NFTablesProxyMode,
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "canal",
+					Version: "v3.28",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
+			name: "Supported nftables proxy mode with Cilium",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
+				ExternalCloudProvider: true,
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.NFTablesProxyMode,
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "cilium",
+					Version: "1.16.6",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
+			name: "Supported iptables proxy mode",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
+				ExternalCloudProvider: true,
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPTablesProxyMode,
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "canal",
+					Version: "v3.28",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
 			name: "Supported CNI for dual-stack",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
