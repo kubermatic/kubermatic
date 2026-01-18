@@ -97,7 +97,7 @@ func EnsureClusterWithCleanup(t *testing.T, ctx context.Context, client ctrlrunt
 			Port: 6443,
 		},
 		Versions: kubermaticv1.ClusterVersionsStatus{
-			ControlPlane: semver.Semver("v1.30.5"),
+			ControlPlane: semver.Semver("v1.32.1"),
 		},
 		NamespaceName: "cluster-default",
 	}
