@@ -40,6 +40,7 @@ import (
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	gwapischeme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 )
 
 const (
@@ -123,10 +124,16 @@ func GetClients() (ctrlruntimeclient.Client, *rest.Config, error) {
 	if err := scheme.AddToScheme(sc); err != nil {
 		return nil, nil, err
 	}
+
 	if err := kubermaticv1.AddToScheme(sc); err != nil {
 		return nil, nil, err
 	}
+
 	if err := constrainttemplatev1.AddToScheme(sc); err != nil {
+		return nil, nil, err
+	}
+
+	if err := gwapischeme.AddToScheme(sc); err != nil {
 		return nil, nil, err
 	}
 
@@ -134,14 +141,17 @@ func GetClients() (ctrlruntimeclient.Client, *rest.Config, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get kube config: %w", err)
 	}
+
 	httpClient, err := rest.HTTPClientFor(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create HTTP client: %w", err)
 	}
+
 	mapper, err := apiutil.NewDynamicRESTMapper(config, httpClient)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create dynamic REST mapper: %w", err)
 	}
+
 	c, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{
 		Mapper: mapper,
 		Scheme: sc,
@@ -149,6 +159,7 @@ func GetClients() (ctrlruntimeclient.Client, *rest.Config, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create client: %w", err)
 	}
+
 	return c, config, nil
 }
 
