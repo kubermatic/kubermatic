@@ -782,7 +782,6 @@ func TestReconcile(t *testing.T) {
 					Controller:                   kubermaticv1.HealthStatusUp,
 					MachineController:            kubermaticv1.HealthStatusUp,
 					Etcd:                         kubermaticv1.HealthStatusUp,
-					OpenVPN:                      kubermaticv1.HealthStatusUp,
 					CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 					UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 				}

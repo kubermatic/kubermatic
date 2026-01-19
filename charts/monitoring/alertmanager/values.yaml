@@ -73,10 +73,6 @@ alertmanager:
     # if a user-cluster apiserver is down, ignore other components failing
     - source_match_re: { alertname: KubernetesApiserverDown, cluster: .+ }
       equal: [seed_cluster, cluster]
-    # if a user-cluster OpenVPN server is dead, we cannot connect to the nodes anymore
-    - source_match_re: { alertname: OpenVPNServerDown, cluster: .+ }
-      target_match_re: { alertname: (CAdvisorDown|KubernetesNodeDown) }
-      equal: [seed_cluster, cluster]
   extraVolumeMounts:
   - name: templates
     mountPath: /etc/alertmanager/templates

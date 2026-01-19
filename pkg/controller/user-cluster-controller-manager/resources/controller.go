@@ -80,7 +80,6 @@ func Add(
 	clusterURL *url.URL,
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker,
 	overwriteRegistry string,
-	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
 	registerReconciledCheck func(name string, check healthz.Checker) error,
@@ -111,7 +110,6 @@ func Add(
 		clusterURL:                clusterURL,
 		clusterIsPaused:           clusterIsPaused,
 		imageRewriter:             registry.GetImageRewriterFunc(overwriteRegistry),
-		openvpnServerPort:         openvpnServerPort,
 		kasSecurePort:             kasSecurePort,
 		tunnelingAgentIP:          tunnelingAgentIP,
 		log:                       log,
@@ -246,7 +244,6 @@ type reconciler struct {
 	clusterURL                *url.URL
 	clusterIsPaused           userclustercontrollermanager.IsPausedChecker
 	imageRewriter             registry.ImageRewriter
-	openvpnServerPort         uint32
 	kasSecurePort             uint32
 	tunnelingAgentIP          net.IP
 	dnsClusterIP              string
@@ -299,10 +296,6 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 func (r *reconciler) caCert(ctx context.Context) (*triple.KeyPair, error) {
 	return resources.GetClusterRootCA(ctx, r.namespace, r.seedClient)
-}
-
-func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
-	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
 }
 
 func (r *reconciler) mlaGatewayCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
