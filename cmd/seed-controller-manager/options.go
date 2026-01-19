@@ -62,7 +62,6 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile string
 	kubermaticImage          string
 	etcdLauncherImage        string
-	dnatControllerImage      string
 	namespace                string
 	concurrentClusterUpdate  int
 	addonEnforceInterval     int
