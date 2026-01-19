@@ -48,7 +48,6 @@ images=(
   "$DOCKER_REPO/etcd-launcher:$TAGS"
   "$DOCKER_REPO/addons:$TAGS"
   "$DOCKER_REPO/user-ssh-keys-agent:$TAGS-amd64"
-  "$DOCKER_REPO/kubeletdnat-controller:$TAGS-amd64"
   "$DOCKER_REPO/network-interface-manager:$TAGS-amd64"
 )
 

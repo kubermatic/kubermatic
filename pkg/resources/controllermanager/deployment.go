@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -175,15 +174,6 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				name: defaultResourceRequirements.DeepCopy(),
-			}
-
-			if !data.IsKonnectivityEnabled() {
-				openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-				}
-				dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, *openvpnSidecar)
-				defResourceRequirements[openvpnSidecar.Name] = openvpnSidecar.Resources.DeepCopy()
 			}
 
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, resources.GetOverrides(data.Cluster().Spec.ComponentsOverride), dep.Annotations)
@@ -377,16 +367,7 @@ func getVolumes(isKonnectivityEnabled bool) []corev1.Volume {
 			},
 		},
 	}
-	if !isKonnectivityEnabled {
-		vs = append(vs, corev1.Volume{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		})
-	}
+
 	return vs
 }
 

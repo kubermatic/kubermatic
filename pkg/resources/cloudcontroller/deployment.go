@@ -24,7 +24,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,8 +33,7 @@ import (
 )
 
 const (
-	ccmContainerName           = "cloud-controller-manager"
-	openvpnClientContainerName = "openvpn-client"
+	ccmContainerName = "cloud-controller-manager"
 )
 
 type ccmDeploymentReconcilerFunc func(*resources.TemplateData) reconciling.NamedDeploymentReconcilerFactory
@@ -108,17 +106,6 @@ func DeploymentReconciler(data *resources.TemplateData) reconciling.NamedDeploym
 				}
 
 				containerNames := sets.New(ccmContainerName)
-
-				if !data.IsKonnectivityEnabled() {
-					// inject the openVPN sidecar container
-					openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
-					if err != nil {
-						return nil, fmt.Errorf("failed to get openvpn sidecar: %w", err)
-					}
-					modified.Spec.Template.Spec.Containers = append(modified.Spec.Template.Spec.Containers, *openvpnSidecar)
-
-					containerNames.Insert(openvpnSidecar.Name)
-				}
 
 				modified.Spec.Template, err = apiserver.IsRunningWrapper(data, modified.Spec.Template, containerNames)
 				if err != nil {

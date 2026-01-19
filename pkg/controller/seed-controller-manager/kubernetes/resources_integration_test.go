@@ -193,7 +193,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Controller:                   kubermaticv1.HealthStatusUp,
 			MachineController:            kubermaticv1.HealthStatusUp,
 			Etcd:                         kubermaticv1.HealthStatusUp,
-			OpenVPN:                      kubermaticv1.HealthStatusUp,
 			CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 		},
@@ -239,7 +238,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		dockerPullConfigJSON: []byte("{}"),
 		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
 		kubermaticImage:      defaulting.DefaultKubermaticImage,
-		dnatControllerImage:  defaulting.DefaultDNATControllerImage,
 		etcdLauncherImage:    defaulting.DefaultEtcdLauncherImage,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
