@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
 	"k8c.io/kubermatic/v2/pkg/resources/konnectivity"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
-	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 	"k8c.io/reconciler/pkg/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -126,27 +125,11 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			}
 
 			var konnectivityProxySidecar *corev1.Container
-			var openvpnSidecar *corev1.Container
-			var dnatControllerSidecar *corev1.Container
 
 			if data.IsKonnectivityEnabled() {
 				konnectivityProxySidecar, err = konnectivity.ProxySidecar(data, *dep.Spec.Replicas)
 				if err != nil {
 					return nil, fmt.Errorf("failed to get konnectivity-proxy sidecar: %w", err)
-				}
-			} else {
-				openvpnSidecar, err = vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
-				if err != nil {
-					return nil, fmt.Errorf("failed to get openvpn-client sidecar: %w", err)
-				}
-
-				dnatControllerSidecar, err = vpnsidecar.DnatControllerContainer(
-					data,
-					"dnat-controller",
-					fmt.Sprintf("https://127.0.0.1:%d", address.Port),
-				)
-				if err != nil {
-					return nil, fmt.Errorf("failed to get dnat-controller sidecar: %w", err)
 				}
 			}
 
@@ -218,18 +201,6 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 				defResourceRequirements = map[string]*corev1.ResourceRequirements{
 					name:                          defaultResourceRequirements.DeepCopy(),
 					konnectivityProxySidecar.Name: konnectivityProxySidecar.Resources.DeepCopy(),
-				}
-			} else {
-				dep.Spec.Template.Spec.Containers = []corev1.Container{
-					*openvpnSidecar,
-					*dnatControllerSidecar,
-					*apiserverContainer,
-				}
-
-				defResourceRequirements = map[string]*corev1.ResourceRequirements{
-					name:                       defaultResourceRequirements.DeepCopy(),
-					openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
-					dnatControllerSidecar.Name: dnatControllerSidecar.Resources.DeepCopy(),
 				}
 			}
 
@@ -816,25 +787,6 @@ func getVolumes(data *resources.TemplateData, isEncryptionEnabled, isAuditEnable
 							Name: resources.KonnectivityKubeApiserverEgress,
 						},
 						DefaultMode: intPtr(420),
-					},
-				},
-			},
-		}...)
-	} else {
-		vs = append(vs, []corev1.Volume{
-			{
-				Name: resources.OpenVPNClientCertificatesSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.OpenVPNClientCertificatesSecretName,
-					},
-				},
-			},
-			{
-				Name: resources.KubeletDnatControllerKubeconfigSecretName,
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: resources.KubeletDnatControllerKubeconfigSecretName,
 					},
 				},
 			},

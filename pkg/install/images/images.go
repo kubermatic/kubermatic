@@ -61,7 +61,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/csi/vmwareclouddirector"
-	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
@@ -488,7 +487,6 @@ func getImagesFromReconcilers(_ logrus.FieldLogger, templateData *resources.Temp
 	deploymentReconcilers = append(deploymentReconcilers, gatekeeper.ControllerDeploymentReconciler(false, templateData.RewriteImage, nil))
 	deploymentReconcilers = append(deploymentReconcilers, vmwareclouddirector.ControllerDeploymentReconciler(templateData))
 	deploymentReconcilers = append(deploymentReconcilers, metricsserver.DeploymentReconciler(templateData))
-	deploymentReconcilers = append(deploymentReconcilers, dns.DeploymentReconciler(templateData))
 
 	if templateData.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		deploymentReconcilers = append(deploymentReconcilers, cloudcontroller.DeploymentReconciler(templateData))
@@ -588,26 +586,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		},
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.OpenVPNServerServiceName,
-				Namespace: mockNamespaceName,
-			},
-			Spec: corev1.ServiceSpec{
-				Ports:     []corev1.ServicePort{{NodePort: 96}},
-				ClusterIP: "192.0.2.2",
-			},
-		},
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.DNSResolverServiceName,
-				Namespace: mockNamespaceName,
-			},
-			Spec: corev1.ServiceSpec{
-				Ports:     []corev1.ServicePort{{NodePort: 98}},
-				ClusterIP: "192.0.2.11",
-			},
-		},
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.KonnectivityProxyServiceName,
 				Namespace: mockNamespaceName,
 			},
@@ -691,7 +669,6 @@ func getTemplateData(config *kubermaticv1.KubermaticConfiguration, clusterVersio
 		WithEtcdDiskSize(resource.Quantity{}).
 		WithKubermaticImage(defaulting.DefaultKubermaticImage).
 		WithEtcdLauncherImage(defaulting.DefaultEtcdLauncherImage).
-		WithDnatControllerImage(defaulting.DefaultDNATControllerImage).
 		WithNetworkIntfMgrImage(defaulting.DefaultNetworkInterfaceManagerImage).
 		WithBackupPeriod(20 * time.Minute).
 		WithFailureDomainZoneAntiaffinity(false).

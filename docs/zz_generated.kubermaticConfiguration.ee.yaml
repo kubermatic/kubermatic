@@ -504,9 +504,6 @@ spec:
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
-    # DNATControllerDockerRepository is the repository containing the
-    # dnat-controller image.
-    dnatControllerDockerRepository: quay.io/kubermatic/kubeletdnat-controller
     # EtcdLauncherDockerRepository is the repository containing the Kubermatic
     # etcd-launcher image.
     etcdLauncherDockerRepository: quay.io/kubermatic/etcd-launcher

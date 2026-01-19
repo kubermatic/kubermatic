@@ -18,7 +18,7 @@ export GO111MODULE = on
 export KUBERMATIC_EDITION ?= ce
 DOCKER_REPO ?= quay.io/kubermatic
 REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
-CMD ?= $(filter-out OWNERS nodeport-proxy kubeletdnat-controller network-interface-manager, $(notdir $(wildcard ./cmd/*)))
+CMD ?= $(filter-out OWNERS nodeport-proxy network-interface-manager, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
 GIT_VERSION = $(shell git describe --tags --always --match='v*')

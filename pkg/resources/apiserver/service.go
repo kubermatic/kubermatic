@@ -44,7 +44,7 @@ func ServiceReconciler(exposeStrategy kubermaticv1.ExposeStrategy, externalURL s
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			case kubermaticv1.ExposeStrategyLoadBalancer:
 				// Even when using exposeStrategy==LoadBalancer, we create
-				// one LoadBalancer for two Services (APIServer and openVPN) and use the nodePortProxy in
+				// one LoadBalancer for APIServer services and use the nodePortProxy in
 				// namespaced mode to redirect the traffic to the right service depending on its port.
 				// We use a nodePort Service because that gives us a concurrency-safe allocation mechanism
 				// for a unique port

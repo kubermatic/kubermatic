@@ -134,7 +134,6 @@ func Add(
 	oidcIssuerClientID string,
 	kubermaticImage string,
 	etcdLauncherImage string,
-	dnatControllerImage string,
 	machineControllerImageTag string,
 	machineControllerImageRepository string,
 	tunnelingAgentIP string,

@@ -81,7 +81,6 @@ func SeedControllerManagerDeploymentReconciler(workerName string, versions kuber
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-worker-name=%s", workerName),
 				fmt.Sprintf("-kubermatic-image=%s", cfg.Spec.UserCluster.KubermaticDockerRepository),
-				fmt.Sprintf("-dnatcontroller-image=%s", cfg.Spec.UserCluster.DNATControllerDockerRepository),
 				fmt.Sprintf("-etcd-launcher-image=%s", cfg.Spec.UserCluster.EtcdLauncherDockerRepository),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
 				fmt.Sprintf("-max-parallel-reconcile=%d", cfg.Spec.SeedController.MaximumParallelReconciles),

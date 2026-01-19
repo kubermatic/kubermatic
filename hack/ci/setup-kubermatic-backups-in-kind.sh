@@ -76,15 +76,6 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
-  echodate "Building kubeletdnat-controller image"
-  TEST_NAME="Build kubeletdnat-controller Docker image"
-  cd cmd/kubeletdnat-controller
-  make build
-  IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
-)
-(
   echodate "Building etcd-launcher image"
   TEST_NAME="Build etcd-launcher Docker image"
   IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"

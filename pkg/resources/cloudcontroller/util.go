@@ -61,16 +61,6 @@ func getVolumes(isKonnectivityEnabled bool, mountCloudConfig bool) []corev1.Volu
 			},
 		})
 	}
-	if !isKonnectivityEnabled {
-		vs = append(vs, corev1.Volume{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		})
-	}
 	return vs
 }
 

@@ -165,7 +165,6 @@ func getKubermaticConfiguration(options *MirrorImagesOptions) (*kubermaticv1.Kub
 		config.Spec.SeedController.DockerRepository = ""
 		config.Spec.Webhook.DockerRepository = ""
 		config.Spec.UserCluster.KubermaticDockerRepository = ""
-		config.Spec.UserCluster.DNATControllerDockerRepository = ""
 		config.Spec.UserCluster.EtcdLauncherDockerRepository = ""
 		config.Spec.UserCluster.Addons.DockerRepository = ""
 		config.Spec.VerticalPodAutoscaler.Recommender.DockerRepository = ""
