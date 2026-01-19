@@ -85,7 +85,6 @@ type TemplateData struct {
 	oidcIssuerURL                         string
 	oidcIssuerClientID                    string
 	kubermaticImage                       string
-	dnatControllerImage                   string
 	networkIntfMgrImage                   string
 	machineControllerImageTag             string
 	machineControllerImageRepository      string
@@ -584,10 +583,6 @@ func (d *TemplateData) KubermaticDockerTag() string {
 	return d.versions.KubermaticContainerTag
 }
 
-func (d *TemplateData) DNATControllerImage() string {
-	return registry.Must(d.RewriteImage(d.dnatControllerImage))
-}
-
 func (d *TemplateData) NetworkIntfMgrImage() string {
 	return registry.Must(d.RewriteImage(d.networkIntfMgrImage))
 }
@@ -598,10 +593,6 @@ func (d *TemplateData) BackupSchedule() time.Duration {
 
 func (d *TemplateData) BackupCount() *int {
 	return d.backupCount
-}
-
-func (d *TemplateData) DNATControllerTag() string {
-	return d.versions.KubermaticContainerTag
 }
 
 func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {

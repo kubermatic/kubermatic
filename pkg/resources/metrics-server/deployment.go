@@ -64,8 +64,6 @@ type metricsServerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetRootCA() (*triple.KeyPair, error)
 	RewriteImage(string) (string, error)
-	DNATControllerImage() string
-	DNATControllerTag() string
 	NodeAccessNetwork() string
 	IsKonnectivityEnabled() bool
 }
@@ -116,7 +114,6 @@ func DeploymentReconciler(data metricsServerData) reconciling.NamedDeploymentRec
 						"--kubelet-use-node-status-port",
 						"--secure-port", "10250",
 						"--metric-resolution", "15s",
-						// We use the same as the API server as we use the same dnat-controller
 						"--kubelet-preferred-address-types", resources.GetKubeletPreferredAddressTypes(data.Cluster(), data.IsKonnectivityEnabled()),
 						"--v", "1",
 						"--tls-cert-file", servingCertMountFolder + "/" + resources.ServingCertSecretKey,
