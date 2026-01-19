@@ -571,7 +571,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 	l := logger.WithField("gateway", gatewayName.String())
 	gw := gatewayapiv1.Gateway{}
 
-	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 3*time.Second, 10*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := kubeClient.Get(ctx, gatewayName, &gw); err != nil {
 			l.Debugf("failed to get Gateway, err: %v", err)
 			return false, nil
@@ -618,7 +618,7 @@ func waitForGateway(ctx context.Context, logger *logrus.Entry, kubeClient ctrlru
 		return true, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Gateway %s failed to become ready within 5 minutes: %w", gatewayName.String(), err)
+		return nil, fmt.Errorf("Gateway %s failed to become ready within 10 minutes: %w", gatewayName.String(), err)
 	}
 
 	return &gw, nil

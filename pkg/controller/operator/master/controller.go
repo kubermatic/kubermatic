@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -139,7 +140,10 @@ func Add(
 	}
 
 	if enableGatewayAPI {
-		exists, err := gatewayAPICRDExists(context.Background(), mgr.GetAPIReader())
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		exists, err := gatewayAPICRDExists(ctx, mgr.GetAPIReader())
 		if err != nil {
 			return fmt.Errorf("failed to check whether Gateway API CRD exists: %w", err)
 		}
