@@ -160,6 +160,10 @@ func TestCiliumClusters(t *testing.T) {
 			name:      "iptables proxy mode test",
 			proxyMode: resources.IPTablesProxyMode,
 		},
+		{
+			name:      "nftables proxy mode test",
+			proxyMode: resources.NFTablesProxyMode,
+		},
 	}
 
 	for _, test := range tests {

@@ -475,6 +475,8 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+	// NFTablesProxyMode defines the nftables kube-proxy mode.
+	NFTablesProxyMode = "nftables"
 	// EBPFProxyMode defines the eBPF proxy mode (disables kube-proxy and requires CNI support).
 	EBPFProxyMode = "ebpf"
 
@@ -1820,5 +1822,14 @@ func PSALabelsBaseline() map[string]string {
 		psaapi.EnforceLevelLabel: string(psaapi.LevelBaseline),
 		psaapi.AuditLevelLabel:   string(psaapi.LevelBaseline),
 		psaapi.WarnLevelLabel:    string(psaapi.LevelBaseline),
+	}
+}
+
+func AllProxyModes() []string {
+	return []string{
+		IPVSProxyMode,
+		IPTablesProxyMode,
+		EBPFProxyMode,
+		NFTablesProxyMode,
 	}
 }
