@@ -75,7 +75,7 @@ func (m *Mutator) Mutate(ctx context.Context, oldCluster, newCluster *kubermatic
 		return nil, field.InternalError(nil, err)
 	}
 
-	if err := defaulting.DefaultClusterSpec(ctx, &newCluster.Spec, defaultTemplate, seed, config, provider); err != nil {
+	if err := defaulting.DefaultClusterSpec(ctx, &newCluster.Spec, newCluster.Annotations, defaultTemplate, seed, config, provider); err != nil {
 		return nil, field.InternalError(nil, err)
 	}
 
