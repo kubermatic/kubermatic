@@ -165,6 +165,9 @@ func knpServerArgs(data *resources.TemplateData, serverCount int32) ([]string, e
 		"--server-port=0",
 		"--agent-port=8132",
 		"--admin-port=8133",
+		// Bind admin server to all interfaces to allow Prometheus scraping.
+		// By default konnectivity binds to localhost only.
+		"--admin-bind-address=0.0.0.0",
 		"--health-port=8134",
 		"--agent-namespace=kube-system",
 		fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),

@@ -1,0 +1,235 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Envoy Gateway has two components:
+#
+# 1. Control Plane (gateway): Kubernetes controller that watches Gateway API resources
+#     and translates them into Envoy configuration. Deployed as envoy-gateway pods.
+#
+# 2. Data Plane (envoyProxy): The actual Envoy proxies that handle traffic.
+#     Deployed as envoy-<gateway-name>-* pods, one deployment per Gateway.
+#
+# This chart configures both components.
+#
+
+# GatewayClass defines which controller handles Gateways. This chart creates one
+# GatewayClass that links to our EnvoyProxy configuration.
+gatewayClass:
+  create: true
+  name: kubermatic-envoy-gateway
+
+  # Annotations for the GatewayClass
+  annotations:
+    "helm.sh/resource-policy": keep
+
+  # Reference an external EnvoyProxy instead of the default one created by this chart.
+  # Set this to bring your own EnvoyProxy configuration.
+  # Ensure the referenced EnvoyProxy exists before installing.
+  # parametersRef:
+  #   group: gateway.envoyproxy.io
+  #   kind: EnvoyProxy
+  #   name: my-custom-proxy
+  #   namespace: my-namespace
+
+# Configures the Envoy proxy deployment that handles actual traffic.
+# Changes here affect Envoy proxy (data plane).
+envoyProxy:
+  create: true
+  name: kubermatic-default-proxy
+  attachToGatewayClass: true
+
+  deployment:
+    replicas: 3
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 1
+    container:
+      image: "envoyproxy/envoy:distroless-v1.36.3"
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+      env: []
+    pod:
+      annotations:
+        prometheus.io/scrape: "true"
+        # envoy proxy has port named "metrics" for prometheus scraping, which listens on 19001 by default
+        prometheus.io/port: "19001"
+      labels: {}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubermatic.io/type
+                    operator: In
+                    values:
+                      - stable
+      tolerations:
+        - key: only_critical
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      nodeSelector: {}
+      volumes: []
+      volumeMounts: []
+
+    # Shutdown manager handles graceful pod termination.
+    shutdownManager:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+
+    # Container security context (applied to envoy and shutdown-manager).
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+
+  service:
+    annotations:
+      "helm.sh/resource-policy": keep
+    labels: {}
+    type: LoadBalancer
+    externalTrafficPolicy: "Local"
+    # patch allows modifying the generated Service using JSON Merge Patch (RFC 7396).
+    # This is useful for setting static NodePorts or other Service customizations.
+    # Note: envoyService.patch uses KubernetesPatchSpec which supports:
+    # - StrategicMerge (default)
+    # - JSONMerge (RFC 7396 - JSON Merge Patch)
+    # JSONPatch (RFC 6902) is NOT supported here - that's for EnvoyPatchPolicy only.
+    #
+    # The patch value is a partial object that gets merged into the Service.
+    # Example (HTTP only - sets NodePort for port 80):
+    # patch:
+    #   type: JSONMerge
+    #   value:
+    #     spec:
+    #       ports:
+    #       - name: http
+    #         nodePort: 30080
+    patch: {}
+
+  bootstrap: {}
+  extraArgs: []
+  filterOrder: []
+  ipFamily: IPv4
+
+# backendTrafficPolicy configures traffic policies for backends (upstream services).
+# This replaces nginx-ingress annotations like proxy-body-size.
+backendTrafficPolicy:
+  create: true
+  name: kubermatic-backend-policy
+
+  targetGateway:
+    name: kubermatic
+    # Empty means same namespace as the policy
+    namespace: ""
+
+  # Request buffer configuration.
+  # Replaces nginx "proxy-body-size: 0" (unlimited).
+  # Envoy doesn't support truly unlimited, so we use a large value.
+  # Requests larger than this limit are rejected with HTTP 413.
+  requestBuffer:
+    limit: "100Mi"
+
+# Configures client connection settings for the Gateway.
+# This replaces nginx-ingress annotations like large-client-header-buffers.
+clientTrafficPolicy:
+  create: true
+  name: kubermatic-client-policy
+
+  targetGateway:
+    name: kubermatic
+    # Empty means same namespace as the policy
+    namespace: ""
+
+  # Connection buffer configuration.
+  # Replaces nginx "large-client-header-buffers: 4 64k" = 256KB.
+  # Default Envoy buffer is 32KB, which is insufficient for LDAP/SAML scenarios.
+  connection:
+    bufferLimit: "256Ki" # Matches nginx "4 64k"
+    # connectionLimit can also be set to limit concurrent connections
+    # connectionLimit:
+    #   value: 10000
+
+# gateway configures the Envoy Gateway controller (control plane).
+# These values are passed to the upstream gateway-helm chart.
+gateway:
+  deployment:
+    # Number of control plane replicas.
+    replicas: 1
+
+    envoyGateway:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+
+    pod:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "19001"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: kubermatic.io/type
+                    operator: In
+                    values:
+                      - stable
+      tolerations:
+        - key: only_critical
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+
+  # Control plane service (xDS endpoint).
+  service:
+    type: ClusterIP
+
+  config:
+    envoyGateway:
+      gateway:
+        # Must match the controllerName in GatewayClass.
+        controllerName: gateway.k8c.io/envoy-gateway
+      provider:
+        type: Kubernetes
+      logging:
+        level:
+          default: info
