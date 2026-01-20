@@ -70,6 +70,9 @@ const (
 	MaxEtcdClusterSize     = 9
 
 	DefaultKonnectivityKeepaliveTime = "1m"
+	// DefaultKonnectivityXfrChannelSize is the default value for the --xfr-channel-size flag.
+	// It controls the buffer size for data transfer between konnectivity-server and konnectivity-agent.
+	DefaultKonnectivityXfrChannelSize = 150
 )
 
 // +kubebuilder:validation:Enum=standard;basic

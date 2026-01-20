@@ -52,6 +52,7 @@ func TestKnpServerArgs(t *testing.T) {
 			"--authentication-audience=system:konnectivity-server",
 			"--proxy-strategies=default",
 			fmt.Sprintf("--keepalive-time=%s", keepAliveTime),
+			fmt.Sprintf("--xfr-channel-size=%d", kubermaticv1.DefaultKonnectivityXfrChannelSize),
 		}
 	}
 
@@ -245,6 +246,71 @@ func TestKnpServerArgs(t *testing.T) {
 				getDefaultArgs(2, kubermaticv1.DefaultKonnectivityKeepaliveTime),
 				"--custom-arg=value",
 			),
+		},
+		{
+			name: "default xfr-channel-size is set",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: nil,
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{},
+				},
+			},
+			serverCount:       3,
+			expectedKeepAlive: kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			expectedArgs:      getDefaultArgs(3, kubermaticv1.DefaultKonnectivityKeepaliveTime),
+		},
+		{
+			name: "user xfr-channel-size overrides default without duplicates",
+			seed: &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					DefaultComponentSettings: kubermaticv1.ComponentSettings{
+						KonnectivityProxy: kubermaticv1.KonnectivityProxySettings{
+							Args: []string{"--xfr-channel-size=300"},
+						},
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					ComponentsOverride: kubermaticv1.ComponentSettings{},
+				},
+			},
+			serverCount:       3,
+			expectedKeepAlive: kubermaticv1.DefaultKonnectivityKeepaliveTime,
+			// When user specifies xfr-channel-size, default is NOT added (no duplicates)
+			expectedArgs: func() []string {
+				// getDefaultArgs includes xfr-channel-size, but we expect it to be replaced
+				baseArgs := []string{
+					"--logtostderr=true",
+					"-v=3",
+					fmt.Sprintf("--cluster-key=/etc/kubernetes/pki/%s.key", resources.KonnectivityProxyTLSSecretName),
+					fmt.Sprintf("--cluster-cert=/etc/kubernetes/pki/%s.crt", resources.KonnectivityProxyTLSSecretName),
+					"--uds-name=/etc/kubernetes/konnectivity-server/konnectivity-server.socket",
+					fmt.Sprintf("--kubeconfig=/etc/kubernetes/kubeconfig/%s", resources.KonnectivityServerConf),
+					fmt.Sprintf("--server-count=%d", 3),
+					"--mode=grpc",
+					"--server-port=0",
+					"--agent-port=8132",
+					"--admin-port=8133",
+					"--health-port=8134",
+					"--agent-namespace=kube-system",
+					fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),
+					"--delete-existing-uds-file=true",
+					"--authentication-audience=system:konnectivity-server",
+					"--proxy-strategies=default",
+					fmt.Sprintf("--keepalive-time=%s", kubermaticv1.DefaultKonnectivityKeepaliveTime),
+					"--xfr-channel-size=300",
+				}
+				return baseArgs
+			}(),
 		},
 	}
 

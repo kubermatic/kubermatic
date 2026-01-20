@@ -18,7 +18,10 @@ package konnectivity
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -173,10 +176,17 @@ func knpServerArgs(data *resources.TemplateData, serverCount int32) ([]string, e
 		fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
 	}
 
-	if kSrvArgs == nil {
-		return args, nil
+	if !HasArgWithPrefix(kSrvArgs, "--xfr-channel-size") {
+		args = append(args, fmt.Sprintf("--xfr-channel-size=%d", kubermaticv1.DefaultKonnectivityXfrChannelSize))
 	}
 
 	args = append(args, kSrvArgs...)
 	return args, nil
+}
+
+// HasArgWithPrefix returns true if any element in args starts with the given prefix.
+func HasArgWithPrefix(args []string, prefix string) bool {
+	return slices.ContainsFunc(args, func(arg string) bool {
+		return strings.HasPrefix(arg, prefix)
+	})
 }
