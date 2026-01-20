@@ -71,7 +71,7 @@ const (
 
 	DefaultKonnectivityKeepaliveTime = "1m"
 	// DefaultKonnectivityXfrChannelSize is the default value for the --xfr-channel-size flag.
-	// It controls the buffer size for data transfer between konnectivity-server and konnectivity-agent.
+	// It sets the receive channel buffer size for packet handling.
 	DefaultKonnectivityXfrChannelSize = 150
 )
 
