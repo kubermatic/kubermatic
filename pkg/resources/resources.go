@@ -1824,3 +1824,12 @@ func PSALabelsBaseline() map[string]string {
 		psaapi.WarnLevelLabel:    string(psaapi.LevelBaseline),
 	}
 }
+
+func AllProxyModes() []string {
+	return []string{
+		IPVSProxyMode,
+		IPTablesProxyMode,
+		EBPFProxyMode,
+		NFTablesProxyMode,
+	}
+}

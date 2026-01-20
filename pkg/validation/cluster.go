@@ -486,9 +486,9 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, dc *k
 func validateProxyMode(n *kubermaticv1.ClusterNetworkingConfig, cni *kubermaticv1.CNIPluginSettings, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if n.ProxyMode != resources.IPVSProxyMode && n.ProxyMode != resources.IPTablesProxyMode && n.ProxyMode != resources.EBPFProxyMode && n.ProxyMode != resources.NFTablesProxyMode {
+	if !slices.Contains(resources.AllProxyModes(), n.ProxyMode) {
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("proxyMode"), n.ProxyMode,
-			[]string{resources.IPVSProxyMode, resources.IPTablesProxyMode, resources.EBPFProxyMode, resources.NFTablesProxyMode}))
+			resources.AllProxyModes()))
 	}
 
 	if n.ProxyMode == resources.EBPFProxyMode && (cni == nil || cni.Type == kubermaticv1.CNIPluginTypeCanal) {
