@@ -12,8 +12,8 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
-// only for local development, will be updated once the code is published
-replace k8c.io/application-catalog-manager => ../application-catalog
+// TODO: Remove once k8c.io has go-import meta tag configured
+replace k8c.io/application-catalog-manager => github.com/kubermatic/application-catalog-manager v0.0.0-20260120140957-f51528200a0c
 
 require (
 	dario.cat/mergo v1.0.2
