@@ -203,9 +203,10 @@ func verifyChecksum(ctx context.Context, checksumURL string, binaryFilePath stri
 func getCriToolsRelease(version semverlib.Version) string {
 	release := fmt.Sprintf("%d.%d", version.Major(), version.Minor())
 	var criToolsReleases = map[string]string{
+		"1.34": "v1.34.0",
+		"1.33": "v1.33.0",
 		"1.32": "v1.32.0",
 		"1.31": "v1.31.1",
-		"1.30": "v1.30.1",
 	}
 	if criToolRelease, ok := criToolsReleases[release]; ok {
 		return criToolRelease

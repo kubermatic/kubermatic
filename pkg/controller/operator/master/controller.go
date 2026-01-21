@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -37,6 +38,8 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	policyv1 "k8s.io/api/policy/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -45,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 )
 
 const (
@@ -58,14 +62,16 @@ func Add(
 	namespace string,
 	numWorkers int,
 	workerName string,
+	enableGatewayAPI bool,
 ) error {
 	reconciler := &Reconciler{
-		Client:     mgr.GetClient(),
-		scheme:     mgr.GetScheme(),
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
-		log:        log.Named(ControllerName),
-		workerName: workerName,
-		versions:   kubermatic.GetVersions(),
+		Client:            mgr.GetClient(),
+		scheme:            mgr.GetScheme(),
+		recorder:          mgr.GetEventRecorderFor(ControllerName),
+		log:               log.Named(ControllerName),
+		workerName:        workerName,
+		versions:          kubermatic.GetVersions(),
+		gatewayAPIEnabled: enableGatewayAPI,
 	}
 
 	bldr := builder.ControllerManagedBy(mgr).
@@ -123,7 +129,7 @@ func Add(
 		}}
 	})
 
-	for _, t := range []ctrlruntimeclient.Object{
+	namespacedResources := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -131,7 +137,28 @@ func Add(
 		&corev1.ServiceAccount{},
 		&networkingv1.Ingress{},
 		&policyv1.PodDisruptionBudget{},
-	} {
+	}
+
+	if enableGatewayAPI {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+		defer cancel()
+
+		exists, err := gatewayAPICRDExists(ctx, mgr.GetAPIReader())
+		if err != nil {
+			return fmt.Errorf("failed to check whether Gateway API CRD exists: %w", err)
+		}
+
+		if !exists {
+			return fmt.Errorf("--enable-gateway-api=true but Gateway API CRDs are not found.")
+		}
+
+		namespacedResources = append(namespacedResources, &gatewayapiv1.Gateway{}, &gatewayapiv1.HTTPRoute{})
+		log.Infow("Gateway API mode enabled, watching Gateway and HTTPRoute resources")
+	} else {
+		log.Warn("In the future KKP releases, nginx-ingress-controller will be deprecated. Consider upgrading to Gateway API.")
+	}
+
+	for _, t := range namespacedResources {
 		bldr.Watches(t, childEventHandler, builder.WithPredicates(namespacePredicate, common.ManagedByOperatorPredicate))
 	}
 
@@ -155,4 +182,20 @@ func Add(
 	_, err := bldr.Build(reconciler)
 
 	return err
+}
+
+func gatewayAPICRDExists(ctx context.Context, reader ctrlruntimeclient.Reader) (bool, error) {
+	crd := apiextensionsv1.CustomResourceDefinition{}
+	key := types.NamespacedName{Name: "gateways.gateway.networking.k8s.io"}
+
+	crdExists := true
+	if err := reader.Get(ctx, key, &crd); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return false, fmt.Errorf("failed to probe for Gateway API CRD: %w", err)
+		}
+
+		crdExists = false
+	}
+
+	return crdExists, nil
 }

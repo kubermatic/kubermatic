@@ -44,6 +44,10 @@ const (
 	DefaultEtcdVolumeSize                         = "5Gi"
 	DefaultAuthClientID                           = "kubermatic"
 	DefaultIngressClass                           = "nginx"
+	DefaultIngressName                            = "kubermatic"
+	DefaultGatewayName                            = "kubermatic"
+	DefaultHTTPRouteName                          = "kubermatic"
+	DefaultGatewayClassName                       = "kubermatic-envoy-gateway"
 	DefaultCABundleConfigMapName                  = "ca-bundle"
 	DefaultAPIReplicas                            = 2
 	DefaultUIReplicas                             = 2
@@ -228,15 +232,6 @@ var (
 		// Dashboard hides version that are not supported any longer from the
 		// cluster creation/upgrade page.
 		Versions: []semver.Semver{
-			// Kubernetes 1.31
-			newSemver("v1.31.1"),
-			newSemver("v1.31.5"),
-			newSemver("v1.31.7"),
-			newSemver("v1.31.8"),
-			newSemver("v1.31.10"),
-			newSemver("v1.31.11"),
-			newSemver("v1.31.13"),
-			newSemver("v1.31.14"),
 			// Kubernetes 1.32
 			newSemver("v1.32.1"),
 			newSemver("v1.32.3"),
@@ -258,17 +253,6 @@ var (
 			newSemver("v1.34.3"),
 		},
 		Updates: []kubermaticv1.Update{
-			// ======= 1.31 =======
-			{
-				// Allow to change to any patch version
-				From: "1.31.*",
-				To:   "1.31.*",
-			},
-			{
-				// Allow to next minor release
-				From: "1.31.*",
-				To:   "1.32.*",
-			},
 			// ======= 1.32 =======
 			{
 				// Allow to change to any patch version
@@ -314,18 +298,18 @@ var (
 	eksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html
-		Default: semver.NewSemverOrDie("v1.31"),
+		Default: semver.NewSemverOrDie("v1.32"),
 		Versions: []semver.Semver{
-			newSemver("v1.31"),
+			newSemver("v1.32"),
 		},
 	}
 
 	aksProviderVersioningConfiguration = kubermaticv1.ExternalClusterProviderVersioningConfiguration{
 		// List of Supported versions
 		// https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions
-		Default: semver.NewSemverOrDie("v1.31"),
+		Default: semver.NewSemverOrDie("v1.32"),
 		Versions: []semver.Semver{
-			newSemver("v1.31"),
+			newSemver("v1.32"),
 		},
 	}
 
@@ -428,6 +412,11 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 	if configCopy.Spec.Ingress.ClassName == "" {
 		configCopy.Spec.Ingress.ClassName = DefaultIngressClass
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", configCopy.Spec.Ingress.ClassName)
+	}
+
+	if configCopy.Spec.Ingress.Gateway != nil && configCopy.Spec.Ingress.Gateway.ClassName == "" {
+		configCopy.Spec.Ingress.Gateway.ClassName = DefaultGatewayClassName
+		logger.Debugw("Defaulting field", "field", "ingress.gateway.className", "value", configCopy.Spec.Ingress.Gateway.ClassName)
 	}
 
 	if configCopy.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix == "" {

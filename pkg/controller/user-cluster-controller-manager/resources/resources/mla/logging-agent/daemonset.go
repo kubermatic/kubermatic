@@ -33,26 +33,26 @@ import (
 )
 
 const (
-	imageName     = "grafana/agent"
-	imageTag      = "v0.29.0"
+	imageName     = "grafana/alloy"
+	imageTag      = "v1.9.2"
 	appName       = "mla-logging-agent"
-	containerName = "grafana-agent"
+	containerName = "grafana-alloy"
 
 	reloaderImageName = "prometheus-operator/prometheus-config-reloader"
 	reloaderTag       = "v0.60.1"
 
 	configVolumeName         = "config"
-	configVolumeMountPath    = "/etc/agent"
-	configFileName           = "agent.yaml"
+	configVolumeMountPath    = "/etc/alloy"
+	configFileName           = "config.alloy"
 	certificatesVolumeName   = "certificates"
 	runVolumeName            = "run"
-	runVolumeMountPath       = "/run/grafana-agent"
+	runVolumeMountPath       = "/run/grafana-alloy"
 	containerVolumeName      = "containers"
 	containerVolumeMountPath = "/var/lib/docker/containers"
 	podVolumeName            = "pods"
 	podVolumeMountPath       = "/var/log/pods"
 	metricsPortName          = "http-metrics"
-	containerPort            = 3101
+	containerPort            = 12345
 )
 
 var (
@@ -97,9 +97,11 @@ func DaemonSetReconciler(overrides *corev1.ResourceRequirements, imageRewriter r
 					Image:           registry.Must(imageRewriter(fmt.Sprintf("%s:%s", imageName, imageTag))),
 					ImagePullPolicy: corev1.PullAlways,
 					Args: []string{
-						fmt.Sprintf("-config.file=%s/%s", configVolumeMountPath, configFileName),
-						fmt.Sprintf("-server.http.address=0.0.0.0:%d", containerPort),
-						"-disable-reporting",
+						"run",
+						fmt.Sprintf("%s/%s", configVolumeMountPath, configFileName),
+						fmt.Sprintf("--server.http.listen-addr=0.0.0.0:%d", containerPort),
+						"--storage.path=/tmp/alloy",
+						"--stability.level=generally-available",
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{

@@ -469,6 +469,17 @@ spec:
                         Domain is the base domain where the dashboard shall be available. Even with
                         a disabled Ingress, this must always be a valid hostname.
                       type: string
+                    gateway:
+                      description: |-
+                        Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+                        When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+                        are managed by kubermatic-operator, instead of Ingress.
+                      properties:
+                        className:
+                          default: kubermatic-envoy-gateway
+                          description: ClassName is the GatewayClass to use.
+                          type: string
+                      type: object
                     namespaceOverride:
                       description: NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
                       type: string
@@ -2602,13 +2613,22 @@ spec:
                                 namespace:
                                   properties:
                                     burst:
+                                      default: 100
+                                      description: Burst is the maximum burst size for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                     cacheSize:
+                                      default: 4096
+                                      description: CacheSize is the size of the LRU cache for this limit type.
                                       format: int32
+                                      minimum: 0
                                       type: integer
                                     qps:
+                                      default: 50
+                                      description: QPS is the queries per second allowed for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                   required:
                                     - burst
@@ -2617,13 +2637,22 @@ spec:
                                 server:
                                   properties:
                                     burst:
+                                      default: 100
+                                      description: Burst is the maximum burst size for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                     cacheSize:
+                                      default: 4096
+                                      description: CacheSize is the size of the LRU cache for this limit type.
                                       format: int32
+                                      minimum: 0
                                       type: integer
                                     qps:
+                                      default: 50
+                                      description: QPS is the queries per second allowed for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                   required:
                                     - burst
@@ -2632,13 +2661,22 @@ spec:
                                 sourceAndObject:
                                   properties:
                                     burst:
+                                      default: 100
+                                      description: Burst is the maximum burst size for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                     cacheSize:
+                                      default: 4096
+                                      description: CacheSize is the size of the LRU cache for this limit type.
                                       format: int32
+                                      minimum: 0
                                       type: integer
                                     qps:
+                                      default: 50
+                                      description: QPS is the queries per second allowed for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                   required:
                                     - burst
@@ -2647,13 +2685,22 @@ spec:
                                 user:
                                   properties:
                                     burst:
+                                      default: 100
+                                      description: Burst is the maximum burst size for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                     cacheSize:
+                                      default: 4096
+                                      description: CacheSize is the size of the LRU cache for this limit type.
                                       format: int32
+                                      minimum: 0
                                       type: integer
                                     qps:
+                                      default: 50
+                                      description: QPS is the queries per second allowed for this limit type.
                                       format: int32
+                                      minimum: 1
                                       type: integer
                                   required:
                                     - burst
@@ -3279,4 +3326,5 @@ spec:
           type: object
       served: true
       storage: true
-      subresources: {}
+      subresources:
+        status: {}

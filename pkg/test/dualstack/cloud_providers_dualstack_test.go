@@ -30,6 +30,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/jig"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/util/wait"
@@ -60,6 +61,7 @@ type testCase struct {
 	operatingSystems       []providerconfig.OperatingSystem
 	cni                    string
 	ipFamily               net.IPFamily
+	proxyMode              string
 	skipNodes              bool
 	skipHostNetworkPods    bool
 	skipEgressConnectivity bool
@@ -141,6 +143,32 @@ var (
 			skipHostNetworkPods: true,
 		},
 		{
+			cloudProvider: kubermaticv1.AWSCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:                 CanalCNI,
+			ipFamily:            net.IPFamilyIPv4IPv6,
+			proxyMode:           resources.NFTablesProxyMode,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.AWSCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:                 CiliumCNI,
+			ipFamily:            net.IPFamilyIPv4IPv6,
+			proxyMode:           resources.NFTablesProxyMode,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
 			cloudProvider: kubermaticv1.AzureCloudProvider,
 			operatingSystems: []providerconfig.OperatingSystem{
 				providerconfig.OperatingSystemFlatcar,
@@ -159,8 +187,32 @@ var (
 				providerconfig.OperatingSystemRockyLinux,
 				providerconfig.OperatingSystemUbuntu,
 			},
+			cni:       CiliumCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.AzureCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemRockyLinux,
+				providerconfig.OperatingSystemUbuntu,
+			},
 			cni:      CanalCNI,
 			ipFamily: net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.AzureCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+				providerconfig.OperatingSystemRockyLinux,
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:       CanalCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.GCPCloudProvider,
@@ -177,7 +229,29 @@ var (
 			operatingSystems: []providerconfig.OperatingSystem{
 				providerconfig.OperatingSystemUbuntu,
 			},
+			cni:                 CiliumCNI,
+			proxyMode:           resources.NFTablesProxyMode,
+			ipFamily:            net.IPFamilyIPv4IPv6,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.GCPCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
 			cni:                 CanalCNI,
+			ipFamily:            net.IPFamilyIPv4IPv6,
+			skipNodes:           true,
+			skipHostNetworkPods: true,
+		},
+		{
+			cloudProvider: kubermaticv1.GCPCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:                 CanalCNI,
+			proxyMode:           resources.NFTablesProxyMode,
 			ipFamily:            net.IPFamilyIPv4IPv6,
 			skipNodes:           true,
 			skipHostNetworkPods: true,
@@ -199,8 +273,30 @@ var (
 				providerconfig.OperatingSystemFlatcar,
 				providerconfig.OperatingSystemRHEL,
 			},
+			cni:       CiliumCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.OpenstackCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+			},
 			cni:      CanalCNI,
 			ipFamily: net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.OpenstackCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemFlatcar,
+				providerconfig.OperatingSystemRHEL,
+			},
+			cni:       CanalCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.HetznerCloudProvider,
@@ -217,8 +313,28 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 				providerconfig.OperatingSystemRockyLinux,
 			},
+			cni:       CiliumCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.HetznerCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
 			cni:      CanalCNI,
 			ipFamily: net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.HetznerCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:       CanalCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
@@ -235,8 +351,28 @@ var (
 				providerconfig.OperatingSystemUbuntu,
 				providerconfig.OperatingSystemRockyLinux,
 			},
+			cni:       CiliumCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
 			cni:      CanalCNI,
 			ipFamily: net.IPFamilyIPv4IPv6,
+		},
+		{
+			cloudProvider: kubermaticv1.DigitaloceanCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+				providerconfig.OperatingSystemRockyLinux,
+			},
+			cni:       CanalCNI,
+			proxyMode: resources.NFTablesProxyMode,
+			ipFamily:  net.IPFamilyIPv4IPv6,
 		},
 		{
 			cloudProvider: kubermaticv1.VSphereCloudProvider,
@@ -252,7 +388,27 @@ var (
 			operatingSystems: []providerconfig.OperatingSystem{
 				providerconfig.OperatingSystemUbuntu,
 			},
+			cni:                    CanalCNI,
+			proxyMode:              resources.NFTablesProxyMode,
+			ipFamily:               net.IPFamilyIPv4IPv6,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
+		{
+			cloudProvider: kubermaticv1.VSphereCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
 			cni:                    CiliumCNI,
+			ipFamily:               net.IPFamilyIPv4IPv6,
+			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
+		},
+		{
+			cloudProvider: kubermaticv1.VSphereCloudProvider,
+			operatingSystems: []providerconfig.OperatingSystem{
+				providerconfig.OperatingSystemUbuntu,
+			},
+			cni:                    CiliumCNI,
+			proxyMode:              resources.NFTablesProxyMode,
 			ipFamily:               net.IPFamilyIPv4IPv6,
 			skipEgressConnectivity: true, // TODO: remove once public IPv6 is available in Kubermatic DC
 		},
@@ -316,6 +472,7 @@ func removeDisabledTests(allTests []testCase, log *zap.SugaredLogger) []testCase
 			operatingSystems:       operatingSystems, // NB: here we override the OS list
 			cni:                    test.cni,
 			ipFamily:               test.ipFamily,
+			proxyMode:              test.proxyMode,
 			skipNodes:              test.skipNodes,
 			skipHostNetworkPods:    test.skipHostNetworkPods,
 			skipEgressConnectivity: test.skipEgressConnectivity,
@@ -345,9 +502,15 @@ func TestNewClusters(t *testing.T) {
 
 	for _, test := range filteredTests {
 		testName := fmt.Sprintf("%s-%s-%s", test.cloudProvider, test.cni, test.ipFamily)
+		if test.proxyMode != "" {
+			testName = fmt.Sprintf("%s-%s", testName, test.proxyMode)
+		}
 
 		t.Run(testName, func(t *testing.T) {
 			testLog := log.With("provider", test.cloudProvider, "cni", test.cni, "ipfamily", test.ipFamily)
+			if test.proxyMode != "" {
+				testLog = testLog.With("proxymode", test.proxyMode)
+			}
 
 			jigCreator := cloudProviderJiggers[test.cloudProvider]
 			clusterName := fmt.Sprintf("dualstack-e2e-%s", rand.String(5))
@@ -370,12 +533,18 @@ func TestNewClusters(t *testing.T) {
 					return c
 				})
 
+			// TODO: Update to nftables, when updating to default for canal CNI
 			// change proxy mode depending on the CNI
 			switch test.cni {
 			case CanalCNI:
-				testJig.ClusterJig.WithProxyMode("ipvs")
+				testJig.ClusterJig.WithProxyMode(resources.IPVSProxyMode)
 			case CiliumCNI:
-				testJig.ClusterJig.WithProxyMode("ebpf")
+				testJig.ClusterJig.WithProxyMode(resources.EBPFProxyMode)
+			}
+
+			// Override proxy mode if specified in test case
+			if test.proxyMode != "" {
+				testJig.ClusterJig.WithProxyMode(test.proxyMode)
 			}
 
 			// we create the machines later ourselves, so for now we do not want the jig to create them
