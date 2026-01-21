@@ -53,7 +53,7 @@ func TestKnpServerArgs(t *testing.T) {
 			"--authentication-audience=system:konnectivity-server",
 			"--proxy-strategies=default",
 			fmt.Sprintf("--keepalive-time=%s", keepAliveTime),
-			fmt.Sprintf("--xfr-channel-size=%d", kubermaticv1.DefaultKonnectivityXfrChannelSize),
+			"--xfr-channel-size=150",
 		}
 	}
 

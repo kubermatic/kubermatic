@@ -21,7 +21,6 @@ import (
 	"slices"
 	"strings"
 
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/registry"
@@ -29,6 +28,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	// defaultXfrChannelSize is the default value for the --xfr-channel-size flag.
+	// It sets the receive channel buffer size for packet handling.
+	defaultXfrChannelSize = 150
 )
 
 var (
@@ -179,12 +184,7 @@ func knpServerArgs(data *resources.TemplateData, serverCount int32) ([]string, e
 		fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
 	}
 
-	if !HasArgWithPrefix(kSrvArgs, "--xfr-channel-size") {
-		args = append(args, fmt.Sprintf("--xfr-channel-size=%d", kubermaticv1.DefaultKonnectivityXfrChannelSize))
-	}
-
-	args = append(args, kSrvArgs...)
-	return args, nil
+	return AppendArgsWithDefaults(args, kSrvArgs), nil
 }
 
 // HasArgWithPrefix returns true if any element in args starts with the given prefix.
@@ -192,4 +192,13 @@ func HasArgWithPrefix(args []string, prefix string) bool {
 	return slices.ContainsFunc(args, func(arg string) bool {
 		return strings.HasPrefix(arg, prefix)
 	})
+}
+
+// AppendArgsWithDefaults appends userArgs to baseArgs, adding any required
+// default arguments that aren't already specified in userArgs.
+func AppendArgsWithDefaults(baseArgs, userArgs []string) []string {
+	if !HasArgWithPrefix(userArgs, "--xfr-channel-size") {
+		baseArgs = append(baseArgs, fmt.Sprintf("--xfr-channel-size=%d", defaultXfrChannelSize))
+	}
+	return append(baseArgs, userArgs...)
 }

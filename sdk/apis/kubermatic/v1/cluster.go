@@ -70,9 +70,6 @@ const (
 	MaxEtcdClusterSize     = 9
 
 	DefaultKonnectivityKeepaliveTime = "1m"
-	// DefaultKonnectivityXfrChannelSize is the default value for the --xfr-channel-size flag.
-	// It sets the receive channel buffer size for packet handling.
-	DefaultKonnectivityXfrChannelSize = 150
 )
 
 // +kubebuilder:validation:Enum=standard;basic

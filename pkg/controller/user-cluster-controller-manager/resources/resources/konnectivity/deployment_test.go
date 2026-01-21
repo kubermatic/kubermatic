@@ -48,7 +48,7 @@ func TestGetArgs(t *testing.T) {
 				"--health-server-port=8134",
 				fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
 				"--keepalive-time=1m",
-				fmt.Sprintf("--xfr-channel-size=%d", kubermaticv1.DefaultKonnectivityXfrChannelSize),
+				"--xfr-channel-size=150",
 			},
 		},
 		{
@@ -92,7 +92,7 @@ func TestGetArgs(t *testing.T) {
 				"--health-server-port=8134",
 				fmt.Sprintf("--service-account-token-path=/var/run/secrets/tokens/%s", resources.KonnectivityAgentToken),
 				"--keepalive-time=30s",
-				fmt.Sprintf("--xfr-channel-size=%d", kubermaticv1.DefaultKonnectivityXfrChannelSize),
+				"--xfr-channel-size=150",
 			},
 		},
 	}
