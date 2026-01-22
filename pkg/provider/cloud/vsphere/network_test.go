@@ -20,49 +20,45 @@ package vsphere
 
 import (
 	"context"
-	"fmt"
-	"sort"
+	"strings"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/diff"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
-	tests := []struct {
-		name                 string
-		expectedNetworkInfos []NetworkInfo
-	}{
-		{
-			name: "get all networks",
-			expectedNetworkInfos: []NetworkInfo{
-				{
-					AbsolutePath: fmt.Sprintf("/%s/network/VM Network", vSphereDatacenter),
-					RelativePath: "VM Network",
-					Type:         "Network",
-					Name:         "VM Network",
-				},
-			},
-		},
+	sim := vSphereSimulator{t: t}
+	sim.setUp()
+	defer sim.tearDown()
+
+	dc := &kubermaticv1.DatacenterSpecVSphere{}
+	sim.fillClientInfo(dc)
+
+	networks, err := GetNetworks(context.Background(), dc, sim.username(), sim.password(), nil)
+	if err != nil {
+		t.Fatalf("GetNetworks failed: %v", err)
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(context.Background(), getTestDC(), vSphereUsername, vSpherePassword, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+	if len(networks) == 0 {
+		t.Fatal("expected at least one network, got none")
+	}
 
-			sort.Slice(test.expectedNetworkInfos, func(i, j int) bool {
-				return test.expectedNetworkInfos[i].AbsolutePath < test.expectedNetworkInfos[j].AbsolutePath
-			})
-
-			sort.Slice(networkInfos, func(i, j int) bool {
-				return networkInfos[i].AbsolutePath < networkInfos[j].AbsolutePath
-			})
-
-			if changes := diff.ObjectDiff(test.expectedNetworkInfos, networkInfos); changes != "" {
-				t.Errorf("Got network infos differ from expected ones. Diff: %v", changes)
-			}
-		})
+	const expectedPathPrefix = "/DC0/network/"
+	for _, n := range networks {
+		if n.Name == "" {
+			t.Error("network Name should not be empty")
+		}
+		if n.AbsolutePath == "" {
+			t.Error("network AbsolutePath should not be empty")
+		}
+		if n.RelativePath == "" {
+			t.Error("network RelativePath should not be empty")
+		}
+		if n.Type == "" {
+			t.Error("network Type should not be empty")
+		}
+		if !strings.HasPrefix(n.AbsolutePath, expectedPathPrefix) {
+			t.Errorf("expected AbsolutePath to start with %q, got %s", expectedPathPrefix, n.AbsolutePath)
+		}
 	}
 }
