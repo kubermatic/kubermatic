@@ -58,6 +58,16 @@ spec:
         - --reverse-proxy=true
         - --skip-provider-button=true
         - --config=/config/config.toml
+        {{- if $.Values.iap.extraArgs }}
+        {{- range $arg := $.Values.iap.extraArgs }}
+        - {{ $arg }}
+        {{- end }}
+        {{- end }}
+        {{- if .extraArgs }}
+        {{- range $arg := .extraArgs }}
+        - {{ $arg }}
+        {{- end }}
+        {{- end }}
         envFrom:
         - secretRef:
             name: iap-{{ .name }}-secret
