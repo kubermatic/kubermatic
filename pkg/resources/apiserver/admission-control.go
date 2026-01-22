@@ -21,6 +21,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/reconciler/pkg/reconciling"
 
@@ -151,27 +152,25 @@ func getEventRateLimitConfiguration(data *resources.TemplateData) (string, error
 	config := EventConfiguration{
 		Kind:       "Configuration",
 		APIVersion: "eventratelimit.admission.k8s.io/v1alpha1",
-		Limits:     []EventLimit{},
 	}
 
-	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.Server != nil {
-		limit := data.Cluster().Spec.EventRateLimitConfig.Server
-		config.Limits = append(config.Limits, EventLimit{Type: "Server", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
-	}
+	rateLimitConfig := data.Cluster().Spec.EventRateLimitConfig
+	if rateLimitConfig != nil {
+		addEventLimit := func(limitType kubermaticv1.EventRateLimitType, item *kubermaticv1.EventRateLimitConfigItem) {
+			if item != nil {
+				config.Limits = append(config.Limits, EventLimit{
+					Type:      string(limitType),
+					QPS:       item.QPS,
+					Burst:     item.Burst,
+					CacheSize: item.CacheSize,
+				})
+			}
+		}
 
-	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.Namespace != nil {
-		limit := data.Cluster().Spec.EventRateLimitConfig.Namespace
-		config.Limits = append(config.Limits, EventLimit{Type: "Namespace", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
-	}
-
-	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.User != nil {
-		limit := data.Cluster().Spec.EventRateLimitConfig.User
-		config.Limits = append(config.Limits, EventLimit{Type: "User", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
-	}
-
-	if data.Cluster().Spec.EventRateLimitConfig != nil && data.Cluster().Spec.EventRateLimitConfig.SourceAndObject != nil {
-		limit := data.Cluster().Spec.EventRateLimitConfig.SourceAndObject
-		config.Limits = append(config.Limits, EventLimit{Type: "SourceAndObject", QPS: limit.QPS, Burst: limit.Burst, CacheSize: limit.CacheSize})
+		addEventLimit(kubermaticv1.EventRateLimitTypeServer, rateLimitConfig.Server)
+		addEventLimit(kubermaticv1.EventRateLimitTypeNamespace, rateLimitConfig.Namespace)
+		addEventLimit(kubermaticv1.EventRateLimitTypeUser, rateLimitConfig.User)
+		addEventLimit(kubermaticv1.EventRateLimitTypeSourceAndObject, rateLimitConfig.SourceAndObject)
 	}
 
 	rawConfig, err := yaml.Marshal(config)

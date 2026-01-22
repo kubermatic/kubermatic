@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Gateway API migration: When true, kubermatic-operator will run with "--enable-gateway-api"
+# flag, which allows it to watch and manage Gateway API resources (Gateway and HTTPRoute)
+# instead of old Ingress resources.
+migrateGatewayAPI: false
+
 kubermaticOperator:
   image:
     repository: "quay.io/kubermatic/kubermatic"

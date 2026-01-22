@@ -63,6 +63,7 @@ spec:
         - --server-port=0
         - --agent-port=8132
         - --admin-port=8133
+        - --admin-bind-address=0.0.0.0
         - --health-port=8134
         - --agent-namespace=kube-system
         - --agent-service-account=system-konnectivity-agent
@@ -70,6 +71,7 @@ spec:
         - --authentication-audience=system:konnectivity-server
         - --proxy-strategies=default
         - --keepalive-time=1m
+        - --xfr-channel-size=150
         command:
         - /proxy-server
         image: registry.k8s.io/kas-network-proxy/proxy-server:v0.31.0

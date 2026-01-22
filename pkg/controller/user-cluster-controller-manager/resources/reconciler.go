@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"maps"
 	"net"
 	"strings"
 
@@ -54,7 +55,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
-	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
 	"k8c.io/kubermatic/v2/pkg/controller/util"
 	"k8c.io/kubermatic/v2/pkg/crd"
@@ -318,7 +318,6 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 
 func (r *reconciler) reconcileServiceAccounts(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedServiceAccountReconcilerFactory{
-		userauth.ServiceAccountReconciler(),
 		usersshkeys.ServiceAccountReconciler(),
 		coredns.ServiceAccountReconciler(),
 	}
@@ -420,7 +419,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 	// default
 	creators = []reconciling.NamedRoleReconcilerFactory{
-		machinecontroller.EndpointReaderRoleReconciler(),
+		machinecontroller.EndpointSliceReaderRoleReconciler(),
 		operatingsystemmanager.DefaultRoleReconciler(),
 	}
 
@@ -567,7 +566,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context, data reconcileDa
 
 func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedClusterRoleBindingReconcilerFactory{
-		userauth.ClusterRoleBindingReconciler(),
 		kubestatemetrics.ClusterRoleBindingReconciler(),
 		prometheus.ClusterRoleBindingReconciler(),
 		machinecontroller.ClusterRoleBindingReconciler(),
@@ -944,6 +942,32 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	return nil
 }
 
+// psaPrivilegedLabeler returns a namespace reconciler that applies PSA privileged labels.
+func psaPrivilegedLabeler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
+			}
+			maps.Copy(ns.Labels, resources.PSALabelsPrivileged())
+			return ns, nil
+		}
+	}
+}
+
+// psaBaselineLabeler returns a namespace reconciler that applies PSA baseline labels.
+func psaBaselineLabeler(namespace string) reconciling.NamedNamespaceReconcilerFactory {
+	return func() (string, reconciling.NamespaceReconciler) {
+		return namespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
+			}
+			maps.Copy(ns.Labels, resources.PSALabelsBaseline())
+			return ns, nil
+		}
+	}
+}
+
 func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData) error {
 	var dsReconcilers []reconciling.NamedDaemonSetReconcilerFactory
 
@@ -960,7 +984,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 		if err != nil {
 			return fmt.Errorf("failed to retrieve envoy-agent config hash: %w", err)
 		}
-		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
+		dsReconcilers = append(dsReconcilers, envoyagent.DaemonSetReconciler(data.cluster, r.tunnelingAgentIP, r.versions, configHash, r.imageRewriter))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsReconcilers, metav1.NamespaceSystem, r); err != nil {
@@ -981,6 +1005,11 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context, data reconcileData)
 func (r *reconciler) reconcileNamespaces(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedNamespaceReconcilerFactory{
 		cloudinitsettings.NamespaceReconciler,
+		// PSA labels for system namespaces
+		psaPrivilegedLabeler(metav1.NamespaceSystem),
+		psaPrivilegedLabeler(metav1.NamespacePublic),
+		psaPrivilegedLabeler(resources.NamespaceNodeLease),
+		psaBaselineLabeler(metav1.NamespaceDefault),
 	}
 	if data.kubernetesDashboardEnabled {
 		creators = append(creators, kubernetesdashboard.NamespaceReconciler)

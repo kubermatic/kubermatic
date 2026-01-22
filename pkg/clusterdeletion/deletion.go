@@ -75,6 +75,11 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		return err
 	}
 
+	// Cleanup ServiceAccounts
+	if err := d.cleanupServiceAccounts(ctx, cluster); err != nil {
+		return err
+	}
+
 	if err := d.cleanupNodes(ctx, cluster); err != nil {
 		return err
 	}

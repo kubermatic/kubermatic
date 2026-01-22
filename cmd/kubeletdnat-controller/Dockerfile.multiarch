@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker.io/golang:1.25.1 AS builder
+FROM docker.io/golang:1.25.6 AS builder
 
 # import the GOPROXY variable via an arg and then use
 # that arg to define the environment variable later on
@@ -28,7 +28,7 @@ WORKDIR /go/src/k8c.io/kubermatic
 COPY . .
 RUN make -C ./cmd/kubeletdnat-controller build
 
-FROM docker.io/alpine:3.19
+FROM docker.io/alpine:3.23
 LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/blob/main/cmd/kubeletdnat-controller/Dockerfile.multiarch"
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"

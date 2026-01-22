@@ -455,6 +455,96 @@ func TestHandle(t *testing.T) {
 			wantAllowed: true,
 		},
 		{
+			name: "Supported nftables proxy mode with Canal",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
+				ExternalCloudProvider: true,
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.NFTablesProxyMode,
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "canal",
+					Version: "v3.28",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
+			name: "Supported nftables proxy mode with Cilium",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
+				ExternalCloudProvider: true,
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.NFTablesProxyMode,
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "cilium",
+					Version: "1.16.6",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
+			name: "Supported iptables proxy mode",
+			op:   admissionv1.Create,
+			cluster: rawClusterGen{
+				Name:      "foo",
+				Namespace: "kubermatic",
+				Labels: map[string]string{
+					kubermaticv1.ProjectIDLabelKey: project1.Name,
+				},
+				ExposeStrategy:        kubermaticv1.ExposeStrategyNodePort.String(),
+				ExternalCloudProvider: true,
+				NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+					Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+					Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+					DNSDomain:                "cluster.local",
+					ProxyMode:                resources.IPTablesProxyMode,
+					NodeLocalDNSCacheEnabled: ptr.To(true),
+				},
+				ComponentSettings: kubermaticv1.ComponentSettings{
+					Apiserver: kubermaticv1.APIServerSettings{
+						NodePortRange: "30000-32768",
+					},
+				},
+				CNIPlugin: &kubermaticv1.CNIPluginSettings{
+					Type:    "canal",
+					Version: "v3.28",
+				},
+			}.Build(),
+			wantAllowed: true,
+		},
+		{
 			name: "Supported CNI for dual-stack",
 			op:   admissionv1.Create,
 			cluster: rawClusterGen{
@@ -1746,4 +1836,395 @@ func (r rawClusterGen) Do() []byte {
 	buff := bytes.NewBuffer([]byte{})
 	_ = s.Encode(&c, buff)
 	return buff.Bytes()
+}
+
+func TestValidateEventRateLimitEnforcement(t *testing.T) {
+	seed := kubermaticv1.Seed{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "kubermatic",
+			Namespace: "kubermatic",
+		},
+		Spec: kubermaticv1.SeedSpec{
+			Datacenters: map[string]kubermaticv1.Datacenter{
+				datacenterName: {
+					Spec: kubermaticv1.DatacenterSpec{
+						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
+					},
+				},
+			},
+		},
+	}
+
+	project := kubermaticv1.Project{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "abcd1234",
+		},
+		Spec: kubermaticv1.ProjectSpec{
+			Name: "my project",
+		},
+		Status: kubermaticv1.ProjectStatus{
+			Phase: kubermaticv1.ProjectActive,
+		},
+	}
+
+	baseCluster := func() rawClusterGen {
+		return rawClusterGen{
+			Name:      "foo",
+			Namespace: "kubermatic",
+			Labels: map[string]string{
+				kubermaticv1.ProjectIDLabelKey: project.Name,
+			},
+			ExposeStrategy:        "NodePort",
+			ExternalCloudProvider: true,
+			NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                resources.IPVSProxyMode,
+				NodeLocalDNSCacheEnabled: ptr.To(true),
+			},
+			ComponentSettings: kubermaticv1.ComponentSettings{
+				Apiserver: kubermaticv1.APIServerSettings{
+					NodePortRange: "30000-32768",
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name                       string
+		op                         admissionv1.Operation
+		config                     *kubermaticv1.KubermaticConfiguration
+		useEventRateLimitPlugin    bool
+		oldUseEventRateLimitPlugin *bool
+		userConfig                 *kubermaticv1.EventRateLimitConfig
+		wantAllowed                bool
+	}{
+		{
+			name: "Create cluster without enforcement - no plugin enabled",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{},
+			},
+			useEventRateLimitPlugin: false,
+			wantAllowed:             true,
+		},
+		{
+			name: "Create cluster with enforcement - plugin not enabled",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: false,
+			wantAllowed:             false,
+		},
+		{
+			name: "Create cluster with enforcement - plugin enabled",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
+		},
+		{
+			name: "Update cluster with enforcement - disable plugin",
+			op:   admissionv1.Update,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin:    false,
+			oldUseEventRateLimitPlugin: ptr.To(true),
+			wantAllowed:                false,
+		},
+		{
+			name: "Update cluster with enforcement - keep plugin enabled",
+			op:   admissionv1.Update,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin:    true,
+			oldUseEventRateLimitPlugin: ptr.To(true),
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
+		},
+		{
+			name: "Update cluster without enforcement - disable plugin",
+			op:   admissionv1.Update,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{},
+			},
+			useEventRateLimitPlugin:    false,
+			oldUseEventRateLimitPlugin: ptr.To(true),
+			wantAllowed:                true,
+		},
+		{
+			name: "Create cluster with enforced=false - plugin not enabled",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(false),
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: false,
+			wantAllowed:             true,
+		},
+		{
+			name: "Create with enforced config - user specifies different config",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   25,
+					Burst: 50,
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Create with enforced config - user specifies same config",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
+		},
+		{
+			name: "Create with enforced config - no user config",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enforced: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   50,
+					Burst: 100,
+				},
+			},
+			wantAllowed: true,
+		},
+		{
+			name: "Create without enforced config - user can override",
+			op:   admissionv1.Create,
+			config: &kubermaticv1.KubermaticConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kubermatic",
+					Namespace: "kubermatic",
+				},
+				Spec: kubermaticv1.KubermaticConfigurationSpec{
+					UserCluster: kubermaticv1.KubermaticUserClusterConfiguration{
+						AdmissionPlugins: &kubermaticv1.AdmissionPluginsConfiguration{
+							EventRateLimit: &kubermaticv1.EventRateLimitPluginConfiguration{
+								Enabled: ptr.To(true),
+								DefaultConfig: &kubermaticv1.EventRateLimitConfig{
+									Server: &kubermaticv1.EventRateLimitConfigItem{
+										QPS:   50,
+										Burst: 100,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			useEventRateLimitPlugin: true,
+			userConfig: &kubermaticv1.EventRateLimitConfig{
+				Server: &kubermaticv1.EventRateLimitConfigItem{
+					QPS:   25,
+					Burst: 50,
+				},
+			},
+			wantAllowed: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testSeed := seed.DeepCopy()
+
+			seedClient := fake.
+				NewClientBuilder().
+				WithScheme(testScheme).
+				WithObjects(testSeed, &project).
+				Build()
+
+			seedGetter := test.NewSeedGetter(testSeed)
+			configGetter := test.NewConfigGetter(tt.config)
+
+			clusterValidator := validator{
+				client:                    seedClient,
+				seedGetter:                seedGetter,
+				configGetter:              configGetter,
+				disableProviderValidation: true,
+			}
+
+			gen := baseCluster()
+			cluster := gen.Build()
+			cluster.Spec.UseEventRateLimitAdmissionPlugin = tt.useEventRateLimitPlugin
+			cluster.Spec.EventRateLimitConfig = tt.userConfig
+
+			ctx := context.Background()
+			var err error
+
+			switch tt.op {
+			case admissionv1.Create:
+				_, err = clusterValidator.ValidateCreate(ctx, &cluster)
+			case admissionv1.Update:
+				oldGen := baseCluster()
+				oldCluster := oldGen.Build()
+				if tt.oldUseEventRateLimitPlugin != nil {
+					oldCluster.Spec.UseEventRateLimitAdmissionPlugin = *tt.oldUseEventRateLimitPlugin
+				}
+				_, err = clusterValidator.ValidateUpdate(ctx, &oldCluster, &cluster)
+			}
+
+			allowed := err == nil
+
+			if allowed != tt.wantAllowed {
+				t.Errorf("Allowed %t, but wanted %t: %v", allowed, tt.wantAllowed, err)
+			}
+		})
+	}
 }

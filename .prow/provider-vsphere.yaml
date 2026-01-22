@@ -13,50 +13,6 @@
 # limitations under the License.
 
 presubmits:
-  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.31
-    decorate: true
-    run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-vsphere: "true"
-      preset-vault: "true"
-      preset-docker-mirror: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: RELEASES_TO_TEST
-              value: "1.31"
-            - name: PROVIDER
-              value: "vsphere"
-            - name: DISTRIBUTIONS
-              value: ubuntu
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
-          command:
-            - "./hack/ci/run-e2e-tests.sh"
-          # docker-in-docker needs privileged mode
-          securityContext:
-            privileged: true
-          resources:
-            requests:
-              memory: 4Gi
-              cpu: 3.5
-            limits:
-              memory: 6Gi
-
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.32
     decorate: true
     run_if_changed: "(addons/csi/vsphere|pkg/provider/cloud/vsphere)"
@@ -74,7 +30,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -118,7 +74,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -162,7 +118,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -206,7 +162,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -252,7 +208,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee
@@ -301,7 +257,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           env:
             - name: KUBERMATIC_EDITION
               value: ee

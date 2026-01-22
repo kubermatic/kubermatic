@@ -18,6 +18,8 @@ package konnectivity
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -26,6 +28,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	// defaultXfrChannelSize is the default value for the --xfr-channel-size flag.
+	// It sets the receive channel buffer size for packet handling.
+	defaultXfrChannelSize = 150
 )
 
 var (
@@ -162,6 +170,9 @@ func knpServerArgs(data *resources.TemplateData, serverCount int32) ([]string, e
 		"--server-port=0",
 		"--agent-port=8132",
 		"--admin-port=8133",
+		// Bind admin server to all interfaces to allow Prometheus scraping.
+		// By default konnectivity binds to localhost only.
+		"--admin-bind-address=0.0.0.0",
 		"--health-port=8134",
 		"--agent-namespace=kube-system",
 		fmt.Sprintf("--agent-service-account=%s", resources.KonnectivityServiceAccountName),
@@ -173,10 +184,21 @@ func knpServerArgs(data *resources.TemplateData, serverCount int32) ([]string, e
 		fmt.Sprintf("--keepalive-time=%s", data.GetKonnectivityKeepAliveTime()),
 	}
 
-	if kSrvArgs == nil {
-		return args, nil
-	}
+	return AppendArgsWithDefaults(args, kSrvArgs), nil
+}
 
-	args = append(args, kSrvArgs...)
-	return args, nil
+// HasArgWithPrefix returns true if any element in args starts with the given prefix.
+func HasArgWithPrefix(args []string, prefix string) bool {
+	return slices.ContainsFunc(args, func(arg string) bool {
+		return strings.HasPrefix(arg, prefix)
+	})
+}
+
+// AppendArgsWithDefaults appends userArgs to baseArgs, adding any required
+// default arguments that aren't already specified in userArgs.
+func AppendArgsWithDefaults(baseArgs, userArgs []string) []string {
+	if !HasArgWithPrefix(userArgs, "--xfr-channel-size") {
+		baseArgs = append(baseArgs, fmt.Sprintf("--xfr-channel-size=%d", defaultXfrChannelSize))
+	}
+	return append(baseArgs, userArgs...)
 }

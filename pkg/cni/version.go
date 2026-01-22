@@ -43,14 +43,16 @@ var (
 	// supportedCNIPluginVersions contains a list of all currently supported CNI versions for each CNI type.
 	// Only supported versions are available for selection in KKP UI.
 	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.28", "v3.29", "v3.30"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.29", "v3.30", "v3.31"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			// NOTE: as of 1.13.0, we moved to Application infra for Cilium CNI management and started using real semver
 			// See pkg/cni/cilium docs for details on introducing a new version.
 			"1.15.16",
 			"1.16.9",
 			"1.17.7",
+			"1.17.12",
 			"1.18.2",
+			"1.18.6",
 		),
 		kubermaticv1.CNIPluginTypeNone: sets.New(""),
 	}
@@ -58,7 +60,7 @@ var (
 	// Deprecated versions are not available for selection in KKP UI, but are still accepted
 	// by the validation webhook for backward compatibility.
 	deprecatedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.Set[string]{
-		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.21", "v3.22", "v3.23", "v3.24", "v3.25", "v3.26", "v3.27"),
+		kubermaticv1.CNIPluginTypeCanal: sets.New("v3.21", "v3.22", "v3.23", "v3.24", "v3.25", "v3.26", "v3.27", "v3.28"),
 		kubermaticv1.CNIPluginTypeCilium: sets.New(
 			"v1.11",
 			"v1.12",

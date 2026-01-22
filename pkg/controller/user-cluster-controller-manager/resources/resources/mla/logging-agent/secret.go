@@ -48,7 +48,7 @@ func SecretReconciler(config Config) reconciling.NamedSecretReconcilerFactory {
 			if err := t.Execute(&configBuf, config); err != nil {
 				return nil, err
 			}
-			secret.Data["agent.yaml"] = configBuf.Bytes()
+			secret.Data["config.alloy"] = configBuf.Bytes()
 			secret.Labels = resources.BaseAppLabels(appName, nil)
 			return secret, nil
 		}
@@ -57,294 +57,401 @@ func SecretReconciler(config Config) reconciling.NamedSecretReconcilerFactory {
 
 const (
 	configTemplate = `
-logs:
-  configs:
-  - name: default
-    clients:
-    - url: {{ .MLAGatewayURL }}
-      tls_config:
-        cert_file: {{ .TLSCertFile }}
-        key_file: {{ .TLSKeyFile }}
-        ca_file: {{ .TLSCACertFile }}
+discovery.kubernetes "logs_default_kubernetes_pods_app_kubernetes_io_name" {
+        role = "pod"
+}
 
-    positions:
-      filename: /run/grafana-agent/positions.yaml
+discovery.relabel "logs_default_kubernetes_pods_app_kubernetes_io_name" {
+        targets = discovery.kubernetes.logs_default_kubernetes_pods_app_kubernetes_io_name.targets
 
-    scrape_configs:
-      # See also https://github.com/grafana/loki/blob/master/production/ksonnet/promtail/scrape_config.libsonnet for reference
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+                target_label  = "app"
+        }
 
-      # Pods with a label 'app.kubernetes.io/name'
-      - job_name: kubernetes-pods-app-kubernetes-io-name
-        pipeline_stages:
-          - cri: {}
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_name
-            target_label: app
-          - action: drop
-            regex: ''
-            source_labels:
-              - app
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_component
-            target_label: component
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_node_name
-            target_label: node_name
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_namespace
-            target_label: namespace
-          - action: replace
-            replacement: $1
-            separator: /
-            source_labels:
-            - namespace
-            - app
-            target_label: job
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_name
-            target_label: pod
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_container_name
-            target_label: container
-          - action: replace
-            replacement: /var/log/pods/$1/*/*.log
-            separator: _
-            source_labels:
-            - __meta_kubernetes_namespace
-            - __meta_kubernetes_pod_name
-            - __meta_kubernetes_pod_uid
-            target_label: __path__
+        rule {
+                source_labels = ["app"]
+                regex         = ""
+                action        = "drop"
+        }
 
-      # Pods with a label 'app'
-      - job_name: kubernetes-pods-app
-        pipeline_stages:
-          - cri: {}
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          # Drop pods with label 'app.kubernetes.io/name'. They are already considered above
-          - action: drop
-            regex: .+
-            source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_name
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_label_app
-            target_label: app
-          - action: drop
-            regex: ''
-            source_labels:
-              - app
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_label_component
-            target_label: component
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_node_name
-            target_label: node_name
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_namespace
-            target_label: namespace
-          - action: replace
-            replacement: $1
-            separator: /
-            source_labels:
-            - namespace
-            - app
-            target_label: job
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_name
-            target_label: pod
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_container_name
-            target_label: container
-          - action: replace
-            replacement: /var/log/pods/$1/*/*.log
-            separator: _
-            source_labels:
-            - __meta_kubernetes_namespace
-            - __meta_kubernetes_pod_name
-            - __meta_kubernetes_pod_uid
-            target_label: __path__
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component"]
+                target_label  = "component"
+        }
 
-      # Pods with direct controllers, such as StatefulSet
-      - job_name: kubernetes-pods-direct-controllers
-        pipeline_stages:
-          - cri: {}
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          # Drop pods with label 'app.kubernetes.io/name' or 'app'. They are already considered above
-          - action: drop
-            regex: .+
-            separator: ''
-            source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_name
-              - __meta_kubernetes_pod_label_app
-          - action: drop
-            regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
-            source_labels:
-              - __meta_kubernetes_pod_controller_name
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_controller_name
-            target_label: app
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_node_name
-            target_label: node_name
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_namespace
-            target_label: namespace
-          - action: replace
-            replacement: $1
-            separator: /
-            source_labels:
-            - namespace
-            - app
-            target_label: job
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_name
-            target_label: pod
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_container_name
-            target_label: container
-          - action: replace
-            replacement: /var/log/pods/$1/*/*.log
-            separator: _
-            source_labels:
-            - __meta_kubernetes_namespace
-            - __meta_kubernetes_pod_name
-            - __meta_kubernetes_pod_uid
-            target_label: __path__
+        rule {
+                source_labels = ["__meta_kubernetes_pod_node_name"]
+                target_label  = "node_name"
+        }
 
-      # Pods with indirect controllers, such as Deployment
-      - job_name: kubernetes-pods-indirect-controller
-        pipeline_stages:
-          - cri: {}
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          # Drop pods with label 'app.kubernetes.io/name' or 'app'. They are already considered above
-          - action: drop
-            regex: .+
-            separator: ''
-            source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_name
-              - __meta_kubernetes_pod_label_app
-          - action: keep
-            regex: '[0-9a-z-.]+-[0-9a-f]{8,10}'
-            source_labels:
-              - __meta_kubernetes_pod_controller_name
-          - action: replace
-            regex: '([0-9a-z-.]+)-[0-9a-f]{8,10}'
-            source_labels:
-              - __meta_kubernetes_pod_controller_name
-            target_label: app
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_node_name
-            target_label: node_name
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_namespace
-            target_label: namespace
-          - action: replace
-            replacement: $1
-            separator: /
-            source_labels:
-            - namespace
-            - app
-            target_label: job
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_name
-            target_label: pod
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_container_name
-            target_label: container
-          - action: replace
-            replacement: /var/log/pods/$1/*/*.log
-            separator: _
-            source_labels:
-            - __meta_kubernetes_namespace
-            - __meta_kubernetes_pod_name
-            - __meta_kubernetes_pod_uid
-            target_label: __path__
-      # All remaining pods not yet covered
-      - job_name: kubernetes-other
-        pipeline_stages:
-          - cri: {}
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          # Drop what has already been covered
-          - action: drop
-            regex: .+
-            separator: ''
-            source_labels:
-              - __meta_kubernetes_pod_label_app_kubernetes_io_name
-              - __meta_kubernetes_pod_label_app
-          - action: drop
-            regex: .+
-            source_labels:
-              - __meta_kubernetes_pod_controller_name
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_name
-            target_label: app
-          - action: replace
-            source_labels:
-              - __meta_kubernetes_pod_label_component
-            target_label: component
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_node_name
-            target_label: node_name
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_namespace
-            target_label: namespace
-          - action: replace
-            replacement: $1
-            separator: /
-            source_labels:
-            - namespace
-            - app
-            target_label: job
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_name
-            target_label: pod
-          - action: replace
-            source_labels:
-            - __meta_kubernetes_pod_container_name
-            target_label: container
-          - action: replace
-            replacement: /var/log/pods/$1/*/*.log
-            separator: _
-            source_labels:
-            - __meta_kubernetes_namespace
-            - __meta_kubernetes_pod_name
-            - __meta_kubernetes_pod_uid
-            target_label: __path__
+        rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label  = "namespace"
+        }
+
+        rule {
+                source_labels = ["namespace", "app"]
+                separator     = "/"
+                target_label  = "job"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "pod"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                target_label  = "container"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+                separator     = "_"
+                target_label  = "__path__"
+                replacement   = "/var/log/pods/$1/*/*.log"
+        }
+}
+
+local.file_match "logs_default_kubernetes_pods_app_kubernetes_io_name" {
+        path_targets = discovery.relabel.logs_default_kubernetes_pods_app_kubernetes_io_name.output
+}
+
+loki.process "logs_default_kubernetes_pods_app_kubernetes_io_name" {
+        forward_to = [loki.write.logs_default.receiver]
+
+        stage.cri { }
+}
+
+loki.source.file "logs_default_kubernetes_pods_app_kubernetes_io_name" {
+        targets               = local.file_match.logs_default_kubernetes_pods_app_kubernetes_io_name.targets
+        forward_to            = [loki.process.logs_default_kubernetes_pods_app_kubernetes_io_name.receiver]
+        legacy_positions_file = "/run/grafana-agent/positions.yaml"
+}
+
+discovery.kubernetes "logs_default_kubernetes_pods_app" {
+        role = "pod"
+}
+
+discovery.relabel "logs_default_kubernetes_pods_app" {
+        targets = discovery.kubernetes.logs_default_kubernetes_pods_app.targets
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+                regex         = ".+"
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app"]
+                target_label  = "app"
+        }
+
+        rule {
+                source_labels = ["app"]
+                regex         = ""
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_component"]
+                target_label  = "component"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_node_name"]
+                target_label  = "node_name"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label  = "namespace"
+        }
+
+        rule {
+                source_labels = ["namespace", "app"]
+                separator     = "/"
+                target_label  = "job"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "pod"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                target_label  = "container"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+                separator     = "_"
+                target_label  = "__path__"
+                replacement   = "/var/log/pods/$1/*/*.log"
+        }
+}
+
+local.file_match "logs_default_kubernetes_pods_app" {
+        path_targets = discovery.relabel.logs_default_kubernetes_pods_app.output
+}
+
+loki.process "logs_default_kubernetes_pods_app" {
+        forward_to = [loki.write.logs_default.receiver]
+
+        stage.cri { }
+}
+
+loki.source.file "logs_default_kubernetes_pods_app" {
+        targets               = local.file_match.logs_default_kubernetes_pods_app.targets
+        forward_to            = [loki.process.logs_default_kubernetes_pods_app.receiver]
+        legacy_positions_file = "/run/grafana-agent/positions.yaml"
+}
+
+discovery.kubernetes "logs_default_kubernetes_pods_direct_controllers" {
+        role = "pod"
+}
+
+discovery.relabel "logs_default_kubernetes_pods_direct_controllers" {
+        targets = discovery.kubernetes.logs_default_kubernetes_pods_direct_controllers.targets
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app"]
+                separator     = ""
+                regex         = ".+"
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_controller_name"]
+                regex         = "[0-9a-z-.]+-[0-9a-f]{8,10}"
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_controller_name"]
+                target_label  = "app"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_node_name"]
+                target_label  = "node_name"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label  = "namespace"
+        }
+
+        rule {
+                source_labels = ["namespace", "app"]
+                separator     = "/"
+                target_label  = "job"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "pod"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                target_label  = "container"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+                separator     = "_"
+                target_label  = "__path__"
+                replacement   = "/var/log/pods/$1/*/*.log"
+        }
+}
+
+local.file_match "logs_default_kubernetes_pods_direct_controllers" {
+        path_targets = discovery.relabel.logs_default_kubernetes_pods_direct_controllers.output
+}
+
+loki.process "logs_default_kubernetes_pods_direct_controllers" {
+        forward_to = [loki.write.logs_default.receiver]
+
+        stage.cri { }
+}
+
+loki.source.file "logs_default_kubernetes_pods_direct_controllers" {
+        targets               = local.file_match.logs_default_kubernetes_pods_direct_controllers.targets
+        forward_to            = [loki.process.logs_default_kubernetes_pods_direct_controllers.receiver]
+        legacy_positions_file = "/run/grafana-agent/positions.yaml"
+}
+
+discovery.kubernetes "logs_default_kubernetes_pods_indirect_controller" {
+        role = "pod"
+}
+
+discovery.relabel "logs_default_kubernetes_pods_indirect_controller" {
+        targets = discovery.kubernetes.logs_default_kubernetes_pods_indirect_controller.targets
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app"]
+                separator     = ""
+                regex         = ".+"
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_controller_name"]
+                regex         = "[0-9a-z-.]+-[0-9a-f]{8,10}"
+                action        = "keep"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_controller_name"]
+                regex         = "([0-9a-z-.]+)-[0-9a-f]{8,10}"
+                target_label  = "app"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_node_name"]
+                target_label  = "node_name"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label  = "namespace"
+        }
+
+        rule {
+                source_labels = ["namespace", "app"]
+                separator     = "/"
+                target_label  = "job"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "pod"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                target_label  = "container"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+                separator     = "_"
+                target_label  = "__path__"
+                replacement   = "/var/log/pods/$1/*/*.log"
+        }
+}
+
+local.file_match "logs_default_kubernetes_pods_indirect_controller" {
+        path_targets = discovery.relabel.logs_default_kubernetes_pods_indirect_controller.output
+}
+
+loki.process "logs_default_kubernetes_pods_indirect_controller" {
+        forward_to = [loki.write.logs_default.receiver]
+
+        stage.cri { }
+}
+
+loki.source.file "logs_default_kubernetes_pods_indirect_controller" {
+        targets               = local.file_match.logs_default_kubernetes_pods_indirect_controller.targets
+        forward_to            = [loki.process.logs_default_kubernetes_pods_indirect_controller.receiver]
+        legacy_positions_file = "/run/grafana-agent/positions.yaml"
+}
+
+discovery.kubernetes "logs_default_kubernetes_other" {
+        role = "pod"
+}
+
+discovery.relabel "logs_default_kubernetes_other" {
+        targets = discovery.kubernetes.logs_default_kubernetes_other.targets
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name", "__meta_kubernetes_pod_label_app"]
+                separator     = ""
+                regex         = ".+"
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_controller_name"]
+                regex         = ".+"
+                action        = "drop"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "app"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_label_component"]
+                target_label  = "component"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_node_name"]
+                target_label  = "node_name"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace"]
+                target_label  = "namespace"
+        }
+
+        rule {
+                source_labels = ["namespace", "app"]
+                separator     = "/"
+                target_label  = "job"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_name"]
+                target_label  = "pod"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_pod_container_name"]
+                target_label  = "container"
+        }
+
+        rule {
+                source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+                separator     = "_"
+                target_label  = "__path__"
+                replacement   = "/var/log/pods/$1/*/*.log"
+        }
+}
+
+local.file_match "logs_default_kubernetes_other" {
+        path_targets = discovery.relabel.logs_default_kubernetes_other.output
+}
+
+loki.process "logs_default_kubernetes_other" {
+        forward_to = [loki.write.logs_default.receiver]
+
+        stage.cri { }
+}
+
+loki.source.file "logs_default_kubernetes_other" {
+        targets               = local.file_match.logs_default_kubernetes_other.targets
+        forward_to            = [loki.process.logs_default_kubernetes_other.receiver]
+        legacy_positions_file = "/run/grafana-agent/positions.yaml"
+}
+
+loki.write "logs_default" {
+        endpoint {
+                url = "{{ .MLAGatewayURL }}"
+
+                tls_config {
+                        cert_file= "{{ .TLSCertFile }}"
+                        key_file= "{{ .TLSKeyFile }}"
+                        ca_file= "{{ .TLSCACertFile }}"
+                }
+        }
+        external_labels = {}
+}
 `
 )
 

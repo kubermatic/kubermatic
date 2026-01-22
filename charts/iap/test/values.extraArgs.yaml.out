@@ -1,0 +1,466 @@
+---
+# Source: iap/templates/pdbs.yaml
+apiVersion: policy/v1
+
+kind: PodDisruptionBudget
+metadata:
+  name: iap-alertmanager
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: iap
+      target: alertmanager
+---
+# Source: iap/templates/pdbs.yaml
+apiVersion: policy/v1
+
+kind: PodDisruptionBudget
+metadata:
+  name: iap-grafana
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: iap
+      target: grafana
+---
+# Source: iap/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iap-alertmanager-secret
+type: Opaque
+data:
+  OAUTH2_PROXY_CLIENT_ID: YWxlcnRtYW5hZ2Vy
+  OAUTH2_PROXY_CLIENT_SECRET: eHh4
+  OAUTH2_PROXY_COOKIE_SECRET: eHh4
+---
+# Source: iap/templates/secrets.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iap-grafana-secret
+type: Opaque
+data:
+  OAUTH2_PROXY_CLIENT_ID: Z3JhZmFuYQ==
+  OAUTH2_PROXY_CLIENT_SECRET: eHh4
+  OAUTH2_PROXY_COOKIE_SECRET: eHh4
+---
+# Source: iap/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iap-alertmanager-configmap
+data:
+  config.toml: |
+    approval_prompt = "none"
+    email_domains = ["*"]
+    github_org = "mygithuborg"
+    github_team = "mygroup"
+    scope = "groups openid email"
+    skip_auth_regex = ["/-/healthy"]
+---
+# Source: iap/templates/configmaps.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iap-grafana-configmap
+data:
+  config.toml: |
+    approval_prompt = "none"
+    email_domains = ["*"]
+    pass_user_headers = true
+    scope = "groups openid email"
+    skip_auth_regex = ["/api/health"]
+---
+# Source: iap/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-iap
+  labels:
+    app: iap
+    target: alertmanager
+    kind: proxy
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    name: http
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: iap
+    target: alertmanager
+---
+# Source: iap/templates/services.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-iap
+  labels:
+    app: iap
+    target: grafana
+    kind: proxy
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    name: http
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: iap
+    target: grafana
+---
+# Source: iap/templates/deployments.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iap-alertmanager
+  labels:
+    app: iap
+    target: alertmanager
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: iap
+      target: alertmanager
+  template:
+    metadata:
+      labels:
+        app: iap
+        target: alertmanager
+      annotations:
+        checksum/config: bfef6acd1069e36a2f1d4de5289a013d7ac9a961289aa780a3c1486bcfe75314
+        checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: "quay.io/oauth2-proxy/oauth2-proxy:v7.13.0"
+        imagePullPolicy: IfNotPresent
+        args:
+        - --provider=oidc
+        - --oidc-issuer-url=https://kubermatic.tld/dex
+        - --http-address=0.0.0.0:3000
+        - --upstream=http://alertmanager.monitoring.svc.cluster.local:9093
+        - --cookie-name=alertmanager_oauth2_proxy
+        - --proxy-prefix=/oauth
+        - --ping-path=/oauth/healthy
+        - --silence-ping-logging=true
+        - --reverse-proxy=true
+        - --skip-provider-button=true
+        - --config=/config/config.toml
+        - --arg1=added-in-all-deployments
+        - --arg2=added-for-alertmanager
+        envFrom:
+        - secretRef:
+            name: iap-alertmanager-secret
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /oauth/healthy
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /oauth/healthy
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 25m
+            memory: 25Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          seccompProfile:
+            type: RuntimeDefault
+      volumes:
+      - name: config
+        configMap:
+          name: iap-alertmanager-configmap
+          items:
+          - key: config.toml
+            path: config.toml
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: iap
+                  target: alertmanager
+              topologyKey: kubernetes.io/hostname
+            weight: 10
+      tolerations:
+        []
+---
+# Source: iap/templates/deployments.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iap-grafana
+  labels:
+    app: iap
+    target: grafana
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: iap
+      target: grafana
+  template:
+    metadata:
+      labels:
+        app: iap
+        target: grafana
+      annotations:
+        checksum/config: bfef6acd1069e36a2f1d4de5289a013d7ac9a961289aa780a3c1486bcfe75314
+        checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
+    spec:
+      containers:
+      - name: oauth2-proxy
+        image: "quay.io/oauth2-proxy/oauth2-proxy:v7.13.0"
+        imagePullPolicy: IfNotPresent
+        args:
+        - --provider=oidc
+        - --oidc-issuer-url=https://kubermatic.tld/dex
+        - --http-address=0.0.0.0:3000
+        - --upstream=http://grafana.monitoring.svc.cluster.local:3000
+        - --cookie-name=grafana_oauth2_proxy
+        - --proxy-prefix=/oauth
+        - --ping-path=/oauth/healthy
+        - --silence-ping-logging=true
+        - --reverse-proxy=true
+        - --skip-provider-button=true
+        - --config=/config/config.toml
+        - --arg1=added-in-all-deployments
+        envFrom:
+        - secretRef:
+            name: iap-grafana-secret
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /oauth/healthy
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: /oauth/healthy
+            port: http
+          initialDelaySeconds: 3
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: 100m
+            memory: 50Mi
+          requests:
+            cpu: 25m
+            memory: 25Mi
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 2000
+          runAsGroup: 2000
+          seccompProfile:
+            type: RuntimeDefault
+      volumes:
+      - name: config
+        configMap:
+          name: iap-grafana-configmap
+          items:
+          - key: config.toml
+            path: config.toml
+      nodeSelector:
+        {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: iap
+                  target: grafana
+              topologyKey: kubernetes.io/hostname
+            weight: 10
+      tolerations:
+        []
+---
+# Source: iap/templates/ingresses.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager-iap
+  labels:
+    app: iap
+    target: alertmanager
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - secretName: alertmanager-tls
+    hosts:
+    - alertmanager.kubermatic.tld
+  rules:
+  - host: alertmanager.kubermatic.tld
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: alertmanager-iap
+            port:
+              number: 3000
+---
+# Source: iap/templates/ingresses.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana-iap
+  labels:
+    app: iap
+    target: grafana
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - secretName: grafana-tls
+    hosts:
+    - grafana.kubermatic.tld
+  rules:
+  - host: grafana.kubermatic.tld
+    http:
+      paths:
+      - path: "/"
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana-iap
+            port:
+              number: 3000
+---
+# Source: iap/templates/configmaps.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: iap/templates/deployments.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: iap/templates/ingresses.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: iap/templates/pdbs.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: iap/templates/secrets.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+# Source: iap/templates/services.yaml
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.

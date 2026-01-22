@@ -916,6 +916,8 @@ func (d *TemplateData) GetEnvVars() ([]corev1.EnvVar, error) {
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
 		vars = append(vars, corev1.EnvVar{Name: "KUBEVIRT_KUBECONFIG", ValueFrom: refTo(KubeVirtKubeconfig)})
+		vars = append(vars, corev1.EnvVar{Name: "PROJECT_ID", Value: cluster.Labels["project-id"]})
+		vars = append(vars, corev1.EnvVar{Name: "CLUSTER_ID", Value: cluster.Name})
 	}
 	if cluster.Spec.Cloud.Alibaba != nil {
 		vars = append(vars, corev1.EnvVar{Name: "ALIBABA_ACCESS_KEY_ID", ValueFrom: refTo(AlibabaAccessKeyID)})

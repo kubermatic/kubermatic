@@ -11,7 +11,7 @@ replace github.com/nutanix-cloud-native/prism-go-client => github.com/nutanix-cl
 replace k8c.io/kubermatic/sdk/v2 => ./sdk
 
 require (
-	dario.cat/mergo v1.0.1
+	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.2
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization v1.0.0
@@ -80,10 +80,10 @@ require (
 	go.etcd.io/etcd/client/v3 v3.6.4
 	go.etcd.io/etcd/etcdutl/v3 v3.6.4
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.41.0
+	golang.org/x/crypto v0.45.0
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sys v0.35.0
-	golang.org/x/tools v0.36.0
+	golang.org/x/sys v0.38.0
+	golang.org/x/tools v0.38.0
 	gomodules.xyz/jsonpatch/v2 v2.4.0
 	google.golang.org/api v0.228.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7
@@ -96,8 +96,8 @@ require (
 	k8c.io/kubelb v1.2.0
 	k8c.io/kubeone v1.10.0
 	k8c.io/kubermatic/sdk/v2 v2.0.0-00010101000000-000000000000
-	k8c.io/machine-controller/sdk v1.64.0
-	k8c.io/operating-system-manager v1.8.0
+	k8c.io/machine-controller/sdk v1.64.1-0.20260121155206-01ad12aa435b
+	k8c.io/operating-system-manager v1.8.1-0.20260122092708-a75b71800e7c
 	k8c.io/reconciler v0.5.0
 	k8s.io/api v0.34.0
 	k8s.io/apiextensions-apiserver v0.34.0
@@ -124,6 +124,8 @@ require (
 	github.com/hashicorp/golang-lru/arc/v2 v2.0.7
 	github.com/opencontainers/image-spec v1.1.1
 	gopkg.in/yaml.v2 v2.4.0
+	k8s.io/pod-security-admission v0.31.0
+	sigs.k8s.io/gateway-api v1.3.0
 )
 
 require (
@@ -473,11 +475,11 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/mod v0.27.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/term v0.34.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
@@ -491,10 +493,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
 	k8s.io/kube-proxy v0.31.1 // indirect
 	k8s.io/kubelet v0.31.1 // indirect
-	k8s.io/pod-security-admission v0.31.0 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
-	sigs.k8s.io/gateway-api v1.3.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect

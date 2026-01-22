@@ -39,7 +39,7 @@ spec:
         - '{"command":"/usr/local/bin/osm-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080","-namespace","kube-system","-cluster-dns","169.254.20.10"]}'
         command:
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/operating-system-manager:v1.8.0
+        image: quay.io/kubermatic/operating-system-manager:a75b71800e7c9c79e2299e2af7713c006d6ea1f7
         livenessProbe:
           failureThreshold: 3
           httpGet:

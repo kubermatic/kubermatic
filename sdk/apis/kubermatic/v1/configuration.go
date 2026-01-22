@@ -71,6 +71,7 @@ const (
 
 // +kubebuilder:object:generate=true
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:JSONPath=".metadata.creationTimestamp",name="Age",type="date"
 
 // KubermaticConfiguration is the configuration required for running Kubermatic.
@@ -292,6 +293,13 @@ type KubermaticUserClusterConfiguration struct {
 	OperatingSystemManager OperatingSystemManager `json:"operatingSystemManager,omitempty"`
 	// KubeLB configures the kubeLB component.
 	KubeLB KubeLBConfiguration `json:"kubelb,omitempty"`
+	// Kyverno configures the Kyverno policy engine settings at the global level.
+	// These settings apply to all user clusters unless overridden at seed or datacenter level.
+	// +optional
+	Kyverno *KyvernoConfigurations `json:"kyverno,omitempty"`
+	// AdmissionPlugins configures global admission plugin settings for all user clusters.
+	// +optional
+	AdmissionPlugins *AdmissionPluginsConfiguration `json:"admissionPlugins,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -330,6 +338,34 @@ type KubeLBConfiguration struct {
 	// KKP is responsible for deploying KubeLB along with it's CRDs, RBAC, etc. The tag here is only for the KubeLB CCM container image.
 	// Thus if you are using official KubeLB image, upgrades to newer minor or major version of KubeLB is not supported and only patch versions should be adjusted.
 	ImageTag string `json:"imageTag,omitempty"`
+}
+
+// AdmissionPluginsConfiguration contains global settings for admission plugins.
+type AdmissionPluginsConfiguration struct {
+	// EventRateLimit configures the EventRateLimit admission plugin.
+	// +optional
+	EventRateLimit *EventRateLimitPluginConfiguration `json:"eventRateLimit,omitempty"`
+}
+
+// EventRateLimitPluginConfiguration configures the EventRateLimit admission plugin at global level.
+//
+// Enforcement modes:
+//   - Enforced=true: Plugin must be enabled; config cannot be overridden by users
+//   - Enabled=true: Plugin enabled by default for new clusters, users can disable
+//   - DefaultConfig: Applied when plugin is enabled and cluster has no config
+//     (always applied when Enforced=true, overwriting user config)
+type EventRateLimitPluginConfiguration struct {
+	// Enabled indicates whether EventRateLimit should be enabled by default for new clusters.
+	// +optional
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Enforced indicates whether EventRateLimit enablement is mandatory.
+	// +optional
+	Enforced *bool `json:"enforced,omitempty"`
+
+	// DefaultConfig provides default configuration values for the EventRateLimit plugin.
+	// +optional
+	DefaultConfig *EventRateLimitConfig `json:"defaultConfig,omitempty"`
 }
 
 // MachineControllerConfiguration configures Machine Controller.
@@ -377,6 +413,8 @@ type KubermaticAddonsConfiguration struct {
 
 // SystemApplicationsConfiguration contains configuration for system Applications (e.g. CNI).
 type SystemApplicationsConfiguration struct {
+	// RegistryConnection contains options that control how KKP connects to the Helm OCI registry.
+	RegistryConnectionConfig `json:",inline"`
 	// HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
 	HelmRepository string `json:"helmRepository,omitempty"`
 	// HelmRegistryConfigFile optionally holds the ref and key in the secret for the OCI registry credential file.
@@ -388,9 +426,25 @@ type SystemApplicationsConfiguration struct {
 
 // ApplicationsConfiguration contains configuration for default Applications configuration settings.
 type ApplicationsConfiguration struct {
+	// RegistryConnection contains options that control how KKP connects to the Helm OCI registry.
+	RegistryConnectionConfig `json:",inline"`
 	// Namespace is the namespace which is set as the default for applications installed via ui
 	// If left empty the default for the application installation namespace is the name of the resource itself
 	Namespace string `json:"namespace,omitempty"`
+}
+
+// RegistryConnectionConfig contains options that control how connections
+// to OCI registries are established.
+type RegistryConnectionConfig struct {
+	// InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+	// the server's TLS certificate.
+	// This should only be used in development or testing environments.
+	InsecureSkipTLSVerify bool `json:"insecureSkipTLSVerify,omitempty"`
+
+	// PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+	// instead of HTTPS.
+	// This is intended for local or air-gapped setups where HTTPS is not available.
+	PlainHTTP bool `json:"plainHTTP,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
@@ -417,6 +471,18 @@ type KubermaticIngressConfiguration struct {
 	// Setting an empty name disables the automatic creation of certificates and disables
 	// the TLS settings on the Kubermatic Ingress.
 	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
+
+	// Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+	// When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+	// are managed by kubermatic-operator, instead of Ingress.
+	Gateway *KubermaticGatewayConfiguration `json:"gateway,omitempty"`
+}
+
+// KubermaticGatewayConfiguration configures the Gateway API integration.
+type KubermaticGatewayConfiguration struct {
+	// ClassName is the GatewayClass to use.
+	// +kubebuilder:default:=kubermatic-envoy-gateway
+	ClassName string `json:"className,omitempty"`
 }
 
 // KubermaticMasterControllerConfiguration configures the Kubermatic master controller-manager.

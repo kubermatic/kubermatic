@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
+	psaapi "k8s.io/pod-security-admission/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -403,6 +404,8 @@ const (
 	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
 	// the machine  provisioning cloud-init.
 	CloudInitSettingsNamespace = "cloud-init-settings"
+	// NamespaceNodeLease is the namespace where node lease objects are stored.
+	NamespaceNodeLease = "kube-node-lease"
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only.
 	DefaultOwnerReadOnlyMode = 0400
 
@@ -472,6 +475,8 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+	// NFTablesProxyMode defines the nftables kube-proxy mode.
+	NFTablesProxyMode = "nftables"
 	// EBPFProxyMode defines the eBPF proxy mode (disables kube-proxy and requires CNI support).
 	EBPFProxyMode = "ebpf"
 
@@ -1525,6 +1530,10 @@ func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()
 	}
+	if componentSettings.EnvoyAgent != nil && componentSettings.EnvoyAgent.Resources != nil {
+		r[EnvoyAgentDaemonSetName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
+		r[EnvoyAgentAssignAddressContainerName] = componentSettings.EnvoyAgent.Resources.DeepCopy()
+	}
 	if componentSettings.KonnectivityProxy.Resources != nil {
 		r[KonnectivityServerContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
 		r[KonnectivityAgentContainer] = componentSettings.KonnectivityProxy.Resources.DeepCopy()
@@ -1796,4 +1805,31 @@ func containsString(s []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// PSALabelsPrivileged returns Pod Security Admission labels for privileged level.
+func PSALabelsPrivileged() map[string]string {
+	return map[string]string{
+		psaapi.EnforceLevelLabel: string(psaapi.LevelPrivileged),
+		psaapi.AuditLevelLabel:   string(psaapi.LevelBaseline),
+		psaapi.WarnLevelLabel:    string(psaapi.LevelPrivileged),
+	}
+}
+
+// PSALabelsBaseline returns Pod Security Admission labels for baseline level.
+func PSALabelsBaseline() map[string]string {
+	return map[string]string{
+		psaapi.EnforceLevelLabel: string(psaapi.LevelBaseline),
+		psaapi.AuditLevelLabel:   string(psaapi.LevelBaseline),
+		psaapi.WarnLevelLabel:    string(psaapi.LevelBaseline),
+	}
+}
+
+func AllProxyModes() []string {
+	return []string{
+		IPVSProxyMode,
+		IPTablesProxyMode,
+		EBPFProxyMode,
+		NFTablesProxyMode,
+	}
 }

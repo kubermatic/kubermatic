@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/cni"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/kyverno"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -146,6 +147,21 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 			spec.KubeLB.Enabled = true
 		}
 	}
+
+	kyvernoEnforcement := kyverno.GetEnforcement(
+		datacenter.Spec.Kyverno,
+		seed.Spec.Kyverno,
+		config.Spec.UserCluster.Kyverno,
+	)
+	if kyvernoEnforcement.Enforced {
+		if spec.Kyverno == nil {
+			spec.Kyverno = &kubermaticv1.KyvernoSettings{}
+		}
+		spec.Kyverno.Enabled = true
+	}
+
+	// Default EventRateLimit admission plugin from global config
+	defaultEventRateLimitPlugin(spec, config)
 
 	// Add default CNI plugin settings if not present.
 	if spec.CNIPlugin == nil {
@@ -266,4 +282,34 @@ func DefaultClusterNetwork(specClusterNetwork kubermaticv1.ClusterNetworkingConf
 	}
 
 	return specClusterNetwork
+}
+
+// defaultEventRateLimitPlugin applies global EventRateLimit admission plugin settings to the cluster spec.
+func defaultEventRateLimitPlugin(spec *kubermaticv1.ClusterSpec, config *kubermaticv1.KubermaticConfiguration) {
+	if config == nil || config.Spec.UserCluster.AdmissionPlugins == nil ||
+		config.Spec.UserCluster.AdmissionPlugins.EventRateLimit == nil {
+		return
+	}
+
+	erl := config.Spec.UserCluster.AdmissionPlugins.EventRateLimit
+	isEnforced := erl.Enforced != nil && *erl.Enforced
+
+	// If enforced, enable the plugin
+	if isEnforced {
+		spec.UseEventRateLimitAdmissionPlugin = true
+	}
+
+	// Apply enabled default if not already enabled
+	if !spec.UseEventRateLimitAdmissionPlugin && erl.Enabled != nil && *erl.Enabled {
+		spec.UseEventRateLimitAdmissionPlugin = true
+	}
+
+	// Apply configuration:
+	// - If enforced AND defaultConfig is set: always apply (overwrite user config)
+	// - If not enforced: only apply if user hasn't specified config
+	if spec.UseEventRateLimitAdmissionPlugin && erl.DefaultConfig != nil {
+		if isEnforced || spec.EventRateLimitConfig == nil {
+			spec.EventRateLimitConfig = erl.DefaultConfig.DeepCopy()
+		}
+	}
 }

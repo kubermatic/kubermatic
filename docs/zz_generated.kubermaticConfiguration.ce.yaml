@@ -196,6 +196,12 @@ spec:
     # Domain is the base domain where the dashboard shall be available. Even with
     # a disabled Ingress, this must always be a valid hostname.
     domain: example.com
+    # Gateway configures Gateway API mode as nginx-ingress-controller replacement.
+    # When enabled via `kubermatic-operator` flag, Gateway and HTTPRoute resources
+    # are managed by kubermatic-operator, instead of Ingress.
+    gateway:
+      # ClassName is the GatewayClass to use.
+      className: kubermatic-envoy-gateway
     # NamespaceOverride need to be set if a different ingress-controller is used than the KKP default one.
     namespaceOverride: ""
   # MasterController configures the master-controller-manager.
@@ -478,13 +484,23 @@ spec:
       # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
       # suffix it becomes "v2.15.0-SUFFIX".
       dockerTagSuffix: ""
+    # AdmissionPlugins configures global admission plugin settings for all user clusters.
+    admissionPlugins: null
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # Applications contains configuration for default Application settings.
     applications:
+      # InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+      # the server's TLS certificate.
+      # This should only be used in development or testing environments.
+      insecureSkipTLSVerify: false
       # Namespace is the namespace which is set as the default for applications installed via ui
       # If left empty the default for the application installation namespace is the name of the resource itself
       namespace: ""
+      # PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+      # instead of HTTPS.
+      # This is intended for local or air-gapped setups where HTTPS is not available.
+      plainHTTP: false
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
     # the Kubernetes API server.
     disableApiserverEndpointReconciling: false
@@ -509,6 +525,9 @@ spec:
       imageTag: ""
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
     kubermaticDockerRepository: quay.io/kubermatic/kubermatic
+    # Kyverno configures the Kyverno policy engine settings at the global level.
+    # These settings apply to all user clusters unless overridden at seed or datacenter level.
+    kyverno: null
     # MachineController configures the Machine Controller
     machineController:
       # ImageRepository is used to override the Machine Controller image repository.
@@ -570,28 +589,36 @@ spec:
       helmRegistryConfigFile: null
       # HelmRepository specifies OCI repository containing Helm charts of system Applications e.g. oci://localhost:5000/myrepo.
       helmRepository: ""
+      # InsecureSkipTLSVerify allows connecting to the OCI registry without verifying
+      # the server's TLS certificate.
+      # This should only be used in development or testing environments.
+      insecureSkipTLSVerify: false
+      # PlainHTTP allows using an unencrypted HTTP connection when accessing the OCI registry
+      # instead of HTTPS.
+      # This is intended for local or air-gapped setups where HTTPS is not available.
+      plainHTTP: false
   # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Default is the default version to offer users.
-    default: v1.33.6
+    default: v1.33.7
     # ExternalClusters contains the available and default Kubernetes versions and updates for ExternalClusters.
     externalClusters:
       aks:
         # Default is the default version to offer users.
-        default: v1.31
+        default: v1.32
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
-          - v1.31
+          - v1.32
       eks:
         # Default is the default version to offer users.
-        default: v1.31
+        default: v1.32
         # Updates is a list of available upgrades.
         updates: null
         # Versions lists the available versions.
         versions:
-          - v1.31
+          - v1.32
     # ProviderIncompatibilities lists all the Kubernetes version incompatibilities
     providerIncompatibilities:
       - # Condition is the cluster or datacenter condition that must be met to block a specific version
@@ -620,14 +647,10 @@ spec:
         # for the worker nodes of all matching user clusters.
         automaticNodeUpdate: false
         # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-        from: 1.31.*
+        from: 1.32.*
         # To is the version to which an update is allowed.
         # Must be a valid version if `automatic` is set to true, e.g. "1.20.13".
         # Can be a wildcard otherwise, e.g. "1.20.*".
-        to: 1.31.*
-      - from: 1.31.*
-        to: 1.32.*
-      - from: 1.32.*
         to: 1.32.*
       - from: 1.32.*
         to: 1.33.*
@@ -639,14 +662,6 @@ spec:
         to: 1.34.*
     # Versions lists the available versions.
     versions:
-      - v1.31.1
-      - v1.31.5
-      - v1.31.7
-      - v1.31.8
-      - v1.31.10
-      - v1.31.11
-      - v1.31.13
-      - v1.31.14
       - v1.32.1
       - v1.32.3
       - v1.32.4
@@ -659,8 +674,10 @@ spec:
       - v1.33.3
       - v1.33.5
       - v1.33.6
+      - v1.33.7
       - v1.34.1
       - v1.34.2
+      - v1.34.3
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

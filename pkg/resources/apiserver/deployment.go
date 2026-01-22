@@ -75,9 +75,11 @@ func DeploymentReconciler(data *resources.TemplateData, enableOIDCAuthentication
 			kubernetes.EnsureLabels(dep, baseLabels)
 
 			dep.Spec.Replicas = resources.Int32(1)
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas != nil {
-				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
+			override := data.Cluster().Spec.ComponentsOverride.Apiserver
+			if override.Replicas != nil {
+				dep.Spec.Replicas = override.Replicas
 			}
+			dep.Spec.Template.Spec.Tolerations = override.Tolerations
 
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: baseLabels,

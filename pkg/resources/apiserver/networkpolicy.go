@@ -334,6 +334,32 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) rec
 		}
 
 		return resources.NetworkPolicyOIDCIssuerAllow, func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			// Allow egress to both nginx-ingress and envoy-gateway namespaces
+			// That helps for backward compatibility until we fully switch to envoy-gateway
+			ingressNamespaces := []string{ingressNamespace, kubermaticmaster.EnvoyGatewayControllerNamespace}
+
+			egressRules := []networkingv1.NetworkPolicyEgressRule{
+				{
+					To: ipListToPeers(egressIPs),
+				},
+			}
+
+			for _, ns := range ingressNamespaces {
+				egressRules = append(egressRules, networkingv1.NetworkPolicyEgressRule{
+					To: []networkingv1.NetworkPolicyPeer{
+						{
+							// allow egress traffic to the ingress-controller as for some CNI + kube-proxy
+							// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									corev1.LabelMetadataName: ns,
+								},
+							},
+						},
+					},
+				})
+			}
+
 			np.Spec = networkingv1.NetworkPolicySpec{
 				PolicyTypes: []networkingv1.PolicyType{
 					networkingv1.PolicyTypeEgress,
@@ -343,19 +369,7 @@ func OIDCIssuerAllowReconciler(egressIPs []net.IP, namespaceOverride string) rec
 						resources.AppLabelKey: name,
 					},
 				},
-				Egress: []networkingv1.NetworkPolicyEgressRule{
-					{
-						To: append(ipListToPeers(egressIPs), networkingv1.NetworkPolicyPeer{
-							// allow egress traffic to the ingress-controller as for some CNI + kube-proxy
-							// mode combinations a local path to it may be used to reach OIDC issuer installed in KKP
-							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									corev1.LabelMetadataName: ingressNamespace,
-								},
-							},
-						}),
-					},
-				},
+				Egress: egressRules,
 			}
 
 			return np, nil

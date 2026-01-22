@@ -391,7 +391,6 @@ type ClusterConditionType string
 // The reference time for this is the node system time and might differ from
 // the user's timezone, which needs to be considered when configuring a window.
 type UpdateWindow struct {
-
 	// Sets the start time of the update window. This can be a time of day in 24h format, e.g. `22:30`,
 	// or a day of week plus a time of day, for example `Mon 21:00`. Only short names for week days are supported,
 	// i.e. `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat` and `Sun`.
@@ -767,6 +766,20 @@ type OIDCSettings struct {
 	GroupsPrefix   string `json:"groupsPrefix,omitempty"`
 }
 
+// EventRateLimitType defines the type of event rate limit.
+type EventRateLimitType string
+
+const (
+	// EventRateLimitTypeServer is a limit where one bucket is shared by all event queries.
+	EventRateLimitTypeServer EventRateLimitType = "Server"
+	// EventRateLimitTypeNamespace is a limit where one bucket is used by each namespace.
+	EventRateLimitTypeNamespace EventRateLimitType = "Namespace"
+	// EventRateLimitTypeUser is a limit where one bucket is used by each user.
+	EventRateLimitTypeUser EventRateLimitType = "User"
+	// EventRateLimitTypeSourceAndObject is a limit where one bucket is used by each source+object combination.
+	EventRateLimitTypeSourceAndObject EventRateLimitType = "SourceAndObject"
+)
+
 // EventRateLimitConfig configures the `EventRateLimit` admission plugin.
 // More info: https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#eventratelimit
 type EventRateLimitConfig struct {
@@ -777,8 +790,23 @@ type EventRateLimitConfig struct {
 }
 
 type EventRateLimitConfigItem struct {
-	QPS       int32 `json:"qps"`
-	Burst     int32 `json:"burst"`
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=50
+	//
+	// QPS is the queries per second allowed for this limit type.
+	QPS int32 `json:"qps"`
+
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:default=100
+	//
+	// Burst is the maximum burst size for this limit type.
+	Burst int32 `json:"burst"`
+
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:default=4096
+	// +optional
+	//
+	// CacheSize is the size of the LRU cache for this limit type.
 	CacheSize int32 `json:"cacheSize,omitempty"`
 }
 
@@ -866,6 +894,8 @@ type ComponentSettings struct {
 	KubeStateMetrics *DeploymentSettings `json:"kubeStateMetrics,omitempty"`
 	// MachineController configures the Kubermatic machine-controller deployment.
 	MachineController *DeploymentSettings `json:"machineController,omitempty"`
+	// EnvoyAgent configures the envoy-agent deployed in the usercluster.
+	EnvoyAgent *DaemonSetSettings `json:"envoyAgent,omitempty"`
 }
 
 type APIServerSettings struct {
@@ -900,6 +930,11 @@ type ControllerSettings struct {
 
 type DeploymentSettings struct {
 	Replicas    *int32                       `json:"replicas,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
+}
+
+type DaemonSetSettings struct {
 	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
 }
@@ -1003,10 +1038,10 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain"`
 
-	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf
+	// +kubebuilder:validation:Enum=ipvs;iptables;ebpf;nftables;
 	// +kubebuilder:default=ipvs
 
-	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf").
+	// ProxyMode defines the kube-proxy mode ("ipvs" / "iptables" / "ebpf" / "nftables").
 	// Defaults to "ipvs". "ebpf" disables kube-proxy and requires CNI support.
 	ProxyMode string `json:"proxyMode"`
 
@@ -1346,7 +1381,6 @@ type BaremetalCloudSpec struct {
 }
 
 type TinkerbellCloudSpec struct {
-
 	// The cluster's kubeconfig file, encoded with base64.
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 }
@@ -1487,6 +1521,11 @@ type OpenstackCloudSpec struct {
 	// List of LoadBalancerClass configurations to be used for the OpenStack cloud provider.
 	// +optional
 	LoadBalancerClasses []LoadBalancerClass `json:"loadBalancerClasses,omitempty"`
+	// NodeVolumeAttachLimit defines the maximum number of volumes that can be
+	// attached to a single node. If set, this value overrides the default
+	// OpenStack volume attachment limit.
+	// +optional
+	NodeVolumeAttachLimit *uint `json:"nodeVolumeAttachLimit,omitempty"`
 }
 
 // NOOP.
@@ -1575,7 +1614,6 @@ type AnexiaCloudSpec struct {
 
 // NutanixCSIConfig contains credentials and the endpoint for the Nutanix Prism Element to which the CSI driver connects.
 type NutanixCSIConfig struct {
-
 	// Prism Element Username for CSI driver.
 	Username string `json:"username,omitempty"`
 

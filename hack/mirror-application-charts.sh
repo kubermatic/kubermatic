@@ -33,6 +33,9 @@ declare -A CHART_URLS=(
   ["aikit"]="https://sozercan.github.io/aikit/charts/aikit-%s.tgz"
   ["argo-cd"]="https://github.com/argoproj/argo-helm/releases/download/argo-cd-%s/argo-cd-%s.tgz"
   ["cert-manager"]="https://charts.jetstack.io/charts/cert-manager-%s.tgz"
+  # envoy-gateway is not part of the Application Catalog; however, it'll be used by
+  # kkp as an alternative to nginx-ingress-controller; thus, added it here for mirroring
+  ["envoy-gateway"]="oci://docker.io/envoyproxy/gateway-helm"
   ["falco"]="https://github.com/falcosecurity/charts/releases/download/falco-%s/falco-%s.tgz"
   ["flux2"]="https://github.com/fluxcd-community/helm-charts/releases/download/flux2-%s/flux2-%s.tgz"
   ["k8sgpt-operator"]="https://charts.k8sgpt.ai/k8sgpt-operator-%s.tgz"
@@ -44,16 +47,18 @@ declare -A CHART_URLS=(
   ["trivy-operator"]="https://github.com/aquasecurity/helm-charts/releases/download/trivy-operator-%s/trivy-operator-%s.tgz"
   ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
   ["kueue"]="oci://registry.k8s.io/kueue/charts/kueue"
+  ["mcp-server-kubernetes"]="oci://ghcr.io/flux159/mcp-server-kubernetes"
 )
 
 # Default versions for each chart
 declare -A CHART_VERSIONS=(
   ["cluster-autoscaler"]="9.46.6"
-  ["cilium"]="1.18.2"
+  ["cilium"]="1.18.6"
   # Add more default versions here as needed
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
   ["cert-manager"]="v1.17.2"
+  ["envoy-gateway"]="v1.6.1"
   ["falco"]="4.21.2"
   ["flux2"]="2.15.0"
   ["k8sgpt-operator"]="0.2.17"
@@ -65,6 +70,7 @@ declare -A CHART_VERSIONS=(
   ["trivy-operator"]="0.28.0"
   ["local-ai"]="3.4.2"
   ["kueue"]="0.13.4"
+  ["mcp-server-kubernetes"]="2.9.9"
 )
 
 # ─── Usage ────────────────────────────────────────────────────────────────────
