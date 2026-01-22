@@ -1176,6 +1176,11 @@ func (in *CNIPluginSettings) DeepCopy() *CNIPluginSettings {
 func (in *CatalogManagerConfiguration) DeepCopyInto(out *CatalogManagerConfiguration) {
 	*out = *in
 	out.Image = in.Image
+	if in.Apps != nil {
+		in, out := &in.Apps, &out.Apps
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	in.ManagerSettings.DeepCopyInto(&out.ManagerSettings)
 	in.WebhookSettings.DeepCopyInto(&out.WebhookSettings)
 }

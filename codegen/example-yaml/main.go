@@ -331,7 +331,7 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 						Repository: defaulting.DefaultApplicationManagerImageRepository,
 						Tag:        defaulting.DefaultApplicationManagerImageTag,
 					},
-					Applications: []string{
+					Apps: []string{
 						"cert-manager",
 						"argo-cd",
 					},

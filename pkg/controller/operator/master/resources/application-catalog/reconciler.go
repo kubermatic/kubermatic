@@ -62,6 +62,7 @@ func ReconcileDefaultApplicationCatalog(
 		},
 		Spec: catalogv1alpha1.ApplicationCatalogSpec{
 			Helm: &catalogv1alpha1.HelmSpec{
+				Charts:          []catalogv1alpha1.ChartConfig{},
 				IncludeDefaults: true,
 			},
 		},
