@@ -645,6 +645,10 @@ type CatalogManagerConfiguration struct {
 	// Image configures the container image for the application-catalog manager.
 	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
 
+	// Applications is a list of application definition names that should be installed in the master cluster.
+	// If not set, all the applications from the catalog are installed.
+	Applications []string `json:"applications,omitempty"`
+
 	ManagerSettings CatalogManagerSettings `json:"managerSettings,omitempty"`
 	WebhookSettings CatalogWebhookSettings `json:"webhookSettings,omitempty"`
 }

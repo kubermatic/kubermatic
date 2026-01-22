@@ -58,13 +58,18 @@ spec:
     # kubermaticconfiguration.spec.applications.defaultApplicationCatalog field becomes no-op,
     # as the responsibility of ApplicationDefinitions is delegated to the new ApplicationCatalog Cr.
     catalogManager:
+      # Applications is a list of application definition names that should be installed in the master cluster.
+      # If not set, all the applications from the catalog are installed.
+      applications:
+        - cert-manager
+        - argo-cd
       # Image configures the container image for the application-catalog manager.
       image:
         # Repository is used to override the application-catalog manager image repository.
         # The default value is "quay.io/kubermatic/application-catalog-manager"
         repository: quay.io/kubermatic/application-catalog-manager
         # Tag is used to override the application-catalog manager image tag.
-        tag: ""
+        tag: v0.2.0-rc.4
       managerSettings:
         # LogLevel specifies the logging verbosity level for the application-catalog manager.
         logLevel: ""

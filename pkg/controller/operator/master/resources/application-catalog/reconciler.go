@@ -19,6 +19,7 @@ package applicationcatalogmanager
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -36,6 +37,9 @@ import (
 const (
 	// DefaultApplicationCatalogName is the name of the default ApplicationCatalog CR
 	DefaultApplicationCatalogName = "default-catalog"
+
+	// IncludeAnnotation is the annotation key for filtering default applications
+	IncludeAnnotation = "defaultcatalog.k8c.io/include"
 )
 
 // ReconcileDefaultApplicationCatalog ensures the default ApplicationCatalog CR exists
@@ -60,8 +64,18 @@ func ReconcileDefaultApplicationCatalog(
 			},
 		},
 		Spec: catalogv1alpha1.ApplicationCatalogSpec{
-			Helm: &catalogv1alpha1.HelmSpec{},
+			Helm: &catalogv1alpha1.HelmSpec{
+				IncludeDefaults: true,
+			},
 		},
+	}
+
+	if len(cfg.Spec.Applications.CatalogManager.Applications) > 0 {
+		if catalog.Annotations == nil {
+			catalog.Annotations = make(map[string]string)
+		}
+
+		catalog.Annotations[IncludeAnnotation] = strings.Join(cfg.Spec.Applications.CatalogManager.Applications, ",")
 	}
 
 	if err := controllerutil.SetControllerReference(cfg, catalog, scheme); err != nil {
@@ -93,6 +107,29 @@ func ReconcileDefaultApplicationCatalog(
 	if existingCatalog.Labels["app.kubernetes.io/component"] != "application-catalog" {
 		existingCatalog.Labels["app.kubernetes.io/component"] = "application-catalog"
 		needsUpdate = true
+	}
+
+	if existingCatalog.Annotations == nil {
+		existingCatalog.Annotations = make(map[string]string)
+	}
+
+	expectedAnnotationValue := ""
+	if len(cfg.Spec.Applications.CatalogManager.Applications) > 0 {
+		expectedAnnotationValue = strings.Join(cfg.Spec.Applications.CatalogManager.Applications, ",")
+	}
+
+	currentAnnotationValue, hasAnnotation := existingCatalog.Annotations[IncludeAnnotation]
+
+	if expectedAnnotationValue == "" {
+		if hasAnnotation {
+			delete(existingCatalog.Annotations, IncludeAnnotation)
+			needsUpdate = true
+		}
+	} else {
+		if !hasAnnotation || currentAnnotationValue != expectedAnnotationValue {
+			existingCatalog.Annotations[IncludeAnnotation] = expectedAnnotationValue
+			needsUpdate = true
+		}
 	}
 
 	if needsUpdate {
