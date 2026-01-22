@@ -738,14 +738,9 @@ func (r *Reconciler) reconcileApplicationCatalog(ctx context.Context, config *ku
 		return nil
 	}
 
-	if !config.Spec.Applications.DefaultApplicationCatalog.Enable {
-		logger.Debug("Default application catalog is disabled, skipping ApplicationCatalog CR creation")
-		return applicationcatalogmanager.CleanupApplicationCatalogs(ctx, r.Client, logger)
-	}
-
 	logger.Debug("Reconciling default ApplicationCatalog CR")
 
-	if err := applicationcatalogmanager.ReconcileDefaultApplicationCatalog(ctx, config, r.Client, r.scheme, logger); err != nil {
+	if err := applicationcatalogmanager.ReconcileDefaultApplicationCatalog(ctx, config, r.Client, logger); err != nil {
 		return fmt.Errorf("failed to reconcile default ApplicationCatalog: %w", err)
 	}
 

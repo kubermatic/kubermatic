@@ -28,10 +28,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -48,7 +46,6 @@ func ReconcileDefaultApplicationCatalog(
 	ctx context.Context,
 	cfg *kubermaticv1.KubermaticConfiguration,
 	client ctrlruntimeclient.Client,
-	scheme *runtime.Scheme,
 	logger *zap.SugaredLogger,
 ) error {
 	logger.Debug("Reconciling default ApplicationCatalog CR")
@@ -76,10 +73,6 @@ func ReconcileDefaultApplicationCatalog(
 		}
 
 		catalog.Annotations[IncludeAnnotation] = strings.Join(cfg.Spec.Applications.CatalogManager.Applications, ",")
-	}
-
-	if err := controllerutil.SetControllerReference(cfg, catalog, scheme); err != nil {
-		return fmt.Errorf("failed to set owner reference: %w", err)
 	}
 
 	existingCatalog := &catalogv1alpha1.ApplicationCatalog{}

@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 func TestReconcileDefaultApplicationCatalog(t *testing.T) {
@@ -191,15 +190,12 @@ func TestReconcileDefaultApplicationCatalog(t *testing.T) {
 
 			var client ctrlruntimeclient.Client
 			if tc.existingCatalog != nil {
-				if err := controllerutil.SetControllerReference(tc.config, tc.existingCatalog, testScheme); err != nil {
-					t.Fatalf("failed to set owner reference: %v", err)
-				}
 				client = fake.NewClientBuilder().WithScheme(testScheme).WithObjects(tc.existingCatalog).Build()
 			} else {
 				client = fake.NewClientBuilder().WithScheme(testScheme).Build()
 			}
 
-			err := ReconcileDefaultApplicationCatalog(ctx, tc.config, client, testScheme, logger)
+			err := ReconcileDefaultApplicationCatalog(ctx, tc.config, client, logger)
 
 			if tc.expectError && err == nil {
 				t.Error("Expected error but got none")
