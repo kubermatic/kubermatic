@@ -3,8 +3,27 @@
 - [v2.29.0](#v2290)
 - [v2.29.1](#v2291)
 - [v2.29.2](#v2292)
+- [v2.29.3](#v2293)
 
-## [v2.29.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.2)
+## v2.29.3
+
+**GitHub release: [v2.29.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.3)**
+
+### New Features
+
+- Add status conditions for policy binding resources ([#15209](https://github.com/kubermatic/kubermatic/pull/15209))
+
+### Bugfixes
+
+- Fix issue where OIDC kubeconfig downloads would fail with RBAC "Forbidden" errors when the identity provider returns uppercase email addresses ([#7740](https://github.com/kubermatic/dashboard/pull/7740))
+
+### Updates
+
+- Update Go version to 1.25.6 ([#15332](https://github.com/kubermatic/kubermatic/pull/15332), [#7782](https://github.com/kubermatic/dashboard/pull/7782))
+
+## v2.29.2
+
+**GitHub release: [v2.29.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.2)**
 
 ### Breaking Changes
 
@@ -30,7 +49,9 @@
 - Update machine-controller to [v1.64.1](https://github.com/kubermatic/machine-controller/releases/tag/v1.64.1) ([#15267](https://github.com/kubermatic/kubermatic/pull/15267))
 - Add support of the latest k8s patch releases v1.34.3/v1.33.7 ([#15239](https://github.com/kubermatic/kubermatic/pull/15239))
 
-## [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)
+## v2.29.1
+
+**GitHub release: [v2.29.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.1)**
 
 ### Supported Kubernetes Versions
 
