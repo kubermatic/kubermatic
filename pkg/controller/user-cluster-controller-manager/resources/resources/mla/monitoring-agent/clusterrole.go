@@ -32,6 +32,7 @@ func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 				{
 					APIGroups: []string{""},
 					Resources: []string{
+						"endpoints",
 						"nodes",
 						"nodes/proxy",
 						"node/metrics",
@@ -39,7 +40,6 @@ func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 						"services",
 						"ingresses",
 						"configmaps",
-						"endpoints",
 					},
 					Verbs: []string{
 						"get",
