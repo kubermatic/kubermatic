@@ -46,6 +46,11 @@ func ClusterRoleReconciler() reconciling.NamedClusterRoleReconcilerFactory {
 					Verbs: []string{"list", "watch"},
 				},
 				{
+					APIGroups: []string{"discovery.k8s.io"},
+					Resources: []string{"endpointslices"},
+					Verbs:     []string{"list", "watch"},
+				},
+				{
 					APIGroups: []string{""},
 					Resources: []string{
 						"services/proxy",
