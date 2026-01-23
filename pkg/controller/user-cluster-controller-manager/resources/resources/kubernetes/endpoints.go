@@ -33,35 +33,6 @@ const (
 	endpointSliceName = serviceName
 )
 
-// EndpointsReconciler returns the func to create/update the endpoints of the kubernetes service.
-func EndpointsReconciler(k8sServiceEndpointAddress string, k8sServiceEndpointPort int32) reconciling.NamedEndpointsReconcilerFactory {
-	return func() (string, reconciling.EndpointsReconciler) {
-		return serviceName, func(ep *corev1.Endpoints) (*corev1.Endpoints, error) {
-			// our controller is reconciling the endpoint slice, do not mirror with EndpointSliceMirroring controller
-			ep.Labels = map[string]string{
-				discoveryv1.LabelSkipMirror: "true",
-			}
-			ep.Subsets = []corev1.EndpointSubset{
-				{
-					Addresses: []corev1.EndpointAddress{
-						{
-							IP: k8sServiceEndpointAddress,
-						},
-					},
-					Ports: []corev1.EndpointPort{
-						{
-							Name:     "https",
-							Port:     k8sServiceEndpointPort,
-							Protocol: corev1.ProtocolTCP,
-						},
-					},
-				},
-			}
-			return ep, nil
-		}
-	}
-}
-
 // EndpointSliceReconciler returns the func to create/update the endpoint slice of the kubernetes service.
 func EndpointSliceReconciler(k8sServiceEndpointAddress string, k8sServiceEndpointPort int32) reconciling.NamedEndpointSliceReconcilerFactory {
 	return func() (string, reconciling.EndpointSliceReconciler) {

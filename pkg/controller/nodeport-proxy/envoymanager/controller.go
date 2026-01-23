@@ -28,6 +28,7 @@ import (
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -132,16 +133,18 @@ func (r *Reconciler) sync(ctx context.Context) error {
 
 		ets := extractExposeTypes(&service, r.options.ExposeAnnotationKey)
 
-		// Get associated endpoints
-		eps := corev1.Endpoints{}
-		if err := r.client.Get(ctx, types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
-			if apierrors.IsNotFound(err) {
-				continue
-			}
-			return fmt.Errorf("failed to get endpoints for service '%s': %w", svcKey, err)
+		// Get associated endpoint slices
+		epSlices := discoveryv1.EndpointSliceList{}
+		if err := r.client.List(ctx, &epSlices,
+			ctrlruntimeclient.InNamespace(service.Namespace),
+			ctrlruntimeclient.MatchingLabels{discoveryv1.LabelServiceName: service.Name}); err != nil {
+			return fmt.Errorf("failed to list endpointslices for service '%s': %w", svcKey, err)
+		}
+		if len(epSlices.Items) == 0 {
+			continue
 		}
 		// Add service to the service builder
-		sb.addService(&service, &eps, ets)
+		sb.addService(&service, &epSlices, ets)
 	}
 
 	// Get current snapshot
@@ -206,23 +209,35 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manag
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.options.ExposeAnnotationKey, log: r.log})).
-		Watches(&corev1.Endpoints{}, handler.EnqueueRequestsFromMapFunc(r.newEndpointHandler())).
+		Watches(&discoveryv1.EndpointSlice{}, handler.EnqueueRequestsFromMapFunc(r.newEndpointSliceHandler())).
 		Complete(r)
 }
 
-func (r *Reconciler) newEndpointHandler() handler.MapFunc {
+func (r *Reconciler) newEndpointSliceHandler() handler.MapFunc {
 	return func(ctx context.Context, obj ctrlruntimeclient.Object) []ctrlruntime.Request {
-		svcName := types.NamespacedName{
-			Name:      obj.GetName(),
-			Namespace: obj.GetNamespace(),
+		epSlice, ok := obj.(*discoveryv1.EndpointSlice)
+		if !ok {
+			return nil
 		}
-		// Get the service associated to the Endpoints
+
+		// Get service name from the EndpointSlice label
+		serviceName, ok := epSlice.Labels[discoveryv1.LabelServiceName]
+		if !ok {
+			return nil
+		}
+
+		svcName := types.NamespacedName{
+			Name:      serviceName,
+			Namespace: epSlice.Namespace,
+		}
+
+		// Get the service associated to the EndpointSlice
 		svc := corev1.Service{}
 		if err := r.client.Get(ctx, svcName, &svc); err != nil {
-			// Avoid enqueuing events for endpoints that do not have an associated
+			// Avoid enqueuing events for endpointslices that do not have an associated
 			// service (e.g. leader election).
 			if !apierrors.IsNotFound(err) {
-				r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+				r.log.Errorw("error occurred while mapping endpointslice to service", "endpointslice", obj.GetName())
 			}
 			return nil
 		}
