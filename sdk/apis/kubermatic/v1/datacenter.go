@@ -17,7 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 
 	kubevirtv1 "kubevirt.io/api/core/v1"
@@ -64,8 +66,7 @@ const (
 	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
-var SupportedProviders = []ProviderType{
-	AKSCloudProvider,
+var InfrastructureProviders = []ProviderType{
 	AlibabaCloudProvider,
 	AnexiaCloudProvider,
 	AWSCloudProvider,
@@ -74,10 +75,7 @@ var SupportedProviders = []ProviderType{
 	BringYourOwnCloudProvider,
 	DigitaloceanCloudProvider,
 	EdgeCloudProvider,
-	EKSCloudProvider,
-	FakeCloudProvider,
 	GCPCloudProvider,
-	GKECloudProvider,
 	HetznerCloudProvider,
 	KubevirtCloudProvider,
 	NutanixCloudProvider,
@@ -85,6 +83,27 @@ var SupportedProviders = []ProviderType{
 	VMwareCloudDirectorCloudProvider,
 	VSphereCloudProvider,
 }
+
+var ManagedKubernetesProviders = []ProviderType{
+	AKSCloudProvider,
+	EKSCloudProvider,
+	GKECloudProvider,
+}
+
+var SupportedProviders = func() []ProviderType {
+	providers := append(
+		InfrastructureProviders,
+		append(
+			ManagedKubernetesProviders,
+			FakeCloudProvider,
+		)...)
+
+	slices.SortFunc(providers, func(a, b ProviderType) int {
+		return cmp.Compare(string(a), string(b))
+	})
+
+	return providers
+}()
 
 func IsProviderSupported(name string) bool {
 	for _, provider := range SupportedProviders {
