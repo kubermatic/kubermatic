@@ -172,6 +172,8 @@ func GetAutoscalerImageTag(majorMinorVersion string) (string, error) {
 		return "v1.33.0", nil
 	case "1.34":
 		return "v1.33.0", nil
+	case "1.35":
+		return "v1.33.0", nil
 	}
 	return "", fmt.Errorf("could not find cluster autoscaler tag for cluster minor-major version %v", majorMinorVersion)
 }
