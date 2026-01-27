@@ -24,6 +24,7 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # policy.
 ADD https://dl.k8s.io/v1.35.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.35
 ADD https://dl.k8s.io/v1.33.7/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.33
+ADD https://dl.k8s.io/v1.32.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.32
 
 RUN wget -O- https://get.helm.sh/helm-v3.18.5-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 

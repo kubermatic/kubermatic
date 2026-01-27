@@ -22,7 +22,6 @@ import (
 
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"go.uber.org/zap"
-
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
@@ -52,7 +51,7 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 			if g.Labels == nil {
 				g.Labels = make(map[string]string)
 			}
-			g.Labels[common.NameLabel] = "kubermatic"
+			g.Labels[common.NameLabel] = defaulting.DefaultGatewayName
 
 			if g.Annotations == nil {
 				g.Annotations = make(map[string]string)
