@@ -1,0 +1,157 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  labels:
+    app: csi-controller
+  name: csi-controller
+  namespace: cluster-de-test-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-controller
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: socket-dir
+        kubermatic.k8c.io/last-restart: ""
+      labels:
+        app: operating-system-manager
+        cloud-config-csi-secret-revision: "123456"
+        cluster: de-test-01
+        vcloud-basic-auth-secret-revision: "123456"
+        vcloud-csi-kubeconfig-secret-revision: "123456"
+    spec:
+      containers:
+      - args:
+        - --csi-address=$(ADDRESS)
+        - --kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig
+        - --timeout=180s
+        - --v=5
+        env:
+        - name: ADDRESS
+          value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+        image: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
+        imagePullPolicy: IfNotPresent
+        name: csi-attacher
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/pluginproxy/
+          name: socket-dir
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: vcloud-csi-kubeconfig
+          readOnly: true
+      - args:
+        - --csi-address=$(ADDRESS)
+        - --kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig
+        - --default-fstype=ext4
+        - --timeout=300s
+        - --v=5
+        env:
+        - name: ADDRESS
+          value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+        image: registry.k8s.io/sig-storage/csi-provisioner:v2.2.2
+        imagePullPolicy: IfNotPresent
+        name: csi-provisioner
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/pluginproxy/
+          name: socket-dir
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: vcloud-csi-kubeconfig
+          readOnly: true
+      - args:
+        - --csi-address=$(ADDRESS)
+        - --timeout=30s
+        - --kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig
+        - --v=5
+        env:
+        - name: ADDRESS
+          value: /var/lib/csi/sockets/pluginproxy/csi.sock
+        image: registry.k8s.io/sig-storage/csi-resizer:v1.4.0
+        imagePullPolicy: IfNotPresent
+        name: csi-resizer
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/pluginproxy/
+          name: socket-dir
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: vcloud-csi-kubeconfig
+          readOnly: true
+      - args:
+        - --endpoint=$(CSI_ENDPOINT)
+        - --cloud-config=/etc/kubernetes/vcloud/config
+        command:
+        - /opt/vcloud/bin/cloud-director-named-disk-csi-driver
+        env:
+        - name: CSI_ENDPOINT
+          value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        image: projects.registry.vmware.com/vmware-cloud-director/cloud-director-named-disk-csi-driver:1.6.0
+        imagePullPolicy: IfNotPresent
+        name: vcd-csi-plugin
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+        volumeMounts:
+        - mountPath: /var/lib/csi/sockets/pluginproxy/
+          name: socket-dir
+        - mountPath: /dev
+          mountPropagation: HostToContainer
+          name: pods-probe-dir
+        - mountPath: /var/lib/kubelet/plugins/kubernetes.io/csi
+          mountPropagation: HostToContainer
+          name: pv-dir
+        - mountPath: /etc/kubernetes/vcloud
+          name: cloud-config-csi
+        - mountPath: /etc/kubernetes/vcloud/basic-auth
+          name: vcloud-basic-auth-volume
+      dnsPolicy: ClusterFirst
+      serviceAccountName: vcloud-csi
+      volumes:
+      - emptyDir: {}
+        name: socket-dir
+      - hostPath:
+          path: /dev
+          type: DirectoryOrCreate
+        name: pods-probe-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins/kubernetes.io/csi
+          type: DirectoryOrCreate
+        name: pv-dir
+      - name: cloud-config-csi
+        secret:
+          secretName: cloud-config-csi
+      - name: vcloud-basic-auth-volume
+        secret:
+          secretName: vcloud-basic-auth
+      - name: vcloud-csi-kubeconfig
+        secret:
+          secretName: vcloud-csi-kubeconfig
+status: {}
