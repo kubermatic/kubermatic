@@ -17,7 +17,7 @@ LABEL org.opencontainers.image.source="https://github.com/kubermatic/kubermatic/
 LABEL org.opencontainers.image.vendor="Kubermatic"
 LABEL org.opencontainers.image.authors="support@kubermatic.com"
 
-ENV KUBECTL_VERSION=v1.34.3
+ENV KUBECTL_VERSION=v1.35.0
 
 RUN apk add --no-cache -U bash ca-certificates curl jq
 
