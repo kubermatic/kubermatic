@@ -1,0 +1,19 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "3600"
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+  name: front-loadbalancer
+  namespace: cluster-de-test-01
+spec:
+  ports:
+  - name: secure
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: nodeport-proxy-envoy
+  type: LoadBalancer
+status:
+  loadBalancer: {}
