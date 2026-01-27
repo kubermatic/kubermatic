@@ -37,7 +37,7 @@ nodes:
      hostPort: 6443
    - containerPort: 32121
      hostPort: 8088
-   # ingress controller for kubermatic api and dashboard
+   # envoy gateway for kubermatic api and dashboard
    - containerPort: 31514
      hostPort: 80
    - containerPort: 32394
@@ -53,9 +53,9 @@ var kindKubermaticNamespace = corev1.Namespace{
 	},
 }
 
-var kindIngressControllerNamespace = corev1.Namespace{
+var kindEnvoyGatewayNamespace = corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
-		Name: "nginx-ingress-controller",
+		Name: "envoy-gateway-system",
 	},
 }
 
@@ -65,53 +65,6 @@ var kindStorageClass = storagev1.StorageClass{
 	},
 	Provisioner:       "rancher.io/local-path",
 	VolumeBindingMode: ptr(storagev1.VolumeBindingWaitForFirstConsumer),
-}
-
-var kindIngressControllerService = corev1.Service{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "nginx-ingress-controller-kind",
-		Namespace: "nginx-ingress-controller",
-	},
-	Spec: corev1.ServiceSpec{
-		Ports: []corev1.ServicePort{
-			{
-				Name:        "http",
-				Protocol:    "TCP",
-				AppProtocol: ptr("http"),
-				Port:        80,
-				TargetPort: utilintstr.IntOrString{
-					Type:   1,
-					IntVal: 0,
-					StrVal: "http",
-				},
-				NodePort: 31514,
-			},
-			{
-				Name:        "https",
-				Protocol:    "TCP",
-				AppProtocol: ptr("https"),
-				Port:        443,
-				TargetPort: utilintstr.IntOrString{
-					Type:   1,
-					IntVal: 0,
-					StrVal: "https",
-				},
-				NodePort: 32394,
-			},
-		},
-		Selector: map[string]string{
-			"app.kubernetes.io/component": "controller",
-			"app.kubernetes.io/instance":  "nginx-ingress-controller",
-			"app.kubernetes.io/name":      "nginx",
-		},
-		Type:                  "NodePort",
-		ExternalTrafficPolicy: "Cluster",
-		IPFamilies: []corev1.IPFamily{
-			"IPv4",
-		},
-		IPFamilyPolicy:        ptr(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicyType("Cluster")),
-	},
 }
 
 var kindNodeportProxyService = corev1.Service{
