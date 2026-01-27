@@ -587,7 +587,7 @@ spec:
               value: "20"
             - name: AZCOPY_BUFFER_GB
               value: "1"
-          image: '{{ Image (print "mcr.microsoft.com/oss/kubernetes-csi/azurefile-csi:" $version) }}'
+          image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5
@@ -806,8 +806,11 @@ spec:
         - args:
             - --v=5
             - --endpoint=$(CSI_ENDPOINT)
+            {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - --azurefile-proxy-endpoint=$(AZUREFILE_PROXY_ENDPOINT)
             - --enable-azurefile-proxy=true
+            - --enable-kata-cc-mount=false
+            {{- end }}
             - --nodeid=$(KUBE_NODE_NAME)
             - --kubeconfig=
             - --drivername=file.csi.azure.com
@@ -823,7 +826,6 @@ spec:
             - --mount-permissions=511
             - --allow-inline-volume-key-access-with-identity=false
             - --metrics-address=0.0.0.0:29615
-            - --enable-kata-cc-mount=false
           env:
             - name: AZURE_CREDENTIAL_FILE
               value: /etc/kubernetes/azure.json
@@ -835,9 +837,11 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
             - name: AZURE_GO_SDK_LOG_LEVEL
+            {{- if semverCompare .Cluster.Version ">= 1.33" }}
             - name: AZUREFILE_PROXY_ENDPOINT
               value: unix:///csi/azurefile-proxy.sock
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.34.3" }}'
+            {{- end }}
+          image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5
@@ -914,9 +918,10 @@ spec:
               name: socket-dir
             - mountPath: /registration
               name: registration-dir
+        {{- if semverCompare .Cluster.Version ">= 1.34" }}
         - command:
             - azfilesrefresh
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.34.3" }}'
+          image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           name: azfilesrefresh
           resources: null
@@ -933,8 +938,10 @@ spec:
               name: azfilesauth
             - mountPath: /var/log/
               name: log-dir
+        {{- end }}
       dnsPolicy: Default
       hostNetwork: true
+      {{- if semverCompare .Cluster.Version ">= 1.33" }}
       hostPID: true
       initContainers:
         - command:
@@ -952,9 +959,11 @@ spec:
               value: /var/lib/kubelet
             - name: MIGRATE_K8S_REPO
               value: "false"
+            {{- if semverCompare .Cluster.Version ">= 1.34" }}
             - name: ENABLE_MI_AUTH
               value: "true"
-          image: '{{ Image "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:v1.34.3" }}'
+            {{- end }}
+          image: '{{ Image (print "mcr.microsoft.com/oss/v2/kubernetes-csi/azurefile-csi:" $version) }}'
           imagePullPolicy: IfNotPresent
           name: install-azurefile-proxy
           securityContext:
@@ -970,6 +979,7 @@ spec:
             - mountPath: /var/lib/kubelet
               mountPropagation: Bidirectional
               name: mountpoint-dir
+      {{- end }}
       nodeSelector:
         kubernetes.io/os: linux
       priorityClassName: system-node-critical

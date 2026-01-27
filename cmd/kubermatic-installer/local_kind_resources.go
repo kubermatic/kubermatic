@@ -93,7 +93,7 @@ var kindNodeportProxyService = corev1.Service{
 			"IPv4",
 		},
 		IPFamilyPolicy:        ptr.To(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyType("Cluster")),
+		InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicy("Cluster")),
 	},
 }
 

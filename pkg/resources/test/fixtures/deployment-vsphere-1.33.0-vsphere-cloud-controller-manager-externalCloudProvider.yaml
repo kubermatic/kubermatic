@@ -43,7 +43,7 @@ spec:
         env:
         - name: SSL_CERT_FILE
           value: /etc/kubermatic/certs/ca-bundle.pem
-        image: registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere:v1.35.0
+        image: registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere:v1.33.1
         name: cloud-controller-manager
         resources:
           limits:

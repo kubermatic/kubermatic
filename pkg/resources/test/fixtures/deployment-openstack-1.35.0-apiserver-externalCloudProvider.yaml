@@ -204,8 +204,6 @@ spec:
         - 'oidc:'
         - --oidc-groups-claim
         - groups
-        - --feature-gates
-        - StrictCostEnforcementForVAP=true,StrictCostEnforcementForWebhooks=true
         - --egress-selector-config-file
         - /etc/kubernetes/konnectivity/egress-selector-configuration.yaml
         command:

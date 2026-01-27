@@ -1,0 +1,19 @@
+{
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      }
+    },
+    {
+      "Action": "sts:AssumeRole",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::000000000000:root"
+      }
+    }
+  ],
+  "Version": "2012-10-17"
+}
