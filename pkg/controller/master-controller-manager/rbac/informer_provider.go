@@ -65,7 +65,7 @@ func (p *InformerProviderImpl) KubeInformerFactoryFor(namespace string) kubeinfo
 		panic("Please register a factory before starting the provider call to StartInformers method")
 	}
 
-	p.kubeInformers[namespace] = kubeinformers.NewFilteredSharedInformerFactory(p.kubeClient, p.resync, namespace, nil)
+	p.kubeInformers[namespace] = kubeinformers.NewSharedInformerFactoryWithOptions(p.kubeClient, p.resync, kubeinformers.WithNamespace(namespace))
 	return p.kubeInformers[namespace]
 }
 

@@ -110,7 +110,7 @@ var kindIngressControllerService = corev1.Service{
 			"IPv4",
 		},
 		IPFamilyPolicy:        ptr(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicyType("Cluster")),
+		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicy("Cluster")),
 	},
 }
 
@@ -149,7 +149,7 @@ var kindNodeportProxyService = corev1.Service{
 			"IPv4",
 		},
 		IPFamilyPolicy:        ptr(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicyType("Cluster")),
+		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicy("Cluster")),
 	},
 }
 
