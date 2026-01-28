@@ -211,8 +211,9 @@ func localKind(logger *logrus.Logger, dir string) (ctrlruntimeclient.Client, con
 		logger.Fatalf("failed to construct mgr: %v", err)
 	}
 
-	if err := setupKubermaticInstallerScheme(mgr); err != nil {
-		logger.Fatalf("failed to setup installer scheme: %v", err)
+	err = setupKubermaticInstallerScheme(mgr)
+	if err != nil {
+		logger.Fatalf("failed to setup scheme: %v", err)
 	}
 
 	go func() {
@@ -329,12 +330,40 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 	}
 
 	return prepareYAMLFile(dir, "values", func(doc *yamled.Document) error {
+		// new gateway api migration
+		doc.Set(yamled.Path{"migrateGatewayAPI"}, true)
+		doc.Set(yamled.Path{"httpRoute", "gatewayName"}, "kubermatic")
+		doc.Set(yamled.Path{"httpRoute", "gatewayNamespace"}, "kubermatic")
+		doc.Set(yamled.Path{"httpRoute", "domain"}, kkpEndpoint)
+		doc.Remove(yamled.Path{"nginx"})
+
+		// configure envoy proxy
+		doc.Set(yamled.Path{"envoyProxy", "service", "type"}, "NodePort")
+		doc.Set(yamled.Path{"envoyProxy", "service", "externalTrafficPolicy"}, "Cluster")
+		doc.Set(yamled.Path{"envoyProxy", "service", "patch", "type"}, "JSONMerge")
+		doc.Set(yamled.Path{"envoyProxy", "service", "patch", "value", "spec", "type"}, "NodePort")
+		doc.Set(yamled.Path{"envoyProxy", "service", "patch", "value", "spec", "ports"}, []map[string]interface{}{
+			{
+				"name":       "http",
+				"port":       80,
+				"targetPort": 10080,
+				"nodePort":   31514,
+			},
+			{
+				"name":       "https",
+				"port":       443,
+				"targetPort": 10443,
+				"nodePort":   32394,
+			},
+		})
+
+		// dex configuration
+		doc.Set(yamled.Path{"dex", "replicaCount"}, 1)
 		doc.Set(yamled.Path{"dex", "config", "enablePasswordDB"}, true)
 		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", kkpEndpoint))
-		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
-		doc.Set(yamled.Path{"nginx", "controller", "extraArgs", "update-status"}, "true")
-		doc.Remove(yamled.Path{"minio"})
-
+		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
+			"enabled": false,
+		})
 		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
 			"className": "nginx",
 			"enabled":   true,
@@ -354,6 +383,8 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 			},
 			"tls": []map[string]interface{}{},
 		})
+		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
+		doc.Remove(yamled.Path{"minio"})
 
 		// Set the imagePullSecret from kubermatic.example.yaml
 		// This ensures both configurations use the same value
@@ -403,10 +434,8 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 		logger.Fatalf("failed to prepare Helm values: %v", err)
 	}
 
-	ensureResource(kubeClient, logger, &kindIngressControllerNamespace)
 	ensureResource(kubeClient, logger, &kindKubermaticNamespace)
 	ensureResource(kubeClient, logger, &kindStorageClass)
-	ensureResource(kubeClient, logger, &kindIngressControllerService)
 	ensureResource(kubeClient, logger, &kindNodeportProxyService)
 
 	ms := kubermaticmaster.NewStack(false)
@@ -415,11 +444,11 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", kubermaticPath, err)
 	}
 
-	// the string valuesPath is wrapped in a slice: []string{valuesPath}
 	v, err := loadHelmValues([]string{valuesPath})
 	if err != nil {
 		logger.Panicf("Failed to load %v after autoconfiguration: %v", valuesPath, err)
 	}
+
 	msOpts := stack.DeployOptions{
 		ChartsDirectory:            opts.ChartsDirectory,
 		KubeClient:                 kubeClient,
@@ -430,6 +459,7 @@ func installKubermatic(logger *logrus.Logger, dir string, kubeClient ctrlruntime
 		KubermaticConfiguration:    k,
 		RawKubermaticConfiguration: uk,
 		HelmValues:                 v,
+		MigrateToGatewayAPI:        true,
 	}
 
 	if err := ms.Deploy(context.Background(), msOpts); err != nil {
