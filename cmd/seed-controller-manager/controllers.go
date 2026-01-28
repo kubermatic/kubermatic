@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/audit-logging-enforcement-controller"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
@@ -87,6 +88,7 @@ var AllControllers = map[string]controllerCreator{
 	defaultapplicationcontroller.ControllerName:             createDefaultApplicationController,
 	clustercredentialscontroller.ControllerName:             createClusterCredentialsController,
 	applicationsecretclustercontroller.ControllerName:       createApplicationSecretClusterController,
+	auditloggingenforcement.ControllerName:                  createAuditLoggingEnforcementController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -500,5 +502,15 @@ func createApplicationSecretClusterController(ctrlCtx *controllerContext) error 
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.namespace,
+	)
+}
+
+func createAuditLoggingEnforcementController(ctrlCtx *controllerContext) error {
+	return auditloggingenforcement.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.seedGetter,
+		ctrlCtx.runOptions.workerCount,
 	)
 }
