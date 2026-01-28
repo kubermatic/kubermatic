@@ -23,7 +23,7 @@ aws-node-termination-handler: OUTPUT_FILE=aws-node-termination-handler/aws-node-
 aws-node-termination-handler:
 	cat aws-node-termination-handler/_header.txt > $(OUTPUT_FILE)
 	helm template aws-node-termination-handler oci://public.ecr.aws/aws-ec2/helm/aws-node-termination-handler \
-	  --version 0.27.4 \
+	  --version 0.27.2 \
 	  --namespace kube-system \
 	  --values values-aws-node-termination-handler.yaml \
 	  >> $(OUTPUT_FILE)
