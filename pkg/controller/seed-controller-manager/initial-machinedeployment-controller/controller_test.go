@@ -69,7 +69,6 @@ func healthy() kubermaticv1.ExtendedClusterHealth {
 		Controller:                   kubermaticv1.HealthStatusUp,
 		MachineController:            kubermaticv1.HealthStatusUp,
 		Etcd:                         kubermaticv1.HealthStatusUp,
-		OpenVPN:                      kubermaticv1.HealthStatusUp,
 		CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 		UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 	}

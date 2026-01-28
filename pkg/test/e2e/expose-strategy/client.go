@@ -35,9 +35,9 @@ import (
 )
 
 const (
-	openvpnImage        = "quay.io/kubermatic/openvpn:v2.5.2-r0"
+	clientImage         = "quay.io/kubermatic/util:2.5.0"
 	clientPodName       = "client-pod"
-	clientContainerName = "openvpn"
+	clientContainerName = "client"
 	kubeconfigPath      = "/etc/kubernetes"
 )
 
@@ -108,8 +108,7 @@ func (cj *clientJig) VerifyApiserverVersion(ctx context.Context, kasHostPort str
 	})
 }
 
-// newClientPod returns a pod that runs a container allowing to run kubectl and
-// OpenVPN commands.
+// newClientPod returns a pod that runs a container allowing to run kubectl commands.
 func newClientPod(ns string) *corev1.Pod {
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -120,7 +119,7 @@ func newClientPod(ns string) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:    clientContainerName,
-					Image:   openvpnImage,
+					Image:   clientImage,
 					Command: []string{"/bin/bash"},
 					Args:    []string{"-c", "while true; do sleep 2073600; done"},
 					Env: []corev1.EnvVar{
