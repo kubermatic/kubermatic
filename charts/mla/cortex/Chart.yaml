@@ -14,7 +14,7 @@
 
 apiVersion: v2
 version: 9.9.9-dev
-appVersion: v1.14.1
+appVersion: v1.20.0
 description: 'Horizontally scalable, highly available, multi-tenant, long term Prometheus.'
 home: https://cortexmetrics.io/
 kubeVersion: ^1.19.0-0
@@ -23,5 +23,7 @@ sources:
   - https://github.com/cortexproject/cortex-helm-chart
 dependencies:
 - name: cortex
-  repository: oci://quay.io/kubermatic-mirror/helm-charts
-  version: 2.1.0
+  # FIXME: Figure out how to mirror the helm-charts in kubermatic-mirror?
+  # repository: oci://quay.io/kubermatic-mirror/helm-charts
+  repository: https://cortexproject.github.io/cortex-helm-chart
+  version: 3.0.0
