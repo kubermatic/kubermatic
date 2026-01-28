@@ -329,7 +329,15 @@ func (sb *snapshotBuilder) makeTunnelingVirtualHosts(service *corev1.Service) (v
 }
 
 func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHost) *envoylistenerv3.Listener {
-	routerpb, err := anypb.New(&envoyrouterv3.Router{})
+	// RejectConnectRequestEarlyData is explicitly set to false to maintain
+	// backward compatibility with Envoy 1.37.0. In 1.37.0, the runtime flag
+	// envoy.reloadable_features.reject_early_connect_data was removed and
+	// replaced with this Router filter config option. Setting to false allows
+	// early data in CONNECT requests which was the implicit default behavior
+	// before 1.37.0.
+	routerpb, err := anypb.New(&envoyrouterv3.Router{
+		RejectConnectRequestEarlyData: wrapperspb.Bool(false),
+	})
 	if err != nil {
 		// panic as this either never occurs or cannot recover
 		panic(fmt.Errorf("failed to marshal router: %w", err))
