@@ -171,7 +171,12 @@ func RoleReconciler() (string, reconciling.RoleReconciler) {
 		r.Rules = []rbacv1.PolicyRule{
 			{
 				APIGroups: []string{""},
-				Resources: []string{"endpoints", "services"},
+				Resources: []string{"services"},
+				Verbs:     []string{"list", "get", "watch"},
+			},
+			{
+				APIGroups: []string{"discovery.k8s.io"},
+				Resources: []string{"endpointslices"},
 				Verbs:     []string{"list", "get", "watch"},
 			},
 			{

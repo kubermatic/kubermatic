@@ -151,13 +151,6 @@ linters:
       # gocritic
       - path: (.+)\.go$
         text: singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
-      # This needs to be fixed against https://github.com/kubermatic/kubermatic/issues/14876
-      - linters:
-          - staticcheck
-        text: "SA1019: corev1.Endpoints is deprecated"
-      - linters:
-          - staticcheck
-        text: "SA1019: corev1.EndpointSubset is deprecated"
       - linters:
           - goconst
         path: (.+)_test\.go
