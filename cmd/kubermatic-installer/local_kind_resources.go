@@ -24,6 +24,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilintstr "k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 var kindConfigContent = `kind: Cluster
@@ -43,19 +44,9 @@ nodes:
    - containerPort: 32394
      hostPort: 443`
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 var kindKubermaticNamespace = corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "kubermatic",
-	},
-}
-
-var kindEnvoyGatewayNamespace = corev1.Namespace{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "envoy-gateway-system",
 	},
 }
 
@@ -64,7 +55,7 @@ var kindStorageClass = storagev1.StorageClass{
 		Name: "kubermatic-fast",
 	},
 	Provisioner:       "rancher.io/local-path",
-	VolumeBindingMode: ptr(storagev1.VolumeBindingWaitForFirstConsumer),
+	VolumeBindingMode: ptr.To(storagev1.VolumeBindingWaitForFirstConsumer),
 }
 
 var kindNodeportProxyService = corev1.Service{
@@ -101,8 +92,8 @@ var kindNodeportProxyService = corev1.Service{
 		IPFamilies: []corev1.IPFamily{
 			"IPv4",
 		},
-		IPFamilyPolicy:        ptr(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicyType("Cluster")),
+		IPFamilyPolicy:        ptr.To(corev1.IPFamilyPolicy("SingleStack")),
+		InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyType("Cluster")),
 	},
 }
 
@@ -124,7 +115,7 @@ var kindLocalSeed = kubermaticv1.Seed{
 				Location: "Hamburg", // TODO: some clever heuristic or geolocation service?
 				Spec: kubermaticv1.DatacenterSpec{
 					Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-						EnableDefaultNetworkPolicies: ptr(false),
+						EnableDefaultNetworkPolicies: ptr.To(false),
 						DNSPolicy:                    "ClusterFirst",
 						Images: kubermaticv1.KubeVirtImageSources{
 							HTTP: &kubermaticv1.KubeVirtHTTPSource{
@@ -160,7 +151,7 @@ var kindLocalPreset = kubermaticv1.Preset{
 	Spec: kubermaticv1.PresetSpec{
 		Kubevirt: &kubermaticv1.Kubevirt{
 			ProviderPreset: kubermaticv1.ProviderPreset{
-				Enabled: ptr(true),
+				Enabled: ptr.To(true),
 			},
 			Kubeconfig: "",
 		},
