@@ -66,8 +66,8 @@ func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	}
 }
 
-// EndpointReaderRoleReconciler returns the func to create/update the Role for the machine controller to allow reading the kubernetes api endpoints.
-func EndpointReaderRoleReconciler() reconciling.NamedRoleReconcilerFactory {
+// EndpointSliceReaderRoleReconciler returns the func to create/update the Role for the machine controller to allow reading the kubernetes API server endpointslices.
+func EndpointSliceReaderRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return resources.MachineControllerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Name = resources.MachineControllerRoleName
@@ -76,8 +76,8 @@ func EndpointReaderRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups: []string{""},
-					Resources: []string{"endpoints"},
+					APIGroups: []string{"discovery.k8s.io"},
+					Resources: []string{"endpointslices"},
 					Verbs: []string{
 						"get",
 						"list",

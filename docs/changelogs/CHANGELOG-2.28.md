@@ -6,6 +6,16 @@
 - [v2.28.3](#v2283)
 - [v2.28.4](#v2284)
 - [v2.28.5](#v2285)
+- [v2.28.6](#v2286)
+
+## v2.28.6
+
+**GitHub release: [v2.28.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.28.6)**
+
+### Updates
+
+- Update Go version to 1.24.12 ([#15325](https://github.com/kubermatic/kubermatic/pull/15325), [#7781](https://github.com/kubermatic/dashboard/pull/7781))
+- Users can now configure additional arguments to oauth2-proxy pods. (useful for seed and user-mla) ([#15279](https://github.com/kubermatic/kubermatic/pull/15279))
 
 ## v2.28.5
 

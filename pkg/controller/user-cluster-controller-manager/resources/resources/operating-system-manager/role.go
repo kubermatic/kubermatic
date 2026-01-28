@@ -93,7 +93,7 @@ func KubePublicRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 }
 
 // DefaultRoleReconciler returns the func to create/update the Role for the OSM
-// to retrieve kube-apiserver address from the Kubernetes endpoint.
+// to retrieve kube-apiserver address from the Kubernetes EndpointSlices.
 func DefaultRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return resources.OperatingSystemManagerRoleName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
@@ -101,11 +101,11 @@ func DefaultRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 
 			r.Rules = []rbacv1.PolicyRule{
 				{
-					APIGroups:     []string{""},
-					Resources:     []string{"endpoints"},
-					ResourceNames: []string{"kubernetes"},
+					APIGroups: []string{"discovery.k8s.io"},
+					Resources: []string{"endpointslices"},
 					Verbs: []string{
 						"get",
+						"list",
 					},
 				},
 			}

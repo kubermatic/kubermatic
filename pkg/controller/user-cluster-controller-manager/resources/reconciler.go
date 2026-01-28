@@ -419,7 +419,7 @@ func (r *reconciler) reconcileRoles(ctx context.Context, data reconcileData) err
 
 	// default
 	creators = []reconciling.NamedRoleReconcilerFactory{
-		machinecontroller.EndpointReaderRoleReconciler(),
+		machinecontroller.EndpointSliceReaderRoleReconciler(),
 		operatingsystemmanager.DefaultRoleReconciler(),
 	}
 

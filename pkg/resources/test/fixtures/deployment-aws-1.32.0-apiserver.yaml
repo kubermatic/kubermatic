@@ -71,6 +71,7 @@ spec:
         - --authentication-audience=system:konnectivity-server
         - --proxy-strategies=default
         - --keepalive-time=1m
+        - --xfr-channel-size=150
         command:
         - /proxy-server
         image: registry.k8s.io/kas-network-proxy/proxy-server:v0.31.0
