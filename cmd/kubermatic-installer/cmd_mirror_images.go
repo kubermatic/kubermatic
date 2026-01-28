@@ -32,7 +32,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	"k8c.io/kubermatic/v2/pkg/defaulting"
-	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/images"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -385,12 +384,6 @@ func collectApplicationImages(logger *logrus.Logger, kubermaticConfig *kubermati
 	}
 
 	copyKubermaticConfig := kubermaticConfig.DeepCopy()
-
-	if _, ok := copyKubermaticConfig.Spec.FeatureGates[features.ExternalApplicationCatalogManager]; ok {
-		logger.Info("🚀 Getting images for configured application catalog and its manager…")
-		imageSet.Insert(fmt.Sprintf("%s:%s", strings.Replace(copyKubermaticConfig.Spec.Applications.CatalogManager.RegistrySettings.RegistryURL, "oci://", "", 1), copyKubermaticConfig.Spec.Applications.CatalogManager.RegistrySettings.Tag))
-		imageSet.Insert(fmt.Sprintf("%s:%s", copyKubermaticConfig.Spec.Applications.CatalogManager.Image.Repository, copyKubermaticConfig.Spec.Applications.CatalogManager.Image.Tag))
-	}
 
 	logger.Info("🚀 Getting images from system Applications Helm charts…")
 	for sysChart, err := range images.SystemAppsHelmCharts(copyKubermaticConfig, logger, helmClient, options.HelmTimeout, options.RegistryPrefix) {

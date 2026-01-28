@@ -78,21 +78,23 @@ func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 	return func() (string, reconciling.ClusterRoleReconciler) {
 		return name, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
 			cr.Rules = []rbacv1.PolicyRule{
+				// Leader election
 				{
 					APIGroups: []string{"coordination.k8s.io"},
 					Resources: []string{"leases"},
-					Verbs:     []string{"*"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 				},
-
+				// Events for recording
 				{
 					APIGroups: []string{""},
 					Resources: []string{"events"},
 					Verbs:     []string{"create", "patch"},
 				},
+				// ApplicationDefinitions management
 				{
 					APIGroups: []string{"apps.kubermatic.k8c.io"},
 					Resources: []string{"applicationdefinitions"},
-					Verbs:     []string{"*"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
 				},
 				{
 					APIGroups: []string{"apps.kubermatic.k8c.io"},
@@ -102,12 +104,41 @@ func ClusterRoleReconciler(cfg *kubermaticv1.KubermaticConfiguration) reconcilin
 				{
 					APIGroups: []string{"apps.kubermatic.k8c.io"},
 					Resources: []string{"applicationdefinitions/finalizers"},
-					Verbs:     []string{"get", "update", "patch", "delete"},
+					Verbs:     []string{"update"},
 				},
+				// KubermaticConfiguration access
 				{
 					APIGroups: []string{"kubermatic.k8c.io"},
 					Resources: []string{"kubermaticconfigurations"},
 					Verbs:     []string{"get", "update", "list", "watch", "patch"},
+				},
+				// Secrets access (for Helm chart credentials)
+				{
+					APIGroups: []string{""},
+					Resources: []string{"secrets"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				// ConfigMaps access
+				{
+					APIGroups: []string{""},
+					Resources: []string{"configmaps"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				// ApplicationCatalogs management (new CRD)
+				{
+					APIGroups: []string{"applicationcatalog.k8c.io"},
+					Resources: []string{"applicationcatalogs"},
+					Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+				},
+				{
+					APIGroups: []string{"applicationcatalog.k8c.io"},
+					Resources: []string{"applicationcatalogs/status"},
+					Verbs:     []string{"get", "update", "patch"},
+				},
+				{
+					APIGroups: []string{"applicationcatalog.k8c.io"},
+					Resources: []string{"applicationcatalogs/finalizers"},
+					Verbs:     []string{"update"},
 				},
 			}
 
@@ -120,10 +151,17 @@ func RoleReconciler() reconciling.NamedRoleReconcilerFactory {
 	return func() (string, reconciling.RoleReconciler) {
 		return ApplicationCatalogServiceAccountName, func(r *rbacv1.Role) (*rbacv1.Role, error) {
 			r.Rules = []rbacv1.PolicyRule{
+				// Secrets access within namespace (for Helm chart credentials)
 				{
 					APIGroups: []string{""},
 					Resources: []string{"secrets"},
-					Verbs:     []string{"get", "list"},
+					Verbs:     []string{"get", "list", "watch"},
+				},
+				// ConfigMaps access within namespace
+				{
+					APIGroups: []string{""},
+					Resources: []string{"configmaps"},
+					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
 
@@ -201,11 +239,11 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 				"--metrics-address=0.0.0.0:8085",
 				fmt.Sprintf(
 					"--reconciliation-interval=%s",
-					cfg.Spec.Applications.CatalogManager.ReconciliationInterval.Duration,
+					cfg.Spec.Applications.CatalogManager.ManagerSettings.ReconciliationInterval.Duration,
 				),
 			}
 
-			if cfg.Spec.Applications.CatalogManager.LogLevel == "debug" {
+			if cfg.Spec.Applications.CatalogManager.ManagerSettings.LogLevel == "debug" {
 				args = append(args, "--log-debug=true")
 			} else {
 				args = append(args, "--log-debug=false")
@@ -274,8 +312,9 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 }
 
 func getResources(cfg *kubermaticv1.KubermaticConfiguration) corev1.ResourceRequirements {
-	if cfg.Spec.Applications.CatalogManager.Resources.Requests != nil || cfg.Spec.Applications.CatalogManager.Resources.Limits != nil {
-		return cfg.Spec.Applications.CatalogManager.Resources
+	resources := cfg.Spec.Applications.CatalogManager.ManagerSettings.Resources
+	if resources.Requests != nil || resources.Limits != nil {
+		return resources
 	}
 
 	return defaultResourceRequirements
