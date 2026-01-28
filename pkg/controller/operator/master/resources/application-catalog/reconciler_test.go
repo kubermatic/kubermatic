@@ -55,7 +55,7 @@ func TestReconcileDefaultApplicationCatalog(t *testing.T) {
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					Applications: kubermaticv1.ApplicationDefinitionsConfiguration{
 						CatalogManager: kubermaticv1.CatalogManagerConfiguration{
-							Applications: []string{},
+							Apps: []string{},
 						},
 					},
 				},
@@ -95,7 +95,7 @@ func TestReconcileDefaultApplicationCatalog(t *testing.T) {
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					Applications: kubermaticv1.ApplicationDefinitionsConfiguration{
 						CatalogManager: kubermaticv1.CatalogManagerConfiguration{
-							Applications: []string{"ingress-nginx", "cert-manager", "argo-cd"},
+							Apps: []string{"ingress-nginx", "cert-manager", "argo-cd"},
 						},
 					},
 				},
@@ -131,7 +131,7 @@ func TestReconcileDefaultApplicationCatalog(t *testing.T) {
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					Applications: kubermaticv1.ApplicationDefinitionsConfiguration{
 						CatalogManager: kubermaticv1.CatalogManagerConfiguration{
-							Applications: []string{"new-app-1", "new-app-2"},
+							Apps: []string{"new-app-1", "new-app-2"},
 						},
 					},
 				},
@@ -167,7 +167,7 @@ func TestReconcileDefaultApplicationCatalog(t *testing.T) {
 				Spec: kubermaticv1.KubermaticConfigurationSpec{
 					Applications: kubermaticv1.ApplicationDefinitionsConfiguration{
 						CatalogManager: kubermaticv1.CatalogManagerConfiguration{
-							Applications: []string{},
+							Apps: []string{},
 						},
 					},
 				},

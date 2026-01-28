@@ -68,12 +68,12 @@ func ReconcileDefaultApplicationCatalog(
 		},
 	}
 
-	if len(cfg.Spec.Applications.CatalogManager.Applications) > 0 {
+	if len(cfg.Spec.Applications.CatalogManager.Apps) > 0 {
 		if catalog.Annotations == nil {
 			catalog.Annotations = make(map[string]string)
 		}
 
-		catalog.Annotations[IncludeAnnotation] = strings.Join(cfg.Spec.Applications.CatalogManager.Applications, ",")
+		catalog.Annotations[IncludeAnnotation] = strings.Join(cfg.Spec.Applications.CatalogManager.Apps, ",")
 	}
 
 	existingCatalog := &catalogv1alpha1.ApplicationCatalog{}
@@ -108,8 +108,8 @@ func ReconcileDefaultApplicationCatalog(
 	}
 
 	expectedAnnotationValue := ""
-	if len(cfg.Spec.Applications.CatalogManager.Applications) > 0 {
-		expectedAnnotationValue = strings.Join(cfg.Spec.Applications.CatalogManager.Applications, ",")
+	if len(cfg.Spec.Applications.CatalogManager.Apps) > 0 {
+		expectedAnnotationValue = strings.Join(cfg.Spec.Applications.CatalogManager.Apps, ",")
 	}
 
 	currentAnnotationValue, hasAnnotation := existingCatalog.Annotations[IncludeAnnotation]
