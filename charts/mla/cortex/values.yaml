@@ -123,7 +123,7 @@ cortex:
         dir: /data
         retention_period: 365m
         close_idle_tsdb_timeout: 365m
-        wal_compression_enabled: true
+        wal_compression_type: zstd
         flush_blocks_on_shutdown: true
   runtimeconfigmap:
     # -- If true, a configmap for the `runtime_config` will be created.
