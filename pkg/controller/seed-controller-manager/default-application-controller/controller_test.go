@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -509,6 +510,110 @@ func TestReconcile(t *testing.T) {
 				return compareApplications(apps.Items, applications, changedApplicationInstallationNamespace, true)
 			},
 		},
+		{
+			name:                        "scenario 16: reconciliation interval annotation is propagated to application installation",
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinitionWithReconciliationInterval(applicationName, "namespace", "v1.0.0", "", false, true, "", nil, nil, "10m"),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected count %d", len(apps.Items), 2)
+				}
+
+				// Find the application we created (not the CNI one)
+				for _, app := range apps.Items {
+					if app.Name == applicationName {
+						expectedInterval := 10 * time.Minute
+						if app.Spec.ReconciliationInterval.Duration != expectedInterval {
+							return fmt.Errorf("installed app %s has incorrect reconciliation interval: expected %v, got %v", app.Name, expectedInterval, app.Spec.ReconciliationInterval.Duration)
+						}
+						return nil
+					}
+				}
+
+				return fmt.Errorf("application %s not found in installed applications", applicationName)
+			},
+		},
+		{
+			name:                        "scenario 17: invalid reconciliation interval annotation is handled gracefully",
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinitionWithReconciliationInterval(applicationName, "namespace", "v1.0.0", "", false, true, "", nil, nil, "invalid-duration"),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected count %d", len(apps.Items), 2)
+				}
+
+				// Find the application we created (not the CNI one)
+				for _, app := range apps.Items {
+					if app.Name == applicationName {
+						// Invalid duration should result in zero interval (default)
+						if app.Spec.ReconciliationInterval.Duration != 0 {
+							return fmt.Errorf("installed app %s should have zero reconciliation interval for invalid annotation, got %v", app.Name, app.Spec.ReconciliationInterval.Duration)
+						}
+						return nil
+					}
+				}
+
+				return fmt.Errorf("application %s not found in installed applications", applicationName)
+			},
+		},
+		{
+			name:                        "scenario 18: missing reconciliation interval annotation results in zero interval",
+			cluster:                     genCluster(clusterName, defaultDatacenterName, false, ciliumCNISettings),
+			systemAppInstallationValues: map[string]any{"status": "ready"},
+			applications: []appskubermaticv1.ApplicationDefinition{
+				*genApplicationDefinition(applicationName, "namespace", "v1.0.0", "", false, true, "", nil, nil),
+			},
+			validate: func(cluster *kubermaticv1.Cluster, applications []appskubermaticv1.ApplicationDefinition, userClusterClient ctrlruntimeclient.Client, reconcileErr error) error {
+				if reconcileErr != nil {
+					return fmt.Errorf("reconciling should not have caused an error, but did: %w", reconcileErr)
+				}
+
+				apps := appskubermaticv1.ApplicationInstallationList{}
+				if err := userClusterClient.List(context.Background(), &apps); err != nil {
+					return fmt.Errorf("failed to list ApplicationInstallations in user cluster: %w", err)
+				}
+
+				if len(apps.Items) != 2 {
+					return fmt.Errorf("installed applications count %d doesn't match the expected count %d", len(apps.Items), 2)
+				}
+
+				// Find the application we created (not the CNI one)
+				for _, app := range apps.Items {
+					if app.Name == applicationName {
+						if app.Spec.ReconciliationInterval.Duration != 0 {
+							return fmt.Errorf("installed app %s should have zero reconciliation interval, got %v", app.Name, app.Spec.ReconciliationInterval.Duration)
+						}
+						return nil
+					}
+				}
+
+				return fmt.Errorf("application %s not found in installed applications", applicationName)
+			},
+		},
 	}
 	project := &kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
@@ -691,6 +796,21 @@ func compareApplications(installedApps []appskubermaticv1.ApplicationInstallatio
 						return fmt.Errorf("installed app %s has incorrect values: expected %q, got %q", installedApp.Name, appDef.Spec.DefaultValuesBlock, installedApp.Spec.ValuesBlock)
 					}
 				}
+
+				// Compare reconciliation interval
+				if intervalStr, ok := appDef.Annotations[appskubermaticv1.ApplicationReconciliationIntervalAnnotation]; ok {
+					expectedInterval, err := time.ParseDuration(intervalStr)
+					if err == nil {
+						if installedApp.Spec.ReconciliationInterval.Duration != expectedInterval {
+							return fmt.Errorf("installed app %s has incorrect reconciliation interval: expected %v, got %v", installedApp.Name, expectedInterval, installedApp.Spec.ReconciliationInterval.Duration)
+						}
+					}
+				} else { //nolint:gocritic
+					// No annotation means zero interval
+					if installedApp.Spec.ReconciliationInterval.Duration != 0 {
+						return fmt.Errorf("installed app %s has unexpected reconciliation interval: expected 0, got %v", installedApp.Name, installedApp.Spec.ReconciliationInterval.Duration)
+					}
+				}
 				break
 			}
 		}
@@ -744,10 +864,17 @@ func genCluster(name, datacenter string, initialApplicationCondition bool, cniPl
 }
 
 func genApplicationDefinition(name, namespace, defaultVersion, defaultDatacenterName string, defaultApp, enforced bool, defaultValues string, defaultRawValues *runtime.RawExtension, defaultNamespace *appskubermaticv1.AppNamespaceSpec) *appskubermaticv1.ApplicationDefinition {
+	return genApplicationDefinitionWithReconciliationInterval(name, namespace, defaultVersion, defaultDatacenterName, defaultApp, enforced, defaultValues, defaultRawValues, defaultNamespace, "")
+}
+
+func genApplicationDefinitionWithReconciliationInterval(name, namespace, defaultVersion, defaultDatacenterName string, defaultApp, enforced bool, defaultValues string, defaultRawValues *runtime.RawExtension, defaultNamespace *appskubermaticv1.AppNamespaceSpec, reconciliationInterval string) *appskubermaticv1.ApplicationDefinition {
 	annotations := map[string]string{}
 	selector := appskubermaticv1.DefaultingSelector{}
 	if defaultDatacenterName != "" {
 		selector.Datacenters = []string{defaultDatacenterName}
+	}
+	if reconciliationInterval != "" {
+		annotations[appskubermaticv1.ApplicationReconciliationIntervalAnnotation] = reconciliationInterval
 	}
 
 	return &appskubermaticv1.ApplicationDefinition{
