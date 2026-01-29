@@ -52,7 +52,7 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 			if g.Labels == nil {
 				g.Labels = make(map[string]string)
 			}
-			g.Labels[common.NameLabel] = "kubermatic"
+			g.Labels[common.NameLabel] = defaulting.DefaultGatewayName
 
 			if g.Annotations == nil {
 				g.Annotations = make(map[string]string)
