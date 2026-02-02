@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/crd"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -69,6 +70,14 @@ func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 
+	sublogger.Info("Deploying Gateway API Custom Resource Definitions...")
+	crdDirectory := filepath.Join(opt.ChartsDirectory, EnvoyGatewayControllerChartName, "crd")
+
+	err = util.DeployCRDs(ctx, kubeClient, sublogger, crdDirectory, nil, crd.MasterCluster)
+	if err != nil {
+		return fmt.Errorf("failed to deploy Gateway API CRDs: %w", err)
+	}
+
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, EnvoyGatewayControllerNamespace, EnvoyGatewayControllerReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check Helm release: %w", err)
@@ -97,7 +106,6 @@ func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 	logger.Info("✅ Success.")
 
 	return nil
-}
 
 func waitForGatewayClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client) error {
 	logger.Info("Waiting for GatewayClass to be available...")
