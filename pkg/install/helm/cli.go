@@ -235,10 +235,9 @@ func (c *cli) GetValues(namespace string, releaseName string) (*yamled.Document,
 }
 
 func (c *cli) Version() (*semverlib.Version, error) {
-	// add --client to gracefully handle Helm 2 (Helm 3 ignores the flag, thankfully);
 	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
 	// Helm-2-style templating string "{{ .Client.SemVer }}"
-	output, err := c.run("", "version", "--client", "--template", "{{ .Version }}")
+	output, err := c.run("", "version", "--template", "{{ .Version }}")
 	if err != nil {
 		return nil, err
 	}
