@@ -267,6 +267,7 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	}
 
 	v22 := semverlib.MustParse("2.22.0")
+	v30 := semverlib.MustParse("2.30.0")
 
 	if release != nil && release.Version.LessThan(v22) && !chart.Version.LessThan(v22) {
 		sublogger.Warn("Installation process will temporarily remove and then upgrade memcached instances used by Cortex.")
@@ -274,6 +275,15 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 		err = upgradeCortexStatefulsets(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
 		if err != nil {
 			return fmt.Errorf("failed to prepare Cortex for upgrade: %w", err)
+		}
+	}
+
+	if release != nil && release.Version.LessThan(v30) && !chart.Version.LessThan(v30) {
+		sublogger.Warn("Installation process will delete memcached services for v2.30.0+ upgrade (immutable clusterIP change).")
+
+		err = upgradeCortexMemcachedServices(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to prepare memcached services for upgrade: %w", err)
 		}
 	}
 
@@ -285,6 +295,14 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 
 	if err := ctrlruntimeclient.IgnoreAlreadyExists(kubeClient.Create(ctx, runtimeConfigMap)); err != nil {
 		return fmt.Errorf("failed to create runtime-config ConfigMap: %w", err)
+	}
+
+	// Upgrade runtime config key from runtime-config.yaml to runtime_config.yaml after ensuring ConfigMap exists
+	if release != nil && release.Version.LessThan(v30) && !chart.Version.LessThan(v30) {
+		err = upgradeCortexRuntimeConfigMap(ctx, sublogger, kubeClient, runtimeConfigMap)
+		if err != nil {
+			return fmt.Errorf("failed to upgrade runtime config ConfigMap: %w", err)
+		}
 	}
 
 	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CortexNamespace, CortexReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, opt.DisableDependencyUpdate, release); err != nil {
@@ -574,5 +592,116 @@ func upgradeConsulStatefulsets(
 			return fmt.Errorf("failed to remove the statefulset: %w\n\nuse backup file to check the changes and restore if needed", err)
 		}
 	}
+	return nil
+}
+
+func upgradeCortexMemcachedServices(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s: %s detected, performing upgrade to %s", release.Name, release.Version.String(), chart.Version.String())
+	logger.Info("Removing memcached services")
+
+	servicesList := &unstructured.UnstructuredList{}
+	servicesList.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "",
+		Kind:    "ServiceList",
+		Version: "v1",
+	})
+
+	// List of memcached service names to delete
+	memcachedServices := []string{
+		release.Name + "-memcached-blocks",
+		release.Name + "-memcached-blocks-index",
+		release.Name + "-memcached-blocks-metadata",
+	}
+
+	for _, serviceName := range memcachedServices {
+		service := &unstructured.Unstructured{}
+		service.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "",
+			Kind:    "Service",
+			Version: "v1",
+		})
+		service.SetName(serviceName)
+		service.SetNamespace(CortexNamespace)
+
+		logger.Infof("Deleting service: %s", serviceName)
+		if err := kubeClient.Delete(ctx, service); ctrlruntimeclient.IgnoreNotFound(err) != nil {
+			return fmt.Errorf("failed to delete service %s: %w", serviceName, err)
+		}
+	}
+
+	logger.Info("Memcached services deleted successfully, Helm will recreate them with correct configuration")
+	return nil
+}
+
+func upgradeCortexRuntimeConfigMap(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	configMap *corev1.ConfigMap,
+) error {
+	logger.Info("Upgrading runtime config ConfigMap key from runtime-config.yaml to runtime_config.yaml")
+
+	// Fetch the actual ConfigMap from the cluster
+	existingConfigMap := &corev1.ConfigMap{}
+	configMapKey := ctrlruntimeclient.ObjectKey{
+		Name:      configMap.Name,
+		Namespace: configMap.Namespace,
+	}
+
+	if err := kubeClient.Get(ctx, configMapKey, existingConfigMap); err != nil {
+		if ctrlruntimeclient.IgnoreNotFound(err) == nil {
+			logger.Info("Runtime config ConfigMap does not exist yet, no migration needed")
+			return nil
+		}
+		return fmt.Errorf("failed to get runtime config ConfigMap: %w", err)
+	}
+
+	// Check if old key exists in the actual cluster ConfigMap
+	oldKey := "runtime-config.yaml"
+	newKey := mla.RuntimeConfigFileName // This should be "runtime_config.yaml"
+
+	if oldData, hasOldKey := existingConfigMap.Data[oldKey]; hasOldKey {
+		logger.Infof("Found old key '%s', migrating to '%s'", oldKey, newKey)
+
+		// Preserve the old data
+		if existingConfigMap.Data == nil {
+			existingConfigMap.Data = make(map[string]string)
+		}
+
+		// Copy data from old key to new key
+		existingConfigMap.Data[newKey] = oldData
+
+		// Remove old key
+		delete(existingConfigMap.Data, oldKey)
+
+		// Update the ConfigMap
+		if err := kubeClient.Update(ctx, existingConfigMap); err != nil {
+			return fmt.Errorf("failed to update runtime config ConfigMap: %w", err)
+		}
+
+		logger.Infof("Successfully migrated ConfigMap key from '%s' to '%s'", oldKey, newKey)
+	} else if _, hasNewKey := existingConfigMap.Data[newKey]; hasNewKey {
+		logger.Infof("ConfigMap already has correct key '%s', no migration needed", newKey)
+	} else {
+		// Neither key exists, add the new key with default value
+		logger.Infof("ConfigMap exists but has no runtime config key, adding '%s'", newKey)
+		if existingConfigMap.Data == nil {
+			existingConfigMap.Data = make(map[string]string)
+		}
+		existingConfigMap.Data[newKey] = "overrides:\n"
+
+		if err := kubeClient.Update(ctx, existingConfigMap); err != nil {
+			return fmt.Errorf("failed to update runtime config ConfigMap: %w", err)
+		}
+	}
+
 	return nil
 }

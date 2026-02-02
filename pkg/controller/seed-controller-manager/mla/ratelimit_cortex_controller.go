@@ -43,7 +43,7 @@ import (
 
 const (
 	RuntimeConfigMap      = "cortex-runtime-config"
-	RuntimeConfigFileName = "runtime-config.yaml"
+	RuntimeConfigFileName = "runtime_config.yaml"
 )
 
 type TenantOverride struct {
