@@ -106,6 +106,7 @@ func deployEnvoyGatewayController(ctx context.Context, logger *logrus.Entry, kub
 	logger.Info("✅ Success.")
 
 	return nil
+}
 
 func waitForGatewayClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client) error {
 	logger.Info("Waiting for GatewayClass to be available...")
