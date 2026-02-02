@@ -363,25 +363,7 @@ func prepareHelmValues(dir, kkpEndpoint string) (string, error) {
 		doc.Set(yamled.Path{"dex", "config", "issuer"}, fmt.Sprintf("http://%s/dex", kkpEndpoint))
 		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
 			"enabled": false,
-		})
-		doc.Set(yamled.Path{"dex", "ingress"}, map[string]interface{}{
-			"className": "nginx",
-			"enabled":   true,
-			"annotations": map[string]interface{}{
-				"cert-manager.io/cluster-issuer": "letsencrypt-staging",
-			},
-			"hosts": []map[string]interface{}{
-				{
-					"host": kkpEndpoint,
-					"paths": []map[string]interface{}{
-						{
-							"path":     "/dex",
-							"pathType": "ImplementationSpecific",
-						},
-					},
-				},
-			},
-			"tls": []map[string]interface{}{},
+			"tls":     []map[string]interface{}{},
 		})
 		doc.Set(yamled.Path{"telemetry", "uuid"}, uuid.NewString())
 		doc.Remove(yamled.Path{"minio"})
