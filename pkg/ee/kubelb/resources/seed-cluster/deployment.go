@@ -62,7 +62,7 @@ var (
 
 const (
 	imageName = "kubelb-ccm-ee"
-	imageTag  = "v1.2.0"
+	imageTag  = "v1.3.0-rc.0"
 )
 
 type kubeLBData interface {
@@ -184,6 +184,13 @@ func DeploymentReconcilerWithoutInitWrapper(data kubeLBData) reconciling.NamedDe
 							Name:      resources.KubeLBManagerKubeconfigSecretName,
 							MountPath: "/etc/kubernetes/kubelb-kubeconfig",
 							ReadOnly:  true,
+						},
+					},
+					Ports: []corev1.ContainerPort{
+						{
+							ContainerPort: 8082,
+							Name:          "ccm-metrics",
+							Protocol:      corev1.ProtocolTCP,
 						},
 					},
 				},

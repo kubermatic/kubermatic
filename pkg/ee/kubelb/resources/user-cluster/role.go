@@ -56,7 +56,7 @@ func KubeSystemRoleReconciler() reconciling.NamedRoleReconcilerFactory {
 					},
 				},
 				{
-					APIGroups: []string{""},
+					APIGroups: []string{"events.k8s.io"},
 					Resources: []string{"events"},
 					Verbs: []string{
 						"create",
@@ -140,6 +140,16 @@ func ClusterRoleReconciler(dc kubermaticv1.Datacenter, cluster *kubermaticv1.Clu
 						APIGroups: []string{"apiextensions.k8s.io"},
 						Resources: []string{"customresourcedefinitions"},
 						Verbs:     []string{"get", "list", "watch", "create", "update"},
+					})
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{"gateway.envoyproxy.io"},
+						Resources: []string{"backendtrafficpolicies", "clienttrafficpolicies"},
+						Verbs:     []string{"get", "list", "watch", "create", "update", "delete", "patch"},
+					})
+					r.Rules = append(r.Rules, rbacv1.PolicyRule{
+						APIGroups: []string{"gateway.envoyproxy.io"},
+						Resources: []string{"backendtrafficpolicies/status", "clienttrafficpolicies/status"},
+						Verbs:     []string{"get", "patch", "update"},
 					})
 				}
 				return r, nil
