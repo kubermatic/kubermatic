@@ -1,0 +1,33 @@
+{{- if .Values.migrateGatewayAPI }}
+{{ range .Values.iap.deployments }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .name }}-iap
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: iap
+    target: {{ .name }}
+    app.kubernetes.io/name: iap
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: helm
+spec:
+  parentRefs:
+    - name: {{ $.Values.httpRoute.gatewayName }}
+      namespace: {{ $.Values.httpRoute.gatewayNamespace }}
+  hostnames:
+    - {{ .ingress.host | trim | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ .name }}-iap
+          port: {{ $.Values.iap.port }}
+      timeouts:
+        request: {{ $.Values.httpRoute.timeout }}
+        backendRequest: {{ $.Values.httpRoute.timeout }}
+{{ end }}
+{{- end -}}
