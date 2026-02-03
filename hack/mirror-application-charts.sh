@@ -18,7 +18,7 @@
 # For usage instructions and details on adding new charts or mirroring new versions,
 # refer to the accompanying README.
 
-set -euo pipefail
+set -eo pipefail
 
 # ─── Default registry and repo ────────────────────────────────────────────────
 REGISTRY_HOST="${REGISTRY_HOST:-quay.io}"
@@ -64,7 +64,7 @@ declare -A CHART_VERSIONS=(
   ["k8sgpt-operator"]="0.2.17"
   ["kube-vip"]="0.6.6"
   ["metallb"]="0.14.9"
-  ["ingress-nginx"]="4.12.2"
+  ["ingress-nginx"]="4.14.3"
   ["gpu-operator"]="v25.3.0"
   ["trivy"]="0.14.1"
   ["trivy-operator"]="0.28.0"
@@ -73,11 +73,14 @@ declare -A CHART_VERSIONS=(
   ["mcp-server-kubernetes"]="2.9.9"
 )
 
+# Re-enable unset variable checking after array declarations
+set -u
+
 # ─── Usage ────────────────────────────────────────────────────────────────────
 usage() {
   echo "Usage: $0 <chart-name> [version (optional)]"
   echo "Supported charts:"
-  for key in "${!CHART_CONFIGS[@]}"; do echo "  - $key"; done
+  for key in "${!CHART_URLS[@]}"; do echo "  - $key"; done
   echo
   echo "Environment overrides:"
   echo "  REGISTRY_HOST        OCI registry host (default: quay.io)"
@@ -99,7 +102,7 @@ parse_args() {
   CHART_NAME="$1"
   CHART_VERSION="${2:-}"
 
-  if [[ ! -v "CHART_URLS[$CHART_NAME]" ]]; then
+  if [[ -z "${CHART_URLS[$CHART_NAME]:-}" ]]; then
     echo "Error: Unsupported chart '$CHART_NAME'"
     usage
   fi
