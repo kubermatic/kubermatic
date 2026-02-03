@@ -56,8 +56,6 @@ data:
   config.toml: |
     approval_prompt = "none"
     email_domains = ["*"]
-    github_org = "mygithuborg"
-    github_team = "mygroup"
     scope = "groups openid email"
     skip_auth_regex = ["/-/healthy"]
 ---
@@ -134,7 +132,7 @@ spec:
         app: iap
         target: alertmanager
       annotations:
-        checksum/config: bfef6acd1069e36a2f1d4de5289a013d7ac9a961289aa780a3c1486bcfe75314
+        checksum/config: e975c82a15ca71267003fa817589461188288686dad076f2fab04768d32d858a
         checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
     spec:
       containers:
@@ -235,7 +233,7 @@ spec:
         app: iap
         target: grafana
       annotations:
-        checksum/config: bfef6acd1069e36a2f1d4de5289a013d7ac9a961289aa780a3c1486bcfe75314
+        checksum/config: e975c82a15ca71267003fa817589461188288686dad076f2fab04768d32d858a
         checksum/secrets: 989d015caf95f5bca21d031b01a46edb1a1319b96503af2d1c8f601c1364d0df
     spec:
       containers:
@@ -315,62 +313,6 @@ spec:
             weight: 10
       tolerations:
         []
----
-# Source: iap/templates/ingresses.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: alertmanager-iap
-  labels:
-    app: iap
-    target: alertmanager
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  ingressClassName: nginx
-  tls:
-  - secretName: alertmanager-tls
-    hosts:
-    - alertmanager.kubermatic.tld
-  rules:
-  - host: alertmanager.kubermatic.tld
-    http:
-      paths:
-      - path: "/"
-        pathType: Prefix
-        backend:
-          service:
-            name: alertmanager-iap
-            port:
-              number: 3000
----
-# Source: iap/templates/ingresses.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana-iap
-  labels:
-    app: iap
-    target: grafana
-  annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
-spec:
-  ingressClassName: nginx
-  tls:
-  - secretName: grafana-tls
-    hosts:
-    - grafana.kubermatic.tld
-  rules:
-  - host: grafana.kubermatic.tld
-    http:
-      paths:
-      - path: "/"
-        pathType: Prefix
-        backend:
-          service:
-            name: grafana-iap
-            port:
-              number: 3000
 ---
 # Source: iap/templates/configmaps.yaml
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
@@ -476,3 +418,63 @@ spec:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+---
+# Source: iap/templates/httproutes.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: alertmanager-iap
+  namespace: default
+  labels:
+    app: iap
+    target: alertmanager
+    app.kubernetes.io/name: iap
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+spec:
+  parentRefs:
+    - name: kubermatic
+      namespace: kubermatic
+  hostnames:
+    - "alertmanager.kubermatic.tld"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: alertmanager-iap
+          port: 3000
+      timeouts:
+        request: 3600s
+        backendRequest: 3600s
+---
+# Source: iap/templates/httproutes.yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: grafana-iap
+  namespace: default
+  labels:
+    app: iap
+    target: grafana
+    app.kubernetes.io/name: iap
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+spec:
+  parentRefs:
+    - name: kubermatic
+      namespace: kubermatic
+  hostnames:
+    - "grafana.kubermatic.tld"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: grafana-iap
+          port: 3000
+      timeouts:
+        request: 3600s
+        backendRequest: 3600s
