@@ -115,10 +115,19 @@ usercluster-mla)
 
 seed-mla)
   echodate "Running Kubermatic Installer for Master/Seed MLA..."
-  ./_build/kubermatic-installer deploy seed-mla \
-    --config "$KUBERMATIC_CONFIG" \
-    --helm-values "$VALUES_FILE" \
-    --helm-timeout=30m
+  # deploy iap only when it is set in values file
+  if $(yq '.iap.deployments != null' ${VALUES_FILE}); then
+    ./_build/kubermatic-installer deploy seed-mla \
+      --config "$KUBERMATIC_CONFIG" \
+      --helm-values "$VALUES_FILE" \
+      --mla-include-iap \
+      --helm-timeout=30m
+  else
+    ./_build/kubermatic-installer deploy seed-mla \
+      --config "$KUBERMATIC_CONFIG" \
+      --helm-values "$VALUES_FILE" \
+      --helm-timeout=30m
+  fi
   ;;
 
 kubermatic)
@@ -140,14 +149,5 @@ kubermatic)
     --migrate-upstream-cert-manager \
     --force
 
-  if [[ "$clusterType" = "master" ]]; then
-    # We might have not configured IAP, which results in nothing being deployed. This triggers
-    # https://github.com/helm/helm/issues/4295 and marks this as failed.
-    if [ $(yq '.iap.deployments | length' "$VALUES_FILE") -gt 0 ]; then
-      deploy "iap" "iap" charts/iap/
-    else
-      echodate "Skipping IAP chart because no deployments are defined in Helm values file."
-    fi
-  fi
   ;;
 esac
