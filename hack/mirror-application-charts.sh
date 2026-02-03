@@ -1,4 +1,4 @@
-#!/usr/bin/env -S bash
+#!/usr/bin/env bash
 
 # Copyright 2025 The Kubermatic Kubernetes Platform contributors.
 #
@@ -17,19 +17,6 @@
 # This script mirrors upstream Helm charts (used by System Applications) to the Kubermatic OCI registry.
 # For usage instructions and details on adding new charts or mirroring new versions,
 # refer to the accompanying README.
-
-# Check bash version (requires 4.0+ for associative arrays)
-if ((BASH_VERSINFO[0] < 4)); then
-  echo "Error: This script requires bash 4.0 or higher (current: ${BASH_VERSION})"
-  echo ""
-  echo "On macOS, install bash 4+ via Homebrew:"
-  echo "  brew install bash"
-  echo ""
-  echo "Then either:"
-  echo "  1. Run directly: /opt/homebrew/bin/bash $0 $*"
-  echo "  2. Or add to PATH: export PATH=\"/opt/homebrew/bin:\$PATH\""
-  exit 1
-fi
 
 set -eo pipefail
 
