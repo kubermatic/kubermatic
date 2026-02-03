@@ -26,6 +26,7 @@ import (
 	semverlib "github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
@@ -435,6 +436,11 @@ func deployMLAIap(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 
 	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, MLAIAPNamespace); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
+	}
+
+	// label the namespace to allow HTTPRoute attachment to the kubermatic Gateway.
+	if err := util.EnsureNamespaceLabel(ctx, kubeClient, MLAIAPNamespace, common.GatewayAccessLabelKey, "true"); err != nil {
+		return fmt.Errorf("failed to label namespace for Gateway access: %w", err)
 	}
 
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, MLAIAPNamespace, MLAIAPReleaseName)
