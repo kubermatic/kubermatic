@@ -28,7 +28,7 @@ ADD https://dl.k8s.io/v1.33.7/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.3
 ADD https://dl.k8s.io/v1.32.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.32
 ADD https://dl.k8s.io/v1.31.12/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.31
 
-RUN wget -O- https://get.helm.sh/helm-v3.18.5-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
+RUN wget -O- https://get.helm.sh/helm-v3.19.0-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
 # We need the ca-certs so the KKP API can verify the certificates of the OIDC server (usually Dex)
 RUN chmod +x /usr/local/bin/kubectl-* /usr/local/bin/helm && apk add ca-certificates
