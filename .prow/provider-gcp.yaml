@@ -300,7 +300,7 @@ presubmits:
             - name: PROVIDER
               value: "gcp"
             - name: DISTRIBUTIONS
-              value: ubuntu
+              value: flatcar
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:

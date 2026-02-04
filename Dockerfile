@@ -23,8 +23,10 @@ ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 # kubectl binaries and deduce which one to use based on the version skew
 # policy.
 ADD https://dl.k8s.io/v1.35.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.35
+ADD https://dl.k8s.io/v1.34.3/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.34
 ADD https://dl.k8s.io/v1.33.7/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.33
 ADD https://dl.k8s.io/v1.32.11/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.32
+ADD https://dl.k8s.io/v1.31.12/bin/linux/amd64/kubectl /usr/local/bin/kubectl-1.31
 
 RUN wget -O- https://get.helm.sh/helm-v3.18.5-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
