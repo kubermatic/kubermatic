@@ -281,7 +281,7 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 	if release != nil && release.Version.LessThan(v30) && !chart.Version.LessThan(v30) {
 		sublogger.Warn("Installation process will delete memcached services for v2.30.0+ upgrade (immutable clusterIP change).")
 
-		err = upgradeCortexMemcachedServices(ctx, sublogger, kubeClient, helmClient, opt, chart, release)
+		err = upgradeCortexMemcachedServices(ctx, sublogger, kubeClient, chart, release)
 		if err != nil {
 			return fmt.Errorf("failed to prepare memcached services for upgrade: %w", err)
 		}
@@ -599,20 +599,11 @@ func upgradeCortexMemcachedServices(
 	ctx context.Context,
 	logger *logrus.Entry,
 	kubeClient ctrlruntimeclient.Client,
-	helmClient helm.Client,
-	opt stack.DeployOptions,
 	chart *helm.Chart,
 	release *helm.Release,
 ) error {
 	logger.Infof("%s: %s detected, performing upgrade to %s", release.Name, release.Version.String(), chart.Version.String())
 	logger.Info("Removing memcached services")
-
-	servicesList := &unstructured.UnstructuredList{}
-	servicesList.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "",
-		Kind:    "ServiceList",
-		Version: "v1",
-	})
 
 	// List of memcached service names to delete
 	memcachedServices := []string{
@@ -622,12 +613,7 @@ func upgradeCortexMemcachedServices(
 	}
 
 	for _, serviceName := range memcachedServices {
-		service := &unstructured.Unstructured{}
-		service.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   "",
-			Kind:    "Service",
-			Version: "v1",
-		})
+		service := &corev1.Service{}
 		service.SetName(serviceName)
 		service.SetNamespace(CortexNamespace)
 

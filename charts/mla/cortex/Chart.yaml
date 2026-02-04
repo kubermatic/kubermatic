@@ -23,7 +23,5 @@ sources:
   - https://github.com/cortexproject/cortex-helm-chart
 dependencies:
 - name: cortex
-  # FIXME: Figure out how to mirror the helm-charts in kubermatic-mirror?
-  # repository: oci://quay.io/kubermatic-mirror/helm-charts
   repository: https://cortexproject.github.io/cortex-helm-chart
   version: 3.0.0
