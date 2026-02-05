@@ -278,15 +278,6 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 		}
 	}
 
-	if release != nil && release.Version.LessThan(v30) && !chart.Version.LessThan(v30) {
-		sublogger.Warn("Installation process will delete memcached services for v2.30.0+ upgrade (immutable clusterIP change).")
-
-		err = upgradeCortexMemcachedServices(ctx, sublogger, kubeClient, chart, release)
-		if err != nil {
-			return fmt.Errorf("failed to prepare memcached services for upgrade: %w", err)
-		}
-	}
-
 	runtimeConfigMap := &corev1.ConfigMap{
 		Data: map[string]string{mla.RuntimeConfigFileName: "overrides:\n"},
 	}
@@ -297,11 +288,20 @@ func deployCortex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlrunt
 		return fmt.Errorf("failed to create runtime-config ConfigMap: %w", err)
 	}
 
+	// Custom Upgrade steps for KKP v2.30.0+
 	// Upgrade runtime config key from runtime-config.yaml to runtime_config.yaml after ensuring ConfigMap exists
+	// Delete few memcached services to allow Helm to recreate them with correct immutable clusterIP configuration
 	if release != nil && release.Version.LessThan(v30) && !chart.Version.LessThan(v30) {
+		sublogger.Warn("Installation process will delete memcached services for v2.30.0+ upgrade (immutable clusterIP change).")
+
+		err = deleteCortexMemcachedServices(ctx, sublogger, kubeClient, chart, release)
+		if err != nil {
+			return fmt.Errorf("failed to delete cortex memcached services before cortex upgrade: %w", err)
+		}
+
 		err = upgradeCortexRuntimeConfigMap(ctx, sublogger, kubeClient, runtimeConfigMap)
 		if err != nil {
-			return fmt.Errorf("failed to upgrade runtime config ConfigMap: %w", err)
+			return fmt.Errorf("failed to upgrade cortex-runtime-config ConfigMap before cortex upgrade: %w", err)
 		}
 	}
 
@@ -595,7 +595,7 @@ func upgradeConsulStatefulsets(
 	return nil
 }
 
-func upgradeCortexMemcachedServices(
+func deleteCortexMemcachedServices(
 	ctx context.Context,
 	logger *logrus.Entry,
 	kubeClient ctrlruntimeclient.Client,
@@ -656,11 +656,6 @@ func upgradeCortexRuntimeConfigMap(
 
 	if oldData, hasOldKey := existingConfigMap.Data[oldKey]; hasOldKey {
 		logger.Infof("Found old key '%s', migrating to '%s'", oldKey, newKey)
-
-		// Preserve the old data
-		if existingConfigMap.Data == nil {
-			existingConfigMap.Data = make(map[string]string)
-		}
 
 		// Copy data from old key to new key
 		existingConfigMap.Data[newKey] = oldData
