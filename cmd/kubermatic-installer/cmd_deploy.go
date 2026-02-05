@@ -25,13 +25,11 @@ import (
 	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	"github.com/go-logr/zapr"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
@@ -44,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -251,6 +248,10 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 			return fmt.Errorf("failed to construct mgr: %w", err)
 		}
 
+		if err := setupKubermaticInstallerScheme(mgr); err != nil {
+			return fmt.Errorf("failed to setup installer scheme: %w", err)
+		}
+
 		// start the manager in its own goroutine
 		appContext := context.Background()
 
@@ -295,18 +296,6 @@ func DeployFunc(logger *logrus.Logger, versions kubermatic.Versions, opt *Deploy
 		}
 
 		logger.Info("✅ Provided configuration is valid.")
-
-		if err := apiextensionsv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %w", err)
-		}
-
-		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %w", err)
-		}
-
-		if err := certmanagerv1.AddToScheme(mgr.GetScheme()); err != nil {
-			return fmt.Errorf("failed to add scheme: %w", err)
-		}
 
 		// prepare seed access components
 		seedsGetter, err := seedsGetterFactory(appContext, kubeClient)
