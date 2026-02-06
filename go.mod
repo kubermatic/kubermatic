@@ -63,7 +63,7 @@ require (
 	github.com/open-policy-agent/gatekeeper/v3 v3.17.0
 	github.com/phayes/freeport v0.0.0-20220201140144-74d24b5ae9f5
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_golang v1.23.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/sosedoff/gitkit v0.4.0
@@ -99,14 +99,14 @@ require (
 	k8c.io/machine-controller/sdk v1.64.1-0.20260121155206-01ad12aa435b
 	k8c.io/operating-system-manager v1.8.1-0.20260122092708-a75b71800e7c
 	k8c.io/reconciler v0.5.0
-	k8s.io/api v0.34.0
-	k8s.io/apiextensions-apiserver v0.34.0
-	k8s.io/apimachinery v0.34.0
-	k8s.io/apiserver v0.34.0
+	k8s.io/api v0.34.1
+	k8s.io/apiextensions-apiserver v0.34.1
+	k8s.io/apimachinery v0.34.1
+	k8s.io/apiserver v0.34.1
 	k8s.io/autoscaler/vertical-pod-autoscaler v1.0.0
 	k8s.io/cli-runtime v0.34.0
-	k8s.io/client-go v0.34.0
-	k8s.io/code-generator v0.34.0
+	k8s.io/client-go v0.34.1
+	k8s.io/code-generator v0.34.1
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kube-aggregator v0.34.0
 	k8s.io/kubectl v0.34.0
@@ -115,7 +115,7 @@ require (
 	k8s.io/utils v0.0.0-20250820121507-0af2bda4dd1d
 	kubevirt.io/api v1.3.1
 	kubevirt.io/containerized-data-importer-api v1.60.3
-	sigs.k8s.io/controller-runtime v0.22.0
+	sigs.k8s.io/controller-runtime v0.22.1
 	sigs.k8s.io/controller-tools v0.19.0
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -125,7 +125,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/pod-security-admission v0.31.0
-	sigs.k8s.io/gateway-api v1.3.0
+	sigs.k8s.io/gateway-api v1.4.1
 )
 
 require (
@@ -237,7 +237,7 @@ require (
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
+	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/emicklei/proto v1.13.2 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/envoyproxy/go-control-plane/ratelimit v0.1.0 // indirect
@@ -264,13 +264,13 @@ require (
 	github.com/go-logr/zerologr v1.2.3 // indirect
 	github.com/go-openapi/analysis v0.23.0 // indirect
 	github.com/go-openapi/errors v0.22.0 // indirect
-	github.com/go-openapi/jsonpointer v0.21.0 // indirect
+	github.com/go-openapi/jsonpointer v0.21.2 // indirect
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/loads v0.22.0 // indirect
 	github.com/go-openapi/runtime v0.28.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/strfmt v0.23.0 // indirect
-	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/validate v0.24.0 // indirect
 	github.com/go-piv/piv-go v1.11.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -334,7 +334,7 @@ require (
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mackerelio/go-osstat v0.2.5 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
@@ -376,8 +376,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.62.0 // indirect
-	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/common v0.65.0 // indirect
+	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/protocolbuffers/txtpbfmt v0.0.0-20240116145035-ef3ab179eed6 // indirect
 	github.com/r3labs/diff v1.1.0 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be // indirect
@@ -480,21 +480,20 @@ require (
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
-	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251029180050-ab9386a59fda // indirect
-	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
+	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	k8s.io/component-base v0.34.0 // indirect
+	k8s.io/component-base v0.34.1 // indirect
 	k8s.io/component-helpers v0.34.0 // indirect
-	k8s.io/gengo/v2 v2.0.0-20250604051438-85fd79dbfd9f // indirect
-	k8s.io/kube-openapi v0.0.0-20250710124328-f3f2b991d03b // indirect
+	k8s.io/gengo/v2 v2.0.0-20250820003526-c297c0c1eb9d // indirect
+	k8s.io/kube-openapi v0.0.0-20250814151709-d7b6acb124c3 // indirect
 	k8s.io/kube-proxy v0.31.1 // indirect
 	k8s.io/kubelet v0.31.1 // indirect
 	kubevirt.io/controller-lifecycle-operator-sdk/api v0.2.4 // indirect
 	oras.land/oras-go/v2 v2.6.0 // indirect
-	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
+	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.20.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.20.1 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect

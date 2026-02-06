@@ -113,7 +113,7 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 							},
 						},
 					},
-					TLS: &gatewayapiv1.GatewayTLSConfig{
+					TLS: &gatewayapiv1.ListenerTLSConfig{
 						Mode: ptr.To(gatewayapiv1.TLSModeTerminate),
 						CertificateRefs: []gatewayapiv1.SecretObjectReference{
 							{
