@@ -74,7 +74,7 @@ spec:
         - --xfr-channel-size=150
         command:
         - /proxy-server
-        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.31.0
+        image: registry.k8s.io/kas-network-proxy/proxy-server:v0.32.1
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
