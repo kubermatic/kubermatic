@@ -58,7 +58,15 @@ data:
       },
       "datacenter": "dc1",
       "data_dir": "/consul/data",
+      "enable_debug": false,
       "domain": "consul",
+      "limits": {
+        "request_limits": {
+          "mode": "disabled",
+          "read_rate": -1,
+          "write_rate": -1
+        }
+      },
       "ports": {
         "grpc": 8502,
         "grpc_tls": -1,
@@ -66,11 +74,13 @@ data:
       },
       "recursors": [],
       "retry_join": ["release-name-consul-server.default.svc:8301"],
-      "server": true
+      "server": true,
+      "leave_on_terminate": true,
+      "autopilot": {
+        "min_quorum": 2,
+        "disable_upgrade_migration": true
+      }
     }
-  extra-from-values.json: |-
-    {}
-    
   ui-config.json: |-
     {
       "ui_config": {
@@ -81,6 +91,65 @@ data:
     {
       "enable_central_service_config": true
     }
+---
+# Source: consul/charts/consul/templates/server-tmp-extra-config-configmap.yaml
+# ConfigMap that is used as a temporary landing spot so that the container command
+# in the server-stateful set where it needs to be transformed.  ConfigMaps create
+# read only volumes so it needs to be copied and transformed to the extra-config
+# emptyDir volume where all final extra cofngi lives for use in consul.  (locality-init
+# also writes to extra-config volume.)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: release-name-consul-server-tmp-extra-config
+  namespace: default
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: release-name
+    component: server
+data:
+  extra-from-values.json: |-
+    {}
+---
+# Source: consul/charts/consul/templates/server-clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: release-name-consul-server
+  namespace: default
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: release-name
+    component: server
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs:
+  - get
+---
+# Source: consul/charts/consul/templates/server-clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: release-name-consul-server
+  labels:
+    app: consul
+    chart: consul-helm
+    heritage: Helm
+    release: release-name
+    component: server
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: release-name-consul-server
+subjects:
+- kind: ServiceAccount
+  name: release-name-consul-server
+  namespace: default
 ---
 # Source: consul/charts/consul/templates/server-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -264,21 +333,22 @@ spec:
         hasDNS: "true"
       annotations:
         "consul.hashicorp.com/connect-inject": "false"
-        "consul.hashicorp.com/config-checksum": 0c3eb6ce33226c599419e7286c447e31765e9161fa21076f45af5b3036ae838f
+        "consul.hashicorp.com/mesh-inject": "false"
+        "consul.hashicorp.com/config-checksum": 172f50008a43216944d1c0a35f72aaed1aca0489c93c7a2e0eec024dc343d0e2
         "cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes": "extra-config"
         
     spec:
       affinity:
         podAntiAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 1
-                  podAffinityTerm:
-                    labelSelector:
-                      matchLabels:
-                        app: consul
-                        release: "release-name"
-                        component: server
-                    topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: consul
+                    release: "release-name"
+                    component: server
+                topologyKey: kubernetes.io/hostname
       terminationGracePeriodSeconds: 30
       serviceAccountName: release-name-consul-server
       securityContext:
@@ -287,14 +357,50 @@ spec:
         runAsNonRoot: true
         runAsUser: 100
       volumes:
+        - name: tmp
+          emptyDir: {}
         - name: config
           configMap:
             name: release-name-consul-server-config
         - name: extra-config
           emptyDir: {}
+        - name: tmp-extra-config
+          configMap:
+            name: release-name-consul-server-tmp-extra-config
+      initContainers:
+      - name: locality-init
+        image: hashicorp/consul-k8s-control-plane:1.9.2
+        
+
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        command:
+          - "/bin/sh"
+          - "-ec"
+          - |
+            exec consul-k8s-control-plane fetch-server-region -node-name "$NODE_NAME" -output-file /consul/extra-config/locality.json
+        volumeMounts:
+          - name: extra-config
+            mountPath: /consul/extra-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+          runAsUser: 100
       containers:
         - name: consul
-          image: "docker.io/hashicorp/consul:1.14.2"
+          image: "docker.io/hashicorp/consul:1.22.2"
+          
+
+          imagePullPolicy: 
           env:
             - name: ADVERTISE_IP
               valueFrom:
@@ -316,7 +422,7 @@ spec:
             - "-ec"
             - |
 
-              cp /consul/config/extra-from-values.json /consul/extra-config/extra-from-values.json
+              cp /consul/tmp/extra-config/extra-from-values.json /consul/extra-config/extra-from-values.json
               [ -n "${HOST_IP}" ] && sed -Ei "s|HOST_IP|${HOST_IP?}|g" /consul/extra-config/extra-from-values.json
               [ -n "${POD_IP}" ] && sed -Ei "s|POD_IP|${POD_IP?}|g" /consul/extra-config/extra-from-values.json
               [ -n "${HOSTNAME}" ] && sed -Ei "s|HOSTNAME|${HOSTNAME?}|g" /consul/extra-config/extra-from-values.json
@@ -324,7 +430,7 @@ spec:
               exec /usr/local/bin/docker-entrypoint.sh consul agent \
                 -advertise="${ADVERTISE_IP}" \
                 -config-dir=/consul/config \
-                -config-file=/consul/extra-config/extra-from-values.json
+                -config-dir=/consul/extra-config \
           volumeMounts:
             - name: data-default
               mountPath: /consul/data
@@ -332,6 +438,11 @@ spec:
               mountPath: /consul/config
             - name: extra-config
               mountPath: /consul/extra-config
+            - name: tmp-extra-config
+              mountPath: /consul/tmp/extra-config
+            - name: tmp
+              mountPath: /tmp
+              readOnly: false
           ports:
             - name: http
               containerPort: 8500
@@ -366,7 +477,8 @@ spec:
                 - "/bin/sh"
                 - "-ec"
                 - |
-                  curl http://127.0.0.1:8500/v1/status/leader \
+                  curl \
+                    http://127.0.0.1:8500/v1/status/leader \
                   2>/dev/null | grep -E '".+"'
             failureThreshold: 2
             initialDelaySeconds: 5
@@ -381,7 +493,15 @@ spec:
               cpu: 100m
               memory: 100Mi
           securityContext:
-            null
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+              - ALL
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            runAsUser: 100
   volumeClaimTemplates:
     - metadata:
         name: data-default
@@ -409,7 +529,9 @@ metadata:
 spec:
   containers:
     - name: consul-test
-      image: "docker.io/hashicorp/consul:1.14.2"
+      image: "docker.io/hashicorp/consul:1.22.2"
+      
+
       env:
         - name: HOST_IP
           valueFrom:

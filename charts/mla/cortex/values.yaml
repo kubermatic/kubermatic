@@ -13,12 +13,11 @@
 # limitations under the License.
 
 cortex:
-  # Check master values.yaml which are the default values for Chart version v2.23.8-a
-  # https://github.com/cortexproject/cortex-helm-chart/blob/v2.1.0/values.yaml
+  # Check master values.yaml which are the default values for Chart version v3.0.0
+  # https://github.com/cortexproject/cortex-helm-chart/blob/v3.0.0/values.yaml
 
-  # TEMP until KKP user-mla chart is updated
-  image:
-    tag: "v1.16.1"
+  # image:
+  #   tag: "v1.20.0"
   config:
     auth_enabled: true
     # Note: below defaults were changed by cortex from 0.7.0 to 1.7.0. So not keeping old defaults
@@ -52,14 +51,6 @@ cortex:
     # Note: below defaults were changed by cortex from 0.7.0 to 1.7.0. So not keeping old defaults in upgrade to helm chart v2.1.0
     # server:
     #   grpc_server_max_concurrent_streams: 1000
-    store_gateway:
-      # Note: Retaining below customization to enable sharding in store_gateway and querier
-      # TODO: sharding makes sense only if we have multiple replicas of store_gateway. but we only have one store_gateway running. So do we really need sharding??
-      sharding_enabled: true
-      sharding_ring:
-        replication_factor: 2
-        kvstore:
-          store: memberlist
     distributor:
       # Note: Retaining below customization to enable accepting ha prometheus metrics
       ha_tracker:
@@ -100,10 +91,9 @@ cortex:
         bucket_name: "cortex-ruler"
         endpoint: "minio:9000"
         insecure: true
-    runtime_config:
-      # TODO: review if we customized below or are defaults from helmchart v1.7.0 - folder name changed
-      file: "/etc/cortex-runtime-cfg/runtime-config.yaml"
-      period: "10s"
+    # runtime_config uses defaults from upstream v3.0.0:
+    #   file: /etc/cortex-runtime-config/runtime_config.yaml
+    #   period: 10s
     alertmanager:
       # Note: These are customized in kubermatic. Not sure if they are really needed. But will keep them.
       enable_api: true
@@ -114,9 +104,9 @@ cortex:
         endpoint: "minio:9000"
         insecure: true
     compactor:
+      # improve data fetch from s3. This increases parallelism while fetching blocks from object storage
+      blocks_fetch_concurrency: 10
       data_dir: /data/cortex/compactor
-      # Note: i think there is no need to run compactor every half an hour. Default of 1h is just fine.
-      # compaction_interval: 30m
       sharding_enabled: true
       sharding_ring:
         kvstore:
@@ -133,7 +123,7 @@ cortex:
         dir: /data
         retention_period: 365m
         close_idle_tsdb_timeout: 365m
-        wal_compression_enabled: true
+        wal_compression_type: zstd
         flush_blocks_on_shutdown: true
   runtimeconfigmap:
     # -- If true, a configmap for the `runtime_config` will be created.
@@ -161,15 +151,9 @@ cortex:
               topologyKey: "kubernetes.io/hostname"
     persistentVolume:
       storageClass: "kubermatic-fast"
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
     extraVolumeMounts:
       - mountPath: /tmp
         name: storage
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
     env:
       - name: ACCESS_KEY
         valueFrom:
@@ -184,13 +168,6 @@ cortex:
   distributor:
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
   ingester:
     statefulSet:
       enabled: true
@@ -219,13 +196,6 @@ cortex:
     #     path: /ready
     #     port: http-metrics
     #     scheme: HTTP
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
     env:
       - name: ACCESS_KEY
         valueFrom:
@@ -247,13 +217,6 @@ cortex:
       ruler-storage.s3.secret-access-key: $(SECRET_KEY)
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage,tmp
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
     env:
       - name: ACCESS_KEY
         valueFrom:
@@ -275,13 +238,6 @@ cortex:
       blocks-storage.s3.secret-access-key: $(SECRET_KEY)
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: storage
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
     env:
       - name: ACCESS_KEY
         valueFrom:
@@ -299,13 +255,6 @@ cortex:
     resources:
       requests:
         cpu: 5m
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
   nginx:
     # Note: this is configured specifically in kubermatic so keeping it that way. I am yet to understand why we need nginx.
     enabled: false
@@ -319,13 +268,6 @@ cortex:
       blocks-storage.s3.secret-access-key: $(SECRET_KEY)
     persistentVolume:
       storageClass: "kubermatic-fast"
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
     env:
       - name: ACCESS_KEY
         valueFrom:
@@ -340,18 +282,12 @@ cortex:
   compactor:
     persistentVolume:
       storageClass: "kubermatic-fast"
-    extraVolumes:
-      - name: cortex-runtime-config
-        configMap:
-          name: cortex-runtime-config
-    extraVolumeMounts:
-      - mountPath: "/etc/cortex-runtime-cfg"
-        name: "cortex-runtime-config"
   memcached-blocks-index:
     enabled: true
     podAnnotations:
       cluster-autoscaler.kubernetes.io/safe-to-evict-local-volumes: tmp
     # Note: this is specifically customized in kubermatic. So keeping it that way.
+    # Note: Helm chart v3.0.0 uses community memcached image, config via args instead of extraEnvVars
     resources:
       requests:
         cpu: 5m
