@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+	"k8c.io/kubermatic/sdk/v2/semver"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
@@ -349,6 +350,28 @@ func TestKnpServerArgs(t *testing.T) {
 				assert.NoError(t, err)
 				assert.ElementsMatch(t, tt.expectedArgs, args)
 			}
+		})
+	}
+}
+
+func TestNetworkProxyVersion(t *testing.T) {
+	tests := []struct {
+		clusterVersion string
+		expected       string
+	}{
+		{"1.32.0", "v0.32.1"},
+		{"1.32.5", "v0.32.1"},
+		{"1.33.0", "v0.33.1"},
+		{"1.33.3", "v0.33.1"},
+		{"1.34.0", "v0.34.0"},
+		{"1.34.1", "v0.34.0"},
+		{"1.35.0", "v0.34.0"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.clusterVersion, func(t *testing.T) {
+			v := *semver.NewSemverOrDie(tt.clusterVersion)
+			assert.Equal(t, tt.expected, NetworkProxyVersion(v))
 		})
 	}
 }
