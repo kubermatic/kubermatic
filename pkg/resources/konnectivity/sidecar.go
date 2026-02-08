@@ -34,6 +34,12 @@ const (
 	// defaultXfrChannelSize is the default value for the --xfr-channel-size flag.
 	// It sets the receive channel buffer size for packet handling.
 	defaultXfrChannelSize = 150
+
+	// Supported Kubernetes versions.
+	v132 = "1.32"
+	v133 = "1.33"
+	v134 = "1.34"
+	v135 = "1.35"
 )
 
 var (
@@ -143,12 +149,16 @@ func NetworkProxyVersion(clusterVersion semver.Semver) string {
 	// https://github.com/kubernetes-sigs/apiserver-network-proxy#versioning-and-releases
 
 	switch clusterVersion.MajorMinor() {
-	case "1.30":
-		return "v0.30.3"
-	case "1.31":
+	case v132:
+		return "v0.32.1"
+	case v133:
+		return "v0.33.1"
+	case v134:
+		fallthrough
+	case v135:
 		fallthrough
 	default:
-		return "v0.31.0"
+		return "v0.34.0"
 	}
 }
 
