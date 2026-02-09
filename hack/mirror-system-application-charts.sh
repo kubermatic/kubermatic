@@ -33,6 +33,9 @@ declare -A CHART_URLS=(
   ["aikit"]="https://sozercan.github.io/aikit/charts/aikit-%s.tgz"
   ["argo-cd"]="https://github.com/argoproj/argo-helm/releases/download/argo-cd-%s/argo-cd-%s.tgz"
   ["cert-manager"]="https://charts.jetstack.io/charts/cert-manager-%s.tgz"
+  # envoy-gateway is not part of the Application Catalog; however, it'll be used by
+  # kkp as an alternative to nginx-ingress-controller; thus, added it here for mirroring
+  ["envoy-gateway"]="oci://docker.io/envoyproxy/gateway-helm"
   ["falco"]="https://github.com/falcosecurity/charts/releases/download/falco-%s/falco-%s.tgz"
   ["flux2"]="https://github.com/fluxcd-community/helm-charts/releases/download/flux2-%s/flux2-%s.tgz"
   ["k8sgpt-operator"]="https://charts.k8sgpt.ai/k8sgpt-operator-%s.tgz"
@@ -54,6 +57,7 @@ declare -A CHART_VERSIONS=(
   ["aikit"]="0.18.0"
   ["argo-cd"]="8.0.0"
   ["cert-manager"]="v1.17.2"
+  ["envoy-gateway"]="v1.6.1"
   ["falco"]="4.21.2"
   ["flux2"]="2.15.0"
   ["k8sgpt-operator"]="0.2.17"

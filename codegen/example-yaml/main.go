@@ -315,6 +315,9 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 		Spec: kubermaticv1.KubermaticConfigurationSpec{
 			Ingress: kubermaticv1.KubermaticIngressConfiguration{
 				Domain: "example.com",
+				Gateway: &kubermaticv1.KubermaticGatewayConfiguration{
+					ClassName: "kubermatic-envoy-gateway",
+				},
 			},
 			FeatureGates: map[string]bool{},
 			API:          kubermaticv1.KubermaticAPIConfiguration{},
