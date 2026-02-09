@@ -23,6 +23,7 @@ import (
 	"github.com/containerd/containerd/remotes/docker"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	applicationcatalogmanager "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/application-catalog"
 	"k8c.io/kubermatic/v2/pkg/validation/openapi"
 
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
@@ -66,6 +67,13 @@ func deleteSystemAppErrorMsg() string {
 	)
 }
 
+func deleteAppCatalogManagedAppErrorMsg() string {
+	return fmt.Sprintf("ApplicationDefinition for applications managed by ApplicationCatalog cannot be deleted until the " +
+		"ApplicationDefinition declaration is removed from the ApplicationCatalog. " +
+		"If you would still like to remove the ApplicationDefinition, remove its entry from the ApplicationCatalog first.",
+	)
+}
+
 func ValidateApplicationDefinitionDelete(ad appskubermaticv1.ApplicationDefinition) field.ErrorList {
 	labels := ad.GetLabels()
 	if labels != nil {
@@ -75,6 +83,18 @@ func ValidateApplicationDefinitionDelete(ad appskubermaticv1.ApplicationDefiniti
 					field.NewPath("metadata").Child("labels"),
 					labels,
 					deleteSystemAppErrorMsg(),
+				),
+			}
+		}
+
+		// if the application is managed by ApplicationCatalog, the deletion is blocked until the label
+		// is removed or the ApplicationDefinition declaration is removed from the ApplicationCatalog.
+		if _, exists := labels[applicationcatalogmanager.LabelManagedByApplicationCatalog]; exists {
+			return field.ErrorList{
+				field.Invalid(
+					field.NewPath("metadata").Child("labels"),
+					labels,
+					deleteAppCatalogManagedAppErrorMsg(),
 				),
 			}
 		}

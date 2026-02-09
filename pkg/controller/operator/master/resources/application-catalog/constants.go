@@ -17,5 +17,21 @@ limitations under the License.
 package applicationcatalogmanager
 
 const (
-	ExternalApplicationCatalogManagerManagedByAnnotation = "apps.k8c.io/managed-by-external-manager"
+	// IncludeAnnotation is used to filter which default applications should be included
+	// in the ApplicationCatalog. The value is a comma-separated list of application names.
+	IncludeAnnotation = "defaultcatalog.k8c.io/include"
+
+	// ManagedByLabelValue is the value for app.kubernetes.io/managed-by label.
+	ManagedByLabelValue = "kubermatic-operator"
+
+	// ComponentLabelValue is the value for app.kubernetes.io/component label.
+	ComponentLabelValue = "application-catalog"
+
+	// LabelManagedByApplicationCatalog is the label set by application-catalog-manager
+	// to indicate that an ApplicationDefinition is managed by an ApplicationCatalog.
+	LabelManagedByApplicationCatalog = "applicationcatalog.k8c.io/managed-by"
+
+	// LabelApplicationCatalogName is the label set by application-catalog-manager
+	// to indicate which ApplicationCatalog manages this ApplicationDefinition.
+	LabelApplicationCatalogName = "applicationcatalog.k8c.io/catalog-name"
 )

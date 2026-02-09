@@ -325,6 +325,18 @@ func createExampleKubermaticConfiguration() *kubermaticv1.KubermaticConfiguratio
 				BackupStoreContainer:  defaulting.DefaultBackupStoreContainer,
 				BackupDeleteContainer: defaulting.DefaultBackupDeleteContainer,
 			},
+			Applications: kubermaticv1.ApplicationDefinitionsConfiguration{
+				CatalogManager: kubermaticv1.CatalogManagerConfiguration{
+					Image: kubermaticv1.CatalogManagerImageConfiguration{
+						Repository: defaulting.DefaultApplicationManagerImageRepository,
+						Tag:        defaulting.DefaultApplicationManagerImageTag,
+					},
+					Apps: []string{
+						"cert-manager",
+						"argo-cd",
+					},
+				},
+			},
 		},
 	}
 

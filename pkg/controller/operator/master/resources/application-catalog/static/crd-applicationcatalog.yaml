@@ -1,0 +1,472 @@
+# Copyright 2026 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: applicationcatalogs.applicationcatalog.k8c.io
+spec:
+  group: applicationcatalog.k8c.io
+  names:
+    kind: ApplicationCatalog
+    listKind: ApplicationCatalogList
+    plural: applicationcatalogs
+    shortNames:
+    - appcat
+    singular: applicationcatalog
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          ApplicationCatalog is the Schema for the applicationcatalogs API.
+          It defines a collection of Helm charts that will be converted to ApplicationDefinitions.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ApplicationCatalogSpec defines the desired state of ApplicationCatalog.
+            properties:
+              helm:
+                description: Helm contains Helm chart configuration for this catalog.
+                properties:
+                  charts:
+                    description: |-
+                      Charts is the list of Helm charts to include in this catalog.
+                      Each chart entry in the list will be converted to an ApplicationDefinition.
+                    items:
+                      description: |-
+                        ChartConfig defines the configuration for a single Helm chart
+                        that will be converted to an ApplicationDefinition.
+                      properties:
+                        chartName:
+                          description: |-
+                            ChartName is the name of the Helm chart in the repository.
+                            This is used as the chart name when pulling from the repository.
+                          minLength: 1
+                          type: string
+                        chartVersions:
+                          description: ChartVersions lists the available versions
+                            of this chart.
+                          items:
+                            description: ChartVersion defines a specific version of
+                              a Helm chart.
+                            properties:
+                              appVersion:
+                                description: |-
+                                  AppVersion is the version of the application contained in the chart.
+                                  This maps to ApplicationDefinition.spec.versions[].version.
+                                minLength: 1
+                                type: string
+                              chartVersion:
+                                description: |-
+                                  ChartVersion is the semantic version of the Helm chart (e.g., "4.7.1", "v1.16.0").
+                                  This corresponds to the chart version in Chart.yaml.
+                                minLength: 1
+                                type: string
+                              repositorySettings:
+                                description: |-
+                                  RepositorySettings allows overriding the repository URL for this specific version.
+                                  Takes precedence over chart-level and global repository settings.
+                                properties:
+                                  baseURL:
+                                    description: |-
+                                      BaseURL is the base URL of the Helm chart repository.
+                                      Supports http, https, and oci schemes.
+                                      Examples:
+                                        - oci://quay.io/kubermatic-mirror/helm-charts
+                                        - https://charts.example.com
+                                    type: string
+                                  credentials:
+                                    description: |-
+                                      Credentials contains authentication information for the repository.
+                                      Only used when BaseURL is specified.
+                                    properties:
+                                      password:
+                                        description: Password is a reference to a
+                                          secret key containing the password.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      registryConfigFile:
+                                        description: |-
+                                          RegistryConfigFile is a reference to a secret key containing
+                                          a Docker config.json for OCI registry authentication.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                      username:
+                                        description: Username is a reference to a
+                                          secret key containing the username.
+                                        properties:
+                                          key:
+                                            description: The key of the secret to
+                                              select from.  Must be a valid secret
+                                              key.
+                                            type: string
+                                          name:
+                                            default: ""
+                                            description: |-
+                                              Name of the referent.
+                                              This field is effectively required, but due to backwards compatibility is
+                                              allowed to be empty. Instances of this type with an empty value here are
+                                              almost certainly wrong.
+                                              More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                            type: string
+                                          optional:
+                                            description: Specify whether the Secret
+                                              or its key must be defined
+                                            type: boolean
+                                        required:
+                                        - key
+                                        type: object
+                                        x-kubernetes-map-type: atomic
+                                    type: object
+                                type: object
+                            required:
+                            - appVersion
+                            - chartVersion
+                            type: object
+                          minItems: 1
+                          type: array
+                        defaultValuesBlock:
+                          description: |-
+                            DefaultValuesBlock contains the default Helm values for this application.
+                            This is a YAML string that preserves comments.
+                          type: string
+                        metadata:
+                          description: |-
+                            Metadata contains display information for the application.
+                            If metadata.appName is not specified, chartName is used for ApplicationDefinition name.
+                          properties:
+                            appName:
+                              description: |-
+                                AppName is the name used for the ApplicationDefinition metadata.name.
+                                If not specified, chartName is used.
+                              type: string
+                            description:
+                              description: Description provides a brief description
+                                of the application.
+                              type: string
+                            displayName:
+                              description: DisplayName is a human-readable name for
+                                the application.
+                              minLength: 1
+                              type: string
+                            documentationURL:
+                              description: DocumentationURL is a link to the application's
+                                documentation.
+                              type: string
+                            logo:
+                              description: Logo is a base64-encoded image for the
+                                application logo.
+                              type: string
+                            logoFormat:
+                              description: LogoFormat specifies the format of the
+                                logo image.
+                              enum:
+                              - svg+xml
+                              - png
+                              type: string
+                            sourceURL:
+                              description: SourceURL is a link to the application's
+                                source code repository.
+                              type: string
+                          required:
+                          - displayName
+                          type: object
+                        repositorySettings:
+                          description: |-
+                            RepositorySettings allows overriding the repository URL for this chart.
+                            Takes precedence over global repository settings.
+                          properties:
+                            baseURL:
+                              description: |-
+                                BaseURL is the base URL of the Helm chart repository.
+                                Supports http, https, and oci schemes.
+                                Examples:
+                                  - oci://quay.io/kubermatic-mirror/helm-charts
+                                  - https://charts.example.com
+                              type: string
+                            credentials:
+                              description: |-
+                                Credentials contains authentication information for the repository.
+                                Only used when BaseURL is specified.
+                              properties:
+                                password:
+                                  description: Password is a reference to a secret
+                                    key containing the password.
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select
+                                        from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its
+                                        key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                registryConfigFile:
+                                  description: |-
+                                    RegistryConfigFile is a reference to a secret key containing
+                                    a Docker config.json for OCI registry authentication.
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select
+                                        from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its
+                                        key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                                username:
+                                  description: Username is a reference to a secret
+                                    key containing the username.
+                                  properties:
+                                    key:
+                                      description: The key of the secret to select
+                                        from.  Must be a valid secret key.
+                                      type: string
+                                    name:
+                                      default: ""
+                                      description: |-
+                                        Name of the referent.
+                                        This field is effectively required, but due to backwards compatibility is
+                                        allowed to be empty. Instances of this type with an empty value here are
+                                        almost certainly wrong.
+                                        More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                      type: string
+                                    optional:
+                                      description: Specify whether the Secret or its
+                                        key must be defined
+                                      type: boolean
+                                  required:
+                                  - key
+                                  type: object
+                                  x-kubernetes-map-type: atomic
+                              type: object
+                          type: object
+                      required:
+                      - chartName
+                      - chartVersions
+                      type: object
+                    type: array
+                  includeDefaults:
+                    description: |-
+                      IncludeDefaults indicates that the webhook should automatically
+                      keep this catalog in sync with the default application catalog.
+                      When true, the webhook will merge defaults on every UPDATE operation,
+                      not just when charts is nil.
+                    type: boolean
+                  repositorySettings:
+                    description: |-
+                      RepositorySettings defines the default repository settings for all charts.
+                      Individual charts can override these settings.
+                      By default, the controller will use the `DefaultHelmRepository`.
+                    properties:
+                      baseURL:
+                        description: |-
+                          BaseURL is the base URL of the Helm chart repository.
+                          Supports http, https, and oci schemes.
+                          Examples:
+                            - oci://quay.io/kubermatic-mirror/helm-charts
+                            - https://charts.example.com
+                        type: string
+                      credentials:
+                        description: |-
+                          Credentials contains authentication information for the repository.
+                          Only used when BaseURL is specified.
+                        properties:
+                          password:
+                            description: Password is a reference to a secret key containing
+                              the password.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          registryConfigFile:
+                            description: |-
+                              RegistryConfigFile is a reference to a secret key containing
+                              a Docker config.json for OCI registry authentication.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          username:
+                            description: Username is a reference to a secret key containing
+                              the username.
+                            properties:
+                              key:
+                                description: The key of the secret to select from.  Must
+                                  be a valid secret key.
+                                type: string
+                              name:
+                                default: ""
+                                description: |-
+                                  Name of the referent.
+                                  This field is effectively required, but due to backwards compatibility is
+                                  allowed to be empty. Instances of this type with an empty value here are
+                                  almost certainly wrong.
+                                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                type: string
+                              optional:
+                                description: Specify whether the Secret or its key
+                                  must be defined
+                                type: boolean
+                            required:
+                            - key
+                            type: object
+                            x-kubernetes-map-type: atomic
+                        type: object
+                    type: object
+                type: object
+            type: object
+          status:
+            description: ApplicationCatalogStatus defines the observed state of ApplicationCatalog.
+            properties:
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  by the controller.
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

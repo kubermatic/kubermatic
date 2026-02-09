@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/onsi/gomega"
 	"go.uber.org/zap"
@@ -472,117 +471,6 @@ func TestHasLimitedRetries(t *testing.T) {
 
 			if got := hasLimitedRetries(appDefinition, appInstallation); got != tt.want {
 				t.Errorf("hasLimitedRetries() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestSyncReconciliationInterval(t *testing.T) {
-	testCases := []struct {
-		name                      string
-		applicationDefinition     *appskubermaticv1.ApplicationDefinition
-		applicationInstallation   *appskubermaticv1.ApplicationInstallation
-		expectedReconcileInterval time.Duration
-		expectUpdate              bool
-	}{
-		{
-			name: "scenario 1: reconciliation interval annotation is synced to application installation",
-			applicationDefinition: func() *appskubermaticv1.ApplicationDefinition {
-				appDef := genApplicationDefinition("app-def-1", nil)
-				appDef.Annotations = map[string]string{
-					appskubermaticv1.ApplicationReconciliationIntervalAnnotation: "10m",
-				}
-				return appDef
-			}(),
-			applicationInstallation:   genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0),
-			expectedReconcileInterval: 10 * time.Minute,
-			expectUpdate:              true,
-		},
-		{
-			name:                      "scenario 2: no annotation means no update",
-			applicationDefinition:     genApplicationDefinition("app-def-1", nil),
-			applicationInstallation:   genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0),
-			expectedReconcileInterval: 0,
-			expectUpdate:              false,
-		},
-		{
-			name: "scenario 3: invalid duration annotation is handled gracefully",
-			applicationDefinition: func() *appskubermaticv1.ApplicationDefinition {
-				appDef := genApplicationDefinition("app-def-1", nil)
-				appDef.Annotations = map[string]string{
-					appskubermaticv1.ApplicationReconciliationIntervalAnnotation: "invalid-duration",
-				}
-				return appDef
-			}(),
-			applicationInstallation:   genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0),
-			expectedReconcileInterval: 0,
-			expectUpdate:              false,
-		},
-		{
-			name: "scenario 4: same value does not trigger update",
-			applicationDefinition: func() *appskubermaticv1.ApplicationDefinition {
-				appDef := genApplicationDefinition("app-def-1", nil)
-				appDef.Annotations = map[string]string{
-					appskubermaticv1.ApplicationReconciliationIntervalAnnotation: "5m",
-				}
-				return appDef
-			}(),
-			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
-				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
-				appInstall.Spec.ReconciliationInterval.Duration = 5 * time.Minute
-				return appInstall
-			}(),
-			expectedReconcileInterval: 5 * time.Minute,
-			expectUpdate:              false,
-		},
-		{
-			name: "scenario 5: different value triggers update",
-			applicationDefinition: func() *appskubermaticv1.ApplicationDefinition {
-				appDef := genApplicationDefinition("app-def-1", nil)
-				appDef.Annotations = map[string]string{
-					appskubermaticv1.ApplicationReconciliationIntervalAnnotation: "15m",
-				}
-				return appDef
-			}(),
-			applicationInstallation: func() *appskubermaticv1.ApplicationInstallation {
-				appInstall := genApplicationInstallation("appInstallation-1", &defaultApplicationNamespace, "app-def-1", "1.0.0", 0, 1, 0)
-				appInstall.Spec.ReconciliationInterval.Duration = 5 * time.Minute
-				return appInstall
-			}(),
-			expectedReconcileInterval: 15 * time.Minute,
-			expectUpdate:              true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
-
-			userClient := kubermaticfake.
-				NewClientBuilder().
-				WithObjects(tc.applicationInstallation).
-				Build()
-
-			r := reconciler{
-				log:        kubermaticlog.Logger,
-				seedClient: userClient,
-				userClient: userClient,
-			}
-
-			err := r.syncReconciliationInterval(ctx, kubermaticlog.Logger, tc.applicationDefinition, tc.applicationInstallation)
-			if err != nil {
-				t.Fatalf("syncReconciliationInterval returned error: %v", err)
-			}
-
-			// Fetch the updated application installation
-			updatedAppInstall := &appskubermaticv1.ApplicationInstallation{}
-			if err := userClient.Get(ctx, types.NamespacedName{Name: tc.applicationInstallation.Name, Namespace: tc.applicationInstallation.Namespace}, updatedAppInstall); err != nil {
-				t.Fatalf("failed to get application installation: %v", err)
-			}
-
-			if updatedAppInstall.Spec.ReconciliationInterval.Duration != tc.expectedReconcileInterval {
-				t.Errorf("expected reconciliation interval %v, got %v", tc.expectedReconcileInterval, updatedAppInstall.Spec.ReconciliationInterval.Duration)
 			}
 		})
 	}

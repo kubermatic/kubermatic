@@ -191,7 +191,7 @@ func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
 				appVerLog := appLog.WithField("application-version", appVer.Version)
 				appVerLog.Debug("Downloading Helm chart…")
 				// pull the chart
-				chartPath, err := downloadAppSourceChart(&appVer.Template.Source, tmpDir, helmTimeout)
+				chartPath, err := DownloadAppSourceChart(&appVer.Template.Source, tmpDir, helmTimeout)
 				if err != nil {
 					yield(nil, fmt.Errorf("failed to pull app chart: %w", err))
 
@@ -220,7 +220,7 @@ func getHelmChartRenderFunc(config *kubermaticv1.KubermaticConfiguration,
 	}
 }
 
-func downloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, directory string, timeout time.Duration) (chartPath string, err error) {
+func DownloadAppSourceChart(appSource *appskubermaticv1.ApplicationSource, directory string, timeout time.Duration) (chartPath string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 

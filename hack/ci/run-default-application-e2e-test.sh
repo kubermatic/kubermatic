@@ -30,7 +30,6 @@ APP_LABEL_KEY="${APP_LABEL_KEY:-}"
 NAMES="${NAMES:-}"
 IS_SYSTEM_APP="${IS_SYSTEM_APP:-}"
 
-# Ensure all environment variables are set
 if [[ -z "$APPLICATION_INSTALLATION_NAME" || -z "$APPLICATION_NAME" || -z "$APPLICATION_NAMESPACE" || -z "$APP_LABEL_KEY" || -z "$NAMES" ]]; then
   echo "One or more required environment variables are missing."
   exit 1
@@ -75,7 +74,6 @@ else
   pathToFile="pkg/ee/default-application-catalog/applicationdefinitions/$APPLICATION_NAME-app.yaml"
 fi
 
-# Check if the file exists
 if [ ! -f "$pathToFile" ]; then
   echodate "Error: File '$pathToFile' does not exist."
   exit 1
@@ -83,29 +81,78 @@ else
   echodate "File path: $pathToFile"
 fi
 
-if [[ -s "$pathToFile" ]]; then
-  versions=$(yq eval '.spec.versions[].version' "$pathToFile")
+run_application_tests() {
+  local pathToFile="$1"
 
-  # Extract the defaultValuesBlock (this will capture everything after 'defaultValuesBlock:' until 'documentationURL')
-  defaultValuesBlock=$(yq eval '.spec.defaultValuesBlock' "$pathToFile")
+  if [[ -s "$pathToFile" ]]; then
+    versions=$(yq eval '.spec.versions[].version' "$pathToFile")
 
-  echodate "Processing default values block: $defaultValuesBlock"
+    defaultValuesBlock=$(yq eval '.spec.defaultValuesBlock' "$pathToFile")
 
-  for version in $versions; do
-    echodate "Processing version: $version"
-    go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/defaultappcatalog \
-      -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
-      -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
-      -application-installation-name "$APPLICATION_INSTALLATION_NAME" \
-      -application-name "$APPLICATION_NAME" \
-      -application-namespace "$APPLICATION_NAMESPACE" \
-      -application-version "$version" \
-      -app-label-key "$APP_LABEL_KEY" \
-      -names "$NAMES" \
-      -default-values-block "$defaultValuesBlock"
-  done
-else
-  echo "File is empty or does not exist."
-fi
+    echodate "Processing default values block: $defaultValuesBlock"
+
+    for version in $versions; do
+      echodate "Processing version: $version"
+      go_test default_application_catalog_test -timeout 1h -tags e2e -v ./pkg/test/e2e/defaultappcatalog \
+        -aws-kkp-datacenter "$AWS_E2E_TESTS_DATACENTER" \
+        -ssh-pub-key "$(cat "$E2E_SSH_PUBKEY")" \
+        -application-installation-name "$APPLICATION_INSTALLATION_NAME" \
+        -application-name "$APPLICATION_NAME" \
+        -application-namespace "$APPLICATION_NAMESPACE" \
+        -application-version "$version" \
+        -app-label-key "$APP_LABEL_KEY" \
+        -names "$NAMES" \
+        -default-values-block "$defaultValuesBlock"
+    done
+  else
+    echo "File is empty or does not exist."
+  fi
+}
+
+verify_resource_exists() {
+  kubectl get "$@" -o name | grep -q .
+}
+
+migrate_to_external_catalog_manager() {
+  echodate "Patching KubermaticConfiguration to enable ExternalApplicationCatalogManager..."
+  kubectl patch kubermaticconfiguration e2e -n kubermatic --type=merge \
+    -p '{"spec":{"featureGates":{"ExternalApplicationCatalogManager":true},"applications":{"defaultApplicationCatalog":{"enable":false}}}}'
+
+  echodate "Waiting for operator to process configuration change..."
+  sleep 10
+
+  echodate "Waiting for application-catalog-manager deployment..."
+  retry 10 kubectl -n kubermatic wait --for=condition=available --timeout=120s deployment/application-catalog-manager
+
+  echodate "Waiting for application-catalog-webhook deployment..."
+  retry 10 kubectl -n kubermatic wait --for=condition=available --timeout=120s deployment/application-catalog-webhook
+
+  echodate "Verifying default ApplicationCatalog CR exists..."
+  retry 5 verify_resource_exists applicationcatalog default-catalog -n kubermatic
+
+  echodate "Verifying catalog-managed ApplicationDefinitions..."
+  retry 5 verify_resource_exists applicationdefinitions -A -l 'applicationcatalog.k8c.io/managed-by=true'
+
+  echodate "Migration to ExternalApplicationCatalogManager completed successfully!"
+}
+
+echodate "Running $APPLICATION_NAME tests with OLD approach (Internal ApplicationDefinition management)..."
+run_application_tests "$pathToFile"
+echodate "Tests with OLD approach completed successfully!"
+
+echodate "Cleaning up user cluster resources..."
+echodate "Cleanup completed"
+
+echodate "==========================================================="
+echodate "Starting migration to ExternalApplicationCatalogManager..."
+echodate "==========================================================="
+migrate_to_external_catalog_manager
+
+echodate "========================================================================================="
+echodate "Running $APPLICATION_NAME tests with NEW approach (ExternalApplicationCatalogManager)..."
+echodate "========================================================================================="
+run_application_tests "$pathToFile"
+
+echodate "Tests with NEW approach completed successfully!"
 
 echodate "Application $APPLICATION_NAME tests done."
