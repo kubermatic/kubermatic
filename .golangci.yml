@@ -151,6 +151,15 @@ linters:
       # gocritic
       - path: (.+)\.go$
         text: singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
+      # Endpoints API deprecated in K8s 1.33 (KEP-4974), but still required for conformance tests.
+      # Remove once Kubernetes reaches Stage 3 of the deprecation plan.
+      # https://github.com/kubermatic/kubermatic/issues/14876
+      - linters:
+          - staticcheck
+        text: "SA1019: corev1.Endpoints is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: corev1.EndpointSubset is deprecated"
       - linters:
           - goconst
         path: (.+)_test\.go

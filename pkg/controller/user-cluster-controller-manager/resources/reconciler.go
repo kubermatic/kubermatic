@@ -741,6 +741,12 @@ func (r *reconciler) reconcileEndpoints(ctx context.Context, data reconcileData)
 	if !data.reconcileK8sSvcEndpoints {
 		return nil
 	}
+	epReconcilers := []reconciling.NamedEndpointsReconcilerFactory{
+		kubernetesresources.EndpointsReconciler(data.k8sServiceEndpointAddress, data.k8sServiceEndpointPort),
+	}
+	if err := reconciling.ReconcileEndpoints(ctx, epReconcilers, metav1.NamespaceDefault, r); err != nil {
+		return fmt.Errorf("failed to reconcile Endpoints: %w", err)
+	}
 	epSliceReconcilers := []reconciling.NamedEndpointSliceReconcilerFactory{
 		kubernetesresources.EndpointSliceReconciler(data.k8sServiceEndpointAddress, data.k8sServiceEndpointPort),
 	}
