@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Gateway API migration: When true, creates HTTPRoute instead of using Ingress.
+# The HTTPRoutes will attach to the kubermatic Gateway (cross-namespace).
+# The kubermatic-installer automatically labels the namespace for Gateway access.
+migrateGatewayAPI: false
+
+# httpRoute configures HTTPRoute for IAP deployments (only used when migrateGatewayAPI: true)
+httpRoute:
+  # Name of the Gateway to attach to (in kubermatic namespace)
+  gatewayName: kubermatic
+  # Namespace of the Gateway
+  gatewayNamespace: kubermatic
+  # Timeout for requests (matching nginx proxy-read-timeout annotation)
+  timeout: 3600s
+
 iap:
   image:
     repository: quay.io/oauth2-proxy/oauth2-proxy

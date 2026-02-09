@@ -24,6 +24,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilintstr "k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 var kindConfigContent = `kind: Cluster
@@ -37,25 +38,15 @@ nodes:
      hostPort: 6443
    - containerPort: 32121
      hostPort: 8088
-   # ingress controller for kubermatic api and dashboard
+   # envoy gateway for kubermatic api and dashboard
    - containerPort: 31514
      hostPort: 80
    - containerPort: 32394
      hostPort: 443`
 
-func ptr[T any](v T) *T {
-	return &v
-}
-
 var kindKubermaticNamespace = corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
 		Name: "kubermatic",
-	},
-}
-
-var kindIngressControllerNamespace = corev1.Namespace{
-	ObjectMeta: metav1.ObjectMeta{
-		Name: "nginx-ingress-controller",
 	},
 }
 
@@ -64,54 +55,7 @@ var kindStorageClass = storagev1.StorageClass{
 		Name: "kubermatic-fast",
 	},
 	Provisioner:       "rancher.io/local-path",
-	VolumeBindingMode: ptr(storagev1.VolumeBindingWaitForFirstConsumer),
-}
-
-var kindIngressControllerService = corev1.Service{
-	ObjectMeta: metav1.ObjectMeta{
-		Name:      "nginx-ingress-controller-kind",
-		Namespace: "nginx-ingress-controller",
-	},
-	Spec: corev1.ServiceSpec{
-		Ports: []corev1.ServicePort{
-			{
-				Name:        "http",
-				Protocol:    "TCP",
-				AppProtocol: ptr("http"),
-				Port:        80,
-				TargetPort: utilintstr.IntOrString{
-					Type:   1,
-					IntVal: 0,
-					StrVal: "http",
-				},
-				NodePort: 31514,
-			},
-			{
-				Name:        "https",
-				Protocol:    "TCP",
-				AppProtocol: ptr("https"),
-				Port:        443,
-				TargetPort: utilintstr.IntOrString{
-					Type:   1,
-					IntVal: 0,
-					StrVal: "https",
-				},
-				NodePort: 32394,
-			},
-		},
-		Selector: map[string]string{
-			"app.kubernetes.io/component": "controller",
-			"app.kubernetes.io/instance":  "nginx-ingress-controller",
-			"app.kubernetes.io/name":      "nginx",
-		},
-		Type:                  "NodePort",
-		ExternalTrafficPolicy: "Cluster",
-		IPFamilies: []corev1.IPFamily{
-			"IPv4",
-		},
-		IPFamilyPolicy:        ptr(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicyType("Cluster")),
-	},
+	VolumeBindingMode: ptr.To(storagev1.VolumeBindingWaitForFirstConsumer),
 }
 
 var kindNodeportProxyService = corev1.Service{
@@ -148,8 +92,8 @@ var kindNodeportProxyService = corev1.Service{
 		IPFamilies: []corev1.IPFamily{
 			"IPv4",
 		},
-		IPFamilyPolicy:        ptr(corev1.IPFamilyPolicy("SingleStack")),
-		InternalTrafficPolicy: ptr(corev1.ServiceInternalTrafficPolicyType("Cluster")),
+		IPFamilyPolicy:        ptr.To(corev1.IPFamilyPolicy("SingleStack")),
+		InternalTrafficPolicy: ptr.To(corev1.ServiceInternalTrafficPolicyType("Cluster")),
 	},
 }
 
@@ -171,7 +115,7 @@ var kindLocalSeed = kubermaticv1.Seed{
 				Location: "Hamburg", // TODO: some clever heuristic or geolocation service?
 				Spec: kubermaticv1.DatacenterSpec{
 					Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
-						EnableDefaultNetworkPolicies: ptr(false),
+						EnableDefaultNetworkPolicies: ptr.To(false),
 						DNSPolicy:                    "ClusterFirst",
 						Images: kubermaticv1.KubeVirtImageSources{
 							HTTP: &kubermaticv1.KubeVirtHTTPSource{
@@ -207,7 +151,7 @@ var kindLocalPreset = kubermaticv1.Preset{
 	Spec: kubermaticv1.PresetSpec{
 		Kubevirt: &kubermaticv1.Kubevirt{
 			ProviderPreset: kubermaticv1.ProviderPreset{
-				Enabled: ptr(true),
+				Enabled: ptr.To(true),
 			},
 			Kubeconfig: "",
 		},

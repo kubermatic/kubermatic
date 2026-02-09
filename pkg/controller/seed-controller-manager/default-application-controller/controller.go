@@ -36,6 +36,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -393,6 +394,15 @@ func ApplicationInstallationReconciler(
 			// Both DefaultValues and DefaultValuesBlock can not be set at the same time, our webhooks should prevent this.
 			if len(app.Spec.ValuesBlock) == 0 && application.Spec.DefaultValues != nil {
 				app.Spec.Values = *application.Spec.DefaultValues
+			}
+
+			// Set ReconciliationInterval from annotation if present
+			if intervalStr, ok := application.Annotations[appskubermaticv1.ApplicationReconciliationIntervalAnnotation]; ok {
+				if interval, err := time.ParseDuration(intervalStr); err == nil {
+					app.Spec.ReconciliationInterval = metav1.Duration{Duration: interval}
+				} else {
+					logger.Warnf("Invalid reconciliation interval annotation %q on ApplicationDefinition %s: %v", intervalStr, application.Name, err)
+				}
 			}
 
 			return app, nil
