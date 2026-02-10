@@ -50,6 +50,14 @@ var (
 		"app.kubernetes.io/name": DaemonSetName,
 		"name":                   DaemonSetName,
 	}
+
+	// veleroAdditionalPodLabels contains labels that should only be on node-agent pods (not in the selector).
+	// The "role" label is required since Velero v1.17 uses "role=node-agent" to find node-agent pods in isRunningInNode:
+	// https://github.com/vmware-tanzu/velero/blob/v1.17.1/pkg/nodeagent/node_agent.go
+	// This is separate from veleroAdditionalLabels because the DaemonSet selector is immutable.
+	veleroAdditionalPodLabels = map[string]string{
+		"role": DaemonSetName,
+	}
 )
 
 // DaemonSetReconciler returns the function to create and update the Velero node-agent DaemonSet.
@@ -65,6 +73,7 @@ func DaemonSetReconciler(data templateData) reconciling.NamedDaemonSetReconciler
 			}
 
 			kubernetes.EnsureLabels(&ds.Spec.Template, podLabels)
+			kubernetes.EnsureLabels(&ds.Spec.Template, veleroAdditionalPodLabels)
 			kubernetes.EnsureAnnotations(&ds.Spec.Template, map[string]string{
 				resources.ClusterAutoscalerSafeToEvictVolumesAnnotation: "scratch",
 			})
