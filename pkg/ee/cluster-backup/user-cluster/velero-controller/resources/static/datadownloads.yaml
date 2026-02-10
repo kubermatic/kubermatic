@@ -1,10 +1,10 @@
-# This file has been generated with Velero v1.14.0. Do not edit.
+# This file has been generated with Velero v1.17.1. Do not edit.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.16.5
   labels:
     component: velero
   name: datadownloads.velero.io
@@ -93,6 +93,13 @@ spec:
                     DataMover specifies the data mover to be used by the backup.
                     If DataMover is "" or "velero", the built-in data mover will be used.
                   type: string
+                nodeOS:
+                  description: NodeOS is OS of the node where the DataDownload is processed.
+                  enum:
+                    - auto
+                    - linux
+                    - windows
+                  type: string
                 operationTimeout:
                   description: |-
                     OperationTimeout specifies the time used to wait internal operations,
@@ -133,6 +140,16 @@ spec:
             status:
               description: DataDownloadStatus is the current status of a DataDownload.
               properties:
+                acceptedByNode:
+                  description: Node is name of the node where the DataUpload is prepared.
+                  type: string
+                acceptedTimestamp:
+                  description: |-
+                    AcceptedTimestamp records the time the DataUpload is to be prepared.
+                    The server's time is used for AcceptedTimestamp
+                  format: date-time
+                  nullable: true
+                  type: string
                 completionTimestamp:
                   description: |-
                     CompletionTimestamp records the time a restore was completed.
