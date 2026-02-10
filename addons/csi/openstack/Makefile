@@ -18,7 +18,7 @@ OUTPUT_FILE = driver.yaml
 REPO_NAME = kkp-addons-csi-openstack
 
 # alpha.1 allows to specify extraEnv in Helm values
-CHART_VERSION = 2.34.0
+CHART_VERSION = 2.35.0
 
 .PHONY: default
 default: setup-helm build clean-helm
@@ -31,7 +31,7 @@ build:
 	  --skip-tests \
 	  > $(OUTPUT_FILE)
 	kubectl kustomize . > $(OUTPUT_FILE).tmp
-	sed -i 's/feature-gates=Topology=true/feature-gates=Topology={{ .Cluster.CSI.CinderTopologyEnabled }}/g' $(OUTPUT_FILE).tmp
+	sed -i '' 's/feature-gates=Topology=true/feature-gates=Topology={{ .Cluster.CSI.CinderTopologyEnabled }}/g' $(OUTPUT_FILE).tmp
 	../../templatify.sh $(OUTPUT_FILE).tmp --dynamic "registry.k8s.io/provider-os/cinder-csi-plugin:version"
 	cat _header.txt $(OUTPUT_FILE).tmp _footer.txt > $(OUTPUT_FILE)
 	rm $(OUTPUT_FILE).tmp

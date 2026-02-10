@@ -61,7 +61,7 @@ func getFakeClientset(objs ...ctrlruntimeclient.Object) *fake.Clientset {
 		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
 	}
 
-	return fake.NewSimpleClientset(runtimeObjects...)
+	return fake.NewClientset(runtimeObjects...)
 }
 
 func TestEnsureProjectInitialized(t *testing.T) {

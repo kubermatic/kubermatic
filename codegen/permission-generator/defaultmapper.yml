@@ -215,6 +215,11 @@ modules:
   github.com/aws/aws-sdk-go-v2/service/sts:
     funcs:
       NewFromConfig: null
+      GetCallerIdentity:
+        permissions:
+          "*":
+            actions:
+              - "sts:GetCallerIdentity"
 
   github.com/aws/aws-sdk-go-v2/aws:
     funcs:

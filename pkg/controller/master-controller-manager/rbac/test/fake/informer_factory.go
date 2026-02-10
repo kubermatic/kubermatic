@@ -32,7 +32,7 @@ type SharedInformerFactory struct {
 
 // NewFakeSharedInformerFactory returns a new factory.
 func NewFakeSharedInformerFactory(kubeClient kubernetes.Interface, namespace string) *SharedInformerFactory {
-	f := kubeinformers.NewFilteredSharedInformerFactory(kubeClient, time.Minute*5, namespace, nil)
+	f := kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Minute*5, kubeinformers.WithNamespace(namespace))
 	factory := &SharedInformerFactory{SharedInformerFactory: f}
 	return factory
 }
