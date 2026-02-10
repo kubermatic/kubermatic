@@ -366,7 +366,7 @@ spec:
       automountServiceAccountToken: true
       initContainers:
         - name: kubectl
-          image: "docker.io/bitnamilegacy/kubectl:1.32"
+          image: "docker.io/bitnamilegacy/kubectl:1.33"
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
