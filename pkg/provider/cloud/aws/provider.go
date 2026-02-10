@@ -244,6 +244,12 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 		return nil, fmt.Errorf("failed to get API client: %w", err)
 	}
 
+	// Get credentials for passing to IAM operations
+	accessKeyID, secretAccessKey, _, _, err := GetCredentialsForCluster(cluster.Spec.Cloud, a.secretKeySelector)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AWS credentials: %w", err)
+	}
+
 	cluster, err = update(ctx, cluster.Name, func(cluster *kubermaticv1.Cluster) {
 		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 	})
@@ -277,7 +283,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 
 	// We create a dedicated role for the control plane.
 	if !cluster.Spec.Cloud.AWS.DisableIAMReconciling && (force || cluster.Spec.Cloud.AWS.ControlPlaneRoleARN == "") {
-		cluster, err = reconcileControlPlaneRole(ctx, client.IAM, cluster, update)
+		cluster, err = reconcileControlPlaneRole(ctx, client.IAM, cluster, update, accessKeyID, secretAccessKey, a.dc.Region)
 		if err != nil {
 			return nil, err
 		}
@@ -285,7 +291,7 @@ func (a *AmazonEC2) reconcileCluster(ctx context.Context, cluster *kubermaticv1.
 
 	// instance profile and role for worker nodes
 	if !cluster.Spec.Cloud.AWS.DisableIAMReconciling && (force || cluster.Spec.Cloud.AWS.InstanceProfileName == "") {
-		cluster, err = reconcileWorkerInstanceProfile(ctx, client.IAM, cluster, update)
+		cluster, err = reconcileWorkerInstanceProfile(ctx, client.IAM, cluster, update, accessKeyID, secretAccessKey, a.dc.Region)
 		if err != nil {
 			return nil, err
 		}

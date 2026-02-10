@@ -31,6 +31,13 @@ var (
       "Effect": "Allow",
       "Principal": { "Service": "ec2.amazonaws.com"},
       "Action": "sts:AssumeRole"
+    },
+	{
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::{{ .AccountID }}:root"
+      },
+      "Action": "sts:AssumeRole"
     }
   ]
 }
@@ -217,6 +224,7 @@ var (
       {
         "Effect": "Allow",
         "Action": [
+		  "ec2:DescribeAvailabilityZones",
           "ec2:DescribeInstances",
           "ec2:DescribeRegions",
           "ec2:DescribeRouteTables",
@@ -227,7 +235,13 @@ var (
           "ec2:DescribeVolumesModifications",
           "ec2:ModifyInstanceAttribute",
           "ec2:ModifyVolume",
-          "ec2:DescribeVpcs"
+          "ec2:DescribeVpcs",
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeLoadBalancerPolicies",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth"
         ],
         "Resource": [
           "*"
@@ -269,6 +283,20 @@ var (
           }
         }
       },
+	  {
+	    "Effect": "Allow",
+	    "Action": [
+		  "ec2:CreateTags"
+	    ],
+	    "Resource": [
+		  "arn:aws:ec2:*:*:security-group/*"
+	    ],
+	    "Condition": {
+		  "StringEquals": {
+		    "ec2:CreateAction": "CreateSecurityGroup"
+		  }
+	    }
+	  },
       {
         "Effect": "Allow",
         "Action": [
@@ -296,21 +324,14 @@ var (
           "elasticloadbalancing:ConfigureHealthCheck",
           "elasticloadbalancing:DeleteLoadBalancer",
           "elasticloadbalancing:DeleteLoadBalancerListeners",
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DetachLoadBalancerFromSubnets",
           "elasticloadbalancing:DeregisterInstancesFromLoadBalancer",
           "elasticloadbalancing:ModifyLoadBalancerAttributes",
           "elasticloadbalancing:RegisterInstancesWithLoadBalancer",
           "elasticloadbalancing:SetLoadBalancerPoliciesForBackendServer",
-          "elasticloadbalancing:AddTags",
           "elasticloadbalancing:DeleteListener",
           "elasticloadbalancing:DeleteTargetGroup",
           "elasticloadbalancing:DeregisterTargets",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeLoadBalancerPolicies",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeTargetHealth",
           "elasticloadbalancing:ModifyListener",
           "elasticloadbalancing:ModifyTargetGroup",
           "elasticloadbalancing:RegisterTargets",
@@ -338,6 +359,20 @@ func getControlPlanePolicy(clusterName string) (string, error) {
 	return renderPolicy(clusterName, controlPlanePolicyTpl)
 }
 
+func getAssumeRolePolicy(accountID string) (string, error) {
+	assumeRolePolicyTpl := template.Must(template.New("assume-role-policy").Parse(assumeRolePolicy))
+
+	buf := &bytes.Buffer{}
+	err := assumeRolePolicyTpl.Execute(buf, assumeRoleTplData{
+		AccountID: accountID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to render assume role policy: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
 func renderPolicy(clusterName string, tpl *template.Template) (string, error) {
 	tag := ec2ClusterTag(clusterName)
 
@@ -348,6 +383,10 @@ func renderPolicy(clusterName string, tpl *template.Template) (string, error) {
 	})
 
 	return buf.String(), err
+}
+
+type assumeRoleTplData struct {
+	AccountID string
 }
 
 type policyTplData struct {

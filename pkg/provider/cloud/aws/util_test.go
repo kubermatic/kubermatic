@@ -79,3 +79,16 @@ func testClusterUpdater(cluster *kubermaticv1.Cluster) provider.ClusterUpdater {
 		return cluster, nil
 	}
 }
+
+// getTestCredentials returns AWS credentials from environment variables for testing.
+func getTestCredentials(t *testing.T) (accessKeyID, secretAccessKey, region string) {
+	accessKeyID = os.Getenv("AWS_ACCESS_KEY_ID")
+	secretAccessKey = os.Getenv("AWS_SECRET_ACCESS_KEY")
+	region = os.Getenv("AWS_REGION")
+
+	if accessKeyID == "" || secretAccessKey == "" || region == "" {
+		return nope, nope, nope
+	}
+
+	return accessKeyID, secretAccessKey, region
+}

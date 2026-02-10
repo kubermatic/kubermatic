@@ -134,10 +134,12 @@ func VSphereCCMVersion(version semver.Semver) string {
 	case v132:
 		return "1.32.2"
 	case v133:
-		fallthrough
+		return "1.33.1"
 	case v134:
+		return "1.34.0"
+	case v135:
 		fallthrough
 	default:
-		return "1.33.0"
+		return "1.35.0"
 	}
 }
