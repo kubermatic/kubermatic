@@ -641,7 +641,70 @@ type ApplicationDefinitionsConfiguration struct {
 	CatalogManager CatalogManagerConfiguration `json:"catalogManager,omitempty"`
 }
 
+// ApplicationCatalogLimit defines filtering criteria for ApplicationDefinitions.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type ApplicationCatalogLimit struct {
+	// MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	MetadataSelector ApplicationDefinitionMetadataSelector `json:"metadataSelector,omitempty"`
+	// NameSelector defines criteria for selecting ApplicationDefinitions by name.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	NameSelector []string `json:"nameSelector,omitempty"`
+}
+
+// RegistrySettings configures the OCI registry from which ApplicationDefinitions are retrieved.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type RegistrySettings struct {
+	// RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	RegistryURL string `json:"registryURL,omitempty"`
+	// Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Tag string `json:"tag,omitempty"`
+	// Credentials optionally references a secret containing Helm registry authentication credentials.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Credentials *RegistryCredentials `json:"credentials,omitempty"`
+}
+
+// RegistryCredentials holds authentication credentials for Helm registry.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type RegistryCredentials struct {
+	// Username references the secret containing the registry username credential.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Username *corev1.SecretKeySelector `json:"username,omitempty"`
+	// Password references the secret containing the registry password credential.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Password *corev1.SecretKeySelector `json:"password,omitempty"`
+	// RegistryConfigFile references the secret containing the Docker registry configuration file.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	RegistryConfigFile *corev1.SecretKeySelector `json:"registryConfigFile,omitempty"`
+}
+
+// ApplicationDefinitionMetadataSelector defines metadata-based selection criteria for ApplicationDefinitions.
+// Deprecated: This type is deprecated and serves no purpose. It is preserved for backward compatibility.
+type ApplicationDefinitionMetadataSelector struct {
+	// Tiers specifies the support tiers to filter ApplicationDefinitions.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Tiers []string `json:"tiers,omitempty"`
+}
+
 type CatalogManagerConfiguration struct {
+	// LogLevel specifies the logging verbosity level for the application-catalog manager.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	LogLevel string `json:"logLevel,omitempty"`
+
+	// RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	RegistrySettings RegistrySettings `json:"registrySettings,omitempty"`
+
+	// Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+	// Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+	Limit ApplicationCatalogLimit `json:"limit,omitempty"`
+
+	// Resources describes the requested and maximum allowed CPU/memory usage.
+	// Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// Image configures the container image for the application-catalog manager.
 	Image CatalogManagerImageConfiguration `json:"image,omitempty"`
 
@@ -649,10 +712,15 @@ type CatalogManagerConfiguration struct {
 	// If not set, all the applications from the catalog are installed.
 	Apps []string `json:"apps,omitempty"`
 
+	// ManagerSettings configures the application-catalog manager deployment settings.
 	ManagerSettings CatalogManagerSettings `json:"managerSettings,omitempty"`
+	// WebhookSettings configures the application-catalog webhook deployment settings.
 	WebhookSettings CatalogWebhookSettings `json:"webhookSettings,omitempty"`
 }
 
+// CatalogManagerSettings configures the application-catalog manager deployment.
+// This component reconciles ApplicationDefinition CRs from ApplicationCatalog CRs
+// when the ExternalApplicationCatalogManager feature gate is enabled.
 type CatalogManagerSettings struct {
 	// Resources describes the requested and maximum allowed CPU/memory usage for application-catalog manager deployment.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -665,6 +733,9 @@ type CatalogManagerSettings struct {
 	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
 }
 
+// CatalogWebhookSettings configures the application-catalog webhook deployment.
+// This component validates and mutates ApplicationCatalog and ApplicationDefinition CRs
+// when the ExternalApplicationCatalogManager feature gate is enabled.
 type CatalogWebhookSettings struct {
 	// Resources describes the requested and maximum allowed CPU/memory usage for application-catalog webhook deployment.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
