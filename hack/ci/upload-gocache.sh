@@ -72,10 +72,6 @@ echodate "Building binaries"
   make -C cmd/nodeport-proxy build
 )
 (
-  TEST_NAME="Building kubeletdnat controller"
-  make -C cmd/kubeletdnat-controller build
-)
-(
   TEST_NAME="Building clusterexposer"
   cd pkg/test/clusterexposer/cmd
   go build --tags "$KUBERMATIC_EDITION" -v .

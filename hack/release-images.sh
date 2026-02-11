@@ -19,7 +19,6 @@
 ### * quay.io/kubermatic/kubermatic[-ee]
 ### * quay.io/kubermatic/addons
 ### * quay.io/kubermatic/nodeport-proxy
-### * quay.io/kubermatic/kubeletdnat-controller
 ### * quay.io/kubermatic/user-ssh-keys-agent
 ### * quay.io/kubermatic/etcd-launcher
 ### * quay.io/kubermatic/network-interface-manager
@@ -132,9 +131,6 @@ create_manifest() {
 echodate "Building user-ssh-keys-agent images..."
 buildx_build . cmd/user-ssh-keys-agent/Dockerfile.multiarch "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG"
 
-echodate "Building kubeletdnat-controller images..."
-buildx_build . cmd/kubeletdnat-controller/Dockerfile.multiarch "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG"
-
 echodate "Building network-interface-manager images..."
 buildx_build . cmd/network-interface-manager/Dockerfile.multiarch "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG"
 
@@ -160,11 +156,9 @@ for TAG in $ALL_TAGS; do
     docker push "$DOCKER_REPO/conformance-tests:$TAG"
 
     create_manifest "$DOCKER_REPO/user-ssh-keys-agent" "$PRIMARY_TAG" "$TAG"
-    create_manifest "$DOCKER_REPO/kubeletdnat-controller" "$PRIMARY_TAG" "$TAG"
     create_manifest "$DOCKER_REPO/network-interface-manager" "$PRIMARY_TAG" "$TAG"
 
     docker manifest push --purge "$DOCKER_REPO/user-ssh-keys-agent:$TAG"
-    docker manifest push --purge "$DOCKER_REPO/kubeletdnat-controller:$TAG"
     docker manifest push --purge "$DOCKER_REPO/network-interface-manager:$TAG"
   fi
 done
