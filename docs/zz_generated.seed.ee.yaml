@@ -792,7 +792,7 @@ spec:
         # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
         sourceRanges: []
       # Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
-      # If unset, 3 replicas are used.
+      # Defaults to 3.
       replicas: null
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
