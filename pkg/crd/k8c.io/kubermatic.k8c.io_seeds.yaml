@@ -3576,6 +3576,13 @@ spec:
                                 type: string
                               type: array
                           type: object
+                        replicas:
+                          description: |-
+                            Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+                            If unset, 3 replicas are used.
+                          format: int32
+                          minimum: 1
+                          type: integer
                         resources:
                           description: Resources describes the requested and maximum allowed CPU/memory usage.
                           properties:
