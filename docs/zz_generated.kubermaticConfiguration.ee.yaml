@@ -70,6 +70,22 @@ spec:
         repository: quay.io/kubermatic/application-catalog-manager
         # Tag is used to override the application-catalog manager image tag.
         tag: v0.2.0-rc.6
+      # Limit defines filtering criteria for ApplicationDefinitions to be reconciled.
+      # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+      limit:
+        # MetadataSelector defines criteria for selecting ApplicationDefinitions based on their metadata attributes.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        metadataSelector:
+          # Tiers specifies the support tiers to filter ApplicationDefinitions.
+          # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+          tiers: null
+        # NameSelector defines criteria for selecting ApplicationDefinitions by name.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        nameSelector: null
+      # LogLevel specifies the logging verbosity level for the application-catalog manager.
+      # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+      logLevel: ""
+      # ManagerSettings configures the application-catalog manager deployment settings.
       managerSettings:
         # LogLevel specifies the logging verbosity level for the application-catalog manager.
         logLevel: ""
@@ -95,6 +111,38 @@ spec:
           # otherwise to an implementation-defined value. Requests cannot exceed Limits.
           # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
           requests: null
+      # RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
+      # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+      registrySettings:
+        # Credentials optionally references a secret containing Helm registry authentication credentials.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        credentials: null
+        # RegistryURL specifies the OCI registry URL where ApplicationDefinitions are stored.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        registryURL: ""
+        # Tag specifies the version tag for ApplicationDefinitions in the OCI registry.
+        # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
+        tag: ""
+      # Resources describes the requested and maximum allowed CPU/memory usage.
+      # Deprecated: This field is deprecated. Use ManagerSettings.Resources instead.
+      resources:
+        # Claims lists the names of resources, defined in spec.resourceClaims,
+        # that are used by this container.
+
+        # This field depends on the
+        # DynamicResourceAllocation feature gate.
+
+        # This field is immutable. It can only be set for containers.
+        claims: null
+        # Limits describes the maximum amount of compute resources allowed.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        limits: null
+        # Requests describes the minimum amount of compute resources required.
+        # If Requests is omitted for a container, it defaults to Limits if that is explicitly specified,
+        # otherwise to an implementation-defined value. Requests cannot exceed Limits.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+        requests: null
+      # WebhookSettings configures the application-catalog webhook deployment settings.
       webhookSettings:
         # LogLevel specifies the logging verbosity level for the application-catalog webhook.
         logLevel: ""
