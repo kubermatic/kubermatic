@@ -66,6 +66,8 @@ type Options struct {
 	// disabled and won't be configured in Envoy.
 	EnvoyTunnelingListenerPort int
 
+	// The following connection settings are optional Envoy overrides.
+	// Zero values leave the corresponding Envoy fields unset.
 	// SNIListenerIdleTimeout bounds how long inactive SNI listener downstream
 	// TCP connections are kept open.
 	SNIListenerIdleTimeout time.Duration
