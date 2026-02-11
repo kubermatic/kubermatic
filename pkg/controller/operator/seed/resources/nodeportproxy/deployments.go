@@ -99,6 +99,7 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 				fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
 				fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort),
 			}
+			args = append(args, envoyManagerConnectionSettingsArgs(seed)...)
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "envoy-manager",
@@ -191,6 +192,22 @@ func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *
 
 			return d, nil
 		}
+	}
+}
+
+func envoyManagerConnectionSettingsArgs(seed *kubermaticv1.Seed) []string {
+	settings := seed.Spec.NodeportProxy.Envoy.ConnectionSettings
+
+	return []string{
+		fmt.Sprintf("-sni-listener-idle-timeout=%s", settings.SNIListenerIdleTimeout.Duration),
+		fmt.Sprintf("-tunneling-connection-idle-timeout=%s", settings.TunnelingConnectionIdleTimeout.Duration),
+		fmt.Sprintf("-tunneling-stream-idle-timeout=%s", settings.TunnelingStreamIdleTimeout.Duration),
+		fmt.Sprintf("-downstream-tcp-keepalive-time=%s", settings.DownstreamTCPKeepaliveTime.Duration),
+		fmt.Sprintf("-downstream-tcp-keepalive-interval=%s", settings.DownstreamTCPKeepaliveInterval.Duration),
+		fmt.Sprintf("-downstream-tcp-keepalive-probes=%d", settings.DownstreamTCPKeepaliveProbes),
+		fmt.Sprintf("-upstream-tcp-keepalive-time=%s", settings.UpstreamTCPKeepaliveTime.Duration),
+		fmt.Sprintf("-upstream-tcp-keepalive-interval=%s", settings.UpstreamTCPKeepaliveInterval.Duration),
+		fmt.Sprintf("-upstream-tcp-keepalive-probes=%d", settings.UpstreamTCPKeepaliveProbes),
 	}
 }
 

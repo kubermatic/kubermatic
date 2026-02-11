@@ -31,6 +31,7 @@ import (
 	envoyendpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoyhttpconnectionmanagerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -45,6 +46,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -697,6 +699,469 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 				t.Errorf("expect generic accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
 		})
+	}
+}
+
+func TestSNIFilterChainsSetIdleTimeout(t *testing.T) {
+	svc := test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+		WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+		Build()
+
+	idleTimeout := 15 * time.Minute
+	filterChains := makeSNIFilterChains(svc, portHostMapping{"https": "host.com"}, idleTimeout)
+	if len(filterChains) != 1 {
+		t.Fatalf("expected exactly one filter chain, got %d", len(filterChains))
+	}
+
+	tcpProxyAny := filterChains[0].Filters[0].GetTypedConfig()
+	tcpProxy := &envoytcpfilterv3.TcpProxy{}
+	if err := tcpProxyAny.UnmarshalTo(tcpProxy); err != nil {
+		t.Fatalf("failed to unmarshal tcp proxy config: %v", err)
+	}
+
+	expectedIdleTimeout := durationpb.New(idleTimeout)
+	if d := diff.ObjectDiff(expectedIdleTimeout, tcpProxy.GetIdleTimeout()); d != "" {
+		t.Fatalf("unexpected SNI tcp proxy idle timeout: %s", d)
+	}
+}
+
+func TestTunnelingListenerSetsExplicitIdleTimeouts(t *testing.T) {
+	connectionIdleTimeout := 15 * time.Minute
+	streamIdleTimeout := 5 * time.Minute
+	sb := &snapshotBuilder{
+		Options: Options{
+			EnvoyTunnelingListenerPort:       8088,
+			TunnelingConnectionIdleTimeout:   connectionIdleTimeout,
+			TunnelingConnectionStreamTimeout: streamIdleTimeout,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	listener := sb.makeTunnelingListener(&envoyroutev3.VirtualHost{
+		Name:    "test/my-service-https",
+		Domains: []string{"my-service.test.svc.cluster.local:443"},
+		Routes: []*envoyroutev3.Route{
+			{
+				Match: &envoyroutev3.RouteMatch{
+					PathSpecifier: &envoyroutev3.RouteMatch_ConnectMatcher_{
+						ConnectMatcher: &envoyroutev3.RouteMatch_ConnectMatcher{},
+					},
+				},
+				Action: &envoyroutev3.Route_Route{
+					Route: &envoyroutev3.RouteAction{
+						ClusterSpecifier: &envoyroutev3.RouteAction_Cluster{
+							Cluster: "test/my-service-https",
+						},
+						UpgradeConfigs: []*envoyroutev3.RouteAction_UpgradeConfig{
+							{
+								UpgradeType:   UpgradeType,
+								ConnectConfig: &envoyroutev3.RouteAction_UpgradeConfig_ConnectConfig{},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+
+	hcmAny := listener.FilterChains[0].Filters[0].GetTypedConfig()
+	hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{}
+	if err := hcmAny.UnmarshalTo(hcm); err != nil {
+		t.Fatalf("failed to unmarshal HTTP connection manager config: %v", err)
+	}
+
+	expectedConnectionIdleTimeout := durationpb.New(connectionIdleTimeout)
+	if d := diff.ObjectDiff(expectedConnectionIdleTimeout, hcm.GetCommonHttpProtocolOptions().GetIdleTimeout()); d != "" {
+		t.Fatalf("unexpected tunneling connection idle timeout: %s", d)
+	}
+
+	expectedStreamIdleTimeout := durationpb.New(streamIdleTimeout)
+	if d := diff.ObjectDiff(expectedStreamIdleTimeout, hcm.GetStreamIdleTimeout()); d != "" {
+		t.Fatalf("unexpected tunneling stream idle timeout: %s", d)
+	}
+}
+
+func TestNoConnectionSettingsKeepsEnvoyDefaults(t *testing.T) {
+	svc := test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+		WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+		Build()
+
+	filterChains := makeSNIFilterChains(svc, portHostMapping{"https": "host.com"}, 0)
+	if len(filterChains) != 1 {
+		t.Fatalf("expected exactly one filter chain, got %d", len(filterChains))
+	}
+
+	tcpProxyAny := filterChains[0].Filters[0].GetTypedConfig()
+	tcpProxy := &envoytcpfilterv3.TcpProxy{}
+	if err := tcpProxyAny.UnmarshalTo(tcpProxy); err != nil {
+		t.Fatalf("failed to unmarshal tcp proxy config: %v", err)
+	}
+	if tcpProxy.GetIdleTimeout() != nil {
+		t.Fatalf("expected SNI tcp proxy idle timeout to be unset when not configured")
+	}
+
+	sb := &snapshotBuilder{
+		Options: Options{
+			EnvoySNIListenerPort:       6443,
+			EnvoyTunnelingListenerPort: 8088,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	sniListener := sb.makeSNIListener(filterChains...)
+	if sniListener.GetTcpKeepalive() != nil {
+		t.Fatalf("expected SNI listener tcp keepalive to be unset when not configured")
+	}
+
+	tunnelingListener := sb.makeTunnelingListener()
+	if tunnelingListener.GetTcpKeepalive() != nil {
+		t.Fatalf("expected tunneling listener tcp keepalive to be unset when not configured")
+	}
+
+	hcmAny := tunnelingListener.FilterChains[0].Filters[0].GetTypedConfig()
+	hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{}
+	if err := hcmAny.UnmarshalTo(hcm); err != nil {
+		t.Fatalf("failed to unmarshal HTTP connection manager config: %v", err)
+	}
+	if hcm.GetCommonHttpProtocolOptions() != nil {
+		t.Fatalf("expected tunneling connection idle timeout to be unset when not configured")
+	}
+	if hcm.GetStreamIdleTimeout() != nil {
+		t.Fatalf("expected tunneling stream idle timeout to be unset when not configured")
+	}
+
+	portName := "https"
+	portProtocol := corev1.ProtocolTCP
+	portNumber := int32(8443)
+	ready := true
+	epSlices := &discoveryv1.EndpointSliceList{
+		Items: []discoveryv1.EndpointSlice{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test",
+					Name:      "my-service-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "my-service",
+					},
+				},
+				Ports: []discoveryv1.EndpointPort{
+					{
+						Name:     &portName,
+						Protocol: &portProtocol,
+						Port:     &portNumber,
+					},
+				},
+				Endpoints: []discoveryv1.Endpoint{
+					{
+						Addresses: []string{"172.16.0.1"},
+						Conditions: discoveryv1.EndpointConditions{
+							Ready: &ready,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	clusters := sb.makeClusters(svc, epSlices, sets.New("https"))
+	if len(clusters) != 1 {
+		t.Fatalf("expected exactly one cluster, got %d", len(clusters))
+	}
+
+	cluster, ok := clusters[0].(*envoyclusterv3.Cluster)
+	if !ok {
+		t.Fatalf("expected cluster resource type %T, got %T", &envoyclusterv3.Cluster{}, clusters[0])
+	}
+	if cluster.GetUpstreamConnectionOptions() != nil {
+		t.Fatalf("expected cluster upstream tcp keepalive to be unset when not configured")
+	}
+}
+
+func TestSNIListenerSetsDownstreamTCPKeepalive(t *testing.T) {
+	keepaliveTime := 5 * time.Minute
+	keepaliveInterval := 30 * time.Second
+	keepaliveProbes := 5
+	sb := &snapshotBuilder{
+		Options: Options{
+			EnvoySNIListenerPort:           6443,
+			DownstreamTCPKeepaliveTime:     keepaliveTime,
+			DownstreamTCPKeepaliveInterval: keepaliveInterval,
+			DownstreamTCPKeepaliveProbes:   keepaliveProbes,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	listener := sb.makeSNIListener()
+	assertTCPKeepalive(t, listener.GetTcpKeepalive(), uint32(keepaliveProbes), keepaliveTime, keepaliveInterval)
+}
+
+func TestTunnelingListenerSetsDownstreamTCPKeepalive(t *testing.T) {
+	keepaliveTime := 5 * time.Minute
+	keepaliveInterval := 30 * time.Second
+	keepaliveProbes := 5
+	sb := &snapshotBuilder{
+		Options: Options{
+			EnvoyTunnelingListenerPort:     8088,
+			DownstreamTCPKeepaliveTime:     keepaliveTime,
+			DownstreamTCPKeepaliveInterval: keepaliveInterval,
+			DownstreamTCPKeepaliveProbes:   keepaliveProbes,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	listener := sb.makeTunnelingListener()
+	assertTCPKeepalive(t, listener.GetTcpKeepalive(), uint32(keepaliveProbes), keepaliveTime, keepaliveInterval)
+}
+
+func TestNodePortListenerSetsDownstreamTCPKeepalive(t *testing.T) {
+	keepaliveTime := 5 * time.Minute
+	keepaliveInterval := 30 * time.Second
+	keepaliveProbes := 5
+	sb := &snapshotBuilder{
+		Options: Options{
+			DownstreamTCPKeepaliveTime:     keepaliveTime,
+			DownstreamTCPKeepaliveInterval: keepaliveInterval,
+			DownstreamTCPKeepaliveProbes:   keepaliveProbes,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	svc := test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+		WithServiceType(corev1.ServiceTypeNodePort).
+		WithServicePort("https", 443, 32000, intstr.FromString("https"), corev1.ProtocolTCP).
+		Build()
+
+	listeners, _ := sb.makeListenersForNodePortService(svc)
+	if len(listeners) != 1 {
+		t.Fatalf("expected exactly one nodeport listener, got %d", len(listeners))
+	}
+
+	listener, ok := listeners[0].(*envoylistenerv3.Listener)
+	if !ok {
+		t.Fatalf("expected listener resource type %T, got %T", &envoylistenerv3.Listener{}, listeners[0])
+	}
+
+	assertTCPKeepalive(t, listener.GetTcpKeepalive(), uint32(keepaliveProbes), keepaliveTime, keepaliveInterval)
+}
+
+func TestTCPKeepaliveSubSecondDurationsRoundUp(t *testing.T) {
+	tcpKeepalive := makeTCPKeepalive(500*time.Millisecond, 250*time.Millisecond, 3)
+
+	if tcpKeepalive == nil {
+		t.Fatalf("expected tcp keepalive settings to be configured")
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveTime().GetValue(), uint32(1); got != want {
+		t.Fatalf("unexpected keepalive time: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveInterval().GetValue(), uint32(1); got != want {
+		t.Fatalf("unexpected keepalive interval: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveProbes().GetValue(), uint32(3); got != want {
+		t.Fatalf("unexpected keepalive probes: got %d, want %d", got, want)
+	}
+}
+
+func TestSNIListenerSetsPartialDownstreamTCPKeepaliveWithoutBackfill(t *testing.T) {
+	keepaliveInterval := 45 * time.Second
+	sb := &snapshotBuilder{
+		Options: Options{
+			EnvoySNIListenerPort:           6443,
+			DownstreamTCPKeepaliveInterval: keepaliveInterval,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	listener := sb.makeSNIListener()
+	tcpKeepalive := listener.GetTcpKeepalive()
+	if tcpKeepalive == nil {
+		t.Fatalf("expected tcp keepalive settings to be configured")
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveInterval().GetValue(), uint32(keepaliveInterval/time.Second); got != want {
+		t.Fatalf("unexpected keepalive interval: got %d, want %d", got, want)
+	}
+
+	if tcpKeepalive.KeepaliveTime != nil {
+		t.Fatalf("expected keepalive time to be unset when not configured")
+	}
+
+	if tcpKeepalive.KeepaliveProbes != nil {
+		t.Fatalf("expected keepalive probes to be unset when not configured")
+	}
+}
+
+func TestClustersSetUpstreamTCPKeepalive(t *testing.T) {
+	keepaliveTime := 5 * time.Minute
+	keepaliveInterval := 30 * time.Second
+	keepaliveProbes := 5
+	svc := test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+		WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+		Build()
+
+	portName := "https"
+	portProtocol := corev1.ProtocolTCP
+	portNumber := int32(8443)
+	ready := true
+	epSlices := &discoveryv1.EndpointSliceList{
+		Items: []discoveryv1.EndpointSlice{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test",
+					Name:      "my-service-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "my-service",
+					},
+				},
+				Ports: []discoveryv1.EndpointPort{
+					{
+						Name:     &portName,
+						Protocol: &portProtocol,
+						Port:     &portNumber,
+					},
+				},
+				Endpoints: []discoveryv1.Endpoint{
+					{
+						Addresses: []string{"172.16.0.1"},
+						Conditions: discoveryv1.EndpointConditions{
+							Ready: &ready,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	sb := &snapshotBuilder{
+		Options: Options{
+			UpstreamTCPKeepaliveTime:          keepaliveTime,
+			UpstreamTCPKeepaliveProbeInterval: keepaliveInterval,
+			UpstreamTCPKeepaliveProbeAttempts: keepaliveProbes,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	clusters := sb.makeClusters(svc, epSlices, sets.New("https"))
+	if len(clusters) != 1 {
+		t.Fatalf("expected exactly one cluster, got %d", len(clusters))
+	}
+
+	cluster, ok := clusters[0].(*envoyclusterv3.Cluster)
+	if !ok {
+		t.Fatalf("expected cluster resource type %T, got %T", &envoyclusterv3.Cluster{}, clusters[0])
+	}
+
+	tcpKeepalive := cluster.GetUpstreamConnectionOptions().GetTcpKeepalive()
+	if tcpKeepalive == nil {
+		t.Fatalf("expected tcp keepalive settings to be configured")
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveProbes().GetValue(), uint32(keepaliveProbes); got != want {
+		t.Fatalf("unexpected keepalive probes: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveTime().GetValue(), uint32(keepaliveTime/time.Second); got != want {
+		t.Fatalf("unexpected keepalive time: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveInterval().GetValue(), uint32(keepaliveInterval/time.Second); got != want {
+		t.Fatalf("unexpected keepalive interval: got %d, want %d", got, want)
+	}
+}
+
+func TestClustersSetPartialUpstreamTCPKeepaliveWithoutBackfill(t *testing.T) {
+	keepaliveProbes := 7
+	svc := test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+		WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+		Build()
+
+	portName := "https"
+	portProtocol := corev1.ProtocolTCP
+	portNumber := int32(8443)
+	ready := true
+	epSlices := &discoveryv1.EndpointSliceList{
+		Items: []discoveryv1.EndpointSlice{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test",
+					Name:      "my-service-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "my-service",
+					},
+				},
+				Ports: []discoveryv1.EndpointPort{
+					{
+						Name:     &portName,
+						Protocol: &portProtocol,
+						Port:     &portNumber,
+					},
+				},
+				Endpoints: []discoveryv1.Endpoint{
+					{
+						Addresses: []string{"172.16.0.1"},
+						Conditions: discoveryv1.EndpointConditions{
+							Ready: &ready,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	sb := &snapshotBuilder{
+		Options: Options{
+			UpstreamTCPKeepaliveProbeAttempts: keepaliveProbes,
+		},
+		log: zaptest.NewLogger(t).Sugar(),
+	}
+
+	clusters := sb.makeClusters(svc, epSlices, sets.New("https"))
+	if len(clusters) != 1 {
+		t.Fatalf("expected exactly one cluster, got %d", len(clusters))
+	}
+
+	cluster, ok := clusters[0].(*envoyclusterv3.Cluster)
+	if !ok {
+		t.Fatalf("expected cluster resource type %T, got %T", &envoyclusterv3.Cluster{}, clusters[0])
+	}
+
+	tcpKeepalive := cluster.GetUpstreamConnectionOptions().GetTcpKeepalive()
+	if tcpKeepalive == nil {
+		t.Fatalf("expected tcp keepalive settings to be configured")
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveProbes().GetValue(), uint32(keepaliveProbes); got != want {
+		t.Fatalf("unexpected keepalive probes: got %d, want %d", got, want)
+	}
+
+	if tcpKeepalive.KeepaliveTime != nil {
+		t.Fatalf("expected keepalive time to be unset when not configured")
+	}
+
+	if tcpKeepalive.KeepaliveInterval != nil {
+		t.Fatalf("expected keepalive interval to be unset when not configured")
+	}
+}
+
+func assertTCPKeepalive(t *testing.T, tcpKeepalive *envoycorev3.TcpKeepalive, probes uint32, keepaliveTime, keepaliveInterval time.Duration) {
+	t.Helper()
+
+	if tcpKeepalive == nil {
+		t.Fatalf("expected tcp keepalive settings to be configured")
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveProbes().GetValue(), probes; got != want {
+		t.Fatalf("unexpected keepalive probes: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveTime().GetValue(), uint32(keepaliveTime/time.Second); got != want {
+		t.Fatalf("unexpected keepalive time: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveInterval().GetValue(), uint32(keepaliveInterval/time.Second); got != want {
+		t.Fatalf("unexpected keepalive interval: got %d, want %d", got, want)
 	}
 }
 

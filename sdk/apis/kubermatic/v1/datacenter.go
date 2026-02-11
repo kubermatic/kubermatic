@@ -408,6 +408,41 @@ type EnvoyLoadBalancerService struct {
 type NodePortProxyComponentEnvoy struct {
 	NodeportProxyComponent `json:",inline"`
 	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
+	// ConnectionSettings configures idle timeout and TCP keepalive settings for
+	// the nodeport-proxy Envoy listeners and upstream clusters.
+	ConnectionSettings NodePortProxyEnvoyConnectionSettings `json:"connectionSettings,omitempty"`
+}
+
+type NodePortProxyEnvoyConnectionSettings struct {
+	// SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+	// downstream connections are kept open.
+	SNIListenerIdleTimeout metav1.Duration `json:"sniListenerIdleTimeout,omitempty"`
+	// TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+	// listener downstream connections are kept open.
+	TunnelingConnectionIdleTimeout metav1.Duration `json:"tunnelingConnectionIdleTimeout,omitempty"`
+	// TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+	// on the tunneling listener are kept open.
+	TunnelingStreamIdleTimeout metav1.Duration `json:"tunnelingStreamIdleTimeout,omitempty"`
+	// DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+	// keepalive probe is sent on downstream listener sockets.
+	DownstreamTCPKeepaliveTime metav1.Duration `json:"downstreamTCPKeepaliveTime,omitempty"`
+	// DownstreamTCPKeepaliveInterval configures the interval between TCP
+	// keepalive probes on downstream listener sockets.
+	DownstreamTCPKeepaliveInterval metav1.Duration `json:"downstreamTCPKeepaliveInterval,omitempty"`
+	// DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+	// probes before considering downstream listener sockets dead.
+	// +kubebuilder:validation:Minimum:=1
+	DownstreamTCPKeepaliveProbes uint32 `json:"downstreamTCPKeepaliveProbes,omitempty"`
+	// UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+	// keepalive probe is sent on upstream cluster sockets.
+	UpstreamTCPKeepaliveTime metav1.Duration `json:"upstreamTCPKeepaliveTime,omitempty"`
+	// UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+	// probes on upstream cluster sockets.
+	UpstreamTCPKeepaliveInterval metav1.Duration `json:"upstreamTCPKeepaliveInterval,omitempty"`
+	// UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+	// probes before considering upstream cluster sockets dead.
+	// +kubebuilder:validation:Minimum:=1
+	UpstreamTCPKeepaliveProbes uint32 `json:"upstreamTCPKeepaliveProbes,omitempty"`
 }
 
 type NodeportProxyComponent struct {
