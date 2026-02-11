@@ -712,31 +712,18 @@ func makeTCPKeepalive(keepaliveTime, keepaliveInterval time.Duration, keepaliveP
 	}
 
 	if keepaliveTime > 0 {
-		if seconds := durationToSecondsRoundedUp(keepaliveTime); seconds > 0 {
+		if seconds := uint32(keepaliveTime / time.Second); seconds > 0 {
 			keepalive.KeepaliveTime = wrapperspb.UInt32(seconds)
 		}
 	}
 
 	if keepaliveInterval > 0 {
-		if seconds := durationToSecondsRoundedUp(keepaliveInterval); seconds > 0 {
+		if seconds := uint32(keepaliveInterval / time.Second); seconds > 0 {
 			keepalive.KeepaliveInterval = wrapperspb.UInt32(seconds)
 		}
 	}
 
 	return keepalive
-}
-
-func durationToSecondsRoundedUp(d time.Duration) uint32 {
-	if d <= 0 {
-		return 0
-	}
-
-	seconds := d / time.Second
-	if d%time.Second != 0 {
-		seconds++
-	}
-
-	return uint32(seconds)
 }
 
 // getEndpointsFromSlices returns a slice of LbEndpoint pointers for a given
