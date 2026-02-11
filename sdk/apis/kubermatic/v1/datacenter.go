@@ -407,7 +407,11 @@ type EnvoyLoadBalancerService struct {
 }
 type NodePortProxyComponentEnvoy struct {
 	NodeportProxyComponent `json:",inline"`
-	LoadBalancerService    EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
+	// Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+	// If unset, 3 replicas are used.
+	// +kubebuilder:validation:Minimum:=1
+	Replicas            *int32                   `json:"replicas,omitempty"`
+	LoadBalancerService EnvoyLoadBalancerService `json:"loadBalancerService,omitempty"`
 	// ConnectionSettings configures idle timeout and TCP keepalive settings for
 	// the nodeport-proxy Envoy listeners and upstream clusters.
 	// Zero values keep Envoy defaults (no KKP override).
