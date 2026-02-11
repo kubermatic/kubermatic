@@ -32,6 +32,11 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+const (
+	// nope is used for invalid/dummy test values.
+	nope = "does-not-exist"
+)
+
 func roleNameToARN(roleName string) string {
 	// Follow the naming scheme localstack uses.
 	return "arn:aws:iam::000000000000:role/" + roleName
@@ -108,8 +113,20 @@ func TestEnsureRole(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
 
+	// Get test credentials from environment
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
+
+	// Get AWS account ID from credentials
+	accountID, err := GetAccountID(ctx, accessKeyID, secretAccessKey, region)
+	if err != nil {
+		t.Fatalf("failed to get AWS account ID: %v", err)
+	}
+
 	t.Run("role-does-not-exist-yet", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+		})
 		roleName := controlPlaneRoleName(cluster.Name)
 
 		policy, err := getControlPlanePolicy(cluster.Name)
@@ -119,7 +136,7 @@ func TestEnsureRole(t *testing.T) {
 
 		policies := map[string]string{controlPlanePolicyName: policy}
 
-		roleARN, err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies)
+		roleARN, err := ensureRole(context.Background(), cs.IAM, cluster, roleName, policies, accountID)
 		if err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
@@ -133,7 +150,10 @@ func TestEnsureRole(t *testing.T) {
 	})
 
 	t.Run("add-policy-to-foreign-existing-role", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+		})
 		roleName := controlPlaneRoleName(cluster.Name)
 
 		policy, err := getControlPlanePolicy(cluster.Name)
@@ -155,7 +175,7 @@ func TestEnsureRole(t *testing.T) {
 
 		// reconcile role and check if the code successfully attaches the policy
 		// to an existing role
-		if _, err := ensureRole(ctx, cs.IAM, cluster, roleName, policies); err != nil {
+		if _, err := ensureRole(ctx, cs.IAM, cluster, roleName, policies, accountID); err != nil {
 			t.Fatalf("ensureRole should have not errored, but returned %v", err)
 		}
 
@@ -168,10 +188,16 @@ func TestReconcileWorkerRole(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
 
-	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+	cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+		AccessKeyID:     nope,
+		SecretAccessKey: nope,
+	})
 	roleName := workerRoleName(cluster.Name)
 
-	if _, err := reconcileWorkerRole(ctx, cs.IAM, cluster); err != nil {
+	// Get test credentials from environment
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
+
+	if _, err := reconcileWorkerRole(ctx, cs.IAM, cluster, accessKeyID, secretAccessKey, region); err != nil {
 		t.Fatalf("reconcileWorkerRole should have not errored, but returned %v", err)
 	}
 
@@ -188,8 +214,14 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
 
+	// Get test credentials from environment
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
+
 	t.Run("no-role-yet", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+		})
 		updater := testClusterUpdater(cluster)
 
 		policy, err := getControlPlanePolicy(cluster.Name)
@@ -197,7 +229,7 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 			t.Fatalf("failed to build the control plane policy: %v", err)
 		}
 
-		cluster, err = reconcileControlPlaneRole(ctx, cs.IAM, cluster, updater)
+		cluster, err = reconcileControlPlaneRole(ctx, cs.IAM, cluster, updater, accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -214,11 +246,13 @@ func TestReconcileControlPlaneRole(t *testing.T) {
 	t.Run("role-set-but-does-not-exist", func(t *testing.T) {
 		roleName := "does-not-exist-yet-" + rand.String(10)
 		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:         nope,
+			SecretAccessKey:     nope,
 			ControlPlaneRoleARN: roleName,
 		})
 		updater := testClusterUpdater(cluster)
 
-		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater, accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -236,12 +270,18 @@ func TestDeleteRole(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
 
+	// Get test credentials from environment
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
+
 	t.Run("fully-owned-role", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+		})
 		updater := testClusterUpdater(cluster)
 
 		// reconcile to create the control plane role
-		cluster, err := reconcileControlPlaneRole(ctx, cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(ctx, cs.IAM, cluster, updater, accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -267,7 +307,11 @@ func TestDeleteRole(t *testing.T) {
 		ctx := context.Background()
 
 		roleName := "my-role-" + rand.String(10)
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{ControlPlaneRoleARN: roleName})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:         nope,
+			SecretAccessKey:     nope,
+			ControlPlaneRoleARN: roleName,
+		})
 		updater := testClusterUpdater(cluster)
 
 		// create a foreign role
@@ -281,7 +325,7 @@ func TestDeleteRole(t *testing.T) {
 		}
 
 		// reconcile the role to assign policies to it, but not the owner tag
-		cluster, err := reconcileControlPlaneRole(ctx, cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(ctx, cs.IAM, cluster, updater, accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -315,12 +359,18 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
 
+	// Get test credentials from environment
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
+
 	t.Run("fully-owned-role", func(t *testing.T) {
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:     nope,
+			SecretAccessKey: nope,
+		})
 		updater := testClusterUpdater(cluster)
 
 		// reconcile to create the control plane role
-		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater, accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}
@@ -338,7 +388,11 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 
 	t.Run("foreign-owned-role", func(t *testing.T) {
 		roleName := "my-role-" + rand.String(10)
-		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{ControlPlaneRoleARN: roleName})
+		cluster := makeCluster(&kubermaticv1.AWSCloudSpec{
+			AccessKeyID:         nope,
+			SecretAccessKey:     nope,
+			ControlPlaneRoleARN: roleName,
+		})
 		updater := testClusterUpdater(cluster)
 
 		// create a foreign role
@@ -352,7 +406,7 @@ func TestCleanUpControlPlaneRole(t *testing.T) {
 		}
 
 		// reconcile the role to assign policies to it, but not the owner tag
-		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater)
+		cluster, err := reconcileControlPlaneRole(context.Background(), cs.IAM, cluster, updater, accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileControlPlaneRole should have not errored, but returned %v", err)
 		}

@@ -116,6 +116,7 @@ func profileHasRole(profile *iamtypes.InstanceProfile, roleName string) bool {
 func TestReconcileWorkerInstanceProfile(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -128,7 +129,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster), accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -159,7 +160,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 		})
 
 		// this will create a new profile that is owned by us
-		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster), accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -204,7 +205,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 		// this should create neither a profile nor a role, we rely entirely on the pre-existing stuff,
 		// no matter how broken it might be (it's the user's responsibility if they make us use their
 		// profile)
-		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster), accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -232,6 +233,7 @@ func TestReconcileWorkerInstanceProfile(t *testing.T) {
 func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 	ctx := context.Background()
 	cs := getTestClientSet(ctx, t)
+	accessKeyID, secretAccessKey, region := getTestCredentials(t)
 
 	defaultVPC, err := getDefaultVPC(ctx, cs.EC2)
 	if err != nil {
@@ -244,7 +246,7 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster), accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}
@@ -271,7 +273,7 @@ func TestCleanUpWorkerInstanceProfile(t *testing.T) {
 			VPCID: defaultVPCID,
 		})
 
-		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster))
+		cluster, err = reconcileWorkerInstanceProfile(ctx, cs.IAM, cluster, testClusterUpdater(cluster), accessKeyID, secretAccessKey, region)
 		if err != nil {
 			t.Fatalf("reconcileWorkerInstanceProfile should not have errored, but returned %v", err)
 		}

@@ -47,6 +47,11 @@ func prometheusClusterRole() reconciling.NamedClusterRoleReconcilerFactory {
 				},
 				{
 					Verbs:     []string{"get", "list", "watch"},
+					APIGroups: []string{"discovery.k8s.io"},
+					Resources: []string{"endpointslices"},
+				},
+				{
+					Verbs:     []string{"get", "list", "watch"},
 					APIGroups: []string{"extensions", "networking.k8s.io"},
 					Resources: []string{"ingresses", "ingresses/status"},
 				},

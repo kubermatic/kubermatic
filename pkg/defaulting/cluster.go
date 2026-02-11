@@ -46,7 +46,15 @@ import (
 // This function assumes that the KubermaticConfiguration has already been defaulted
 // (as the KubermaticConfigurationGetter does that automatically), but the Seed
 // does not yet need to be defaulted (to the values of the KubermaticConfiguration).
-func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, template *kubermaticv1.ClusterTemplate, seed *kubermaticv1.Seed, config *kubermaticv1.KubermaticConfiguration, cloudProvider provider.CloudProvider) error {
+func DefaultClusterSpec(
+	ctx context.Context,
+	spec *kubermaticv1.ClusterSpec,
+	clusterAnnotations map[string]string,
+	template *kubermaticv1.ClusterTemplate,
+	seed *kubermaticv1.Seed,
+	config *kubermaticv1.KubermaticConfiguration,
+	cloudProvider provider.CloudProvider,
+) error {
 	var err error
 
 	// Apply default values to the Seed, just in case.
@@ -95,23 +103,25 @@ func DefaultClusterSpec(ctx context.Context, spec *kubermaticv1.ClusterSpec, tem
 		return fieldErr
 	}
 
-	// Set the audit logging settings
-	if seed.Spec.AuditLogging != nil {
-		spec.AuditLogging = new(kubermaticv1.AuditLoggingSettings)
-		(*seed.Spec.AuditLogging).DeepCopyInto(spec.AuditLogging)
-	}
-
-	// Enforce audit logging
-	if datacenter.Spec.EnforceAuditLogging {
-		if spec.AuditLogging == nil {
-			spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
+	// Set the audit logging settings (skip if cluster has opt-out annotation)
+	if clusterAnnotations[kubermaticv1.SkipAuditLoggingEnforcementAnnotation] != "true" {
+		if seed.Spec.AuditLogging != nil {
+			spec.AuditLogging = new(kubermaticv1.AuditLoggingSettings)
+			(*seed.Spec.AuditLogging).DeepCopyInto(spec.AuditLogging)
 		}
-		spec.AuditLogging.Enabled = true
-	}
 
-	// Enforce audit webhook backend
-	if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
-		spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
+		// Enforce audit logging
+		if datacenter.Spec.EnforceAuditLogging {
+			if spec.AuditLogging == nil {
+				spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{}
+			}
+			spec.AuditLogging.Enabled = true
+		}
+
+		// Enforce audit webhook backend
+		if datacenter.Spec.EnforcedAuditWebhookSettings != nil {
+			spec.AuditLogging.WebhookBackend = datacenter.Spec.EnforcedAuditWebhookSettings
+		}
 	}
 
 	// Enforce PodSecurityPolicy
