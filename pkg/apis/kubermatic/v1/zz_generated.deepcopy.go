@@ -5323,6 +5323,11 @@ func (in *NetworkRanges) DeepCopy() *NetworkRanges {
 func (in *NodePortProxyComponentEnvoy) DeepCopyInto(out *NodePortProxyComponentEnvoy) {
 	*out = *in
 	in.NodeportProxyComponent.DeepCopyInto(&out.NodeportProxyComponent)
+	if in.Replicas != nil {
+		in, out := &in.Replicas, &out.Replicas
+		*out = new(int32)
+		**out = **in
+	}
 	in.LoadBalancerService.DeepCopyInto(&out.LoadBalancerService)
 }
 
