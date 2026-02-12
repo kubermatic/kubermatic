@@ -1251,6 +1251,7 @@ spec:
                                 description: |-
                                   Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
                                   Defaults to false.
+
                                   Deprecated: Use .kubevirt.usePodResourcesCPU instead.
                                 type: boolean
                               enableDefaultNetworkPolicies:
@@ -3543,6 +3544,7 @@ spec:
                       description: |-
                         Annotations are used to further tweak the LoadBalancer integration with the
                         cloud provider where the seed cluster is running.
+
                         Deprecated: Use .envoy.loadBalancerService.annotations instead.
                       type: object
                     disable:

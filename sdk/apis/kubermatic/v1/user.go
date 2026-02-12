@@ -68,6 +68,7 @@ type UserStatus struct {
 // UserSpec specifies a user.
 type UserSpec struct {
 	// ID is an unused legacy field.
+	//
 	// Deprecated: do not set this field anymore.
 	ID string `json:"id,omitempty"`
 	// Name is the full name of this user.

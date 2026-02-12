@@ -67,6 +67,7 @@ type SettingSpec struct {
 	// +kubebuilder:default=false
 
 	// EnableWebTerminal enables the Web Terminal feature for the user clusters.
+	//
 	// Deprecated: EnableWebTerminal is deprecated and should be removed in KKP 2.27+. Please use webTerminalOptions instead. When webTerminalOptions.enabled is set then this field will be ignored.
 	EnableWebTerminal bool `json:"enableWebTerminal,omitempty"`
 
