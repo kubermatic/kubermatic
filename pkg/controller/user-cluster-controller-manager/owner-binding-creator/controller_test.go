@@ -28,7 +28,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 			r := &reconciler{
 				log:        kubermaticlog.Logger,
 				client:     client,
-				recorder:   record.NewFakeRecorder(10),
+				recorder:   events.NewFakeRecorder(10),
 				ownerEmail: tc.ownerEmail,
 				clusterIsPaused: func(c context.Context) (bool, error) {
 					return false, nil

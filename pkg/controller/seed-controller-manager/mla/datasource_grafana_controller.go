@@ -38,7 +38,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -59,7 +59,7 @@ type datasourceGrafanaReconciler struct {
 
 	log                         *zap.SugaredLogger
 	workerName                  string
-	recorder                    record.EventRecorder
+	recorder                    events.EventRecorder
 	versions                    kubermatic.Versions
 	datasourceGrafanaController *datasourceGrafanaController
 }
@@ -80,7 +80,7 @@ func newDatasourceGrafanaReconciler(
 
 		log:                         log.Named(subname),
 		workerName:                  workerName,
-		recorder:                    mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:                    mgr.GetEventRecorder(controllerName(subname)),
 		versions:                    versions,
 		datasourceGrafanaController: datasourceGrafanaController,
 	}
@@ -134,7 +134,7 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err

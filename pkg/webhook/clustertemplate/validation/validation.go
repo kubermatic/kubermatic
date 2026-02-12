@@ -29,13 +29,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.ClusterTemplate] = &validator{}
 
 // validator for validating Kubermatic ClusterTemplate CRs.
 type validator struct {
@@ -61,24 +60,19 @@ func NewValidator(client ctrlruntimeclient.Client, seedGetter provider.SeedGette
 	}
 }
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	return nil, v.validate(ctx, obj)
+func (v *validator) ValidateCreate(ctx context.Context, template *kubermaticv1.ClusterTemplate) (admission.Warnings, error) {
+	return nil, v.validate(ctx, template)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *kubermaticv1.ClusterTemplate) (admission.Warnings, error) {
 	return nil, v.validate(ctx, newObj)
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *kubermaticv1.ClusterTemplate) (admission.Warnings, error) {
 	return nil, nil
 }
 
-func (v *validator) validate(ctx context.Context, obj runtime.Object) error {
-	template, ok := obj.(*kubermaticv1.ClusterTemplate)
-	if !ok {
-		return errors.New("object is not a ClusterTemplate")
-	}
-
+func (v *validator) validate(ctx context.Context, template *kubermaticv1.ClusterTemplate) error {
 	var errs field.ErrorList
 	datacenter, seed, cloudProvider, err := v.buildValidationDependencies(ctx, &template.Spec)
 	if err != nil {

@@ -140,7 +140,7 @@ func main() {
 		log.Fatalw("Failed to create seed validator", zap.Error(err))
 	}
 
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.Seed{}).WithCustomValidator(seedValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.Seed{}).WithValidator(seedValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup seed validation webhook", zap.Error(err))
 	}
 
@@ -148,7 +148,7 @@ func main() {
 	// setup KubermaticConfiguration webhooks
 
 	configValidator := kubermaticconfigurationvalidation.NewValidator()
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.KubermaticConfiguration{}).WithCustomValidator(configValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.KubermaticConfiguration{}).WithValidator(configValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup KubermaticConfiguration validation webhook", zap.Error(err))
 	}
 
@@ -157,7 +157,7 @@ func main() {
 
 	// validation webhook can already use ctrl-runtime boilerplate
 	clusterValidator := clustervalidation.NewValidator(mgr.GetClient(), seedGetter, configGetter, options.featureGates, caPool)
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.Cluster{}).WithCustomValidator(clusterValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.Cluster{}).WithValidator(clusterValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
 	}
 
@@ -173,7 +173,7 @@ func main() {
 	// setup ClusterTemplate webhooks
 
 	clusterTemplateValidator := clustertemplatevalidation.NewValidator(mgr.GetClient(), seedGetter, seedClientGetter, configGetter, options.featureGates, caPool)
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.ClusterTemplate{}).WithCustomValidator(clusterTemplateValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.ClusterTemplate{}).WithValidator(clusterTemplateValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup cluster validation webhook", zap.Error(err))
 	}
 
@@ -191,7 +191,7 @@ func main() {
 	// setup User webhooks
 
 	userValidator := uservalidation.NewValidator(mgr.GetClient(), seedsGetter, seedClientGetter)
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.User{}).WithCustomValidator(userValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.User{}).WithValidator(userValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup user validation webhook", zap.Error(err))
 	}
 
@@ -199,7 +199,7 @@ func main() {
 	// setup Resource Quota webhooks
 
 	quotaValidator := resourcequotavalidation.NewValidator(mgr.GetClient())
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.ResourceQuota{}).WithCustomValidator(quotaValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.ResourceQuota{}).WithValidator(quotaValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup resource quota validation webhook", zap.Error(err))
 	}
 
@@ -209,7 +209,7 @@ func main() {
 	usersshkeymutation.NewAdmissionHandler(log, mgr.GetScheme(), mgr.GetClient()).SetupWebhookWithManager(mgr)
 
 	userSSHKeyValidator := usersshkeyvalidation.NewValidator(mgr.GetClient())
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.UserSSHKey{}).WithCustomValidator(userSSHKeyValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.UserSSHKey{}).WithValidator(userSSHKeyValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup user SSH key validation webhook", zap.Error(err))
 	}
 
@@ -226,7 +226,7 @@ func main() {
 	// setup IPAMPool webhook
 
 	ipamPoolValidator := ipampoolvalidation.NewValidator(seedGetter, seedClientGetter)
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.IPAMPool{}).WithCustomValidator(ipamPoolValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.IPAMPool{}).WithValidator(ipamPoolValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup IPAMPool validation webhook", zap.Error(err))
 	}
 
@@ -234,7 +234,7 @@ func main() {
 	// setup GroupProjectBinding webhook
 
 	groupProjectBindingValidator := groupprojectbinding.NewValidator()
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.GroupProjectBinding{}).WithCustomValidator(groupProjectBindingValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.GroupProjectBinding{}).WithValidator(groupProjectBindingValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup GroupProjectBinding validation webhook", zap.Error(err))
 	}
 
@@ -242,7 +242,7 @@ func main() {
 	// setup PolicyTemplate webhook
 
 	policyTemplateValidator := policytemplatevalidation.NewValidator(mgr.GetClient())
-	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.PolicyTemplate{}).WithCustomValidator(policyTemplateValidator).Complete(); err != nil {
+	if err := builder.WebhookManagedBy(mgr, &kubermaticv1.PolicyTemplate{}).WithValidator(policyTemplateValidator).Complete(); err != nil {
 		log.Fatalw("Failed to setup PolicyTemplate validation webhook", zap.Error(err))
 	}
 

@@ -38,7 +38,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -95,7 +95,7 @@ func TestSync(t *testing.T) {
 	rec := reconciler{
 		masterClient: masterClient,
 		seedClients:  seedClients,
-		recorder:     &record.FakeRecorder{},
+		recorder:     &events.FakeRecorder{},
 		log:          kubermaticlog.Logger,
 	}
 

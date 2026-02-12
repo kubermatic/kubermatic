@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 			r := &reconciler{
 				log:                     kubermaticlog.Logger,
 				workerNameLabelSelector: workerSelector,
-				recorder:                &record.FakeRecorder{},
+				recorder:                &events.FakeRecorder{},
 				seedGetter:              seedGetter,
 				seedClient:              seedClient,
 			}

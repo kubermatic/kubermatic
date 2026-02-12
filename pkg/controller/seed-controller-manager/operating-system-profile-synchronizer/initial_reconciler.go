@@ -31,7 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -54,7 +54,7 @@ type clusterInitReconciler struct {
 	seedClient                    ctrlruntimeclient.Client
 	log                           *zap.SugaredLogger
 	namespace                     string
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	userClusterConnectionProvider UserClusterClientProvider
 }
 
@@ -70,7 +70,7 @@ func addClusterInitReconciler(
 
 	reconciler := &clusterInitReconciler{
 		seedClient:                    seedMgr.GetClient(),
-		recorder:                      seedMgr.GetEventRecorderFor(controllerName),
+		recorder:                      seedMgr.GetEventRecorder(controllerName),
 		log:                           log.Named(controllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		namespace:                     namespace,
@@ -127,7 +127,7 @@ func (r *clusterInitReconciler) Reconcile(ctx context.Context, request reconcile
 
 	err := r.reconcile(ctx, cluster)
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	// If the reconciling failed, we return an error here, which will make controller-runtime

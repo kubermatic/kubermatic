@@ -18,13 +18,11 @@ package validation
 
 import (
 	"context"
-	"errors"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/webhook/util"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -42,14 +40,9 @@ func NewValidator(client ctrlruntimeclient.Client) *validator {
 	}
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.UserSSHKey] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	key, ok := obj.(*kubermaticv1.UserSSHKey)
-	if !ok {
-		return nil, errors.New("object is not a UserSSHKey")
-	}
-
+func (v *validator) ValidateCreate(ctx context.Context, key *kubermaticv1.UserSSHKey) (admission.Warnings, error) {
 	errs := validation.ValidateUserSSHKeyCreate(key)
 
 	if err := v.validateProjectRelationship(ctx, key, nil); err != nil {
@@ -59,17 +52,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	oldKey, ok := oldObj.(*kubermaticv1.UserSSHKey)
-	if !ok {
-		return nil, errors.New("old object is not a UserSSHKey")
-	}
-
-	newKey, ok := newObj.(*kubermaticv1.UserSSHKey)
-	if !ok {
-		return nil, errors.New("new object is not a UserSSHKey")
-	}
-
+func (v *validator) ValidateUpdate(ctx context.Context, oldKey, newKey *kubermaticv1.UserSSHKey) (admission.Warnings, error) {
 	errs := validation.ValidateUserSSHKeyUpdate(oldKey, newKey)
 
 	if err := v.validateProjectRelationship(ctx, newKey, oldKey); err != nil {
@@ -79,7 +62,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *kubermaticv1.UserSSHKey) (admission.Warnings, error) {
 	return nil, nil
 }
 

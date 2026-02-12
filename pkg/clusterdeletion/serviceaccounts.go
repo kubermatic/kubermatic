@@ -48,7 +48,7 @@ func (d *Deletion) cleanupServiceAccounts(ctx context.Context, cluster *kubermat
 	}
 
 	if err == nil {
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ServiceAccountCleanup", "Deleted ServiceAccount %s from namespace %s", saName, metav1.NamespaceSystem)
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ServiceAccountCleanup", "Reconciling", "Deleted ServiceAccount %s from namespace %s", saName, metav1.NamespaceSystem)
 	}
 
 	return nil

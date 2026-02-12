@@ -38,7 +38,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -231,7 +231,7 @@ func TestReconcile(t *testing.T) {
 				seedClient:  seedClient,
 				userClient:  userClient,
 				log:         log,
-				recorder:    &record.FakeRecorder{},
+				recorder:    &events.FakeRecorder{},
 				namespace:   testClusterNamespace,
 				clusterName: testClusterName,
 				clusterIsPaused: func(ctx context.Context) (bool, error) {

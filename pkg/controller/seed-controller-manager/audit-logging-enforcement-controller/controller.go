@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -50,7 +50,7 @@ const (
 type reconciler struct {
 	log                     *zap.SugaredLogger
 	workerNameLabelSelector labels.Selector
-	recorder                record.EventRecorder
+	recorder                events.EventRecorder
 	seedGetter              provider.SeedGetter
 	seedClient              ctrlruntimeclient.Client
 }
@@ -71,7 +71,7 @@ func Add(
 	reconciler := &reconciler{
 		log:                     log.Named(ControllerName),
 		workerNameLabelSelector: workerSelector,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
+		recorder:                mgr.GetEventRecorder(ControllerName),
 		seedGetter:              seedGetter,
 		seedClient:              mgr.GetClient(),
 	}
@@ -320,7 +320,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err := r.reconcile(ctx, cluster, log)
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "AuditLoggingEnforcementError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "AuditLoggingEnforcementError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err
@@ -405,10 +405,10 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	if datacenter.Spec.EnforceAuditLogging {
-		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AuditLoggingEnforced",
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "AuditLoggingEnforced", "Reconciling",
 			"Audit logging configuration enforced from seed %s", seed.Name)
 	} else {
-		r.recorder.Eventf(cluster, corev1.EventTypeNormal, "AuditLoggingDisabled",
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "AuditLoggingDisabled", "Reconciling",
 			"Audit logging disabled as enforcement is disabled for datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 

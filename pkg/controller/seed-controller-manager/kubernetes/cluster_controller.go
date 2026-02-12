@@ -47,7 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -85,7 +85,7 @@ type Reconciler struct {
 	seedGetter   provider.SeedGetter
 	configGetter provider.KubermaticConfigurationGetter
 
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 
 	overwriteRegistry                string
 	nodeAccessNetwork                string
@@ -150,7 +150,7 @@ func Add(
 		userClusterConnProvider: userClusterConnProvider,
 		workerName:              workerName,
 
-		recorder: mgr.GetEventRecorderFor(ControllerName),
+		recorder: mgr.GetEventRecorder(ControllerName),
 
 		overwriteRegistry:                overwriteRegistry,
 		nodeAccessNetwork:                nodeAccessNetwork,
@@ -286,7 +286,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	// no need to log the error, controller-runtime does it for us
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err
