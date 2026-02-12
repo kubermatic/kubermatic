@@ -40,6 +40,7 @@ const (
 	ServiceAccountName    = "nodeport-proxy"
 	EnvoyDeploymentName   = "nodeport-proxy-envoy"
 	UpdaterDeploymentName = "nodeport-proxy-updater"
+	DefaultEnvoyReplicas  = int32(3)
 	EnvoyPort             = 8002
 	EnvoySNIPort          = 6443
 	EnvoyTunnelingPort    = 8088
@@ -48,7 +49,11 @@ const (
 func EnvoyDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, seed *kubermaticv1.Seed, supportsFailureDomainZoneAntiAffinity bool, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return EnvoyDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.Spec.Replicas = ptr.To[int32](3)
+			replicas := DefaultEnvoyReplicas
+			if seed.Spec.NodeportProxy.Envoy.Replicas != nil {
+				replicas = *seed.Spec.NodeportProxy.Envoy.Replicas
+			}
+			d.Spec.Replicas = ptr.To(replicas)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					common.NameLabel: EnvoyDeploymentName,
