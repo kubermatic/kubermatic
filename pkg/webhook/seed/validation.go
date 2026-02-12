@@ -23,6 +23,7 @@ import (
 	"net"
 	"regexp"
 	"sync"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1/helper"
@@ -189,6 +190,10 @@ func (v *validator) validate(ctx context.Context, obj runtime.Object, isDelete b
 		return err
 	}
 
+	if err := validateNodePortProxyEnvoyConnectionSettings(subject); err != nil {
+		return err
+	}
+
 	if err := validateEtcdBackupConfiguration(ctx, seedClient, subject); err != nil {
 		return err
 	}
@@ -208,6 +213,56 @@ func validateDefaultAPIServerAllowedIPRanges(ctx context.Context, seed *kubermat
 			}
 		}
 	}
+	return nil
+}
+
+func validateNodePortProxyEnvoyConnectionSettings(seed *kubermaticv1.Seed) error {
+	settings := seed.Spec.NodeportProxy.Envoy.ConnectionSettings
+
+	durationFields := []struct {
+		field string
+		value time.Duration
+	}{
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.sniListenerIdleTimeout",
+			value: settings.SNIListenerIdleTimeout.Duration,
+		},
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.tunnelingConnectionIdleTimeout",
+			value: settings.TunnelingConnectionIdleTimeout.Duration,
+		},
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.tunnelingStreamIdleTimeout",
+			value: settings.TunnelingStreamIdleTimeout.Duration,
+		},
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.downstreamTCPKeepaliveTime",
+			value: settings.DownstreamTCPKeepaliveTime.Duration,
+		},
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.downstreamTCPKeepaliveInterval",
+			value: settings.DownstreamTCPKeepaliveInterval.Duration,
+		},
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.upstreamTCPKeepaliveTime",
+			value: settings.UpstreamTCPKeepaliveTime.Duration,
+		},
+		{
+			field: "spec.nodeportProxy.envoy.connectionSettings.upstreamTCPKeepaliveInterval",
+			value: settings.UpstreamTCPKeepaliveInterval.Duration,
+		},
+	}
+
+	for _, d := range durationFields {
+		if d.value < 0 {
+			return fmt.Errorf("%s must be >= 0", d.field)
+		}
+
+		if d.value > 0 && d.value < time.Second {
+			return fmt.Errorf("%s must be 0 or >= 1s", d.field)
+		}
+	}
+
 	return nil
 }
 
