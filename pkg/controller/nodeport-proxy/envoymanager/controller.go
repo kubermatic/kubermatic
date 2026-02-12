@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
@@ -64,6 +65,38 @@ type Options struct {
 	// When the value is less or equal than 0 the HTTP/2 CONNECT Listener is
 	// disabled and won't be configured in Envoy.
 	EnvoyTunnelingListenerPort int
+
+	// The following connection settings are optional Envoy overrides.
+	// Zero values leave the corresponding Envoy fields unset.
+	// SNIListenerIdleTimeout bounds how long inactive SNI listener downstream
+	// TCP connections are kept open.
+	SNIListenerIdleTimeout time.Duration
+	// TunnelingConnectionIdleTimeout bounds how long inactive tunneling
+	// listener downstream connections are kept open.
+	TunnelingConnectionIdleTimeout time.Duration
+	// TunnelingConnectionStreamTimeout bounds how long inactive HTTP/2 CONNECT
+	// streams on the tunneling listener are kept open.
+	TunnelingConnectionStreamTimeout time.Duration
+
+	// DownstreamTCPKeepaliveTime configures idle time before downstream
+	// listener sockets send TCP keepalive probes.
+	DownstreamTCPKeepaliveTime time.Duration
+	// DownstreamTCPKeepaliveInterval configures interval between downstream
+	// listener keepalive probes.
+	DownstreamTCPKeepaliveInterval time.Duration
+	// DownstreamTCPKeepaliveProbes configures how many unanswered downstream
+	// keepalive probes are allowed before the socket is considered dead.
+	DownstreamTCPKeepaliveProbes int
+
+	// UpstreamTCPKeepaliveTime configures idle time before upstream cluster
+	// sockets send TCP keepalive probes.
+	UpstreamTCPKeepaliveTime time.Duration
+	// UpstreamTCPKeepaliveProbeInterval configures interval between upstream
+	// keepalive probes.
+	UpstreamTCPKeepaliveProbeInterval time.Duration
+	// UpstreamTCPKeepaliveProbeAttempts configures how many unanswered upstream
+	// keepalive probes are allowed before the socket is considered dead.
+	UpstreamTCPKeepaliveProbeAttempts int
 }
 
 func (o Options) IsSNIEnabled() bool {
@@ -72,6 +105,70 @@ func (o Options) IsSNIEnabled() bool {
 
 func (o Options) IsTunnelingEnabled() bool {
 	return o.EnvoyTunnelingListenerPort > 0
+}
+
+func (o Options) HasSNIListenerIdleTimeout() bool {
+	return o.SNIListenerIdleTimeout > 0
+}
+
+func (o Options) GetSNIListenerIdleTimeout() time.Duration {
+	return o.SNIListenerIdleTimeout
+}
+
+func (o Options) HasTunnelingConnectionIdleTimeout() bool {
+	return o.TunnelingConnectionIdleTimeout > 0
+}
+
+func (o Options) GetTunnelingConnectionIdleTimeout() time.Duration {
+	return o.TunnelingConnectionIdleTimeout
+}
+
+func (o Options) HasTunnelingConnectionStreamTimeout() bool {
+	return o.TunnelingConnectionStreamTimeout > 0
+}
+
+func (o Options) GetTunnelingConnectionStreamTimeout() time.Duration {
+	return o.TunnelingConnectionStreamTimeout
+}
+
+func (o Options) HasDownstreamTCPKeepalive() bool {
+	return o.DownstreamTCPKeepaliveTime > 0 || o.DownstreamTCPKeepaliveInterval > 0 || o.DownstreamTCPKeepaliveProbes > 0
+}
+
+func (o Options) GetDownstreamTCPKeepaliveTime() time.Duration {
+	return o.DownstreamTCPKeepaliveTime
+}
+
+func (o Options) GetDownstreamTCPKeepaliveInterval() time.Duration {
+	return o.DownstreamTCPKeepaliveInterval
+}
+
+func (o Options) GetDownstreamTCPKeepaliveProbes() uint32 {
+	if o.DownstreamTCPKeepaliveProbes <= 0 {
+		return 0
+	}
+
+	return uint32(o.DownstreamTCPKeepaliveProbes)
+}
+
+func (o Options) HasUpstreamTCPKeepalive() bool {
+	return o.UpstreamTCPKeepaliveTime > 0 || o.UpstreamTCPKeepaliveProbeInterval > 0 || o.UpstreamTCPKeepaliveProbeAttempts > 0
+}
+
+func (o Options) GetUpstreamTCPKeepaliveTime() time.Duration {
+	return o.UpstreamTCPKeepaliveTime
+}
+
+func (o Options) GetUpstreamTCPKeepaliveProbeInterval() time.Duration {
+	return o.UpstreamTCPKeepaliveProbeInterval
+}
+
+func (o Options) GetUpstreamTCPKeepaliveProbeAttempts() uint32 {
+	if o.UpstreamTCPKeepaliveProbeAttempts <= 0 {
+		return 0
+	}
+
+	return uint32(o.UpstreamTCPKeepaliveProbeAttempts)
 }
 
 // NewReconciler returns a new Reconciler or an error if something goes wrong

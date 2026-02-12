@@ -54,7 +54,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const clusterConnectTimeout = 1 * time.Second
+const (
+	clusterConnectTimeout = 1 * time.Second
+)
 
 const (
 	UpgradeType = "CONNECT"
@@ -165,7 +167,7 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 
 	svcLog.Debugw("creating sni filter chains", "portHostMapping", m)
 	// Besides the filter chains returns the ports that are exposed.
-	return makeSNIFilterChains(svc, m), ports
+	return makeSNIFilterChains(svc, m, sb.GetSNIListenerIdleTimeout()), ports
 }
 
 // build returns a new Snapshot from the resources derived by the Services
@@ -207,7 +209,7 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	return accessLog
 }
 
-func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylistenerv3.FilterChain {
+func makeSNIFilterChains(service *corev1.Service, p portHostMapping, idleTimeout time.Duration) []*envoylistenerv3.FilterChain {
 	var sniFilterChains []*envoylistenerv3.FilterChain
 
 	serviceKey := ServiceKey(service)
@@ -221,6 +223,9 @@ func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylis
 					Cluster: servicePortKey,
 				},
 				AccessLog: makeAccessLog(),
+			}
+			if idleTimeout > 0 {
+				tcpProxyConfig.IdleTimeout = durationpb.New(idleTimeout)
 			}
 
 			tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
@@ -280,6 +285,13 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 			},
 		},
 		FilterChains: fcs,
+	}
+	if sb.HasDownstreamTCPKeepalive() {
+		sniListener.TcpKeepalive = makeTCPKeepalive(
+			sb.GetDownstreamTCPKeepaliveTime(),
+			sb.GetDownstreamTCPKeepaliveInterval(),
+			sb.GetDownstreamTCPKeepaliveProbes(),
+		)
 	}
 	return sniListener
 }
@@ -370,6 +382,14 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 			},
 		},
 	}
+	if sb.HasTunnelingConnectionIdleTimeout() {
+		hcm.CommonHttpProtocolOptions = &envoycorev3.HttpProtocolOptions{
+			IdleTimeout: durationpb.New(sb.GetTunnelingConnectionIdleTimeout()),
+		}
+	}
+	if sb.HasTunnelingConnectionStreamTimeout() {
+		hcm.StreamIdleTimeout = durationpb.New(sb.GetTunnelingConnectionStreamTimeout())
+	}
 	httpManagerConfigMarshalled, err := anypb.New(hcm)
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal HTTP Connection Manager: %w", err))
@@ -402,6 +422,13 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 				},
 			},
 		},
+	}
+	if sb.HasDownstreamTCPKeepalive() {
+		tunnelingListener.TcpKeepalive = makeTCPKeepalive(
+			sb.GetDownstreamTCPKeepaliveTime(),
+			sb.GetDownstreamTCPKeepaliveInterval(),
+			sb.GetDownstreamTCPKeepaliveProbes(),
+		)
 	}
 	return tunnelingListener
 }
@@ -438,6 +465,15 @@ func (sb *snapshotBuilder) makeClusters(service *corev1.Service, epSlices *disco
 					},
 				},
 			},
+		}
+		if sb.HasUpstreamTCPKeepalive() {
+			cluster.UpstreamConnectionOptions = &envoyclusterv3.UpstreamConnectionOptions{
+				TcpKeepalive: makeTCPKeepalive(
+					sb.GetUpstreamTCPKeepaliveTime(),
+					sb.GetUpstreamTCPKeepaliveProbeInterval(),
+					sb.GetUpstreamTCPKeepaliveProbeAttempts(),
+				),
+			}
 		}
 		clusters = append(clusters, cluster)
 	}
@@ -494,6 +530,13 @@ func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servi
 					},
 				},
 			},
+		}
+		if sb.HasDownstreamTCPKeepalive() {
+			listener.TcpKeepalive = makeTCPKeepalive(
+				sb.GetDownstreamTCPKeepaliveTime(),
+				sb.GetDownstreamTCPKeepaliveInterval(),
+				sb.GetDownstreamTCPKeepaliveProbes(),
+			)
 		}
 		listeners = append(listeners, listener)
 	}
@@ -659,6 +702,28 @@ func hasReadyEndpoints(epSlices *discoveryv1.EndpointSliceList) bool {
 		}
 	}
 	return false
+}
+
+func makeTCPKeepalive(keepaliveTime, keepaliveInterval time.Duration, keepaliveProbes uint32) *envoycorev3.TcpKeepalive {
+	keepalive := &envoycorev3.TcpKeepalive{}
+
+	if keepaliveProbes > 0 {
+		keepalive.KeepaliveProbes = wrapperspb.UInt32(keepaliveProbes)
+	}
+
+	if keepaliveTime > 0 {
+		if seconds := uint32(keepaliveTime / time.Second); seconds > 0 {
+			keepalive.KeepaliveTime = wrapperspb.UInt32(seconds)
+		}
+	}
+
+	if keepaliveInterval > 0 {
+		if seconds := uint32(keepaliveInterval / time.Second); seconds > 0 {
+			keepalive.KeepaliveInterval = wrapperspb.UInt32(seconds)
+		}
+	}
+
+	return keepalive
 }
 
 // getEndpointsFromSlices returns a slice of LbEndpoint pointers for a given
