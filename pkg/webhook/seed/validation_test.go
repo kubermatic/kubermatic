@@ -18,8 +18,10 @@ package seed
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd"
@@ -603,6 +605,74 @@ func TestValidateDefaultAPIServerAllowedIPRanges(t *testing.T) {
 			}
 			if !tc.errExpected && err != nil {
 				t.Errorf("Unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestValidateNodePortProxyEnvoyConnectionSettings(t *testing.T) {
+	testCases := []struct {
+		name      string
+		settings  kubermaticv1.NodePortProxyEnvoyConnectionSettings
+		wantError string
+	}{
+		{
+			name: "accepts zero values",
+		},
+		{
+			name: "accepts second-granularity values",
+			settings: kubermaticv1.NodePortProxyEnvoyConnectionSettings{
+				SNIListenerIdleTimeout:         metav1.Duration{Duration: 15 * time.Minute},
+				TunnelingConnectionIdleTimeout: metav1.Duration{Duration: 15 * time.Minute},
+				TunnelingStreamIdleTimeout:     metav1.Duration{Duration: 5 * time.Minute},
+				DownstreamTCPKeepaliveTime:     metav1.Duration{Duration: 5 * time.Minute},
+				DownstreamTCPKeepaliveInterval: metav1.Duration{Duration: 30 * time.Second},
+				DownstreamTCPKeepaliveProbes:   5,
+				UpstreamTCPKeepaliveTime:       metav1.Duration{Duration: 5 * time.Minute},
+				UpstreamTCPKeepaliveInterval:   metav1.Duration{Duration: 30 * time.Second},
+				UpstreamTCPKeepaliveProbes:     5,
+			},
+		},
+		{
+			name: "rejects negative duration",
+			settings: kubermaticv1.NodePortProxyEnvoyConnectionSettings{
+				SNIListenerIdleTimeout: metav1.Duration{Duration: -1 * time.Second},
+			},
+			wantError: "sniListenerIdleTimeout",
+		},
+		{
+			name: "rejects sub-second duration",
+			settings: kubermaticv1.NodePortProxyEnvoyConnectionSettings{
+				DownstreamTCPKeepaliveInterval: metav1.Duration{Duration: 500 * time.Millisecond},
+			},
+			wantError: "downstreamTCPKeepaliveInterval",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			seed := &kubermaticv1.Seed{
+				Spec: kubermaticv1.SeedSpec{
+					NodeportProxy: kubermaticv1.NodeportProxyConfig{
+						Envoy: kubermaticv1.NodePortProxyComponentEnvoy{
+							ConnectionSettings: tc.settings,
+						},
+					},
+				},
+			}
+
+			err := validateNodePortProxyEnvoyConnectionSettings(seed)
+			if tc.wantError == "" && err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if tc.wantError != "" {
+				if err == nil {
+					t.Fatalf("expected an error containing %q but got nil", tc.wantError)
+				}
+				if !strings.Contains(err.Error(), tc.wantError) {
+					t.Fatalf("expected error to contain %q, got %q", tc.wantError, err.Error())
+				}
 			}
 		})
 	}
