@@ -82,26 +82,6 @@ presubmits:
             - name: KUBERMATIC_EDITION
               value: ee
 
-  - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-goproxy: "true"
-    spec:
-      containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-6
-          command:
-            - make
-            - lint
-          resources:
-            requests:
-              memory: 10Gi
-              cpu: 3
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-
   - name: pre-kubermatic-shellcheck
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
