@@ -35,7 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -59,7 +59,7 @@ type Reconciler struct {
 
 	workerNameLabelSelector       labels.Selector
 	workerName                    string
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	userClusterConnectionProvider UserClusterClientProvider
 	versions                      kubermatic.Versions
 }
@@ -82,7 +82,7 @@ func Add(
 		log:                           log.Named(ControllerName),
 		workerNameLabelSelector:       workerSelector,
 		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(ControllerName),
+		recorder:                      mgr.GetEventRecorder(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		versions:                      versions,
 	}
@@ -131,7 +131,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err
@@ -182,7 +182,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 	}
 
 	// The predicate will prevent us from reconciling this cluster again.
-	r.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterMigrated", "Cluster has been migrated from the legacy machine-controller userdata to operating-system-manager")
+	r.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ClusterMigrated", "Reconciling", "Cluster has been migrated from the legacy machine-controller userdata to operating-system-manager")
 	return nil, nil
 }
 

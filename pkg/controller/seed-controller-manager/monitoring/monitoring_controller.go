@@ -34,7 +34,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	autoscalingv1 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -67,7 +67,7 @@ type Reconciler struct {
 	userClusterConnProvider userClusterConnectionProvider
 	workerName              string
 	log                     *zap.SugaredLogger
-	recorder                record.EventRecorder
+	recorder                events.EventRecorder
 
 	seedGetter               provider.SeedGetter
 	configGetter             provider.KubermaticConfigurationGetter
@@ -106,7 +106,7 @@ func Add(
 		userClusterConnProvider: userClusterConnProvider,
 		workerName:              workerName,
 		log:                     log,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
+		recorder:                mgr.GetEventRecorder(ControllerName),
 
 		overwriteRegistry:        overwriteRegistry,
 		nodeAccessNetwork:        nodeAccessNetwork,
@@ -204,7 +204,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err

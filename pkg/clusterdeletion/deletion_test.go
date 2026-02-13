@@ -33,7 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -172,7 +172,7 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			ctx := context.Background()
 			deletion := &Deletion{
 				seedClient:              seedClient,
-				recorder:                &record.FakeRecorder{},
+				recorder:                &events.FakeRecorder{},
 				userClusterClientGetter: userClusterClientGetter,
 			}
 

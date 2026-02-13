@@ -33,7 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -52,7 +52,7 @@ const (
 type syncReconciler struct {
 	log                           *zap.SugaredLogger
 	workerName                    string
-	recorder                      record.EventRecorder
+	recorder                      events.EventRecorder
 	namespace                     string
 	seedClient                    ctrlruntimeclient.Client
 	userClusterConnectionProvider UserClusterClientProvider
@@ -71,7 +71,7 @@ func addSyncReconciler(
 	reconciler := &syncReconciler{
 		log:                           log.Named(controllerName),
 		workerName:                    workerName,
-		recorder:                      mgr.GetEventRecorderFor(controllerName),
+		recorder:                      mgr.GetEventRecorder(controllerName),
 		namespace:                     namespace,
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		seedClient:                    mgr.GetClient(),
@@ -109,7 +109,7 @@ func (r *syncReconciler) Reconcile(ctx context.Context, request reconcile.Reques
 
 	err := r.reconcile(ctx, log, cosp)
 	if err != nil {
-		r.recorder.Event(cosp, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cosp, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

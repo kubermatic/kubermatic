@@ -39,7 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -125,7 +125,7 @@ func TestReconcile(t *testing.T) {
 				userClient:  userClient,
 				clusterName: tc.cluster.Name,
 				caBundle:    nil,
-				recorder:    &record.FakeRecorder{},
+				recorder:    &events.FakeRecorder{},
 				clusterIsPaused: func(c context.Context) (bool, error) {
 					return false, nil
 				},

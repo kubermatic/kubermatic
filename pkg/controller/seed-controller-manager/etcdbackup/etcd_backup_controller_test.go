@@ -46,7 +46,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	clocktesting "k8s.io/utils/clock/testing"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -396,7 +396,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 				log:                 kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:              fake.NewClientBuilder().WithObjects(cluster, backupConfig).Build(),
 				scheme:              scheme.Scheme,
-				recorder:            record.NewFakeRecorder(10),
+				recorder:            events.NewFakeRecorder(10),
 				clock:               clock,
 				randStringGenerator: constRandStringGenerator("xxxx"),
 				seedGetter: func() (*kubermaticv1.Seed, error) {
@@ -621,7 +621,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:   fc,
 				scheme:   scheme.Scheme,
-				recorder: record.NewFakeRecorder(10),
+				recorder: events.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return generator.GenTestSeed(), nil
@@ -969,7 +969,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:   fc,
 				scheme:   scheme.Scheme,
-				recorder: record.NewFakeRecorder(10),
+				recorder: events.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return generator.GenTestSeed(), nil
@@ -1255,7 +1255,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:   fc,
 				scheme:   scheme.Scheme,
-				recorder: record.NewFakeRecorder(10),
+				recorder: events.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return generator.GenTestSeed(), nil
@@ -1575,7 +1575,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:   fake.NewClientBuilder().WithObjects(initObjs...).Build(),
 				scheme:   scheme.Scheme,
-				recorder: record.NewFakeRecorder(10),
+				recorder: events.NewFakeRecorder(10),
 				clock:    clock,
 				seedGetter: func() (*kubermaticv1.Seed, error) {
 					return generator.GenTestSeed(), nil
@@ -1706,7 +1706,7 @@ func TestMultipleBackupDestination(t *testing.T) {
 				log:      kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:   fake.NewClientBuilder().WithObjects(initObjs...).Build(),
 				scheme:   scheme.Scheme,
-				recorder: record.NewFakeRecorder(10),
+				recorder: events.NewFakeRecorder(10),
 				clock:    clocktesting.NewFakeClock(time.Unix(60, 0).UTC()),
 				caBundle: certificates.NewFakeCABundle(),
 				seedGetter: func() (*kubermaticv1.Seed, error) {

@@ -130,7 +130,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           command:
             - "./hack/ci/run-gateway-api-e2e-tests.sh"
           env:
@@ -164,7 +164,7 @@ presubmits:
       preset-e2e-ssh: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-4
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
           command:
             - "./hack/ci/run-gateway-api-migration-e2e.sh"
           env:

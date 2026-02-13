@@ -67,7 +67,7 @@ func Add(
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
 		scheme:            mgr.GetScheme(),
-		recorder:          mgr.GetEventRecorderFor(ControllerName),
+		recorder:          mgr.GetEventRecorder(ControllerName),
 		log:               log.Named(ControllerName),
 		workerName:        workerName,
 		versions:          kubermatic.GetVersions(),

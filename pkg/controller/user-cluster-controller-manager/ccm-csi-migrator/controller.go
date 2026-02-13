@@ -34,7 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -49,7 +49,7 @@ type reconciler struct {
 	log             *zap.SugaredLogger
 	seedClient      ctrlruntimeclient.Client
 	userClient      ctrlruntimeclient.Client
-	seedRecorder    record.EventRecorder
+	seedRecorder    events.EventRecorder
 	versions        kubermatic.Versions
 	clusterName     string
 	clusterIsPaused userclustercontrollermanager.IsPausedChecker
@@ -62,7 +62,7 @@ func Add(log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, versions kube
 		log:             log,
 		seedClient:      seedMgr.GetClient(),
 		userClient:      userMgr.GetClient(),
-		seedRecorder:    seedMgr.GetEventRecorderFor(controllerName),
+		seedRecorder:    seedMgr.GetEventRecorder(controllerName),
 		versions:        versions,
 		clusterName:     clusterName,
 		clusterIsPaused: clusterIsPaused,
@@ -98,7 +98,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, cluster)
 	if err != nil {
-		r.seedRecorder.Event(cluster, corev1.EventTypeWarning, "CCMCSIMigrationFailed", err.Error())
+		r.seedRecorder.Eventf(cluster, nil, corev1.EventTypeWarning, "CCMCSIMigrationFailed", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

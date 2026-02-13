@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -76,7 +76,7 @@ type reconciler struct {
 	log                  *zap.SugaredLogger
 	seedClient           ctrlruntimeclient.Client
 	userClient           ctrlruntimeclient.Client
-	userRecorder         record.EventRecorder
+	userRecorder         events.EventRecorder
 	clusterIsPaused      userclustercontrollermanager.IsPausedChecker
 	appInstaller         applications.ApplicationInstaller
 	seedClusterNamespace string
@@ -90,7 +90,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		log:                  log,
 		seedClient:           seedMgr.GetClient(),
 		userClient:           userMgr.GetClient(),
-		userRecorder:         userMgr.GetEventRecorderFor(controllerName),
+		userRecorder:         userMgr.GetEventRecorder(controllerName),
 		clusterIsPaused:      clusterIsPaused,
 		appInstaller:         appInstaller,
 		seedClusterNamespace: seedClusterNamespace,
@@ -149,7 +149,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	err = r.reconcile(ctx, log, appInstallation)
 	if err != nil {
-		r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, applicationInstallationReconcileFailedEvent, err.Error())
+		r.userRecorder.Eventf(appInstallation, nil, corev1.EventTypeWarning, applicationInstallationReconcileFailedEvent, "Reconciling", err.Error())
 		return reconcile.Result{}, err
 	}
 
@@ -392,7 +392,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 // traceWarning logs the message in warning mode and raise a k8s event on appInstallation with the eventReason and the message.
 func (r *reconciler) traceWarning(appInstallation *appskubermaticv1.ApplicationInstallation, log *zap.SugaredLogger, eventReason, message string) {
 	log.Warn(message)
-	r.userRecorder.Event(appInstallation, corev1.EventTypeWarning, eventReason, message)
+	r.userRecorder.Eventf(appInstallation, nil, corev1.EventTypeWarning, eventReason, "Reconciling", message)
 }
 
 // syncReconciliationInterval syncs the ReconciliationInterval from the ApplicationDefinition annotation

@@ -381,6 +381,7 @@ type NodeportProxyConfig struct {
 	Disable bool `json:"disable,omitempty"`
 	// Annotations are used to further tweak the LoadBalancer integration with the
 	// cloud provider where the seed cluster is running.
+	//
 	// Deprecated: Use .envoy.loadBalancerService.annotations instead.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// Envoy configures the Envoy application itself.
@@ -907,6 +908,7 @@ type DatacenterSpecKubevirt struct {
 
 	// Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
 	// Defaults to false.
+	//
 	// Deprecated: Use .kubevirt.usePodResourcesCPU instead.
 	EnableDedicatedCPUs bool `json:"enableDedicatedCpus,omitempty"`
 

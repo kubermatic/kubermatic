@@ -1055,6 +1055,7 @@ type ClusterNetworkingConfig struct {
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
 	// CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+	//
 	// Deprecated: This field should not be used anymore, use cluster.componentsOverride.coreDNS.replicas
 	// instead. Only one of the two fields can be set at any time.
 	CoreDNSReplicas *int32 `json:"coreDNSReplicas,omitempty"`
@@ -1267,6 +1268,7 @@ type VSphereCloudSpec struct {
 	// +optional
 	Password string `json:"password"`
 	// The name of the vSphere network.
+	//
 	// Deprecated: Use networks instead.
 	// +optional
 	VMNetName string `json:"vmNetName,omitempty"`
@@ -1351,6 +1353,7 @@ type VMwareCloudDirectorCloudSpec struct {
 	VDC string `json:"vdc,omitempty"`
 
 	// The name of organizational virtual data center network that will be associated with the VMs and vApp.
+	//
 	// Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.
 	OVDCNetwork string `json:"ovdcNetwork,omitempty"`
 

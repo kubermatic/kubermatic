@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -152,7 +152,7 @@ func TestReconcile(t *testing.T) {
 				log:          kubermaticlog.Logger,
 				seedClient:   seedClient,
 				userClient:   userClient,
-				seedRecorder: record.NewFakeRecorder(10),
+				seedRecorder: events.NewFakeRecorder(10),
 				versions:     kubermatic.Versions{},
 				clusterName:  tc.userCluster.Name,
 				clusterIsPaused: func(c context.Context) (bool, error) {

@@ -18,7 +18,6 @@ package validation
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
@@ -27,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/webhook/util"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -51,14 +49,9 @@ func NewValidator(client ctrlruntimeclient.Client,
 	}
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.User] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	user, ok := obj.(*kubermaticv1.User)
-	if !ok {
-		return nil, errors.New("object is not a User")
-	}
-
+func (v *validator) ValidateCreate(ctx context.Context, user *kubermaticv1.User) (admission.Warnings, error) {
 	errs := validation.ValidateUserCreate(user)
 
 	if err := v.validateProjectRelationship(ctx, user, nil); err != nil {
@@ -73,17 +66,7 @@ func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (adm
 	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
-	oldUser, ok := oldObj.(*kubermaticv1.User)
-	if !ok {
-		return nil, errors.New("old object is not a User")
-	}
-
-	newUser, ok := newObj.(*kubermaticv1.User)
-	if !ok {
-		return nil, errors.New("new object is not a User")
-	}
-
+func (v *validator) ValidateUpdate(ctx context.Context, oldUser, newUser *kubermaticv1.User) (admission.Warnings, error) {
 	errs := validation.ValidateUserUpdate(oldUser, newUser)
 
 	if err := v.validateProjectRelationship(ctx, newUser, oldUser); err != nil {
@@ -99,12 +82,7 @@ func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.O
 	return nil, errs.ToAggregate()
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
-	user, ok := obj.(*kubermaticv1.User)
-	if !ok {
-		return nil, errors.New("object is not a User")
-	}
-
+func (v *validator) ValidateDelete(ctx context.Context, user *kubermaticv1.User) (admission.Warnings, error) {
 	return nil, validation.ValidateUserDelete(ctx, user, v.client, v.seedsGetter, v.seedClientGetter)
 }
 

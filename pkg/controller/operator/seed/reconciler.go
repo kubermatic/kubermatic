@@ -51,7 +51,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -64,10 +64,10 @@ type Reconciler struct {
 	scheme                 *runtime.Scheme
 	namespace              string
 	masterClient           ctrlruntimeclient.Client
-	masterRecorder         record.EventRecorder
+	masterRecorder         events.EventRecorder
 	configGetter           provider.KubermaticConfigurationGetter
 	seedClients            map[string]ctrlruntimeclient.Client
-	seedRecorders          map[string]record.EventRecorder
+	seedRecorders          map[string]events.EventRecorder
 	initializedSeedsGetter provider.SeedsGetter
 	workerName             string
 	versions               kubermaticversion.Versions
@@ -138,8 +138,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 		if apierrors.IsNotFound(err) {
 			err = fmt.Errorf("cannot find copy of Seed resource on seed cluster: %w", err)
 
-			r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingSkipped", fmt.Sprintf("%s: %v", seed.Name, err))
-			r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingSkipped", err.Error())
+			r.masterRecorder.Eventf(config, nil, corev1.EventTypeWarning, "SeedReconcilingSkipped", "Reconciling", "%s: %v", seed.Name, err)
+			r.masterRecorder.Eventf(seed, nil, corev1.EventTypeWarning, "ReconcilingSkipped", "Reconciling", err.Error())
 
 			if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingSkipped", err.Error()); err != nil {
 				log.Errorw("Failed to update seed status", zap.Error(err))
@@ -158,9 +158,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, seed
 
 	// make sure to use the seedCopy so the owner ref has the correct UID
 	if err := r.reconcileResources(ctx, config, seedCopy, seedClient, log); err != nil {
-		r.masterRecorder.Event(config, corev1.EventTypeWarning, "SeedReconcilingError", fmt.Sprintf("%s: %v", seed.Name, err))
-		r.masterRecorder.Event(seed, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		seedRecorder.Event(seedCopy, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.masterRecorder.Eventf(config, nil, corev1.EventTypeWarning, "SeedReconcilingError", "Reconciling", "%s: %v", seed.Name, err)
+		r.masterRecorder.Eventf(seed, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
+		seedRecorder.Eventf(seedCopy, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 
 		if err := r.setSeedCondition(ctx, seed, corev1.ConditionFalse, "ReconcilingError", err.Error()); err != nil {
 			log.Errorw("Failed to update seed status", zap.Error(err))

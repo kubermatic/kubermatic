@@ -30,7 +30,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -47,7 +47,7 @@ const ControllerName = "kkp-usersshkey-project-ownership-controller"
 type reconcileSyncProjectBinding struct {
 	ctrlruntimeclient.Client
 
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 	log      *zap.SugaredLogger
 }
 
@@ -55,7 +55,7 @@ func Add(mgr manager.Manager, log *zap.SugaredLogger) error {
 	r := &reconcileSyncProjectBinding{
 		Client: mgr.GetClient(),
 
-		recorder: mgr.GetEventRecorderFor(ControllerName),
+		recorder: mgr.GetEventRecorder(ControllerName),
 		log:      log,
 	}
 
@@ -109,7 +109,7 @@ func (r *reconcileSyncProjectBinding) Reconcile(ctx context.Context, request rec
 
 	err := r.reconcile(ctx, log, sshKey)
 	if err != nil {
-		r.recorder.Event(sshKey, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(sshKey, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return reconcile.Result{}, err

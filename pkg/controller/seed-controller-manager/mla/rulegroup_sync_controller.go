@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -43,7 +43,7 @@ type ruleGroupSyncReconciler struct {
 	ctrlruntimeclient.Client
 	log                     *zap.SugaredLogger
 	workerName              string
-	recorder                record.EventRecorder
+	recorder                events.EventRecorder
 	versions                kubermatic.Versions
 	ruleGroupSyncController *ruleGroupSyncController
 }
@@ -64,7 +64,7 @@ func newRuleGroupSyncReconciler(
 		Client:                  client,
 		log:                     log.Named(subname),
 		workerName:              workerName,
-		recorder:                mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:                mgr.GetEventRecorder(controllerName(subname)),
 		versions:                versions,
 		ruleGroupSyncController: ruleGroupSyncController,
 	}
@@ -113,7 +113,7 @@ func (r *ruleGroupSyncReconciler) Reconcile(ctx context.Context, request reconci
 		}
 		return reconciling.ReconcileRuleGroups(ctx, ruleGroupReconcilerFactory, cluster.Status.NamespaceName, seedClient)
 	}); err != nil {
-		r.recorder.Event(ruleGroup, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(ruleGroup, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcle rulegroup %s: %w", ruleGroup.Name, err)
 	}
 
