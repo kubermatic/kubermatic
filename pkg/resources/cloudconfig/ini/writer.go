@@ -30,6 +30,7 @@ type File interface {
 type Section interface {
 	AddStringKey(key, value string)
 	AddBoolKey(key string, value bool)
+	AddKey(key string, value any)
 }
 
 type file struct {
@@ -89,6 +90,13 @@ func (s *section) AddBoolKey(key string, value bool) {
 	})
 }
 
+func (s *section) AddKey(key string, value any) {
+	s.pairs = append(s.pairs, &freePair{
+		key:   key,
+		value: value,
+	})
+}
+
 func (s *section) render(out io.Writer) error {
 	if _, err := fmt.Fprintf(out, "[%s]\n", s.name); err != nil {
 		return err
@@ -119,4 +127,13 @@ type boolPair struct {
 
 func (p *boolPair) String() string {
 	return fmt.Sprintf("%s = %s", p.key, strconv.FormatBool(p.value))
+}
+
+type freePair struct {
+	key   string
+	value any
+}
+
+func (p *freePair) String() string {
+	return fmt.Sprintf("%s = %s", p.key, p.value)
 }
