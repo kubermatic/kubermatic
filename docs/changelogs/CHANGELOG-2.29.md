@@ -4,6 +4,29 @@
 - [v2.29.1](#v2291)
 - [v2.29.2](#v2292)
 - [v2.29.3](#v2293)
+- [v2.29.4](#v2294)
+
+## v2.29.4
+
+**GitHub release: [v2.29.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.29.4)**
+
+### Supported Kubernetes Versions
+
+- Add support of new Kubernetes patch releases v1.34.4/v1.33.8/v1.32.12 ([#15472](https://github.com/kubermatic/kubermatic/pull/15472))
+
+### New Features
+
+- Add Gateway API support to the IAP chart, allowing IAP deployments to use HTTPRoute resources instead of Ingress when migrating to Gateway API ([#15365](https://github.com/kubermatic/kubermatic/pull/15365))
+- Kubermatic now supports Gateway API for external traffic routing as an alternative to NGINX Ingress. It can be enabled via the `--enable-gateway-api` operator flag (set via `migrateGatewayAPI: true` in Helm values and `--migrate-gateway-api` in `kubermatic-installer`) ([#15402](https://github.com/kubermatic/kubermatic/pull/15402))
+- The installer now uses a consistent scheme setup for both `deploy` and `local kind` commands ([#15288](https://github.com/kubermatic/kubermatic/pull/15288))
+
+### Bugfixes
+
+- Add optional Seed setting `spec.nodeportProxy.envoy.replicas` to configure the `nodeport-proxy-envoy` replica count. If unset, existing default behavior remains (`3` replicas) ([#15464](https://github.com/kubermatic/kubermatic/pull/15464))
+
+### Updates
+
+- Update nginx-ingress-controller version to 1.14.3 ([#15364](https://github.com/kubermatic/kubermatic/pull/15364))
 
 ## v2.29.3
 
