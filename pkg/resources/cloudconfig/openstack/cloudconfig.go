@@ -18,10 +18,10 @@ package openstack
 
 import (
 	"bytes"
+	"fmt"
 	"maps"
 	"slices"
 	"strconv"
-	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
@@ -118,6 +118,50 @@ func ForCluster(cluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, cred
 		LoadBalancerClass: lbClassOpts,
 	}
 
+	if dc.Spec.Openstack.LoadBalancerMonitor != nil {
+		if dc.Spec.Openstack.LoadBalancerMonitor.Create {
+			cc.LoadBalancer.Monitor.Create = true
+		}
+
+		if dc.Spec.Openstack.LoadBalancerMonitor.Delay > 0 {
+			cc.LoadBalancer.Monitor.Delay = dc.Spec.Openstack.LoadBalancerMonitor.Delay
+		}
+
+		if dc.Spec.Openstack.LoadBalancerMonitor.MaxRetries > 0 {
+			cc.LoadBalancer.Monitor.MaxRetries = dc.Spec.Openstack.LoadBalancerMonitor.MaxRetries
+		}
+
+		if dc.Spec.Openstack.LoadBalancerMonitor.MaxRetriesDown > 0 {
+			cc.LoadBalancer.Monitor.MaxRetriesDown = dc.Spec.Openstack.LoadBalancerMonitor.MaxRetriesDown
+		}
+
+		if dc.Spec.Openstack.LoadBalancerMonitor.Timeout > 0 {
+			cc.LoadBalancer.Monitor.Timeout = dc.Spec.Openstack.LoadBalancerMonitor.Timeout
+		}
+	}
+
+	if cluster.Spec.Cloud.Openstack.LoadBalancerMonitor != nil {
+		if cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.Create {
+			cc.LoadBalancer.Monitor.Create = true
+		}
+
+		if cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.Delay > 0 {
+			cc.LoadBalancer.Monitor.Delay = cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.Delay
+		}
+
+		if cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.MaxRetries > 0 {
+			cc.LoadBalancer.Monitor.MaxRetries = cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.MaxRetries
+		}
+
+		if cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.MaxRetriesDown > 0 {
+			cc.LoadBalancer.Monitor.MaxRetriesDown = cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.MaxRetriesDown
+		}
+
+		if cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.Timeout > 0 {
+			cc.LoadBalancer.Monitor.Timeout = cluster.Spec.Cloud.Openstack.LoadBalancerMonitor.Timeout
+		}
+	}
+
 	// Set NodeVolumeAttachLimit if specified in the DC or Cluster spec
 	if dc.Spec.Openstack.NodeVolumeAttachLimit != nil {
 		cc.BlockStorage.NodeVolumeAttachLimit = *dc.Spec.Openstack.NodeVolumeAttachLimit
@@ -178,16 +222,21 @@ func (c *CloudConfig) String() (string, error) {
 	return buf.String(), nil
 }
 
+type LoadBalancerMonitor struct {
+	Create         bool
+	Delay          uint
+	Timeout        uint
+	MaxRetries     uint
+	MaxRetriesDown uint
+}
+
 type LoadBalancerOpts struct {
 	UseOctavia           *bool
 	SubnetID             string
 	FloatingNetworkID    string
 	LBMethod             string
 	LBProvider           string
-	CreateMonitor        bool
-	MonitorDelay         time.Duration
-	MonitorTimeout       time.Duration
-	MonitorMaxRetries    uint
+	Monitor              LoadBalancerMonitor
 	ManageSecurityGroups bool
 
 	EnableIngressHostname *bool
@@ -219,11 +268,24 @@ func (o *LoadBalancerOpts) toINI(section ini.Section) {
 		}
 	}
 
-	if o.CreateMonitor {
+	if o.Monitor.Create {
 		section.AddBoolKey("create-monitor", true)
-		section.AddStringKey("monitor-delay", o.MonitorDelay.String())
-		section.AddStringKey("monitor-timeout", o.MonitorTimeout.String())
-		section.AddStringKey("monitor-max-retries", strconv.FormatUint(uint64(o.MonitorMaxRetries), 10))
+	}
+
+	if o.Monitor.Delay > 0 {
+		section.AddKey("monitor-delay", fmt.Sprintf("%d", o.Monitor.Delay))
+	}
+
+	if o.Monitor.Timeout > 0 {
+		section.AddKey("monitor-timeout", fmt.Sprintf("%d", o.Monitor.Timeout))
+	}
+
+	if o.Monitor.MaxRetries > 0 {
+		section.AddKey("monitor-max-retries", fmt.Sprintf("%d", o.Monitor.MaxRetries))
+	}
+
+	if o.Monitor.MaxRetriesDown > 0 {
+		section.AddKey("monitor-max-retries-down", fmt.Sprintf("%d", o.Monitor.MaxRetriesDown))
 	}
 }
 
