@@ -1475,8 +1475,23 @@ type OpenstackCloudSpec struct {
 	//
 	// Note that the network is external if the "External" field is set to true
 	FloatingIPPool string `json:"floatingIPPool"`
-	RouterID       string `json:"routerID"`
-	SubnetID       string `json:"subnetID"`
+	// LoadBalancerFloatingIPPool holds the name of the external network to be used
+	// for LoadBalancer floating IP allocation.
+	//
+	// When specified, LoadBalancer type Services will receive floating IPs from this pool
+	// instead of the FloatingIPPool. This allows using different external networks for
+	// cluster infrastructure (router) vs. LoadBalancer services.
+	// If not specified, FloatingIPPool is used for LoadBalancers for backward compatibility.
+	//
+	// This field sets a cluster-wide default for LoadBalancers. Services can override
+	// this default by using the `loadbalancer.openstack.org/class` annotation to select
+	// a specific LoadBalancerClass.
+	// +optional
+	LoadBalancerFloatingIPPool string `json:"loadBalancerFloatingIPPool,omitempty"`
+
+	RouterID string `json:"routerID"`
+	SubnetID string `json:"subnetID"`
+
 	// SubnetCIDR is the CIDR that will be assigned to the subnet that is created for the cluster if the cluster spec
 	// didn't specify a subnet id.
 	// +optional
