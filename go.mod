@@ -39,7 +39,7 @@ require (
 	github.com/aws/smithy-go v1.22.3
 	github.com/cert-manager/cert-manager v1.15.4
 	github.com/cilium/cilium v1.16.9
-	github.com/containerd/containerd/v2 v2.0.2
+	github.com/containerd/containerd/v2 v2.0.7
 	github.com/digitalocean/godo v1.142.0
 	github.com/distribution/distribution/v3 v3.0.0
 	github.com/distribution/reference v0.6.0
@@ -483,7 +483,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc // indirect
 	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
