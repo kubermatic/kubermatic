@@ -1,0 +1,59 @@
+#                Kubermatic Enterprise Read-Only License
+#                       Version 1.0 ("KERO-1.0")
+#                   Copyright © 2025 Kubermatic GmbH
+#
+# 1.	You may only view, read and display for studying purposes the source
+#    code of the software licensed under this license, and, to the extent
+#    explicitly provided under this license, the binary code.
+# 2.	Any use of the software which exceeds the foregoing right, including,
+#    without limitation, its execution, compilation, copying, modification
+#    and distribution, is expressly prohibited.
+# 3.	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+#    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# END OF TERMS AND CONDITIONS
+
+apiVersion: apps.kubermatic.k8c.io/v1
+kind: ApplicationDefinition
+metadata:
+  name: envoy-gateway
+spec:
+  description: Envoy Gateway is a cloud-native ingress gateway and API gateway built on Envoy Proxy and Kubernetes Gateway API
+  displayName: Envoy Gateway
+  method: helm
+  versions:
+    - template:
+        source:
+          helm:
+            chartName: gateway-helm
+            chartVersion: v1.7.0
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: v1.7.0
+    - template:
+        source:
+          helm:
+            chartName: gateway-helm
+            chartVersion: v1.6.3
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: v1.6.3
+    - template:
+        source:
+          helm:
+            chartName: gateway-helm
+            chartVersion: v1.5.8
+            url: oci://quay.io/kubermatic-mirror/helm-charts
+      version: v1.5.8
+  defaultValuesBlock: |
+    config:
+      envoyGateway:
+        logging:
+          level:
+            default: info
+  documentationURL: https://gateway.envoyproxy.io/
+  sourceURL: https://github.com/envoyproxy/gateway
+  logoFormat: png
