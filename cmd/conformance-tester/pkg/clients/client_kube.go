@@ -192,6 +192,12 @@ func (c *kubeClient) CreateCluster(ctx context.Context, log *zap.SugaredLogger, 
 		cluster.Spec.ClusterNetwork.IPFamily = kubermaticv1.IPFamilyDualStack
 	}
 
+	// Enable MLA monitoring for e2e tests
+	cluster.Spec.MLA = &kubermaticv1.MLASettings{
+		MonitoringEnabled: true,
+		LoggingEnabled:    false,
+	}
+
 	if err := c.opts.SeedClusterClient.Create(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to create cluster: %w", err)
 	}
