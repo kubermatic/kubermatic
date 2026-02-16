@@ -48,6 +48,7 @@ declare -A CHART_URLS=(
   ["local-ai"]="https://github.com/go-skynet/helm-charts/releases/download/local-ai-%s/local-ai-%s.tgz"
   ["kueue"]="oci://registry.k8s.io/kueue/charts/kueue"
   ["mcp-server-kubernetes"]="oci://ghcr.io/flux159/mcp-server-kubernetes"
+  ["velero"]="https://github.com/vmware-tanzu/velero/releases/download/velero-%s/velero-%s.tgz"
 )
 
 # Default versions for each chart
@@ -71,6 +72,7 @@ declare -A CHART_VERSIONS=(
   ["local-ai"]="3.4.2"
   ["kueue"]="0.13.4"
   ["mcp-server-kubernetes"]="2.9.9"
+  ["velero"]="1.17.1"
 )
 
 # Re-enable unset variable checking after array declarations
