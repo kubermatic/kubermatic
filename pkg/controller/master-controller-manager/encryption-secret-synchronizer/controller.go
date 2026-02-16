@@ -35,7 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -61,7 +61,7 @@ const (
 type reconciler struct {
 	masterClient ctrlruntimeclient.Client
 	log          *zap.SugaredLogger
-	recorder     record.EventRecorder
+	recorder     events.EventRecorder
 	workerName   string
 	seedClients  kuberneteshelper.SeedClientMap
 	namespace    string
@@ -84,7 +84,7 @@ func Add(
 		log:          log.Named(ControllerName),
 		workerName:   workerName,
 		masterClient: masterManager.GetClient(),
-		recorder:     masterManager.GetEventRecorderFor(ControllerName),
+		recorder:     masterManager.GetEventRecorder(ControllerName),
 		seedClients:  kuberneteshelper.SeedClientMap{},
 		namespace:    namespace,
 	}

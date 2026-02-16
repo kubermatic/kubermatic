@@ -31,6 +31,7 @@ import (
 	envoyendpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoyhttpconnectionmanagerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -41,9 +42,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/fake"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -69,13 +72,12 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 443, 32000, intstr.FromString("https"), corev1.ProtocolTCP).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-nodeport-abc", Namespace: "test"}, "my-nodeport").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithPort("http", 8080, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					WithEndpoint(true, "172.16.0.2").
+					Build(),
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-nodeport-https": makeCluster(t, "test/my-nodeport-https", 8443, "172.16.0.1", "172.16.0.2"),
@@ -94,12 +96,11 @@ func TestSync(t *testing.T) {
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					WithNotReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-nodeport-abc", Namespace: "test"}, "my-nodeport").
+					WithPort("http", 8080, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					WithNotReadyEndpoint("172.16.0.2").
+					Build(),
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-nodeport-http": makeCluster(t, "test/my-nodeport-http", 8080, "172.16.0.1"),
@@ -115,7 +116,7 @@ func TestSync(t *testing.T) {
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-nodeport-abc", Namespace: "test"}, "my-nodeport").
 					Build(),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{},
@@ -129,7 +130,7 @@ func TestSync(t *testing.T) {
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-nodeport-abc", Namespace: "test"}, "my-nodeport").
 					Build(),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{},
@@ -144,13 +145,12 @@ func TestSync(t *testing.T) {
 					WithServicePort("http", 80, 0, intstr.FromString("http"), corev1.ProtocolTCP).
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-cluster-ip-abc", Namespace: "test"}, "my-cluster-ip").
+					WithPort("http", 8080, corev1.ProtocolTCP).
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					WithEndpoint(true, "172.16.0.2").
+					Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -170,14 +170,13 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					WithServicePort("admin", 6443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithEndpointPort("admin", 6443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-cluster-ip-abc", Namespace: "test"}, "my-cluster-ip").
+					WithPort("http", 8080, corev1.ProtocolTCP).
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithPort("admin", 6443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					WithEndpoint(true, "172.16.0.2").
+					Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -198,11 +197,10 @@ func TestSync(t *testing.T) {
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-cluster-ip-abc", Namespace: "test"}, "my-cluster-ip").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					Build(),
 			},
 			// 0 deactivates the SNI listener
 			sniListenerPort:  0,
@@ -218,22 +216,20 @@ func TestSync(t *testing.T) {
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "newer-service-abc", Namespace: "test"}, "newer-service").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					Build(),
 				test.NewServiceBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "older-service-abc", Namespace: "test"}, "older-service").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.2").
+					Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -253,11 +249,10 @@ func TestSync(t *testing.T) {
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"": "host.com"}`).
 					WithServicePort("", 1025, 0, intstr.FromString(""), corev1.ProtocolUDP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 1025, corev1.ProtocolUDP).
-					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "udp-service-abc", Namespace: "test"}, "udp-service").
+					WithPort("https", 1025, corev1.ProtocolUDP).
+					WithEndpoint(true, "172.16.0.1").
+					Build(),
 			},
 			sniListenerPort:  443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{},
@@ -271,11 +266,10 @@ func TestSync(t *testing.T) {
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "Tunneling").
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-service-abc", Namespace: "test"}, "my-service").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					Build(),
 			},
 			tunnelingListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -294,11 +288,10 @@ func TestSync(t *testing.T) {
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-service-abc", Namespace: "test"}, "my-service").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					Build(),
 			},
 			tunnelingListenerPort: 8080,
 			sniListenerPort:       8443,
@@ -319,11 +312,10 @@ func TestSync(t *testing.T) {
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"http": "host.com"}`). // port http does not exist
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
-					WithEndpointsSubset().
-					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
-					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+				test.NewEndpointSliceBuilder(test.NamespacedName{Name: "my-service-abc", Namespace: "test"}, "my-service").
+					WithPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpoint(true, "172.16.0.1").
+					Build(),
 			},
 			tunnelingListenerPort: 8080,
 			sniListenerPort:       8443,
@@ -545,21 +537,44 @@ func makeCluster(t *testing.T, name string, portValue uint32, addresses ...strin
 	}
 }
 
-func TestNewEndpointHandler(t *testing.T) {
+func TestNewEndpointSliceHandler(t *testing.T) {
 	tests := []struct {
 		name          string
-		eps           *corev1.Endpoints
+		epSlice       *discoveryv1.EndpointSlice
 		resources     []ctrlruntimeclient.Object
 		expectResults []ctrlruntime.Request
 	}{
 		{
-			name:          "No results when matching service is not found",
-			eps:           &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"}},
+			name: "No results when EndpointSlice has no service label",
+			epSlice: &discoveryv1.EndpointSlice{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo-abc"},
+			},
+			expectResults: nil,
+		},
+		{
+			name: "No results when matching service is not found",
+			epSlice: &discoveryv1.EndpointSlice{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "foo",
+					Name:      "foo-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "foo",
+					},
+				},
+			},
 			expectResults: nil,
 		},
 		{
 			name: "No result when matching service found but not exposed",
-			eps:  &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"}},
+			epSlice: &discoveryv1.EndpointSlice{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "foo",
+					Name:      "foo-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "foo",
+					},
+				},
+			},
 			resources: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"},
@@ -569,7 +584,15 @@ func TestNewEndpointHandler(t *testing.T) {
 		},
 		{
 			name: "Result expected when exposed matching service is found",
-			eps:  &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "bar"}},
+			epSlice: &discoveryv1.EndpointSlice{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "foo",
+					Name:      "bar-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "bar",
+					},
+				},
+			},
 			resources: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
@@ -596,9 +619,9 @@ func TestNewEndpointHandler(t *testing.T) {
 				options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				client:  client,
 				log:     log,
-			}).newEndpointHandler()
+			}).newEndpointSliceHandler()
 
-			res := handler(context.Background(), tt.eps)
+			res := handler(context.Background(), tt.epSlice)
 
 			if d := diff.ObjectDiff(tt.expectResults, res); d != "" {
 				t.Errorf("Got unexpected results:\n%v", d)
@@ -676,6 +699,278 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 				t.Errorf("expect generic accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
 		})
+	}
+}
+
+func TestConnectionSettings(t *testing.T) {
+	svc := test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+		WithServiceType(corev1.ServiceTypeNodePort).
+		WithServicePort("https", 443, 32000, intstr.FromString("https"), corev1.ProtocolTCP).
+		Build()
+
+	portName := "https"
+	portProtocol := corev1.ProtocolTCP
+	portNumber := int32(8443)
+	ready := true
+	epSlices := &discoveryv1.EndpointSliceList{
+		Items: []discoveryv1.EndpointSlice{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "test",
+					Name:      "my-nodeport-abc",
+					Labels: map[string]string{
+						discoveryv1.LabelServiceName: "my-nodeport",
+					},
+				},
+				Ports: []discoveryv1.EndpointPort{
+					{
+						Name:     &portName,
+						Protocol: &portProtocol,
+						Port:     &portNumber,
+					},
+				},
+				Endpoints: []discoveryv1.Endpoint{
+					{
+						Addresses: []string{"172.16.0.1"},
+						Conditions: discoveryv1.EndpointConditions{
+							Ready: &ready,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	vh := &envoyroutev3.VirtualHost{
+		Name:    "test/my-nodeport-https",
+		Domains: []string{"my-nodeport.test.svc.cluster.local:443"},
+		Routes: []*envoyroutev3.Route{
+			{
+				Match: &envoyroutev3.RouteMatch{
+					PathSpecifier: &envoyroutev3.RouteMatch_ConnectMatcher_{
+						ConnectMatcher: &envoyroutev3.RouteMatch_ConnectMatcher{},
+					},
+				},
+				Action: &envoyroutev3.Route_Route{
+					Route: &envoyroutev3.RouteAction{
+						ClusterSpecifier: &envoyroutev3.RouteAction_Cluster{
+							Cluster: "test/my-nodeport-https",
+						},
+						UpgradeConfigs: []*envoyroutev3.RouteAction_UpgradeConfig{
+							{
+								UpgradeType:   UpgradeType,
+								ConnectConfig: &envoyroutev3.RouteAction_UpgradeConfig_ConnectConfig{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		name    string
+		options Options
+		assert  func(t *testing.T, sb *snapshotBuilder)
+	}{
+		{
+			name: "no_settings_use_envoy_defaults",
+			options: Options{
+				EnvoySNIListenerPort:       6443,
+				EnvoyTunnelingListenerPort: 8088,
+			},
+			assert: func(t *testing.T, sb *snapshotBuilder) {
+				t.Helper()
+
+				filterChains := makeSNIFilterChains(svc, portHostMapping{"https": "host.com"}, sb.GetSNIListenerIdleTimeout())
+				if len(filterChains) != 1 {
+					t.Fatalf("expected exactly one filter chain, got %d", len(filterChains))
+				}
+
+				tcpProxyAny := filterChains[0].Filters[0].GetTypedConfig()
+				tcpProxy := &envoytcpfilterv3.TcpProxy{}
+				if err := tcpProxyAny.UnmarshalTo(tcpProxy); err != nil {
+					t.Fatalf("failed to unmarshal tcp proxy config: %v", err)
+				}
+				if tcpProxy.GetIdleTimeout() != nil {
+					t.Fatalf("expected SNI tcp proxy idle timeout to be unset when not configured")
+				}
+
+				sniListener := sb.makeSNIListener(filterChains...)
+				if sniListener.GetTcpKeepalive() != nil {
+					t.Fatalf("expected SNI listener tcp keepalive to be unset when not configured")
+				}
+
+				tunnelingListener := sb.makeTunnelingListener(vh)
+				if tunnelingListener.GetTcpKeepalive() != nil {
+					t.Fatalf("expected tunneling listener tcp keepalive to be unset when not configured")
+				}
+
+				hcmAny := tunnelingListener.FilterChains[0].Filters[0].GetTypedConfig()
+				hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{}
+				if err := hcmAny.UnmarshalTo(hcm); err != nil {
+					t.Fatalf("failed to unmarshal HTTP connection manager config: %v", err)
+				}
+				if hcm.GetCommonHttpProtocolOptions() != nil {
+					t.Fatalf("expected tunneling connection idle timeout to be unset when not configured")
+				}
+				if hcm.GetStreamIdleTimeout() != nil {
+					t.Fatalf("expected tunneling stream idle timeout to be unset when not configured")
+				}
+
+				nodePortListeners, _ := sb.makeListenersForNodePortService(svc)
+				if len(nodePortListeners) != 1 {
+					t.Fatalf("expected exactly one nodeport listener, got %d", len(nodePortListeners))
+				}
+				nodePortListener, ok := nodePortListeners[0].(*envoylistenerv3.Listener)
+				if !ok {
+					t.Fatalf("expected listener resource type %T, got %T", &envoylistenerv3.Listener{}, nodePortListeners[0])
+				}
+				if nodePortListener.GetTcpKeepalive() != nil {
+					t.Fatalf("expected nodeport listener tcp keepalive to be unset when not configured")
+				}
+
+				clusters := sb.makeClusters(svc, epSlices, sets.New("https"))
+				if len(clusters) != 1 {
+					t.Fatalf("expected exactly one cluster, got %d", len(clusters))
+				}
+				cluster, ok := clusters[0].(*envoyclusterv3.Cluster)
+				if !ok {
+					t.Fatalf("expected cluster resource type %T, got %T", &envoyclusterv3.Cluster{}, clusters[0])
+				}
+				if cluster.GetUpstreamConnectionOptions() != nil {
+					t.Fatalf("expected cluster upstream tcp keepalive to be unset when not configured")
+				}
+			},
+		},
+		{
+			name: "explicit_timeouts_and_keepalive_are_applied",
+			options: Options{
+				EnvoySNIListenerPort:              6443,
+				EnvoyTunnelingListenerPort:        8088,
+				SNIListenerIdleTimeout:            15 * time.Minute,
+				TunnelingConnectionIdleTimeout:    15 * time.Minute,
+				TunnelingConnectionStreamTimeout:  5 * time.Minute,
+				DownstreamTCPKeepaliveTime:        5 * time.Minute,
+				DownstreamTCPKeepaliveInterval:    30 * time.Second,
+				DownstreamTCPKeepaliveProbes:      5,
+				UpstreamTCPKeepaliveTime:          5 * time.Minute,
+				UpstreamTCPKeepaliveProbeInterval: 30 * time.Second,
+				UpstreamTCPKeepaliveProbeAttempts: 5,
+			},
+			assert: func(t *testing.T, sb *snapshotBuilder) {
+				t.Helper()
+
+				filterChains := makeSNIFilterChains(svc, portHostMapping{"https": "host.com"}, sb.GetSNIListenerIdleTimeout())
+				tcpProxyAny := filterChains[0].Filters[0].GetTypedConfig()
+				tcpProxy := &envoytcpfilterv3.TcpProxy{}
+				if err := tcpProxyAny.UnmarshalTo(tcpProxy); err != nil {
+					t.Fatalf("failed to unmarshal tcp proxy config: %v", err)
+				}
+				if got, want := tcpProxy.GetIdleTimeout().AsDuration(), 15*time.Minute; got != want {
+					t.Fatalf("unexpected SNI tcp proxy idle timeout: got %s, want %s", got, want)
+				}
+
+				sniListener := sb.makeSNIListener(filterChains...)
+				assertTCPKeepalive(t, sniListener.GetTcpKeepalive(), 5, 5*time.Minute, 30*time.Second)
+
+				tunnelingListener := sb.makeTunnelingListener(vh)
+				assertTCPKeepalive(t, tunnelingListener.GetTcpKeepalive(), 5, 5*time.Minute, 30*time.Second)
+
+				hcmAny := tunnelingListener.FilterChains[0].Filters[0].GetTypedConfig()
+				hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{}
+				if err := hcmAny.UnmarshalTo(hcm); err != nil {
+					t.Fatalf("failed to unmarshal HTTP connection manager config: %v", err)
+				}
+				if got, want := hcm.GetCommonHttpProtocolOptions().GetIdleTimeout().AsDuration(), 15*time.Minute; got != want {
+					t.Fatalf("unexpected tunneling connection idle timeout: got %s, want %s", got, want)
+				}
+				if got, want := hcm.GetStreamIdleTimeout().AsDuration(), 5*time.Minute; got != want {
+					t.Fatalf("unexpected tunneling stream idle timeout: got %s, want %s", got, want)
+				}
+
+				nodePortListeners, _ := sb.makeListenersForNodePortService(svc)
+				nodePortListener := nodePortListeners[0].(*envoylistenerv3.Listener)
+				assertTCPKeepalive(t, nodePortListener.GetTcpKeepalive(), 5, 5*time.Minute, 30*time.Second)
+
+				clusters := sb.makeClusters(svc, epSlices, sets.New("https"))
+				cluster := clusters[0].(*envoyclusterv3.Cluster)
+				assertTCPKeepalive(t, cluster.GetUpstreamConnectionOptions().GetTcpKeepalive(), 5, 5*time.Minute, 30*time.Second)
+			},
+		},
+		{
+			name: "partial_keepalive_does_not_backfill_missing_values",
+			options: Options{
+				EnvoySNIListenerPort:              6443,
+				DownstreamTCPKeepaliveInterval:    45 * time.Second,
+				UpstreamTCPKeepaliveProbeAttempts: 7,
+			},
+			assert: func(t *testing.T, sb *snapshotBuilder) {
+				t.Helper()
+
+				sniListener := sb.makeSNIListener()
+				downstreamKeepalive := sniListener.GetTcpKeepalive()
+				if downstreamKeepalive == nil {
+					t.Fatalf("expected downstream tcp keepalive settings to be configured")
+				}
+				if got, want := downstreamKeepalive.GetKeepaliveInterval().GetValue(), uint32(45); got != want {
+					t.Fatalf("unexpected downstream keepalive interval: got %d, want %d", got, want)
+				}
+				if downstreamKeepalive.KeepaliveTime != nil {
+					t.Fatalf("expected downstream keepalive time to be unset when not configured")
+				}
+				if downstreamKeepalive.KeepaliveProbes != nil {
+					t.Fatalf("expected downstream keepalive probes to be unset when not configured")
+				}
+
+				clusters := sb.makeClusters(svc, epSlices, sets.New("https"))
+				cluster := clusters[0].(*envoyclusterv3.Cluster)
+				upstreamKeepalive := cluster.GetUpstreamConnectionOptions().GetTcpKeepalive()
+				if upstreamKeepalive == nil {
+					t.Fatalf("expected upstream tcp keepalive settings to be configured")
+				}
+				if got, want := upstreamKeepalive.GetKeepaliveProbes().GetValue(), uint32(7); got != want {
+					t.Fatalf("unexpected upstream keepalive probes: got %d, want %d", got, want)
+				}
+				if upstreamKeepalive.KeepaliveTime != nil {
+					t.Fatalf("expected upstream keepalive time to be unset when not configured")
+				}
+				if upstreamKeepalive.KeepaliveInterval != nil {
+					t.Fatalf("expected upstream keepalive interval to be unset when not configured")
+				}
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			sb := &snapshotBuilder{
+				Options: tc.options,
+				log:     zaptest.NewLogger(t).Sugar(),
+			}
+
+			tc.assert(t, sb)
+		})
+	}
+}
+
+func assertTCPKeepalive(t *testing.T, tcpKeepalive *envoycorev3.TcpKeepalive, probes uint32, keepaliveTime, keepaliveInterval time.Duration) {
+	t.Helper()
+
+	if tcpKeepalive == nil {
+		t.Fatalf("expected tcp keepalive settings to be configured")
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveProbes().GetValue(), probes; got != want {
+		t.Fatalf("unexpected keepalive probes: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveTime().GetValue(), uint32(keepaliveTime/time.Second); got != want {
+		t.Fatalf("unexpected keepalive time: got %d, want %d", got, want)
+	}
+
+	if got, want := tcpKeepalive.GetKeepaliveInterval().GetValue(), uint32(keepaliveInterval/time.Second); got != want {
+		t.Fatalf("unexpected keepalive interval: got %d, want %d", got, want)
 	}
 }
 

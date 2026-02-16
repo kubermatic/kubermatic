@@ -19,7 +19,6 @@ package envoymanager
 import (
 	"fmt"
 	"net"
-	"reflect"
 	"sort"
 	"strconv"
 	"time"
@@ -50,11 +49,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const clusterConnectTimeout = 1 * time.Second
+const (
+	clusterConnectTimeout = 1 * time.Second
+)
 
 const (
 	UpgradeType = "CONNECT"
@@ -91,12 +93,12 @@ func newSnapshotBuilder(log *zap.SugaredLogger, portHostMappingGetter portHostMa
 }
 
 // addService adds a Service to the builder with the associated service types.
-func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints, expTypes nodeportproxy.ExposeTypes) {
+func (sb *snapshotBuilder) addService(svc *corev1.Service, epSlices *discoveryv1.EndpointSliceList, expTypes nodeportproxy.ExposeTypes) {
 	svcKey := ServiceKey(svc)
 	svcLog := sb.log.With("service", svcKey)
 	// If service has no ready pods associated, don't bother creating any
 	// configuration.
-	if len(eps.Subsets) == 0 {
+	if !hasReadyEndpoints(epSlices) {
 		svcLog.Debug("skipping service: it has no running pods")
 		return
 	}
@@ -134,7 +136,7 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 
 	// Create clusters
 	sb.log.Debugw("creating clusters", "includePorts", includePorts)
-	sb.clusters = append(sb.clusters, sb.makeClusters(svc, eps, includePorts)...)
+	sb.clusters = append(sb.clusters, sb.makeClusters(svc, epSlices, includePorts)...)
 }
 
 // makeSNIFilterChains returns the FilterChains for the given service and the
@@ -165,7 +167,7 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 
 	svcLog.Debugw("creating sni filter chains", "portHostMapping", m)
 	// Besides the filter chains returns the ports that are exposed.
-	return makeSNIFilterChains(svc, m), ports
+	return makeSNIFilterChains(svc, m, sb.GetSNIListenerIdleTimeout()), ports
 }
 
 // build returns a new Snapshot from the resources derived by the Services
@@ -207,7 +209,7 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	return accessLog
 }
 
-func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylistenerv3.FilterChain {
+func makeSNIFilterChains(service *corev1.Service, p portHostMapping, idleTimeout time.Duration) []*envoylistenerv3.FilterChain {
 	var sniFilterChains []*envoylistenerv3.FilterChain
 
 	serviceKey := ServiceKey(service)
@@ -221,6 +223,9 @@ func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylis
 					Cluster: servicePortKey,
 				},
 				AccessLog: makeAccessLog(),
+			}
+			if idleTimeout > 0 {
+				tcpProxyConfig.IdleTimeout = durationpb.New(idleTimeout)
 			}
 
 			tcpProxyConfigMarshalled, err := anypb.New(tcpProxyConfig)
@@ -280,6 +285,13 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 			},
 		},
 		FilterChains: fcs,
+	}
+	if sb.HasDownstreamTCPKeepalive() {
+		sniListener.TcpKeepalive = makeTCPKeepalive(
+			sb.GetDownstreamTCPKeepaliveTime(),
+			sb.GetDownstreamTCPKeepaliveInterval(),
+			sb.GetDownstreamTCPKeepaliveProbes(),
+		)
 	}
 	return sniListener
 }
@@ -370,6 +382,14 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 			},
 		},
 	}
+	if sb.HasTunnelingConnectionIdleTimeout() {
+		hcm.CommonHttpProtocolOptions = &envoycorev3.HttpProtocolOptions{
+			IdleTimeout: durationpb.New(sb.GetTunnelingConnectionIdleTimeout()),
+		}
+	}
+	if sb.HasTunnelingConnectionStreamTimeout() {
+		hcm.StreamIdleTimeout = durationpb.New(sb.GetTunnelingConnectionStreamTimeout())
+	}
 	httpManagerConfigMarshalled, err := anypb.New(hcm)
 	if err != nil {
 		panic(fmt.Errorf("failed to marshal HTTP Connection Manager: %w", err))
@@ -403,10 +423,17 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 			},
 		},
 	}
+	if sb.HasDownstreamTCPKeepalive() {
+		tunnelingListener.TcpKeepalive = makeTCPKeepalive(
+			sb.GetDownstreamTCPKeepaliveTime(),
+			sb.GetDownstreamTCPKeepaliveInterval(),
+			sb.GetDownstreamTCPKeepaliveProbes(),
+		)
+	}
 	return tunnelingListener
 }
 
-func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *corev1.Endpoints, includePorts sets.Set[string]) (clusters []envoycachetype.Resource) {
+func (sb *snapshotBuilder) makeClusters(service *corev1.Service, epSlices *discoveryv1.EndpointSliceList, includePorts sets.Set[string]) (clusters []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
 		if !includePorts.Has(servicePort.Name) {
@@ -414,7 +441,7 @@ func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *core
 			continue
 		}
 		servicePortKey := ServicePortKey(serviceKey, &servicePort)
-		endpoints := sb.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
+		endpoints := sb.getEndpointsFromSlices(service, &servicePort, corev1.ProtocolTCP, epSlices)
 
 		// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
 		sort.Slice(endpoints, func(i, j int) bool {
@@ -438,6 +465,15 @@ func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *core
 					},
 				},
 			},
+		}
+		if sb.HasUpstreamTCPKeepalive() {
+			cluster.UpstreamConnectionOptions = &envoyclusterv3.UpstreamConnectionOptions{
+				TcpKeepalive: makeTCPKeepalive(
+					sb.GetUpstreamTCPKeepaliveTime(),
+					sb.GetUpstreamTCPKeepaliveProbeInterval(),
+					sb.GetUpstreamTCPKeepaliveProbeAttempts(),
+				),
+			}
 		}
 		clusters = append(clusters, cluster)
 	}
@@ -494,6 +530,13 @@ func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servi
 					},
 				},
 			},
+		}
+		if sb.HasDownstreamTCPKeepalive() {
+			listener.TcpKeepalive = makeTCPKeepalive(
+				sb.GetDownstreamTCPKeepaliveTime(),
+				sb.GetDownstreamTCPKeepaliveInterval(),
+				sb.GetDownstreamTCPKeepaliveProbes(),
+			)
 		}
 		listeners = append(listeners, listener)
 	}
@@ -646,14 +689,49 @@ func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Re
 	return
 }
 
-// getEndpoints returns a slice of LbEndpoint pointers for a given
-// service/target port combination.
-// Based on:
-// https://github.com/kubernetes/ingress-nginx/blob/decc1346dd956a7f3edfc23c2547abbc75598e36/internal/ingress/controller/endpoints.go#L35
-func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol, eps *corev1.Endpoints) []*envoyendpointv3.LbEndpoint {
+// hasReadyEndpoints returns true if any EndpointSlice contains at least one ready endpoint.
+func hasReadyEndpoints(epSlices *discoveryv1.EndpointSliceList) bool {
+	if epSlices == nil {
+		return false
+	}
+	for _, slice := range epSlices.Items {
+		for _, endpoint := range slice.Endpoints {
+			if endpoint.Conditions.Ready != nil && *endpoint.Conditions.Ready {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func makeTCPKeepalive(keepaliveTime, keepaliveInterval time.Duration, keepaliveProbes uint32) *envoycorev3.TcpKeepalive {
+	keepalive := &envoycorev3.TcpKeepalive{}
+
+	if keepaliveProbes > 0 {
+		keepalive.KeepaliveProbes = wrapperspb.UInt32(keepaliveProbes)
+	}
+
+	if keepaliveTime > 0 {
+		if seconds := uint32(keepaliveTime / time.Second); seconds > 0 {
+			keepalive.KeepaliveTime = wrapperspb.UInt32(seconds)
+		}
+	}
+
+	if keepaliveInterval > 0 {
+		if seconds := uint32(keepaliveInterval / time.Second); seconds > 0 {
+			keepalive.KeepaliveInterval = wrapperspb.UInt32(seconds)
+		}
+	}
+
+	return keepalive
+}
+
+// getEndpointsFromSlices returns a slice of LbEndpoint pointers for a given
+// service/target port combination from EndpointSlices.
+func (sb *snapshotBuilder) getEndpointsFromSlices(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol, epSlices *discoveryv1.EndpointSliceList) []*envoyendpointv3.LbEndpoint {
 	var upsServers []*envoyendpointv3.LbEndpoint
 
-	if s == nil || port == nil {
+	if s == nil || port == nil || epSlices == nil {
 		return upsServers
 	}
 
@@ -664,47 +742,56 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 	svcKey := ServiceKey(s)
 	serviceLog := sb.log.With("service", svcKey)
 
-	for _, ss := range eps.Subsets {
-		for _, epPort := range ss.Ports {
-			if !reflect.DeepEqual(epPort.Protocol, proto) {
+	for _, slice := range epSlices.Items {
+		for _, epPort := range slice.Ports {
+			if epPort.Protocol == nil || *epPort.Protocol != proto {
 				continue
 			}
 
 			var targetPort int32
 
 			// port.Name is optional if there is only one port
-			if port.Name == "" || port.Name == epPort.Name {
-				targetPort = epPort.Port
+			if port.Name == "" || (epPort.Name != nil && port.Name == *epPort.Name) {
+				if epPort.Port != nil {
+					targetPort = *epPort.Port
+				}
 			}
 
 			if targetPort <= 0 {
 				continue
 			}
 
-			for _, epAddress := range ss.Addresses {
-				ep := net.JoinHostPort(epAddress.IP, strconv.Itoa(int(targetPort)))
-				if _, exists := processedUpstreamServers[ep]; exists {
+			for _, endpoint := range slice.Endpoints {
+				// Only include ready endpoints
+				if endpoint.Conditions.Ready == nil || !*endpoint.Conditions.Ready {
 					continue
 				}
-				ups := &envoyendpointv3.LbEndpoint{
-					HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-						Endpoint: &envoyendpointv3.Endpoint{
-							Address: &envoycorev3.Address{
-								Address: &envoycorev3.Address_SocketAddress{
-									SocketAddress: &envoycorev3.SocketAddress{
-										Protocol: envoycorev3.SocketAddress_TCP,
-										Address:  epAddress.IP,
-										PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-											PortValue: uint32(targetPort),
+
+				for _, address := range endpoint.Addresses {
+					ep := net.JoinHostPort(address, strconv.Itoa(int(targetPort)))
+					if _, exists := processedUpstreamServers[ep]; exists {
+						continue
+					}
+					ups := &envoyendpointv3.LbEndpoint{
+						HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
+							Endpoint: &envoyendpointv3.Endpoint{
+								Address: &envoycorev3.Address{
+									Address: &envoycorev3.Address_SocketAddress{
+										SocketAddress: &envoycorev3.SocketAddress{
+											Protocol: envoycorev3.SocketAddress_TCP,
+											Address:  address,
+											PortSpecifier: &envoycorev3.SocketAddress_PortValue{
+												PortValue: uint32(targetPort),
+											},
 										},
 									},
 								},
 							},
 						},
-					},
+					}
+					upsServers = append(upsServers, ups)
+					processedUpstreamServers[ep] = struct{}{}
 				}
-				upsServers = append(upsServers, ups)
-				processedUpstreamServers[ep] = struct{}{}
 			}
 		}
 	}

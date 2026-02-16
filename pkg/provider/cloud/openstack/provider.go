@@ -43,6 +43,7 @@ const (
 	// SecurityGroupCleanupFinalizer will instruct the deletion of the security group.
 	SecurityGroupCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-security-group"
 	// OldNetworkCleanupFinalizer will instruct the deletion of all network components. Router, Network, Subnet
+	//
 	// Deprecated: Got split into dedicated finalizers.
 	OldNetworkCleanupFinalizer = "kubermatic.k8c.io/cleanup-openstack-network"
 

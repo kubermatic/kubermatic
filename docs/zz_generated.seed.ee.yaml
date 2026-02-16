@@ -246,6 +246,7 @@ spec:
           dnsPolicy: ""
           # Optional: EnableDedicatedCPUs enables the assignment of dedicated cpus instead of resource requests and limits for a virtual machine.
           # Defaults to false.
+
           # Deprecated: Use .kubevirt.usePodResourcesCPU instead.
           enableDedicatedCpus: false
           # Optional: EnableDefaultNetworkPolicies enables deployment of default network policies like cluster isolation.
@@ -731,6 +732,7 @@ spec:
   nodeportProxy:
     # Annotations are used to further tweak the LoadBalancer integration with the
     # cloud provider where the seed cluster is running.
+
     # Deprecated: Use .envoy.loadBalancerService.annotations instead.
     annotations: {}
     # Disable will prevent the Kubermatic Operator from creating a nodeport-proxy
@@ -739,6 +741,46 @@ spec:
     disable: false
     # Envoy configures the Envoy application itself.
     envoy:
+      # ConnectionSettings configures idle timeout and TCP keepalive settings for
+      # the nodeport-proxy Envoy listeners and upstream clusters.
+      # Zero values keep Envoy defaults (no KKP override).
+      connectionSettings:
+        # DownstreamTCPKeepaliveInterval configures the interval between TCP
+        # keepalive probes on downstream listener sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        downstreamTCPKeepaliveInterval: 0s
+        # DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+        # probes before considering downstream listener sockets dead.
+        # Set to 0 to leave unset.
+        downstreamTCPKeepaliveProbes: 0
+        # DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+        # keepalive probe is sent on downstream listener sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        downstreamTCPKeepaliveTime: 0s
+        # SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+        # downstream connections are kept open.
+        # Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+        sniListenerIdleTimeout: 0s
+        # TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+        # listener downstream connections are kept open.
+        # Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+        tunnelingConnectionIdleTimeout: 0s
+        # TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+        # on the tunneling listener are kept open.
+        # Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+        tunnelingStreamIdleTimeout: 0s
+        # UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+        # probes on upstream cluster sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        upstreamTCPKeepaliveInterval: 0s
+        # UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+        # probes before considering upstream cluster sockets dead.
+        # Set to 0 to leave unset.
+        upstreamTCPKeepaliveProbes: 0
+        # UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+        # keepalive probe is sent on upstream cluster sockets.
+        # Set to 0 to leave unset. If set, value must be >= 1s.
+        upstreamTCPKeepaliveTime: 0s
       # DockerRepository is the repository containing the component's image.
       dockerRepository: docker.io/envoyproxy/envoy
       loadBalancerService:
@@ -751,6 +793,9 @@ spec:
         # This field will be ignored if the cloud-provider does not support the feature.
         # More info: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/
         sourceRanges: []
+      # Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
+      # Defaults to 3.
+      replicas: null
       # Resources describes the requested and maximum allowed CPU/memory usage.
       resources:
         # Claims lists the names of resources, defined in spec.resourceClaims,

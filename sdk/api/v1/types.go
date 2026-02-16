@@ -161,6 +161,7 @@ type ApplicationSpec struct {
 	ApplicationRef ApplicationRef `json:"applicationRef"`
 
 	// Values specify values overrides that are passed to helm templating. Comments are not preserved.
+	//
 	// Deprecated: Use ValuesBlock instead
 	Values json.RawMessage `json:"values,omitempty"`
 

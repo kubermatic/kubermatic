@@ -34,7 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -63,7 +63,7 @@ type Reconciler struct {
 	seedKubeconfigGetter provider.SeedKubeconfigGetter
 	seedClientGetter     provider.SeedClientGetter
 	log                  *zap.SugaredLogger
-	recorder             record.EventRecorder
+	recorder             events.EventRecorder
 	versions             kubermatic.Versions
 }
 
@@ -81,7 +81,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := r.reconcile(ctx, logger, seed); err != nil {
-		r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
+		r.recorder.Eventf(seed, nil, corev1.EventTypeWarning, "ReconcilingFailed", "Reconciling", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile seed %s: %w", seed.Name, err)
 	}
 

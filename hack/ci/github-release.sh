@@ -262,6 +262,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/nginx-ingress-controller \
     charts/s3-exporter \
     charts/telemetry \
+    charts/envoy-gateway-controller \
     charts/values.example.ce.yaml \
     charts/values.example.mla.yaml \
     charts/kubermatic.example.ce.yaml \
@@ -304,6 +305,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/nginx-ingress-controller \
     charts/s3-exporter \
     charts/telemetry \
+    charts/envoy-gateway-controller \
     charts/values.example.ee.yaml \
     charts/values.example.mla.yaml \
     charts/kubermatic.example.ee.yaml \

@@ -100,6 +100,65 @@ spec:
                           description: Disable is a flag that can be used to disable certificate automation for a tenant.
                           type: boolean
                       type: object
+                    circuitBreaker:
+                      description: |-
+                        CircuitBreaker defines the circuit breaker configuration for this tenant's Envoy clusters.
+                        Overrides Config-level settings.
+                      properties:
+                        maxConnections:
+                          description: |-
+                            MaxConnections is the maximum number of connections that Envoy will establish to all endpoints in the cluster.
+                            If not specified, the default is 1024.
+                          format: int64
+                          maximum: 4294967295
+                          minimum: 0
+                          type: integer
+                        maxParallelRequests:
+                          description: |-
+                            MaxParallelRequests is the maximum number of parallel requests that Envoy will make to the cluster.
+                            This is applicable to HTTP/2 and gRPC connections.
+                            If not specified, the default is 1024.
+                          format: int64
+                          maximum: 4294967295
+                          minimum: 0
+                          type: integer
+                        maxParallelRetries:
+                          description: |-
+                            MaxParallelRetries is the maximum number of parallel retries that Envoy will make to the cluster.
+                            If not specified, the default is 3.
+                          format: int64
+                          maximum: 4294967295
+                          minimum: 0
+                          type: integer
+                        maxPendingRequests:
+                          description: |-
+                            MaxPendingRequests is the maximum number of pending requests that Envoy will queue to the cluster.
+                            If not specified, the default is 1024.
+                          format: int64
+                          maximum: 4294967295
+                          minimum: 0
+                          type: integer
+                        maxRequestsPerConnection:
+                          description: |-
+                            MaxRequestsPerConnection is the maximum number of requests that Envoy will make over a single connection
+                            to the cluster. If not specified, there is no limit.
+                          format: int64
+                          maximum: 4294967295
+                          minimum: 0
+                          type: integer
+                        perEndpoint:
+                          description: PerEndpoint configures circuit breaker thresholds that apply to individual endpoints rather than the whole cluster.
+                          properties:
+                            maxConnections:
+                              description: |-
+                                MaxConnections is the maximum number of connections that Envoy will establish to a single endpoint.
+                                If not specified, the default is 1024.
+                              format: int64
+                              maximum: 4294967295
+                              minimum: 0
+                              type: integer
+                          type: object
+                      type: object
                     defaultAnnotations:
                       additionalProperties:
                         additionalProperties:
@@ -203,6 +262,10 @@ spec:
                           x-kubernetes-map-type: atomic
                         disable:
                           description: Disable is a flag that can be used to disable Gateway API for a tenant.
+                          type: boolean
+                        disableBackendTrafficPolicy:
+                          type: boolean
+                        disableClientTrafficPolicy:
                           type: boolean
                         disableGRPCRoute:
                           type: boolean

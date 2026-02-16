@@ -25,7 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -41,7 +41,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	workerName string
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 	log        *zap.SugaredLogger
 }
 
@@ -51,7 +51,7 @@ func Add(mgr manager.Manager, numWorkers int, workerName string, log *zap.Sugare
 		Client: mgr.GetClient(),
 
 		workerName: workerName,
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		recorder:   mgr.GetEventRecorder(ControllerName),
 		log:        log,
 	}
 
@@ -93,7 +93,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			reason = "no reason given"
 		}
 
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ClusterPaused", "Cluster cannot be cleaned up because it is paused: %s", reason)
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ClusterPaused", "Reconciling", "Cluster cannot be cleaned up because it is paused: %s", reason)
 	}
 
 	// no worker name
@@ -102,7 +102,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		// tell if a seed-ctrl-mgr with the given worker-name is actually
 		// up and running right now)
 		if time.Since(cluster.DeletionTimestamp.Time) > 5*time.Minute {
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "WorkerName", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "WorkerName", "Reconciling", "A %s label is set, preventing the regular seed-controller-manager from cleaning up.", kubermaticv1.WorkerNameLabelKey)
 		}
 	}
 

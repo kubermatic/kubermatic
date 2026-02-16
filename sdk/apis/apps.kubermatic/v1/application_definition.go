@@ -213,6 +213,7 @@ type ApplicationDefinitionSpec struct {
 	Method TemplateMethod `json:"method"`
 
 	// DefaultValues specify default values for the UI which are passed to helm templating when creating an application. Comments are not preserved.
+	//
 	// Deprecated: Use DefaultValuesBlock instead. This field was deprecated in KKP 2.25 and will be removed in KKP 2.27+.
 	// +kubebuilder:pruning:PreserveUnknownFields
 	DefaultValues *runtime.RawExtension `json:"defaultValues,omitempty"`

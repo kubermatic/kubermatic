@@ -133,6 +133,7 @@ spec:
                 values:
                   description: |-
                     Values specify values overrides that are passed to helm templating. Comments are not preserved.
+
                     Deprecated: Use ValuesBlock instead. This field was deprecated in KKP 2.25 and will be removed in KKP 2.27+.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true

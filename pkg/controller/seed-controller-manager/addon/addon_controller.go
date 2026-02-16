@@ -55,7 +55,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -97,7 +97,7 @@ type Reconciler struct {
 	addonEnforceInterval int
 	addonVariables       map[string]interface{}
 	overwriteRegistry    string
-	recorder             record.EventRecorder
+	recorder             events.EventRecorder
 	kubeconfigProvider   KubeconfigProvider
 	versions             kubermatic.Versions
 	addons               map[string]*addon.Addon
@@ -128,7 +128,7 @@ func Add(
 		addonEnforceInterval: addonEnforceInterval,
 		kubeconfigProvider:   kubeconfigProvider,
 		workerName:           workerName,
-		recorder:             mgr.GetEventRecorderFor(ControllerName),
+		recorder:             mgr.GetEventRecorder(ControllerName),
 		overwriteRegistry:    overwriteRegistry,
 		versions:             versions,
 		addons:               addons,
@@ -299,8 +299,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 				func() (*reconcile.Result, error) {
 					result, err := r.reconcile(ctx, log, addon, cluster)
 					if err != nil {
-						r.recorder.Event(addon, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-						r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+						r.recorder.Eventf(addon, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
+						r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling",
 							"failed to reconcile Addon %q: %v", addon.Name, err)
 					}
 

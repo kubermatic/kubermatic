@@ -151,13 +151,38 @@ linters:
       # gocritic
       - path: (.+)\.go$
         text: singleCaseSwitch # in most cases this is the beginning of a lookup table and should be kept an obvious table
-      # This needs to be fixed against https://github.com/kubermatic/kubermatic/issues/14876
+      # Endpoints API deprecated in K8s 1.33 (KEP-4974), but still required for conformance tests.
+      # Remove once Kubernetes reaches Stage 3 of the deprecation plan.
+      # https://github.com/kubermatic/kubermatic/issues/14876
       - linters:
           - staticcheck
         text: "SA1019: corev1.Endpoints is deprecated"
       - linters:
           - staticcheck
         text: "SA1019: corev1.EndpointSubset is deprecated"
+      # KKP's own deprecated fields still referenced for backward compatibility.
+      # These will be removed together with the deprecated fields themselves.
+      - linters:
+          - staticcheck
+        text: "SA1019: .*CoreDNSReplicas is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*\\.Values is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*OVDCNetwork is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*NodeportProxy\\.Annotations is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*DefaultValues is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: .*VMNetName is deprecated"
+      - linters:
+          - staticcheck
+        text: "SA1019: registry.GetOverwriteFunc is deprecated"
       - linters:
           - goconst
         path: (.+)_test\.go

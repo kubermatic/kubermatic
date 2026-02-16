@@ -37,7 +37,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -58,7 +58,7 @@ func newTestDashboardGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient
 	reconciler := dashboardGrafanaReconciler{
 		Client:                     dynamicClient,
 		log:                        kubermaticlog.Logger,
-		recorder:                   record.NewFakeRecorder(10),
+		recorder:                   events.NewFakeRecorder(10),
 		dashboardGrafanaController: dashboardGrafanaController,
 	}
 	return &reconciler, ts

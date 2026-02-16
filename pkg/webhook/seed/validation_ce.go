@@ -20,14 +20,12 @@ package seed
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -36,7 +34,7 @@ type fixedNameValidator struct {
 	name     string
 }
 
-var _ admission.CustomValidator = &fixedNameValidator{}
+var _ admission.Validator[*kubermaticv1.Seed] = &fixedNameValidator{}
 
 func NewValidator(
 	seedsGetter provider.SeedsGetter,
@@ -54,31 +52,26 @@ func NewValidator(
 	}, nil
 }
 
-func (v *fixedNameValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *fixedNameValidator) ValidateCreate(ctx context.Context, obj *kubermaticv1.Seed) (admission.Warnings, error) {
 	return nil, v.validate(ctx, obj, false)
 }
 
-func (v *fixedNameValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *fixedNameValidator) ValidateUpdate(ctx context.Context, oldObj, newObj *kubermaticv1.Seed) (admission.Warnings, error) {
 	return nil, v.validate(ctx, newObj, false)
 }
 
-func (v *fixedNameValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *fixedNameValidator) ValidateDelete(ctx context.Context, obj *kubermaticv1.Seed) (admission.Warnings, error) {
 	return nil, v.validate(ctx, obj, true)
 }
 
-func (v *fixedNameValidator) validate(ctx context.Context, obj runtime.Object, isDelete bool) error {
+func (v *fixedNameValidator) validate(ctx context.Context, obj *kubermaticv1.Seed, isDelete bool) error {
 	// restrict names to CE-compatible names, i.e. only "kubermatic";
 	// this is both to make the validation easier (we can use the default
 	// seedsGetter if there cannot be more than one Seed in CE) and to make
 	// misconfiguration harder (we warn the user early if they create misnamed Seeds)
 	if !isDelete {
-		subject, ok := obj.(*kubermaticv1.Seed)
-		if !ok {
-			return errors.New("given object is not a Seed")
-		}
-
-		if subject.Name != v.name {
-			return fmt.Errorf("cannot create Seed %s: it must be named %s", subject.Name, v.name)
+		if obj.Name != v.name {
+			return fmt.Errorf("cannot create Seed %s: it must be named %s", obj.Name, v.name)
 		}
 	}
 

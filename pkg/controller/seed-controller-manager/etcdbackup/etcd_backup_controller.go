@@ -46,7 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"k8s.io/utils/clock"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,7 +88,7 @@ type Reconciler struct {
 	clock               clock.WithTickerAndDelayedExecution
 	randStringGenerator func() string
 	caBundle            resources.CABundle
-	recorder            record.EventRecorder
+	recorder            events.EventRecorder
 	versions            kubermatic.Versions
 	seedGetter          provider.SeedGetter
 	configGetter        provider.KubermaticConfigurationGetter
@@ -121,7 +121,7 @@ func Add(
 		log:        log,
 		scheme:     mgr.GetScheme(),
 		workerName: workerName,
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
+		recorder:   mgr.GetEventRecorder(ControllerName),
 
 		versions: versions,
 		clock:    &clock.RealClock{},
@@ -221,8 +221,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 			result = &reconcile.Result{RequeueAfter: 30 * time.Second}
 			err = nil
 		} else {
-			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+			r.recorder.Eventf(backupConfig, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling",
 				"failed to reconcile etcd backup config %q: %v", backupConfig.Name, err)
 		}
 	}
@@ -348,7 +348,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 			if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 				return nil, fmt.Errorf("failed to update backup config: %w", err)
 			}
-			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "TooManyBackups", "tracking too many backups; not scheduling new ones")
+			r.recorder.Eventf(backupConfig, nil, corev1.EventTypeWarning, "TooManyBackups", "Reconciling", "tracking too many backups; not scheduling new ones")
 		}
 
 		return nil, nil
@@ -362,7 +362,7 @@ func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupC
 		if err := r.Status().Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
 			return nil, fmt.Errorf("failed to update backup config: %w", err)
 		}
-		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NormalBackupCount", "backup count low enough; scheduling new backups")
+		r.recorder.Eventf(backupConfig, nil, corev1.EventTypeNormal, "NormalBackupCount", "Reconciling", "backup count low enough; scheduling new backups")
 	}
 
 	var backupToSchedule *kubermaticv1.BackupStatus
