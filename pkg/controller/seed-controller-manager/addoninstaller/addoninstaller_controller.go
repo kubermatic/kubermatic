@@ -51,9 +51,10 @@ const (
 	ControllerName  = "kkp-addoninstaller-controller"
 	addonDefaultKey = ".spec.isDefault"
 
-	kubeProxyAddonName = "kube-proxy"
-	openVPNAddonName   = "openvpn"
-	CSIAddonName       = "csi"
+	kubeStatsMetricsAddonName = "kube-state-metrics"
+	kubeProxyAddonName        = "kube-proxy"
+	openVPNAddonName          = "openvpn"
+	CSIAddonName              = "csi"
 )
 
 type Reconciler struct {
@@ -317,6 +318,10 @@ func skipAddonInstallation(addon kubermaticv1.Addon, cluster *kubermaticv1.Clust
 	}
 	if addon.Name == CSIAddonName && cluster.Spec.DisableCSIDriver {
 		return true // skip csi driver installation if DisableCSIDriver is true
+	}
+
+	if addon.Name == kubeStatsMetricsAddonName && !cluster.Spec.MLA.MonitoringEnabled {
+		return true // skip kube-stats-metrics if monitoring is disabled
 	}
 	return false
 }
