@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	hetznerServerType = "cx32"
+	hetznerServerType = "cpx22"
 )
 
 type hetznerScenario struct {
