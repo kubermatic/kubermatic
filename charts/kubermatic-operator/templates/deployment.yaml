@@ -65,8 +65,8 @@ spec:
         {{- end }}
         {{- if .Values.migrateGatewayAPI }}
         - -enable-gateway-api
-        {{- if .Values.kubermaticOperator.httpRouteWatchNamespaces }}
-        - -httproute-watch-namespaces={{ join "," .Values.kubermaticOperator.httpRouteWatchNamespaces }}
+        {{- with .Values.kubermaticOperator.httpRouteWatchNamespaces }}
+        - -httproute-watch-namespaces={{ join "," . }}
         {{- end }}
         {{- end }}
         env:
