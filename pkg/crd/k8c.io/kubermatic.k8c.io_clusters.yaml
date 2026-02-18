@@ -4289,13 +4289,6 @@ spec:
                         - HealthStatusUp
                         - HealthStatusProvisioning
                       type: string
-                    openvpn:
-                      description: ' Deprecated: OpenVPN will be removed entirely in the future.'
-                      enum:
-                        - HealthStatusDown
-                        - HealthStatusUp
-                        - HealthStatusProvisioning
-                      type: string
                     operatingSystemManager:
                       enum:
                         - HealthStatusDown

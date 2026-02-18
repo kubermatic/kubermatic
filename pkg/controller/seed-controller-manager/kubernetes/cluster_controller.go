@@ -94,7 +94,6 @@ type Reconciler struct {
 	dockerPullConfigJSON             []byte
 	kubermaticImage                  string
 	etcdLauncherImage                string
-	dnatControllerImage              string
 	machineControllerImageTag        string
 	machineControllerImageRepository string
 	concurrentClusterUpdates         int
@@ -134,7 +133,6 @@ func Add(
 	oidcIssuerClientID string,
 	kubermaticImage string,
 	etcdLauncherImage string,
-	dnatControllerImage string,
 	machineControllerImageTag string,
 	machineControllerImageRepository string,
 	tunnelingAgentIP string,
@@ -159,7 +157,6 @@ func Add(
 		dockerPullConfigJSON:             dockerPullConfigJSON,
 		kubermaticImage:                  kubermaticImage,
 		etcdLauncherImage:                etcdLauncherImage,
-		dnatControllerImage:              dnatControllerImage,
 		machineControllerImageTag:        machineControllerImageTag,
 		machineControllerImageRepository: machineControllerImageRepository,
 		concurrentClusterUpdates:         concurrentClusterUpdates,

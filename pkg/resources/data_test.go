@@ -258,67 +258,6 @@ func TestEtcdLauncherImage(t *testing.T) {
 	}
 }
 
-func TestDNATControllerImage(t *testing.T) {
-	testCases := []struct {
-		name                    string
-		templateData            *TemplateData
-		wantDNATControllerImage string
-	}{
-		{
-			name: "default image",
-			templateData: &TemplateData{
-				dnatControllerImage: "quay.io/kubermatic/kubeletdnat-controller",
-			},
-			wantDNATControllerImage: "quay.io/kubermatic/kubeletdnat-controller",
-		},
-		{
-			name: "default image with overwrite registry",
-			templateData: &TemplateData{
-				dnatControllerImage: "quay.io/kubermatic/kubeletdnat-controller",
-				OverwriteRegistry:   "custom-registry.kubermatic.io",
-			},
-			wantDNATControllerImage: "custom-registry.kubermatic.io/kubermatic/kubeletdnat-controller",
-		},
-		{
-			name: "custom image with 2 parts",
-			templateData: &TemplateData{
-				dnatControllerImage: "kubermatic/kubeletdnat-controller",
-			},
-			wantDNATControllerImage: "docker.io/kubermatic/kubeletdnat-controller",
-		},
-		{
-			name: "custom image with 2 parts with overwrite registry",
-			templateData: &TemplateData{
-				dnatControllerImage: "kubermatic/kubeletdnat-controller",
-				OverwriteRegistry:   "custom-registry.kubermatic.io",
-			},
-			wantDNATControllerImage: "custom-registry.kubermatic.io/kubermatic/kubeletdnat-controller",
-		},
-		{
-			name: "custom image with 4 parts",
-			templateData: &TemplateData{
-				dnatControllerImage: "registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
-			},
-			wantDNATControllerImage: "registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
-		},
-		{
-			name: "custom image with 4 parts with overwrite registry",
-			templateData: &TemplateData{
-				dnatControllerImage: "registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
-				OverwriteRegistry:   "custom-registry.kubermatic.io",
-			},
-			wantDNATControllerImage: "custom-registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if img := tc.templateData.DNATControllerImage(); img != tc.wantDNATControllerImage {
-				t.Errorf("want kubeletdnat-controller image %q, but got %q", tc.wantDNATControllerImage, img)
-			}
-		})
-	}
-}
-
 func TestNetworkInterfaceManagerImage(t *testing.T) {
 	testCases := []struct {
 		name                    string

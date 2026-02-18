@@ -542,10 +542,6 @@ func DefaultConfiguration(config *kubermaticv1.KubermaticConfiguration, logger *
 		return configCopy, err
 	}
 
-	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.DNATControllerDockerRepository, DefaultDNATControllerImage, "userCluster.dnatControllerDockerRepository", logger); err != nil {
-		return configCopy, err
-	}
-
 	if err := defaultDockerRepo(&configCopy.Spec.UserCluster.EtcdLauncherDockerRepository, DefaultEtcdLauncherImage, "userCluster.etcdLauncher.DockerRepository", logger); err != nil {
 		return configCopy, err
 	}
@@ -792,12 +788,6 @@ items:
   kind: Addon
   metadata:
     name: kube-proxy
-    labels:
-      addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8c.io/v1
-  kind: Addon
-  metadata:
-    name: openvpn
     labels:
       addons.kubermatic.io/ensure: true
 - apiVersion: kubermatic.k8c.io/v1

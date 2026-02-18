@@ -2916,11 +2916,6 @@ spec:
                         DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
                         the Kubernetes API server.
                       type: boolean
-                    dnatControllerDockerRepository:
-                      description: |-
-                        DNATControllerDockerRepository is the repository containing the
-                        dnat-controller image.
-                      type: string
                     etcdLauncherDockerRepository:
                       description: |-
                         EtcdLauncherDockerRepository is the repository containing the Kubermatic
