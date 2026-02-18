@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -196,7 +197,11 @@ func (r *Reconciler) desiredListeners(
 		}
 	}
 
-	for hostname, certName := range hostnameToCertName {
+	hostnames := slices.Collect(maps.Keys(hostnameToCertName))
+	slices.Sort(hostnames)
+
+	for _, hostname := range hostnames {
+		certName := hostnameToCertName[hostname]
 		listener := gatewayapiv1.Listener{
 			Name:     gatewayapiv1.SectionName(sanitizeListenerName(hostname)),
 			Hostname: ptr.To(gatewayapiv1.Hostname(hostname)),

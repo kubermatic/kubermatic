@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -103,6 +104,18 @@ func main() {
 		log.Fatal("-namespace is a mandatory flag")
 	}
 
+	httprouteWatchNamespaces := sets.New[string]()
+	for _, ns := range strings.Split(opt.httprouteWatchNamespaces, ",") {
+		ns = strings.TrimSpace(ns)
+		if ns != "" {
+			httprouteWatchNamespaces.Insert(ns)
+		}
+	}
+
+	if httprouteWatchNamespaces.Len() == 0 {
+		log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
+	}
+
 	versions := kubermatic.GetVersions()
 	helloLog := log.With("kubermatic-tag", versions.KubermaticContainerTag, "ui-tag", versions.UIContainerTag, "edition")
 
@@ -163,7 +176,7 @@ func main() {
 		opt.workerCount,
 		opt.workerName,
 		opt.enableGatewayAPI,
-		strings.Split(opt.httprouteWatchNamespaces, ","),
+		sets.List(httprouteWatchNamespaces),
 	)
 	if err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
