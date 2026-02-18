@@ -111,7 +111,7 @@ func main() {
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&runOpts.configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
-	flag.StringVar(&runOpts.httprouteWatchNamespaces, "httproute-watch-namespaces", "mla,monitoring", "Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync")
+	flag.StringVar(&runOpts.httprouteWatchNamespaces, "httproute-watch-namespaces", "monitoring,mla", "Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
