@@ -18,6 +18,7 @@ package kubermatic
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -38,7 +39,7 @@ func masterControllerManagerPodLabels() map[string]string {
 	}
 }
 
-func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions) reconciling.NamedDeploymentReconcilerFactory {
+func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguration, workerName string, versions kubermatic.Versions, httprouteWatchNamespaces []string) reconciling.NamedDeploymentReconcilerFactory {
 	return func() (string, reconciling.DeploymentReconciler) {
 		return common.MasterControllerManagerDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			labels := masterControllerManagerPodLabels()
@@ -65,6 +66,7 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
+				fmt.Sprintf("-httproute-watch-namespaces=%s", strings.Join(httprouteWatchNamespaces, ",")),
 			}
 
 			if cfg.Spec.MasterController.DebugLog {

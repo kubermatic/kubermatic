@@ -64,6 +64,8 @@ type Reconciler struct {
 	// It will create Gateway and HTTPRoute resources when enabled for Kubermatic API and Dashboard.
 	// It will be by default true in the future releases as Gateway API becomes the default.
 	gatewayAPIEnabled bool
+	// httprouteWatchNamespaces is a list of namespaces to watch HTTPRoutes for Gateway listener sync.
+	httprouteWatchNamespaces []string
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -428,7 +430,7 @@ func (r *Reconciler) reconcileDeployments(ctx context.Context, config *kubermati
 	logger.Debug("Reconciling Deployments")
 
 	reconcilers := []reconciling.NamedDeploymentReconcilerFactory{
-		kubermatic.MasterControllerManagerDeploymentReconciler(config, r.workerName, r.versions),
+		kubermatic.MasterControllerManagerDeploymentReconciler(config, r.workerName, r.versions, r.httprouteWatchNamespaces),
 		common.WebhookDeploymentReconciler(config, r.versions, nil, false),
 	}
 

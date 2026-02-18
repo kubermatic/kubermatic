@@ -24,6 +24,13 @@ kubermaticOperator:
     # a release prowjob
     tag: "v9.9.9-dev"
 
+  # Namespaces to watch for HTTPRoutes when Gateway API is enabled.
+  # Only used when migrateGatewayAPI=true and HTTPRouteGatewaySync feature gate is enabled.
+  # Default: ["monitoring", "mla"]
+  httpRouteWatchNamespaces:
+    - monitoring
+    - mla
+
   imagePullSecret: |
     {
       "quay.io": {}
