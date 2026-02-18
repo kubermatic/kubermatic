@@ -52,6 +52,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	gatewayclientscheme "sigs.k8s.io/gateway-api/pkg/client/clientset/versioned/scheme"
 )
 
 const (
@@ -188,6 +189,10 @@ func main() {
 
 	if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", kubermaticv1.SchemeGroupVersion), zap.Error(err))
+	}
+
+	if err := gatewayclientscheme.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("failed to add Gateway API scheme", zap.Error(err))
 	}
 
 	// these two getters rely on the ctrlruntime manager being started; they
