@@ -63,6 +63,7 @@ func Add(
 	numWorkers int,
 	workerName string,
 	enableGatewayAPI bool,
+	httprouteWatchNamespaces []string,
 ) error {
 	reconciler := &Reconciler{
 		Client:            mgr.GetClient(),
@@ -72,6 +73,7 @@ func Add(
 		workerName:        workerName,
 		versions:          kubermatic.GetVersions(),
 		gatewayAPIEnabled: enableGatewayAPI,
+		httprouteWatchNamespaces: httprouteWatchNamespaces,
 	}
 
 	bldr := builder.ControllerManagedBy(mgr).

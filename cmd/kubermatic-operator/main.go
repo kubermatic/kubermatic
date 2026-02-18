@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"strings"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/zapr"
@@ -48,12 +49,13 @@ import (
 )
 
 type controllerRunOptions struct {
-	namespace            string
-	internalAddr         string
-	workerCount          int
-	workerName           string
-	enableLeaderElection bool
-	enableGatewayAPI     bool
+	namespace                string
+	internalAddr             string
+	workerCount              int
+	workerName               string
+	enableLeaderElection     bool
+	enableGatewayAPI         bool
+	httprouteWatchNamespaces string
 }
 
 func main() {
@@ -78,6 +80,12 @@ func main() {
 		"enable-gateway-api",
 		false,
 		"Allow watching Gateway API resources (Gateway and HTTPRoute). Requires Gateway API CRDs to exist",
+	)
+	flag.StringVar(
+		&opt.httprouteWatchNamespaces,
+		"httproute-watch-namespaces",
+		"monitoring,mla",
+		"Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync. Only used when --enable-gateway-api is set.",
 	)
 	flag.Parse()
 
@@ -148,7 +156,16 @@ func main() {
 
 	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-	if err := masterctrl.Add(mgr, log, opt.namespace, opt.workerCount, opt.workerName, opt.enableGatewayAPI); err != nil {
+	err = masterctrl.Add(
+		mgr,
+		log,
+		opt.namespace,
+		opt.workerCount,
+		opt.workerName,
+		opt.enableGatewayAPI,
+		strings.Split(opt.httprouteWatchNamespaces, ","),
+	)
+	if err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 

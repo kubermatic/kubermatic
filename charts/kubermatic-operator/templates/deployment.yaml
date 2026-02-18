@@ -65,6 +65,9 @@ spec:
         {{- end }}
         {{- if .Values.migrateGatewayAPI }}
         - -enable-gateway-api
+        {{- if .Values.kubermaticOperator.httpRouteWatchNamespaces }}
+        - -httproute-watch-namespaces={{ join "," .Values.kubermaticOperator.httpRouteWatchNamespaces }}
+        {{- end }}
         {{- end }}
         env:
         - name: SSL_CERT_FILE
