@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/go-logr/zapr"
 	"github.com/prometheus/client_golang/prometheus"
@@ -58,31 +59,33 @@ const (
 )
 
 type controllerRunOptions struct {
-	internalAddr            string
-	enableLeaderElection    bool
-	leaderElectionNamespace string
-	featureGates            features.FeatureGate
-	configFile              string
+	internalAddr             string
+	enableLeaderElection     bool
+	leaderElectionNamespace  string
+	featureGates             features.FeatureGate
+	configFile               string
+	httprouteWatchNamespaces string
 
 	workerName string
 	namespace  string
 }
 
 type controllerContext struct {
-	ctx                     context.Context
-	mgr                     manager.Manager
-	log                     *zap.SugaredLogger
-	workerCount             int
-	workerName              string
-	workerNameLabelSelector labels.Selector
-	workerNamePredicate     predicate.Predicate
-	seedsGetter             provider.SeedsGetter
-	seedKubeconfigGetter    provider.SeedKubeconfigGetter
-	labelSelectorFunc       func(*metav1.ListOptions)
-	namespace               string
-	versions                kubermatic.Versions
-	overwriteRegistry       string
-	featureGates            features.FeatureGate
+	ctx                      context.Context
+	mgr                      manager.Manager
+	log                      *zap.SugaredLogger
+	workerCount              int
+	workerName               string
+	workerNameLabelSelector  labels.Selector
+	workerNamePredicate      predicate.Predicate
+	seedsGetter              provider.SeedsGetter
+	seedKubeconfigGetter     provider.SeedKubeconfigGetter
+	labelSelectorFunc        func(*metav1.ListOptions)
+	namespace                string
+	versions                 kubermatic.Versions
+	overwriteRegistry        string
+	featureGates             features.FeatureGate
+	httprouteWatchNamespaces []string
 
 	configGetter provider.KubermaticConfigurationGetter
 }
@@ -107,6 +110,7 @@ func main() {
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&runOpts.configFile, "kubermatic-configuration-file", "", "(for development only) path to a KubermaticConfiguration YAML file")
+	flag.StringVar(&runOpts.httprouteWatchNamespaces, "httproute-watch-namespaces", "mla,monitoring", "Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -118,6 +122,7 @@ func main() {
 	ctrlCtx.workerName = runOpts.workerName
 	ctrlCtx.namespace = runOpts.namespace
 	ctrlCtx.featureGates = runOpts.featureGates
+	ctrlCtx.httprouteWatchNamespaces = strings.Split(runOpts.httprouteWatchNamespaces, ",")
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
