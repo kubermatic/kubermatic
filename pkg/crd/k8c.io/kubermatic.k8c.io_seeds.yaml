@@ -3261,6 +3261,71 @@ spec:
                     envoy:
                       description: Envoy configures the Envoy application itself.
                       properties:
+                        connectionSettings:
+                          description: |-
+                            ConnectionSettings configures idle timeout and TCP keepalive settings for
+                            the nodeport-proxy Envoy listeners and upstream clusters.
+                            Zero values keep Envoy defaults (no KKP override).
+                          properties:
+                            downstreamTCPKeepaliveInterval:
+                              description: |-
+                                DownstreamTCPKeepaliveInterval configures the interval between TCP
+                                keepalive probes on downstream listener sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                            downstreamTCPKeepaliveProbes:
+                              description: |-
+                                DownstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+                                probes before considering downstream listener sockets dead.
+                                Set to 0 to leave unset.
+                              format: int32
+                              minimum: 1
+                              type: integer
+                            downstreamTCPKeepaliveTime:
+                              description: |-
+                                DownstreamTCPKeepaliveTime configures the idle time before the first TCP
+                                keepalive probe is sent on downstream listener sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                            sniListenerIdleTimeout:
+                              description: |-
+                                SNIListenerIdleTimeout bounds how long inactive :6443 SNI listener
+                                downstream connections are kept open.
+                                Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+                              type: string
+                            tunnelingConnectionIdleTimeout:
+                              description: |-
+                                TunnelingConnectionIdleTimeout bounds how long inactive :8088 tunneling
+                                listener downstream connections are kept open.
+                                Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+                              type: string
+                            tunnelingStreamIdleTimeout:
+                              description: |-
+                                TunnelingStreamIdleTimeout bounds how long inactive HTTP/2 CONNECT streams
+                                on the tunneling listener are kept open.
+                                Set to 0 to keep Envoy default behavior. If set, value must be >= 1s.
+                              type: string
+                            upstreamTCPKeepaliveInterval:
+                              description: |-
+                                UpstreamTCPKeepaliveInterval configures the interval between TCP keepalive
+                                probes on upstream cluster sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                            upstreamTCPKeepaliveProbes:
+                              description: |-
+                                UpstreamTCPKeepaliveProbes is the number of unanswered TCP keepalive
+                                probes before considering upstream cluster sockets dead.
+                                Set to 0 to leave unset.
+                              format: int32
+                              minimum: 1
+                              type: integer
+                            upstreamTCPKeepaliveTime:
+                              description: |-
+                                UpstreamTCPKeepaliveTime configures the idle time before the first TCP
+                                keepalive probe is sent on upstream cluster sockets.
+                                Set to 0 to leave unset. If set, value must be >= 1s.
+                              type: string
+                          type: object
                         dockerRepository:
                           description: DockerRepository is the repository containing the component's image.
                           type: string
@@ -3284,9 +3349,10 @@ spec:
                               type: array
                           type: object
                         replicas:
+                          default: 3
                           description: |-
                             Replicas sets the number of pod replicas for the nodeport-proxy-envoy deployment.
-                            If unset, 3 replicas are used.
+                            Defaults to 3.
                           format: int32
                           minimum: 1
                           type: integer
