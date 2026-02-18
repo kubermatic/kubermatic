@@ -18,6 +18,8 @@ package httproutegatewaysync
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"reflect"
 	"slices"
@@ -35,6 +37,15 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayapiv1 "sigs.k8s.io/gateway-api/apis/v1"
+)
+
+const (
+	// maxListenerNameLength is the maximum length for a DNS-1035 label.
+	maxListenerNameLength = 63
+	// listenerNamePrefixLen is the prefix length before hash suffix.
+	listenerNamePrefixLen = maxListenerNameLength - 1 - 8 // 54 = 63 - 1 (dash) - 8 (hash)
+	// listenerNameHashLen is the length of the hash suffix.
+	listenerNameHashLen = 8
 )
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -170,6 +181,14 @@ func (r *Reconciler) desiredListeners(
 	for _, route := range httpRoutes {
 		for _, hostname := range route.Spec.Hostnames {
 			h := string(hostname)
+			if h == "" {
+				log.Debug(
+					"Skipping empty hostname in HTTPRoute %s/%s - not valid for cert-manager TLS",
+					route.Namespace, route.Name,
+				)
+				continue
+			}
+
 			if _, exists := hostnameToCertName[h]; !exists {
 				// first HTTPRoute with this hostname determines cert name
 				hostnameToCertName[h] = fmt.Sprintf("%s-%s", route.Namespace, route.Name)
@@ -210,8 +229,9 @@ func (r *Reconciler) desiredListeners(
 	return listeners
 }
 
-// sanitizeListenerName converts a hostname to a valid listener name.
+// sanitizeListenerName converts a hostname to a valid DNS-1035 label for a listener name.
 // Wildcard hostnames (*.example.com) are prefixed with "w-" and the asterisk is removed.
+// For names exceeding 63 characters, a hash suffix ensures uniqueness.
 func sanitizeListenerName(hostname string) string {
 	name := strings.ToLower(hostname)
 
@@ -220,11 +240,28 @@ func sanitizeListenerName(hostname string) string {
 	}
 
 	name = strings.ReplaceAll(name, ".", "-")
-	if len(name) > 63 {
-		name = name[:63]
+
+	// if name fits within limit, return as-is after trimming trailing dashes
+	if len(name) <= maxListenerNameLength {
+		return strings.TrimRight(name, "-")
 	}
 
-	return strings.TrimRight(name, "-")
+	// for long names, use hash suffix to ensure uniqueness
+	// format: <prefix>-<hash> = maxListenerNameLength chars total
+	hashBytes := sha256.Sum256([]byte(hostname))
+	hash := hex.EncodeToString(hashBytes[:])[:listenerNameHashLen]
+
+	if len(name) > listenerNamePrefixLen {
+		name = name[:listenerNamePrefixLen]
+	}
+	name = strings.TrimRight(name, "-")
+
+	// ensure name doesn't start with dash (invalid DNS label)
+	if name == "" || name[0] == '-' {
+		name = "x"
+	}
+
+	return name + "-" + hash
 }
 
 func (r *Reconciler) patchGatewayListeners(
