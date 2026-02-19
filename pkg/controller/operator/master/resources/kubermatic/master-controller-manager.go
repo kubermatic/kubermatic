@@ -22,6 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/reconciler/pkg/reconciling"
@@ -66,7 +67,10 @@ func MasterControllerManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticCon
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-overwrite-registry=%s", cfg.Spec.UserCluster.OverwriteRegistry),
-				fmt.Sprintf("-httproute-watch-namespaces=%s", strings.Join(httprouteWatchNamespaces, ",")),
+			}
+
+			if cfg.Spec.FeatureGates[features.HTTPRouteGatewaySync] && len(httprouteWatchNamespaces) > 0 {
+				args = append(args, fmt.Sprintf("-httproute-watch-namespaces=%s", strings.Join(httprouteWatchNamespaces, ",")))
 			}
 
 			if cfg.Spec.MasterController.DebugLog {

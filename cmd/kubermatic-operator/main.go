@@ -105,15 +105,17 @@ func main() {
 	}
 
 	httprouteWatchNamespaces := sets.New[string]()
-	for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
-		ns = strings.TrimSpace(ns)
-		if ns != "" {
-			httprouteWatchNamespaces.Insert(ns)
+	if opt.enableGatewayAPI {
+		for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
+			ns = strings.TrimSpace(ns)
+			if ns != "" {
+				httprouteWatchNamespaces.Insert(ns)
+			}
 		}
-	}
 
-	if httprouteWatchNamespaces.Len() == 0 {
-		log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
+		if httprouteWatchNamespaces.Len() == 0 {
+			log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
+		}
 	}
 
 	versions := kubermatic.GetVersions()
