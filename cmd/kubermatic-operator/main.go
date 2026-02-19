@@ -105,7 +105,7 @@ func main() {
 	}
 
 	httprouteWatchNamespaces := sets.New[string]()
-	for _, ns := range strings.Split(opt.httprouteWatchNamespaces, ",") {
+	for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
 		ns = strings.TrimSpace(ns)
 		if ns != "" {
 			httprouteWatchNamespaces.Insert(ns)
