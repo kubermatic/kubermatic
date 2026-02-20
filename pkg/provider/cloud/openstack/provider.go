@@ -340,14 +340,14 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 		}
 	}
 
-	hasLBFloatingIpPool := false
+	hasLBFloatingIPPool := false
 	if cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool != "" {
 		lbExtNetwork, err = getNetworkByName(netClient, cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get external network for load balancer floating IP pool by name: %w", err)
 		}
 
-		hasLBFloatingIpPool = true
+		hasLBFloatingIPPool = true
 	}
 
 	// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer.
@@ -362,7 +362,7 @@ func reconcileExtNetwork(ctx context.Context, netClient *gophercloud.ServiceClie
 		// by default, the same floating IP pool is used for machines and LBs.
 		cluster.Annotations[LoadBalancerFloatingIPPoolIDAnnotation] = extNetwork.ID
 
-		if hasLBFloatingIpPool && lbExtNetwork != nil {
+		if hasLBFloatingIPPool && lbExtNetwork != nil {
 			cluster.Spec.Cloud.Openstack.LoadBalancerFloatingIPPool = lbExtNetwork.Name
 			cluster.Annotations[LoadBalancerFloatingIPPoolIDAnnotation] = lbExtNetwork.ID
 		}
