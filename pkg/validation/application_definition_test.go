@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	appskubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/apps.kubermatic/v1"
+	applicationcatalogmanager "k8c.io/kubermatic/v2/pkg/controller/operator/master/resources/application-catalog"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1153,6 +1154,9 @@ func TestValidateApplicationDefinitionDelete(t *testing.T) {
 	managedAppDef := getApplicationDefinition(managedAppName, false, false, nil, map[string]string{
 		appskubermaticv1.ApplicationManagedByLabel: appskubermaticv1.ApplicationManagedByKKPValue,
 	})
+	catalogManagedApp := getApplicationDefinition("catalog-managed", false, false, nil, map[string]string{
+		applicationcatalogmanager.LabelManagedByApplicationCatalog: "true",
+	})
 
 	testCases := []struct {
 		name          string
@@ -1168,6 +1172,11 @@ func TestValidateApplicationDefinitionDelete(t *testing.T) {
 			name:          "scenario 2: application deletion is not allowed for managed application definition",
 			ad:            managedAppDef,
 			expectedError: `[metadata.labels: Invalid value: {"apps.kubermatic.k8c.io/managed-by":"kkp"}: ` + deleteSystemAppErrorMsg() + `]`,
+		},
+		{
+			name:          "scenario 3: application deletion is not allowed for catalog managed application definition",
+			ad:            catalogManagedApp,
+			expectedError: `[metadata.labels: Invalid value: {"applicationcatalog.k8c.io/managed-by":"true"}: ` + deleteAppCatalogManagedAppErrorMsg() + `]`,
 		},
 	}
 

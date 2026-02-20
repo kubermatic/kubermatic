@@ -771,3 +771,38 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
+
+  - name: pre-kubermatic-appcatalog-manager-e2e
+    run_if_changed: "(pkg/test/e2e/appcatalogmanager/|pkg/controller/operator/master/resources/application-catalog/|pkg/controller/operator/master/reconciler.go|pkg/validation/application_definition.go|.prow/applications-catalog.yaml|hack/ci/run-appcatalog-manager-e2e-tests.sh)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws-e2e-kkp: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-mirror: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+      preset-e2e-ssh: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-6
+          command:
+            - "./hack/ci/run-appcatalog-manager-e2e-tests.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
