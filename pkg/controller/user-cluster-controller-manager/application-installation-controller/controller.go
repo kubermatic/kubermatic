@@ -193,6 +193,11 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, appI
 		return r.userClient.Delete(ctx, appInstallation)
 	}
 
+	// Sync ReconciliationInterval from ApplicationDefinition annotation to ApplicationInstallation spec
+	if err := r.syncReconciliationInterval(ctx, log, applicationDef, appInstallation); err != nil {
+		return fmt.Errorf("failed to sync reconciliation interval: %w", err)
+	}
+
 	// get applicationVersion. If it can not be found, there are 2 cases:
 	//   1) KKP admin has removed the applicationVersion, and we have to remove the corresponding ApplicationInstallation(s)
 	//   2) User made a mistake, or applicationDefinition has not been synced yet on this seed. So we just notify the user.
@@ -388,6 +393,38 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 func (r *reconciler) traceWarning(appInstallation *appskubermaticv1.ApplicationInstallation, log *zap.SugaredLogger, eventReason, message string) {
 	log.Warn(message)
 	r.userRecorder.Eventf(appInstallation, nil, corev1.EventTypeWarning, eventReason, "Reconciling", message)
+}
+
+// syncReconciliationInterval syncs the ReconciliationInterval from the ApplicationDefinition annotation
+// to the ApplicationInstallation spec. If the annotation is present and the value is different,
+// the ApplicationInstallation is updated.
+func (r *reconciler) syncReconciliationInterval(ctx context.Context, log *zap.SugaredLogger, applicationDef *appskubermaticv1.ApplicationDefinition, appInstallation *appskubermaticv1.ApplicationInstallation) error {
+	intervalStr, ok := applicationDef.Annotations[appskubermaticv1.ApplicationReconciliationIntervalAnnotation]
+	if !ok {
+		// No annotation set, nothing to sync
+		return nil
+	}
+
+	interval, err := time.ParseDuration(intervalStr)
+	if err != nil {
+		log.Warnf("Invalid reconciliation interval annotation %q on ApplicationDefinition %s: %v", intervalStr, applicationDef.Name, err)
+		return nil
+	}
+
+	// Check if the interval is different from the current value
+	if appInstallation.Spec.ReconciliationInterval.Duration == interval {
+		return nil
+	}
+
+	log.Infof("Syncing reconciliation interval from ApplicationDefinition annotation: %v", interval)
+	oldAppInstallation := appInstallation.DeepCopy()
+	appInstallation.Spec.ReconciliationInterval.Duration = interval
+
+	if err := r.userClient.Patch(ctx, appInstallation, ctrlruntimeclient.MergeFrom(oldAppInstallation)); err != nil {
+		return fmt.Errorf("failed to update ApplicationInstallation with reconciliation interval: %w", err)
+	}
+
+	return nil
 }
 
 // enqueueAppInstallationForAppDef fan-out updates from applicationDefinition to the ApplicationInstallation that reference

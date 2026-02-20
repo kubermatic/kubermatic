@@ -577,7 +577,7 @@ func filterChartsByName(charts []catalogv1alpha1.ChartConfig, includeList []stri
 
 	var filtered []catalogv1alpha1.ChartConfig
 	for _, chart := range charts {
-		if _, included := includeSet[chart.ChartName]; included {
+		if _, included := includeSet[chart.GetAppName()]; included {
 			filtered = append(filtered, chart)
 		}
 	}

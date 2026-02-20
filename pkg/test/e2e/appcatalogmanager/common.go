@@ -539,7 +539,7 @@ func WithIncludeAnnotation(apps ...string) CatalogOption {
 		if c.Annotations == nil {
 			c.Annotations = make(map[string]string)
 		}
-		c.Annotations[IncludeAnnotation] = joinStrings(apps, ",")
+		c.Annotations[IncludeAnnotation] = strings.Join(apps, ",")
 	}
 }
 
@@ -562,17 +562,6 @@ func WithRepositoryURL(url string) CatalogOption {
 		}
 		c.Spec.Helm.RepositorySettings.BaseURL = url
 	}
-}
-
-func joinStrings(strs []string, sep string) string {
-	if len(strs) == 0 {
-		return ""
-	}
-	result := strs[0]
-	for i := 1; i < len(strs); i++ {
-		result += sep + strs[i]
-	}
-	return result
 }
 
 func getDefaultChartNames() []string {
