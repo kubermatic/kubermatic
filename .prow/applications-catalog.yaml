@@ -765,7 +765,7 @@ presubmits:
             - name: APP_LABEL_KEY
               value: "app.kubernetes.io/name"
             - name: NAMES
-              value: "envoy-gateway"
+              value: "envoy-gateway,gateway-helm"
             - name: KUBERMATIC_EDITION
               value: ee
             - name: SERVICE_ACCOUNT_KEY
