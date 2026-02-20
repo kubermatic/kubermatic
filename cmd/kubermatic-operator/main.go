@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"flag"
+	"strings"
 
 	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
 	"github.com/go-logr/zapr"
@@ -37,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -48,12 +50,13 @@ import (
 )
 
 type controllerRunOptions struct {
-	namespace            string
-	internalAddr         string
-	workerCount          int
-	workerName           string
-	enableLeaderElection bool
-	enableGatewayAPI     bool
+	namespace                string
+	internalAddr             string
+	workerCount              int
+	workerName               string
+	enableLeaderElection     bool
+	enableGatewayAPI         bool
+	httprouteWatchNamespaces string
 }
 
 func main() {
@@ -79,6 +82,12 @@ func main() {
 		false,
 		"Allow watching Gateway API resources (Gateway and HTTPRoute). Requires Gateway API CRDs to exist",
 	)
+	flag.StringVar(
+		&opt.httprouteWatchNamespaces,
+		"httproute-watch-namespaces",
+		"monitoring,mla",
+		"Comma-separated list of namespaces to watch HTTPRoutes for Gateway listener sync. Only used when --enable-gateway-api is set.",
+	)
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format).Named(opt.workerName)
@@ -93,6 +102,20 @@ func main() {
 
 	if len(opt.namespace) == 0 {
 		log.Fatal("-namespace is a mandatory flag")
+	}
+
+	httprouteWatchNamespaces := sets.New[string]()
+	if opt.enableGatewayAPI {
+		for ns := range strings.SplitSeq(opt.httprouteWatchNamespaces, ",") {
+			ns = strings.TrimSpace(ns)
+			if ns != "" {
+				httprouteWatchNamespaces.Insert(ns)
+			}
+		}
+
+		if httprouteWatchNamespaces.Len() == 0 {
+			log.Fatal("-httproute-watch-namespaces must contain at least one namespace")
+		}
 	}
 
 	versions := kubermatic.GetVersions()
@@ -148,7 +171,16 @@ func main() {
 
 	seedClientGetter := kubernetesprovider.SeedClientGetterFactory(seedKubeconfigGetter)
 
-	if err := masterctrl.Add(mgr, log, opt.namespace, opt.workerCount, opt.workerName, opt.enableGatewayAPI); err != nil {
+	err = masterctrl.Add(
+		mgr,
+		log,
+		opt.namespace,
+		opt.workerCount,
+		opt.workerName,
+		opt.enableGatewayAPI,
+		sets.List(httprouteWatchNamespaces),
+	)
+	if err != nil {
 		log.Fatalw("Failed to add operator-master controller", zap.Error(err))
 	}
 
