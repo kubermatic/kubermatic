@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.1
     kubermatic.k8c.io/location: master,seed
   name: clusters.kubermatic.k8c.io
 spec:
@@ -1640,6 +1640,7 @@ spec:
                         ovdcNetwork:
                           description: |-
                             The name of organizational virtual data center network that will be associated with the VMs and vApp.
+
                             Deprecated: OVDCNetwork has been deprecated starting with KKP 2.25 and will be removed in KKP 2.27+. It is recommended to use OVDCNetworks instead.
                           type: string
                         ovdcNetworks:
@@ -1784,6 +1785,7 @@ spec:
                         vmNetName:
                           description: |-
                             The name of the vSphere network.
+
                             Deprecated: Use networks instead.
                           type: string
                       required:
@@ -1800,6 +1802,7 @@ spec:
                     coreDNSReplicas:
                       description: |-
                         CoreDNSReplicas is the number of desired pods of user cluster coredns deployment.
+
                         Deprecated: This field should not be used anymore, use cluster.componentsOverride.coreDNS.replicas
                         instead. Only one of the two fields can be set at any time.
                       format: int32

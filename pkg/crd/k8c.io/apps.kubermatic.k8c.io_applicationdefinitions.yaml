@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.19.0
+    controller-gen.kubebuilder.io/version: v0.20.1
     kubermatic.k8c.io/location: master,seed
   name: applicationdefinitions.apps.kubermatic.k8c.io
 spec:
@@ -116,6 +116,7 @@ spec:
                 defaultValues:
                   description: |-
                     DefaultValues specify default values for the UI which are passed to helm templating when creating an application. Comments are not preserved.
+
                     Deprecated: Use DefaultValuesBlock instead. This field was deprecated in KKP 2.25 and will be removed in KKP 2.27+.
                   type: object
                   x-kubernetes-preserve-unknown-fields: true

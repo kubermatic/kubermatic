@@ -46,7 +46,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -426,7 +426,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 	masterSeeds := map[string]*kubermaticv1.Seed{} // makes the seedsGetter implementation easier
 	seedObjects := map[string][]ctrlruntimeclient.Object{}
 	seedClients := map[string]ctrlruntimeclient.Client{}
-	seedRecorders := map[string]record.EventRecorder{}
+	seedRecorders := map[string]events.EventRecorder{}
 
 	for _, seedName := range seeds {
 		masterSeed := allSeeds[seedName].DeepCopy()
@@ -451,7 +451,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 			WithObjects(seedObjects[seedName]...).
 			Build()
 
-		seedRecorders[seedName] = record.NewFakeRecorder(999)
+		seedRecorders[seedName] = events.NewFakeRecorder(999)
 	}
 
 	masterClient := fake.
@@ -460,7 +460,7 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *kubermati
 		WithObjects(masterObjects...).
 		Build()
 
-	masterRecorder := record.NewFakeRecorder(999)
+	masterRecorder := events.NewFakeRecorder(999)
 
 	versions := kubermatic.GetVersions()
 	versions.KubermaticContainerTag = "latest"

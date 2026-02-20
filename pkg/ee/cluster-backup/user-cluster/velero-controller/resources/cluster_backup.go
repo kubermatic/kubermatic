@@ -49,8 +49,8 @@ const (
 	CloudCredentialsSecretName           = "velero-cloud-credentials"
 	defaultCloudCredentialsSecretKeyName = "cloud"
 
-	version       = "v1.14.0"
-	pluginVersion = "v1.10.0"
+	version       = "v1.17.1"
+	pluginVersion = "v1.13.2"
 
 	backupOrigin = "kkp-controllers"
 
@@ -140,7 +140,7 @@ func BSLReconciler(cluster *kubermaticv1.Cluster, cbsl *kubermaticv1.ClusterBack
 }
 
 // CustomizationConfigMapReconciler reconciles a ConfigMap to configure the velero restore helper,
-// see https://velero.io/docs/v1.12/file-system-backup/#customize-restore-helper-container.
+// see https://velero.io/docs/v1.17/file-system-backup/#customize-restore-helper-container.
 func CustomizationConfigMapReconciler(rewriter registry.ImageRewriter) reconciling.NamedConfigMapReconcilerFactory {
 	return func() (string, reconciling.ConfigMapReconciler) {
 		return customizationConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
@@ -155,7 +155,7 @@ func CustomizationConfigMapReconciler(rewriter registry.ImageRewriter) reconcili
 			}
 
 			// all we want to set is the custom restore helper image
-			rewritten, err := rewriter("quay.io/kubermatic-mirror/images/velero-restore-helper")
+			rewritten, err := rewriter("quay.io/kubermatic-mirror/images/velero")
 			if err != nil {
 				return nil, fmt.Errorf("failed to rewrite image: %w", err)
 			}

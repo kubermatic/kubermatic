@@ -19,7 +19,8 @@ package validation
 import (
 	"context"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	kubermaticv1 "k8c.io/kubermatic/sdk/v2/apis/kubermatic/v1"
+
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -32,16 +33,16 @@ func NewValidator() *validator {
 	return &validator{}
 }
 
-var _ admission.CustomValidator = &validator{}
+var _ admission.Validator[*kubermaticv1.GroupProjectBinding] = &validator{}
 
-func (v *validator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateCreate(ctx context.Context, obj *kubermaticv1.GroupProjectBinding) (admission.Warnings, error) {
 	return nil, validateCreate(ctx, obj)
 }
 
-func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateUpdate(ctx context.Context, oldObj, newObj *kubermaticv1.GroupProjectBinding) (admission.Warnings, error) {
 	return nil, validateUpdate(ctx, oldObj, newObj)
 }
 
-func (v *validator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *validator) ValidateDelete(ctx context.Context, obj *kubermaticv1.GroupProjectBinding) (admission.Warnings, error) {
 	return nil, validateDelete(ctx, obj)
 }

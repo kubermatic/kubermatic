@@ -101,6 +101,7 @@ func GatewayReconciler(cfg *kubermaticv1.KubermaticConfiguration, namespace stri
 				}
 				listeners = append(listeners, gatewayapiv1.Listener{
 					Name:     "https",
+					Hostname: ptr.To(gatewayapiv1.Hostname(cfg.Spec.Ingress.Domain)),
 					Protocol: gatewayapiv1.HTTPSProtocolType,
 					Port:     gatewayapiv1.PortNumber(443),
 					AllowedRoutes: &gatewayapiv1.AllowedRoutes{

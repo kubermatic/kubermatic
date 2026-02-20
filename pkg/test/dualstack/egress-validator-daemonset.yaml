@@ -30,10 +30,10 @@ spec:
       hostNetwork: false
       containers:
         - name: egress-validator-4-container
-          image: docker.io/byrnedo/alpine-curl:0.1.8
+          image: quay.io/kubermatic/util:2.7.0
           imagePullPolicy: IfNotPresent
           command:
-            - /bin/ash
+            - /bin/sh
             - -c
             - while true; do sleep 1; done
           readinessProbe:
@@ -81,10 +81,10 @@ spec:
       hostNetwork: false
       containers:
         - name: egress-validator-6-container
-          image: docker.io/byrnedo/alpine-curl:0.1.8
+          image: quay.io/kubermatic/util:2.7.0
           imagePullPolicy: IfNotPresent
           command:
-            - /bin/ash
+            - /bin/sh
             - -c
             - while true; do sleep 1; done
           readinessProbe:

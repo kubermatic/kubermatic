@@ -18,6 +18,7 @@ package validation
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/robfig/cron/v3"
@@ -26,7 +27,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/utils/strings/slices"
 )
 
 var reportTypes = []string{"cluster", "namespace"}

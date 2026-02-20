@@ -39,7 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -309,7 +309,7 @@ func TestReconcile(t *testing.T) {
 			ctx := context.Background()
 			r := &Reconciler{
 				Client:   seedClient,
-				recorder: &record.FakeRecorder{},
+				recorder: &events.FakeRecorder{},
 				log:      log,
 				versions: kubermatic.GetFakeVersions(),
 

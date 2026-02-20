@@ -33,7 +33,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -46,7 +46,7 @@ type Reconciler struct {
 
 	seedClientGetter provider.SeedClientGetter
 	log              *zap.SugaredLogger
-	recorder         record.EventRecorder
+	recorder         events.EventRecorder
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -97,7 +97,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := r.reconcile(ctx, config, seed, seedClient, logger); err != nil {
-		r.recorder.Event(seed, corev1.EventTypeWarning, "ReconcilingFailed", err.Error())
+		r.recorder.Eventf(seed, nil, corev1.EventTypeWarning, "ReconcilingFailed", "Reconciling", err.Error())
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile: %w", err)
 	}
 

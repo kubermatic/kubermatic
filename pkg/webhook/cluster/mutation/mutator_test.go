@@ -19,6 +19,7 @@ package mutation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	jsonpatch "gomodules.xyz/jsonpatch/v2"
@@ -73,12 +74,12 @@ var (
 	// collected here for brevity sake.
 	defaultPatches = []jsonpatch.JsonPatchOperation{
 		jsonpatch.NewOperation("replace", "/spec/exposeStrategy", string(defaulting.DefaultExposeStrategy)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(kubermaticv1.DefaultEtcdClusterSize)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", json.Number(fmt.Sprintf("%d", kubermaticv1.DefaultEtcdClusterSize))),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", defaulting.DefaultEtcdVolumeSize),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(defaulting.DefaultAPIServerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", json.Number(fmt.Sprintf("%d", defaulting.DefaultAPIServerReplicas))),
 		jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", resources.DefaultNodePortRange),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(defaulting.DefaultControllerManagerReplicas)),
-		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(defaulting.DefaultSchedulerReplicas)),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", json.Number(fmt.Sprintf("%d", defaulting.DefaultControllerManagerReplicas))),
+		jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", json.Number(fmt.Sprintf("%d", defaulting.DefaultSchedulerReplicas))),
 		jsonpatch.NewOperation("add", "/spec/kubernetesDashboard", map[string]interface{}{"enabled": true}),
 	}
 
@@ -86,7 +87,7 @@ var (
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipFamily", string(kubermaticv1.IPFamilyIPv4)),
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4}),
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4}),
-		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(resources.DefaultNodeCIDRMaskSizeIPv4)),
+		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", json.Number(fmt.Sprintf("%d", resources.DefaultNodeCIDRMaskSizeIPv4))),
 		jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 		jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 	}
@@ -227,24 +228,24 @@ func TestMutator(t *testing.T) {
 			wantAllowed: true,
 			wantPatches: []jsonpatch.JsonPatchOperation{
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/nodePortRange", "30000-32768"),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", float64(2)),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/replicas", json.Number("2")),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/tolerations", []interface{}{map[string]interface{}{"effect": "PreferNoSchedule", "key": "test-no-schedule", "operator": "Exists"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/apiserver/endpointReconcilingDisabled", true),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", float64(2)),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/replicas", json.Number("2")),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/tolerations", []interface{}{map[string]interface{}{"effect": "PreferNoSchedule", "key": "test-no-schedule", "operator": "Exists"}}),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/leaderElection/leaseDurationSeconds", float64(10)),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/leaderElection/renewDeadlineSeconds", float64(5)),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/leaderElection/retryPeriodSeconds", float64(2)),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/leaderElection/leaseDurationSeconds", json.Number("10")),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/leaderElection/renewDeadlineSeconds", json.Number("5")),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/controllerManager/leaderElection/retryPeriodSeconds", json.Number("2")),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/tolerations", []interface{}{map[string]interface{}{"effect": "PreferNoSchedule", "key": "test-no-schedule", "operator": "Exists"}}),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/leaderElection/renewDeadlineSeconds", float64(5)),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/leaderElection/retryPeriodSeconds", float64(2)),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/leaderElection/leaseDurationSeconds", float64(10)),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", float64(2)),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/resources", float64(5)),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/leaderElection/renewDeadlineSeconds", json.Number("5")),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/leaderElection/retryPeriodSeconds", json.Number("2")),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/leaderElection/leaseDurationSeconds", json.Number("10")),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/replicas", json.Number("2")),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/resources", json.Number("5")),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/scheduler/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
-				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", float64(7)),
+				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/clusterSize", json.Number("7")),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/storageClass", "fast-storage"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/diskSize", "1G"),
 				jsonpatch.NewOperation("add", "/spec/componentsOverride/etcd/resources", map[string]interface{}{"requests": map[string]interface{}{"memory": "500M"}}),
@@ -293,7 +294,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipFamily", string(kubermaticv1.IPFamilyIPv4)),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{"10.240.32.0/20"}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{"10.241.0.0/16"}),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", json.Number("24")),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "example.local"),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.EBPFProxyMode),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
@@ -575,7 +576,7 @@ func TestMutator(t *testing.T) {
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/ipvs", map[string]interface{}{"strictArp": true}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", true),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(24)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", json.Number("24")),
 				jsonpatch.NewOperation("add", "/spec/features/externalCloudProvider", true),
 				jsonpatch.NewOperation("add", "/spec/features/ccmClusterName", true),
 				jsonpatch.NewOperation("replace", "/spec/cloud/providerName", string(kubermaticv1.KubevirtCloudProvider)),
@@ -668,8 +669,8 @@ func TestMutator(t *testing.T) {
 				defaultPatches,
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/services/cidrBlocks", []interface{}{resources.DefaultClusterServicesCIDRIPv4, resources.DefaultClusterServicesCIDRIPv6}),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/pods/cidrBlocks", []interface{}{resources.DefaultClusterPodsCIDRIPv4, resources.DefaultClusterPodsCIDRIPv6}),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", float64(resources.DefaultNodeCIDRMaskSizeIPv4)),
-				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv6", float64(resources.DefaultNodeCIDRMaskSizeIPv6)),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv4", json.Number(fmt.Sprintf("%d", resources.DefaultNodeCIDRMaskSizeIPv4))),
+				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeCidrMaskSizeIPv6", json.Number(fmt.Sprintf("%d", resources.DefaultNodeCIDRMaskSizeIPv6))),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/dnsDomain", "cluster.local"),
 				jsonpatch.NewOperation("add", "/spec/clusterNetwork/nodeLocalDNSCacheEnabled", resources.DefaultNodeLocalDNSCacheEnabled),
 				jsonpatch.NewOperation("replace", "/spec/clusterNetwork/proxyMode", resources.IPVSProxyMode),

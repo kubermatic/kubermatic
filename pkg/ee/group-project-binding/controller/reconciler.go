@@ -38,7 +38,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -47,7 +47,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	log      *zap.SugaredLogger
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 
 	setOwnerRef bool
 }
@@ -74,7 +74,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		project := &kubermaticv1.Project{}
 		if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: binding.Spec.ProjectID}, project); err != nil {
 			if apierrors.IsNotFound(err) {
-				r.recorder.Event(binding, corev1.EventTypeWarning, "ProjectNotFound", err.Error())
+				r.recorder.Eventf(binding, nil, corev1.EventTypeWarning, "ProjectNotFound", "Reconciling", err.Error())
 			}
 			return reconcile.Result{}, err
 		}
@@ -95,7 +95,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 
 	if err := r.reconcile(ctx, r.Client, log, binding); err != nil {
-		r.recorder.Event(binding, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(binding, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 		return reconcile.Result{}, err
 	}
 

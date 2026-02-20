@@ -41,7 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -57,7 +57,7 @@ const (
 type Reconciler struct {
 	ctrlruntimeclient.Client
 	log      *zap.SugaredLogger
-	recorder record.EventRecorder
+	recorder events.EventRecorder
 }
 
 // Add creates a cluster controller.
@@ -65,7 +65,7 @@ func Add(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger) error
 	reconciler := &Reconciler{
 		log:      log.Named(ControllerName),
 		Client:   mgr.GetClient(),
-		recorder: mgr.GetEventRecorderFor(ControllerName),
+		recorder: mgr.GetEventRecorder(ControllerName),
 	}
 
 	// Watch for changes to ExternalCluster except KubeOne and generic clusters.
@@ -113,13 +113,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	if err != nil {
 		switch {
 		case isHTTPError(err, http.StatusNotFound):
-			r.recorder.Event(cluster, corev1.EventTypeWarning, "ResourceNotFound", err.Error())
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ResourceNotFound", "Reconciling", err.Error())
 			err = nil
 		case isHTTPError(err, http.StatusForbidden):
-			r.recorder.Event(cluster, corev1.EventTypeWarning, "AuthorizationFailed", err.Error())
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "AuthorizationFailed", "Reconciling", err.Error())
 			err = nil
 		default:
-			r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+			r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 		}
 	}
 

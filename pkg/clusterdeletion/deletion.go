@@ -26,7 +26,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -34,7 +34,7 @@ const (
 	deletedLBAnnotationName = "kubermatic.k8c.io/cleaned-up-loadbalancers"
 )
 
-func New(seedClient ctrlruntimeclient.Client, recorder record.EventRecorder, userClusterClientGetter func() (ctrlruntimeclient.Client, error)) *Deletion {
+func New(seedClient ctrlruntimeclient.Client, recorder events.EventRecorder, userClusterClientGetter func() (ctrlruntimeclient.Client, error)) *Deletion {
 	return &Deletion{
 		seedClient:              seedClient,
 		recorder:                recorder,
@@ -44,7 +44,7 @@ func New(seedClient ctrlruntimeclient.Client, recorder record.EventRecorder, use
 
 type Deletion struct {
 	seedClient              ctrlruntimeclient.Client
-	recorder                record.EventRecorder
+	recorder                events.EventRecorder
 	userClusterClientGetter func() (ctrlruntimeclient.Client, error)
 }
 
@@ -67,7 +67,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	if kuberneteshelper.HasAnyFinalizer(cluster,
 		kubermaticv1.InClusterLBCleanupFinalizer,
 		kubermaticv1.InClusterPVCleanupFinalizer) {
-		d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "LoadBalancers / PersistentVolumeClaims have been deleted, waiting for them to be destroyed.")
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ClusterCleanup", "Reconciling", "LoadBalancers / PersistentVolumeClaims have been deleted, waiting for them to be destroyed.")
 		return nil
 	}
 
@@ -102,7 +102,7 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 	ns := kubermaticv1.NamespaceCleanupFinalizer
 
 	if !kuberneteshelper.HasFinalizerSuperset(cluster, cred, ns) {
-		d.recorder.Eventf(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Waiting for all finalizers except %q and %q to be removed before removing cluster namespace.", cred, ns)
+		d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ClusterCleanup", "Reconciling", "Waiting for all finalizers except %q and %q to be removed before removing cluster namespace.", cred, ns)
 		return nil
 	}
 
@@ -175,7 +175,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 		}
 	}
 
-	d.recorder.Event(cluster, corev1.EventTypeNormal, "ClusterCleanup", "Cleanup of LoadBalancers / PersistentVolumeClaims has been completed.")
+	d.recorder.Eventf(cluster, nil, corev1.EventTypeNormal, "ClusterCleanup", "Reconciling", "Cleanup of LoadBalancers / PersistentVolumeClaims has been completed.")
 
 	return kuberneteshelper.TryRemoveFinalizer(ctx, d.seedClient, cluster, kubermaticv1.InClusterLBCleanupFinalizer, kubermaticv1.InClusterPVCleanupFinalizer)
 }

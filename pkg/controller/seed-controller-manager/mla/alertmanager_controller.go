@@ -40,7 +40,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,7 +61,7 @@ type alertmanagerReconciler struct {
 
 	log        *zap.SugaredLogger
 	workerName string
-	recorder   record.EventRecorder
+	recorder   events.EventRecorder
 	versions   kubermatic.Versions
 
 	alertmanagerController *alertmanagerController
@@ -84,7 +84,7 @@ func newAlertmanagerReconciler(
 
 		log:                    log.Named(subname),
 		workerName:             workerName,
-		recorder:               mgr.GetEventRecorderFor(controllerName(subname)),
+		recorder:               mgr.GetEventRecorder(controllerName(subname)),
 		versions:               versions,
 		alertmanagerController: alertmanagerController,
 	}
@@ -160,7 +160,7 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 	}
 
 	if err != nil {
-		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		r.recorder.Eventf(cluster, nil, corev1.EventTypeWarning, "ReconcilingError", "Reconciling", err.Error())
 	}
 
 	return *result, err

@@ -50,6 +50,7 @@ type SSHKeySpec struct {
 	// Name is the human readable name for this SSH key.
 	Name string `json:"name"`
 	// Owner is the name of the User object that owns this SSH key.
+	//
 	// Deprecated: This field is not used anymore.
 	// +optional
 	Owner string `json:"owner,omitempty"`

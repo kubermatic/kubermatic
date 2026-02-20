@@ -35,7 +35,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -51,7 +51,7 @@ func newTestRuleGroupReconciler(objects []ctrlruntimeclient.Object, handler http
 	reconciler := ruleGroupReconciler{
 		Client:              fakeClient,
 		log:                 kubermaticlog.Logger,
-		recorder:            record.NewFakeRecorder(10),
+		recorder:            events.NewFakeRecorder(10),
 		ruleGroupController: controller,
 	}
 	return &reconciler, ts
