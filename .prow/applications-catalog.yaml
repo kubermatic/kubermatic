@@ -761,7 +761,7 @@ presubmits:
             - name: APPLICATION_NAME
               value: "envoy-gateway"
             - name: APPLICATION_NAMESPACE
-              value: "envoy-gateway-system"
+              value: "envoy-gateway"
             - name: APP_LABEL_KEY
               value: "app.kubernetes.io/name"
             - name: NAMES
