@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	azureVMSize = "Standard_F2"
+	azureVMSize = "Standard_F2s_v2"
 )
 
 type azureScenario struct {
