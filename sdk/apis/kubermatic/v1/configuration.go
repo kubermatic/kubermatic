@@ -712,6 +712,11 @@ type CatalogManagerConfiguration struct {
 	// If not set, all the applications from the catalog are installed.
 	Apps []string `json:"apps,omitempty"`
 
+	// ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+	// By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+	// Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
+
 	// ManagerSettings configures the application-catalog manager deployment settings.
 	ManagerSettings CatalogManagerSettings `json:"managerSettings,omitempty"`
 	// WebhookSettings configures the application-catalog webhook deployment settings.
@@ -726,11 +731,6 @@ type CatalogManagerSettings struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// LogLevel specifies the logging verbosity level for the application-catalog manager.
 	LogLevel string `json:"logLevel,omitempty"`
-
-	// ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
-	// By default, ApplicationsDefinitions are reconciled at every 10 minutes.
-	// Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
-	ReconciliationInterval metav1.Duration `json:"reconciliationInterval,omitempty"`
 }
 
 // CatalogWebhookSettings configures the application-catalog webhook deployment.

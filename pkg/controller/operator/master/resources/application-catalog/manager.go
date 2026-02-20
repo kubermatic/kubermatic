@@ -232,7 +232,7 @@ func CatalogManagerDeploymentReconciler(cfg *kubermaticv1.KubermaticConfiguratio
 				"--metrics-address=0.0.0.0:8085",
 				fmt.Sprintf(
 					"--reconciliation-interval=%s",
-					cfg.Spec.Applications.CatalogManager.ManagerSettings.ReconciliationInterval.Duration,
+					cfg.Spec.Applications.CatalogManager.ReconciliationInterval.Duration,
 				),
 			}
 

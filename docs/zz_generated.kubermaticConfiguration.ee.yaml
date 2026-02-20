@@ -89,10 +89,6 @@ spec:
       managerSettings:
         # LogLevel specifies the logging verbosity level for the application-catalog manager.
         logLevel: ""
-        # ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
-        # By default, ApplicationsDefinitions are reconciled at every 10 minutes.
-        # Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
-        reconciliationInterval: 0s
         # Resources describes the requested and maximum allowed CPU/memory usage for application-catalog manager deployment.
         resources:
           # Claims lists the names of resources, defined in spec.resourceClaims,
@@ -111,6 +107,10 @@ spec:
           # otherwise to an implementation-defined value. Requests cannot exceed Limits.
           # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
           requests: null
+      # ReconciliationInterval is the interval at which application-catalog manager reconcile ApplicationDefinitions.
+      # By default, ApplicationsDefinitions are reconciled at every 10 minutes.
+      # Setting a value equal to 0 disables the force reconciliation of the default Application Catalog.
+      reconciliationInterval: 0s
       # RegistrySettings configures the OCI registry from which ApplicationDefinition manifests are retrieved.
       # Deprecated: This field is deprecated and serves no purpose. It is preserved for backward compatibility.
       registrySettings:
